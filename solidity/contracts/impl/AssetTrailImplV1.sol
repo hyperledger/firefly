@@ -2,7 +2,7 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 
-contract RegistryImplV1 is Initializable {
+contract AssetTrailImplV1 is Initializable {
     
   struct Member {
     address member;

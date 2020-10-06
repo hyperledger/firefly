@@ -1,4 +1,0 @@
-[submodule "deps"]
-	path = deps/openzeppelin-sdk
-	url = git@github.com:OpenZeppelin/openzeppelin-sdk.git
-	branch = solc-0.6
