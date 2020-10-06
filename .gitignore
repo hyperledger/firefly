@@ -1,0 +1,4 @@
+solidity/node_modules
+solidity/deps
+solidity/build
+solidity/package-lock.json
