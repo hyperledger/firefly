@@ -1,5 +1,5 @@
-const Registry = artifacts.require('Registry');
-const RegistryImplV1 = artifacts.require('RegistryImplV1');
+const AssetTrail = artifacts.require('AssetTrail');
+const AssetTrailImplV1 = artifacts.require('AssetTrailImplV1');
 const crypto = require('crypto');
 const ABI = require('./abi.json');
 
@@ -51,7 +51,7 @@ const testMetadataValues = [
   'value-2'
 ];
 
-contract('Registry tests', (accounts) => {
+contract('AssetTrail tests', (accounts) => {
   let implv1, mainContract;
   let proxyAdmin, user1, user2, user3, user4;
   const TEST_HASH = '0x' + crypto.createHash('sha256').update('Some fact').digest('hex');
@@ -75,7 +75,7 @@ contract('Registry tests', (accounts) => {
 
   describe('constructor tests', () => {
     it('deploys impl v1', async () => {
-      implv1 = await RegistryImplV1.new();
+      implv1 = await AssetTrailImplV1.new();
     });
 
     it('deploys main contract', async () => {
@@ -88,7 +88,7 @@ contract('Registry tests', (accounts) => {
         []
       );
 
-      mainContract = await Registry.new(implv1.address, proxyAdmin, data, { from: proxyAdmin });
+      mainContract = await AssetTrail.new(implv1.address, proxyAdmin, data, { from: proxyAdmin });
     });
   });
 
