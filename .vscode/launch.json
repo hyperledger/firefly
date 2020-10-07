@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug core",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "preLaunchTask": "npm: build - core",
+      "cwd": "${workspaceFolder}/core",
+      "program": "${workspaceFolder}/core/build/index.js",
+    }
+  ]
+}

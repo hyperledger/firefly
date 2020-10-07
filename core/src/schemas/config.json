@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "ethconnect"
+  ],
+  "properties": {
+    "ethconnect": {
+      "type": "object",
+      "required": [
+        "wsURL",
+        "credentials"
+      ],
+      "properties": {
+        "wsURL": {
+          "type": "string"
+        },
+        "credentials": {
+          "type": "object",
+          "required": [
+            "user",
+            "password"
+          ],
+          "properties": {
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
