@@ -1,3 +1,5 @@
 solidity/node_modules
 solidity/build
 solidity/package-lock.json
+core/node_modules
+core/build

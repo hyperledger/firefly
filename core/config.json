@@ -1,0 +1,10 @@
+{
+  "$schema": "./src/schemas/config.json",
+  "ethconnect": {
+    "wsURL": "",
+    "credentials": {
+      "user": "",
+      "password": ""
+    }
+  }
+}
