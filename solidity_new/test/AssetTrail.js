@@ -104,6 +104,18 @@ contract('AssetTrail.sol', accounts => {
 
   describe('Asset Trail', () => {
 
+    describe('Status', () => {
+
+      it('Initial', async() => {
+        const result = await assetTrailContract.getStatus();
+        assert.equal(result.totalAssetDefinitions, 0);
+        assert.equal(result.totalPaymentDefinitionsc, 0);
+        assert.equal(result.totalAssetInstances, 0);
+        assert.equal(result.totalPaymentInstances, 0);
+      });
+
+  });
+
     describe('Members', () => {
 
       it('registerMember should raise an error if the name is empty', async () => {
@@ -525,6 +537,18 @@ contract('AssetTrail.sol', accounts => {
         assert.equal(logArgs.key, testAssetPropertyKeys[0]);
         assert.equal(logArgs.value, testAssetPropertyValues[0]);
         assert(logArgs.timestamp.toNumber() > 0);
+      });
+
+    });
+
+    describe('Status', () => {
+
+      it('Final', async() => {
+        const result = await assetTrailContract.getStatus();
+        assert.equal(result.totalAssetDefinitions, 4);
+        assert.equal(result.totalPaymentDefinitionsc, 1);
+        assert.equal(result.totalAssetInstances, 2);
+        assert.equal(result.totalPaymentInstances, 1);
       });
 
     });
