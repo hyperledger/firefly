@@ -106,6 +106,10 @@ contract AssetTrail {
     constructor(address paymentContract) public {
         payment = ERC20(paymentContract);
     }
+
+    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitionsc, uint totalAssetInstances, uint totalPaymentInstances) {
+        return (assetDefinitionCount, paymentDefinitionCount, assetInstanceCount, paymentInstanceCount);
+    }
     
     function registerMember(string memory name, string memory app2appDestination, string memory docExchangeDestination) public {
         require(bytes(name).length != 0, "Invalid name");
