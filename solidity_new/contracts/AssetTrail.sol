@@ -50,6 +50,7 @@ contract AssetTrail {
 
     event DescribedAssetInstanceCreated (
         uint assetDefinitionID,
+        uint assetInstanceID,
         address author,
         bytes32 descriptionHash,
         bytes32 contentHash,
@@ -58,6 +59,7 @@ contract AssetTrail {
 
     event AssetInstanceCreated (
         uint assetDefinitionID,
+        uint assetInstanceID,
         address author,
         bytes32 contentHash,
         uint timestamp
@@ -74,6 +76,7 @@ contract AssetTrail {
     
     event PaymentInstanceCreated (
         uint paymentDefinitionID,
+        uint paymentInstanceID,
         address author,
         address recipient,
         bytes32 paymentHash,
@@ -81,11 +84,8 @@ contract AssetTrail {
     );
     
     event AssetPropertySet (
+        uint assetInstanceID,
         address propertyAuthor,
-        uint assetDefinitionID,
-        bytes32 assetContentHash,
-        address assetAuthor,
-        uint assetTimestamp,
         string key,
         string value,
         uint timestamp
@@ -161,14 +161,12 @@ contract AssetTrail {
     
     function createDescribedAssetInstance(uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
         require(members[msg.sender] == true, "Member must be registered");
-        assetInstanceCount++;
-        emit DescribedAssetInstanceCreated(assetDefinitionID, msg.sender, descriptionHash, contentHash, now);
+        emit DescribedAssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, descriptionHash, contentHash, now);
     }
     
     function createAssetInstance(uint assetDefinitionID, bytes32 contentHash) public {
         require(members[msg.sender] == true, "Member must be registered");
-        assetInstanceCount++;
-        emit AssetInstanceCreated(assetDefinitionID, msg.sender, contentHash, now);
+        emit AssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, contentHash, now);
     }
 
     function createPaymentInstance(uint paymentDefinitionID, address recipient, bytes32 content) public {
@@ -176,15 +174,13 @@ contract AssetTrail {
         require(members[recipient] == true, "Recipient must be registered");
         require(msg.sender != recipient, "Author and recipient cannot be the same");
         require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        paymentInstanceCount++;
-        emit PaymentInstanceCreated(paymentDefinitionID, msg.sender, recipient, content, now);
+        emit PaymentInstanceCreated(paymentDefinitionID, paymentInstanceCount++, msg.sender, recipient, content, now);
     }
     
-    function setAssetProperty(uint assetDefinitionID, bytes32 assetContentHash, address assetAuthor, uint assetTimestamp, string memory key, string memory value) public {
+    function setAssetProperty(uint assetInstanceID, string memory key, string memory value) public {
         require(members[msg.sender] == true, "Member must be registered");
-        require(members[assetAuthor] == true, "Asset author must be registered");
         require(bytes(key).length > 0, "Invalid key");
-        emit AssetPropertySet(msg.sender, assetDefinitionID, assetContentHash, assetAuthor, assetTimestamp, key, value, now);
+        emit AssetPropertySet(assetInstanceID, msg.sender, key, value, now);
     }
     
 }

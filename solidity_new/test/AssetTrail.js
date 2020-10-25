@@ -76,14 +76,6 @@ const testPaymentHashes = [
 
 // Asset property constants
 
-const testAssetHashes = [
-  '0x351bf2e493eb4068dc8110b70851f4a7a083742818d6a69b5b3a39da05413600'
-];
-
-const testAssetTimestamps = [
-  1603418651
-];
-
 const testAssetPropertyKeys = [
   'test-key'
 ];
@@ -356,6 +348,7 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.createDescribedAssetInstance(0, testDescriptionHashes[0], testContentHashes[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.assetDefinitionID, 0);
+        assert.equal(logArgs.assetInstanceID, 0);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.descriptionHash, testDescriptionHashes[0]);
         assert.equal(logArgs.contentHash, testContentHashes[0]);
@@ -380,6 +373,7 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.createAssetInstance(2, testContentHashes[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.assetDefinitionID, 2);
+        assert.equal(logArgs.assetInstanceID, 1);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.contentHash, testContentHashes[0]);
         assert(logArgs.timestamp.toNumber() > 0);
@@ -481,6 +475,7 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.createPaymentInstance(0, accounts[1], testPaymentHashes[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.paymentDefinitionID, 0);
+        assert.equal(logArgs.paymentInstanceID, 0);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.recipient, accounts[1]);
         assert.equal(logArgs.paymentHash, testPaymentHashes[0]);
@@ -499,27 +494,17 @@ contract('AssetTrail.sol', accounts => {
       it('setAssetProperty should raise an error if the sender is not a registered member', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.setAssetProperty(0, testAssetHashes[0], accounts[0], testAssetTimestamps[0], testAssetPropertyKeys[0], testAssetPropertyValues[0], { from: accounts[2] });
+          await assetTrailContract.setAssetProperty(0, testAssetPropertyKeys[0], testAssetPropertyValues[0], { from: accounts[2] });
         } catch (err) {
           exceptionMessage = err.message;
         }
         assert(exceptionMessage.includes('Member must be registered'));
       });
 
-      it('setAssetProperty should raise an error if the asset author is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.setAssetProperty(0, testAssetHashes[0], accounts[2], testAssetTimestamps[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Asset author must be registered'));
-      });
-
       it('setAssetProperty should raise an error if the key is empty', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.setAssetProperty(0, testAssetHashes[0], accounts[0], testAssetTimestamps[0], '', testAssetPropertyValues[0]);
+          await assetTrailContract.setAssetProperty(0, '', testAssetPropertyValues[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -527,13 +512,10 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('setAssetProperty should set an asset property and emit the corresponding event', async () => {
-        const result = await assetTrailContract.setAssetProperty(0, testAssetHashes[0], accounts[0], testAssetTimestamps[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
+        const result = await assetTrailContract.setAssetProperty(0, testAssetPropertyKeys[0], testAssetPropertyValues[0]);
         const logArgs = result.logs[0].args;
+        assert.equal(logArgs.assetInstanceID, 0);
         assert.equal(logArgs.propertyAuthor, accounts[0]);
-        assert.equal(logArgs.assetDefinitionID, 0);
-        assert.equal(logArgs.assetAuthor, accounts[0]);
-        assert.equal(logArgs.assetContentHash, testAssetHashes[0]);
-        assert.equal(logArgs.assetTimestamp, testAssetTimestamps[0]);
         assert.equal(logArgs.key, testAssetPropertyKeys[0]);
         assert.equal(logArgs.value, testAssetPropertyValues[0]);
         assert(logArgs.timestamp.toNumber() > 0);
