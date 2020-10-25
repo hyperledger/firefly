@@ -11,6 +11,9 @@
       "preLaunchTask": "npm: build - core",
       "cwd": "${workspaceFolder}/core",
       "program": "${workspaceFolder}/core/build/index.js",
+      "env": {
+        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data"
+      }
     }
   ]
 }

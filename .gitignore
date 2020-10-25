@@ -1,5 +1,9 @@
 solidity/node_modules
 solidity/build
 solidity/package-lock.json
+solidity_new/node_modules
+solidity_new/build
+solidity_new/package-lock.json
 core/node_modules
 core/build
+core/data
