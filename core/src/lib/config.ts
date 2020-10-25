@@ -4,6 +4,7 @@ import Ajv from 'ajv';
 import configSchema from '../schemas/config.json';
 import * as utils from './utils';
 import { IConfig } from './interfaces';
+import path from 'path';
 
 const asyncReadFile = promisify(readFile);
 const ajv = new Ajv();
@@ -13,7 +14,7 @@ export let config: IConfig;
 
 export const initConfig = async () => {
   try {
-    const data = JSON.parse(await asyncReadFile(process.env.CONFIG_FILE || utils.constants.DEFAULT_CONFIG_FILE, 'utf8'));
+    const data = JSON.parse(await asyncReadFile(path.join(utils.constants.DATA_DIRECTORY, utils.constants.CONFIG_FILE_NAME), 'utf8'));
     if(validateConfig(data)) {
       config = data;
     } else {

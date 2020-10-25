@@ -2,33 +2,97 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "required": [
-    "ethconnect"
+    "port",
+    "apiGateway",
+    "eventStreams",
+    "ipfs",
+    "app2app",
+    "docExchange",
+    "appCredentials"
   ],
   "properties": {
-    "ethconnect": {
+    "port": {
+      "type": "integer"
+    },
+    "apiGateway": {
       "type": "object",
       "required": [
-        "wsURL",
-        "credentials"
+        "apiEndpoint"
       ],
       "properties": {
-        "wsURL": {
+        "apiEndpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "eventStreams": {
+      "type": "object",
+      "required": [
+        "wsEndpoint",
+        "topic"
+      ],
+      "properties": {
+        "wsEndpoint": {
           "type": "string"
         },
-        "credentials": {
-          "type": "object",
-          "required": [
-            "user",
-            "password"
-          ],
-          "properties": {
-            "user": {
-              "type": "string"
-            },
-            "password": {
-              "type": "string"
-            }
-          }
+        "topic": {
+          "type": "string"
+        }
+      }
+    },
+    "ipfs": {
+      "type": "object",
+      "required": [
+        "apiEndpoint",
+        "gatewayEndpoint"
+      ],
+      "properties": {
+        "apiEndpoint": {
+          "type": "string"
+        },
+        "gatewayEndpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "app2app": {
+      "type": "object",
+      "required": [
+        "socketIOEndpoint"
+      ],
+      "properties": {
+        "socketIOEndpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "docExchange": {
+      "type": "object",
+      "required": [
+        "apiEndpoint",
+        "socketIOEndpoint"
+      ],
+      "properties": {
+        "apiEndpoint": {
+          "type": "string"
+        },
+        "socketIOEndpoint": {
+          "type": "string"
+        }
+      }
+    },
+    "appCredentials": {
+      "type": "object",
+      "required": [
+        "user",
+        "password"
+      ],
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
         }
       }
     }
