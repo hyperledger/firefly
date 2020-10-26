@@ -12,9 +12,11 @@ export const handleGetMemberRequest = (address: string) => {
 };
 
 export const handleUpsertMemberRequest = async (address: string, name: string,
-  app2appDestination: string, docExchangeDestination: string) => {
-  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination);
-  await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
+  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
+  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
+  if(!sync) {
+    await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
+  }
 };
 
 export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IMemberRegisteredEvent) => {

@@ -3,11 +3,15 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import apiRouter from './routers/api';
 import { errorHandler } from './lib/request-error';
-import { init as initEventStreams } from './clients/event-streams';
+import * as ipfs from './clients/ipfs';
+import * as docExchange from './clients/doc-exchange';
+import * as eventStreams from './clients/event-streams';
 
 initConfig()
+  .then(() => ipfs.init())
+  .then(() => docExchange.init())
   .then(() => {
-    initEventStreams();
+    eventStreams.init();
     const app = express();
 
     app.use(bodyParser.urlencoded({ extended: true }));

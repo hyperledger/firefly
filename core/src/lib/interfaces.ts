@@ -23,6 +23,8 @@ export interface IConfig {
   }  
 }
 
+// EVENT STREAM INTERFACES
+
 export interface IEventStreamMessage {
   address: string
   blockNumber: string
@@ -42,6 +44,8 @@ export interface IMemberRegisteredEvent {
   timestamp: number
 }
 
+// DATABASE INTERFACES
+
 export interface IDBMember {
   _id?: string
   address: string
@@ -50,4 +54,24 @@ export interface IDBMember {
   timestamp: number
   confirmed: boolean
   owned: boolean
+}
+
+
+// DOCUMENT EXCHANGE INTERFACES
+
+export interface IDocExchangeTransferData {
+  transferId: string
+  transferHash: string
+  hash: string
+  from: string
+  to: string
+  senderSignature: string
+  recipientSignature: string
+  document: string
+  timestamp: string
+  status: 'sent' | 'received' | 'failed'
+}
+
+export interface IDocExchangeListener {
+  (transferData: IDocExchangeTransferData): void
 }

@@ -30,15 +30,16 @@ router.get('/members/:member', async (req, res, next) => {
   }
 });
 
-router.post('/members', async (req, res, next) => {
+router.put('/members', async (req, res, next) => {
   try {
     if (!(req.body.address && req.body.name && req.body.app2appDestination
       && req.body.docExchangeDestination)) {
       throw new RequestError('Invalid member', 400);
     }
+    const sync = req.query.sync === 'true';
     await membersHandler.handleUpsertMemberRequest(req.body.address, req.body.name,
-      req.body.app2appDestination, req.body.docExchangeDestination);
-    res.send({ status: 'submitted' });
+      req.body.app2appDestination, req.body.docExchangeDestination, sync);
+    res.send({ status: sync? 'success' : 'submitted' });
   } catch (err) {
     next(err);
   }
