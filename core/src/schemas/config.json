@@ -43,8 +43,7 @@
     "ipfs": {
       "type": "object",
       "required": [
-        "apiEndpoint",
-        "gatewayEndpoint"
+        "apiEndpoint"
       ],
       "properties": {
         "apiEndpoint": {
@@ -58,10 +57,14 @@
     "app2app": {
       "type": "object",
       "required": [
-        "socketIOEndpoint"
+        "socketIOEndpoint",
+        "destination"
       ],
       "properties": {
         "socketIOEndpoint": {
+          "type": "string"
+        },
+        "destination": {
           "type": "string"
         }
       }
@@ -70,13 +73,17 @@
       "type": "object",
       "required": [
         "apiEndpoint",
-        "socketIOEndpoint"
+        "socketIOEndpoint",
+        "destination"
       ],
       "properties": {
         "apiEndpoint": {
           "type": "string"
         },
         "socketIOEndpoint": {
+          "type": "string"
+        },
+        "destination": {
           "type": "string"
         }
       }
