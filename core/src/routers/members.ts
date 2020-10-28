@@ -5,20 +5,21 @@ import { constants } from '../lib/utils';
 
 const router = Router();
 
-router.get('/members', async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   const skip = Number(req.query.skip || 0);
   const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
+  const owned = req.query.owned === 'true';
   try {
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await membersHandler.handleGetMembersRequest(skip, limit));
+    res.send(await membersHandler.handleGetMembersRequest(skip, limit, owned));
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/members/:member', async (req, res, next) => {
+router.get('/:member', async (req, res, next) => {
   try {
     const member = await membersHandler.handleGetMemberRequest(req.params.member);
     if(member === null) {
@@ -30,7 +31,7 @@ router.get('/members/:member', async (req, res, next) => {
   }
 });
 
-router.put('/members', async (req, res, next) => {
+router.put('/', async (req, res, next) => {
   try {
     if (!(req.body.address && req.body.name && req.body.app2appDestination
       && req.body.docExchangeDestination)) {
@@ -43,14 +44,6 @@ router.put('/members', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-router.get('/assets/definitions', (req, res) => {
-  res.send('ok')
-});
-
-router.post('/assets/instances', (req, res) => {
-  res.send('ok')
 });
 
 export default router;

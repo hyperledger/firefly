@@ -1,10 +1,10 @@
 import * as database from '../clients/database';
 import * as apiGateway from '../clients/api-gateway';
 import * as utils from '../lib/utils';
-import { IMemberRegisteredEvent } from '../lib/interfaces';
+import { IEventMemberRegistered } from '../lib/interfaces';
 
-export const handleGetMembersRequest = (skip: number, limit: number) => {
-  return database.retrieveMembers(skip, limit);
+export const handleGetMembersRequest = (skip: number, limit: number, owned: boolean) => {
+  return database.retrieveMembers(skip, limit, owned);
 };
 
 export const handleGetMemberRequest = (address: string) => {
@@ -19,7 +19,7 @@ export const handleUpsertMemberRequest = async (address: string, name: string,
   }
 };
 
-export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IMemberRegisteredEvent) => {
+export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IEventMemberRegistered) => {
   let owned = false;
   const currentValue = await database.retrieveMember(member);
   if(currentValue !== null) {
