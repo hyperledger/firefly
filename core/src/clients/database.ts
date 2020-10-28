@@ -1,24 +1,51 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBMember } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBMember } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
   autoload: true
 });
 
+const assetDefinitionsDb = Datastore.create({
+  filename: path.join(constants.DATA_DIRECTORY, constants.ASSET_DEFINITIONS_DATABASE_FILE_NAME),
+  autoload: true
+});
+
 membersDb.ensureIndex({ fieldName: 'address', unique: true });
+assetDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
+
 
 export const retrieveMember = (address: string): Promise<IDBMember | null> => {
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
 };
 
-export const retrieveMembers = (skip: number, limit: number): Promise<IDBMember[]> => {
-  return membersDb.find<IDBMember>({}, { _id: 0 }).skip(skip).limit(limit);
+export const retrieveMembers = (skip: number, limit: number, owned: boolean): Promise<IDBMember[]> => {
+  let query: any = {};
+  if (owned) {
+    query.owned = true;
+  }
+  return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit);
 };
 
 export const upsertMember = (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string, timestamp: number, confirmed: boolean, owned: boolean): Promise<number> => {
   return membersDb.update({ address }, { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned }, { upsert: true });
+};
+
+export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
+  return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit);
+};
+
+export const retrieveAssetDefinition = (name: string): Promise<IDBAssetDefinition | null> => {
+  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name });
+};
+
+export const insertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, assetDefinitionID?: number) => {
+  return assetDefinitionsDb.insert({ name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, assetDefinitionID });
+};
+
+export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
+  return assetDefinitionsDb.update({ name }, { $set: { timestamp, assetDefinitionID } });
 };

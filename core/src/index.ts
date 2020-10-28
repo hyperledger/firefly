@@ -1,7 +1,8 @@
 import { initConfig, config } from './lib/config';
 import express from 'express';
 import bodyParser from 'body-parser';
-import apiRouter from './routers/api';
+import membersRouter from './routers/members';
+import assetDefinitionsRouter from './routers/asset-definitions';
 import { errorHandler } from './lib/request-error';
 import * as ipfs from './clients/ipfs';
 import * as docExchange from './clients/doc-exchange';
@@ -17,7 +18,9 @@ initConfig()
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
 
-    app.use('/api/v1', apiRouter);
+    app.use('/api/v1/members', membersRouter);
+    app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
+
     app.use(errorHandler);
 
     app.listen(config.port, () => {

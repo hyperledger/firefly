@@ -23,6 +23,13 @@ export interface IConfig {
   }  
 }
 
+export interface IStatus {
+  totalAssetDefinitions: number,
+  totalAssetInstances: number,
+  totalPaymentDefinitionsc: number,
+  totalPaymentInstances: number
+}
+
 // EVENT STREAM INTERFACES
 
 export interface IEventStreamMessage {
@@ -36,13 +43,24 @@ export interface IEventStreamMessage {
   logIndex: string
 }
 
-export interface IMemberRegisteredEvent {
+export interface IEventMemberRegistered {
   member: string
   name: string
   app2appDestination: string
   docExchangeDestination: string
   timestamp: number
 }
+
+export interface IEventAssetDefinitionCreated {
+  assetDefinitionID: string
+  author: string
+  name: string
+  isContentPrivate: boolean
+  contentSchemaHash?: string
+  descriptionSchemaHash?: string
+  timestamp: string
+}
+
 
 // DATABASE INTERFACES
 
@@ -54,6 +72,17 @@ export interface IDBMember {
   timestamp: number
   confirmed: boolean
   owned: boolean
+}
+
+export interface IDBAssetDefinition {
+  _id?: string
+  assetDefinitionID?: number
+  author: string
+  name: string
+  isContentPrivate: boolean
+  descriptionSchema?: object
+  contentSchena?: object
+  timestamp: number
 }
 
 
