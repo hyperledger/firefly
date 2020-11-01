@@ -97,7 +97,6 @@ contract AssetTrail {
     uint private assetInstanceCount;
     uint private paymentInstanceCount;
 
-    mapping(address => bool) private members;
     mapping(string => bool) private assetDefinitions;
     mapping(string => bool) private paymentDefinitions;
     mapping(uint => uint) private paymentAmounts;
@@ -113,12 +112,10 @@ contract AssetTrail {
     
     function registerMember(string memory name, string memory app2appDestination, string memory docExchangeDestination) public {
         require(bytes(name).length != 0, "Invalid name");
-        members[msg.sender] = true;
         emit MemberRegistered(msg.sender, name, app2appDestination, docExchangeDestination, now);
     }
     
     function createDescribedStructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(name).length != 0, "Invalid name");
         require(assetDefinitions[name] == false, "Asset definition name conflict");
         assetDefinitions[name] = true;
@@ -126,7 +123,6 @@ contract AssetTrail {
     }
 
     function createDescribedUnstructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(name).length != 0, "Invalid name");
         require(assetDefinitions[name] == false, "Asset definition name conflict");
         assetDefinitions[name] = true;
@@ -134,7 +130,6 @@ contract AssetTrail {
     }
     
     function createStructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 contentSchemaHash) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(name).length != 0, "Invalid name");
         require(assetDefinitions[name] == false, "Asset definition name conflict");
         assetDefinitions[name] = true;
@@ -142,7 +137,6 @@ contract AssetTrail {
     }
     
     function createUnstructuredAssetDefinition(string memory name, bool isContentPrivate) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(name).length != 0, "Invalid name");
         require(assetDefinitions[name] == false, "Asset definition name conflict");
         assetDefinitions[name] = true;
@@ -150,7 +144,6 @@ contract AssetTrail {
     }
 
     function createPaymentDefinition(string memory name, bytes32 paymentSchema, uint amount) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(name).length != 0, "Invalid name");
         require(amount > 0 , "Invalid amount");
         require(paymentDefinitions[name] == false, "Payment definition name conflict");
@@ -160,25 +153,20 @@ contract AssetTrail {
     }
     
     function createDescribedAssetInstance(uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
-        require(members[msg.sender] == true, "Member must be registered");
         emit DescribedAssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, descriptionHash, contentHash, now);
     }
     
     function createAssetInstance(uint assetDefinitionID, bytes32 contentHash) public {
-        require(members[msg.sender] == true, "Member must be registered");
         emit AssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, contentHash, now);
     }
 
     function createPaymentInstance(uint paymentDefinitionID, address recipient, bytes32 content) public {
-        require(members[msg.sender] == true, "Member must be registered");
-        require(members[recipient] == true, "Recipient must be registered");
         require(msg.sender != recipient, "Author and recipient cannot be the same");
         require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
         emit PaymentInstanceCreated(paymentDefinitionID, paymentInstanceCount++, msg.sender, recipient, content, now);
     }
     
     function setAssetProperty(uint assetInstanceID, string memory key, string memory value) public {
-        require(members[msg.sender] == true, "Member must be registered");
         require(bytes(key).length > 0, "Invalid key");
         emit AssetPropertySet(assetInstanceID, msg.sender, key, value, now);
     }

@@ -11,7 +11,7 @@ export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) =>
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, sync: boolean, descriptionSchema?: Object, contentSchema?: Object) => {
   
-  if(await database.retrieveAssetDefinition(name) !== null) {
+  if(await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
 
@@ -45,7 +45,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
 };
 
 export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated) => {
-  if(await database.retrieveAssetDefinition(event.name) !== null) {
+  if(await database.retrieveAssetDefinitionByName(event.name) !== null) {
     await database.confirmAssetDefinition(event.name, Number(event.timestamp), Number(event.assetDefinitionID));
   } else {
     let descriptionSchema;

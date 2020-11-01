@@ -2,6 +2,10 @@ import axios from 'axios';
 import { config } from '../lib/config';
 import { IStatus } from '../lib/interfaces';
 
+export const init = () => {
+  // TODO: sanity test
+};
+
 export const getStatus = async (): Promise<IStatus> => {
   const response = await axios({
     url: `${config.apiGateway.apiEndpoint}/getStatus`,

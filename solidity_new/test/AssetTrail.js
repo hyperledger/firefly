@@ -154,16 +154,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Described structured asset definitions', () => {
 
-      it('createDescribedStructuredAssetDefinition should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createDescribedStructuredAssetDefinition(testAssetDefinitionNames[0], true, testDescriptionSchemaHashes[0], testContentSchemaHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
       it('createDescribedStructuredAssetDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
         try {
@@ -200,16 +190,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Described unstructured asset definitions', () => {
 
-      it('createDescribedUnstructuredAssetDefinition should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createDescribedUnstructuredAssetDefinition(testAssetDefinitionNames[1], true, testDescriptionSchemaHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
       it('createDescribedUnstructuredAssetDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
         try {
@@ -244,16 +224,6 @@ contract('AssetTrail.sol', accounts => {
     });
 
     describe('Structured asset definitions', () => {
-
-      it('createStructuredAssetDefinition should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createStructuredAssetDefinition(testAssetDefinitionNames[2], true, testContentSchemaHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
 
       it('createStructuredAssetDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
@@ -290,16 +260,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Unatructured asset definitions', () => {
 
-      it('createUnstructuredAssetDefinition should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createUnstructuredAssetDefinition(testAssetDefinitionNames[2], true, { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
       it('createUnstructuredAssetDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
         try {
@@ -334,16 +294,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Described asset instances', () => {
 
-      it('createDescribedAssetInstance should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createDescribedAssetInstance(0, testDescriptionHashes[0], testContentHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
       it('createDescribedAssetInstance should create a new described asset instance and emit the corresponding event', async () => {
         const result = await assetTrailContract.createDescribedAssetInstance(0, testDescriptionHashes[0], testContentHashes[0]);
         const logArgs = result.logs[0].args;
@@ -359,16 +309,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Asset instances', () => {
 
-      it('createAssetInstance should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createAssetInstance(2, testContentHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
       it('createAssetInstance should create a new asset instance and emit the corresponding event', async () => {
         const result = await assetTrailContract.createAssetInstance(2, testContentHashes[0]);
         const logArgs = result.logs[0].args;
@@ -382,16 +322,6 @@ contract('AssetTrail.sol', accounts => {
     });
 
     describe('Payment definitions', () => {
-
-      it('createPaymentDefinition should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], testPaymentAmounts[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
 
       it('createPaymentDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
@@ -438,26 +368,6 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Payment instances', () => {
 
-      it('createPaymentInstance should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createPaymentInstance(0, accounts[1], testPaymentHashes[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
-
-      it('createPaymentInstance should raise an error if the recipient is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createPaymentInstance(0, accounts[2], testPaymentHashes[0]);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Recipient must be registered'));
-      });
-
       it('createPaymentInstance should raise an error if author and recipient are the same', async () => {
         let exceptionMessage;
         try {
@@ -490,16 +400,6 @@ contract('AssetTrail.sol', accounts => {
     });
 
     describe('Asset properties', () => {
-
-      it('setAssetProperty should raise an error if the sender is not a registered member', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.setAssetProperty(0, testAssetPropertyKeys[0], testAssetPropertyValues[0], { from: accounts[2] });
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Member must be registered'));
-      });
 
       it('setAssetProperty should raise an error if the key is empty', async () => {
         let exceptionMessage;
