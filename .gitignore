@@ -7,3 +7,4 @@ solidity_new/package-lock.json
 core/node_modules
 core/build
 core/data
+core/test/sandbox

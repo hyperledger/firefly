@@ -30,6 +30,16 @@ export interface IStatus {
   totalPaymentInstances: number
 }
 
+// REQUEST INTERFACES
+
+export interface IRequestMultiPartContent {
+  author?: string
+  assetType?: number
+  description?: Promise<string>
+  contentStream: NodeJS.ReadableStream
+  contentFileName: string
+}
+
 // EVENT STREAM INTERFACES
 
 export interface IEventStreamMessage {
@@ -64,6 +74,8 @@ export interface IEventAssetDefinitionCreated {
 
 // DATABASE INTERFACES
 
+export type TAssetStatus = 'authored' | 'available' | 'retrieved'
+
 export interface IDBMember {
   _id?: string
   address: string
@@ -81,10 +93,18 @@ export interface IDBAssetDefinition {
   name: string
   isContentPrivate: boolean
   descriptionSchema?: object
-  contentSchena?: object
+  contentSchema?: object
   timestamp: number
 }
 
+export interface IDBAssetInstance {
+  _id?: string
+  assetInstanceID?: number
+  author: string
+  description?: string
+  content?: string
+  contentHash?: string
+}
 
 // DOCUMENT EXCHANGE INTERFACES
 

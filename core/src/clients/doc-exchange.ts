@@ -25,6 +25,7 @@ export const init = async () => {
   }
 };
 
+
 const establishSocketIOConnection = () => {
   let error = false;
   io.connect(config.docExchange.socketIOEndpoint, {

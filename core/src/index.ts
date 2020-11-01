@@ -3,12 +3,15 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import membersRouter from './routers/members';
 import assetDefinitionsRouter from './routers/asset-definitions';
+import assetInstancesRouter from './routers/asset-instances';
 import { errorHandler } from './lib/request-error';
 import * as ipfs from './clients/ipfs';
+import * as apiGateway from './clients/api-gateway';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
 
-initConfig()
+export const promise = initConfig()
+  .then(() => apiGateway.init())
   .then(() => ipfs.init())
   .then(() => docExchange.init())
   .then(() => {
@@ -20,14 +23,21 @@ initConfig()
 
     app.use('/api/v1/members', membersRouter);
     app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
+    app.use('/api/v1/assets/instances', assetInstancesRouter);
 
     app.use(errorHandler);
 
-    app.listen(config.port, () => {
+    const server = app.listen(config.port, () => {
       console.log(`Asset trail listening on port ${config.port}`);
     });
 
-  })
-  .catch(err => {
+    const shutDown = () => {
+      server.close();
+      eventStreams.shutDown();
+    };
+
+    return { app, shutDown };
+
+  }).catch(err => {
     console.log(`Failed to start asset trail. ${err}`);
   });

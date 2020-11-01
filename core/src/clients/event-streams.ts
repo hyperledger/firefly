@@ -8,6 +8,7 @@ import { IEventMemberRegistered } from '../lib/interfaces';
 
 let ws: WebSocket;
 let disconnectionDetected = false;
+let disconnectionTimeout: NodeJS.Timeout;
 
 export const init = () => {
   ws = new WebSocket(config.eventStreams.wsEndpoint, {
@@ -16,6 +17,15 @@ export const init = () => {
     }
   });
   addEventHandlers();
+};
+
+export const shutDown = () => {
+  if (disconnectionTimeout) {
+    clearTimeout(disconnectionTimeout);
+  }
+  if (ws) {
+    ws.close();
+  }
 };
 
 const addEventHandlers = () => {
@@ -31,7 +41,7 @@ const addEventHandlers = () => {
   }).on('close', () => {
     disconnectionDetected = true;
     console.log(`Event stream websocket disconnected, attempting to reconnect in ${utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS} second(s)`);
-    setTimeout(() => {
+    disconnectionTimeout = setTimeout(() => {
       init();
     }, utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS * 1000);
   }).on('message', async (message: string) => {

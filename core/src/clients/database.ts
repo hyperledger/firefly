@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBMember } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBMember, TAssetStatus } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -13,9 +13,13 @@ const assetDefinitionsDb = Datastore.create({
   autoload: true
 });
 
+const assetInstancesDb = Datastore.create({
+  filename: path.join(constants.DATA_DIRECTORY, constants.ASSET_INSTANCES_DATABASE_FILE_NAME),
+  autoload: true
+});
+
 membersDb.ensureIndex({ fieldName: 'address', unique: true });
 assetDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
-
 
 export const retrieveMember = (address: string): Promise<IDBMember | null> => {
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
@@ -38,7 +42,11 @@ export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<I
   return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit);
 };
 
-export const retrieveAssetDefinition = (name: string): Promise<IDBAssetDefinition | null> => {
+export const retrieveAssetDefinitionByID = (assetDefinitionID: number): Promise<IDBAssetDefinition | null> => {
+  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ assetDefinitionID });
+};
+
+export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDefinition | null> => {
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name });
 };
 
@@ -48,4 +56,12 @@ export const insertAssetDefinition = (name: string, author: string, isContentPri
 
 export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
   return assetDefinitionsDb.update({ name }, { $set: { timestamp, assetDefinitionID } });
+};
+
+export const retrieveAssetInstances = (skip: number, limit: number) => {
+  return assetInstancesDb.find({}).skip(skip).limit(limit);
+};
+
+export const insertAssetInstance = (author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, status: TAssetStatus, timestamp: number, assetInstanceID?: number) => {
+  return assetInstancesDb.insert({ author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID });
 };

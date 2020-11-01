@@ -1,0 +1,27 @@
+{
+  "$schema": "../../src/schemas/config.json",
+  "port": 3000,
+  "apiGateway": {
+    "apiEndpoint": "https://apigateway.kaleido.io"
+  },
+  "eventStreams": {
+    "wsEndpoint": "ws://eventstreams.kaleido.io",
+    "topic": "dev"
+  },
+  "ipfs": {
+    "apiEndpoint": "https://ipfs.kaleido.io"
+  },
+  "app2app": {
+    "socketIOEndpoint": "wss://app2app.ws.kaleido.io",
+    "destination": "app2app_dest"
+  },
+  "docExchange": {
+    "apiEndpoint": "https://docexchange.kaleido.io",
+    "socketIOEndpoint": "http://docexchange.ws.kaleido.io",
+    "destination": "docexchange_dest"
+  },
+  "appCredentials": {
+    "user": "testuser",
+    "password": "testpassword"
+  }
+}
