@@ -9,7 +9,7 @@ export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) =>
   return database.retrieveAssetDefinitions(skip, limit);
 };
 
-export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, sync: boolean, descriptionSchema?: Object, contentSchema?: Object) => {
+export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, descriptionSchema?: Object, contentSchema?: Object) => {
   
   if(await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
@@ -20,26 +20,22 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     if (contentSchema) {
       // Described - structured
       const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-      await apiGateway.createDescribedStructuredAssetDefinition(name, author, isContentPrivate, descriptionSchemaHash, contentSchemaHash, sync);
-      if(!sync) {
-        await database.insertAssetDefinition(name, author, isContentPrivate, descriptionSchema, contentSchema, utils.getTimestamp());
-      }
+      await apiGateway.createDescribedStructuredAssetDefinition(name, author, isContentPrivate, descriptionSchemaHash, contentSchemaHash);
+      await database.insertAssetDefinition(name, author, isContentPrivate, descriptionSchema, contentSchema, utils.getTimestamp(), false);
     } else {
       // Described - unstructured
-      await apiGateway.createDescribedUnstructuredAssetDefinition(name, author, isContentPrivate, descriptionSchemaHash, sync);
-      if(!sync) {
-        await database.insertAssetDefinition(name, author, isContentPrivate, descriptionSchema, undefined, utils.getTimestamp());
-      }
+      await apiGateway.createDescribedUnstructuredAssetDefinition(name, author, isContentPrivate, descriptionSchemaHash);
+      await database.insertAssetDefinition(name, author, isContentPrivate, descriptionSchema, undefined, utils.getTimestamp(), false);
     }
   } else if (contentSchema) {
     // Structured
     const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-    await apiGateway.createStructuredAssetDefinition(name, author, isContentPrivate, contentSchemaHash, sync);
-    await database.insertAssetDefinition(name, author, isContentPrivate, undefined, contentSchema, utils.getTimestamp());
+    await apiGateway.createStructuredAssetDefinition(name, author, isContentPrivate, contentSchemaHash);
+    await database.insertAssetDefinition(name, author, isContentPrivate, undefined, contentSchema, utils.getTimestamp(), false);
   } else {
     // Unstructured
-    await apiGateway.createUnstructuredAssetDefinition(name, author, isContentPrivate, sync);
-    await database.insertAssetDefinition(name, author, isContentPrivate, undefined, undefined, utils.getTimestamp());
+    await apiGateway.createUnstructuredAssetDefinition(name, author, isContentPrivate);
+    await database.insertAssetDefinition(name, author, isContentPrivate, undefined, undefined, utils.getTimestamp(), false);
   }
 
 };
@@ -56,6 +52,6 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     if(event.contentSchemaHash) {
       await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
     }
-    database.insertAssetDefinition(event.name, event.author, event.isContentPrivate, descriptionSchema, contentSchema, Number(event.timestamp), Number(event.assetDefinitionID));
+    database.insertAssetDefinition(event.name, event.author, event.isContentPrivate, descriptionSchema, contentSchema, Number(event.timestamp), true, Number(event.assetDefinitionID));
   }
 };

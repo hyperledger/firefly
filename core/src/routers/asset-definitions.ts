@@ -24,13 +24,13 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     if (!req.body.name || req.body.name === '') {
-      throw new RequestError('Missing or invalid definition name', 400);
+      throw new RequestError('Missing or invalid asset definition name', 400);
     }
     if (!req.body.author) {
-      throw new RequestError('Missing definition author', 400);
+      throw new RequestError('Missing asset definition author', 400);
     }
     if(typeof req.body.isContentPrivate !== 'boolean') {
-      throw new RequestError('Missing or invalid boolean property isContentPrivate', 400);
+      throw new RequestError('Missing asset definition content privacy', 400);
     }
     if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
       throw new RequestError('Invalid description schema', 400);
@@ -38,12 +38,11 @@ router.post('/', async (req, res, next) => {
     if (req.body.contentSchema && !ajv.validateSchema(req.body.contentSchema)) {
       throw new RequestError('Invalid content schema', 400);
     }
-    const sync = req.query.sync === 'true';
 
     await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
-      req.body.author, sync, req.body.descriptionSchema, req.body.contentSchema);
+      req.body.author, req.body.descriptionSchema, req.body.contentSchema);
 
-    res.send({ status: sync ? 'created' : 'submitted' });
+    res.send({ status: 'submitted' });
   } catch (err) {
     next(err);
   }

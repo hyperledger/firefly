@@ -12,18 +12,16 @@ export const handleGetMemberRequest = (address: string) => {
 };
 
 export const handleUpsertMemberRequest = async (address: string, name: string,
-  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
-  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
-  if(!sync) {
-    await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
-  }
+  app2appDestination: string, docExchangeDestination: string) => {
+  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination);
+  await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
 };
 
 export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IEventMemberRegistered) => {
-  let owned = false;
-  const currentValue = await database.retrieveMember(member);
-  if(currentValue !== null) {
-    owned = currentValue.owned;
+  const owner = await database.retrieveMember(member);
+  if(owner !== null && owner.owned) {
+    await database.confirmMember(member, Number(timestamp));
+  } else {
+    await database.upsertMember(member, name, app2appDestination, docExchangeDestination, Number(timestamp), true, false);
   }
-  await database.upsertMember(member, name, app2appDestination, docExchangeDestination, Number(timestamp), true, owned);
 };

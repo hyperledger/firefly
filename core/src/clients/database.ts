@@ -38,6 +38,10 @@ export const upsertMember = (address: string, name: string, app2appDestination: 
   return membersDb.update({ address }, { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned }, { upsert: true });
 };
 
+export const confirmMember = (address: string, timestamp: number) => {
+  return membersDb.update({ address }, { $set: { timestamp, confirmed: true } });
+};
+
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
   return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit);
 };
@@ -50,12 +54,12 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name });
 };
 
-export const insertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, assetDefinitionID?: number) => {
-  return assetDefinitionsDb.insert({ name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, assetDefinitionID });
+export const insertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean, assetDefinitionID?: number) => {
+  return assetDefinitionsDb.insert({ name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, confirmed, assetDefinitionID });
 };
 
 export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
-  return assetDefinitionsDb.update({ name }, { $set: { timestamp, assetDefinitionID } });
+  return assetDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, assetDefinitionID } });
 };
 
 export const retrieveAssetInstances = (skip: number, limit: number) => {
