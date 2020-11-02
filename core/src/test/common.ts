@@ -8,6 +8,22 @@ import assert from 'assert';
 export let app: Express.Application;
 export let mockEventStreamWebSocket: EventEmitter;
 export let mockDocExchangeSocketIO = new EventEmitter();
+export const sampleContentSchema = {
+  type: 'object',
+  required: ['my_string, my_number, my_boolean'],
+  properties: {
+    my_string: {
+      type: 'string'
+    },
+    my_number: {
+      type: 'number'
+    },
+    my_boolean: {
+      type: 'boolean'
+    }
+  }
+}
+
 let shutDown: () => void;
 
 before(async () => {

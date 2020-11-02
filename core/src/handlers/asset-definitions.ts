@@ -9,6 +9,10 @@ export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) =>
   return database.retrieveAssetDefinitions(skip, limit);
 };
 
+export const handleGetAssetDefinitionRequest = (assetDefinitionID: number) => {
+  return database.retrieveAssetDefinitionByID(assetDefinitionID);
+};
+
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, descriptionSchema?: Object, contentSchema?: Object) => {
   
   if(await database.retrieveAssetDefinitionByName(name) !== null) {

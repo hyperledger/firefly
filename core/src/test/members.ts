@@ -108,7 +108,7 @@ describe('Members', async () => {
       timestamp: 1
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
-      signature: 'MemberRegistered(address,string,string,string,uint256)',
+      signature: utils.contractEventSignatures.MEMBER_REGISTERED,
       data
     }]));
     await eventPromise;
@@ -178,7 +178,13 @@ describe('Members', async () => {
       .get('/api/v1/members')
       .expect(200);
     const member = result.body[0];
+    assert.strictEqual(member.address, '0x0000000000000000000000000000000000000001');
+    assert.strictEqual(member.name, 'Member B');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app2');
+    assert.strictEqual(member.docExchangeDestination, 'kld://docexchange2');
+    assert.strictEqual(member.owned, true);
     assert.strictEqual(member.confirmed, true);
+    assert.strictEqual(typeof member.timestamp, 'number');
   });
 
 });
