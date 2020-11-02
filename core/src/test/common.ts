@@ -8,9 +8,24 @@ import assert from 'assert';
 export let app: Express.Application;
 export let mockEventStreamWebSocket: EventEmitter;
 export let mockDocExchangeSocketIO = new EventEmitter();
+export const sampleDescriptionSchema = {
+  type: 'object',
+  required: ['my_description_string, my_description_number, my_description_boolean'],
+  properties: {
+    my_string: {
+      type: 'string'
+    },
+    my_number: {
+      type: 'number'
+    },
+    my_boolean: {
+      type: 'boolean'
+    }
+  }
+}
 export const sampleContentSchema = {
   type: 'object',
-  required: ['my_string, my_number, my_boolean'],
+  required: ['my_content_string, my_content_number, my_content_boolean'],
   properties: {
     my_string: {
       type: 'string'
