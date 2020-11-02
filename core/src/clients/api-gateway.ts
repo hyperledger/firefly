@@ -23,10 +23,10 @@ export const getStatus = async (): Promise<IStatus> => {
 };
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, sync = false) => {
+  docExchangeDestination: string) => {
   await axios({
     method: 'post',
-    url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=${sync}`,
+    url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
@@ -35,10 +35,10 @@ export const upsertMember = async (address: string, name: string, app2appDestina
   });
 };
 
-export const createDescribedStructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string, contentSchemaHash: string, sync = false) => {
+export const createDescribedStructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string, contentSchemaHash: string) => {
   await axios({
     method: 'post',
-    url: `${config.apiGateway.apiEndpoint}/createDescribedStructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
+    url: `${config.apiGateway.apiEndpoint}/createDescribedStructuredAssetDefinition?kld-from=${author}&kld-sync=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
@@ -47,10 +47,10 @@ export const createDescribedStructuredAssetDefinition = async (name: string, aut
   });
 }
 
-export const createDescribedUnstructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string, sync = false) => {
+export const createDescribedUnstructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string) => {
   await axios({
     method: 'post',
-    url: `${config.apiGateway.apiEndpoint}/createDescribedUnstructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
+    url: `${config.apiGateway.apiEndpoint}/createDescribedUnstructuredAssetDefinition?kld-from=${author}&kld-sync=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
@@ -59,10 +59,10 @@ export const createDescribedUnstructuredAssetDefinition = async (name: string, a
   });
 }
 
-export const createStructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, contentSchemaHash: string, sync = false) => {
+export const createStructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, contentSchemaHash: string) => {
   await axios({
     method: 'post',
-    url: `${config.apiGateway.apiEndpoint}/createStructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
+    url: `${config.apiGateway.apiEndpoint}/createStructuredAssetDefinition?kld-from=${author}&kld-sync=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
@@ -71,10 +71,10 @@ export const createStructuredAssetDefinition = async (name: string, author: stri
   });
 }
 
-export const createUnstructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, sync = false) => {
+export const createUnstructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean) => {
   await axios({
     method: 'post',
-    url: `${config.apiGateway.apiEndpoint}/createUnstructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
+    url: `${config.apiGateway.apiEndpoint}/createUnstructuredAssetDefinition?kld-from=${author}&kld-sync=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password

@@ -6,17 +6,16 @@ import { EventEmitter } from 'events';
 import assert from 'assert';
 
 export let app: Express.Application;
-export let shutDown: () => void;
 export let mockEventStreamWebSocket: EventEmitter;
 export let mockDocExchangeSocketIO = new EventEmitter();
+let shutDown: () => void;
 
-export const setup = async () => {
+before(async () => {
 
   const sandboxPath = path.join(__dirname, '../../test/sandbox');
   await fs.rmdir(sandboxPath, { recursive: true });
   await fs.mkdir(sandboxPath);
   await fs.copyFile(path.join(__dirname, '../../test/resources/config.json'), path.join(__dirname, '../../test/sandbox/config.json'));
-  process.env.DATA_DIRECTORY = sandboxPath;
 
   // IPFS
   nock('https://ipfs.kaleido.io')
@@ -67,4 +66,8 @@ export const setup = async () => {
 
   await eventPromise;
 
-}
+});
+
+after(() => {
+  shutDown();
+});

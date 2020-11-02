@@ -1,18 +1,11 @@
-import { setup, shutDown, app, mockEventStreamWebSocket } from './common';
+import { app, mockEventStreamWebSocket } from './common';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IEventMemberRegistered } from '../lib/interfaces';
+import * as utils from '../lib/utils';
 
 describe('Members', async () => {
-
-  before(async () => {
-    await setup();
-  });
-
-  after(() => {
-    shutDown();
-  });
 
   it('Checks that an empty array is initially returned when querying members', async () => {
     const result = await request(app)
@@ -72,7 +65,7 @@ describe('Members', async () => {
   it('Checks that adding a member sends a request to API Gateway and updates the database', async () => {
 
     nock('https://apigateway.kaleido.io')
-      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
       .reply(200);
     const addMemberResponse = await request(app)
       .put('/api/v1/members')
@@ -131,7 +124,7 @@ describe('Members', async () => {
 
   it('Checks that updating a member sends a request to API Gateway and updates the database', async () => {
     nock('https://apigateway.kaleido.io')
-      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
       .reply(200);
     const addMemberResponse = await request(app)
       .put('/api/v1/members')
@@ -174,7 +167,7 @@ describe('Members', async () => {
       timestamp: 1
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
-      signature: 'MemberRegistered(address,string,string,string,uint256)',
+      signature: utils.contractEventSignatures.MEMBER_REGISTERED,
       data
     }]));
     await eventPromise;
