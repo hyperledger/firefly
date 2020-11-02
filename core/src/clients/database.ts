@@ -43,7 +43,7 @@ export const confirmMember = (address: string, timestamp: number) => {
 };
 
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
-  return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit);
+  return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
 export const retrieveAssetDefinitionByID = (assetDefinitionID: number): Promise<IDBAssetDefinition | null> => {

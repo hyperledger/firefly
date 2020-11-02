@@ -21,6 +21,18 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.get('/:assetDefinitionID', async (req, res, next) => {
+  try {
+    const assetDefinitionID = Number(req.params.assetDefinitionID);
+    if (isNaN(assetDefinitionID)) {
+      throw new RequestError('Asset definition ID', 400);
+    }
+    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionRequest(assetDefinitionID));
+  } catch(err) {
+    next(err);
+  }
+});
+
 router.post('/', async (req, res, next) => {
   try {
     if (!req.body.name || req.body.name === '') {
