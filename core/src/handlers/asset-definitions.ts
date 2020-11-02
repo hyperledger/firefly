@@ -54,7 +54,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     }
     let contentSchema;
     if(event.contentSchemaHash) {
-      await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
+      contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
     }
     database.insertAssetDefinition(event.name, event.author, event.isContentPrivate, descriptionSchema, contentSchema, Number(event.timestamp), true, Number(event.assetDefinitionID));
   }

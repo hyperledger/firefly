@@ -1,66 +1,11 @@
-import { app, mockEventStreamWebSocket } from './common';
+import { app, mockEventStreamWebSocket } from '../common';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
-import { IEventMemberRegistered } from '../lib/interfaces';
-import * as utils from '../lib/utils';
+import { IEventMemberRegistered } from '../../lib/interfaces';
+import * as utils from '../../lib/utils';
 
-describe('Members', async () => {
-
-  it('Checks that an empty array is initially returned when querying members', async () => {
-    const result = await request(app)
-      .get('/api/v1/members')
-      .expect(200);
-    assert.deepStrictEqual(result.body, []);
-  });
-
-  it('Attempting to add a member without an address should raise an error', async () => {
-    const result = await request(app)
-      .put('/api/v1/members')
-      .send({
-        name: 'Member A',
-        app2appDestination: 'kld://app2app',
-        docExchangeDestination: 'kld://docexchange'
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Invalid member' });
-  });
-
-  it('Attempting to add a member without a name should raise an error', async () => {
-    const result = await request(app)
-      .put('/api/v1/members')
-      .send({
-        address: '0x0000000000000000000000000000000000000001',
-        app2appDestination: 'kld://app2app',
-        docExchangeDestination: 'kld://docexchange'
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Invalid member' });
-  });
-
-  it('Attempting to add a member without an app2app destination should raise an error', async () => {
-    const result = await request(app)
-      .put('/api/v1/members')
-      .send({
-        address: '0x0000000000000000000000000000000000000001',
-        name: 'Member A',
-        docExchangeDestination: 'kld://docexchange'
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Invalid member' });
-  });
-
-  it('Attempting to add a member without a document exchange destination should raise an error', async () => {
-    const result = await request(app)
-      .put('/api/v1/members')
-      .send({
-        address: '0x0000000000000000000000000000000000000001',
-        name: 'Member A',
-        app2appDestination: 'kld://app2app',
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Invalid member' });
-  });
+describe('Members - registration', async () => {
 
   it('Checks that adding a member sends a request to API Gateway and updates the database', async () => {
 
