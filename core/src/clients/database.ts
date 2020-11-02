@@ -47,11 +47,11 @@ export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<I
 };
 
 export const retrieveAssetDefinitionByID = (assetDefinitionID: number): Promise<IDBAssetDefinition | null> => {
-  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ assetDefinitionID });
+  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ assetDefinitionID }, { _id: 0 });
 };
 
 export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDefinition | null> => {
-  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name });
+  return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
 export const insertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean, assetDefinitionID?: number) => {
