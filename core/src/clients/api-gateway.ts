@@ -82,3 +82,27 @@ export const createUnstructuredAssetDefinition = async (name: string, author: st
     data: { name, isContentPrivate }
   });
 }
+
+export const createDescribedPaymentDefinition = async (name: string, author: string, amount: number, descriptionSchemaHash: string) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=true`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { name, descriptionSchemaHash, amount }
+  });
+};
+
+export const createPaymentDefinition = async (name: string, author: string, amount: number) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=true`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { name, amount }
+  });
+};

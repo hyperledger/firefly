@@ -71,6 +71,14 @@ export interface IEventAssetDefinitionCreated {
   timestamp: string
 }
 
+export interface IEventPaymentDefinitionCreated {
+  paymentDefinitionID: string
+  author: string
+  name: string
+  amount: string
+  descriptionSchemaHash?: string
+  timestamp: string
+}
 
 // DATABASE INTERFACES
 

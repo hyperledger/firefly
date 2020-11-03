@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import membersRouter from './routers/members';
 import assetDefinitionsRouter from './routers/asset-definitions';
 import assetInstancesRouter from './routers/asset-instances';
+import paymentDefinitionsRouter from './routers/payment-definitions';
 import { errorHandler } from './lib/request-error';
 import * as ipfs from './clients/ipfs';
 import * as apiGateway from './clients/api-gateway';
@@ -24,6 +25,8 @@ export const promise = initConfig()
     app.use('/api/v1/members', membersRouter);
     app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
     app.use('/api/v1/assets/instances', assetInstancesRouter);
+    app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
+
 
     app.use(errorHandler);
 

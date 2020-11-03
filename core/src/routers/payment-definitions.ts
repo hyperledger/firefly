@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import RequestError from '../lib/request-error';
-import * as assetDefinitionsHandler from '../handlers/asset-definitions';
+import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { constants } from '../lib/utils';
 import Ajv from 'ajv';
 
@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionsRequest(skip, limit));
+    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionsRequest(skip, limit));
   } catch (err) {
     next(err);
   }
@@ -27,7 +27,7 @@ router.get('/:assetDefinitionID', async (req, res, next) => {
     if (isNaN(assetDefinitionID)) {
       throw new RequestError('Asset definition ID', 400);
     }
-    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionRequest(assetDefinitionID));
+    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionRequest(assetDefinitionID));
   } catch (err) {
     next(err);
   }
@@ -36,22 +36,21 @@ router.get('/:assetDefinitionID', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     if (!req.body.name || req.body.name === '') {
-      throw new RequestError('Missing or invalid asset definition name', 400);
+      throw new RequestError('Missing or invalid payment definition name', 400);
     }
     if (!req.body.author) {
-      throw new RequestError('Missing asset definition author', 400);
+      throw new RequestError('Missing payment definition author', 400);
     }
-    if (typeof req.body.isContentPrivate !== 'boolean') {
-      throw new RequestError('Missing asset definition content privacy', 400);
+    if(Number.isInteger(req.body.amount)) {
+      throw new RequestError('Missing or invalid amount', 400)
+    } else if (!(req.body.amount > 0)) {
+      throw new RequestError('Amount must be greater than 0', 400)
     }
     if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
       throw new RequestError('Invalid description schema', 400);
     }
-    if (req.body.contentSchema && !ajv.validateSchema(req.body.contentSchema)) {
-      throw new RequestError('Invalid content schema', 400);
-    }
-    await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
-      req.body.author, req.body.descriptionSchema, req.body.contentSchema);
+    await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
+      req.body.author, req.body.amount, req.body.contentSchema);
     res.send({ status: 'submitted' });
   } catch (err) {
     next(err);
