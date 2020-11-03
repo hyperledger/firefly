@@ -27,7 +27,7 @@ export const handleCreateAssetInstanceRequest = async (author: string, assetDefi
     }
   }
   // TODO run transaction (described / not described)
-  database.insertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
+  database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
 };
 
 export const handleCreateAssetInstanceMultiPartRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, contentStream: NodeJS.ReadableStream) => {
@@ -48,7 +48,7 @@ export const handleCreateAssetInstanceMultiPartRequest = async (author: string, 
     }
   }
   // TODO run transaction (described / not described)
-  database.insertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
+  database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
 }
 
 const commonTasks = async (author: string, assetDefinitionID: number, description: Object | undefined) => {
