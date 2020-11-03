@@ -1,9 +1,10 @@
 import WebSocket from 'ws';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IEventAssetDefinitionCreated, IEventStreamMessage } from '../lib/interfaces';
+import { IEventAssetDefinitionCreated, IEventPaymentDefinitionCreated, IEventStreamMessage } from '../lib/interfaces';
 import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
+import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { IEventMemberRegistered } from '../lib/interfaces';
 
 let ws: WebSocket;
@@ -66,7 +67,9 @@ const handleMessage = async (message: string) => {
       case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
       case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
         await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated); break;
-
+      case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
+      case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
+        await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated); break;
     }
   }
 };
