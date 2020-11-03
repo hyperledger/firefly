@@ -65,21 +65,37 @@ contract AssetTrail {
         uint timestamp
     );
     
+    event DescribedPaymentDefinitionCreated (
+        uint paymentDefinitionID,
+        address author,
+        string name,
+        bytes32 descriptionSchemaHash,
+        uint amount,
+        uint timestamp
+    );
+
     event PaymentDefinitionCreated (
         uint paymentDefinitionID,
         address author,
         string name,
-        bytes32 paymentSchema,
         uint amount,
         uint timestamp
     );
-    
+
     event PaymentInstanceCreated (
-        uint paymentDefinitionID,
         uint paymentInstanceID,
+        uint paymentDefinitionID,
         address author,
         address recipient,
-        bytes32 paymentHash,
+        uint timestamp
+    );
+
+    event DescribedPaymentInstanceCreated (
+        uint paymentInstanceID,
+        uint paymentDefinitionID,
+        address author,
+        address recipient,
+        bytes32 descriptionHash,
         uint timestamp
     );
     
@@ -106,7 +122,7 @@ contract AssetTrail {
         payment = ERC20(paymentContract);
     }
 
-    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitionsc, uint totalAssetInstances, uint totalPaymentInstances) {
+    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitions, uint totalAssetInstances, uint totalPaymentInstances) {
         return (assetDefinitionCount, paymentDefinitionCount, assetInstanceCount, paymentInstanceCount);
     }
     
@@ -143,13 +159,22 @@ contract AssetTrail {
         emit UnstructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, now);
     }
 
-    function createPaymentDefinition(string memory name, bytes32 paymentSchema, uint amount) public {
+    function createDescribedPaymentDefinition(string memory name, bytes32 descriptionSchema, uint amount) public {
         require(bytes(name).length != 0, "Invalid name");
         require(amount > 0 , "Invalid amount");
         require(paymentDefinitions[name] == false, "Payment definition name conflict");
         paymentAmounts[paymentDefinitionCount] = amount;
         paymentDefinitions[name] = true;
-        emit PaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, paymentSchema, amount, now);
+        emit DescribedPaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, descriptionSchema, amount, now);
+    }
+
+    function createPaymentDefinition(string memory name, uint amount) public {
+        require(bytes(name).length != 0, "Invalid name");
+        require(amount > 0 , "Invalid amount");
+        require(paymentDefinitions[name] == false, "Payment definition name conflict");
+        paymentAmounts[paymentDefinitionCount] = amount;
+        paymentDefinitions[name] = true;
+        emit PaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, amount, now);
     }
     
     function createDescribedAssetInstance(uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
@@ -160,10 +185,16 @@ contract AssetTrail {
         emit AssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, contentHash, now);
     }
 
-    function createPaymentInstance(uint paymentDefinitionID, address recipient, bytes32 content) public {
+    function createDescribedPaymentInstance(uint paymentDefinitionID, address recipient, bytes32 descriptionHash) public {
         require(msg.sender != recipient, "Author and recipient cannot be the same");
         require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        emit PaymentInstanceCreated(paymentDefinitionID, paymentInstanceCount++, msg.sender, recipient, content, now);
+        emit DescribedPaymentInstanceCreated(paymentInstanceCount++, paymentDefinitionID, msg.sender, recipient, descriptionHash, now);
+    }
+
+    function createPaymentInstance(uint paymentDefinitionID, address recipient) public {
+        require(msg.sender != recipient, "Author and recipient cannot be the same");
+        require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
+        emit PaymentInstanceCreated(paymentInstanceCount++, paymentDefinitionID, msg.sender, recipient, now);
     }
     
     function setAssetProperty(uint assetInstanceID, string memory key, string memory value) public {

@@ -57,7 +57,8 @@ const testContentHashes = [
 // Payment definition constants
 
 const testPaymentDefinitionNames = [
-  'My subscriptions'
+  'My subscriptions',
+  'My purchases'
 ];
 
 const testPaymentSchemas = [
@@ -101,7 +102,7 @@ contract('AssetTrail.sol', accounts => {
       it('Initial', async() => {
         const result = await assetTrailContract.getStatus();
         assert.equal(result.totalAssetDefinitions, 0);
-        assert.equal(result.totalPaymentDefinitionsc, 0);
+        assert.equal(result.totalPaymentDefinitions, 0);
         assert.equal(result.totalAssetInstances, 0);
         assert.equal(result.totalPaymentInstances, 0);
       });
@@ -321,12 +322,58 @@ contract('AssetTrail.sol', accounts => {
 
     });
 
+    describe('Described payment definitions', () => {
+
+      it('createDescribedPaymentDefinition should raise an error if the name is empty', async () => {
+        let exceptionMessage;
+        try {
+          await assetTrailContract.createDescribedPaymentDefinition('', testPaymentSchemas[0], testPaymentAmounts[0]);
+        } catch (err) {
+          exceptionMessage = err.message;
+        }
+        assert(exceptionMessage.includes('Invalid name'));
+      });
+
+      it('createDescribedPaymentDefinition should raise an error if the payment amount is 0', async () => {
+        let exceptionMessage;
+        try {
+          await assetTrailContract.createDescribedPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], 0);
+        } catch (err) {
+          exceptionMessage = err.message;
+        }
+        assert(exceptionMessage.includes('Invalid amount'));
+      });
+
+      it('createDescribedPaymentDefinition should create a new payment definition and emit the corresponding event', async () => {
+        const result = await assetTrailContract.createDescribedPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], testPaymentAmounts[0]);
+        const logArgs = result.logs[0].args;
+        assert.equal(logArgs.author, accounts[0]);
+        assert.equal(logArgs.paymentDefinitionID, 0);
+        assert.equal(logArgs.name, testPaymentDefinitionNames[0]);
+        assert.equal(logArgs.descriptionSchemaHash, testPaymentSchemas[0]);
+        assert.equal(logArgs.amount, testPaymentAmounts[0]);
+        assert(logArgs.timestamp.toNumber() > 0);
+      });
+
+      it('createDescribedPaymentDefinition should raise an error when there is a name conflict', async () => {
+        let exceptionMessage;
+        try {
+          await assetTrailContract.createDescribedPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], testPaymentAmounts[0]);
+        } catch (err) {
+          exceptionMessage = err.message;
+        }
+        assert(exceptionMessage.includes('Payment definition name conflict'));
+      });
+
+    });
+
+
     describe('Payment definitions', () => {
 
       it('createPaymentDefinition should raise an error if the name is empty', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createPaymentDefinition('', testPaymentSchemas[0], testPaymentAmounts[0]);
+          await assetTrailContract.createPaymentDefinition('', testPaymentAmounts[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -336,7 +383,7 @@ contract('AssetTrail.sol', accounts => {
       it('createPaymentDefinition should raise an error if the payment amount is 0', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], 0);
+          await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[1], 0);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -344,12 +391,11 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('createPaymentDefinition should create a new payment definition and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], testPaymentAmounts[0]);
+        const result = await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[1], testPaymentAmounts[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.paymentDefinitionID, 0);
-        assert.equal(logArgs.name, testPaymentDefinitionNames[0]);
-        assert.equal(logArgs.paymentSchema, testPaymentSchemas[0]);
+        assert.equal(logArgs.paymentDefinitionID, 1);
+        assert.equal(logArgs.name, testPaymentDefinitionNames[1]);
         assert.equal(logArgs.amount, testPaymentAmounts[0]);
         assert(logArgs.timestamp.toNumber() > 0);
       });
@@ -357,11 +403,44 @@ contract('AssetTrail.sol', accounts => {
       it('createPaymentDefinition should raise an error when there is a name conflict', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[0], testPaymentSchemas[0], testPaymentAmounts[0]);
+          await assetTrailContract.createPaymentDefinition(testPaymentDefinitionNames[1], testPaymentAmounts[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
         assert(exceptionMessage.includes('Payment definition name conflict'));
+      });
+
+    });
+
+    describe('Described payment instances', () => {
+
+      it('createDescribedPaymentInstance should raise an error if author and recipient are the same', async () => {
+        let exceptionMessage;
+        try {
+          await assetTrailContract.createDescribedPaymentInstance(0, accounts[0], testPaymentHashes[0]);
+        } catch (err) {
+          exceptionMessage = err.message;
+        }
+        assert(exceptionMessage.includes('Author and recipient cannot be the same'));
+      });
+
+      it('createDescribedPaymentInstance should create a new payment instance and emit the corresponding event', async () => {
+        const balanceAccount0Before = await payment.balanceOf(accounts[0]);
+        const balanceAccount1Before = await payment.balanceOf(accounts[1]);
+
+        const result = await assetTrailContract.createDescribedPaymentInstance(0, accounts[1], testPaymentHashes[0]);
+        const logArgs = result.logs[0].args;
+        assert.equal(logArgs.paymentDefinitionID, 0);
+        assert.equal(logArgs.paymentInstanceID, 0);
+        assert.equal(logArgs.author, accounts[0]);
+        assert.equal(logArgs.recipient, accounts[1]);
+        assert.equal(logArgs.descriptionHash, testPaymentHashes[0]);
+        assert(logArgs.timestamp.toNumber() > 0);
+
+        const balanceAccount0After = await payment.balanceOf(accounts[0]);
+        const balanceAccount1After = await payment.balanceOf(accounts[1]);
+        assert(balanceAccount0Before.toNumber() === balanceAccount0After.toNumber() + testPaymentAmounts[0]);
+        assert(balanceAccount1Before.toNumber() === balanceAccount1After.toNumber() - testPaymentAmounts[0]);
       });
 
     });
@@ -371,7 +450,7 @@ contract('AssetTrail.sol', accounts => {
       it('createPaymentInstance should raise an error if author and recipient are the same', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createPaymentInstance(0, accounts[0], testPaymentHashes[0]);
+          await assetTrailContract.createPaymentInstance(0, accounts[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -382,13 +461,12 @@ contract('AssetTrail.sol', accounts => {
         const balanceAccount0Before = await payment.balanceOf(accounts[0]);
         const balanceAccount1Before = await payment.balanceOf(accounts[1]);
 
-        const result = await assetTrailContract.createPaymentInstance(0, accounts[1], testPaymentHashes[0]);
+        const result = await assetTrailContract.createPaymentInstance(1, accounts[1]);
         const logArgs = result.logs[0].args;
-        assert.equal(logArgs.paymentDefinitionID, 0);
-        assert.equal(logArgs.paymentInstanceID, 0);
+        assert.equal(logArgs.paymentDefinitionID, 1);
+        assert.equal(logArgs.paymentInstanceID, 1);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.recipient, accounts[1]);
-        assert.equal(logArgs.paymentHash, testPaymentHashes[0]);
         assert(logArgs.timestamp.toNumber() > 0);
 
         const balanceAccount0After = await payment.balanceOf(accounts[0]);
@@ -428,9 +506,9 @@ contract('AssetTrail.sol', accounts => {
       it('Final', async() => {
         const result = await assetTrailContract.getStatus();
         assert.equal(result.totalAssetDefinitions, 4);
-        assert.equal(result.totalPaymentDefinitionsc, 1);
+        assert.equal(result.totalPaymentDefinitions, 2);
         assert.equal(result.totalAssetInstances, 2);
-        assert.equal(result.totalPaymentInstances, 1);
+        assert.equal(result.totalPaymentInstances, 2);
       });
 
     });
