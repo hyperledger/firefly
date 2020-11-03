@@ -13,6 +13,11 @@ const assetDefinitionsDb = Datastore.create({
   autoload: true
 });
 
+const paymentDefinitionsDb = Datastore.create({
+  filename: path.join(constants.DATA_DIRECTORY, constants.PAYMENT_DEFINITIONS_DATABASE_FILE_NAME),
+  autoload: true
+});
+
 const assetInstancesDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.ASSET_INSTANCES_DATABASE_FILE_NAME),
   autoload: true
@@ -20,6 +25,9 @@ const assetInstancesDb = Datastore.create({
 
 membersDb.ensureIndex({ fieldName: 'address', unique: true });
 assetDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
+paymentDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
+
+// Member queries
 
 export const retrieveMember = (address: string): Promise<IDBMember | null> => {
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
@@ -42,6 +50,8 @@ export const confirmMember = (address: string, timestamp: number) => {
   return membersDb.update({ address }, { $set: { timestamp, confirmed: true } });
 };
 
+// Asset definition queries
+
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
   return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
@@ -61,6 +71,30 @@ export const upsertAssetDefinition = (name: string, author: string, isContentPri
 export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
   return assetDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, assetDefinitionID } });
 };
+
+// Payment definition queries
+
+export const retrievePaymentDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
+  return paymentDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
+};
+
+export const retrievePaymentDefinitionByID = (paymentDefinitionID: number): Promise<IDBAssetDefinition | null> => {
+  return paymentDefinitionsDb.findOne<IDBAssetDefinition>({ paymentDefinitionID }, { _id: 0 });
+};
+
+export const retrievePaymentDefinitionByName = (name: string): Promise<IDBAssetDefinition | null> => {
+  return paymentDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
+};
+
+export const upsertPaymentDefinition = (name: string, author: string, descriptionSchema: Object | undefined, amount: number, timestamp: number, confirmed: boolean, paymentDefinitionID?: number) => {
+  return assetDefinitionsDb.update({ name }, { $set: { name, author, descriptionSchema, amount, timestamp, confirmed, paymentDefinitionID } }, { upsert: true });
+};
+
+export const confirmPaymentDefinition = (name: string, timestamp: number, paymentDefinitionID: number) => {
+  return assetDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, paymentDefinitionID } });
+};
+
+// Asset instance queries
 
 export const retrieveAssetInstances = (skip: number, limit: number) => {
   return assetInstancesDb.find({}).skip(skip).limit(limit);

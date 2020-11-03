@@ -159,13 +159,13 @@ contract AssetTrail {
         emit UnstructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, now);
     }
 
-    function createDescribedPaymentDefinition(string memory name, bytes32 descriptionSchema, uint amount) public {
+    function createDescribedPaymentDefinition(string memory name, bytes32 descriptionSchemaHash, uint amount) public {
         require(bytes(name).length != 0, "Invalid name");
         require(amount > 0 , "Invalid amount");
         require(paymentDefinitions[name] == false, "Payment definition name conflict");
         paymentAmounts[paymentDefinitionCount] = amount;
         paymentDefinitions[name] = true;
-        emit DescribedPaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, descriptionSchema, amount, now);
+        emit DescribedPaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, descriptionSchemaHash, amount, now);
     }
 
     function createPaymentDefinition(string memory name, uint amount) public {
