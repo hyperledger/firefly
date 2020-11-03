@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBMember, TAssetStatus } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBMember, IDBPaymentDefinition, TAssetStatus } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -74,24 +74,24 @@ export const confirmAssetDefinition = (name: string, timestamp: number, assetDef
 
 // Payment definition queries
 
-export const retrievePaymentDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
-  return paymentDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
+export const retrievePaymentDefinitions = (skip: number, limit: number): Promise<IDBPaymentDefinition[]> => {
+  return paymentDefinitionsDb.find<IDBPaymentDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
-export const retrievePaymentDefinitionByID = (paymentDefinitionID: number): Promise<IDBAssetDefinition | null> => {
-  return paymentDefinitionsDb.findOne<IDBAssetDefinition>({ paymentDefinitionID }, { _id: 0 });
+export const retrievePaymentDefinitionByID = (paymentDefinitionID: number): Promise<IDBPaymentDefinition | null> => {
+  return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ paymentDefinitionID }, { _id: 0 });
 };
 
-export const retrievePaymentDefinitionByName = (name: string): Promise<IDBAssetDefinition | null> => {
-  return paymentDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
+export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymentDefinition | null> => {
+  return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ name }, { _id: 0 });
 };
 
 export const upsertPaymentDefinition = (name: string, author: string, descriptionSchema: Object | undefined, amount: number, timestamp: number, confirmed: boolean, paymentDefinitionID?: number) => {
-  return assetDefinitionsDb.update({ name }, { $set: { name, author, descriptionSchema, amount, timestamp, confirmed, paymentDefinitionID } }, { upsert: true });
+  return paymentDefinitionsDb.update({ name }, { $set: { name, author, descriptionSchema, amount, timestamp, confirmed, paymentDefinitionID } }, { upsert: true });
 };
 
 export const confirmPaymentDefinition = (name: string, timestamp: number, paymentDefinitionID: number) => {
-  return assetDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, paymentDefinitionID } });
+  return paymentDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, paymentDefinitionID } });
 };
 
 // Asset instance queries

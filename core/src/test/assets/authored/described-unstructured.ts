@@ -22,7 +22,7 @@ describe('Asset definitions: authored - described - unstructured', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: 'Qmb7r5v11TYsJE8dYfnBFjwQsKapX1my7hzfAnd5GFq2io' });
+        .reply(200, { Hash: sampleSchemas.assetDescription.multiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -102,7 +102,7 @@ describe('Asset definitions: authored - described - unstructured', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: 'Qmb7r5v11TYsJE8dYfnBFjwQsKapX1my7hzfAnd5GFq2io' });
+        .reply(200, { Hash: sampleSchemas.assetDescription.multiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
