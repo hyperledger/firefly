@@ -49,6 +49,11 @@ export const sampleSchemas = {
   }
 }
 
+let assetDefinitionID = 0;
+export const getNextAssetDefinitionID = () => {
+  return assetDefinitionID++;
+}
+
 let shutDown: () => void;
 
 before(async () => {

@@ -35,7 +35,7 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
 
 export const upsertMember = (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string, timestamp: number, confirmed: boolean, owned: boolean): Promise<number> => {
-  return membersDb.update({ address }, { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned }, { upsert: true });
+  return membersDb.update({ address }, { $set: { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned } }, { upsert: true });
 };
 
 export const confirmMember = (address: string, timestamp: number) => {
@@ -54,8 +54,8 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const insertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean, assetDefinitionID?: number) => {
-  return assetDefinitionsDb.insert({ name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, confirmed, assetDefinitionID });
+export const upsertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean, assetDefinitionID?: number) => {
+  return assetDefinitionsDb.update({ name }, { $set: { name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, confirmed, assetDefinitionID } }, { upsert: true });
 };
 
 export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
@@ -66,6 +66,6 @@ export const retrieveAssetInstances = (skip: number, limit: number) => {
   return assetInstancesDb.find({}).skip(skip).limit(limit);
 };
 
-export const insertAssetInstance = (author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, status: TAssetStatus, timestamp: number, assetInstanceID?: number) => {
-  return assetInstancesDb.insert({ author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID });
+export const upsertAssetInstance = (author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, status: TAssetStatus, timestamp: number, assetInstanceID?: number) => {
+  // return assetInstancesDb.update({ $set: { author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID } }, { upsert: true });
 };
