@@ -54,6 +54,11 @@ export const getNextAssetDefinitionID = () => {
   return assetDefinitionID++;
 }
 
+let paymentDefinitionID = 0;
+export const getNextPaymentDefinitionID = () => {
+  return paymentDefinitionID++;
+}
+
 let shutDown: () => void;
 
 before(async () => {

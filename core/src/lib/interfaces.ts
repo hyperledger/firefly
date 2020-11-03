@@ -103,6 +103,17 @@ export interface IDBAssetDefinition {
   descriptionSchema?: object
   contentSchema?: object
   timestamp: number
+  confirmed: boolean
+}
+
+export interface IDBPaymentDefinition {
+  _id?: string
+  paymentDefinitionID?: number
+  author: string
+  name: string
+  descriptionSchema?: object
+  timestamp: number
+  confirmed: boolean
 }
 
 export interface IDBAssetInstance {

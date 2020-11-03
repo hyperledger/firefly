@@ -41,7 +41,7 @@ router.post('/', async (req, res, next) => {
     if (!req.body.author) {
       throw new RequestError('Missing payment definition author', 400);
     }
-    if(Number.isInteger(req.body.amount)) {
+    if(!Number.isInteger(req.body.amount)) {
       throw new RequestError('Missing or invalid amount', 400)
     } else if (!(req.body.amount > 0)) {
       throw new RequestError('Amount must be greater than 0', 400)
@@ -50,7 +50,7 @@ router.post('/', async (req, res, next) => {
       throw new RequestError('Invalid description schema', 400);
     }
     await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
-      req.body.author, req.body.amount, req.body.contentSchema);
+      req.body.author, req.body.amount, req.body.descriptionSchema);
     res.send({ status: 'submitted' });
   } catch (err) {
     next(err);
