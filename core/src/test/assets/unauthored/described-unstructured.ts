@@ -17,8 +17,8 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${sampleSchemas.assetDescription.multiHash}`)
-      .reply(200, sampleSchemas.assetDescription.object);
+      .get(`/ipfs/${sampleSchemas.description.multiHash}`)
+      .reply(200, sampleSchemas.description.object);
 
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -30,7 +30,7 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - described - unstructured - public',
-        descriptionSchemaHash: sampleSchemas.assetDescription.sha256,
+        descriptionSchemaHash: sampleSchemas.description.sha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -50,7 +50,7 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.assetDescription.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
       assert.strictEqual(assetDefinition.name, 'unauthored - described - unstructured - public');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
@@ -67,8 +67,8 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
     const timestamp = utils.getTimestamp();
 
     nock('https://ipfs.kaleido.io')
-    .get(`/ipfs/${sampleSchemas.assetDescription.multiHash}`)
-    .reply(200, sampleSchemas.assetDescription.object);
+    .get(`/ipfs/${sampleSchemas.description.multiHash}`)
+    .reply(200, sampleSchemas.description.object);
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
       const eventPromise = new Promise((resolve) => {
@@ -81,7 +81,7 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
         assetDefinitionID: privateAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - described - unstructured - private',
-        descriptionSchemaHash: sampleSchemas.assetDescription.sha256,
+        descriptionSchemaHash: sampleSchemas.description.sha256,
         isContentPrivate: true,
         timestamp: timestamp.toString()
       };
@@ -100,7 +100,7 @@ describe('Asset definitions: unauthored - described - unstructured', async () =>
       assert.strictEqual(assetDefinition.assetDefinitionID, privateAssetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.assetDescription.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - described - unstructured - private');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

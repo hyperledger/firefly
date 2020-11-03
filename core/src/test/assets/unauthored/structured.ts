@@ -17,8 +17,8 @@ describe('Asset definitions: unauthored - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${sampleSchemas.assetContent.multiHash}`)
-      .reply(200, sampleSchemas.assetContent.object);
+      .get(`/ipfs/${sampleSchemas.content.multiHash}`)
+      .reply(200, sampleSchemas.content.object);
 
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -30,7 +30,7 @@ describe('Asset definitions: unauthored - structured', async () => {
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - structured - public',
-        contentSchemaHash: sampleSchemas.assetContent.sha256,
+        contentSchemaHash: sampleSchemas.content.sha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -50,7 +50,7 @@ describe('Asset definitions: unauthored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.name, 'unauthored - structured - public');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
@@ -67,8 +67,8 @@ describe('Asset definitions: unauthored - structured', async () => {
     const timestamp = utils.getTimestamp();
 
     nock('https://ipfs.kaleido.io')
-    .get(`/ipfs/${sampleSchemas.assetContent.multiHash}`)
-    .reply(200, sampleSchemas.assetContent.object);
+    .get(`/ipfs/${sampleSchemas.content.multiHash}`)
+    .reply(200, sampleSchemas.content.object);
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
       const eventPromise = new Promise((resolve) => {
@@ -81,7 +81,7 @@ describe('Asset definitions: unauthored - structured', async () => {
         assetDefinitionID: privateAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - structured - private',
-        contentSchemaHash: sampleSchemas.assetContent.sha256,
+        contentSchemaHash: sampleSchemas.content.sha256,
         isContentPrivate: true,
         timestamp: timestamp.toString()
       };
@@ -100,7 +100,7 @@ describe('Asset definitions: unauthored - structured', async () => {
       assert.strictEqual(assetDefinition.assetDefinitionID, privateAssetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - structured - private');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
