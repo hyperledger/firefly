@@ -8,7 +8,7 @@ import * as utils from '../../../lib/utils';
 let publicAssetDefinitionID = getNextAssetDefinitionID();
 let privateAssetDefinitionID = getNextAssetDefinitionID();
 
-describe('Asset definitions: unauthored - undescribed - structured', async () => {
+describe('Asset definitions: unauthored - structured', async () => {
 
   describe('Public asset definition', async () => {
 
@@ -29,7 +29,7 @@ describe('Asset definitions: unauthored - undescribed - structured', async () =>
       const data: IEventAssetDefinitionCreated = {
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - undescribed - structured - public',
+        name: 'unauthored - structured - public',
         contentSchemaHash: sampleSchemas.assetContent.sha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
@@ -45,13 +45,13 @@ describe('Asset definitions: unauthored - undescribed - structured', async () =>
       const getAssetDefinitionsResponse = await request(app)
         .get('/api/v1/assets/definitions')
         .expect(200);
-      const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - undescribed - structured - public');
+      const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - structured - public');
       assert.strictEqual(assetDefinition.assetDefinitionID, publicAssetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
-      assert.strictEqual(assetDefinition.name, 'unauthored - undescribed - structured - public');
+      assert.strictEqual(assetDefinition.name, 'unauthored - structured - public');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
       const getAssetDefinitionResponse = await request(app)
@@ -80,7 +80,7 @@ describe('Asset definitions: unauthored - undescribed - structured', async () =>
       const data: IEventAssetDefinitionCreated = {
         assetDefinitionID: privateAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - undescribed - structured - private',
+        name: 'unauthored - structured - private',
         contentSchemaHash: sampleSchemas.assetContent.sha256,
         isContentPrivate: true,
         timestamp: timestamp.toString()
@@ -96,13 +96,13 @@ describe('Asset definitions: unauthored - undescribed - structured', async () =>
       const getAssetDefinitionsResponse = await request(app)
         .get('/api/v1/assets/definitions')
         .expect(200);
-      const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - undescribed - structured - private');
+      const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - structured - private');
       assert.strictEqual(assetDefinition.assetDefinitionID, privateAssetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
-      assert.strictEqual(assetDefinition.name, 'unauthored - undescribed - structured - private');
+      assert.strictEqual(assetDefinition.name, 'unauthored - structured - private');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
       const getAssetDefinitionResponse = await request(app)
