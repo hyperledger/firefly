@@ -30,7 +30,7 @@ describe('Asset definitions: authored - structured', async () => {
           name: 'authored - structured - public',
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: false,
-          contentSchema: sampleSchemas.assetContent.object
+          contentSchema: sampleSchemas.content.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body, { status: 'submitted' });
@@ -42,7 +42,7 @@ describe('Asset definitions: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.name, 'authored - structured - public');
       assert.strictEqual(typeof assetDefinition.timestamp, 'number');
     });
@@ -58,7 +58,7 @@ describe('Asset definitions: authored - structured', async () => {
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - structured - public',
-        contentSchemaHash: sampleSchemas.assetContent.sha256,
+        contentSchemaHash: sampleSchemas.content.sha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -78,7 +78,7 @@ describe('Asset definitions: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.name, 'authored - structured - public');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
@@ -110,7 +110,7 @@ describe('Asset definitions: authored - structured', async () => {
           name: 'authored - structured - private',
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
-          contentSchema: sampleSchemas.assetContent.object
+          contentSchema: sampleSchemas.content.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body, { status: 'submitted' });
@@ -122,7 +122,7 @@ describe('Asset definitions: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.name, 'authored - structured - private');
       assert.strictEqual(typeof assetDefinition.timestamp, 'number');
     });
@@ -138,7 +138,7 @@ describe('Asset definitions: authored - structured', async () => {
         assetDefinitionID: privateAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - structured - private',
-        contentSchemaHash: sampleSchemas.assetContent.sha256,
+        contentSchemaHash: sampleSchemas.content.sha256,
         isContentPrivate: true,
         timestamp: timestamp.toString()
       };
@@ -158,7 +158,7 @@ describe('Asset definitions: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.assetContent.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
       assert.strictEqual(assetDefinition.name, 'authored - structured - private');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
