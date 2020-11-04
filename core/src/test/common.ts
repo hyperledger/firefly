@@ -63,10 +63,10 @@ let shutDown: () => void;
 
 before(async () => {
 
-  const sandboxPath = path.join(__dirname, '../../test/sandbox');
+  const sandboxPath = path.join(__dirname, '../../test-resources/sandbox');
   await fs.rmdir(sandboxPath, { recursive: true });
   await fs.mkdir(sandboxPath);
-  await fs.copyFile(path.join(__dirname, '../../test/resources/config.json'), path.join(__dirname, '../../test/sandbox/config.json'));
+  await fs.copyFile(path.join(__dirname, '../../test-resources/config.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
 
   // IPFS
   nock('https://ipfs.kaleido.io')
