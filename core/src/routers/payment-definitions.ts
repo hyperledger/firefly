@@ -21,13 +21,13 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:assetDefinitionID', async (req, res, next) => {
+router.get('/:paymentDefinitionID', async (req, res, next) => {
   try {
-    const assetDefinitionID = Number(req.params.assetDefinitionID);
-    if (isNaN(assetDefinitionID)) {
-      throw new RequestError('Asset definition ID', 400);
+    const paymentDefinitionID = Number(req.params.paymentDefinitionID);
+    if (isNaN(paymentDefinitionID)) {
+      throw new RequestError('Invalid payment definition ID', 400);
     }
-    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionRequest(assetDefinitionID));
+    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionRequest(paymentDefinitionID));
   } catch (err) {
     next(err);
   }

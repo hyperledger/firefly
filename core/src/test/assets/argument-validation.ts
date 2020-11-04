@@ -4,6 +4,20 @@ import assert from 'assert';
 
 describe('Asset definitions - argument validation', async () => {
 
+  it('Attempting to get an asset definition with an invalid ID should raise an error', async () => {
+    const result = await request(app)
+      .get('/api/v1/assets/definitions/invalid')
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Invalid asset definition ID' });
+  });
+
+  it('Attempting to get an asset definition that does not exist should raise an error', async () => {
+    const result = await request(app)
+      .get('/api/v1/assets/definitions/1000000')
+      .expect(404);
+    assert.deepStrictEqual(result.body, { error: 'Asset definition not found' });
+  });
+
   it('Attempting to add an asset definition without a name should raise an error', async () => {
     const result = await request(app)
       .post('/api/v1/assets/definitions')

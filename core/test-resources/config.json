@@ -1,5 +1,5 @@
 {
-  "$schema": "../../src/schemas/config.json",
+  "$schema": "../src/schemas/config.json",
   "port": 3000,
   "apiGateway": {
     "apiEndpoint": "https://apigateway.kaleido.io"

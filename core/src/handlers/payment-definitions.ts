@@ -9,8 +9,12 @@ export const handleGetPaymentDefinitionsRequest = (skip: number, limit: number) 
   return database.retrievePaymentDefinitions(skip, limit);
 };
 
-export const handleGetPaymentDefinitionRequest = (paymentDefinitionID: number) => {
-  return database.retrievePaymentDefinitionByID(paymentDefinitionID);
+export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: number) => {
+  const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
+  if(paymentDefinition === null) {
+    throw new RequestError('Payment definition not found', 404);
+  }
+  return paymentDefinition;
 };
 
 export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, amount: number, descriptionSchema?: Object) => {

@@ -4,6 +4,20 @@ import assert from 'assert';
 
 describe('Payment definitions - argument validation', async () => {
 
+  it('Attempting to get a payment definition with an invalid ID should raise an error', async () => {
+    const result = await request(app)
+      .get('/api/v1/payments/definitions/invalid')
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Invalid payment definition ID' });
+  });
+
+  it('Attempting to get a payment definition that does not exist should raise an error', async () => {
+    const result = await request(app)
+      .get('/api/v1/payments/definitions/1000000')
+      .expect(404);
+    assert.deepStrictEqual(result.body, { error: 'Payment definition not found' });
+  });
+
   it('Attempting to add a payment definition without a name should raise an error', async () => {
     const result = await request(app)
       .post('/api/v1/payments/definitions')

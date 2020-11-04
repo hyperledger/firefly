@@ -11,6 +11,14 @@ export const handleGetAssetInstancesRequest = (skip: number, limit: number) => {
   return database.retrieveAssetInstances(skip, limit);
 };
 
+export const handleGetAssetInstanceRequest = async (assetInstanceID: number) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  if(assetInstance === null) {
+    throw new RequestError('Asset instance not found', 404);
+  }
+  return assetInstance;
+};
+
 export const handleCreateAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: Object | undefined, stream?: NodeJS.ReadableStream) => {
   let contentHash: string;
   const { assetDefinition, descriptionHash } = await commonTasks(author, assetDefinitionID, description);
@@ -53,7 +61,7 @@ export const handleCreateAssetInstanceMultiPartRequest = async (author: string, 
 
 const commonTasks = async (author: string, assetDefinitionID: number, description: Object | undefined) => {
   let descriptionHash: string | undefined;
-  const member = await database.retrieveMember(author);
+  const member = await database.retrieveMemberByAddress(author);
   if (member === null) {
     throw new RequestError('Unknown author', 400);
   } else if (!member.owned) {
