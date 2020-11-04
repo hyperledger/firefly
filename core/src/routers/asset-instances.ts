@@ -56,8 +56,11 @@ router.post('/', async (req, res, next) => {
       if (!(typeof req.body.assetDefinitionID === 'number')) {
         throw new RequestError('Missing or invalid asset definition ID', 400);
       }
+      if(!req.body.author) {
+        throw new RequestError('Missing asset author', 400);
+      }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
-        throw new RequestError('Missing or invalid content', 400);
+        throw new RequestError('Missing or invalid asset content', 400);
       }
       await assetInstancesHandler.handleCreateAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content);
     }

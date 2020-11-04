@@ -78,3 +78,40 @@ describe('Asset definitions - argument validation', async () => {
   });
 
 });
+
+describe('Asset instances - argument validation', async () => {
+
+  it('Attempting to add an asset instance without specifying the asset definition ID should raise an error', async () => {
+    const result = await request(app)
+      .post('/api/v1/assets/instances')
+      .send({
+        author: '0x0000000000000000000000000000000000000001',
+        content: {}
+      })
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition ID' });
+  });
+
+  it('Attempting to add an asset instance without specifying the author should raise an error', async () => {
+    const result = await request(app)
+      .post('/api/v1/assets/instances')
+      .send({
+        assetDefinitionID: 0,
+        content: {}
+      })
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Missing asset author' });
+  });
+
+  it('Attempting to add an asset instance without specifying the content should raise an error', async () => {
+    const result = await request(app)
+      .post('/api/v1/assets/instances')
+      .send({
+        assetDefinitionID: 0,
+        author: '0x0000000000000000000000000000000000000001'
+      })
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset content' });
+  });
+
+});

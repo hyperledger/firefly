@@ -19,13 +19,9 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:member', async (req, res, next) => {
+router.get('/:memberAddress', async (req, res, next) => {
   try {
-    const member = await membersHandler.handleGetMemberRequest(req.params.member);
-    if(member === null) {
-      throw new RequestError('Member not found', 404);
-    }
-    res.send(member);
+    res.send(await membersHandler.handleGetMemberRequest(req.params.memberAddress));
   } catch(err) {
     next(err)
   }
