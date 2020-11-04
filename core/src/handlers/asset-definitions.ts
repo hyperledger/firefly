@@ -9,8 +9,12 @@ export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) =>
   return database.retrieveAssetDefinitions(skip, limit);
 };
 
-export const handleGetAssetDefinitionRequest = (assetDefinitionID: number) => {
-  return database.retrieveAssetDefinitionByID(assetDefinitionID);
+export const handleGetAssetDefinitionRequest = async (assetDefinitionID: number) => {
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
+  if(assetDefinition === null) {
+    throw new RequestError('Asset definition not found', 404);
+  }
+  return assetDefinition;
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, descriptionSchema?: Object, contentSchema?: Object) => {

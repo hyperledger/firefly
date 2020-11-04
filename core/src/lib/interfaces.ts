@@ -26,7 +26,7 @@ export interface IConfig {
 export interface IStatus {
   totalAssetDefinitions: number,
   totalAssetInstances: number,
-  totalPaymentDefinitionsc: number,
+  totalPaymentDefinitions: number,
   totalPaymentInstances: number
 }
 
@@ -118,6 +118,7 @@ export interface IDBPaymentDefinition {
 
 export interface IDBAssetInstance {
   _id?: string
+  assetDefinitionID: number
   assetInstanceID?: number
   author: string
   description?: string

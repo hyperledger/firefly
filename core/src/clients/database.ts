@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBMember, IDBPaymentDefinition, TAssetStatus } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition, TAssetStatus } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -29,7 +29,7 @@ paymentDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
 
 // Member queries
 
-export const retrieveMember = (address: string): Promise<IDBMember | null> => {
+export const retrieveMemberByAddress = (address: string): Promise<IDBMember | null> => {
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
 };
 
@@ -96,10 +96,14 @@ export const confirmPaymentDefinition = (name: string, timestamp: number, paymen
 
 // Asset instance queries
 
-export const retrieveAssetInstances = (skip: number, limit: number) => {
-  return assetInstancesDb.find({}).skip(skip).limit(limit);
+export const retrieveAssetInstances = (skip: number, limit: number): Promise<IDBAssetInstance[]> => {
+  return assetInstancesDb.find<IDBAssetInstance>({}, { _id: 0 }).skip(skip).limit(limit);
+};
+
+export const retrieveAssetInstanceByID = (assetInstanceID: number): Promise<IDBAssetInstance | null> => {
+  return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
 export const upsertAssetInstance = (author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, status: TAssetStatus, timestamp: number, assetInstanceID?: number) => {
-  // return assetInstancesDb.update({ $set: { author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID } }, { upsert: true });
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID } }, { upsert: true });
 };

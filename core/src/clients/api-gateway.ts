@@ -2,8 +2,12 @@ import axios from 'axios';
 import { config } from '../lib/config';
 import { IStatus } from '../lib/interfaces';
 
-export const init = () => {
-  // TODO: sanity test
+export const init = async () => {
+  try {
+    await getStatus();
+  } catch (err) {
+    throw new Error(`Failed to access API Gateway. ${err}`);
+  }
 };
 
 export const getStatus = async (): Promise<IStatus> => {
@@ -17,10 +21,12 @@ export const getStatus = async (): Promise<IStatus> => {
   return {
     totalAssetDefinitions: Number(response.data.totalAssetDefinitions),
     totalAssetInstances: Number(response.data.totalAssetInstances),
-    totalPaymentDefinitionsc: Number(response.data.totalPaymentDefinitionsc),
+    totalPaymentDefinitions: Number(response.data.totalPaymentDefinitionsc),
     totalPaymentInstances: Number(response.data.totalPaymentInstances)
   };
 };
+
+// Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string) => {
@@ -34,6 +40,8 @@ export const upsertMember = async (address: string, name: string, app2appDestina
     data: { name, app2appDestination, docExchangeDestination }
   });
 };
+
+// Asset definition APIs
 
 export const createDescribedStructuredAssetDefinition = async (name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string, contentSchemaHash: string) => {
   await axios({
@@ -83,6 +91,8 @@ export const createUnstructuredAssetDefinition = async (name: string, author: st
   });
 }
 
+// Payment definition APIs
+
 export const createDescribedPaymentDefinition = async (name: string, author: string, amount: number, descriptionSchemaHash: string) => {
   await axios({
     method: 'post',
@@ -104,5 +114,57 @@ export const createPaymentDefinition = async (name: string, author: string, amou
       password: config.appCredentials.password
     },
     data: { name, amount }
+  });
+};
+
+// Asset instance APIs
+
+export const createDescribedAssetInstance = async (assetDefinitionID: number, author: string, descriptionHash: string, contentHash: string, sync = false) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { assetDefinitionID, descriptionHash, contentHash }
+  });
+};
+
+export const createAssetInstance = async (assetDefinitionID: number, author: string, contentHash: string, sync=false) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { assetDefinitionID, contentHash }
+  });
+};
+
+// Payment instance APIs
+
+export const createDescribedPaymentInstance = async (paymentDefinitionID: number, author: string, recipient: string, descriptionHash: string, sync = false) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { paymentDefinitionID, recipient, descriptionHash }
+  });
+};
+
+export const createPaymentInstance = async (paymentDefinitionID: number, author: string, recipient: string, sync = false) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { paymentDefinitionID, recipient }
   });
 };

@@ -68,6 +68,17 @@ before(async () => {
   await fs.mkdir(sandboxPath);
   await fs.copyFile(path.join(__dirname, '../../test-resources/config.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
 
+  // API Gateway
+  nock('https://apigateway.kaleido.io')
+    .get('/getStatus')
+    .reply(200,
+    {
+      totalAssetDefinitions: '0',
+      totalAssetInstances: '0',
+      totalPaymentDefinitions: '0',
+      totalPaymentInstances: '0'
+    });
+
   // IPFS
   nock('https://ipfs.kaleido.io')
     .post('/api/v0/version')

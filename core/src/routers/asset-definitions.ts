@@ -25,7 +25,7 @@ router.get('/:assetDefinitionID', async (req, res, next) => {
   try {
     const assetDefinitionID = Number(req.params.assetDefinitionID);
     if (isNaN(assetDefinitionID)) {
-      throw new RequestError('Asset definition ID', 400);
+      throw new RequestError('Invalid asset definition ID', 400);
     }
     res.send(await assetDefinitionsHandler.handleGetAssetDefinitionRequest(assetDefinitionID));
   } catch (err) {
