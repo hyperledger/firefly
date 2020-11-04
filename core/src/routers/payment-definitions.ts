@@ -42,9 +42,9 @@ router.post('/', async (req, res, next) => {
       throw new RequestError('Missing payment definition author', 400);
     }
     if(!Number.isInteger(req.body.amount)) {
-      throw new RequestError('Missing or invalid amount', 400)
+      throw new RequestError('Missing or invalid payment amount', 400)
     } else if (!(req.body.amount > 0)) {
-      throw new RequestError('Amount must be greater than 0', 400)
+      throw new RequestError('Payment amount must be greater than 0', 400)
     }
     if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
       throw new RequestError('Invalid description schema', 400);
