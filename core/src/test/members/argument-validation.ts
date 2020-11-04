@@ -52,4 +52,11 @@ describe('Members - argument validation', async () => {
     assert.deepStrictEqual(result.body, { error: 'Invalid member' });
   });
 
+  it('Attempting to get a member that does not exist should raise an error', async () => {
+    const result = await request(app)
+      .get('/api/v1/members/0x0000000000000000000000000000000000000099')
+      .expect(404);
+    assert.deepStrictEqual(result.body, { error: 'Member not found' });
+  });
+
 });

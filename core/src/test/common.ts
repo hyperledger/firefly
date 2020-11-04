@@ -4,10 +4,14 @@ import nock from 'nock';
 import mock from 'mock-require';
 import { EventEmitter } from 'events';
 import assert from 'assert';
+import request from 'supertest';
+import { IEventMemberRegistered } from '../lib/interfaces';
+import * as utils from '../lib/utils';
 
 export let app: Express.Application;
 export let mockEventStreamWebSocket: EventEmitter;
 export let mockDocExchangeSocketIO = new EventEmitter();
+
 export const sampleSchemas = {
   description: {
     object: {
@@ -72,12 +76,12 @@ before(async () => {
   nock('https://apigateway.kaleido.io')
     .get('/getStatus')
     .reply(200,
-    {
-      totalAssetDefinitions: '0',
-      totalAssetInstances: '0',
-      totalPaymentDefinitions: '0',
-      totalPaymentInstances: '0'
-    });
+      {
+        totalAssetDefinitions: '0',
+        totalAssetInstances: '0',
+        totalPaymentDefinitions: '0',
+        totalPaymentInstances: '0'
+      });
 
   // IPFS
   nock('https://ipfs.kaleido.io')
@@ -128,7 +132,52 @@ before(async () => {
 
   await eventPromise;
 
+  await setupSampleMembers();
+
 });
+
+const setupSampleMembers = async () => {
+  nock('https://apigateway.kaleido.io')
+    .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
+    .reply(200);
+  await request(app)
+    .put('/api/v1/members')
+    .send({
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Member 1',
+      app2appDestination: 'kld://app2app_1',
+      docExchangeDestination: 'kld://docexchange_1'
+    })
+  const eventPromise = new Promise((resolve) => {
+    mockEventStreamWebSocket.once('send', message => {
+      assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
+      resolve();
+    })
+  });
+  const dataMember1: IEventMemberRegistered = {
+    member: '0x0000000000000000000000000000000000000001',
+    name: 'Test Member 1',
+    app2appDestination: 'kld://app2app_1',
+    docExchangeDestination: 'kld://docexchange_1',
+    timestamp: utils.getTimestamp()
+  }
+  const dataMember2: IEventMemberRegistered =
+  {
+    member: '0x0000000000000000000000000000000000000002',
+    name: 'Test Member 2',
+    app2appDestination: 'kld://app2app_2',
+    docExchangeDestination: 'kld://docexchange_2',
+    timestamp: utils.getTimestamp()
+  };
+  mockEventStreamWebSocket.emit('message', JSON.stringify([{
+    signature: utils.contractEventSignatures.MEMBER_REGISTERED,
+    data: dataMember1
+  }, {
+    signature: utils.contractEventSignatures.MEMBER_REGISTERED,
+    data: dataMember2
+  }]));
+  await eventPromise;
+};
 
 after(() => {
   shutDown();
