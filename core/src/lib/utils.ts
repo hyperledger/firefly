@@ -1,5 +1,6 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
+import { v4 as uuidV4 } from 'uuid';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -10,7 +11,8 @@ export const constants = {
   ASSET_DEFINITIONS_DATABASE_FILE_NAME: 'asset-definitions.json',
   PAYMENT_DEFINITIONS_DATABASE_FILE_NAME: 'payment-definitions.json',
   ASSET_INSTANCES_DATABASE_FILE_NAME: 'asset-instances.json',
-  EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5
+  EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5,
+  DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets'
 };
 
 export const regexps = {
@@ -52,3 +54,18 @@ export const streamToString = (stream: NodeJS.ReadableStream): Promise<string> =
     stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
   })
 }
+
+export const getUnstructuredFilePathInDocExchange = (assetDefinitionName: string, contentFileName: string) => {
+  return `/${constants.DOC_EXCHANGE_ASSET_FOLDER_NAME}/${assetDefinitionName}/${uuidV4()}-${contentFileName}`;
+};
+
+export const uuidToHex = (uuid: string) => {
+  return '0x' + Buffer.from(uuid.replace(/-/g, '')).toString('hex');
+};
+
+export const hexToUuid = (hex: string) => {
+  const decodedTransferID = Buffer.from(hex.substr(2), 'hex').toString('utf-8');
+  return decodedTransferID.substr(0, 8) + '-' + decodedTransferID.substr(8, 4) + '-' +
+    decodedTransferID.substr(12, 4) + '-' + decodedTransferID.substr(16, 4) + '-' +
+    decodedTransferID.substr(20, 12);
+};

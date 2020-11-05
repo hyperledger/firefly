@@ -78,9 +78,7 @@ before(async () => {
     .reply(200,
       {
         totalAssetDefinitions: '0',
-        totalAssetInstances: '0',
-        totalPaymentDefinitions: '0',
-        totalPaymentInstances: '0'
+        totalPaymentDefinitions: '0'
       });
 
   // IPFS

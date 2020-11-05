@@ -27,7 +27,6 @@ export const promise = initConfig()
     app.use('/api/v1/assets/instances', assetInstancesRouter);
     app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
 
-
     app.use(errorHandler);
 
     const server = app.listen(config.port, () => {

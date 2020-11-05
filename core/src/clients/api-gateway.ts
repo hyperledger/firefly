@@ -20,9 +20,7 @@ export const getStatus = async (): Promise<IStatus> => {
   });
   return {
     totalAssetDefinitions: Number(response.data.totalAssetDefinitions),
-    totalAssetInstances: Number(response.data.totalAssetInstances),
-    totalPaymentDefinitions: Number(response.data.totalPaymentDefinitionsc),
-    totalPaymentInstances: Number(response.data.totalPaymentInstances)
+    totalPaymentDefinitions: Number(response.data.totalPaymentDefinitionsc)
   };
 };
 
