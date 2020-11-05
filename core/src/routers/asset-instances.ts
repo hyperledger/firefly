@@ -4,6 +4,7 @@ import * as assetInstancesHandler from '../handlers/asset-instances';
 import { constants, requestKeys, streamToString } from '../lib/utils';
 import Ajv from 'ajv';
 import Busboy from 'busboy';
+import * as utils from '../lib/utils';
 import { IRequestMultiPartContent } from '../lib/interfaces';
 
 const ajv = new Ajv();
@@ -37,32 +38,35 @@ router.get('/:assetInstanceID', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
+    const sync = req.query.sync === 'true';
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
       const formData = await extractDataFromMultipartForm(req);
-      if (formData.assetType === undefined || isNaN(formData.assetType)) {
+      if (formData.assetDefinitionID === undefined || isNaN(formData.assetDefinitionID)) {
         throw new RequestError('Missing or invalid asset definition ID', 400);
       }
       if (formData.description !== undefined) {
-        description = JSON.parse(await formData.description);
+        try {
+          description = JSON.parse(await formData.description);
+        } catch(err) {
+          throw new RequestError(`Invalid description. ${err}`, 400);
+        }
       }
-      if (!formData.author) {
-        throw new RequestError('Missing author', 400);
+      if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
+        throw new RequestError('Missing or invalid asset author', 400);
       }
-      await assetInstancesHandler.handleCreateAssetInstanceMultiPartRequest(formData.author, formData.assetType, description, formData.contentStream);
-
-      res.send('ok')
+      await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, sync);
     } else {
       if (!(typeof req.body.assetDefinitionID === 'number')) {
         throw new RequestError('Missing or invalid asset definition ID', 400);
       }
-      if(!req.body.author) {
-        throw new RequestError('Missing asset author', 400);
+      if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+        throw new RequestError('Missing or invalid asset author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      await assetInstancesHandler.handleCreateAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content);
+      await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
   } catch (err) {
     next(err);
@@ -72,18 +76,18 @@ router.post('/', async (req, res, next) => {
 const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartContent> => {
   return new Promise(async (resolve, reject) => {
     let author: string | undefined;
-    let assetType: number | undefined;
+    let assetDefinitionID: number | undefined;
     let description: Promise<string> | undefined;
     req.pipe(new Busboy({ headers: req.headers })
       .on('field', (fieldname, value) => {
         switch (fieldname) {
           case requestKeys.ASSET_AUTHOR: author = value; break;
-          case requestKeys.ASSET_DEFINITION_ID: assetType = Number(value); break;
+          case requestKeys.ASSET_DEFINITION_ID: assetDefinitionID = Number(value); break;
         }
       }).on('file', (fieldname, readableStream, fileName) => {
         switch (fieldname) {
           case requestKeys.ASSET_DESCRIPTION: description = streamToString(readableStream); break;
-          case requestKeys.ASSET_CONTENT: resolve({ author, assetType, description, contentStream: readableStream, contentFileName: fileName }); break;
+          case requestKeys.ASSET_CONTENT: resolve({ author, assetDefinitionID, description, contentStream: readableStream, contentFileName: fileName }); break;
           default: readableStream.resume();
         }
       })).on('finish', () => {

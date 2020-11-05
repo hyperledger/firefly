@@ -34,7 +34,7 @@ export interface IStatus {
 
 export interface IRequestMultiPartContent {
   author?: string
-  assetType?: number
+  assetDefinitionID?: number
   description?: Promise<string>
   contentStream: NodeJS.ReadableStream
   contentFileName: string

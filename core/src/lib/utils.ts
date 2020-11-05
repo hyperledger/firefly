@@ -13,6 +13,10 @@ export const constants = {
   EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5
 };
 
+export const regexps = {
+  ACCOUNT: /^0x[a-fA-F0-9]{40}$/
+}
+
 export const requestKeys = {
   ASSET_AUTHOR: 'author',
   ASSET_DEFINITION_ID: 'assetDefinitionID',

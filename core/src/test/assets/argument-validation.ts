@@ -37,7 +37,7 @@ describe('Asset definitions - argument validation', async () => {
         isContentPrivate: false
       })
       .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing asset definition author' });
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition author' });
   });
 
   it('Attempting to add an asset definition without indicating if the content should be private or not should raise an error', async () => {
@@ -100,7 +100,7 @@ describe('Asset instances - argument validation', async () => {
         content: {}
       })
       .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing asset author' });
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset author' });
   });
 
   it('Attempting to add an asset instance without specifying the content should raise an error', async () => {

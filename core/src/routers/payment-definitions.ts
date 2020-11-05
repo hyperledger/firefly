@@ -2,6 +2,7 @@ import { Router } from 'express';
 import RequestError from '../lib/request-error';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { constants } from '../lib/utils';
+import * as utils from '../lib/utils';
 import Ajv from 'ajv';
 
 const ajv = new Ajv();
@@ -38,8 +39,8 @@ router.post('/', async (req, res, next) => {
     if (!req.body.name || req.body.name === '') {
       throw new RequestError('Missing or invalid payment definition name', 400);
     }
-    if (!req.body.author) {
-      throw new RequestError('Missing payment definition author', 400);
+    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+      throw new RequestError('Missing or invalid payment definition author', 400);
     }
     if(!Number.isInteger(req.body.amount)) {
       throw new RequestError('Missing or invalid payment amount', 400)

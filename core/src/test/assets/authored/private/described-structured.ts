@@ -93,7 +93,6 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.deepStrictEqual(assetDefinition, getAssetDefinitionResponse.body);
     });
 
-
   });
 
 });
