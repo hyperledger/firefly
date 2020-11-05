@@ -26,11 +26,7 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:assetInstanceID', async (req, res, next) => {
   try {
-    const assetInstanceID = Number(req.params.assetInstanceID);
-    if (isNaN(assetInstanceID)) {
-      throw new RequestError('Invalid asset instance ID', 400);
-    }
-    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(assetInstanceID));
+    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetInstanceID));
   } catch (err) {
     next(err);
   }

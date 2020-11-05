@@ -117,7 +117,7 @@ export const createPaymentDefinition = async (name: string, author: string, amou
 
 // Asset instance APIs
 
-export const createDescribedAssetInstance = async (assetDefinitionID: number, author: string, descriptionHash: string, contentHash: string, sync = false) => {
+export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: number, author: string, descriptionHash: string, contentHash: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -125,11 +125,11 @@ export const createDescribedAssetInstance = async (assetDefinitionID: number, au
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID, descriptionHash, contentHash }
+    data: { assetInstanceID, assetDefinitionID, descriptionHash, contentHash }
   });
 };
 
-export const createAssetInstance = async (assetDefinitionID: number, author: string, contentHash: string, sync=false) => {
+export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: number, author: string, contentHash: string, sync=false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -137,13 +137,13 @@ export const createAssetInstance = async (assetDefinitionID: number, author: str
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID, contentHash }
+    data: { assetInstanceID, assetDefinitionID, contentHash }
   });
 };
 
 // Payment instance APIs
 
-export const createDescribedPaymentInstance = async (paymentDefinitionID: number, author: string, recipient: string, descriptionHash: string, sync = false) => {
+export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: number, author: string, recipient: string, descriptionHash: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -151,11 +151,11 @@ export const createDescribedPaymentInstance = async (paymentDefinitionID: number
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentDefinitionID, recipient, descriptionHash }
+    data: { paymentInstanceID, paymentDefinitionID, recipient, descriptionHash }
   });
 };
 
-export const createPaymentInstance = async (paymentDefinitionID: number, author: string, recipient: string, sync = false) => {
+export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: number, author: string, recipient: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -163,6 +163,6 @@ export const createPaymentInstance = async (paymentDefinitionID: number, author:
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentDefinitionID, recipient }
+    data: { paymentInstanceID, paymentDefinitionID, recipient }
   });
 };

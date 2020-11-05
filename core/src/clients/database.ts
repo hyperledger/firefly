@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition, TAssetStatus } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -23,9 +23,16 @@ const assetInstancesDb = Datastore.create({
   autoload: true
 });
 
+const paymentInstancesDb = Datastore.create({
+  filename: path.join(constants.DATA_DIRECTORY, constants.PAYMENT_INSTANCES_DATABASE_FILE_NAME),
+  autoload: true
+});
+
 membersDb.ensureIndex({ fieldName: 'address', unique: true });
 assetDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
 paymentDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
+assetInstancesDb.ensureIndex({ fieldName: 'assetInstanceID', unique: true });
+paymentInstancesDb.ensureIndex({ fieldName: 'paymentInstanceID', unique: true });
 
 // Member queries
 
@@ -100,10 +107,14 @@ export const retrieveAssetInstances = (skip: number, limit: number): Promise<IDB
   return assetInstancesDb.find<IDBAssetInstance>({}, { _id: 0 }).skip(skip).limit(limit);
 };
 
-export const retrieveAssetInstanceByID = (assetInstanceID: number): Promise<IDBAssetInstance | null> => {
+export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBAssetInstance | null> => {
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
-export const upsertAssetInstance = (author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, status: TAssetStatus, timestamp: number, assetInstanceID?: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, description, contentHash, content, status, timestamp, assetInstanceID } }, { upsert: true });
+export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
 };
+
+export const confirmAssetInstance = (assetInstanceID: string, timestamp: number) => {
+  return assetInstancesDb.update({ assetInstanceID }, { timestamp, confirmed: true });
+}

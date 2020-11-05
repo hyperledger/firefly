@@ -1,4 +1,5 @@
 import Ajv from 'ajv';
+import { v4 as uuidV4 } from 'uuid';
 import * as database from '../clients/database';
 import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
@@ -13,7 +14,7 @@ export const handleGetAssetInstancesRequest = (skip: number, limit: number) => {
   return database.retrieveAssetInstances(skip, limit);
 };
 
-export const handleGetAssetInstanceRequest = async (assetInstanceID: number) => {
+export const handleGetAssetInstanceRequest = async (assetInstanceID: string) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Asset instance not found', 404);
@@ -22,6 +23,7 @@ export const handleGetAssetInstanceRequest = async (assetInstanceID: number) => 
 };
 
 export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: Object, sync: boolean) => {
+  const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -39,19 +41,20 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   } else if (description) {
     throw new RequestError('Asset cannot have description', 400);
   }
-  if(!ajv.validate(assetDefinition.contentSchema, content)) {
+  if (!ajv.validate(assetDefinition.contentSchema, content)) {
     throw new RequestError('Content does not conform to asset definition schema', 400);
   }
-  if(assetDefinition.isContentPrivate) {
+  if (assetDefinition.isContentPrivate) {
     contentHash = utils.getSha256(JSON.stringify(content));
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  await apiGateway.createAssetInstance(assetDefinitionID, author, contentHash, sync);
-  await database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
+  await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, content, false, utils.getTimestamp());
 };
 
 export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: NodeJS.ReadableStream, contentFileName: string, sync: boolean) => {
+  const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -69,42 +72,46 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   } else if (description) {
     throw new RequestError('Asset cannot have description', 400);
   }
-  if(assetDefinition.isContentPrivate) {
-    contentHash = await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, contentFileName));
+  if (assetDefinition.isContentPrivate) {
+    contentHash = await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, assetInstanceID, contentFileName));
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  await apiGateway.createAssetInstance(assetDefinitionID, author, contentHash, sync);
-  await database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, undefined, 'authored', utils.getTimestamp());
+  await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, undefined, false, utils.getTimestamp());
 }
 
 export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreated) => {
-  const assetDefinition = await database.retrieveAssetDefinitionByID(Number(event.assetDefinitionID));
-  if(assetDefinition === null) {
-    throw new Error('Uknown asset definition');
-  }
-  let description: Object | undefined = undefined;
+  const assetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID);
+  if (assetInstance === null) {
+    const assetDefinition = await database.retrieveAssetDefinitionByID(Number(event.assetDefinitionID));
+    if (assetDefinition === null) {
+      throw new Error('Uknown asset definition');
+    }
+    let description: Object | undefined = undefined;
 
-  if(assetDefinition.descriptionSchema) {
-    if(event.descriptionHash) {
-      description = await ipfs.downloadJSON(event.descriptionHash);
-      if(!ajv.validate(assetDefinition.descriptionSchema, description)) {
-        throw new Error('Description does not conform to schema');
+    if (assetDefinition.descriptionSchema) {
+      if (event.descriptionHash) {
+        description = await ipfs.downloadJSON(event.descriptionHash);
+        if (!ajv.validate(assetDefinition.descriptionSchema, description)) {
+          throw new Error('Description does not conform to schema');
+        }
+      } else {
+        throw new Error('Missing description');
       }
-    } else {
-      throw new Error('Missing description');
     }
-  }
 
-  let content: Object | undefined = undefined;
-  if(assetDefinition.contentSchema && !assetDefinition.isContentPrivate) {
-    content = await ipfs.downloadJSON(event.contentHash);
-    if(!ajv.validate(assetDefinition.contentSchema, content)) {
-      throw new Error('Content does not conform to schema');
+    let content: Object | undefined = undefined;
+    if (assetDefinition.contentSchema && !assetDefinition.isContentPrivate) {
+      content = await ipfs.downloadJSON(event.contentHash);
+      if (!ajv.validate(assetDefinition.contentSchema, content)) {
+        throw new Error('Content does not conform to schema');
+      }
     }
+    database.upsertAssetInstance(utils.hexToUuid(event.assetInstanceID), event.author, Number(event.assetDefinitionID), description, event.contentHash, content, true, Number(event.timestamp));
+  } else if(assetInstance.author === event.author && assetInstance.assetDefinitionID === Number(event.assetDefinitionID) && assetInstance.contentHash === event.contentHash) {
+    database.confirmAssetInstance(assetInstance.assetInstanceID, Number(event.timestamp));
+  } else {
+    throw new Error(`Asset instance ID conflict ${assetInstance.assetInstanceID}`);
   }
-
-
-
-  // database.upsertAssetInstance(event.author, Number(event.assetDefinitionID), description, event.contentHash, content, true, Number(event.timestamp), Number(event.assetInstanceID));
 };
