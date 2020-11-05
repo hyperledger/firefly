@@ -37,7 +37,7 @@ describe('Payment definitions - argument validation', async () => {
         amount: 1
       })
       .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing payment definition author' });
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid payment definition author' });
   });
 
   it('Attempting to add a payment definition without an amount should raise an error', async () => {

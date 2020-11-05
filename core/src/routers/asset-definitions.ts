@@ -2,6 +2,7 @@ import { Router } from 'express';
 import RequestError from '../lib/request-error';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import { constants } from '../lib/utils';
+import * as utils from '../lib/utils';
 import Ajv from 'ajv';
 
 const ajv = new Ajv();
@@ -38,8 +39,8 @@ router.post('/', async (req, res, next) => {
     if (!req.body.name || req.body.name === '') {
       throw new RequestError('Missing or invalid asset definition name', 400);
     }
-    if (!req.body.author) {
-      throw new RequestError('Missing asset definition author', 400);
+    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+      throw new RequestError('Missing or invalid asset definition author', 400);
     }
     if (typeof req.body.isContentPrivate !== 'boolean') {
       throw new RequestError('Missing asset definition content privacy', 400);
