@@ -79,8 +79,8 @@ export interface IEventPaymentDefinitionCreated {
 }
 
 export interface IAssetInstanceCreated {
-  assetDefinitionID: string
   assetInstanceID: string
+  assetDefinitionID: string
   author: string
   descriptionHash?: string
   contentHash: string
@@ -88,8 +88,6 @@ export interface IAssetInstanceCreated {
 }
 
 // DATABASE INTERFACES
-
-export type TAssetStatus = 'authored' | 'available' | 'retrieved'
 
 export interface IDBMember {
   _id?: string
@@ -125,12 +123,14 @@ export interface IDBPaymentDefinition {
 
 export interface IDBAssetInstance {
   _id?: string
+  assetInstanceID: string
   assetDefinitionID: number
-  assetInstanceID?: number
   author: string
   description?: string
   content?: string
   contentHash?: string
+  confirmed: boolean
+  timestamp: number
 }
 
 // DOCUMENT EXCHANGE INTERFACES

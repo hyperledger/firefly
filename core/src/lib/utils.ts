@@ -11,6 +11,7 @@ export const constants = {
   ASSET_DEFINITIONS_DATABASE_FILE_NAME: 'asset-definitions.json',
   PAYMENT_DEFINITIONS_DATABASE_FILE_NAME: 'payment-definitions.json',
   ASSET_INSTANCES_DATABASE_FILE_NAME: 'asset-instances.json',
+  PAYMENT_INSTANCES_DATABASE_FILE_NAME: 'payment-instances.json',
   EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5,
   DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets'
 };
@@ -33,7 +34,12 @@ export const contractEventSignatures = {
   STRUCTURED_ASSET_DEFINITION_CREATED: 'StructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,uint256)',
   UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'UnstructuredAssetDefinitionCreated(uint256,address,string,bool,uint256)',
   DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(uint256,address,string,bytes32,uint256,uint256)',
-  PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(uint256,address,string,uint256,uint256)'
+  PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(uint256,address,string,uint256,uint256)',
+  DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,uint256,address,bytes32,bytes32,uint256)',
+  ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,uint256,address,bytes32,uint256)',
+  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,uint256,address,address,bytes32,uint256)',
+  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,uint256,address,address,uint256)',
+  ASSET_PROPERTY_SET: 'AssetPropertySet(bytes32,address,string,string,uint256)'
 };
 
 export const getSha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
@@ -55,8 +61,8 @@ export const streamToString = (stream: NodeJS.ReadableStream): Promise<string> =
   })
 }
 
-export const getUnstructuredFilePathInDocExchange = (assetDefinitionName: string, contentFileName: string) => {
-  return `/${constants.DOC_EXCHANGE_ASSET_FOLDER_NAME}/${assetDefinitionName}/${uuidV4()}-${contentFileName}`;
+export const getUnstructuredFilePathInDocExchange = (assetDefinitionName: string, assetInstanceID: string, contentFileName: string) => {
+  return `/${constants.DOC_EXCHANGE_ASSET_FOLDER_NAME}/${assetDefinitionName}/${assetInstanceID}/${contentFileName}`;
 };
 
 export const uuidToHex = (uuid: string) => {
