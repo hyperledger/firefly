@@ -49,8 +49,8 @@ contract AssetTrail {
     );
 
     event DescribedAssetInstanceCreated (
+        bytes32 assetInstanceID,
         uint assetDefinitionID,
-        uint assetInstanceID,
         address author,
         bytes32 descriptionHash,
         bytes32 contentHash,
@@ -58,8 +58,8 @@ contract AssetTrail {
     );
 
     event AssetInstanceCreated (
+        bytes32 assetInstanceID,
         uint assetDefinitionID,
-        uint assetInstanceID,
         address author,
         bytes32 contentHash,
         uint timestamp
@@ -83,7 +83,7 @@ contract AssetTrail {
     );
 
     event PaymentInstanceCreated (
-        uint paymentInstanceID,
+        bytes32 paymentInstanceID,
         uint paymentDefinitionID,
         address author,
         address recipient,
@@ -91,7 +91,7 @@ contract AssetTrail {
     );
 
     event DescribedPaymentInstanceCreated (
-        uint paymentInstanceID,
+        bytes32 paymentInstanceID,
         uint paymentDefinitionID,
         address author,
         address recipient,
@@ -100,7 +100,7 @@ contract AssetTrail {
     );
     
     event AssetPropertySet (
-        uint assetInstanceID,
+        bytes32 assetInstanceID,
         address propertyAuthor,
         string key,
         string value,
@@ -109,9 +109,6 @@ contract AssetTrail {
     
     uint private assetDefinitionCount;
     uint private paymentDefinitionCount;
-    
-    uint private assetInstanceCount;
-    uint private paymentInstanceCount;
 
     mapping(string => bool) private assetDefinitions;
     mapping(string => bool) private paymentDefinitions;
@@ -122,8 +119,8 @@ contract AssetTrail {
         payment = ERC20(paymentContract);
     }
 
-    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitions, uint totalAssetInstances, uint totalPaymentInstances) {
-        return (assetDefinitionCount, paymentDefinitionCount, assetInstanceCount, paymentInstanceCount);
+    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitions) {
+        return (assetDefinitionCount, paymentDefinitionCount);
     }
     
     function registerMember(string memory name, string memory app2appDestination, string memory docExchangeDestination) public {
@@ -177,27 +174,27 @@ contract AssetTrail {
         emit PaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, amount, now);
     }
     
-    function createDescribedAssetInstance(uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
-        emit DescribedAssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, descriptionHash, contentHash, now);
+    function createDescribedAssetInstance(bytes32 assetInstanceID, uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
+        emit DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, descriptionHash, contentHash, now);
     }
     
-    function createAssetInstance(uint assetDefinitionID, bytes32 contentHash) public {
-        emit AssetInstanceCreated(assetDefinitionID, assetInstanceCount++, msg.sender, contentHash, now);
+    function createAssetInstance(bytes32 assetInstanceID, uint assetDefinitionID, bytes32 contentHash) public {
+        emit AssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, contentHash, now);
     }
 
-    function createDescribedPaymentInstance(uint paymentDefinitionID, address recipient, bytes32 descriptionHash) public {
+    function createDescribedPaymentInstance(bytes32 paymentInstanceID, uint paymentDefinitionID, address recipient, bytes32 descriptionHash) public {
         require(msg.sender != recipient, "Author and recipient cannot be the same");
         require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        emit DescribedPaymentInstanceCreated(paymentInstanceCount++, paymentDefinitionID, msg.sender, recipient, descriptionHash, now);
+        emit DescribedPaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, descriptionHash, now);
     }
 
-    function createPaymentInstance(uint paymentDefinitionID, address recipient) public {
+    function createPaymentInstance(bytes32 paymentInstanceID, uint paymentDefinitionID, address recipient) public {
         require(msg.sender != recipient, "Author and recipient cannot be the same");
         require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        emit PaymentInstanceCreated(paymentInstanceCount++, paymentDefinitionID, msg.sender, recipient, now);
+        emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, now);
     }
     
-    function setAssetProperty(uint assetInstanceID, string memory key, string memory value) public {
+    function setAssetProperty(bytes32 assetInstanceID, string memory key, string memory value) public {
         require(bytes(key).length > 0, "Invalid key");
         emit AssetPropertySet(assetInstanceID, msg.sender, key, value, now);
     }

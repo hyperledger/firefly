@@ -44,6 +44,11 @@ const testContentSchemaHashes = [
 
 // Asset instance constants
 
+const testAssetInstanceIDs = [
+  '0x1ebb3de9307e8c992e7b18f1f48767f6b83eb6befb72985a4f3043609ffa1e96',
+  '0x82459a7f3e4b132093db4d651c74e384e72f8a808c2b321d7b3343d6fb872187'
+];
+
 const testDescriptionHashes = [
   '0x27a84712e4b22c415fc544d55cdee82327a829f96d03329457f76ebf9af4dcaa',
   '0x13609d74cc8ea07555856a54ba51b01f831af4af89bd39847babe5bf6cb665df'
@@ -70,6 +75,11 @@ const testPaymentAmounts = [
 ];
 
 // Payment instance constants
+
+const testPaymentInstanceIDs = [
+  '0x38f31ec46e5bcf5f86502bb4985963c7cf5b821f60ca140c2562636a136dd376',
+  '0xc18a1517995c76e2104fb6d977661a2b2322340cd92d2c98af4779cf8a92bb3a'
+];
 
 const testPaymentHashes = [
   '0x6c2d640aaf679ecf258150e2ceb742c48e8c1e71391d05a75e5e041ffd51c377'
@@ -103,8 +113,6 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.getStatus();
         assert.equal(result.totalAssetDefinitions, 0);
         assert.equal(result.totalPaymentDefinitions, 0);
-        assert.equal(result.totalAssetInstances, 0);
-        assert.equal(result.totalPaymentInstances, 0);
       });
 
   });
@@ -296,10 +304,10 @@ contract('AssetTrail.sol', accounts => {
     describe('Described asset instances', () => {
 
       it('createDescribedAssetInstance should create a new described asset instance and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createDescribedAssetInstance(0, testDescriptionHashes[0], testContentHashes[0]);
+        const result = await assetTrailContract.createDescribedAssetInstance(testAssetInstanceIDs[0], 0, testDescriptionHashes[0], testContentHashes[0]);
         const logArgs = result.logs[0].args;
+        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
         assert.equal(logArgs.assetDefinitionID, 0);
-        assert.equal(logArgs.assetInstanceID, 0);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.descriptionHash, testDescriptionHashes[0]);
         assert.equal(logArgs.contentHash, testContentHashes[0]);
@@ -311,10 +319,10 @@ contract('AssetTrail.sol', accounts => {
     describe('Asset instances', () => {
 
       it('createAssetInstance should create a new asset instance and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createAssetInstance(2, testContentHashes[0]);
+        const result = await assetTrailContract.createAssetInstance(testAssetInstanceIDs[1], 2, testContentHashes[0]);
         const logArgs = result.logs[0].args;
+        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[1]);
         assert.equal(logArgs.assetDefinitionID, 2);
-        assert.equal(logArgs.assetInstanceID, 1);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.contentHash, testContentHashes[0]);
         assert(logArgs.timestamp.toNumber() > 0);
@@ -417,7 +425,7 @@ contract('AssetTrail.sol', accounts => {
       it('createDescribedPaymentInstance should raise an error if author and recipient are the same', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createDescribedPaymentInstance(0, accounts[0], testPaymentHashes[0]);
+          await assetTrailContract.createDescribedPaymentInstance(testPaymentInstanceIDs[0], 0, accounts[0], testPaymentHashes[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -428,10 +436,10 @@ contract('AssetTrail.sol', accounts => {
         const balanceAccount0Before = await payment.balanceOf(accounts[0]);
         const balanceAccount1Before = await payment.balanceOf(accounts[1]);
 
-        const result = await assetTrailContract.createDescribedPaymentInstance(0, accounts[1], testPaymentHashes[0]);
+        const result = await assetTrailContract.createDescribedPaymentInstance(testPaymentInstanceIDs[0], 0, accounts[1], testPaymentHashes[0]);
         const logArgs = result.logs[0].args;
+        assert.equal(logArgs.paymentInstanceID, testPaymentInstanceIDs[0]);
         assert.equal(logArgs.paymentDefinitionID, 0);
-        assert.equal(logArgs.paymentInstanceID, 0);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.recipient, accounts[1]);
         assert.equal(logArgs.descriptionHash, testPaymentHashes[0]);
@@ -450,7 +458,7 @@ contract('AssetTrail.sol', accounts => {
       it('createPaymentInstance should raise an error if author and recipient are the same', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.createPaymentInstance(0, accounts[0]);
+          await assetTrailContract.createPaymentInstance(testPaymentInstanceIDs[0], 0, accounts[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -461,10 +469,10 @@ contract('AssetTrail.sol', accounts => {
         const balanceAccount0Before = await payment.balanceOf(accounts[0]);
         const balanceAccount1Before = await payment.balanceOf(accounts[1]);
 
-        const result = await assetTrailContract.createPaymentInstance(1, accounts[1]);
+        const result = await assetTrailContract.createPaymentInstance(testPaymentInstanceIDs[1], 1, accounts[1]);
         const logArgs = result.logs[0].args;
+        assert.equal(logArgs.paymentInstanceID, testPaymentInstanceIDs[1]);
         assert.equal(logArgs.paymentDefinitionID, 1);
-        assert.equal(logArgs.paymentInstanceID, 1);
         assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.recipient, accounts[1]);
         assert(logArgs.timestamp.toNumber() > 0);
@@ -482,7 +490,7 @@ contract('AssetTrail.sol', accounts => {
       it('setAssetProperty should raise an error if the key is empty', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.setAssetProperty(0, '', testAssetPropertyValues[0]);
+          await assetTrailContract.setAssetProperty(testAssetInstanceIDs[0], '', testAssetPropertyValues[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -490,9 +498,9 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('setAssetProperty should set an asset property and emit the corresponding event', async () => {
-        const result = await assetTrailContract.setAssetProperty(0, testAssetPropertyKeys[0], testAssetPropertyValues[0]);
+        const result = await assetTrailContract.setAssetProperty(testAssetInstanceIDs[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
         const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetInstanceID, 0);
+        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
         assert.equal(logArgs.propertyAuthor, accounts[0]);
         assert.equal(logArgs.key, testAssetPropertyKeys[0]);
         assert.equal(logArgs.value, testAssetPropertyValues[0]);
@@ -507,8 +515,6 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.getStatus();
         assert.equal(result.totalAssetDefinitions, 4);
         assert.equal(result.totalPaymentDefinitions, 2);
-        assert.equal(result.totalAssetInstances, 2);
-        assert.equal(result.totalPaymentInstances, 2);
       });
 
     });
