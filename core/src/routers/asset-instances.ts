@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
         throw new RequestError('Missing or invalid asset author', 400);
       }
-      await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, sync);
+      await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
       if (!(typeof req.body.assetDefinitionID === 'number')) {
         throw new RequestError('Missing or invalid asset definition ID', 400);

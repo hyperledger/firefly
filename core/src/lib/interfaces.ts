@@ -24,10 +24,8 @@ export interface IConfig {
 }
 
 export interface IStatus {
-  totalAssetDefinitions: number,
-  totalAssetInstances: number,
-  totalPaymentDefinitions: number,
-  totalPaymentInstances: number
+  totalAssetDefinitions: number
+  totalPaymentDefinitions: number
 }
 
 // REQUEST INTERFACES
@@ -77,6 +75,15 @@ export interface IEventPaymentDefinitionCreated {
   name: string
   amount: string
   descriptionSchemaHash?: string
+  timestamp: string
+}
+
+export interface IAssetInstanceCreated {
+  assetDefinitionID: string
+  assetInstanceID: string
+  author: string
+  descriptionHash?: string
+  contentHash: string
   timestamp: string
 }
 

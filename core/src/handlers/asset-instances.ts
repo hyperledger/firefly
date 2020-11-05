@@ -5,6 +5,7 @@ import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
+import { IAssetInstanceCreated } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -50,7 +51,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   await database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, content, 'authored', utils.getTimestamp());
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: NodeJS.ReadableStream, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: NodeJS.ReadableStream, contentFileName: string, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -69,10 +70,41 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     throw new RequestError('Asset cannot have description', 400);
   }
   if(assetDefinition.isContentPrivate) {
-    contentHash = await docExchange.uploadStream(content, 'PATH'); // TODO : PATH !
+    contentHash = await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, contentFileName));
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
   await apiGateway.createAssetInstance(assetDefinitionID, author, contentHash, sync);
   await database.upsertAssetInstance(author, assetDefinitionID, description, contentHash, undefined, 'authored', utils.getTimestamp());
 }
+
+export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreated) => {
+  const assetDefinition = await database.retrieveAssetDefinitionByID(Number(event.assetDefinitionID));
+  if(assetDefinition === null) {
+    throw new Error('Uknown asset definition');
+  }
+  let description: Object | undefined = undefined;
+
+  if(assetDefinition.descriptionSchema) {
+    if(event.descriptionHash) {
+      description = await ipfs.downloadJSON(event.descriptionHash);
+      if(!ajv.validate(assetDefinition.descriptionSchema, description)) {
+        throw new Error('Description does not conform to schema');
+      }
+    } else {
+      throw new Error('Missing description');
+    }
+  }
+
+  let content: Object | undefined = undefined;
+  if(assetDefinition.contentSchema && !assetDefinition.isContentPrivate) {
+    content = await ipfs.downloadJSON(event.contentHash);
+    if(!ajv.validate(assetDefinition.contentSchema, content)) {
+      throw new Error('Content does not conform to schema');
+    }
+  }
+
+
+
+  // database.upsertAssetInstance(event.author, Number(event.assetDefinitionID), description, event.contentHash, content, true, Number(event.timestamp), Number(event.assetInstanceID));
+};
