@@ -116,5 +116,5 @@ export const upsertAssetInstance = (assetInstanceID: string, author: string, ass
 };
 
 export const confirmAssetInstance = (assetInstanceID: string, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { timestamp, confirmed: true });
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { timestamp, confirmed: true } });
 }

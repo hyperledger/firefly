@@ -6,7 +6,7 @@ import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IAssetInstanceCreated } from '../lib/interfaces';
+import { IEventAssetInstanceCreated } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -34,6 +34,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     throw new RequestError('Unstructured asset instances must be created using multipart/form-data', 400);
   }
   if (assetDefinition.descriptionSchema) {
+    if(!description) {
+      throw new RequestError('Missing asset definition', 400);
+    }
     if (!ajv.validate(assetDefinition.descriptionSchema, description)) {
       throw new RequestError('Description does not conform to asset definition schema', 400);
     }
@@ -89,8 +92,8 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, undefined, false, utils.getTimestamp());
 }
 
-export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreated) => {
-  const assetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID);
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(utils.hexToUuid(event.assetInstanceID));
    if(assetInstance !== null) {
     if(assetInstance.confirmed) {
       throw new Error(`Duplicate asset instance ID`);

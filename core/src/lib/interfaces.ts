@@ -78,7 +78,7 @@ export interface IEventPaymentDefinitionCreated {
   timestamp: string
 }
 
-export interface IAssetInstanceCreated {
+export interface IEventAssetInstanceCreated {
   assetInstanceID: string
   assetDefinitionID: string
   author: string
