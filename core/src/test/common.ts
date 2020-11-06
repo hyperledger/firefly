@@ -110,7 +110,8 @@ before(async () => {
   mock('ws', MockWebSocket);
 
   mock('socket.io-client', {
-    connect: (url: string) => {
+    connect: (_url: string) => {
+      // assert.strictEqual(url, 'http://docexchange.ws.kaleido.io');
       return mockDocExchangeSocketIO;
     }
   });

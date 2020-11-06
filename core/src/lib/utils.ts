@@ -1,6 +1,5 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
-import { v4 as uuidV4 } from 'uuid';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',

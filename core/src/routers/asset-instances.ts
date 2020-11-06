@@ -2,12 +2,9 @@ import { Router, Request } from 'express';
 import RequestError from '../lib/request-error';
 import * as assetInstancesHandler from '../handlers/asset-instances';
 import { constants, requestKeys, streamToString } from '../lib/utils';
-import Ajv from 'ajv';
 import Busboy from 'busboy';
 import * as utils from '../lib/utils';
 import { IRequestMultiPartContent } from '../lib/interfaces';
-
-const ajv = new Ajv();
 
 const router = Router();
 
@@ -64,6 +61,7 @@ router.post('/', async (req, res, next) => {
       }
       await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
+    res.send({ status: 'submitted' });
   } catch (err) {
     next(err);
   }

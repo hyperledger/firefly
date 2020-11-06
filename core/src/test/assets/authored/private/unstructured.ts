@@ -9,8 +9,6 @@ let privateAssetDefinitionID = getNextAssetDefinitionID();
 
 describe('Assets: authored - private - unstructured', async () => {
 
-  const timestamp = utils.getTimestamp();
-
   describe('Create private asset definition', async () => {
 
     const timestamp = utils.getTimestamp();

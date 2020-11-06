@@ -62,17 +62,21 @@ const addEventHandlers = () => {
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = JSON.parse(message);
   for (const message of messageArray) {
-    switch (message.signature) {
-      case utils.contractEventSignatures.MEMBER_REGISTERED:
-        await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered); break;
-      case utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
-      case utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
-      case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
-      case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
-        await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated); break;
-      case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
-      case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
-        await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated); break;
+    try {
+      switch (message.signature) {
+        case utils.contractEventSignatures.MEMBER_REGISTERED:
+          await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered); break;
+        case utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
+        case utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+        case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
+        case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+          await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated); break;
+        case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
+        case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
+          await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated); break;
+      }
+    } catch (err) {
+      log.error(`Failed to handle event. ${err}`);
     }
   }
 };
