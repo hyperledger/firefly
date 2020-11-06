@@ -4,6 +4,7 @@ import { v4 as uuidV4 } from 'uuid';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   CONFIG_FILE_NAME: 'config.json',
   IPFS_TIMEOUT_MS: 15000,
   DEFAULT_PAGINATION_LIMIT: 100,

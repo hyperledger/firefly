@@ -18,6 +18,7 @@
     "axios": "^0.21.0",
     "body-parser": "^1.19.0",
     "bs58": "^4.0.1",
+    "bunyan": "^1.8.14",
     "busboy": "^0.3.1",
     "express": "^4.17.1",
     "form-data": "^3.0.0",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/bs58": "^4.0.1",
+    "@types/bunyan": "^1.8.6",
     "@types/busboy": "^0.2.3",
     "@types/express": "^4.17.8",
     "@types/mocha": "^8.0.3",
