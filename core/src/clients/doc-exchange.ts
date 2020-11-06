@@ -4,6 +4,10 @@ import { Stream, Readable } from 'stream';
 import io from 'socket.io-client';
 import FormData from 'form-data';
 import axios from 'axios';
+import { createLogger, LogLevelString } from 'bunyan';
+import * as utils from '../lib/utils';
+
+const log = createLogger({ name: 'doc-exchange.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 let listeners: IDocExchangeListener[] = [];
 
@@ -25,7 +29,6 @@ export const init = async () => {
   }
 };
 
-
 const establishSocketIOConnection = () => {
   let error = false;
   io.connect(config.docExchange.socketIOEndpoint, {
@@ -40,14 +43,14 @@ const establishSocketIOConnection = () => {
   }).on('connect', () => {
     if (error) {
       error = false;
-      console.log('Document exchange Socket IO connection restored');
+      log.info('Document exchange Socket IO connection restored');
     }
   }).on('connect_error', (err: Error) => {
     error = true;
-    console.log(`Document exchange Socket IO connection error. ${err.toString()}`);
+    log.error(`Document exchange Socket IO connection error. ${err.toString()}`);
   }).on('error', (err: Error) => {
     error = true;
-    console.log(`Document exchange Socket IO error. ${err.toString()}`);
+    log.error(`Document exchange Socket IO error. ${err.toString()}`);
   }).on('document_received', (transferData: IDocExchangeTransferData) => {
     for (const listener of listeners) {
       listener(transferData);

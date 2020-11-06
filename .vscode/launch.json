@@ -4,16 +4,17 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug core",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "preLaunchTask": "npm: build - core",
+      "name": "Debug core 2",
       "cwd": "${workspaceFolder}/core",
-      "program": "${workspaceFolder}/core/build/index.js",
+      "runtimeExecutable": "nodemon",
       "env": {
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data"
-      }
+      },
+      "args": ["|", "bunyan", "-o", "short"],
+      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "!**/node_modules/**"
+    ]
     }
   ]
 }

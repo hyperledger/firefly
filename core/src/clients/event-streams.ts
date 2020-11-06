@@ -6,6 +6,9 @@ import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { IEventMemberRegistered } from '../lib/interfaces';
+import { createLogger, LogLevelString } from 'bunyan';
+
+const log = createLogger({ name: 'event-streams.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 let ws: WebSocket;
 let disconnectionDetected = false;
@@ -33,7 +36,7 @@ const addEventHandlers = () => {
   ws.on('open', () => {
     if (disconnectionDetected) {
       disconnectionDetected = false;
-      console.log('Event stream websocket restored');
+      log.info('Event stream websocket restored');
     }
     ws.send(JSON.stringify({
       type: 'listen',
@@ -41,7 +44,7 @@ const addEventHandlers = () => {
     }));
   }).on('close', () => {
     disconnectionDetected = true;
-    console.log(`Event stream websocket disconnected, attempting to reconnect in ${utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS} second(s)`);
+    log.error(`Event stream websocket disconnected, attempting to reconnect in ${utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS} second(s)`);
     disconnectionTimeout = setTimeout(() => {
       init();
     }, utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS * 1000);
@@ -52,7 +55,7 @@ const addEventHandlers = () => {
       topic: config.eventStreams.topic
     }));
   }).on('error', err => {
-    console.log(`Event stream websocket error. ${err}`);
+    log.error(`Event stream websocket error. ${err}`);
   });
 };
 

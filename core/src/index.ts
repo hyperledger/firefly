@@ -6,10 +6,14 @@ import assetDefinitionsRouter from './routers/asset-definitions';
 import assetInstancesRouter from './routers/asset-instances';
 import paymentDefinitionsRouter from './routers/payment-definitions';
 import { errorHandler } from './lib/request-error';
+import * as utils from './lib/utils';
 import * as ipfs from './clients/ipfs';
 import * as apiGateway from './clients/api-gateway';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
+import { createLogger, LogLevelString } from 'bunyan';
+
+const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 export const promise = initConfig()
   .then(() => apiGateway.init())
@@ -30,7 +34,7 @@ export const promise = initConfig()
     app.use(errorHandler);
 
     const server = app.listen(config.port, () => {
-      console.log(`Asset trail listening on port ${config.port}`);
+      log.info(`Asset trail listening on port ${config.port}`);
     });
 
     const shutDown = () => {
@@ -41,5 +45,5 @@ export const promise = initConfig()
     return { app, shutDown };
 
   }).catch(err => {
-    console.log(`Failed to start asset trail. ${err}`);
+    log.error(`Failed to start asset trail. ${err}`);
   });
