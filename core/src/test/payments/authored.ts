@@ -1,4 +1,4 @@
-import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../common';
+import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket } from '../common';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';

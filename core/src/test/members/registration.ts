@@ -4,7 +4,6 @@ import request from 'supertest';
 import assert from 'assert';
 import { IEventMemberRegistered, IDBMember } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
-import { timeStamp } from 'console';
 
 describe('Members - registration', async () => {
 

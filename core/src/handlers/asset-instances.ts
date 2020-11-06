@@ -49,7 +49,11 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+  if(descriptionHash) {
+    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
+  } else {
+    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+  }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, content, false, utils.getTimestamp());
 };
 
@@ -77,19 +81,28 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+  if(descriptionHash) {
+    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
+  } else {
+    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+  }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, undefined, false, utils.getTimestamp());
 }
 
 export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreated) => {
   const assetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID);
-  if (assetInstance === null) {
+   if(assetInstance !== null) {
+    if(assetInstance.confirmed) {
+      throw new Error(`Duplicate asset instance ID`);
+    } else {
+      database.confirmAssetInstance(assetInstance.assetInstanceID, Number(event.timestamp));
+    }
+  } else {
     const assetDefinition = await database.retrieveAssetDefinitionByID(Number(event.assetDefinitionID));
     if (assetDefinition === null) {
       throw new Error('Uknown asset definition');
     }
     let description: Object | undefined = undefined;
-
     if (assetDefinition.descriptionSchema) {
       if (event.descriptionHash) {
         description = await ipfs.downloadJSON(event.descriptionHash);
@@ -100,7 +113,6 @@ export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreat
         throw new Error('Missing description');
       }
     }
-
     let content: Object | undefined = undefined;
     if (assetDefinition.contentSchema && !assetDefinition.isContentPrivate) {
       content = await ipfs.downloadJSON(event.contentHash);
@@ -109,9 +121,5 @@ export const handleAssetInstanceCreatedEvent = async (event: IAssetInstanceCreat
       }
     }
     database.upsertAssetInstance(utils.hexToUuid(event.assetInstanceID), event.author, Number(event.assetDefinitionID), description, event.contentHash, content, true, Number(event.timestamp));
-  } else if(assetInstance.author === event.author && assetInstance.assetDefinitionID === Number(event.assetDefinitionID) && assetInstance.contentHash === event.contentHash) {
-    database.confirmAssetInstance(assetInstance.assetInstanceID, Number(event.timestamp));
-  } else {
-    throw new Error(`Asset instance ID conflict ${assetInstance.assetInstanceID}`);
   }
 };
