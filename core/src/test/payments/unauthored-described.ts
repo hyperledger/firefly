@@ -1,4 +1,5 @@
-import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../common';
+import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket } from '../common';
+import { testDescription } from '../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -16,8 +17,8 @@ describe('Payment definitions: unauthored - described', async () => {
     it('Checks that the event stream notification for confirming the payment definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${sampleSchemas.description.multiHash}`)
-      .reply(200, sampleSchemas.description.object);
+      .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
+      .reply(200, testDescription.schema.object);
 
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -30,7 +31,7 @@ describe('Payment definitions: unauthored - described', async () => {
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - described',
         amount: '1',
-        descriptionSchemaHash: sampleSchemas.description.sha256,
+        descriptionSchemaHash: testDescription.schema.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -49,7 +50,7 @@ describe('Payment definitions: unauthored - described', async () => {
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentDefinition.confirmed, true);
       assert.strictEqual(paymentDefinition.amount, 1);
-      assert.deepStrictEqual(paymentDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'unauthored - described');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
 

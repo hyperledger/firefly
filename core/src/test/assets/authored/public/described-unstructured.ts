@@ -1,4 +1,5 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../../../common';
+import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { testDescription } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -21,7 +22,7 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: sampleSchemas.description.multiHash });
+        .reply(200, { Hash: testDescription.schema.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -29,7 +30,7 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
           name: 'authored - public - described - unstructured',
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: false,
-          descriptionSchema: sampleSchemas.description.object
+          descriptionSchema: testDescription.schema.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body, { status: 'submitted' });
@@ -41,7 +42,7 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - public - described - unstructured');
       assert.strictEqual(typeof assetDefinition.timestamp, 'number');
     });
@@ -57,7 +58,7 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - public - described - unstructured',
-        descriptionSchemaHash: sampleSchemas.description.sha256,
+        descriptionSchemaHash: testDescription.schema.ipfsSha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -77,7 +78,7 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - public - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
