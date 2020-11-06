@@ -1,10 +1,11 @@
 import WebSocket from 'ws';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IEventAssetDefinitionCreated, IEventPaymentDefinitionCreated, IEventStreamMessage } from '../lib/interfaces';
+import { IEventAssetDefinitionCreated, IEventAssetInstanceCreated, IEventPaymentDefinitionCreated, IEventStreamMessage } from '../lib/interfaces';
 import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
+import * as assetInstancesHandler from '../handlers/asset-instances';
 import { IEventMemberRegistered } from '../lib/interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
 
@@ -74,6 +75,9 @@ const handleMessage = async (message: string) => {
         case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
         case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
           await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated); break;
+        case utils.contractEventSignatures.ASSET_INSTANCE_CREATED:
+        case utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED:
+          await assetInstancesHandler.handleAssetInstanceCreatedEvent(message.data as IEventAssetInstanceCreated); break;
       }
     } catch (err) {
       log.error(`Failed to handle event. ${err}`);
