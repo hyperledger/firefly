@@ -1,4 +1,5 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../../../common';
+import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { testDescription } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -16,8 +17,8 @@ describe('Assets: unauthored - public - described - unstructured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${sampleSchemas.description.multiHash}`)
-      .reply(200, sampleSchemas.description.object);
+      .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
+      .reply(200, testDescription.schema.object);
 
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -29,7 +30,7 @@ describe('Assets: unauthored - public - described - unstructured', async () => {
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - public - described - unstructured',
-        descriptionSchemaHash: sampleSchemas.description.sha256,
+        descriptionSchemaHash: testDescription.schema.ipfsSha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -49,7 +50,7 @@ describe('Assets: unauthored - public - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'unauthored - public - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 

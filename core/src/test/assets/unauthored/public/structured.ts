@@ -1,4 +1,5 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../../../common';
+import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -16,8 +17,8 @@ describe('Assets: unauthored - public - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${sampleSchemas.content.multiHash}`)
-      .reply(200, sampleSchemas.content.object);
+      .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
+      .reply(200, testContent.schema.object);
 
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -29,7 +30,7 @@ describe('Assets: unauthored - public - structured', async () => {
         assetDefinitionID: publicAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - public - structured',
-        contentSchemaHash: sampleSchemas.content.sha256,
+        contentSchemaHash: testContent.schema.ipfsSha256,
         isContentPrivate: false,
         timestamp: timestamp.toString()
       };
@@ -49,7 +50,7 @@ describe('Assets: unauthored - public - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.contentSchema, sampleSchemas.content.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'unauthored - public - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 

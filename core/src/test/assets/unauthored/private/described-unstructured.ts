@@ -1,4 +1,5 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../../../common';
+import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { testDescription } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -14,8 +15,8 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
     const timestamp = utils.getTimestamp();
 
     nock('https://ipfs.kaleido.io')
-    .get(`/ipfs/${sampleSchemas.description.multiHash}`)
-    .reply(200, sampleSchemas.description.object);
+    .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
+    .reply(200, testDescription.schema.object);
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
       const eventPromise = new Promise((resolve) => {
@@ -28,7 +29,7 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
         assetDefinitionID: privateAssetDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - private - described - unstructured',
-        descriptionSchemaHash: sampleSchemas.description.sha256,
+        descriptionSchemaHash: testDescription.schema.ipfsSha256,
         isContentPrivate: true,
         timestamp: timestamp.toString()
       };
@@ -47,7 +48,7 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
       assert.strictEqual(assetDefinition.assetDefinitionID, privateAssetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

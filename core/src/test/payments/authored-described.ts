@@ -1,4 +1,5 @@
-import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket, sampleSchemas } from '../common';
+import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket } from '../common';
+import { testDescription } from '../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -21,7 +22,7 @@ describe('Payment definitions: authored - described', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: sampleSchemas.description.multiHash });
+        .reply(200, { Hash: testDescription.schema.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/payments/definitions')
@@ -29,7 +30,7 @@ describe('Payment definitions: authored - described', async () => {
           name: 'authored - described',
           author: '0x0000000000000000000000000000000000000001',
           amount: 1,
-          descriptionSchema: sampleSchemas.description.object
+          descriptionSchema: testDescription.schema.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body, { status: 'submitted' });
@@ -41,7 +42,7 @@ describe('Payment definitions: authored - described', async () => {
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentDefinition.confirmed, false);
       assert.strictEqual(paymentDefinition.amount, 1);
-      assert.deepStrictEqual(paymentDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'authored - described');
       assert.strictEqual(typeof paymentDefinition.timestamp, 'number');
     });
@@ -57,7 +58,7 @@ describe('Payment definitions: authored - described', async () => {
         paymentDefinitionID: paymentDefinitionID.toString(),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - described',
-        descriptionSchemaHash: sampleSchemas.description.sha256,
+        descriptionSchemaHash: testDescription.schema.ipfsSha256,
         amount: '1',
         timestamp: timestamp.toString()
       };
@@ -77,7 +78,7 @@ describe('Payment definitions: authored - described', async () => {
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentDefinition.confirmed, true);
       assert.strictEqual(paymentDefinition.amount, 1);
-      assert.deepStrictEqual(paymentDefinition.descriptionSchema, sampleSchemas.description.object);
+      assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'authored - described');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
 
