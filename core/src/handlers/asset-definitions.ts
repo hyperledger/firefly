@@ -23,7 +23,6 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     throw new RequestError('Asset definition name conflict', 409);
   }
   const assetDefinitionID = uuidV4();
-
   if (descriptionSchema) {
     const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
     if (contentSchema) {

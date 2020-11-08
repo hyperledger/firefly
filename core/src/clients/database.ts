@@ -107,10 +107,6 @@ export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBA
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
-export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
+export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, descriptionHash, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
 };
-
-export const confirmAssetInstance = (assetInstanceID: string, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { timestamp, confirmed: true } });
-}

@@ -129,6 +129,7 @@ export interface IDBAssetInstance {
   assetInstanceID: string
   assetDefinitionID: number
   author: string
+  descriptionHash?: string
   description?: string
   content?: string
   contentHash?: string
