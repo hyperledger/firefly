@@ -15,6 +15,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
+console.log(utils.ipfsHashToSha256('QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV'))
 export const promise = initConfig()
   .then(() => apiGateway.init())
   .then(() => ipfs.init())

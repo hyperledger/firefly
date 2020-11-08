@@ -31,6 +31,7 @@ router.get('/:assetInstanceID', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
+    let assetInstanceID: string;
     const sync = req.query.sync === 'true';
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
@@ -48,7 +49,7 @@ router.post('/', async (req, res, next) => {
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
         throw new RequestError('Missing or invalid asset author', 400);
       }
-      await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
       if (!req.body.assetDefinitionID) {
         throw new RequestError('Missing asset definition ID', 400);
@@ -59,9 +60,9 @@ router.post('/', async (req, res, next) => {
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
-    res.send({ status: 'submitted' });
+    res.send({ status: 'submitted', assetInstanceID });
   } catch (err) {
     next(err);
   }
