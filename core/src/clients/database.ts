@@ -53,10 +53,6 @@ export const upsertMember = (address: string, name: string, app2appDestination: 
   return membersDb.update({ address }, { $set: { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned } }, { upsert: true });
 };
 
-export const confirmMember = (address: string, timestamp: number) => {
-  return membersDb.update({ address }, { $set: { timestamp, confirmed: true } });
-};
-
 // Asset definition queries
 
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
@@ -74,10 +70,6 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
 export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, contentSchemaHash: string | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
   return assetDefinitionsDb.update({ assetDefinitionID }, { assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed }, { upsert: true });
 };
-
-// export const confirmAssetDefinition = (assetDefinitionID: string, timestamp: number) => {
-//   return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, confirmed: true } });
-// };
 
 export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
   return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
@@ -100,10 +92,6 @@ export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymen
 export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, timestamp, confirmed } }, { upsert: true });
 };
-
-// export const confirmPaymentDefinition = (paymentDefinitionID: string, timestamp: number) => {
-//   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { timestamp, confirmed: true } });
-// };
 
 export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { timestamp, conflict: true } });
