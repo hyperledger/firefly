@@ -8,7 +8,8 @@
       "cwd": "${workspaceFolder}/core",
       "runtimeExecutable": "nodemon",
       "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data"
+        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data",
+        "LOG_LEVEL": "trace"
       },
       "args": ["|", "bunyan", "-o", "short"],
       "outputCapture": "std",

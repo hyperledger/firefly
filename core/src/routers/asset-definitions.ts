@@ -24,11 +24,7 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:assetDefinitionID', async (req, res, next) => {
   try {
-    const assetDefinitionID = Number(req.params.assetDefinitionID);
-    if (isNaN(assetDefinitionID)) {
-      throw new RequestError('Invalid asset definition ID', 400);
-    }
-    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionRequest(assetDefinitionID));
+    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionRequest(req.params.assetDefinitionID));
   } catch (err) {
     next(err);
   }
@@ -51,9 +47,10 @@ router.post('/', async (req, res, next) => {
     if (req.body.contentSchema && !ajv.validateSchema(req.body.contentSchema)) {
       throw new RequestError('Invalid content schema', 400);
     }
-    await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
-      req.body.author, req.body.descriptionSchema, req.body.contentSchema);
-    res.send({ status: 'submitted' });
+    const sync = req.query.sync === 'true';
+    const assetDefinitionID = await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
+      req.body.author, req.body.descriptionSchema, req.body.contentSchema, sync);
+    res.send({ status: 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);
   }

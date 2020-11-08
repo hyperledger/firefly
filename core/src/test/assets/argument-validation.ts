@@ -4,13 +4,6 @@ import assert from 'assert';
 
 describe('Asset definitions - argument validation', async () => {
 
-  it('Attempting to get an asset definition with an invalid ID should raise an error', async () => {
-    const result = await request(app)
-      .get('/api/v1/assets/definitions/invalid')
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Invalid asset definition ID' });
-  });
-
   it('Attempting to get an asset definition that does not exist should raise an error', async () => {
     const result = await request(app)
       .get('/api/v1/assets/definitions/1000000')
@@ -89,14 +82,14 @@ describe('Asset instances - argument validation', async () => {
         content: {}
       })
       .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition ID' });
+    assert.deepStrictEqual(result.body, { error: 'Missing asset definition ID' });
   });
 
   it('Attempting to add an asset instance without specifying the author should raise an error', async () => {
     const result = await request(app)
       .post('/api/v1/assets/instances')
       .send({
-        assetDefinitionID: 0,
+        assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
         content: {}
       })
       .expect(400);
@@ -107,7 +100,7 @@ describe('Asset instances - argument validation', async () => {
     const result = await request(app)
       .post('/api/v1/assets/instances')
       .send({
-        assetDefinitionID: 0,
+        assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
         author: '0x0000000000000000000000000000000000000001'
       })
       .expect(400);

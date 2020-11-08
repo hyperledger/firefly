@@ -34,7 +34,7 @@ export const promise = initConfig()
     app.use(errorHandler);
 
     const server = app.listen(config.port, () => {
-      log.info(`Asset trail listening on port ${config.port}`);
+      log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);
     });
 
     const shutDown = () => {

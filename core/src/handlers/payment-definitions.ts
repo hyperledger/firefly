@@ -1,3 +1,4 @@
+import { v4 as uuidV4 } from 'uuid';
 import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
@@ -9,35 +10,54 @@ export const handleGetPaymentDefinitionsRequest = (skip: number, limit: number) 
   return database.retrievePaymentDefinitions(skip, limit);
 };
 
-export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: number) => {
+export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: string) => {
   const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
-  if(paymentDefinition === null) {
+  if (paymentDefinition === null) {
     throw new RequestError('Payment definition not found', 404);
   }
   return paymentDefinition;
 };
 
-export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, amount: number, descriptionSchema?: Object) => {
+export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
-    throw new RequestError('Asset definition name conflict', 409);
+    throw new RequestError('Payment definition name conflict', 409);
   }
+  const assetDefinitionID = uuidV4();
+  let descriptionSchemaHash: string | undefined;
   if (descriptionSchema) {
-    const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    await apiGateway.createDescribedPaymentDefinition(name, author, amount, descriptionSchemaHash);
+    descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
+    await apiGateway.createDescribedPaymentDefinition(name, author, descriptionSchemaHash, sync);
   } else {
-    await apiGateway.createPaymentDefinition(name, author, amount);
+    await apiGateway.createPaymentDefinition(name, author, sync);
   }
-  await database.upsertPaymentDefinition(name, author, descriptionSchema, amount, utils.getTimestamp(), false);
+  await database.upsertPaymentDefinition(assetDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, utils.getTimestamp(), false);
+  return assetDefinitionID;
 };
 
 export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDefinitionCreated) => {
-  if (await database.retrievePaymentDefinitionByName(event.name) !== null) {
-    await database.confirmPaymentDefinition(event.name, Number(event.timestamp), Number(event.paymentDefinitionID));
+  const paymentDefinitionID = utils.hexToUuid(event.paymentDefinitionID);
+  const dbPaymentDefinitionByID = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
+  if (dbPaymentDefinitionByID !== null) {
+    if (dbPaymentDefinitionByID.confirmed) {
+      throw new Error(`Payment definition ID conflict ${paymentDefinitionID}`);
+    }
   } else {
-    let descriptionSchema;
-    if (event.descriptionSchemaHash) {
+    const dbpaymentDefinitionByName = await database.retrievePaymentDefinitionByName(event.name);
+    if (dbpaymentDefinitionByName !== null) {
+      if (dbpaymentDefinitionByName.confirmed) {
+        throw new Error(`Payment definition name conflict ${event.name}`);
+      } else {
+        await database.markPaymentDefinitionAsConflict(dbpaymentDefinitionByName.paymentDefinitionID, Number(event.timestamp));
+      }
+    }
+  }
+  let descriptionSchema;
+  if (event.descriptionSchemaHash) {
+    if (event.descriptionSchemaHash === dbPaymentDefinitionByID?.descriptionSchemaHash) {
+      descriptionSchema = dbPaymentDefinitionByID?.descriptionSchema
+    } else {
       descriptionSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.descriptionSchemaHash));
     }
-    database.upsertPaymentDefinition(event.name, event.author, descriptionSchema, Number(event.amount), Number(event.timestamp), true, Number(event.paymentDefinitionID));
   }
+  database.upsertPaymentDefinition(paymentDefinitionID, event.name, event.author, event.descriptionSchemaHash, descriptionSchema, Number(event.timestamp), true);
 };

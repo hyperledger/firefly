@@ -32,7 +32,7 @@ export interface IStatus {
 
 export interface IRequestMultiPartContent {
   author?: string
-  assetDefinitionID?: number
+  assetDefinitionID?: string
   description?: Promise<string>
   contentStream: NodeJS.ReadableStream
   contentFileName: string
@@ -73,7 +73,6 @@ export interface IEventPaymentDefinitionCreated {
   paymentDefinitionID: string
   author: string
   name: string
-  amount: string
   descriptionSchemaHash?: string
   timestamp: string
 }
@@ -101,22 +100,26 @@ export interface IDBMember {
 
 export interface IDBAssetDefinition {
   _id?: string
-  assetDefinitionID?: number
+  assetDefinitionID: string
   author: string
   name: string
   isContentPrivate: boolean
+  descriptionSchemaHash?: string
   descriptionSchema?: object
+  contentSchemaHash?: string
   contentSchema?: object
   timestamp: number
   confirmed: boolean
+  conflict?: boolean
 }
 
 export interface IDBPaymentDefinition {
   _id?: string
-  paymentDefinitionID?: number
+  paymentDefinitionID: string
   author: string
   name: string
   descriptionSchema?: object
+  descriptionSchemaHash?: string
   timestamp: number
   confirmed: boolean
 }

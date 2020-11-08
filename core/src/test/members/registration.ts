@@ -13,7 +13,7 @@ describe('Members - registration', async () => {
   it('Checks that adding a member sends a request to API Gateway and updates the database', async () => {
 
     nock('https://apigateway.kaleido.io')
-      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000011&kld-sync=true')
+      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000011&kld-sync=false')
       .reply(200);
     const addMemberResponse = await request(app)
       .put('/api/v1/members')
@@ -88,7 +88,7 @@ describe('Members - registration', async () => {
 
   it('Checks that updating a member sends a request to API Gateway and updates the database', async () => {
     nock('https://apigateway.kaleido.io')
-      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000011&kld-sync=true')
+      .post('/registerMember?kld-from=0x0000000000000000000000000000000000000011&kld-sync=false')
       .reply(200);
     const addMemberResponse = await request(app)
       .put('/api/v1/members')

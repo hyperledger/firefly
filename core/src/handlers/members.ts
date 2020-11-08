@@ -17,8 +17,8 @@ export const handleGetMemberRequest = async (address: string) => {
 };
 
 export const handleUpsertMemberRequest = async (address: string, name: string,
-  app2appDestination: string, docExchangeDestination: string) => {
-  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination);
+  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
+  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
   await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
 };
 
