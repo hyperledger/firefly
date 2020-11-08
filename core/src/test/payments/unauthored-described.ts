@@ -1,4 +1,4 @@
-import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket } from '../common';
+import { app, mockEventStreamWebSocket } from '../common';
 import { testDescription } from '../samples';
 import nock from 'nock';
 import request from 'supertest';
@@ -6,13 +6,13 @@ import assert from 'assert';
 import { IEventPaymentDefinitionCreated, IDBPaymentDefinition } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
 
-let paymentDefinitionID = getNextPaymentDefinitionID();
-
 describe('Payment definitions: unauthored - described', async () => {
 
-  const timestamp = utils.getTimestamp();
+  const paymentDefinitionID = '4b4a3be1-0732-4ba1-b492-6f315bb82f53';
 
   describe('Payment definition event', async () => {
+
+  const timestamp = utils.getTimestamp();
 
     it('Checks that the event stream notification for confirming the payment definition creation is handled', async () => {
 
@@ -27,10 +27,9 @@ describe('Payment definitions: unauthored - described', async () => {
         })
       });
       const data: IEventPaymentDefinitionCreated = {
-        paymentDefinitionID: paymentDefinitionID.toString(),
+        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - described',
-        amount: '1',
         descriptionSchemaHash: testDescription.schema.ipfsSha256,
         timestamp: timestamp.toString()
       };
@@ -49,7 +48,6 @@ describe('Payment definitions: unauthored - described', async () => {
       assert.strictEqual(paymentDefinition.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentDefinition.confirmed, true);
-      assert.strictEqual(paymentDefinition.amount, 1);
       assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'unauthored - described');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);

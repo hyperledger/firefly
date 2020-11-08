@@ -22,7 +22,7 @@ export const handleGetAssetInstanceRequest = async (assetInstanceID: string) => 
   return assetInstance;
 };
 
-export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: Object, sync: boolean) => {
+export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, sync: boolean) => {
   const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
@@ -60,7 +60,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, description, contentHash, content, false, utils.getTimestamp());
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: number, description: Object | undefined, content: NodeJS.ReadableStream, contentFileName: string, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, contentFileName: string, sync: boolean) => {
   const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
@@ -101,7 +101,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       database.confirmAssetInstance(assetInstance.assetInstanceID, Number(event.timestamp));
     }
   } else {
-    const assetDefinition = await database.retrieveAssetDefinitionByID(Number(event.assetDefinitionID));
+    const assetDefinition = await database.retrieveAssetDefinitionByID(event.assetDefinitionID);
     if (assetDefinition === null) {
       throw new Error('Uknown asset definition');
     }
@@ -123,6 +123,6 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
         throw new Error('Content does not conform to schema');
       }
     }
-    database.upsertAssetInstance(utils.hexToUuid(event.assetInstanceID), event.author, Number(event.assetDefinitionID), description, event.contentHash, content, true, Number(event.timestamp));
+    database.upsertAssetInstance(utils.hexToUuid(event.assetInstanceID), event.author, event.assetDefinitionID, description, event.contentHash, content, true, Number(event.timestamp));
   }
 };

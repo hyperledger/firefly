@@ -1,4 +1,4 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { app, mockEventStreamWebSocket } from '../../../common';
 import { testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
@@ -6,9 +6,9 @@ import assert from 'assert';
 import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 
-let privateAssetDefinitionID = getNextAssetDefinitionID();
-
 describe('Assets: authored - structured', async () => {
+
+  let assetDefinitionID: string;
 
   describe('Create asset definition', () => {
 
@@ -17,7 +17,7 @@ describe('Assets: authored - structured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
+        .post('/createStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200);
 
       nock('https://ipfs.kaleido.io')
@@ -33,12 +33,14 @@ describe('Assets: authored - structured', async () => {
           contentSchema: testContent.schema.object
         })
         .expect(200);
-      assert.deepStrictEqual(result.body, { status: 'submitted' });
+      assert.deepStrictEqual(result.body.status, 'submitted');
+      assetDefinitionID = result.body.assetDefinitionID;
 
       const getAssetDefinitionsResponse = await request(app)
         .get('/api/v1/assets/definitions')
         .expect(200);
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'authored - private - structured');
+      assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
@@ -55,7 +57,7 @@ describe('Assets: authored - structured', async () => {
         })
       });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: privateAssetDefinitionID.toString(),
+        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - private - structured',
         contentSchemaHash: testContent.schema.ipfsSha256,
@@ -74,7 +76,7 @@ describe('Assets: authored - structured', async () => {
         .get('/api/v1/assets/definitions')
         .expect(200);
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'authored - private - structured');
-      assert.strictEqual(assetDefinition.assetDefinitionID, privateAssetDefinitionID);
+      assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
@@ -83,8 +85,8 @@ describe('Assets: authored - structured', async () => {
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
       const getAssetDefinitionResponse = await request(app)
-      .get(`/api/v1/assets/definitions/${privateAssetDefinitionID}`)
-      .expect(200);
+        .get(`/api/v1/assets/definitions/${assetDefinitionID}`)
+        .expect(200);
       assert.deepStrictEqual(assetDefinition, getAssetDefinitionResponse.body);
     });
 

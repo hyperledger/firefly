@@ -1,13 +1,13 @@
-import { app, getNextPaymentDefinitionID, mockEventStreamWebSocket } from '../common';
+import { app, mockEventStreamWebSocket } from '../common';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IDBPaymentDefinition, IEventPaymentDefinitionCreated } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
 
-let paymentDefinitionID = getNextPaymentDefinitionID();
-
 describe('Payment definitions: authored', async () => {
+
+  let paymentDefinitionID: string;
 
   describe('Create payment definition', () => {
 
@@ -16,7 +16,7 @@ describe('Payment definitions: authored', async () => {
     it('Checks that the payment definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createPaymentDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
+        .post('/createPaymentDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200);
 
       const result = await request(app)
@@ -27,7 +27,8 @@ describe('Payment definitions: authored', async () => {
           amount: 1
         })
         .expect(200);
-      assert.deepStrictEqual(result.body, { status: 'submitted' });
+      assert.deepStrictEqual(result.body.status, 'submitted');
+      paymentDefinitionID = result.body.assetDefinitionID;
 
       const getPaymentDefinitionsResponse = await request(app)
         .get('/api/v1/payments/definitions')
@@ -35,7 +36,6 @@ describe('Payment definitions: authored', async () => {
       const paymentDefinition = getPaymentDefinitionsResponse.body.find((paymentDefinition: IDBPaymentDefinition) => paymentDefinition.name === 'authored');
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentDefinition.confirmed, false);
-      assert.strictEqual(paymentDefinition.amount, 1);
       assert.strictEqual(paymentDefinition.name, 'authored');
       assert.strictEqual(typeof paymentDefinition.timestamp, 'number');
     });
@@ -48,10 +48,9 @@ describe('Payment definitions: authored', async () => {
         })
       });
       const data: IEventPaymentDefinitionCreated = {
-        paymentDefinitionID: paymentDefinitionID.toString(),
+        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored',
-        amount: '1',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -69,7 +68,6 @@ describe('Payment definitions: authored', async () => {
       assert.strictEqual(paymentDefinition.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentDefinition.confirmed, true);
-      assert.strictEqual(paymentDefinition.amount, 1);
       assert.strictEqual(paymentDefinition.name, 'authored');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
 
@@ -80,6 +78,5 @@ describe('Payment definitions: authored', async () => {
     });
 
   });
-
 
 });

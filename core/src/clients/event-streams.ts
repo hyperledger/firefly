@@ -63,6 +63,7 @@ const addEventHandlers = () => {
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = JSON.parse(message);
   for (const message of messageArray) {
+    log.trace(`Event ${JSON.stringify(message)}`);
     try {
       switch (message.signature) {
         case utils.contractEventSignatures.MEMBER_REGISTERED:

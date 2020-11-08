@@ -1,4 +1,4 @@
-import { app, getNextAssetDefinitionID, mockEventStreamWebSocket } from '../../../common';
+import { app, mockEventStreamWebSocket } from '../../../common';
 import { testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
@@ -6,9 +6,9 @@ import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 
-let publicAssetDefinitionID = getNextAssetDefinitionID();
-
 describe('Assets: unauthored - public - structured', async () => {
+
+  const assetDefinitionID = 'f5847e19-8632-44fb-a742-17b7a1fd8bc5';
 
   describe('Asset definition', async () => {
 
@@ -27,7 +27,7 @@ describe('Assets: unauthored - public - structured', async () => {
         })
       });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: publicAssetDefinitionID.toString(),
+        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - public - structured',
         contentSchemaHash: testContent.schema.ipfsSha256,
@@ -46,7 +46,7 @@ describe('Assets: unauthored - public - structured', async () => {
         .get('/api/v1/assets/definitions')
         .expect(200);
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - public - structured');
-      assert.strictEqual(assetDefinition.assetDefinitionID, publicAssetDefinitionID);
+      assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
@@ -55,7 +55,7 @@ describe('Assets: unauthored - public - structured', async () => {
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 
       const getAssetDefinitionResponse = await request(app)
-      .get(`/api/v1/assets/definitions/${publicAssetDefinitionID}`)
+      .get(`/api/v1/assets/definitions/${assetDefinitionID}`)
       .expect(200);
       assert.deepStrictEqual(assetDefinition, getAssetDefinitionResponse.body);
     });

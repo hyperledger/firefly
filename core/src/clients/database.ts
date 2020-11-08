@@ -29,8 +29,8 @@ const paymentInstancesDb = Datastore.create({
 });
 
 membersDb.ensureIndex({ fieldName: 'address', unique: true });
-assetDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
-paymentDefinitionsDb.ensureIndex({ fieldName: 'name', unique: true });
+assetDefinitionsDb.ensureIndex({ fieldName: 'assetDefinitionID', unique: true });
+paymentDefinitionsDb.ensureIndex({ fieldName: 'paymentDefinitionID', unique: true });
 assetInstancesDb.ensureIndex({ fieldName: 'assetInstanceID', unique: true });
 paymentInstancesDb.ensureIndex({ fieldName: 'paymentInstanceID', unique: true });
 
@@ -63,7 +63,7 @@ export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<I
   return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
-export const retrieveAssetDefinitionByID = (assetDefinitionID: number): Promise<IDBAssetDefinition | null> => {
+export const retrieveAssetDefinitionByID = (assetDefinitionID: string): Promise<IDBAssetDefinition | null> => {
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ assetDefinitionID }, { _id: 0 });
 };
 
@@ -71,12 +71,16 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertAssetDefinition = (name: string, author: string, isContentPrivate: boolean, descriptionSchema: Object | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean, assetDefinitionID?: number) => {
-  return assetDefinitionsDb.update({ name }, { $set: { name, author, isContentPrivate, descriptionSchema, contentSchema, timestamp, confirmed, assetDefinitionID } }, { upsert: true });
+export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, contentSchemaHash: string | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
+  return assetDefinitionsDb.update({ assetDefinitionID }, { assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed }, { upsert: true });
 };
 
-export const confirmAssetDefinition = (name: string, timestamp: number, assetDefinitionID: number) => {
-  return assetDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, assetDefinitionID } });
+// export const confirmAssetDefinition = (assetDefinitionID: string, timestamp: number) => {
+//   return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, confirmed: true } });
+// };
+
+export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
+  return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
 };
 
 // Payment definition queries
@@ -85,7 +89,7 @@ export const retrievePaymentDefinitions = (skip: number, limit: number): Promise
   return paymentDefinitionsDb.find<IDBPaymentDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
-export const retrievePaymentDefinitionByID = (paymentDefinitionID: number): Promise<IDBPaymentDefinition | null> => {
+export const retrievePaymentDefinitionByID = (paymentDefinitionID: string): Promise<IDBPaymentDefinition | null> => {
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ paymentDefinitionID }, { _id: 0 });
 };
 
@@ -93,12 +97,16 @@ export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymen
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertPaymentDefinition = (name: string, author: string, descriptionSchema: Object | undefined, amount: number, timestamp: number, confirmed: boolean, paymentDefinitionID?: number) => {
-  return paymentDefinitionsDb.update({ name }, { $set: { name, author, descriptionSchema, amount, timestamp, confirmed, paymentDefinitionID } }, { upsert: true });
+export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
+  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, timestamp, confirmed } }, { upsert: true });
 };
 
-export const confirmPaymentDefinition = (name: string, timestamp: number, paymentDefinitionID: number) => {
-  return paymentDefinitionsDb.update({ name }, { $set: { timestamp, confirmed: true, paymentDefinitionID } });
+// export const confirmPaymentDefinition = (paymentDefinitionID: string, timestamp: number) => {
+//   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { timestamp, confirmed: true } });
+// };
+
+export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
+  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { timestamp, conflict: true } });
 };
 
 // Asset instance queries
@@ -111,7 +119,7 @@ export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBA
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
-export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: number, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
+export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
   return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
 };
 

@@ -35,8 +35,8 @@ router.post('/', async (req, res, next) => {
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
       const formData = await extractDataFromMultipartForm(req);
-      if (formData.assetDefinitionID === undefined || isNaN(formData.assetDefinitionID)) {
-        throw new RequestError('Missing or invalid asset definition ID', 400);
+      if (!formData.assetDefinitionID) {
+        throw new RequestError('Missing asset definition ID', 400);
       }
       if (formData.description !== undefined) {
         try {
@@ -50,8 +50,8 @@ router.post('/', async (req, res, next) => {
       }
       await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
-      if (!(typeof req.body.assetDefinitionID === 'number')) {
-        throw new RequestError('Missing or invalid asset definition ID', 400);
+      if (!req.body.assetDefinitionID) {
+        throw new RequestError('Missing asset definition ID', 400);
       }
       if (!utils.regexps.ACCOUNT.test(req.body.author)) {
         throw new RequestError('Missing or invalid asset author', 400);
@@ -70,13 +70,13 @@ router.post('/', async (req, res, next) => {
 const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartContent> => {
   return new Promise(async (resolve, reject) => {
     let author: string | undefined;
-    let assetDefinitionID: number | undefined;
+    let assetDefinitionID: string | undefined;
     let description: Promise<string> | undefined;
     req.pipe(new Busboy({ headers: req.headers })
       .on('field', (fieldname, value) => {
         switch (fieldname) {
           case requestKeys.ASSET_AUTHOR: author = value; break;
-          case requestKeys.ASSET_DEFINITION_ID: assetDefinitionID = Number(value); break;
+          case requestKeys.ASSET_DEFINITION_ID: assetDefinitionID = value; break;
         }
       }).on('file', (fieldname, readableStream, fileName) => {
         switch (fieldname) {

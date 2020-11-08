@@ -13,7 +13,7 @@ contract AssetTrail {
     );
 
     event DescribedStructuredAssetDefinitionCreated (
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         string name,
         bool isContentPrivate,
@@ -23,7 +23,7 @@ contract AssetTrail {
     );
     
     event DescribedUnstructuredAssetDefinitionCreated (
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         string name,
         bool isContentPrivate,
@@ -32,7 +32,7 @@ contract AssetTrail {
     );
     
     event StructuredAssetDefinitionCreated (
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         string name,
         bool isContentPrivate,
@@ -41,7 +41,7 @@ contract AssetTrail {
     );
 
     event UnstructuredAssetDefinitionCreated (
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         string name,
         bool isContentPrivate,
@@ -50,7 +50,7 @@ contract AssetTrail {
 
     event DescribedAssetInstanceCreated (
         bytes32 assetInstanceID,
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         bytes32 descriptionHash,
         bytes32 contentHash,
@@ -59,46 +59,46 @@ contract AssetTrail {
 
     event AssetInstanceCreated (
         bytes32 assetInstanceID,
-        uint assetDefinitionID,
+        bytes32 assetDefinitionID,
         address author,
         bytes32 contentHash,
         uint timestamp
     );
     
     event DescribedPaymentDefinitionCreated (
-        uint paymentDefinitionID,
+        bytes32 paymentDefinitionID,
         address author,
         string name,
         bytes32 descriptionSchemaHash,
-        uint amount,
         uint timestamp
     );
 
     event PaymentDefinitionCreated (
-        uint paymentDefinitionID,
+        bytes32 paymentDefinitionID,
         address author,
         string name,
-        uint amount,
-        uint timestamp
-    );
-
-    event PaymentInstanceCreated (
-        bytes32 paymentInstanceID,
-        uint paymentDefinitionID,
-        address author,
-        address recipient,
         uint timestamp
     );
 
     event DescribedPaymentInstanceCreated (
         bytes32 paymentInstanceID,
-        uint paymentDefinitionID,
+        bytes32 paymentDefinitionID,
         address author,
         address recipient,
+        uint amount,
         bytes32 descriptionHash,
         uint timestamp
     );
     
+    event PaymentInstanceCreated (
+        bytes32 paymentInstanceID,
+        bytes32 paymentDefinitionID,
+        address author,
+        address recipient,
+        uint amount,
+        uint timestamp
+    );
+
     event AssetPropertySet (
         bytes32 assetInstanceID,
         address propertyAuthor,
@@ -106,21 +106,11 @@ contract AssetTrail {
         string value,
         uint timestamp
     );
-    
-    uint private assetDefinitionCount;
-    uint private paymentDefinitionCount;
 
-    mapping(string => bool) private assetDefinitions;
-    mapping(string => bool) private paymentDefinitions;
-    mapping(uint => uint) private paymentAmounts;
     ERC20 payment;
 
     constructor(address paymentContract) public {
         payment = ERC20(paymentContract);
-    }
-
-    function getStatus() public view returns (uint totalAssetDefinitions, uint totalPaymentDefinitions) {
-        return (assetDefinitionCount, paymentDefinitionCount);
     }
     
     function registerMember(string memory name, string memory app2appDestination, string memory docExchangeDestination) public {
@@ -128,70 +118,56 @@ contract AssetTrail {
         emit MemberRegistered(msg.sender, name, app2appDestination, docExchangeDestination, now);
     }
     
-    function createDescribedStructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {
+    function createDescribedStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(assetDefinitions[name] == false, "Asset definition name conflict");
-        assetDefinitions[name] = true;
-        emit DescribedStructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, descriptionSchemaHash, contentSchemaHash, now);
+        emit DescribedStructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, descriptionSchemaHash, contentSchemaHash, now);
     }
 
-    function createDescribedUnstructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash) public {
+    function createDescribedUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(assetDefinitions[name] == false, "Asset definition name conflict");
-        assetDefinitions[name] = true;
-        emit DescribedUnstructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, descriptionSchemaHash, now);
+        emit DescribedUnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, descriptionSchemaHash, now);
     }
     
-    function createStructuredAssetDefinition(string memory name, bool isContentPrivate, bytes32 contentSchemaHash) public {
+    function createStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 contentSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(assetDefinitions[name] == false, "Asset definition name conflict");
-        assetDefinitions[name] = true;
-        emit StructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, contentSchemaHash, now);
+        emit StructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, contentSchemaHash, now);
     }
     
-    function createUnstructuredAssetDefinition(string memory name, bool isContentPrivate) public {
+    function createUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(assetDefinitions[name] == false, "Asset definition name conflict");
-        assetDefinitions[name] = true;
-        emit UnstructuredAssetDefinitionCreated(assetDefinitionCount++, msg.sender, name, isContentPrivate, now);
+        emit UnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, now);
     }
 
-    function createDescribedPaymentDefinition(string memory name, bytes32 descriptionSchemaHash, uint amount) public {
+    function createDescribedPaymentDefinition(bytes32 paymentDefinitionID, string memory name, bytes32 descriptionSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(amount > 0 , "Invalid amount");
-        require(paymentDefinitions[name] == false, "Payment definition name conflict");
-        paymentAmounts[paymentDefinitionCount] = amount;
-        paymentDefinitions[name] = true;
-        emit DescribedPaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, descriptionSchemaHash, amount, now);
+        emit DescribedPaymentDefinitionCreated(paymentDefinitionID, msg.sender, name, descriptionSchemaHash, now);
     }
 
-    function createPaymentDefinition(string memory name, uint amount) public {
+    function createPaymentDefinition(bytes32 paymentDefinitionID, string memory name) public {
         require(bytes(name).length != 0, "Invalid name");
-        require(amount > 0 , "Invalid amount");
-        require(paymentDefinitions[name] == false, "Payment definition name conflict");
-        paymentAmounts[paymentDefinitionCount] = amount;
-        paymentDefinitions[name] = true;
-        emit PaymentDefinitionCreated(paymentDefinitionCount++, msg.sender, name, amount, now);
+        emit PaymentDefinitionCreated(paymentDefinitionID, msg.sender, name, now);
     }
     
-    function createDescribedAssetInstance(bytes32 assetInstanceID, uint assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
+    function createDescribedAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
         emit DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, descriptionHash, contentHash, now);
     }
     
-    function createAssetInstance(bytes32 assetInstanceID, uint assetDefinitionID, bytes32 contentHash) public {
+    function createAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 contentHash) public {
         emit AssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, contentHash, now);
     }
 
-    function createDescribedPaymentInstance(bytes32 paymentInstanceID, uint paymentDefinitionID, address recipient, bytes32 descriptionHash) public {
+    function createDescribedPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address recipient, uint amount, bytes32 descriptionHash) public {
         require(msg.sender != recipient, "Author and recipient cannot be the same");
-        require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        emit DescribedPaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, descriptionHash, now);
+        require(amount > 0, "Amount must be greater than 0");
+        require(payment.transferFrom(msg.sender, recipient, amount), "Failed to transfer tokens");
+        emit DescribedPaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, descriptionHash, now);
     }
 
-    function createPaymentInstance(bytes32 paymentInstanceID, uint paymentDefinitionID, address recipient) public {
+    function createPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address recipient, uint amount) public {
         require(msg.sender != recipient, "Author and recipient cannot be the same");
-        require(payment.transferFrom(msg.sender, recipient, paymentAmounts[paymentDefinitionID]), "Failed to transfer tokens");
-        emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, now);
+        require(amount > 0, "Amount must be greater than 0");
+        require(payment.transferFrom(msg.sender, recipient, amount), "Failed to transfer tokens");
+        emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, now);
     }
     
     function setAssetProperty(bytes32 assetInstanceID, string memory key, string memory value) public {

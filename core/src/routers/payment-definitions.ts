@@ -24,11 +24,7 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:paymentDefinitionID', async (req, res, next) => {
   try {
-    const paymentDefinitionID = Number(req.params.paymentDefinitionID);
-    if (isNaN(paymentDefinitionID)) {
-      throw new RequestError('Invalid payment definition ID', 400);
-    }
-    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionRequest(paymentDefinitionID));
+    res.send(await paymentDefinitionsHandler.handleGetPaymentDefinitionRequest(req.params.paymentDefinitionID));
   } catch (err) {
     next(err);
   }
@@ -42,17 +38,13 @@ router.post('/', async (req, res, next) => {
     if (!utils.regexps.ACCOUNT.test(req.body.author)) {
       throw new RequestError('Missing or invalid payment definition author', 400);
     }
-    if(!Number.isInteger(req.body.amount)) {
-      throw new RequestError('Missing or invalid payment amount', 400)
-    } else if (!(req.body.amount > 0)) {
-      throw new RequestError('Payment amount must be greater than 0', 400)
-    }
     if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
       throw new RequestError('Invalid description schema', 400);
     }
-    await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
-      req.body.author, req.body.amount, req.body.descriptionSchema);
-    res.send({ status: 'submitted' });
+    const sync = req.query.sync === 'true';
+    const assetDefinitionID = await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
+      req.body.author, req.body.descriptionSchema, sync);
+    res.send({ status: 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);
   }
