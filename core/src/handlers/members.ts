@@ -18,15 +18,12 @@ export const handleGetMemberRequest = async (address: string) => {
 
 export const handleUpsertMemberRequest = async (address: string, name: string,
   app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
-  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
   await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true);
+  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
 };
 
 export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IEventMemberRegistered) => {
-  const owner = await database.retrieveMemberByAddress(member);
-  if(owner !== null && owner.owned) {
-    await database.confirmMember(member, Number(timestamp));
-  } else {
-    await database.upsertMember(member, name, app2appDestination, docExchangeDestination, Number(timestamp), true, false);
-  }
+  const dbMember = await database.retrieveMemberByAddress(member);
+  const memberOwned = dbMember?.owned ?? false;
+  await database.upsertMember(member, name, app2appDestination, docExchangeDestination, Number(timestamp), true, memberOwned);
 };
