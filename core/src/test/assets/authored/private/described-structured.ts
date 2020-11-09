@@ -31,6 +31,7 @@ describe('Assets: authored - private - described - structured', async () => {
           name: 'authored - private - described - structured',
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
+          isContentUnique: true,
           descriptionSchema: testDescription.schema.object,
           contentSchema: testContent.schema.object
         })
@@ -46,6 +47,7 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - structured');
@@ -71,6 +73,7 @@ describe('Assets: authored - private - described - structured', async () => {
         descriptionSchemaHash: testDescription.schema.ipfsSha256,
         contentSchemaHash: testContent.schema.ipfsSha256,
         isContentPrivate: true,
+        isContentUnique: true,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -89,6 +92,7 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - structured');

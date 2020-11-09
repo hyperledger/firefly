@@ -67,8 +67,8 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, contentSchemaHash: string | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
-  return assetDefinitionsDb.update({ assetDefinitionID }, { assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed }, { upsert: true });
+export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, contentSchemaHash: string | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
+  return assetDefinitionsDb.update({ assetDefinitionID }, { assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed }, { upsert: true });
 };
 
 export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {

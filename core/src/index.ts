@@ -8,16 +8,13 @@ import paymentDefinitionsRouter from './routers/payment-definitions';
 import { errorHandler } from './lib/request-error';
 import * as utils from './lib/utils';
 import * as ipfs from './clients/ipfs';
-import * as apiGateway from './clients/api-gateway';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
 import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
-console.log(utils.ipfsHashToSha256('QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV'))
 export const promise = initConfig()
-  .then(() => apiGateway.init())
   .then(() => ipfs.init())
   .then(() => docExchange.init())
   .then(() => {

@@ -18,7 +18,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
   return assetDefinition;
 };
 
-export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
+export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean, author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
@@ -27,19 +27,19 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
     if (contentSchema) {
       const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
-      await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, contentSchemaHash, sync);
+      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
+      await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, contentSchemaHash, sync);
     } else {
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, descriptionSchema, undefined, undefined, utils.getTimestamp(), false);
-      await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, descriptionSchemaHash, sync);
+      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, undefined, undefined, utils.getTimestamp(), false);
+      await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, sync);
     }
   } else if (contentSchema) {
     const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, undefined, undefined, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
-    await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, contentSchemaHash, sync);
+    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
+    await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, contentSchemaHash, sync);
   } else {
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, undefined, undefined, undefined, undefined, utils.getTimestamp(), false);
-    await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, sync);
+    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined, undefined, undefined, utils.getTimestamp(), false);
+    await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, sync);
   }
   return assetDefinitionID;
 };
@@ -77,5 +77,5 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
     }
   }
-  database.upsertAssetDefinition(assetDefinitionID, event.name, event.author, event.isContentPrivate, event.descriptionSchemaHash, descriptionSchema, event.contentSchemaHash, contentSchema, Number(event.timestamp), true);
+  database.upsertAssetDefinition(assetDefinitionID, event.name, event.author, event.isContentPrivate, event.isContentUnique, event.descriptionSchemaHash, descriptionSchema, event.contentSchemaHash, contentSchema, Number(event.timestamp), true);
 };

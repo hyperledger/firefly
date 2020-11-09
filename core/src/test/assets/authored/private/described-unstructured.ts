@@ -30,6 +30,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
           name: 'authored - private - described - unstructured',
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
+          isContentUnique: true,
           descriptionSchema: testDescription.schema.object
         })
         .expect(200);
@@ -44,6 +45,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - unstructured');
       assert.strictEqual(typeof assetDefinition.timestamp, 'number');
@@ -62,6 +64,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
         descriptionSchemaHash: testDescription.schema.ipfsSha256,
         name: 'authored - private - described - unstructured',
         isContentPrivate: true,
+        isContentUnique: true,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -80,6 +83,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

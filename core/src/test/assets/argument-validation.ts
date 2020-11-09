@@ -16,7 +16,8 @@ describe('Asset definitions - argument validation', async () => {
       .post('/api/v1/assets/definitions')
       .send({
         author: '0x0000000000000000000000000000000000000001',
-        isContentPrivate: false
+        isContentPrivate: false,
+        isContentUnique: true
       })
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition name' });
@@ -27,7 +28,8 @@ describe('Asset definitions - argument validation', async () => {
       .post('/api/v1/assets/definitions')
       .send({
         name: 'My asset definition',
-        isContentPrivate: false
+        isContentPrivate: false,
+        isContentUnique: true
       })
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition author' });
@@ -38,7 +40,8 @@ describe('Asset definitions - argument validation', async () => {
       .post('/api/v1/assets/definitions')
       .send({
         name: 'My asset definition',
-        author: '0x0000000000000000000000000000000000000001'
+        author: '0x0000000000000000000000000000000000000001',
+        isContentUnique: true
       })
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Missing asset definition content privacy' });
@@ -51,7 +54,8 @@ describe('Asset definitions - argument validation', async () => {
         name: 'My asset definition',
         author: '0x0000000000000000000000000000000000000001',
         descriptionSchema: 'INVALID',
-        isContentPrivate: false
+        isContentPrivate: false,
+        isContentUnique: true
       })
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Invalid description schema' });
@@ -64,7 +68,8 @@ describe('Asset definitions - argument validation', async () => {
         name: 'My asset definition',
         author: '0x0000000000000000000000000000000000000001',
         contentSchema: 'INVALID',
-        isContentPrivate: false
+        isContentPrivate: false,
+        isContentUnique: true
       })
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Invalid content schema' });

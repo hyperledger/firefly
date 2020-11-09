@@ -41,6 +41,9 @@ router.post('/', async (req, res, next) => {
     if (typeof req.body.isContentPrivate !== 'boolean') {
       throw new RequestError('Missing asset definition content privacy', 400);
     }
+    if (typeof req.body.isContentUnique !== 'boolean') {
+      throw new RequestError('Missing asset definition content uniqueness', 400);
+    }
     if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
       throw new RequestError('Invalid description schema', 400);
     }
@@ -49,7 +52,7 @@ router.post('/', async (req, res, next) => {
     }
     const sync = req.query.sync === 'true';
     const assetDefinitionID = await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
-      req.body.author, req.body.descriptionSchema, req.body.contentSchema, sync);
+      req.body.isContentUnique, req.body.author, req.body.descriptionSchema, req.body.contentSchema, sync);
     res.send({ status: 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);

@@ -24,6 +24,7 @@ describe('Asset definitions: unauthored - unstructured', async () => {
         author: '0x0000000000000000000000000000000000000002',
         name: 'unauthored - private - unstructured',
         isContentPrivate: true,
+        isContentUnique: true,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
