@@ -17,6 +17,7 @@ contract AssetTrail {
         address author,
         string name,
         bool isContentPrivate,
+        bool isContentUnique,
         bytes32 descriptionSchemaHash,
         bytes32 contentSchemaHash,
         uint timestamp
@@ -27,6 +28,7 @@ contract AssetTrail {
         address author,
         string name,
         bool isContentPrivate,
+        bool isContentUnique,
         bytes32 descriptionSchemaHash,
         uint timestamp
     );
@@ -36,6 +38,7 @@ contract AssetTrail {
         address author,
         string name,
         bool isContentPrivate,
+        bool isContentUnique,
         bytes32 contentSchemaHash,
         uint timestamp
     );
@@ -45,6 +48,7 @@ contract AssetTrail {
         address author,
         string name,
         bool isContentPrivate,
+        bool isContentUnique,
         uint timestamp
     );
 
@@ -118,24 +122,24 @@ contract AssetTrail {
         emit MemberRegistered(msg.sender, name, app2appDestination, docExchangeDestination, now);
     }
     
-    function createDescribedStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {
+    function createDescribedStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bool isContentUnique, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        emit DescribedStructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, descriptionSchemaHash, contentSchemaHash, now);
+        emit DescribedStructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, isContentUnique, descriptionSchemaHash, contentSchemaHash, now);
     }
 
-    function createDescribedUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 descriptionSchemaHash) public {
+    function createDescribedUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bool isContentUnique, bytes32 descriptionSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        emit DescribedUnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, descriptionSchemaHash, now);
+        emit DescribedUnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, isContentUnique, descriptionSchemaHash, now);
     }
     
-    function createStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bytes32 contentSchemaHash) public {
+    function createStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bool isContentUnique, bytes32 contentSchemaHash) public {
         require(bytes(name).length != 0, "Invalid name");
-        emit StructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, contentSchemaHash, now);
+        emit StructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, isContentUnique, contentSchemaHash, now);
     }
     
-    function createUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate) public {
+    function createUnstructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bool isContentUnique) public {
         require(bytes(name).length != 0, "Invalid name");
-        emit UnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, now);
+        emit UnstructuredAssetDefinitionCreated(assetDefinitionID, msg.sender, name, isContentPrivate, isContentUnique, now);
     }
 
     function createDescribedPaymentDefinition(bytes32 paymentDefinitionID, string memory name, bytes32 descriptionSchemaHash) public {
