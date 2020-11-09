@@ -136,6 +136,7 @@ export interface IDBAssetInstance {
   content?: string
   contentHash?: string
   confirmed: boolean
+  conflict: boolean
   timestamp: number
 }
 

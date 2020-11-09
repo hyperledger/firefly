@@ -94,7 +94,7 @@ export const upsertPaymentDefinition = (paymentDefinitionID: string, name: strin
 };
 
 export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
-  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { timestamp, conflict: true } });
+  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { conflict: true, timestamp } });
 };
 
 // Asset instance queries
@@ -107,6 +107,14 @@ export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBA
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
+export const retrieveAssetInstanceByContentID = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
+  return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
+};
+
 export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
   return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, descriptionHash, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
+};
+
+export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: number) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
 };
