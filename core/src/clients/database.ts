@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -112,9 +112,23 @@ export const retrieveAssetInstanceByContentID = (assetDefinitionID: string, cont
 };
 
 export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { author, assetDefinitionID, descriptionHash, description, contentHash, content, confirmed, timestamp, assetInstanceID } }, { upsert: true });
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, confirmed, timestamp } }, { upsert: true });
 };
 
 export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: number) => {
   return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
+};
+
+// Payment instance queries
+
+export const retrievePaymentInstances = (skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
+  return paymentInstancesDb.find<IDBPaymentInstance>({}, { _id: 0 }).skip(skip).limit(limit);
+};
+
+export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<IDBPaymentInstance | null> => {
+  return paymentInstancesDb.findOne<IDBPaymentInstance>({ paymentInstanceID }, { _id: 0 });
+};
+
+export const upsertPaymentInstance = (paymentInstanceID: string, author: string, paymentDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, recipient: string, amount: number, confirmed: boolean, timestamp: number) => {
+  return paymentInstancesDb.update({ paymentInstanceID }, { $set: { paymentInstanceID, author, paymentDefinitionID, descriptionHash, description, recipient, amount, confirmed, timestamp } }, { upsert: true });
 };

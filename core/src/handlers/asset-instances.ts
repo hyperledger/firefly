@@ -38,7 +38,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   }
   if (assetDefinition.descriptionSchema) {
     if (!description) {
-      throw new RequestError('Missing asset definition', 400);
+      throw new RequestError('Missing asset description', 400);
     }
     if (!ajv.validate(assetDefinition.descriptionSchema, description)) {
       throw new RequestError('Description does not conform to asset definition schema', 400);
@@ -58,9 +58,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp());
   if (descriptionHash) {
-    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
+    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync); // TODO
   } else {
-    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
   }
   return assetInstanceID;
 };

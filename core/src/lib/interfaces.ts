@@ -140,6 +140,19 @@ export interface IDBAssetInstance {
   timestamp: number
 }
 
+export interface IDBPaymentInstance {
+  _id?: string
+  paymentInstanceID: string
+  paymentDefinitionID: string
+  author: string
+  recipient: string
+  amount: number
+  descriptionHash?: string
+  description: string
+  confirmed: boolean
+  timestamp: number
+}
+
 // DOCUMENT EXCHANGE INTERFACES
 
 export interface IDocExchangeTransferData {
