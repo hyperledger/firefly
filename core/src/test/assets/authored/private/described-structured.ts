@@ -6,7 +6,7 @@ import assert from 'assert';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 
-describe.only('Assets: authored - private - described - structured', async () => {
+describe('Assets: authored - private - described - structured', async () => {
 
   let assetDefinitionID: string;
   const timestamp = utils.getTimestamp();
@@ -115,8 +115,6 @@ describe.only('Assets: authored - private - described - structured', async () =>
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
         .reply(200, { Hash: testDescription.sample.ipfsMultiHash })
-        // .post('/api/v0/add')
-        // .reply(200, { Hash: testContent.sample.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/instances')

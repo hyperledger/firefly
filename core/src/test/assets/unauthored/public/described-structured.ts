@@ -3,16 +3,15 @@ import { testDescription, testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
-import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
+import { IEventAssetDefinitionCreated, IDBAssetDefinition, IEventAssetInstanceCreated, IDBAssetInstance } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 
 describe('Assets: unauthored - public - described - structured', async () => {
 
   const assetDefinitionID = 'cb289f68-5eaf-46d2-9be1-3dcfdde76885';
+  const timestamp = utils.getTimestamp();
 
   describe('Asset definition', async () => {
-
-    const timestamp = utils.getTimestamp();
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
@@ -62,6 +61,61 @@ describe('Assets: unauthored - public - described - structured', async () => {
       .get(`/api/v1/assets/definitions/${assetDefinitionID}`)
       .expect(200);
       assert.deepStrictEqual(assetDefinition, getAssetDefinitionResponse.body);
+    });
+
+  });
+
+  describe('Asset instances', async () => {
+
+    const assetInstanceID = '9e8acd3b-4067-443f-ad6e-739976bc63ee';
+
+    it('Checks that the event stream notification for confirming the asset instance creation is handled', async () => {
+
+      nock('https://ipfs.kaleido.io')
+      .get(`/ipfs/${testDescription.sample.ipfsMultiHash}`)
+      .reply(200, testDescription.sample.object)
+      .get(`/ipfs/${testContent.sample.ipfsMultiHash}`)
+      .reply(200, testContent.sample.object)
+
+      const eventPromise = new Promise((resolve) => {
+        mockEventStreamWebSocket.once('send', message => {
+          assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
+          resolve();
+        })
+      });
+      const data: IEventAssetInstanceCreated = {
+        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        author: '0x0000000000000000000000000000000000000002',
+        assetInstanceID: utils.uuidToHex(assetInstanceID),
+        descriptionHash: testDescription.sample.ipfsSha256,
+        contentHash: testContent.sample.ipfsMultiHash,
+        timestamp: timestamp.toString()
+      };
+      mockEventStreamWebSocket.emit('message', JSON.stringify([{
+        signature: utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED,
+        data
+      }]));
+      await eventPromise;
+    });
+
+    it('Checks that the asset instance is confirmed', async () => {
+      const getAssetInstancesResponse = await request(app)
+        .get('/api/v1/assets/instances')
+        .expect(200);
+      const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
+      assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
+      assert.strictEqual(assetInstance.descriptionHash, testDescription.sample.ipfsSha256);
+      assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
+      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsMultiHash);
+      assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
+      assert.strictEqual(assetInstance.confirmed, true);
+      assert.strictEqual(typeof assetInstance.timestamp, 'number');
+
+      const getAssetInstanceResponse = await request(app)
+        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .expect(200);
+      assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });
 
   });

@@ -3,16 +3,15 @@ import { testDescription, testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
-import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../lib/interfaces';
+import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 
 describe('Assets: authored - public - described - structured', async () => {
 
   let assetDefinitionID: string;
+  const timestamp = utils.getTimestamp();
 
   describe('Create asset definition', () => {
-
-    const timestamp = utils.getTimestamp();
 
     it('Checks that the asset definition can be added', async () => {
 
@@ -94,6 +93,98 @@ describe('Assets: authored - public - described - structured', async () => {
         .get(`/api/v1/assets/definitions/${assetDefinitionID}`)
         .expect(200);
       assert.deepStrictEqual(assetDefinition, getAssetDefinitionResponse.body);
+    });
+
+  });
+
+  describe('Asset instances', async () => {
+
+    let assetInstanceID: string;
+
+    it('Checks that an asset instance can be created', async () => {
+
+      nock('https://apigateway.kaleido.io')
+        .post('/createDescribedAssetInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .reply(200);
+
+      nock('https://ipfs.kaleido.io')
+        .post('/api/v0/add')
+        .reply(200, { Hash: testDescription.sample.ipfsMultiHash })
+        .post('/api/v0/add')
+        .reply(200, { Hash: testContent.sample.ipfsMultiHash })
+
+      const result = await request(app)
+        .post('/api/v1/assets/instances')
+        .send({
+          assetDefinitionID,
+          author: '0x0000000000000000000000000000000000000001',
+          description: testDescription.sample.object,
+          content: testContent.sample.object
+        })
+        .expect(200);
+      assert.deepStrictEqual(result.body.status, 'submitted');
+      assetInstanceID = result.body.assetInstanceID;
+
+      const getAssetInstancesResponse = await request(app)
+        .get('/api/v1/assets/instances')
+        .expect(200);
+      const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
+      assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
+      assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
+      assert.strictEqual(assetInstance.descriptionHash, testDescription.sample.ipfsSha256);
+      assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
+      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
+      assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
+      assert.strictEqual(assetInstance.confirmed, false);
+      assert.strictEqual(typeof assetInstance.timestamp, 'number');
+
+      const getAssetInstanceResponse = await request(app)
+        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .expect(200);
+      assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
+
+    });
+
+    it('Checks that the event stream notification for confirming the asset instance creation is handled', async () => {
+      const eventPromise = new Promise((resolve) => {
+        mockEventStreamWebSocket.once('send', message => {
+          assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
+          resolve();
+        })
+      });
+      const data: IEventAssetInstanceCreated = {
+        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        author: '0x0000000000000000000000000000000000000001',
+        assetInstanceID: utils.uuidToHex(assetInstanceID),
+        descriptionHash: testDescription.sample.ipfsSha256,
+        contentHash: testContent.sample.ipfsSha256,
+        timestamp: timestamp.toString()
+      };
+      mockEventStreamWebSocket.emit('message', JSON.stringify([{
+        signature: utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED,
+        data
+      }]));
+      await eventPromise;
+    });
+
+    it('Checks that the asset instance is confirmed', async () => {
+      const getAssetInstancesResponse = await request(app)
+        .get('/api/v1/assets/instances')
+        .expect(200);
+      const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
+      assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
+      assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
+      assert.strictEqual(assetInstance.descriptionHash, testDescription.sample.ipfsSha256);
+      assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
+      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
+      assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
+      assert.strictEqual(assetInstance.confirmed, true);
+      assert.strictEqual(typeof assetInstance.timestamp, 'number');
+
+      const getAssetInstanceResponse = await request(app)
+        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .expect(200);
+      assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });
 
   });
