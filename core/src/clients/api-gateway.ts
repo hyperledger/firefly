@@ -149,7 +149,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
   });
 };
 
-export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: number, author: string, recipient: string, sync = false) => {
+export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
