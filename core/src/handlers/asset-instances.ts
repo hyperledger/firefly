@@ -53,6 +53,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
+  if(assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, contentHash))?.confirmed) {
+    throw new RequestError(`Asset instance content conflict`);
+  }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp());
   if (descriptionHash) {
     await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
@@ -92,9 +95,9 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   }
   return assetInstanceID;
 }
-
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(utils.hexToUuid(event.assetInstanceID));
+  const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
   if (dbAssetInstance !== null) {
     if (dbAssetInstance.confirmed) {
       throw new Error(`Duplicate asset instance ID`);
@@ -103,6 +106,16 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   const assetDefinition = await database.retrieveAssetDefinitionByID(utils.hexToUuid(event.assetDefinitionID));
   if (assetDefinition === null) {
     throw new Error('Uknown asset definition');
+  }
+  if(assetDefinition.isContentUnique) {
+    const assetInstanceByContentID = await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, event.contentHash);
+    if(assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
+      if (assetInstanceByContentID.confirmed) {
+        throw new Error(`Asset instance content conflict ${event.contentHash}`);
+      } else {
+        await database.markAssetInstanceAsConflict(assetInstanceByContentID.assetInstanceID, Number(event.timestamp));
+      }
+    }
   }
   let description: Object | undefined = undefined;
   if (assetDefinition.descriptionSchema) {
@@ -130,7 +143,6 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  database.upsertAssetInstance(utils.hexToUuid(event.assetInstanceID), event.author,
-    utils.hexToUuid(event.assetDefinitionID), event.descriptionHash, description, event.contentHash,
-    content, true, Number(event.timestamp));
+  database.upsertAssetInstance(eventAssetInstanceID, event.author, utils.hexToUuid(event.assetDefinitionID),
+    event.descriptionHash, description, event.contentHash, content, true, Number(event.timestamp));
 };
