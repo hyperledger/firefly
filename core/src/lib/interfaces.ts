@@ -64,6 +64,7 @@ export interface IEventAssetDefinitionCreated {
   author: string
   name: string
   isContentPrivate: boolean
+  isContentUnique: boolean
   contentSchemaHash?: string
   descriptionSchemaHash?: string
   timestamp: string
@@ -104,6 +105,7 @@ export interface IDBAssetDefinition {
   author: string
   name: string
   isContentPrivate: boolean
+  isContentUnique: boolean
   descriptionSchemaHash?: string
   descriptionSchema?: object
   contentSchemaHash?: string

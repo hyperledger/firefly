@@ -24,7 +24,8 @@ describe('Assets: authored - unstructured', async () => {
         .send({
           name: 'authored - public - unstructured',
           author: '0x0000000000000000000000000000000000000001',
-          isContentPrivate: false
+          isContentPrivate: false,
+          isContentUnique: true,
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
@@ -38,6 +39,7 @@ describe('Assets: authored - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.strictEqual(assetDefinition.name, 'authored - public - unstructured');
       assert.strictEqual(typeof assetDefinition.timestamp, 'number');
     });
@@ -54,6 +56,7 @@ describe('Assets: authored - unstructured', async () => {
         author: '0x0000000000000000000000000000000000000001',
         name: 'authored - public - unstructured',
         isContentPrivate: false,
+        isContentUnique: true,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -72,6 +75,7 @@ describe('Assets: authored - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
+      assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.strictEqual(assetDefinition.name, 'authored - public - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
 

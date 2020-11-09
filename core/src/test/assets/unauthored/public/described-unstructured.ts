@@ -32,6 +32,7 @@ describe('Assets: unauthored - public - described - unstructured', async () => {
         name: 'unauthored - public - described - unstructured',
         descriptionSchemaHash: testDescription.schema.ipfsSha256,
         isContentPrivate: false,
+        isContentUnique: true,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
