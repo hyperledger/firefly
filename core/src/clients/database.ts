@@ -119,7 +119,7 @@ export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: 
   return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
 };
 
-export const addPropertyToAssetInstance = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number) => {
+export const setAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number) => {
   return assetInstancesDb.update({ assetInstanceID }, { $set: { [`properties.${author}.${key}`]: { value, confirmed, timestamp } } });
 };
 

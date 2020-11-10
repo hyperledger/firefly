@@ -42,12 +42,12 @@ router.post('/', async (req, res, next) => {
       if (formData.description !== undefined) {
         try {
           description = JSON.parse(await formData.description);
-        } catch(err) {
+        } catch (err) {
           throw new RequestError(`Invalid description. ${err}`, 400);
         }
       }
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
-        throw new RequestError('Missing or invalid asset author', 400);
+        throw new RequestError('Missing or invalid asset instance author', 400);
       }
       assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
         throw new RequestError('Missing asset definition ID', 400);
       }
       if (!utils.regexps.ACCOUNT.test(req.body.author)) {
-        throw new RequestError('Missing or invalid asset author', 400);
+        throw new RequestError('Missing or invalid asset instance author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
@@ -63,6 +63,25 @@ router.post('/', async (req, res, next) => {
       assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
     res.send({ status: 'submitted', assetInstanceID });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/:assetInstanceID', async (req, res, next) => {
+  if (!req.body.key) {
+    throw new RequestError('Missing asset property key', 400);
+  }
+  if (!req.body.value) {
+    throw new RequestError('Missing asset property value', 400);
+  }
+  if (!req.body.author || !utils.regexps.ACCOUNT.test(req.body.author)) {
+    throw new RequestError('Missing or invalid asset property author', 400);
+  }
+  const sync = req.query.sync === 'true';
+  try {
+    await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
+    res.send({ status: 'submitted' });
   } catch (err) {
     next(err);
   }
