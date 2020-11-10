@@ -101,14 +101,16 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
   }
-  if (assetInstance.confirmed) {
+  if (!assetInstance.confirmed) {
     throw new RequestError('Unconfirmed asset instance', 400);
   }
-  const authorMetadata = assetInstance.properties[author];
-  if (authorMetadata) {
-    const currentValue = authorMetadata[key];
-    if(currentValue?.confirmed && currentValue.value === value) {
-      throw new RequestError('Property already set');
+  if (assetInstance.properties) {
+    const authorMetadata = assetInstance.properties[author];
+    if (authorMetadata) {
+      const currentValue = authorMetadata[key];
+      if (currentValue?.confirmed && currentValue.value === value) {
+        throw new RequestError('Property already set');
+      }
     }
   }
   await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp());
@@ -174,10 +176,10 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
   }
-  if(!dbAssetInstance.confirmed) {
+  if (!dbAssetInstance.confirmed) {
     throw new Error('Unconfirmed asset instance');
   }
-  if(!event.key) {
+  if (!event.key) {
     throw new Error('Invalid property key');
   }
   await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp));

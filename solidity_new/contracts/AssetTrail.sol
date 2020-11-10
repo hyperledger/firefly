@@ -103,7 +103,7 @@ contract AssetTrail {
         uint timestamp
     );
 
-    event AssetPropertySet (
+    event AssetInstancePropertySet (
         bytes32 assetInstanceID,
         address propertyAuthor,
         string key,
@@ -176,7 +176,7 @@ contract AssetTrail {
     
     function setAssetInstanceProperty(bytes32 assetInstanceID, string memory key, string memory value) public {
         require(bytes(key).length > 0, "Invalid key");
-        emit AssetPropertySet(assetInstanceID, msg.sender, key, value, now);
+        emit AssetInstancePropertySet(assetInstanceID, msg.sender, key, value, now);
     }
     
 }
