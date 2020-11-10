@@ -1,11 +1,12 @@
 import WebSocket from 'ws';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IEventAssetDefinitionCreated, IEventAssetInstanceCreated, IEventPaymentDefinitionCreated, IEventStreamMessage } from '../lib/interfaces';
+import { IEventAssetDefinitionCreated, IEventAssetInstanceCreated, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated, IEventStreamMessage } from '../lib/interfaces';
 import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import * as assetInstancesHandler from '../handlers/asset-instances';
+import * as paymentInstanceHandler from '../handlers/payment-instances';
 import { IEventMemberRegistered } from '../lib/interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
 
@@ -79,6 +80,9 @@ const handleMessage = async (message: string) => {
         case utils.contractEventSignatures.ASSET_INSTANCE_CREATED:
         case utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED:
           await assetInstancesHandler.handleAssetInstanceCreatedEvent(message.data as IEventAssetInstanceCreated); break;
+        case utils.contractEventSignatures.DESCRIBED_PAYMENT_INSTANCE_CREATED:
+        case utils.contractEventSignatures.PAYMENT_INSTANCE_CREATED:
+          await paymentInstanceHandler.handlePaymentInstanceCreatedEvent(message.data as IEventPaymentInstanceCreated); break;
       }
     } catch (err) {
       log.error(`Failed to handle event. ${err}`);

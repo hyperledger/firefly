@@ -87,6 +87,16 @@ export interface IEventAssetInstanceCreated {
   timestamp: string
 }
 
+export interface IEventPaymentInstanceCreated {
+  paymentInstanceID: string
+  paymentDefinitionID: string
+  author: string
+  recipient: string
+  descriptionHash?: string
+  amount: string
+  timestamp: string
+}
+
 // DATABASE INTERFACES
 
 export interface IDBMember {

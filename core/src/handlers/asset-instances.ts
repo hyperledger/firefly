@@ -95,13 +95,12 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   }
   return assetInstanceID;
 }
+
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
-  if (dbAssetInstance !== null) {
-    if (dbAssetInstance.confirmed) {
-      throw new Error(`Duplicate asset instance ID`);
-    }
+  if (dbAssetInstance !== null && dbAssetInstance.confirmed) {
+    throw new Error(`Duplicate asset instance ID`);
   }
   const assetDefinition = await database.retrieveAssetDefinitionByID(utils.hexToUuid(event.assetDefinitionID));
   if (assetDefinition === null) {
@@ -129,7 +128,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
         }
       }
     } else {
-      throw new Error('Missing description');
+      throw new Error('Missing asset instance description');
     }
   }
   let content: Object | undefined = undefined;
