@@ -98,7 +98,7 @@ describe('Asset instances - argument validation', async () => {
         content: {}
       })
       .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset author' });
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset instance author' });
   });
 
   it('Attempting to add an asset instance without specifying the content should raise an error', async () => {

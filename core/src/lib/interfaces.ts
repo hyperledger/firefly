@@ -97,6 +97,14 @@ export interface IEventPaymentInstanceCreated {
   timestamp: string
 }
 
+export interface IEventAssetInstancePropertySet {
+  assetInstanceID: string
+  author: string
+  key: string
+  value: string
+  timestamp: string
+}
+
 // DATABASE INTERFACES
 
 export interface IDBMember {

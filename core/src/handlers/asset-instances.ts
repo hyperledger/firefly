@@ -6,7 +6,7 @@ import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IEventAssetInstanceCreated } from '../lib/interfaces';
+import { IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -111,7 +111,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
       throw new RequestError('Property already set');
     }
   }
-  await database.addPropertyToAssetInstance(assetInstanceID, author, key, value, false, utils.getTimestamp());
+  await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp());
   await apiGateway.setAssetInstanceProperty(assetInstanceID, author, key, value, sync);
 };
 
@@ -166,4 +166,19 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   }
   database.upsertAssetInstance(eventAssetInstanceID, event.author, utils.hexToUuid(event.assetDefinitionID),
     event.descriptionHash, description, event.contentHash, content, true, Number(event.timestamp));
+};
+
+export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet) => {
+  const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
+  if (dbAssetInstance === null) {
+    throw new Error('Uknown asset instance');
+  }
+  if(!dbAssetInstance.confirmed) {
+    throw new Error('Unconfirmed asset instance');
+  }
+  if(!event.key) {
+    throw new Error('Invalid property key');
+  }
+  await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp));
 };
