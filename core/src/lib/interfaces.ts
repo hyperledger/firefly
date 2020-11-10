@@ -148,6 +148,15 @@ export interface IDBAssetInstance {
   confirmed: boolean
   conflict: boolean
   timestamp: number
+  properties: {
+    [author: string]: {
+      [key: string]: {
+        value: string
+        timestamp: number
+        confirmed: boolean
+      } | undefined
+    } | undefined
+  }
 }
 
 export interface IDBPaymentInstance {

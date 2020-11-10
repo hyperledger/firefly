@@ -174,7 +174,7 @@ contract AssetTrail {
         emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, now);
     }
     
-    function setAssetProperty(bytes32 assetInstanceID, string memory key, string memory value) public {
+    function setAssetInstanceProperty(bytes32 assetInstanceID, string memory key, string memory value) public {
         require(bytes(key).length > 0, "Invalid key");
         emit AssetPropertySet(assetInstanceID, msg.sender, key, value, now);
     }

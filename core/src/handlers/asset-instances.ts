@@ -53,7 +53,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  if(assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, contentHash))?.confirmed) {
+  if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, contentHash))?.confirmed) {
     throw new RequestError(`Asset instance content conflict`);
   }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp());
@@ -96,6 +96,25 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   return assetInstanceID;
 }
 
+export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  if (assetInstance === null) {
+    throw new RequestError('Unknown asset instance', 400);
+  }
+  if (assetInstance.confirmed) {
+    throw new RequestError('Unconfirmed asset instance', 400);
+  }
+  const authorMetadata = assetInstance.properties[author];
+  if (authorMetadata) {
+    const currentValue = authorMetadata[key];
+    if(currentValue?.confirmed && currentValue.value === value) {
+      throw new RequestError('Property already set');
+    }
+  }
+  await database.addPropertyToAssetInstance(assetInstanceID, author, key, value, false, utils.getTimestamp());
+  await apiGateway.setAssetInstanceProperty(assetInstanceID, author, key, value, sync);
+};
+
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
@@ -106,9 +125,12 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition === null) {
     throw new Error('Uknown asset definition');
   }
-  if(assetDefinition.isContentUnique) {
+  if (!assetDefinition.confirmed) {
+    throw new Error('Unconfirmed asset definition');
+  }
+  if (assetDefinition.isContentUnique) {
     const assetInstanceByContentID = await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, event.contentHash);
-    if(assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
+    if (assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
       if (assetInstanceByContentID.confirmed) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);
       } else {
@@ -135,7 +157,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition.contentSchema) {
     if (event.contentHash === dbAssetInstance?.contentHash) {
       content = dbAssetInstance.content;
-    } else if(!assetDefinition.isContentPrivate) {
+    } else if (!assetDefinition.isContentPrivate) {
       content = await ipfs.downloadJSON(event.contentHash);
       if (!ajv.validate(assetDefinition.contentSchema, content)) {
         throw new Error('Content does not conform to schema');
