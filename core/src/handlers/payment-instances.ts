@@ -58,6 +58,9 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
   if(paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }
+  if(!paymentDefinition.confirmed) {
+    throw new Error('Unconfirmed payment definition');
+  }
   let description: Object | undefined = undefined;
   if(paymentDefinition.descriptionSchema) {
     if(event.descriptionHash) {

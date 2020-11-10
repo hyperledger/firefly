@@ -119,6 +119,10 @@ export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: 
   return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
 };
 
+export const addPropertyToAssetInstance = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { [`properties.${author}.${key}`]: { value, confirmed, timestamp } } });
+};
+
 // Payment instance queries
 
 export const retrievePaymentInstances = (skip: number, limit: number): Promise<IDBPaymentInstance[]> => {

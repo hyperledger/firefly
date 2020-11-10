@@ -135,6 +135,18 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
   });
 };
 
+export const setAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
+  await axios({
+    method: 'post',
+    url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty?kld-from=${author}&kld-sync=${sync}`,
+    auth: {
+      username: config.appCredentials.user,
+      password: config.appCredentials.password
+    },
+    data: { assetInstanceID, key, value }
+  });
+};
+
 // Payment instance APIs
 
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, descriptionHash: string, sync = false) => {

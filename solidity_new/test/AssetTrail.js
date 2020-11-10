@@ -425,18 +425,18 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Asset properties', () => {
 
-      it('setAssetProperty should raise an error if the key is empty', async () => {
+      it('setAssetInstanceProperty should raise an error if the key is empty', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.setAssetProperty(testAssetInstanceIDs[0], '', testAssetPropertyValues[0]);
+          await assetTrailContract.setAssetInstanceProperty(testAssetInstanceIDs[0], '', testAssetPropertyValues[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
         assert(exceptionMessage.includes('Invalid key'));
       });
 
-      it('setAssetProperty should set an asset property and emit the corresponding event', async () => {
-        const result = await assetTrailContract.setAssetProperty(testAssetInstanceIDs[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
+      it('setAssetInstanceProperty should set an asset property and emit the corresponding event', async () => {
+        const result = await assetTrailContract.setAssetInstanceProperty(testAssetInstanceIDs[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
         assert.equal(logArgs.propertyAuthor, accounts[0]);
