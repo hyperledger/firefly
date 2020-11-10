@@ -105,7 +105,7 @@ contract AssetTrail {
 
     event AssetInstancePropertySet (
         bytes32 assetInstanceID,
-        address propertyAuthor,
+        address author,
         string key,
         string value,
         uint timestamp

@@ -114,7 +114,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
     }
   }
   await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp());
-  await apiGateway.setAssetInstanceProperty(assetInstanceID, author, key, value, sync);
+  await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
 };
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
