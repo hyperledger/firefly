@@ -62,7 +62,9 @@ describe('Members - registration', async () => {
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
       signature: utils.contractEventSignatures.MEMBER_REGISTERED,
-      data
+      data,
+      blockNumber: '123',
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
     }]));
     await eventPromise;
   });
@@ -137,7 +139,9 @@ describe('Members - registration', async () => {
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
       signature: utils.contractEventSignatures.MEMBER_REGISTERED,
-      data
+      data,
+      blockNumber: '123',
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
     }]));
     await eventPromise;
   });

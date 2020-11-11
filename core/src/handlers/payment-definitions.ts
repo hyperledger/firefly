@@ -4,7 +4,7 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IEventPaymentDefinitionCreated } from '../lib/interfaces';
+import { IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
 
 export const handleGetPaymentDefinitionsRequest = (skip: number, limit: number) => {
   return database.retrievePaymentDefinitions(skip, limit);
@@ -25,16 +25,16 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
   const assetDefinitionID = uuidV4();
   if (descriptionSchema) {
     const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    await database.upsertPaymentDefinition(assetDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, utils.getTimestamp(), false);
+    await database.upsertPaymentDefinition(assetDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, utils.getTimestamp(), false, undefined);
     await apiGateway.createDescribedPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, descriptionSchemaHash, sync);
   } else {
-    await database.upsertPaymentDefinition(assetDefinitionID, name, author, undefined, undefined, utils.getTimestamp(), false);
+    await database.upsertPaymentDefinition(assetDefinitionID, name, author, undefined, undefined, utils.getTimestamp(), false, undefined);
     await apiGateway.createPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, sync);
   }
   return assetDefinitionID;
 };
 
-export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDefinitionCreated) => {
+export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDefinitionCreated, blockchainData: IDBBlockchainData) => {
   const paymentDefinitionID = utils.hexToUuid(event.paymentDefinitionID);
   const dbPaymentDefinitionByID = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
   if (dbPaymentDefinitionByID !== null) {
@@ -59,5 +59,6 @@ export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDe
       descriptionSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.descriptionSchemaHash));
     }
   }
-  database.upsertPaymentDefinition(paymentDefinitionID, event.name, event.author, event.descriptionSchemaHash, descriptionSchema, Number(event.timestamp), true);
+  database.upsertPaymentDefinition(paymentDefinitionID, event.name, event.author, event.descriptionSchemaHash,
+    descriptionSchema, Number(event.timestamp), true, blockchainData);
 };

@@ -110,10 +110,14 @@ const setupSampleMembers = async () => {
   };
   mockEventStreamWebSocket.emit('message', JSON.stringify([{
     signature: utils.contractEventSignatures.MEMBER_REGISTERED,
-    data: dataMember1
+    data: dataMember1,
+    blockNumber: '123',
+    transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
   }, {
     signature: utils.contractEventSignatures.MEMBER_REGISTERED,
-    data: dataMember2
+    data: dataMember2,
+    blockNumber: '123',
+    transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
   }]));
   await eventPromise;
 };

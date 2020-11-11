@@ -35,7 +35,9 @@ describe('Payment definitions: unauthored - described', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -51,6 +53,8 @@ describe('Payment definitions: unauthored - described', async () => {
       assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'unauthored - described');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
+      assert.strictEqual(paymentDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(paymentDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getPaymentDefinitionResponse = await request(app)
       .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)

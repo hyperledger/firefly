@@ -5,7 +5,7 @@ import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { IDBBlockchainData, IEventPaymentInstanceCreated } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -21,7 +21,8 @@ export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string)
   return assetInstance;
 };
 
-export const handleCreatePaymentDefinitionInstanceRequest = async (author: string, paymentDefinitionID: string, recipient: string, description: object | undefined, amount: number, sync: boolean) => {
+export const handleCreatePaymentDefinitionInstanceRequest = async (author: string, paymentDefinitionID: string,
+  recipient: string, description: object | undefined, amount: number, sync: boolean) => {
   const paymentInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
@@ -40,30 +41,33 @@ export const handleCreatePaymentDefinitionInstanceRequest = async (author: strin
     }
     descriptionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(description)));
   }
-  await database.upsertPaymentInstance(paymentInstanceID, author, paymentDefinition.paymentDefinitionID, descriptionHash, description, recipient, amount, false, utils.getTimestamp());
+  await database.upsertPaymentInstance(paymentInstanceID, author, paymentDefinition.paymentDefinitionID,
+    descriptionHash, description, recipient, amount, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
-    await apiGateway.createDescribedPaymentInstance(utils.uuidToHex(paymentInstanceID), utils.uuidToHex(paymentDefinitionID), author, recipient, descriptionHash, sync);
+    await apiGateway.createDescribedPaymentInstance(utils.uuidToHex(paymentInstanceID),
+      utils.uuidToHex(paymentDefinitionID), author, recipient, descriptionHash, sync);
   } else {
-    await apiGateway.createPaymentInstance(utils.uuidToHex(paymentInstanceID), utils.uuidToHex(paymentDefinitionID), author, recipient, sync);
+    await apiGateway.createPaymentInstance(utils.uuidToHex(paymentInstanceID),
+      utils.uuidToHex(paymentDefinitionID), author, recipient, sync);
   }
 };
 
-export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInstanceCreated) => {
+export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInstanceCreated, blockchainData: IDBBlockchainData) => {
   const eventPaymentInstanceID = utils.hexToUuid(event.paymentInstanceID);
   const dbPaymentInstance = await database.retrievePaymentInstanceByID(eventPaymentInstanceID);
-  if(dbPaymentInstance !== null && dbPaymentInstance.confirmed) {
+  if (dbPaymentInstance !== null && dbPaymentInstance.confirmed) {
     throw new Error(`Duplicate payment instance ID`);
   }
   const paymentDefinition = await database.retrievePaymentDefinitionByID(utils.hexToUuid(event.paymentDefinitionID));
-  if(paymentDefinition === null) {
+  if (paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }
-  if(!paymentDefinition.confirmed) {
+  if (!paymentDefinition.confirmed) {
     throw new Error('Unconfirmed payment definition');
   }
   let description: Object | undefined = undefined;
-  if(paymentDefinition.descriptionSchema) {
-    if(event.descriptionHash) {
+  if (paymentDefinition.descriptionSchema) {
+    if (event.descriptionHash) {
       if (event.descriptionHash === dbPaymentInstance?.descriptionHash) {
         description = dbPaymentInstance.description;
       } else {
@@ -76,5 +80,8 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
       throw new Error('Missing payment instance description');
     }
   }
-  database.upsertPaymentInstance(eventPaymentInstanceID, utils.hexToUuid(event.author), utils.hexToUuid(event.paymentDefinitionID), event.descriptionHash, description, event.recipient, Number(event.amount), true, Number(event.timestamp));
+  database.upsertPaymentInstance(eventPaymentInstanceID, utils.hexToUuid(event.author),
+    utils.hexToUuid(event.paymentDefinitionID),
+    event.descriptionHash, description, event.recipient, Number(event.amount), true,
+    Number(event.timestamp), blockchainData);
 };

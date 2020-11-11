@@ -6,7 +6,7 @@ import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -56,7 +56,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, contentHash))?.confirmed) {
     throw new RequestError(`Asset instance content conflict`);
   }
-  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp());
+  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
     await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync); // TODO
   } else {
@@ -87,7 +87,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, undefined, false, utils.getTimestamp());
+  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, undefined, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
     await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
   } else {
@@ -113,11 +113,11 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
       }
     }
   }
-  await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp());
+  await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp(), undefined);
   await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
 };
 
-export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated) => {
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.confirmed) {
@@ -167,10 +167,10 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     }
   }
   database.upsertAssetInstance(eventAssetInstanceID, event.author, utils.hexToUuid(event.assetDefinitionID),
-    event.descriptionHash, description, event.contentHash, content, true, Number(event.timestamp));
+    event.descriptionHash, description, event.contentHash, content, true, Number(event.timestamp), blockchainData);
 };
 
-export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet) => {
+export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
   if (dbAssetInstance === null) {
@@ -182,5 +182,5 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   if (!event.key) {
     throw new Error('Invalid property key');
   }
-  await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp));
+  await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp), blockchainData);
 };

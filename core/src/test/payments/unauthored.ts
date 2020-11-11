@@ -28,7 +28,9 @@ describe('Payment definitions: unauthored', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -43,6 +45,8 @@ describe('Payment definitions: unauthored', async () => {
       assert.strictEqual(paymentDefinition.confirmed, true);
       assert.strictEqual(paymentDefinition.name, 'unauthored');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
+      assert.strictEqual(paymentDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(paymentDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getPaymentDefinitionResponse = await request(app)
       .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)
