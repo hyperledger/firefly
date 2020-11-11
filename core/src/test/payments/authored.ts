@@ -28,7 +28,7 @@ describe('Payment definitions: authored', async () => {
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
-      paymentDefinitionID = result.body.assetDefinitionID;
+      paymentDefinitionID = result.body.paymentDefinitionID;
 
       const getPaymentDefinitionsResponse = await request(app)
         .get('/api/v1/payments/definitions')

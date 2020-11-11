@@ -84,7 +84,7 @@ export const createUnstructuredAssetDefinition = async (assetDefinitionID: strin
 
 // Payment definition APIs
 
-export const createDescribedPaymentDefinition = async (name: string, author: string, descriptionSchemaHash: string, sync: boolean) => {
+export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string, sync: boolean) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
@@ -92,11 +92,11 @@ export const createDescribedPaymentDefinition = async (name: string, author: str
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { name, descriptionSchemaHash }
+    data: { paymentDefinitionID, name, descriptionSchemaHash }
   });
 };
 
-export const createPaymentDefinition = async (name: string, author: string, sync: boolean) => {
+export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
@@ -104,7 +104,7 @@ export const createPaymentDefinition = async (name: string, author: string, sync
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { name }
+    data: { paymentDefinitionID, name }
   });
 };
 
