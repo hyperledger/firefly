@@ -4,7 +4,7 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IEventAssetDefinitionCreated } from '../lib/interfaces';
+import { IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
 
 export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) => {
   return database.retrieveAssetDefinitions(skip, limit);
@@ -18,7 +18,8 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
   return assetDefinition;
 };
 
-export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean, author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
+export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
@@ -27,24 +28,30 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
     if (contentSchema) {
       const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
-      await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, contentSchemaHash, sync);
+      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
+        descriptionSchema, contentSchemaHash, contentSchema, utils.getTimestamp(), false, undefined);
+      await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
+        descriptionSchemaHash, contentSchemaHash, sync);
     } else {
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, undefined, undefined, utils.getTimestamp(), false);
-      await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, sync);
+      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
+        descriptionSchema, undefined, undefined, utils.getTimestamp(), false, undefined);
+      await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
+        descriptionSchemaHash, sync);
     }
   } else if (contentSchema) {
     const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined, contentSchemaHash, contentSchema, utils.getTimestamp(), false);
+    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined,
+      contentSchemaHash, contentSchema, utils.getTimestamp(), false, undefined);
     await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, contentSchemaHash, sync);
   } else {
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined, undefined, undefined, utils.getTimestamp(), false);
+    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined,
+      undefined, undefined, utils.getTimestamp(), false, undefined);
     await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, sync);
   }
   return assetDefinitionID;
 };
 
-export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated) => {
+export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, blockchainData: IDBBlockchainData) => {
   const assetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
   const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (dbAssetDefinitionByID !== null) {
@@ -77,5 +84,6 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
     }
   }
-  database.upsertAssetDefinition(assetDefinitionID, event.name, event.author, event.isContentPrivate, event.isContentUnique, event.descriptionSchemaHash, descriptionSchema, event.contentSchemaHash, contentSchema, Number(event.timestamp), true);
+  database.upsertAssetDefinition(assetDefinitionID, event.name, event.author, event.isContentPrivate, event.isContentUnique,
+    event.descriptionSchemaHash, descriptionSchema, event.contentSchemaHash, contentSchema, Number(event.timestamp), true, blockchainData);
 };

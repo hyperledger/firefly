@@ -107,6 +107,11 @@ export interface IEventAssetInstancePropertySet {
 
 // DATABASE INTERFACES
 
+export interface IDBBlockchainData {
+  blockNumber: number,
+  transactionHash: string
+}
+
 export interface IDBMember {
   _id?: string
   address: string
@@ -114,6 +119,7 @@ export interface IDBMember {
   docExchangeDestination: string
   timestamp: number
   confirmed: boolean
+  blockchainData?: IDBBlockchainData
   owned: boolean
 }
 
@@ -130,6 +136,7 @@ export interface IDBAssetDefinition {
   contentSchema?: object
   timestamp: number
   confirmed: boolean
+  blockchainData?: IDBBlockchainData
   conflict?: boolean
 }
 
@@ -142,6 +149,7 @@ export interface IDBPaymentDefinition {
   descriptionSchemaHash?: string
   timestamp: number
   confirmed: boolean
+  blockchainData?: IDBBlockchainData
 }
 
 export interface IDBAssetInstance {
@@ -155,6 +163,7 @@ export interface IDBAssetInstance {
   contentHash?: string
   confirmed: boolean
   conflict: boolean
+  blockchainData?: IDBBlockchainData
   timestamp: number
   properties: {
     [author: string]: {
@@ -162,6 +171,7 @@ export interface IDBAssetInstance {
         value: string
         timestamp: number
         confirmed: boolean
+        blockchainData?: IDBBlockchainData
       } | undefined
     } | undefined
   }
@@ -177,6 +187,7 @@ export interface IDBPaymentInstance {
   descriptionHash?: string
   description: string
   confirmed: boolean
+  blockchainData?: IDBBlockchainData
   timestamp: number
 }
 

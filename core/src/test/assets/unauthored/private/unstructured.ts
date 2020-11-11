@@ -29,7 +29,9 @@ describe('Asset definitions: unauthored - unstructured', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -45,6 +47,8 @@ describe('Asset definitions: unauthored - unstructured', async () => {
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
+      assert.strictEqual(assetDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(assetDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetDefinitionResponse = await request(app)
       .get(`/api/v1/assets/definitions/${assetDefinitionID}`)

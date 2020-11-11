@@ -69,7 +69,9 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -87,6 +89,8 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - public - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
+      assert.strictEqual(assetDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(assetDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetDefinitionResponse = await request(app)
         .get(`/api/v1/assets/definitions/${assetDefinitionID}`)

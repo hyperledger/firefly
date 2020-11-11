@@ -68,7 +68,9 @@ describe('Assets: authored - structured', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -86,6 +88,8 @@ describe('Assets: authored - structured', async () => {
       assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
+      assert.strictEqual(assetDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(assetDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetDefinitionResponse = await request(app)
         .get(`/api/v1/assets/definitions/${assetDefinitionID}`)
@@ -151,7 +155,9 @@ describe('Assets: authored - structured', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.ASSET_INSTANCE_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -167,6 +173,8 @@ describe('Assets: authored - structured', async () => {
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(assetInstance.confirmed, true);
       assert.strictEqual(typeof assetInstance.timestamp, 'number');
+      assert.strictEqual(assetInstance.blockchainData.blockNumber, 123);
+      assert.strictEqual(assetInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/instances/${assetInstanceID}`)

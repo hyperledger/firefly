@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBAssetInstance, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
+import { IDBAssetDefinition, IDBAssetInstance, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -49,8 +49,13 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
 };
 
 export const upsertMember = (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, timestamp: number, confirmed: boolean, owned: boolean): Promise<number> => {
-  return membersDb.update({ address }, { $set: { address, name, app2appDestination, docExchangeDestination, timestamp, confirmed, owned } }, { upsert: true });
+  docExchangeDestination: string, timestamp: number, confirmed: boolean, owned: boolean, blockchainData: IDBBlockchainData | undefined): Promise<number> => {
+  return membersDb.update({ address }, {
+    $set: {
+      address, name, app2appDestination, docExchangeDestination, timestamp, confirmed,
+      owned, blockchainData
+    }
+  }, { upsert: true });
 };
 
 // Asset definition queries
@@ -67,8 +72,16 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, contentSchemaHash: string | undefined, contentSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
-  return assetDefinitionsDb.update({ assetDefinitionID }, { assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash, descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed }, { upsert: true });
+export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean,
+  isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined,
+  contentSchemaHash: string | undefined, contentSchema: Object | undefined,
+  timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
+  return assetDefinitionsDb.update({ assetDefinitionID }, {
+    $set: {
+      assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
+      descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed, blockchainData
+    }
+  }, { upsert: true });
 };
 
 export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
@@ -89,8 +102,14 @@ export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymen
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean) => {
-  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, timestamp, confirmed } }, { upsert: true });
+export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined,
+  descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
+  return paymentDefinitionsDb.update({ paymentDefinitionID }, {
+    $set: {
+      paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema,
+      timestamp, confirmed, blockchainData
+    }
+  }, { upsert: true });
 };
 
 export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
@@ -111,16 +130,23 @@ export const retrieveAssetInstanceByContentID = (assetDefinitionID: string, cont
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
 };
 
-export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, confirmed, timestamp } }, { upsert: true });
+export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined,
+  description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number,
+  blockchainData: IDBBlockchainData | undefined) => {
+  return assetInstancesDb.update({ assetInstanceID }, {
+    $set: {
+      assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content,
+      confirmed, blockchainData, timestamp
+    }
+  }, { upsert: true });
 };
 
 export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: number) => {
   return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
 };
 
-export const setAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { [`properties.${author}.${key}`]: { value, confirmed, timestamp } } });
+export const setAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { [`properties.${author}.${key}`]: { value, confirmed, timestamp, blockchainData } } });
 };
 
 // Payment instance queries
@@ -133,6 +159,12 @@ export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<
   return paymentInstancesDb.findOne<IDBPaymentInstance>({ paymentInstanceID }, { _id: 0 });
 };
 
-export const upsertPaymentInstance = (paymentInstanceID: string, author: string, paymentDefinitionID: string, descriptionHash: string | undefined, description: Object | undefined, recipient: string, amount: number, confirmed: boolean, timestamp: number) => {
-  return paymentInstancesDb.update({ paymentInstanceID }, { $set: { paymentInstanceID, author, paymentDefinitionID, descriptionHash, description, recipient, amount, confirmed, timestamp } }, { upsert: true });
+export const upsertPaymentInstance = (paymentInstanceID: string, author: string, paymentDefinitionID: string, descriptionHash: string | undefined,
+  description: Object | undefined, recipient: string, amount: number, confirmed: boolean, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
+  return paymentInstancesDb.update({ paymentInstanceID }, {
+    $set: {
+      paymentInstanceID, author, paymentDefinitionID, descriptionHash, description,
+      recipient, amount, confirmed, blockchainData, timestamp
+    }
+  }, { upsert: true });
 };

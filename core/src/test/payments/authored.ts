@@ -55,7 +55,9 @@ describe('Payment definitions: authored', async () => {
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED,
-        data
+        data,
+        blockNumber: '123',
+        transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
       }]));
       await eventPromise;
     });
@@ -70,6 +72,8 @@ describe('Payment definitions: authored', async () => {
       assert.strictEqual(paymentDefinition.confirmed, true);
       assert.strictEqual(paymentDefinition.name, 'authored');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
+      assert.strictEqual(paymentDefinition.blockchainData.blockNumber, 123);
+      assert.strictEqual(paymentDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getPaymentDefinitionResponse = await request(app)
         .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)
