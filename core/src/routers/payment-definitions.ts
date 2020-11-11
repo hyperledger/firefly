@@ -42,9 +42,9 @@ router.post('/', async (req, res, next) => {
       throw new RequestError('Invalid description schema', 400);
     }
     const sync = req.query.sync === 'true';
-    const assetDefinitionID = await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
+    const paymentDefinitionID = await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,
       req.body.author, req.body.descriptionSchema, sync);
-    res.send({ status: 'submitted', assetDefinitionID });
+    res.send({ status: 'submitted', paymentDefinitionID });
   } catch (err) {
     next(err);
   }

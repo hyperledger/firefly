@@ -19,17 +19,17 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
 };
 
 export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
-  if (await database.retrieveAssetDefinitionByName(name) !== null) {
+  if (await database.retrievePaymentDefinitionByName(name) !== null) {
     throw new RequestError('Payment definition name conflict', 409);
   }
   const assetDefinitionID = uuidV4();
   if (descriptionSchema) {
     const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
     await database.upsertPaymentDefinition(assetDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, utils.getTimestamp(), false);
-    await apiGateway.createDescribedPaymentDefinition(name, author, descriptionSchemaHash, sync);
+    await apiGateway.createDescribedPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, descriptionSchemaHash, sync);
   } else {
     await database.upsertPaymentDefinition(assetDefinitionID, name, author, undefined, undefined, utils.getTimestamp(), false);
-    await apiGateway.createPaymentDefinition(name, author, sync);
+    await apiGateway.createPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, sync);
   }
   return assetDefinitionID;
 };

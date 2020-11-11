@@ -29,16 +29,21 @@ export const requestKeys = {
 
 export const contractEventSignatures = {
   MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,uint256)',
+
   DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedStructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,bytes32,uint256)',
   DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedUnstructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,uint256)',
   STRUCTURED_ASSET_DEFINITION_CREATED: 'StructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,uint256)',
   UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'UnstructuredAssetDefinitionCreated(uint256,address,string,bool,uint256)',
-  DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(uint256,address,string,bytes32,uint256,uint256)',
-  PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(uint256,address,string,uint256,uint256)',
+
+  DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(bytes32,address,string,bytes32,uint256)',
+  PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
+
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,uint256,address,bytes32,bytes32,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,uint256,address,bytes32,uint256)',
+
   DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,uint256,address,address,bytes32,uint256)',
   PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,uint256,address,address,uint256)',
+
   ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
 };
 
