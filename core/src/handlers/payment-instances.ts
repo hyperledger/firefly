@@ -45,10 +45,10 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     descriptionHash, description, recipient, amount, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
     await apiGateway.createDescribedPaymentInstance(utils.uuidToHex(paymentInstanceID),
-      utils.uuidToHex(paymentDefinitionID), author, recipient, descriptionHash, sync);
+      utils.uuidToHex(paymentDefinitionID), author, recipient, amount, descriptionHash, sync);
   } else {
     await apiGateway.createPaymentInstance(utils.uuidToHex(paymentInstanceID),
-      utils.uuidToHex(paymentDefinitionID), author, recipient, sync);
+      utils.uuidToHex(paymentDefinitionID), author, recipient, amount, sync);
   }
   return paymentInstanceID;
 };

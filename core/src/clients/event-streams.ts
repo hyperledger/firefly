@@ -31,6 +31,7 @@ export const shutDown = () => {
     clearTimeout(disconnectionTimeout);
   }
   if (ws) {
+    clearTimeout(heartBeatTimeout);
     ws.close();
   }
 };

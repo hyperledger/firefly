@@ -39,8 +39,8 @@ export const contractEventSignatures = {
   PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,uint256,address,bytes32,bytes32,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,uint256,address,bytes32,uint256)',
-  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,uint256,address,address,bytes32,uint256)',
-  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,uint256,address,address,uint256)',
+  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
+  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',  
   ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
 };
 
