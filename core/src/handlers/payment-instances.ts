@@ -21,7 +21,7 @@ export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string)
   return assetInstance;
 };
 
-export const handleCreatePaymentDefinitionInstanceRequest = async (author: string, paymentDefinitionID: string,
+export const handleCreatePaymentInstanceRequest = async (author: string, paymentDefinitionID: string,
   recipient: string, description: object | undefined, amount: number, sync: boolean) => {
   const paymentInstanceID = uuidV4();
   let descriptionHash: string | undefined;
@@ -34,7 +34,7 @@ export const handleCreatePaymentDefinitionInstanceRequest = async (author: strin
   }
   if (paymentDefinition.descriptionSchema) {
     if (!description) {
-      throw new RequestError('Missing asset description', 400);
+      throw new RequestError('Missing payment description', 400);
     }
     if (!ajv.validate(paymentDefinition.descriptionSchema, description)) {
       throw new RequestError('Description does not conform to payment definition schema', 400);
@@ -50,6 +50,7 @@ export const handleCreatePaymentDefinitionInstanceRequest = async (author: strin
     await apiGateway.createPaymentInstance(utils.uuidToHex(paymentInstanceID),
       utils.uuidToHex(paymentDefinitionID), author, recipient, sync);
   }
+  return paymentInstanceID;
 };
 
 export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInstanceCreated, blockchainData: IDBBlockchainData) => {
@@ -80,7 +81,7 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
       throw new Error('Missing payment instance description');
     }
   }
-  database.upsertPaymentInstance(eventPaymentInstanceID, utils.hexToUuid(event.author),
+  database.upsertPaymentInstance(eventPaymentInstanceID, event.author,
     utils.hexToUuid(event.paymentDefinitionID),
     event.descriptionHash, description, event.recipient, Number(event.amount), true,
     Number(event.timestamp), blockchainData);

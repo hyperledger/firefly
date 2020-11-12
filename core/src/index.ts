@@ -5,6 +5,7 @@ import membersRouter from './routers/members';
 import assetDefinitionsRouter from './routers/asset-definitions';
 import assetInstancesRouter from './routers/asset-instances';
 import paymentDefinitionsRouter from './routers/payment-definitions';
+import paymentInstancesRouter from './routers/payment-instances';
 import { errorHandler } from './lib/request-error';
 import * as utils from './lib/utils';
 import * as ipfs from './clients/ipfs';
@@ -28,6 +29,7 @@ export const promise = initConfig()
     app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
     app.use('/api/v1/assets/instances', assetInstancesRouter);
     app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
+    app.use('/api/v1/payments/instances', paymentInstancesRouter);
 
     app.use(errorHandler);
 

@@ -38,11 +38,14 @@ router.post('/', async (req, res, next) => {
     if (!utils.regexps.ACCOUNT.test(req.body.recipient)) {
       throw new RequestError('Missing or invalid payment recipient', 400);
     }
+    if (req.body.author === req.body.recipient) {
+      throw new RequestError('Author and recipient cannot be the same', 400);
+    }
     if (!(Number.isInteger(req.body.amount) && req.body.amount > 0)) {
       throw new RequestError('Missing or invalid payment amount', 400);
     }
     const sync = req.query.sync === 'true';
-    const paymentInstanceID = paymentInstancesHandler.handleCreatePaymentDefinitionInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, sync);
+    const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, sync);
     res.send({ status: 'submitted', paymentInstanceID });
   } catch (err) {
     next(err);
