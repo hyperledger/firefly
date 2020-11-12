@@ -13,6 +13,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 const log = createLogger({ name: 'event-streams.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 let ws: WebSocket;
+let heartBeatTimeout: NodeJS.Timeout;
 let disconnectionDetected = false;
 let disconnectionTimeout: NodeJS.Timeout;
 
@@ -44,6 +45,7 @@ const addEventHandlers = () => {
       type: 'listen',
       topic: config.eventStreams.topic
     }));
+    heartBeat();
   }).on('close', () => {
     disconnectionDetected = true;
     log.error(`Event stream websocket disconnected, attempting to reconnect in ${utils.constants.EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS} second(s)`);
@@ -56,10 +58,21 @@ const addEventHandlers = () => {
       type: 'ack',
       topic: config.eventStreams.topic
     }));
+  }).on('pong', () => {
+    heartBeat();
   }).on('error', err => {
     log.error(`Event stream websocket error. ${err}`);
   });
 };
+
+const heartBeat = () => {
+  ws.ping();
+  clearTimeout(heartBeatTimeout);
+  heartBeatTimeout = setTimeout(() => {
+    log.error('Event stream ping timeout');
+    ws.terminate();
+  }, utils.constants.EVENT_STREAM_PING_TIMEOUT_SECONDS * 1000);
+}
 
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = JSON.parse(message);

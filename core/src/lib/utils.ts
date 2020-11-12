@@ -13,7 +13,8 @@ export const constants = {
   ASSET_INSTANCES_DATABASE_FILE_NAME: 'asset-instances.json',
   PAYMENT_INSTANCES_DATABASE_FILE_NAME: 'payment-instances.json',
   EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5,
-  DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets'
+  DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets',
+  EVENT_STREAM_PING_TIMEOUT_SECONDS: 60
 };
 
 export const regexps = {
@@ -34,16 +35,12 @@ export const contractEventSignatures = {
   DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedUnstructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,uint256)',
   STRUCTURED_ASSET_DEFINITION_CREATED: 'StructuredAssetDefinitionCreated(uint256,address,string,bool,bytes32,uint256)',
   UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'UnstructuredAssetDefinitionCreated(uint256,address,string,bool,uint256)',
-
   DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(bytes32,address,string,bytes32,uint256)',
   PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
-
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,uint256,address,bytes32,bytes32,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,uint256,address,bytes32,uint256)',
-
   DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,uint256,address,address,bytes32,uint256)',
   PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,uint256,address,address,uint256)',
-
   ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
 };
 
