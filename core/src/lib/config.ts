@@ -5,16 +5,27 @@ import configSchema from '../schemas/config.json';
 import * as utils from './utils';
 import { IConfig } from './interfaces';
 import path from 'path';
+import chokidar, { FSWatcher } from 'chokidar';
+import { createLogger, LogLevelString } from 'bunyan';
+
+const log = createLogger({ name: 'lib/config.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 const asyncReadFile = promisify(readFile);
 const ajv = new Ajv();
 const validateConfig = ajv.compile(configSchema);
+const configFilePath = path.join(utils.constants.DATA_DIRECTORY, utils.constants.CONFIG_FILE_NAME);
 
 export let config: IConfig;
+let fsWatcher: FSWatcher;
 
-export const initConfig = async () => {
+export const init = async () => {
+  await loadConfigFile();
+  watchConfigFile();
+};
+
+const loadConfigFile = async () => {
   try {
-    const data = JSON.parse(await asyncReadFile(path.join(utils.constants.DATA_DIRECTORY, utils.constants.CONFIG_FILE_NAME), 'utf8'));
+    const data = JSON.parse(await asyncReadFile(configFilePath, 'utf8'));
     if(validateConfig(data)) {
       config = data;
     } else {
@@ -23,4 +34,19 @@ export const initConfig = async () => {
   } catch(err) {
     throw new Error(`Failed to read configuration file. ${err}`);
   }
+};
+
+const watchConfigFile = () => {
+  fsWatcher = chokidar.watch(configFilePath, { ignoreInitial: true }).on('change', async () => {
+    try {
+      await loadConfigFile();
+      log.info('Loaded configuration file changes');
+    } catch(err) {
+      log.error(`Failed to load configuration file. ${err}`);
+    }
+  });
+};
+
+export const shutDown = () => {
+  fsWatcher.close();
 };

@@ -1,4 +1,4 @@
-import { initConfig, config } from './lib/config';
+import { config, init as initConfig, shutDown as shutDownConfig} from './lib/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import membersRouter from './routers/members';
@@ -40,6 +40,7 @@ export const promise = initConfig()
     const shutDown = () => {
       server.close();
       eventStreams.shutDown();
+      shutDownConfig();
     };
 
     return { app, shutDown };
