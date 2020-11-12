@@ -53,12 +53,12 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, contentHash))?.confirmed) {
+  if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
     throw new RequestError(`Asset instance content conflict`);
   }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
-    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync); // TODO
+    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
   } else {
     await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
   }
@@ -83,15 +83,18 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     descriptionHash = await ipfs.uploadString(JSON.stringify(description));
   }
   if (assetDefinition.isContentPrivate) {
-    contentHash = await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, assetInstanceID, contentFileName));
+    contentHash = `0x${await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, assetInstanceID, contentFileName))}`;
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
+  if(assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
+    throw new RequestError('Asset instance content conflict', 409);
+  }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, undefined, false, utils.getTimestamp(), undefined);
   if (descriptionHash) {
-    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, descriptionHash, contentHash, sync);
+    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
   } else {
-    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), assetDefinitionID, author, contentHash, sync);
+    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
   }
   return assetInstanceID;
 }
@@ -131,7 +134,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     throw new Error('Unconfirmed asset definition');
   }
   if (assetDefinition.isContentUnique) {
-    const assetInstanceByContentID = await database.retrieveAssetInstanceByContentID(assetDefinition.assetDefinitionID, event.contentHash);
+    const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, event.contentHash);
     if (assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
       if (assetInstanceByContentID.confirmed) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);

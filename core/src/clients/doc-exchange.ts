@@ -115,6 +115,7 @@ export const uploadStream = async (stream: Stream, path: string): Promise<string
   const result = await axios({
     method: 'put',
     url: `${config.docExchange.apiEndpoint}/documents/${path}`,
+    // url: `${config.docExchange.apiEndpoint}/documents/b.txt`,
     data: formData,
     headers: formData.getHeaders(),
     auth: {

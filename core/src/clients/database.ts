@@ -126,7 +126,7 @@ export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBA
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
-export const retrieveAssetInstanceByContentID = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
+export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
 };
 
