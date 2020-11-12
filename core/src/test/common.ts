@@ -43,6 +43,8 @@ before(async () => {
       mockEventStreamWebSocket.emit('send', message);
     }
 
+    ping() { }
+
     close() { }
 
   };

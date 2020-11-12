@@ -149,7 +149,7 @@ export const setAssetInstanceProperty = async (assetInstanceID: string, author: 
 
 // Payment instance APIs
 
-export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, descriptionHash: string, sync = false) => {
+export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, amount: number, descriptionHash: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -157,11 +157,11 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentInstanceID, paymentDefinitionID, recipient, descriptionHash }
+    data: { paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash }
   });
 };
 
-export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, sync = false) => {
+export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, amount: number, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -169,6 +169,6 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentInstanceID, paymentDefinitionID, recipient }
+    data: { paymentInstanceID, paymentDefinitionID, recipient, amount }
   });
 };
