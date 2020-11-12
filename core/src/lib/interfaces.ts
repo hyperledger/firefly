@@ -155,7 +155,7 @@ export interface IDBPaymentDefinition {
 export interface IDBAssetInstance {
   _id?: string
   assetInstanceID: string
-  assetDefinitionID: number
+  assetDefinitionID: string
   author: string
   descriptionHash?: string
   description?: string
@@ -165,6 +165,7 @@ export interface IDBAssetInstance {
   conflict: boolean
   blockchainData?: IDBBlockchainData
   timestamp: number
+  filename?: string
   properties: {
     [author: string]: {
       [key: string]: {

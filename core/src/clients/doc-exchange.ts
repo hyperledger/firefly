@@ -115,7 +115,6 @@ export const uploadStream = async (stream: Stream, path: string): Promise<string
   const result = await axios({
     method: 'put',
     url: `${config.docExchange.apiEndpoint}/documents/${path}`,
-    // url: `${config.docExchange.apiEndpoint}/documents/b.txt`,
     data: formData,
     headers: formData.getHeaders(),
     auth: {
@@ -140,7 +139,7 @@ export const transfer = async (from: string, to: string, document: string) => {
 
 export const getDocumentDetails = async (filePath: string) => {
   const result = await axios({
-    url: `${config.docExchange.apiEndpoint}/documents/${encodeURIComponent(filePath)}?details_only=true`,
+    url: `${config.docExchange.apiEndpoint}/documents/${filePath}?details_only=true`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password

@@ -63,8 +63,8 @@ export const streamToString = (stream: NodeJS.ReadableStream): Promise<string> =
   })
 }
 
-export const getUnstructuredFilePathInDocExchange = (assetDefinitionName: string, assetInstanceID: string, contentFileName: string) => {
-  return `${constants.DOC_EXCHANGE_ASSET_FOLDER_NAME}/${assetDefinitionName}/${assetInstanceID}/${contentFileName}`;
+export const getUnstructuredFilePathInDocExchange = (assetInstanceID: string) => {
+  return `${constants.DOC_EXCHANGE_ASSET_FOLDER_NAME}/${assetInstanceID}`;
 };
 
 export const uuidToHex = (uuid: string) => {
