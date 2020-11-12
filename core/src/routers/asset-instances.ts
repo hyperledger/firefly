@@ -22,8 +22,9 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/:assetInstanceID', async (req, res, next) => {
+  const content = req.query.content === 'true';
   try {
-    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetInstanceID));
+    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetInstanceID, content));
   } catch (err) {
     next(err);
   }

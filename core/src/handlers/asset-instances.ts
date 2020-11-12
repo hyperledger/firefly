@@ -14,10 +14,29 @@ export const handleGetAssetInstancesRequest = (skip: number, limit: number) => {
   return database.retrieveAssetInstances(skip, limit);
 };
 
-export const handleGetAssetInstanceRequest = async (assetInstanceID: string) => {
+export const handleGetAssetInstanceRequest = async (assetInstanceID: string, content: boolean) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Asset instance not found', 404);
+  }
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
+  if (assetDefinition === null) {
+    throw new RequestError('Asset definition not found', 500);
+  }
+  if (content) {
+    if (assetDefinition.contentSchemaHash) {
+      return assetInstance.content;
+    } else {
+      try {
+        return await docExchange.downloadStream(utils.getUnstructuredFilePathInDocExchange(assetInstance.assetInstanceID));
+      } catch (err) {
+        if (err.response?.status === 404) {
+          throw new RequestError('Asset instance content not present in off-chain storage', 404);
+        } else {
+          throw new RequestError(`Failed to obtain asset content from off-chain storage. ${err}`, 500);
+        }
+      }
+    }
   }
   return assetInstance;
 };
@@ -65,7 +84,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   return assetInstanceID;
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, contentFileName: string, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, _contentFileName: string, sync: boolean) => {
   const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
@@ -83,11 +102,11 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     descriptionHash = await ipfs.uploadString(JSON.stringify(description));
   }
   if (assetDefinition.isContentPrivate) {
-    contentHash = `0x${await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetDefinition.name, assetInstanceID, contentFileName))}`;
+    contentHash = `0x${await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetInstanceID))}`;
   } else {
     contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
   }
-  if(assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
+  if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
     throw new RequestError('Asset instance content conflict', 409);
   }
   await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, undefined, false, utils.getTimestamp(), undefined);
