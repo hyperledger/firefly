@@ -9,6 +9,7 @@ import paymentInstancesRouter from './routers/payment-instances';
 import { errorHandler } from './lib/request-error';
 import * as utils from './lib/utils';
 import * as ipfs from './clients/ipfs';
+import * as app2app from './clients/app2app';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
 import { createLogger, LogLevelString } from 'bunyan';
@@ -17,6 +18,7 @@ const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as
 
 export const promise = initConfig()
   .then(() => ipfs.init())
+  .then(() => app2app.init())
   .then(() => docExchange.init())
   .then(() => {
     eventStreams.init();

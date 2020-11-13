@@ -10,7 +10,7 @@ import * as paymentInstanceHandler from '../handlers/payment-instances';
 import { IEventMemberRegistered } from '../lib/interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
 
-const log = createLogger({ name: 'event-streams.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = createLogger({ name: 'clients/event-streams.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 let ws: WebSocket;
 let heartBeatTimeout: NodeJS.Timeout;
