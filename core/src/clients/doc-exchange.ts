@@ -1,4 +1,4 @@
-import { IDocExchangeTransferData, IDocExchangeListener } from '../lib/interfaces';
+import { IDocExchangeTransferData, IDocExchangeListener, IDocExchangeDocumentDetails } from '../lib/interfaces';
 import { config } from '../lib/config';
 import { Stream, Readable } from 'stream';
 import io from 'socket.io-client';
@@ -138,7 +138,7 @@ export const transfer = async (from: string, to: string, document: string) => {
   });
 }
 
-export const getDocumentDetails = async (filePath: string) => {
+export const getDocumentDetails = async (filePath: string): Promise<IDocExchangeDocumentDetails> => {
   const result = await axios({
     url: `${config.docExchange.apiEndpoint}/documents/${filePath}?details_only=true`,
     auth: {

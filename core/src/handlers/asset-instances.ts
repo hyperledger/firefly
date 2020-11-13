@@ -5,8 +5,9 @@ import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
+import * as app2app from '../clients/app2app';
 import RequestError from '../lib/request-error';
-import { IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IAssetTradeRequest, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -207,12 +208,41 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp), blockchainData);
 };
 
-export const handleRequestAssetInstanceFromAuthorRequest = async (assetInstanceID: string) => {
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
-  if (dbAssetInstance === null) {
+export const handleTradeAssetRequest = async (requesterAddress: string, assetInstanceID: string) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  if (assetInstance === null) {
     throw new RequestError('Uknown asset instance', 404);
   }
-  if(database.isMemberOwned(dbAssetInstance.author)) {
+  if(database.isMemberOwned(assetInstance.author)) {
     throw new RequestError('Asset instance authored', 400);
   }
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
+  if(assetDefinition === null) {
+    throw new RequestError('Unknown asset definition', 500);
+  }
+  if(assetDefinition.contentSchema !== undefined) {
+    const documentDetails = await docExchange.getDocumentDetails(utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
+    if(documentDetails.hash === assetInstance.contentHash) {
+      throw new RequestError('Asset content already available', 400);
+    }
+  } else {
+    if(assetInstance.content !== undefined) {
+      throw new RequestError('Asset content already available', 400);
+    }
+  }
+  const author = await database.retrieveMemberByAddress(assetInstance.author);
+  if(author === null) {
+    throw new RequestError('Asset author must be registered', 400);
+  }
+  const requester = await database.retrieveMemberByAddress(requesterAddress);
+  if(requester === null) {
+    throw new RequestError('Requester must be registered', 400);
+  }
+  const tradeRequest: IAssetTradeRequest = {
+    type: 'asset-request',
+    assetInstanceID,
+    requester: requester.address,
+    metadata: {}
+  };
+  app2app.dispatchMessage(requester.app2appDestination, author.app2appDestination, JSON.stringify(tradeRequest));
 };

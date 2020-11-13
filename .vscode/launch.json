@@ -4,11 +4,27 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug core 2",
+      "name": "Org A",
       "cwd": "${workspaceFolder}/core",
       "runtimeExecutable": "nodemon",
       "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data",
+        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/OrgA",
+        "LOG_LEVEL": "trace"
+      },
+      "args": ["|", "bunyan", "-o", "short"],
+      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "!**/node_modules/**"
+    ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Org B",
+      "cwd": "${workspaceFolder}/core",
+      "runtimeExecutable": "nodemon",
+      "env": {
+        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/OrgB",
         "LOG_LEVEL": "trace"
       },
       "args": ["|", "bunyan", "-o", "short"],

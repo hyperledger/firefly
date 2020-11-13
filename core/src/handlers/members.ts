@@ -3,6 +3,7 @@ import * as apiGateway from '../clients/api-gateway';
 import * as utils from '../lib/utils';
 import { IDBBlockchainData, IEventMemberRegistered } from '../lib/interfaces';
 import RequestError from '../lib/request-error';
+import { config } from '../lib/config';
 
 export const handleGetMembersRequest = (skip: number, limit: number, owned: boolean) => {
   return database.retrieveMembers(skip, limit, owned);
@@ -10,20 +11,21 @@ export const handleGetMembersRequest = (skip: number, limit: number, owned: bool
 
 export const handleGetMemberRequest = async (address: string) => {
   const member = await database.retrieveMemberByAddress(address);
-  if(member === null) {
+  if (member === null) {
     throw new RequestError('Member not found', 404);
   }
   return member;
 };
 
-export const handleUpsertMemberRequest = async (address: string, name: string,
-  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
-  await database.upsertMember(address, name, app2appDestination, docExchangeDestination, utils.getTimestamp(), false, true, undefined);
-  await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
+export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
+  const response = await apiGateway.upsertMember(address, name, config.app2app.destination, config.docExchange.destination, sync);
+  let receipt = response.type === 'async'? response.id : undefined;
+  await database.upsertMemberFromRequest(address, name, config.assetTrailInstanceID, config.app2app.destination,
+    config.docExchange.destination, receipt, utils.getTimestamp());
 };
 
-export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }: IEventMemberRegistered, blockchainData: IDBBlockchainData) => {
-  const dbMember = await database.retrieveMemberByAddress(member);
-  const memberOwned = dbMember?.owned ?? false;
-  await database.upsertMember(member, name, app2appDestination, docExchangeDestination, Number(timestamp), true, memberOwned, blockchainData);
+export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }:
+  IEventMemberRegistered, blockchainData: IDBBlockchainData) => {
+  await database.upsertMemberFromEvent(member, name, config.assetTrailInstanceID, app2appDestination, docExchangeDestination,
+    Number(timestamp), blockchainData);
 };
