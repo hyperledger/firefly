@@ -1,4 +1,4 @@
-import { config, init as initConfig, shutDown as shutDownConfig} from './lib/config';
+import { config, init as initConfig, shutDown as shutDownConfig } from './lib/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import membersRouter from './routers/members';
@@ -12,6 +12,7 @@ import * as ipfs from './clients/ipfs';
 import * as app2app from './clients/app2app';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
+import { assetTradeHandler } from './lib/asset-trade';
 import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
@@ -34,6 +35,8 @@ export const promise = initConfig()
     app.use('/api/v1/payments/instances', paymentInstancesRouter);
 
     app.use(errorHandler);
+
+    app2app.addListener(assetTradeHandler);
 
     const server = app.listen(config.port, () => {
       log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);

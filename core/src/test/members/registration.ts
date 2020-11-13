@@ -19,9 +19,7 @@ describe('Members - registration', async () => {
       .put('/api/v1/members')
       .send({
         address: '0x0000000000000000000000000000000000000011',
-        name: 'Member 1',
-        app2appDestination: 'kld://app2app',
-        docExchangeDestination: 'kld://docexchange'
+        name: 'Member 1'
       })
       .expect(200);
     assert.deepStrictEqual(addMemberResponse.body, { status: 'submitted' });
@@ -32,15 +30,14 @@ describe('Members - registration', async () => {
     const member = getMemberResponse.body.find((member: IDBMember) => member.address === '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 1');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app');
-    assert.strictEqual(member.docExchangeDestination, 'kld://docexchange');
-    assert.strictEqual(member.owned, true);
-    assert.strictEqual(member.confirmed, false);
+    assert.strictEqual(member.assetTrailInstanceID, 'service-id');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
     assert.strictEqual(typeof member.timestamp, 'number');
 
     const getMemberByAddressResponse = await request(app)
-    .get('/api/v1/members/0x0000000000000000000000000000000000000011')
-    .expect(200);
+      .get('/api/v1/members/0x0000000000000000000000000000000000000011')
+      .expect(200);
     assert.deepStrictEqual(member, getMemberByAddressResponse.body);
   });
 
@@ -56,8 +53,9 @@ describe('Members - registration', async () => {
     const data: IEventMemberRegistered = {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 1',
-      app2appDestination: 'kld://app2app',
-      docExchangeDestination: 'kld://docexchange',
+      assetTrailServiceInstanceID: 'service-instance',
+      app2appDestination: 'kld://app2app/dest',
+      docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampCreation
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -76,15 +74,18 @@ describe('Members - registration', async () => {
     const member = getMemberResponse.body.find((member: IDBMember) => member.address === '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 1');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app');
-    assert.strictEqual(member.docExchangeDestination, 'kld://docexchange');
-    assert.strictEqual(member.confirmed, true);
-    assert.strictEqual(member.owned, true);
+    assert.strictEqual(member.assetTrailInstanceID, 'service-id');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
+    assert.deepStrictEqual(member.blockchainData, {
+      blockNumber: 123,
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+    });
     assert.strictEqual(member.timestamp, timestampCreation);
 
     const getMemberByAddressResponse = await request(app)
-    .get('/api/v1/members/0x0000000000000000000000000000000000000011')
-    .expect(200);
+      .get('/api/v1/members/0x0000000000000000000000000000000000000011')
+      .expect(200);
     assert.deepStrictEqual(member, getMemberByAddressResponse.body);
   });
 
@@ -96,9 +97,7 @@ describe('Members - registration', async () => {
       .put('/api/v1/members')
       .send({
         address: '0x0000000000000000000000000000000000000011',
-        name: 'Member 2',
-        app2appDestination: 'kld://app2app2',
-        docExchangeDestination: 'kld://docexchange2'
+        name: 'Member 2'
       })
       .expect(200);
     assert.deepStrictEqual(addMemberResponse.body, { status: 'submitted' });
@@ -109,15 +108,18 @@ describe('Members - registration', async () => {
     const member = getMemberResponse.body.find((member: IDBMember) => member.address === '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 2');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app2');
-    assert.strictEqual(member.docExchangeDestination, 'kld://docexchange2');
-    assert.strictEqual(member.owned, true);
-    assert.strictEqual(member.confirmed, false);
+    assert.strictEqual(member.assetTrailInstanceID, 'service-id');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
+    assert.deepStrictEqual(member.blockchainData, {
+      blockNumber: 123,
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+    });
     assert.strictEqual(typeof member.timestamp, 'number');
 
     const getMemberByAddressResponse = await request(app)
-    .get('/api/v1/members/0x0000000000000000000000000000000000000011')
-    .expect(200);
+      .get('/api/v1/members/0x0000000000000000000000000000000000000011')
+      .expect(200);
     assert.deepStrictEqual(member, getMemberByAddressResponse.body);
   });
 
@@ -133,15 +135,16 @@ describe('Members - registration', async () => {
     const data: IEventMemberRegistered = {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 2',
-      app2appDestination: 'kld://app2app2',
-      docExchangeDestination: 'kld://docexchange2',
+      assetTrailServiceInstanceID: 'service-instance',
+      app2appDestination: 'kld://app2app/dest',
+      docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampUpdate
     };
     mockEventStreamWebSocket.emit('message', JSON.stringify([{
       signature: utils.contractEventSignatures.MEMBER_REGISTERED,
       data,
-      blockNumber: '123',
-      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+      blockNumber: '456',
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000001'
     }]));
     await eventPromise;
   });
@@ -153,15 +156,18 @@ describe('Members - registration', async () => {
     const member = getMemberResponse.body.find((member: IDBMember) => member.address === '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 2');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app2');
-    assert.strictEqual(member.docExchangeDestination, 'kld://docexchange2');
-    assert.strictEqual(member.owned, true);
-    assert.strictEqual(member.confirmed, true);
+    assert.strictEqual(member.assetTrailInstanceID, 'service-id');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
+    assert.deepStrictEqual(member.blockchainData, {
+      blockNumber: 456,
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000001'
+    });
     assert.strictEqual(member.timestamp, timestampUpdate);
 
     const getMemberByAddressResponse = await request(app)
-    .get('/api/v1/members/0x0000000000000000000000000000000000000011')
-    .expect(200);
+      .get('/api/v1/members/0x0000000000000000000000000000000000000011')
+      .expect(200);
     assert.deepStrictEqual(member, getMemberByAddressResponse.body);
   });
 

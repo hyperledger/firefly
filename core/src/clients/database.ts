@@ -48,12 +48,20 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
   return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit);
 };
 
-export const upsertMember = (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, timestamp: number, confirmed: boolean, owned: boolean, blockchainData: IDBBlockchainData | undefined): Promise<number> => {
+export const upsertMemberFromRequest = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
+  docExchangeDestination: string, receipt: string | undefined, timestamp: number) => {
   return membersDb.update({ address }, {
     $set: {
-      address, name, app2appDestination, docExchangeDestination, timestamp, confirmed,
-      owned, blockchainData
+      address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, receipt
+    }
+  }, { upsert: true });
+};
+
+export const upsertMemberFromEvent = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
+  docExchangeDestination: string, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
+  return membersDb.update({ address }, {
+    $set: {
+      address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, blockchainData
     }
   }, { upsert: true });
 };

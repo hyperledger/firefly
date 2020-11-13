@@ -90,7 +90,10 @@ router.put('/:assetInstanceID', async (req, res, next) => {
 
 router.patch(':/assetInstanceID', async (req, res, next) => {
   try {
-    await assetInstancesHandler.handleRequestAssetInstanceFromAuthorRequest(req.params.assetInstanceID);
+    if(!utils.regexps.ACCOUNT.test(req.body.requester)) {
+      throw new RequestError(`Missing requester`);
+    }
+    await assetInstancesHandler.handleTradeAssetRequest(req.body.requester, req.params.assetInstanceID);
     res.send({ status: 'submitted' });
   } catch (err) {
     next(err);

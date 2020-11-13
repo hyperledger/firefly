@@ -13,6 +13,10 @@ const testMemberNames = [
   'member-2-update'
 ];
 
+const testAssetTrailServiceInstanceIDs = [
+  'xxxxxxxxxx-xxxxxxxxxx'
+];
+
 const testApp2AppDestinations = [
   'kld://app2app-destination-1',
   'kld://app2app-destination-2',
@@ -120,7 +124,7 @@ contract('AssetTrail.sol', accounts => {
       it('registerMember should raise an error if the name is empty', async () => {
         let exceptionMessage;
         try {
-          await assetTrailContract.registerMember('', testApp2AppDestinations[0], testDocExchangeDestinations[0]);
+          await assetTrailContract.registerMember('', testAssetTrailServiceInstanceIDs[0], testApp2AppDestinations[0], testDocExchangeDestinations[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
@@ -128,7 +132,7 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('registerMember should register a member and emit the corresponding event (member 1)', async () => {
-        const result = await assetTrailContract.registerMember(testMemberNames[0], testApp2AppDestinations[0], testDocExchangeDestinations[0]);
+        const result = await assetTrailContract.registerMember(testMemberNames[0], testAssetTrailServiceInstanceIDs[0], testApp2AppDestinations[0], testDocExchangeDestinations[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.member, accounts[0]);
         assert.equal(logArgs.name, testMemberNames[0]);
@@ -138,7 +142,7 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('registerMember should register a member and emit the corresponding event (member 2)', async () => {
-        const result = await assetTrailContract.registerMember(testMemberNames[1], testApp2AppDestinations[1], testDocExchangeDestinations[1], { from: accounts[1] });
+        const result = await assetTrailContract.registerMember(testMemberNames[1], testAssetTrailServiceInstanceIDs[0], testApp2AppDestinations[1], testDocExchangeDestinations[1], { from: accounts[1] });
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.member, accounts[1]);
         assert.equal(logArgs.name, testMemberNames[1]);
@@ -148,7 +152,7 @@ contract('AssetTrail.sol', accounts => {
       });
 
       it('registerMember should allow members to update their name and destinations (member 2)', async () => {
-        const result = await assetTrailContract.registerMember(testMemberNames[2], testApp2AppDestinations[2], testDocExchangeDestinations[2], { from: accounts[1] });
+        const result = await assetTrailContract.registerMember(testMemberNames[2], testAssetTrailServiceInstanceIDs[0], testApp2AppDestinations[2], testDocExchangeDestinations[2], { from: accounts[1] });
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.member, accounts[1]);
         assert.equal(logArgs.name, testMemberNames[2]);
@@ -439,7 +443,7 @@ contract('AssetTrail.sol', accounts => {
         const result = await assetTrailContract.setAssetInstanceProperty(testAssetInstanceIDs[0], testAssetPropertyKeys[0], testAssetPropertyValues[0]);
         const logArgs = result.logs[0].args;
         assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
-        assert.equal(logArgs.propertyAuthor, accounts[0]);
+        assert.equal(logArgs.author, accounts[0]);
         assert.equal(logArgs.key, testAssetPropertyKeys[0]);
         assert.equal(logArgs.value, testAssetPropertyValues[0]);
         assert(logArgs.timestamp.toNumber() > 0);

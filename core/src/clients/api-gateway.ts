@@ -1,27 +1,13 @@
 import axios from 'axios';
 import { config } from '../lib/config';
-import { IStatus } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../lib/interfaces';
 import * as utils from '../lib/utils';
-
-export const getStatus = async (): Promise<IStatus> => {
-  const response = await axios({
-    url: `${config.apiGateway.apiEndpoint}/getStatus`,
-    auth: {
-      username: config.appCredentials.user,
-      password: config.appCredentials.password
-    }
-  });
-  return {
-    totalAssetDefinitions: Number(response.data.totalAssetDefinitions),
-    totalPaymentDefinitions: Number(response.data.totalPaymentDefinitionsc)
-  };
-};
 
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, sync: boolean) => {
-  await axios({
+  docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=${sync}`,
     auth: {
@@ -30,6 +16,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
     },
     data: { name, app2appDestination, docExchangeDestination }
   });
+  return {...response.data, type: sync? 'sync': 'async'};
 };
 
 // Asset definition APIs

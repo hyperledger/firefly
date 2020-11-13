@@ -1,6 +1,7 @@
 {
   "$schema": "../src/schemas/config.json",
   "port": 3000,
+  "assetTrailInstanceID": "service-id",
   "apiGateway": {
     "apiEndpoint": "https://apigateway.kaleido.io"
   },
@@ -13,12 +14,12 @@
   },
   "app2app": {
     "socketIOEndpoint": "wss://app2app.ws.kaleido.io",
-    "destination": "app2app_dest"
+    "destination": "kld://app2app/dest"
   },
   "docExchange": {
     "apiEndpoint": "https://docexchange.kaleido.io",
     "socketIOEndpoint": "http://docexchange.ws.kaleido.io",
-    "destination": "docexchange_dest"
+    "destination": "kld://docstore/dest"
   },
   "appCredentials": {
     "user": "testuser",

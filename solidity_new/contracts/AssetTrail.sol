@@ -7,6 +7,7 @@ contract AssetTrail {
     event MemberRegistered (
         address member,
         string name,
+        string assetTrailServiceInstanceID,
         string app2appDestination,
         string docExchangeDestination,
         uint timestamp
@@ -117,9 +118,9 @@ contract AssetTrail {
         payment = ERC20(paymentContract);
     }
     
-    function registerMember(string memory name, string memory app2appDestination, string memory docExchangeDestination) public {
+    function registerMember(string memory name, string memory assetTrailServiceInstanceID, string memory app2appDestination, string memory docExchangeDestination) public {
         require(bytes(name).length != 0, "Invalid name");
-        emit MemberRegistered(msg.sender, name, app2appDestination, docExchangeDestination, now);
+        emit MemberRegistered(msg.sender, name, assetTrailServiceInstanceID, app2appDestination, docExchangeDestination, now);
     }
     
     function createDescribedStructuredAssetDefinition(bytes32 assetDefinitionID, string memory name, bool isContentPrivate, bool isContentUnique, bytes32 descriptionSchemaHash, bytes32 contentSchemaHash) public {

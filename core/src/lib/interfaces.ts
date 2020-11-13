@@ -2,6 +2,7 @@
 
 export interface IConfig {
   port: number
+  assetTrailInstanceID: string
   apiGateway: {
     apiEndpoint: string
   }
@@ -25,12 +26,38 @@ export interface IConfig {
   appCredentials: {
     user: string
     password: string
-  }  
+  }
 }
 
-export interface IStatus {
-  totalAssetDefinitions: number
-  totalPaymentDefinitions: number
+// API GATEWAY INTERFACES
+
+export interface IAPIGatewayAsyncResponse {
+  type: 'async'
+  id: string
+  msg: string
+  sent: boolean
+}
+
+export interface IAPIGatewaySyncResponse {
+  type: 'sync'
+  blockHash: string
+  blockNumber: string
+  cumulativeGasUsed: string
+  from: string
+  gasUsed: string
+  headers: {
+    id: string
+    type: 'string',
+    timeReceived: 'string',
+    timeElapsed: number
+    requestOffset: string
+  }
+  nonce: string
+  status: string
+  to: string
+  transactionHash: string
+  transactionIndex: string
+
 }
 
 // REQUEST INTERFACES
@@ -59,6 +86,7 @@ export interface IEventStreamMessage {
 export interface IEventMemberRegistered {
   member: string
   name: string
+  assetTrailServiceInstanceID: string
   app2appDestination: string
   docExchangeDestination: string
   timestamp: number
@@ -120,12 +148,13 @@ export interface IDBBlockchainData {
 export interface IDBMember {
   _id?: string
   address: string
+  name: string
+  assetTrailInstanceID: string
   app2appDestination: string
   docExchangeDestination: string
   timestamp: number
-  confirmed: boolean
   blockchainData?: IDBBlockchainData
-  owned: boolean
+  receipt?: string
 }
 
 export interface IDBAssetDefinition {
@@ -170,7 +199,6 @@ export interface IDBAssetInstance {
   conflict: boolean
   blockchainData?: IDBBlockchainData
   timestamp: number
-  filename?: string
   properties: {
     [author: string]: {
       [key: string]: {
@@ -208,10 +236,17 @@ export interface IApp2AppMessage {
 }
 
 export interface IApp2AppMessageListener {
-  (data: IApp2AppMessage): void
+  (message: IApp2AppMessage): void
 }
 
 // DOCUMENT EXCHANGE INTERFACES
+
+export interface IDocExchangeDocumentDetails {
+  name: string
+  is_directory: boolean
+  size: number
+  hash: string
+}
 
 export interface IDocExchangeTransferData {
   transferId: string
@@ -228,4 +263,13 @@ export interface IDocExchangeTransferData {
 
 export interface IDocExchangeListener {
   (transferData: IDocExchangeTransferData): void
+}
+
+// ASSET TRADE INTERFACES
+
+export interface IAssetTradeRequest {
+  type: 'asset-request'
+  assetInstanceID: string
+  requester: string
+  metadata: { [key: string]: string }
 }
