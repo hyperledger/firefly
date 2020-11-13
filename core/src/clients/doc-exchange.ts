@@ -7,7 +7,7 @@ import axios from 'axios';
 import { createLogger, LogLevelString } from 'bunyan';
 import * as utils from '../lib/utils';
 
-const log = createLogger({ name: 'doc-exchange.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = createLogger({ name: 'clients/doc-exchange.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 let listeners: IDocExchangeListener[] = [];
 
@@ -52,6 +52,7 @@ const establishSocketIOConnection = () => {
     error = true;
     log.error(`Document exchange Socket IO error. ${err.toString()}`);
   }).on('document_received', (transferData: IDocExchangeTransferData) => {
+    log.trace(`Doc exchange transfer event ${JSON.stringify(transferData)}`);
     for (const listener of listeners) {
       listener(transferData);
     }

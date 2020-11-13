@@ -88,6 +88,15 @@ router.put('/:assetInstanceID', async (req, res, next) => {
   }
 });
 
+router.patch(':/assetInstanceID', async (req, res, next) => {
+  try {
+    await assetInstancesHandler.handleRequestAssetInstanceFromAuthorRequest(req.params.assetInstanceID);
+    res.send({ status: 'submitted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartContent> => {
   return new Promise(async (resolve, reject) => {
     let author: string | undefined;

@@ -206,3 +206,13 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   }
   await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp), blockchainData);
 };
+
+export const handleRequestAssetInstanceFromAuthorRequest = async (assetInstanceID: string) => {
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  if (dbAssetInstance === null) {
+    throw new RequestError('Uknown asset instance', 404);
+  }
+  if(database.isMemberOwned(dbAssetInstance.author)) {
+    throw new RequestError('Asset instance authored', 400);
+  }
+};

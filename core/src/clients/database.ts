@@ -58,6 +58,10 @@ export const upsertMember = (address: string, name: string, app2appDestination: 
   }, { upsert: true });
 };
 
+export const isMemberOwned = async (address: string): Promise<boolean> => {
+  return (await membersDb.count({ address, owned: true })) === 1;
+};
+
 // Asset definition queries
 
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {

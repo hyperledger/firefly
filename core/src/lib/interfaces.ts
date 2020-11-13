@@ -13,9 +13,14 @@ export interface IConfig {
     apiEndpoint: string
     gatewayEndpoint: string
   },
+  app2app: {
+    socketIOEndpoint: string
+    destination: string
+  },
   docExchange: {
     apiEndpoint: string
     socketIOEndpoint: string
+    destination: string
   }
   appCredentials: {
     user: string
@@ -190,6 +195,20 @@ export interface IDBPaymentInstance {
   confirmed: boolean
   blockchainData?: IDBBlockchainData
   timestamp: number
+}
+
+// APP2APP INTERFACES
+
+export interface IApp2AppMessage {
+  headers: {
+    from: string
+    to: string
+  },
+  content: string
+}
+
+export interface IApp2AppMessageListener {
+  (data: IApp2AppMessage): void
 }
 
 // DOCUMENT EXCHANGE INTERFACES
