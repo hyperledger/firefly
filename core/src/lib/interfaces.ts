@@ -152,8 +152,10 @@ export interface IDBMember {
   assetTrailInstanceID: string
   app2appDestination: string
   docExchangeDestination: string
-  timestamp: number
-  blockchainData?: IDBBlockchainData
+  submitted?: number
+  timestamp?: number
+  blockNumber?: number
+  transactionHash?: string
   receipt?: string
 }
 

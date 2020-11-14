@@ -27,13 +27,13 @@ export const handleUpsertMemberRequest = async (address: string, name: string, s
     assetTrailInstanceID: config.assetTrailInstanceID,
     app2appDestination: config.app2app.destination,
     docExchangeDestination: config.docExchange.destination,
-    timestamp,
+    submitted: timestamp,
     receipt
   });
 };
 
 export const handleMemberRegisteredEvent = async ({ member, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp }:
-  IEventMemberRegistered, blockchainData: IDBBlockchainData) => {
+  IEventMemberRegistered, { blockNumber, transactionHash}: IDBBlockchainData) => {
   await database.upsertMember({
     address: member,
     name,
@@ -41,6 +41,7 @@ export const handleMemberRegisteredEvent = async ({ member, name, assetTrailInst
     docExchangeDestination,
     assetTrailInstanceID,
     timestamp: Number(timestamp),
-    blockchainData
+    blockNumber,
+    transactionHash
   });
 };

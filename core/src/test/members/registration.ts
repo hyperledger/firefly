@@ -33,7 +33,7 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
     assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
-    assert.strictEqual(typeof member.timestamp, 'number');
+    assert.strictEqual(typeof member.submitted, 'number');
 
     const getMemberByAddressResponse = await request(app)
       .get('/api/v1/members/0x0000000000000000000000000000000000000011')
@@ -77,10 +77,8 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
     assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
-    assert.deepStrictEqual(member.blockchainData, {
-      blockNumber: 123,
-      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
-    });
+    assert.strictEqual(member.blockNumber, 123);
+    assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
     assert.strictEqual(member.timestamp, timestampCreation);
 
     const getMemberByAddressResponse = await request(app)
@@ -111,10 +109,8 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
     assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
-    assert.deepStrictEqual(member.blockchainData, {
-      blockNumber: 123,
-      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
-    });
+    assert.strictEqual(member.blockNumber, 123);
+    assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
     assert.strictEqual(typeof member.timestamp, 'number');
 
     const getMemberByAddressResponse = await request(app)
@@ -159,10 +155,8 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
     assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
-    assert.deepStrictEqual(member.blockchainData, {
-      blockNumber: 456,
-      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000001'
-    });
+    assert.strictEqual(member.blockNumber, 456);
+    assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000001');
     assert.strictEqual(member.timestamp, timestampUpdate);
 
     const getMemberByAddressResponse = await request(app)
