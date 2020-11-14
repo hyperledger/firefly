@@ -14,7 +14,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { name, app2appDestination, docExchangeDestination }
+    data: { name, assetTrailInstanceID: config.assetTrailInstanceID, app2appDestination, docExchangeDestination }
   });
   return {...response.data, type: sync? 'sync': 'async'};
 };

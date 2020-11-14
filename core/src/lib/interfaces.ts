@@ -86,7 +86,7 @@ export interface IEventStreamMessage {
 export interface IEventMemberRegistered {
   member: string
   name: string
-  assetTrailServiceInstanceID: string
+  assetTrailInstanceID: string
   app2appDestination: string
   docExchangeDestination: string
   timestamp: number
