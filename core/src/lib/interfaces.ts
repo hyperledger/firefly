@@ -170,9 +170,11 @@ export interface IDBAssetDefinition {
   descriptionSchema?: object
   contentSchemaHash?: string
   contentSchema?: object
-  timestamp: number
-  confirmed: boolean
-  blockchainData?: IDBBlockchainData
+  submitted?: number
+  timestamp?: number
+  blockNumber?: number
+  transactionHash?: string
+  receipt?: string
   conflict?: boolean
 }
 
