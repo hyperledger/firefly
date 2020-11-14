@@ -14,59 +14,98 @@ export const upsertMember = async (address: string, name: string, app2appDestina
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { name, assetTrailInstanceID: config.assetTrailInstanceID, app2appDestination, docExchangeDestination }
+    data: {
+      name,
+      assetTrailInstanceID: config.assetTrailInstanceID,
+      app2appDestination,
+      docExchangeDestination
+    }
   });
-  return {...response.data, type: sync? 'sync': 'async'};
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
 // Asset definition APIs
 
-export const createDescribedStructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string, contentSchemaHash: string, sync: boolean) => {
-  await axios({
+export const createDescribedStructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string,
+  isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string, contentSchemaHash: string,
+  sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedStructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID: utils.uuidToHex(assetDefinitionID), name, isContentPrivate, isContentUnique, descriptionSchemaHash, contentSchemaHash }
+    data: {
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+      name,
+      isContentPrivate,
+      isContentUnique,
+      descriptionSchemaHash,
+      contentSchemaHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 }
 
-export const createDescribedUnstructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string, sync: boolean) => {
-  await axios({
+export const createDescribedUnstructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string,
+  isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string, sync: boolean):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedUnstructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID: utils.uuidToHex(assetDefinitionID), name, isContentPrivate, isContentUnique, descriptionSchemaHash }
+    data: {
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+      name, isContentPrivate,
+      isContentUnique,
+      descriptionSchemaHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 }
 
-export const createStructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, contentSchemaHash: string, sync: boolean) => {
-  await axios({
+export const createStructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string,
+  isContentPrivate: boolean, isContentUnique: boolean, contentSchemaHash: string, sync: boolean):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createStructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID: utils.uuidToHex(assetDefinitionID), name, isContentPrivate, isContentUnique, contentSchemaHash }
+    data: {
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+      name,
+      isContentPrivate,
+      isContentUnique,
+      contentSchemaHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 }
 
-export const createUnstructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean, isContentUnique: boolean, sync: boolean) => {
-  await axios({
+export const createUnstructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean,
+  isContentUnique: boolean, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createUnstructuredAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetDefinitionID: utils.uuidToHex(assetDefinitionID), name, isContentPrivate, isContentUnique }
+    data: {
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+      name,
+      isContentPrivate,
+      isContentUnique
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 }
 
 // Payment definition APIs
@@ -98,7 +137,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
 // Asset instance APIs
 
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string, descriptionHash: string, contentHash: string, sync = false) => {
-  
+
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
@@ -110,7 +149,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
   });
 };
 
-export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string, contentHash: string, sync=false) => {
+export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string, contentHash: string, sync = false) => {
   await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,

@@ -50,8 +50,8 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 400);
   }
-  if (!assetDefinition.confirmed) {
-    throw new RequestError('Asset definition must be confirmed', 400);
+  if (assetDefinition.transactionHash === undefined) {
+    throw new RequestError('Asset definition transaction must be mined', 400);
   }
   if (!assetDefinition.contentSchema) {
     throw new RequestError('Unstructured asset instances must be created using multipart/form-data', 400);
@@ -150,8 +150,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition === null) {
     throw new Error('Uknown asset definition');
   }
-  if (!assetDefinition.confirmed) {
-    throw new Error('Unconfirmed asset definition');
+  if (assetDefinition.transactionHash === undefined) {
+    throw new Error('Asset definition transaction must be mined');
   }
   if (assetDefinition.isContentUnique) {
     const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, event.contentHash);

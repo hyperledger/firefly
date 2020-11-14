@@ -43,12 +43,13 @@ describe('Asset definitions: unauthored - unstructured', async () => {
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - private - unstructured');
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
-      assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
-      assert.strictEqual(assetDefinition.blockchainData.blockNumber, 123);
-      assert.strictEqual(assetDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(assetDefinition.submitted, undefined);
+      assert.strictEqual(assetDefinition.receipt, undefined);
+      assert.strictEqual(assetDefinition.blockNumber, 123);
+      assert.strictEqual(assetDefinition.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetDefinitionResponse = await request(app)
       .get(`/api/v1/assets/definitions/${assetDefinitionID}`)

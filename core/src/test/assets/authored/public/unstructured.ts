@@ -17,7 +17,7 @@ describe('Assets: authored - unstructured', async () => {
 
       nock('https://apigateway.kaleido.io')
         .post('/createUnstructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
+        .reply(200, { id: 'my-receipt-id' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -37,11 +37,11 @@ describe('Assets: authored - unstructured', async () => {
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'authored - public - unstructured');
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(assetDefinition.confirmed, false);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.strictEqual(assetDefinition.name, 'authored - public - unstructured');
-      assert.strictEqual(typeof assetDefinition.timestamp, 'number');
+      assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof assetDefinition.submitted, 'number');
     });
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
@@ -75,13 +75,14 @@ describe('Assets: authored - unstructured', async () => {
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'authored - public - unstructured');
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(assetDefinition.confirmed, true);
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
       assert.strictEqual(assetDefinition.name, 'authored - public - unstructured');
+      assert.strictEqual(typeof assetDefinition.submitted, 'number');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
-      assert.strictEqual(assetDefinition.blockchainData.blockNumber, 123);
-      assert.strictEqual(assetDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
+      assert.strictEqual(assetDefinition.blockNumber, 123);
+      assert.strictEqual(assetDefinition.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetDefinitionResponse = await request(app)
         .get(`/api/v1/assets/definitions/${assetDefinitionID}`)

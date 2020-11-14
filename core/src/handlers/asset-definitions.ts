@@ -4,7 +4,7 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
 
 export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) => {
   return database.retrieveAssetDefinitions(skip, limit);
@@ -24,44 +24,54 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     throw new RequestError('Asset definition name conflict', 409);
   }
   const assetDefinitionID = uuidV4();
+  const timestamp = utils.getTimestamp();
+  let descriptionSchemaHash: string | undefined;
+  let contentSchemaHash: string | undefined;
+  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   if (descriptionSchema) {
-    const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
+    descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
     if (contentSchema) {
-      const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
-        descriptionSchema, contentSchemaHash, contentSchema, utils.getTimestamp(), false, undefined);
-      await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
+      contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
+      apiGatewayResponse = await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
         descriptionSchemaHash, contentSchemaHash, sync);
     } else {
-      await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
-        descriptionSchema, undefined, undefined, utils.getTimestamp(), false, undefined);
-      await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
+      apiGatewayResponse = await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
         descriptionSchemaHash, sync);
     }
   } else if (contentSchema) {
-    const contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined,
-      contentSchemaHash, contentSchema, utils.getTimestamp(), false, undefined);
-    await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, contentSchemaHash, sync);
+    contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
+    apiGatewayResponse = await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, contentSchemaHash, sync);
   } else {
-    await database.upsertAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, undefined, undefined,
-      undefined, undefined, utils.getTimestamp(), false, undefined);
-    await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, sync);
+    apiGatewayResponse = await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, sync);
   }
+  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  await database.upsertAssetDefinition({
+    assetDefinitionID,
+    author,
+    name,
+    isContentPrivate,
+    isContentUnique,
+    descriptionSchemaHash,
+    descriptionSchema,
+    contentSchemaHash,
+    contentSchema,
+    submitted: timestamp,
+    receipt
+  });
   return assetDefinitionID;
 };
 
-export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, blockchainData: IDBBlockchainData) => {
+export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
   const assetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
   const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (dbAssetDefinitionByID !== null) {
-    if (dbAssetDefinitionByID.confirmed) {
+    if (dbAssetDefinitionByID.transactionHash !== undefined) {
       throw new Error(`Asset definition ID conflict ${assetDefinitionID}`);
     }
   } else {
     const dbAssetDefinitionByName = await database.retrieveAssetDefinitionByName(event.name);
     if (dbAssetDefinitionByName !== null) {
-      if (dbAssetDefinitionByName.confirmed) {
+      if (dbAssetDefinitionByName.transactionHash !== undefined) {
         throw new Error(`Asset definition name conflict ${event.name}`);
       } else {
         await database.markAssetDefinitionAsConflict(assetDefinitionID, Number(event.timestamp));
@@ -84,6 +94,18 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
     }
   }
-  database.upsertAssetDefinition(assetDefinitionID, event.name, event.author, event.isContentPrivate, event.isContentUnique,
-    event.descriptionSchemaHash, descriptionSchema, event.contentSchemaHash, contentSchema, Number(event.timestamp), true, blockchainData);
+  database.upsertAssetDefinition({
+    assetDefinitionID,
+    name: event.name,
+    author: event.author,
+    isContentPrivate: event.isContentPrivate,
+    isContentUnique: event.isContentUnique,
+    descriptionSchemaHash: event.descriptionSchemaHash,
+    descriptionSchema,
+    contentSchemaHash: event.contentSchemaHash,
+    contentSchema,
+    timestamp: Number(event.timestamp),
+    blockNumber,
+    transactionHash
+  });
 };

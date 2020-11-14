@@ -48,24 +48,6 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
   return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
 };
 
-// export const upsertMemberFromRequest = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
-//   docExchangeDestination: string, receipt: string | undefined, timestamp: number) => {
-//   return membersDb.update({ address }, {
-//     $set: {
-//       address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, receipt
-//     }
-//   }, { upsert: true });
-// };
-
-// export const upsertMemberFromEvent = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
-//   docExchangeDestination: string, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
-//   return membersDb.update({ address }, {
-//     $set: {
-//       address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, blockchainData
-//     }
-//   }, { upsert: true });
-// };
-
 export const upsertMember = (member: IDBMember) => {
   return membersDb.update({ address: member.address }, {
     $set: member
@@ -90,17 +72,23 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean,
-  isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined,
-  contentSchemaHash: string | undefined, contentSchema: Object | undefined,
-  timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
-  return assetDefinitionsDb.update({ assetDefinitionID }, {
-    $set: {
-      assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
-      descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed, blockchainData
-    }
+export const upsertAssetDefinition = (assetDefinition: IDBAssetDefinition) => {
+  return assetDefinitionsDb.update({ assetDefinitionID: assetDefinition.assetDefinitionID }, {
+    $set: assetDefinition
   }, { upsert: true });
 };
+
+// export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean,
+//   isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined,
+//   contentSchemaHash: string | undefined, contentSchema: Object | undefined,
+//   timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
+//   return assetDefinitionsDb.update({ assetDefinitionID }, {
+//     $set: {
+//       assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
+//       descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed, blockchainData
+//     }
+//   }, { upsert: true });
+// };
 
 export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
   return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
