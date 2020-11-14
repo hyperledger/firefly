@@ -53,7 +53,7 @@ describe('Members - registration', async () => {
     const data: IEventMemberRegistered = {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 1',
-      assetTrailServiceInstanceID: 'service-instance',
+      assetTrailInstanceID: 'service-id',
       app2appDestination: 'kld://app2app/dest',
       docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampCreation
@@ -135,7 +135,7 @@ describe('Members - registration', async () => {
     const data: IEventMemberRegistered = {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 2',
-      assetTrailServiceInstanceID: 'service-instance',
+      assetTrailInstanceID: 'service-id',
       app2appDestination: 'kld://app2app/dest',
       docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampUpdate

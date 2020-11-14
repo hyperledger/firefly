@@ -98,7 +98,7 @@ const setupSampleMembers = async () => {
   const dataMember1: IEventMemberRegistered = {
     member: '0x0000000000000000000000000000000000000001',
     name: 'Test Member 1',
-    assetTrailServiceInstanceID: 'service-instance',
+    assetTrailInstanceID: 'service-instance',
     app2appDestination: 'kld://app2app_1',
     docExchangeDestination: 'kld://docexchange_1',
     timestamp: utils.getTimestamp()
@@ -107,7 +107,7 @@ const setupSampleMembers = async () => {
   {
     member: '0x0000000000000000000000000000000000000002',
     name: 'Test Member 2',
-    assetTrailServiceInstanceID: 'service-instance',
+    assetTrailInstanceID: 'service-instance',
     app2appDestination: 'kld://app2app_2',
     docExchangeDestination: 'kld://docexchange_2',
     timestamp: utils.getTimestamp()

@@ -18,14 +18,29 @@ export const handleGetMemberRequest = async (address: string) => {
 };
 
 export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
+  const timestamp = utils.getTimestamp();
   const response = await apiGateway.upsertMember(address, name, config.app2app.destination, config.docExchange.destination, sync);
-  let receipt = response.type === 'async'? response.id : undefined;
-  await database.upsertMemberFromRequest(address, name, config.assetTrailInstanceID, config.app2app.destination,
-    config.docExchange.destination, receipt, utils.getTimestamp());
+  let receipt = response.type === 'async' ? response.id : undefined;
+  await database.upsertMember({
+    address,
+    name,
+    assetTrailInstanceID: config.assetTrailInstanceID,
+    app2appDestination: config.app2app.destination,
+    docExchangeDestination: config.docExchange.destination,
+    timestamp,
+    receipt
+  });
 };
 
-export const handleMemberRegisteredEvent = async ({ member, name, app2appDestination, docExchangeDestination, timestamp }:
+export const handleMemberRegisteredEvent = async ({ member, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp }:
   IEventMemberRegistered, blockchainData: IDBBlockchainData) => {
-  await database.upsertMemberFromEvent(member, name, config.assetTrailInstanceID, app2appDestination, docExchangeDestination,
-    Number(timestamp), blockchainData);
+  await database.upsertMember({
+    address: member,
+    name,
+    app2appDestination,
+    docExchangeDestination,
+    assetTrailInstanceID,
+    timestamp: Number(timestamp),
+    blockchainData
+  });
 };

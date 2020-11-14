@@ -45,7 +45,7 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
   if (owned) {
     query.owned = true;
   }
-  return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit);
+  return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
 };
 
 export const upsertMemberFromRequest = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
@@ -63,6 +63,12 @@ export const upsertMemberFromEvent = (address: string, name: string, assetTrailI
     $set: {
       address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, blockchainData
     }
+  }, { upsert: true });
+};
+
+export const upsertMember = (member: IDBMember) => {
+  return membersDb.update({ address: member.address }, {
+    $set: member
   }, { upsert: true });
 };
 
