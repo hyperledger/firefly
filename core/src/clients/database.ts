@@ -48,23 +48,23 @@ export const retrieveMembers = (skip: number, limit: number, owned: boolean): Pr
   return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
 };
 
-export const upsertMemberFromRequest = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
-  docExchangeDestination: string, receipt: string | undefined, timestamp: number) => {
-  return membersDb.update({ address }, {
-    $set: {
-      address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, receipt
-    }
-  }, { upsert: true });
-};
+// export const upsertMemberFromRequest = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
+//   docExchangeDestination: string, receipt: string | undefined, timestamp: number) => {
+//   return membersDb.update({ address }, {
+//     $set: {
+//       address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, receipt
+//     }
+//   }, { upsert: true });
+// };
 
-export const upsertMemberFromEvent = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
-  docExchangeDestination: string, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
-  return membersDb.update({ address }, {
-    $set: {
-      address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, blockchainData
-    }
-  }, { upsert: true });
-};
+// export const upsertMemberFromEvent = (address: string, name: string, assetTrailInstanceID: string, app2appDestination: string,
+//   docExchangeDestination: string, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
+//   return membersDb.update({ address }, {
+//     $set: {
+//       address, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp, blockchainData
+//     }
+//   }, { upsert: true });
+// };
 
 export const upsertMember = (member: IDBMember) => {
   return membersDb.update({ address: member.address }, {
