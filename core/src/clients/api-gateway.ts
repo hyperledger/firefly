@@ -147,29 +147,40 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
 
 // Asset instance APIs
 
-export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string, descriptionHash: string, contentHash: string, sync = false) => {
-
-  await axios({
+export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
+  descriptionHash: string, contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetInstanceID, assetDefinitionID, descriptionHash, contentHash }
+    data: {
+      assetInstanceID,
+      assetDefinitionID,
+      descriptionHash,
+      contentHash }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
-export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string, contentHash: string, sync = false) => {
-  await axios({
+export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
+  contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetInstanceID, assetDefinitionID, contentHash }
+    data: {
+      assetInstanceID,
+      assetDefinitionID,
+      contentHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
 export const setAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {

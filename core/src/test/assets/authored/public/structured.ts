@@ -109,7 +109,7 @@ describe('Assets: authored - public - structured', async () => {
 
       nock('https://apigateway.kaleido.io')
         .post('/createAssetInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
+        .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
@@ -134,8 +134,8 @@ describe('Assets: authored - public - structured', async () => {
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
-      assert.strictEqual(assetInstance.confirmed, false);
-      assert.strictEqual(typeof assetInstance.timestamp, 'number');
+      assert.strictEqual(assetInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof assetInstance.submitted, 'number');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/instances/${assetInstanceID}`)
@@ -176,10 +176,11 @@ describe('Assets: authored - public - structured', async () => {
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
-      assert.strictEqual(assetInstance.confirmed, true);
-      assert.strictEqual(typeof assetInstance.timestamp, 'number');
-      assert.strictEqual(assetInstance.blockchainData.blockNumber, 123);
-      assert.strictEqual(assetInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(assetInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(assetInstance.timestamp, timestamp);
+      assert.strictEqual(typeof assetInstance.submitted, 'number');
+      assert.strictEqual(assetInstance.blockNumber, 123);
+      assert.strictEqual(assetInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/instances/${assetInstanceID}`)

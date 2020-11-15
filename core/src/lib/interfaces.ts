@@ -77,7 +77,7 @@ export interface IEventStreamMessage {
   blockNumber: string
   transactionIndex: string
   transactionHash: string
-  data: Object
+  data: object
   subId: string
   signature: string
   logIndex: string
@@ -199,20 +199,24 @@ export interface IDBAssetInstance {
   assetDefinitionID: string
   author: string
   descriptionHash?: string
-  description?: string
-  content?: string
+  description?: object
+  content?: object
   contentHash?: string
-  confirmed: boolean
-  conflict: boolean
-  blockchainData?: IDBBlockchainData
-  timestamp: number
-  properties: {
+  submitted?: number
+  receipt?: string
+  conflict?: boolean
+  blockNumber?: number
+  transactionHash?: string
+  timestamp?: number
+  properties?: {
     [author: string]: {
       [key: string]: {
         value: string
         timestamp: number
-        confirmed: boolean
-        blockchainData?: IDBBlockchainData
+        submitted?: number
+        receipt?: string
+        blockNumber?: number
+        transactionHash?: string
       } | undefined
     } | undefined
   }

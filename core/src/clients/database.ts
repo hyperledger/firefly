@@ -102,16 +102,6 @@ export const upsertPaymentDefinition = (paymentDefinition: IDBPaymentDefinition)
   }, { upsert: true });
 };
 
-// export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined,
-//   descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
-//   return paymentDefinitionsDb.update({ paymentDefinitionID }, {
-//     $set: {
-//       paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema,
-//       timestamp, confirmed, blockchainData
-//     }
-//   }, { upsert: true });
-// };
-
 export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { conflict: true, timestamp } });
 };
@@ -130,14 +120,9 @@ export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitio
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
 };
 
-export const upsertAssetInstance = (assetInstanceID: string, author: string, assetDefinitionID: string, descriptionHash: string | undefined,
-  description: Object | undefined, contentHash: string, content: Object | undefined, confirmed: boolean, timestamp: number,
-  blockchainData: IDBBlockchainData | undefined) => {
-  return assetInstancesDb.update({ assetInstanceID }, {
-    $set: {
-      assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content,
-      confirmed, blockchainData, timestamp
-    }
+export const upsertAssetInstance = (assetInstance: IDBAssetInstance) => {
+  return assetInstancesDb.update({ assetInstanceID: assetInstance.assetInstanceID }, {
+    $set: assetInstance
   }, { upsert: true });
 };
 
