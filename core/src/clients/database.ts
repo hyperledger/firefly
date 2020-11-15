@@ -149,14 +149,3 @@ export const upsertPaymentInstance = (paymentInstance: IDBPaymentInstance) => {
     $set: paymentInstance
   }, { upsert: true });
 };
-
-
-// export const upsertPaymentInstance = (paymentInstanceID: string, author: string, paymentDefinitionID: string, descriptionHash: string | undefined,
-//   description: Object | undefined, recipient: string, amount: number, confirmed: boolean, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
-//   return paymentInstancesDb.update({ paymentInstanceID }, {
-//     $set: {
-//       paymentInstanceID, author, paymentDefinitionID, descriptionHash, description,
-//       recipient, amount, confirmed, blockchainData, timestamp
-//     }
-//   }, { upsert: true });
-// };

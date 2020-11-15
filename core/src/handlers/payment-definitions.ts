@@ -29,9 +29,9 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
   const paymentDefinitionID = uuidV4();
   if (descriptionSchema) {
     descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(utils.uuidToHex(paymentDefinitionID), name, author, descriptionSchemaHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createPaymentDefinition(utils.uuidToHex(paymentDefinitionID), name, author, sync);
+    apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertPaymentDefinition({
