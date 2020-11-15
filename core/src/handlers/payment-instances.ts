@@ -44,11 +44,11 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
   const timestamp = utils.getTimestamp();
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedPaymentInstance(utils.uuidToHex(paymentInstanceID),
-      utils.uuidToHex(paymentDefinitionID), author, recipient, amount, descriptionHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedPaymentInstance(paymentInstanceID,
+      paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createPaymentInstance(utils.uuidToHex(paymentInstanceID),
-      utils.uuidToHex(paymentDefinitionID), author, recipient, amount, sync);
+    apiGatewayResponse = await apiGateway.createPaymentInstance(paymentInstanceID,
+      paymentDefinitionID, author, recipient, amount, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertPaymentInstance({

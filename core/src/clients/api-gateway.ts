@@ -120,7 +120,7 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
       password: config.appCredentials.password
     },
     data: {
-      paymentDefinitionID,
+      paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
       name,
       descriptionSchemaHash
     }
@@ -138,7 +138,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
       password: config.appCredentials.password
     },
     data: {
-      paymentDefinitionID,
+      paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
       name
     }
   });
@@ -157,8 +157,8 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
       password: config.appCredentials.password
     },
     data: {
-      assetInstanceID,
-      assetDefinitionID,
+      assetInstanceID: utils.uuidToHex(assetInstanceID),
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
       descriptionHash,
       contentHash
     }
@@ -176,8 +176,8 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
       password: config.appCredentials.password
     },
     data: {
-      assetInstanceID,
-      assetDefinitionID,
+      assetInstanceID: utils.uuidToHex(assetInstanceID),
+      assetDefinitionID: utils.uuidToHex(assetDefinitionID),
       contentHash
     }
   });
@@ -215,8 +215,8 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
       password: config.appCredentials.password
     },
     data: {
-      paymentInstanceID,
-      paymentDefinitionID,
+      paymentInstanceID: utils.uuidToHex(paymentInstanceID),
+      paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
       recipient,
       amount,
       descriptionHash
@@ -235,8 +235,8 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
       password: config.appCredentials.password
     },
     data: {
-      paymentInstanceID,
-      paymentDefinitionID,
+      paymentInstanceID: utils.uuidToHex(paymentInstanceID),
+      paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
       recipient,
       amount
     }
