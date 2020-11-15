@@ -108,10 +108,11 @@ describe('Assets: unauthored - public - structured', async () => {
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsMultiHash);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
-      assert.strictEqual(assetInstance.confirmed, true);
-      assert.strictEqual(typeof assetInstance.timestamp, 'number');
-      assert.strictEqual(assetInstance.blockchainData.blockNumber, 123);
-      assert.strictEqual(assetInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(assetInstance.submitted, undefined);
+      assert.strictEqual(assetInstance.receipt, undefined);
+      assert.strictEqual(assetInstance.timestamp, timestamp);
+      assert.strictEqual(assetInstance.blockNumber, 123);
+      assert.strictEqual(assetInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/instances/${assetInstanceID}`)

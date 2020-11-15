@@ -7,7 +7,7 @@ import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import * as app2app from '../clients/app2app';
 import RequestError from '../lib/request-error';
-import { IAssetTradeRequest, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradeRequest, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -43,7 +43,6 @@ export const handleGetAssetInstanceRequest = async (assetInstanceID: string, con
 };
 
 export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, sync: boolean) => {
-  const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -76,17 +75,30 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
     throw new RequestError(`Asset instance content conflict`);
   }
-  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, content, false, utils.getTimestamp(), undefined);
+  const assetInstanceID = uuidV4();
+  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
+  const timestamp = utils.getTimestamp();
   if (descriptionHash) {
-    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
   } else {
-    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
   }
+  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  await database.upsertAssetInstance({
+    assetInstanceID,
+    author,
+    assetDefinitionID,
+    descriptionHash,
+    description,
+    contentHash,
+    content,
+    submitted: timestamp,
+    receipt
+  });
   return assetInstanceID;
 };
 
 export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, _contentFileName: string, sync: boolean) => {
-  const assetInstanceID = uuidV4();
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -102,6 +114,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     }
     descriptionHash = await ipfs.uploadString(JSON.stringify(description));
   }
+  const assetInstanceID = uuidV4();
   if (assetDefinition.isContentPrivate) {
     contentHash = `0x${await docExchange.uploadStream(content, utils.getUnstructuredFilePathInDocExchange(assetInstanceID))}`;
   } else {
@@ -110,12 +123,25 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
     throw new RequestError('Asset instance content conflict', 409);
   }
-  await database.upsertAssetInstance(assetInstanceID, author, assetDefinitionID, descriptionHash, description, contentHash, undefined, false, utils.getTimestamp(), undefined);
+  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
+  const timestamp = utils.getTimestamp();
   if (descriptionHash) {
-    await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID),
+      utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
   } else {
-    await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
   }
+  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  await database.upsertAssetInstance({
+    assetInstanceID,
+    author,
+    assetDefinitionID,
+    descriptionHash,
+    description,
+    contentHash,
+    submitted: timestamp,
+    receipt
+  });
   return assetInstanceID;
 }
 
@@ -124,26 +150,27 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
   }
-  if (!assetInstance.confirmed) {
-    throw new RequestError('Unconfirmed asset instance', 400);
+  if (assetInstance.transactionHash === undefined) {
+    throw new RequestError('Asset instance transaction must be mined', 400);
   }
   if (assetInstance.properties) {
     const authorMetadata = assetInstance.properties[author];
     if (authorMetadata) {
       const currentValue = authorMetadata[key];
-      if (currentValue?.confirmed && currentValue.value === value) {
+      if (currentValue?.transactionHash !== undefined && currentValue.value === value) {
         throw new RequestError('Property already set');
       }
     }
   }
   await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp(), undefined);
   await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  // TODO
 };
 
-export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, blockchainData: IDBBlockchainData) => {
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
-  if (dbAssetInstance !== null && dbAssetInstance.confirmed) {
+  if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
   }
   const assetDefinition = await database.retrieveAssetDefinitionByID(utils.hexToUuid(event.assetDefinitionID));
@@ -156,7 +183,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition.isContentUnique) {
     const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, event.contentHash);
     if (assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
-      if (assetInstanceByContentID.confirmed) {
+      if (assetInstanceByContentID.transactionHash !== undefined) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);
       } else {
         await database.markAssetInstanceAsConflict(assetInstanceByContentID.assetInstanceID, Number(event.timestamp));
@@ -189,8 +216,18 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  database.upsertAssetInstance(eventAssetInstanceID, event.author, utils.hexToUuid(event.assetDefinitionID),
-    event.descriptionHash, description, event.contentHash, content, true, Number(event.timestamp), blockchainData);
+  database.upsertAssetInstance({
+    assetInstanceID: eventAssetInstanceID,
+    author: event.author,
+    assetDefinitionID: assetDefinition.assetDefinitionID,
+    descriptionHash: event.descriptionHash,
+    description,
+    contentHash: event.contentHash,
+    content,
+    timestamp: Number(event.timestamp),
+    blockNumber,
+    transactionHash
+  });
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
@@ -199,7 +236,7 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
   }
-  if (!dbAssetInstance.confirmed) {
+  if (dbAssetInstance.transactionHash === undefined) {
     throw new Error('Unconfirmed asset instance');
   }
   if (!event.key) {
@@ -213,29 +250,29 @@ export const handleTradeAssetRequest = async (requesterAddress: string, assetIns
   if (assetInstance === null) {
     throw new RequestError('Uknown asset instance', 404);
   }
-  if(database.isMemberOwned(assetInstance.author)) {
+  if (database.isMemberOwned(assetInstance.author)) {
     throw new RequestError('Asset instance authored', 400);
   }
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
-  if(assetDefinition === null) {
+  if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 500);
   }
-  if(assetDefinition.contentSchema !== undefined) {
+  if (assetDefinition.contentSchema !== undefined) {
     const documentDetails = await docExchange.getDocumentDetails(utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
-    if(documentDetails.hash === assetInstance.contentHash) {
+    if (documentDetails.hash === assetInstance.contentHash) {
       throw new RequestError('Asset content already available', 400);
     }
   } else {
-    if(assetInstance.content !== undefined) {
+    if (assetInstance.content !== undefined) {
       throw new RequestError('Asset content already available', 400);
     }
   }
   const author = await database.retrieveMemberByAddress(assetInstance.author);
-  if(author === null) {
+  if (author === null) {
     throw new RequestError('Asset author must be registered', 400);
   }
   const requester = await database.retrieveMemberByAddress(requesterAddress);
-  if(requester === null) {
+  if (requester === null) {
     throw new RequestError('Requester must be registered', 400);
   }
   const tradeRequest: IAssetTradeRequest = {
