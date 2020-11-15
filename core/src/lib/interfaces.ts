@@ -212,11 +212,16 @@ export interface IDBAssetInstance {
     [author: string]: {
       [key: string]: {
         value: string
-        timestamp: number
         submitted?: number
         receipt?: string
-        blockNumber?: number
-        transactionHash?: string
+        history?: {
+          [timestamp: string]: {
+            value: string
+            timestamp?: number
+            blockNumber?: number
+            transactionHash?: string
+          }
+        }
       } | undefined
     } | undefined
   }

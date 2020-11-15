@@ -116,7 +116,8 @@ export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBA
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetInstanceID }, { _id: 0 });
 };
 
-export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
+export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitionID: string, contentHash: string):
+  Promise<IDBAssetInstance | null> => {
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
 };
 
@@ -130,8 +131,26 @@ export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: 
   return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
 };
 
-export const setAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, confirmed: boolean, timestamp: number, blockchainData: IDBBlockchainData | undefined) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { [`properties.${author}.${key}`]: { value, confirmed, timestamp, blockchainData } } });
+export const setSubmittedAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, submitted: number,
+  receipt: string | undefined) => {
+  return assetInstancesDb.update({ assetInstanceID }, {
+    $set: {
+      [`properties.${author}.${key}.value`]: value,
+      [`properties.${author}.${key}.submitted`]: submitted,
+      [`properties.${author}.${key}.receipt`]: receipt,
+    }
+  });
+};
+
+export const setConfirmedAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, timestamp: number,
+  { blockNumber, transactionHash }: IDBBlockchainData) => {
+  return assetInstancesDb.update({ assetInstanceID }, {
+    $set: {
+      [`properties.${author}.${key}.value`]: value,
+      [`properties.${author}.${key}.history.${timestamp}`]:
+        { value, timestamp, blockNumber, transactionHash }
+    }
+  });
 };
 
 // Payment instance queries
