@@ -215,7 +215,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     if (event.contentHash === dbAssetInstance?.contentHash) {
       content = dbAssetInstance.content;
     } else if (!assetDefinition.isContentPrivate) {
-      content = await ipfs.downloadJSON(event.contentHash);
+      content = await ipfs.downloadJSON(utils.sha256ToIPFSHash(event.contentHash));
       if (!ajv.validate(assetDefinition.contentSchema, content)) {
         throw new Error('Content does not conform to schema');
       }
@@ -250,7 +250,7 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   await database.setConfirmedAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
 };
 
-export const handleTradeAssetRequest = async (requesterAddress: string, assetInstanceID: string) => {
+export const handleAssetTradeRequest = async (requesterAddress: string, assetInstanceID: string) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Uknown asset instance', 404);

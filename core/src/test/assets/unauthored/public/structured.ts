@@ -87,7 +87,7 @@ describe('Assets: unauthored - public - structured', async () => {
         assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
         assetInstanceID: utils.uuidToHex(assetInstanceID),
-        contentHash: testContent.sample.ipfsMultiHash,
+        contentHash: testContent.sample.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -106,7 +106,7 @@ describe('Assets: unauthored - public - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsMultiHash);
+      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(assetInstance.submitted, undefined);
       assert.strictEqual(assetInstance.receipt, undefined);
