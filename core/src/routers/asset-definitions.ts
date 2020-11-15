@@ -53,7 +53,7 @@ router.post('/', async (req, res, next) => {
     const sync = req.query.sync === 'true';
     const assetDefinitionID = await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
       req.body.isContentUnique, req.body.author, req.body.descriptionSchema, req.body.contentSchema, sync);
-    res.send({ status: 'submitted', assetDefinitionID });
+    res.send({ status: sync? 'success' : 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);
   }

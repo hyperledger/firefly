@@ -63,7 +63,7 @@ router.post('/', async (req, res, next) => {
       }
       assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
-    res.send({ status: 'submitted', assetInstanceID });
+    res.send({ status: sync? 'success' : 'submitted', assetInstanceID });
   } catch (err) {
     next(err);
   }
@@ -82,7 +82,7 @@ router.put('/:assetInstanceID', async (req, res, next) => {
   const sync = req.query.sync === 'true';
   try {
     await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
-    res.send({ status: 'submitted' });
+    res.send({ status: sync? 'success' : 'submitted' });
   } catch (err) {
     next(err);
   }
