@@ -91,7 +91,7 @@ describe('Payment definitions: authored', async () => {
 
       nock('https://apigateway.kaleido.io')
         .post('/createPaymentInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
+        .reply(200, { id: 'my-receipt-id' });
 
       const result = await request(app)
         .post('/api/v1/payments/instances')
@@ -113,8 +113,8 @@ describe('Payment definitions: authored', async () => {
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.amount, 10);
-      assert.strictEqual(paymentInstance.confirmed, false);
-      assert.strictEqual(typeof paymentInstance.timestamp, 'number');
+      assert.strictEqual(paymentInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof paymentInstance.submitted, 'number');
 
       const getPaymentInstanceResponse = await request(app)
         .get(`/api/v1/payments/instances/${paymentInstanceID}`)
@@ -155,11 +155,12 @@ describe('Payment definitions: authored', async () => {
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
-      assert.strictEqual(paymentInstance.confirmed, true);
       assert.strictEqual(paymentInstance.amount, 10);
+      assert.strictEqual(paymentInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof paymentInstance.submitted, 'number');
       assert.strictEqual(paymentInstance.timestamp, timestamp);
-      assert.strictEqual(paymentInstance.blockchainData.blockNumber, 123);
-      assert.strictEqual(paymentInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(paymentInstance.blockNumber, 123);
+      assert.strictEqual(paymentInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/payments/instances/${paymentInstanceID}`)

@@ -230,10 +230,12 @@ export interface IDBPaymentInstance {
   recipient: string
   amount: number
   descriptionHash?: string
-  description: string
-  confirmed: boolean
-  blockchainData?: IDBBlockchainData
-  timestamp: number
+  description?: object
+  receipt?: string
+  submitted?: number
+  timestamp?: number
+  blockNumber?: number
+  transactionHash?: string
 }
 
 // APP2APP INTERFACES

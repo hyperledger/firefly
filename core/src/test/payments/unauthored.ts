@@ -3,7 +3,6 @@ import request from 'supertest';
 import assert from 'assert';
 import { IEventPaymentDefinitionCreated, IDBPaymentDefinition, IEventPaymentInstanceCreated, IDBPaymentInstance } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
-import nock from 'nock';
 
 describe('Payment definitions: unauthored', async () => {
 
@@ -55,46 +54,9 @@ describe('Payment definitions: unauthored', async () => {
 
   });
 
-
   describe('Payment instances', async () => {
 
-    let paymentInstanceID: string;
-
-    it('Checks that a payment instance can be created', async () => {
-
-      nock('https://apigateway.kaleido.io')
-        .post('/createPaymentInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
-
-      const result = await request(app)
-        .post('/api/v1/payments/instances')
-        .send({
-          paymentDefinitionID,
-          author: '0x0000000000000000000000000000000000000001',
-          recipient: '0x0000000000000000000000000000000000000002',
-          amount: 10
-        })
-        .expect(200);
-      assert.deepStrictEqual(result.body.status, 'submitted');
-      paymentInstanceID = result.body.paymentInstanceID;
-
-      const getPaymentInstancesResponse = await request(app)
-        .get('/api/v1/payments/instances')
-        .expect(200);
-      const paymentInstance = getPaymentInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
-      assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
-      assert.strictEqual(paymentInstance.amount, 10);
-      assert.strictEqual(paymentInstance.confirmed, false);
-      assert.strictEqual(typeof paymentInstance.timestamp, 'number');
-
-      const getPaymentInstanceResponse = await request(app)
-        .get(`/api/v1/payments/instances/${paymentInstanceID}`)
-        .expect(200);
-      assert.deepStrictEqual(paymentInstance, getPaymentInstanceResponse.body);
-
-    });
+    const paymentInstanceID = '646a2a24-319e-408b-a099-fc163ff3e692';
 
     it('Checks that the event stream notification for confirming the payment instance creation is handled', async () => {
       const eventPromise = new Promise((resolve) => {
@@ -128,11 +90,12 @@ describe('Payment definitions: unauthored', async () => {
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
-      assert.strictEqual(paymentInstance.confirmed, true);
+      assert.strictEqual(paymentInstance.submitted, undefined);
+      assert.strictEqual(paymentInstance.receipt, undefined);
       assert.strictEqual(paymentInstance.amount, 10);
       assert.strictEqual(paymentInstance.timestamp, timestamp);
-      assert.strictEqual(paymentInstance.blockchainData.blockNumber, 123);
-      assert.strictEqual(paymentInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(paymentInstance.blockNumber, 123);
+      assert.strictEqual(paymentInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/payments/instances/${paymentInstanceID}`)
