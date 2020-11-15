@@ -78,18 +78,6 @@ export const upsertAssetDefinition = (assetDefinition: IDBAssetDefinition) => {
   }, { upsert: true });
 };
 
-// export const upsertAssetDefinition = (assetDefinitionID: string, name: string, author: string, isContentPrivate: boolean,
-//   isContentUnique: boolean, descriptionSchemaHash: string | undefined, descriptionSchema: Object | undefined,
-//   contentSchemaHash: string | undefined, contentSchema: Object | undefined,
-//   timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
-//   return assetDefinitionsDb.update({ assetDefinitionID }, {
-//     $set: {
-//       assetDefinitionID, name, author, isContentPrivate, isContentUnique, descriptionSchemaHash,
-//       descriptionSchema, contentSchemaHash, contentSchema, timestamp, confirmed, blockchainData
-//     }
-//   }, { upsert: true });
-// };
-
 export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
   return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
 };
@@ -108,15 +96,21 @@ export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymen
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined,
-  descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
-  return paymentDefinitionsDb.update({ paymentDefinitionID }, {
-    $set: {
-      paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema,
-      timestamp, confirmed, blockchainData
-    }
+export const upsertPaymentDefinition = (paymentDefinition: IDBPaymentDefinition) => {
+  return paymentDefinitionsDb.update({ paymentDefinitionID: paymentDefinition.paymentDefinitionID }, {
+    $set: paymentDefinition
   }, { upsert: true });
 };
+
+// export const upsertPaymentDefinition = (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string | undefined,
+//   descriptionSchema: Object | undefined, timestamp: number, confirmed: boolean, blockchainData: IDBBlockchainData | undefined) => {
+//   return paymentDefinitionsDb.update({ paymentDefinitionID }, {
+//     $set: {
+//       paymentDefinitionID, name, author, descriptionSchemaHash, descriptionSchema,
+//       timestamp, confirmed, blockchainData
+//     }
+//   }, { upsert: true });
+// };
 
 export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
   return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { conflict: true, timestamp } });

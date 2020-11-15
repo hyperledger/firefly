@@ -110,28 +110,39 @@ export const createUnstructuredAssetDefinition = async (assetDefinitionID: strin
 
 // Payment definition APIs
 
-export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, descriptionSchemaHash: string, sync: boolean) => {
-  await axios({
+export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
+  descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentDefinitionID, name, descriptionSchemaHash }
+    data: {
+      paymentDefinitionID,
+      name,
+      descriptionSchemaHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
-export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean) => {
-  await axios({
+export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentDefinitionID, name }
+    data: {
+      paymentDefinitionID,
+      name
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
 // Asset instance APIs
