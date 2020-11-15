@@ -42,11 +42,10 @@ describe('Payment definitions: unauthored', async () => {
       const paymentDefinition = getPaymentDefinitionsResponse.body.find((paymentDefinition: IDBPaymentDefinition) => paymentDefinition.name === 'unauthored');
       assert.strictEqual(paymentDefinition.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000002');
-      assert.strictEqual(paymentDefinition.confirmed, true);
       assert.strictEqual(paymentDefinition.name, 'unauthored');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
-      assert.strictEqual(paymentDefinition.blockchainData.blockNumber, 123);
-      assert.strictEqual(paymentDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(paymentDefinition.blockNumber, 123);
+      assert.strictEqual(paymentDefinition.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getPaymentDefinitionResponse = await request(app)
       .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)

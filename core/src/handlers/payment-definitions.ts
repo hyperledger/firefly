@@ -4,7 +4,7 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
 
 export const handleGetPaymentDefinitionsRequest = (skip: number, limit: number) => {
   return database.retrievePaymentDefinitions(skip, limit);
@@ -22,29 +22,41 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
   if (await database.retrievePaymentDefinitionByName(name) !== null) {
     throw new RequestError('Payment definition name conflict', 409);
   }
-  const assetDefinitionID = uuidV4();
+  let descriptionSchemaHash: string | undefined;
+  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
+  const timestamp = utils.getTimestamp();
+
+  const paymentDefinitionID = uuidV4();
   if (descriptionSchema) {
-    const descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    await database.upsertPaymentDefinition(assetDefinitionID, name, author, descriptionSchemaHash, descriptionSchema, utils.getTimestamp(), false, undefined);
-    await apiGateway.createDescribedPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, descriptionSchemaHash, sync);
+    descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
+    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(utils.uuidToHex(paymentDefinitionID), name, author, descriptionSchemaHash, sync);
   } else {
-    await database.upsertPaymentDefinition(assetDefinitionID, name, author, undefined, undefined, utils.getTimestamp(), false, undefined);
-    await apiGateway.createPaymentDefinition(utils.uuidToHex(assetDefinitionID), name, author, sync);
+    apiGatewayResponse = await apiGateway.createPaymentDefinition(utils.uuidToHex(paymentDefinitionID), name, author, sync);
   }
-  return assetDefinitionID;
+  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  await database.upsertPaymentDefinition({
+    paymentDefinitionID,
+    name,
+    author,
+    descriptionSchemaHash,
+    descriptionSchema,
+    submitted: timestamp,
+    receipt
+  });
+  return paymentDefinitionID;
 };
 
-export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDefinitionCreated, blockchainData: IDBBlockchainData) => {
+export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDefinitionCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
   const paymentDefinitionID = utils.hexToUuid(event.paymentDefinitionID);
   const dbPaymentDefinitionByID = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
   if (dbPaymentDefinitionByID !== null) {
-    if (dbPaymentDefinitionByID.confirmed) {
+    if (dbPaymentDefinitionByID.transactionHash !== undefined) {
       throw new Error(`Payment definition ID conflict ${paymentDefinitionID}`);
     }
   } else {
     const dbpaymentDefinitionByName = await database.retrievePaymentDefinitionByName(event.name);
     if (dbpaymentDefinitionByName !== null) {
-      if (dbpaymentDefinitionByName.confirmed) {
+      if (dbpaymentDefinitionByName.transactionHash !== undefined) {
         throw new Error(`Payment definition name conflict ${event.name}`);
       } else {
         await database.markPaymentDefinitionAsConflict(dbpaymentDefinitionByName.paymentDefinitionID, Number(event.timestamp));
@@ -59,6 +71,14 @@ export const handlePaymentDefinitionCreatedEvent = async (event: IEventPaymentDe
       descriptionSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.descriptionSchemaHash));
     }
   }
-  database.upsertPaymentDefinition(paymentDefinitionID, event.name, event.author, event.descriptionSchemaHash,
-    descriptionSchema, Number(event.timestamp), true, blockchainData);
+  database.upsertPaymentDefinition({
+    paymentDefinitionID,
+    author: event.author,
+    name: event.name,
+    descriptionSchemaHash: event.descriptionSchemaHash,
+    descriptionSchema,
+    timestamp: Number(event.timestamp),
+    blockNumber,
+    transactionHash
+  });
 };

@@ -185,9 +185,12 @@ export interface IDBPaymentDefinition {
   name: string
   descriptionSchema?: object
   descriptionSchemaHash?: string
-  timestamp: number
-  confirmed: boolean
-  blockchainData?: IDBBlockchainData
+  submitted?: number
+  receipt?: string
+  timestamp?: number
+  blockNumber?: number
+  transactionHash?: string
+  conflict?: boolean
 }
 
 export interface IDBAssetInstance {

@@ -17,7 +17,7 @@ describe('Payment definitions: authored - described', async () => {
 
       nock('https://apigateway.kaleido.io')
         .post('/createDescribedPaymentDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
+        .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
@@ -40,10 +40,10 @@ describe('Payment definitions: authored - described', async () => {
       const paymentDefinition = getPaymentDefinitionsResponse.body.find((paymentDefinition: IDBPaymentDefinition) => paymentDefinition.name === 'authored - described');
       assert.strictEqual(paymentDefinition.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentDefinition.confirmed, false);
       assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'authored - described');
-      assert.strictEqual(typeof paymentDefinition.timestamp, 'number');
+      assert.strictEqual(paymentDefinition.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof paymentDefinition.submitted, 'number');
 
       const getPaymentDefinitionResponse = await request(app)
         .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)
@@ -85,12 +85,13 @@ describe('Payment definitions: authored - described', async () => {
       const paymentDefinition = getPaymentDefinitionsResponse.body.find((paymentDefinition: IDBPaymentDefinition) => paymentDefinition.name === 'authored - described');
       assert.strictEqual(paymentDefinition.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentDefinition.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentDefinition.confirmed, true);
       assert.deepStrictEqual(paymentDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(paymentDefinition.name, 'authored - described');
       assert.strictEqual(paymentDefinition.timestamp, timestamp);
-      assert.strictEqual(paymentDefinition.blockchainData.blockNumber, 123);
-      assert.strictEqual(paymentDefinition.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(paymentDefinition.receipt, 'my-receipt-id');
+      assert.strictEqual(typeof paymentDefinition.submitted, 'number');
+      assert.strictEqual(paymentDefinition.blockNumber, 123);
+      assert.strictEqual(paymentDefinition.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getPaymentDefinitionResponse = await request(app)
         .get(`/api/v1/payments/definitions/${paymentDefinitionID}`)

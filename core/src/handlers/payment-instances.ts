@@ -29,8 +29,8 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
   if (paymentDefinition === null) {
     throw new RequestError('Unknown payment definition', 400);
   }
-  if (!paymentDefinition.confirmed) {
-    throw new RequestError('Payment definition must be confirmed', 400);
+  if (paymentDefinition.transactionHash === undefined) {
+    throw new RequestError('Payment definition transaction must be mined', 400);
   }
   if (paymentDefinition.descriptionSchema) {
     if (!description) {
@@ -63,8 +63,8 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
   if (paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }
-  if (!paymentDefinition.confirmed) {
-    throw new Error('Unconfirmed payment definition');
+  if (paymentDefinition.transactionHash === undefined) {
+    throw new Error('Payment definition transaction must be mined');
   }
   let description: Object | undefined = undefined;
   if (paymentDefinition.descriptionSchema) {
