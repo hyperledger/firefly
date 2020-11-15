@@ -62,55 +62,15 @@ describe('Payment definitions: unauthored - described', async () => {
 
   });
 
-
   describe('Payment instances', async () => {
 
-    let paymentInstanceID: string;
-
-    it('Checks that a payment instance can be created', async () => {
-
-      nock('https://apigateway.kaleido.io')
-        .post('/createDescribedPaymentInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
-        .reply(200);
-
-      nock('https://ipfs.kaleido.io')
-        .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.sample.ipfsMultiHash })
-
-      const result = await request(app)
-        .post('/api/v1/payments/instances')
-        .send({
-          paymentDefinitionID,
-          author: '0x0000000000000000000000000000000000000001',
-          description: testDescription.sample.object,
-          recipient: '0x0000000000000000000000000000000000000002',
-          amount: 10
-        })
-        .expect(200);
-      assert.deepStrictEqual(result.body.status, 'submitted');
-      paymentInstanceID = result.body.paymentInstanceID;
-
-      const getPaymentInstancesResponse = await request(app)
-        .get('/api/v1/payments/instances')
-        .expect(200);
-      const paymentInstance = getPaymentInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
-      assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
-      assert.strictEqual(paymentInstance.descriptionHash, testDescription.sample.ipfsSha256);
-      assert.deepStrictEqual(paymentInstance.description, testDescription.sample.object);
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
-      assert.strictEqual(paymentInstance.amount, 10);
-      assert.strictEqual(paymentInstance.confirmed, false);
-      assert.strictEqual(typeof paymentInstance.timestamp, 'number');
-
-      const getPaymentInstanceResponse = await request(app)
-        .get(`/api/v1/payments/instances/${paymentInstanceID}`)
-        .expect(200);
-      assert.deepStrictEqual(paymentInstance, getPaymentInstanceResponse.body);
-
-    });
+    const paymentInstanceID = 'f831b208-9567-4fe2-b388-8e994a6163e1';
 
     it('Checks that the event stream notification for confirming the payment instance creation is handled', async () => {
+      nock('https://ipfs.kaleido.io')
+      .get(`/ipfs/${testDescription.sample.ipfsMultiHash}`)
+      .reply(200, testDescription.sample.object);
+
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
@@ -145,11 +105,12 @@ describe('Payment definitions: unauthored - described', async () => {
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.descriptionHash, testDescription.sample.ipfsSha256);
       assert.deepStrictEqual(paymentInstance.description, testDescription.sample.object);
-      assert.strictEqual(paymentInstance.confirmed, true);
+      assert.strictEqual(paymentInstance.submitted, undefined);
+      assert.strictEqual(paymentInstance.receipt, undefined);
       assert.strictEqual(paymentInstance.amount, 10);
       assert.strictEqual(paymentInstance.timestamp, timestamp);
-      assert.strictEqual(paymentInstance.blockchainData.blockNumber, 123);
-      assert.strictEqual(paymentInstance.blockchainData.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
+      assert.strictEqual(paymentInstance.blockNumber, 123);
+      assert.strictEqual(paymentInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/payments/instances/${paymentInstanceID}`)

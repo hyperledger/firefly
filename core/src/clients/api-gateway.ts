@@ -160,7 +160,8 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
       assetInstanceID,
       assetDefinitionID,
       descriptionHash,
-      contentHash }
+      contentHash
+    }
   });
   return { ...response.data, type: sync ? 'sync' : 'async' };
 };
@@ -183,40 +184,62 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
   return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
-export const setAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
-  await axios({
+export const setAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string,
+  sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { assetInstanceID, key, value }
+    data: {
+      assetInstanceID,
+      key,
+      value
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
 // Payment instance APIs
 
-export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, amount: number, descriptionHash: string, sync = false) => {
-  await axios({
+export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
+  author: string, recipient: string, amount: number, descriptionHash: string, sync = false):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash }
+    data: {
+      paymentInstanceID,
+      paymentDefinitionID,
+      recipient,
+      amount,
+      descriptionHash
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
 
-export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string, recipient: string, amount: number, sync = false) => {
-  await axios({
+export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string,
+  recipient: string, amount: number, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  const response = await axios({
     method: 'post',
     url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
     auth: {
       username: config.appCredentials.user,
       password: config.appCredentials.password
     },
-    data: { paymentInstanceID, paymentDefinitionID, recipient, amount }
+    data: {
+      paymentInstanceID,
+      paymentDefinitionID,
+      recipient,
+      amount
+    }
   });
+  return { ...response.data, type: sync ? 'sync' : 'async' };
 };
