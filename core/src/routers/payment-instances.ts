@@ -46,7 +46,7 @@ router.post('/', async (req, res, next) => {
     }
     const sync = req.query.sync === 'true';
     const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, sync);
-    res.send({ status: 'submitted', paymentInstanceID });
+    res.send({ status: sync? 'success' : 'submitted', paymentInstanceID });
   } catch (err) {
     next(err);
   }
