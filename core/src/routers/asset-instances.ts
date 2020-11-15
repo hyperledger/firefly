@@ -22,8 +22,8 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/:assetInstanceID', async (req, res, next) => {
-  const content = req.query.content === 'true';
   try {
+    const content = req.query.content === 'true';
     res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetInstanceID, content));
   } catch (err) {
     next(err);
@@ -63,26 +63,26 @@ router.post('/', async (req, res, next) => {
       }
       assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
     }
-    res.send({ status: sync? 'success' : 'submitted', assetInstanceID });
+    res.send({ status: sync ? 'success' : 'submitted', assetInstanceID });
   } catch (err) {
     next(err);
   }
 });
 
 router.put('/:assetInstanceID', async (req, res, next) => {
-  if (!req.body.key) {
-    throw new RequestError('Missing asset property key', 400);
-  }
-  if (!req.body.value) {
-    throw new RequestError('Missing asset property value', 400);
-  }
-  if (!req.body.author || !utils.regexps.ACCOUNT.test(req.body.author)) {
-    throw new RequestError('Missing or invalid asset property author', 400);
-  }
-  const sync = req.query.sync === 'true';
   try {
+    if (!req.body.key) {
+      throw new RequestError('Missing asset property key', 400);
+    }
+    if (!req.body.value) {
+      throw new RequestError('Missing asset property value', 400);
+    }
+    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+      throw new RequestError('Missing or invalid asset property author', 400);
+    }
+    const sync = req.query.sync === 'true';
     await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
-    res.send({ status: sync? 'success' : 'submitted' });
+    res.send({ status: sync ? 'success' : 'submitted' });
   } catch (err) {
     next(err);
   }
@@ -90,7 +90,7 @@ router.put('/:assetInstanceID', async (req, res, next) => {
 
 router.patch(':/assetInstanceID', async (req, res, next) => {
   try {
-    if(!utils.regexps.ACCOUNT.test(req.body.requester)) {
+    if (!utils.regexps.ACCOUNT.test(req.body.requester)) {
       throw new RequestError(`Missing requester`);
     }
     await assetInstancesHandler.handleTradeAssetRequest(req.body.requester, req.params.assetInstanceID);

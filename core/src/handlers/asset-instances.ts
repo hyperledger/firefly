@@ -156,15 +156,20 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
   if (assetInstance.properties) {
     const authorMetadata = assetInstance.properties[author];
     if (authorMetadata) {
-      const currentValue = authorMetadata[key];
-      if (currentValue?.transactionHash !== undefined && currentValue.value === value) {
-        throw new RequestError('Property already set');
+      const valueData = authorMetadata[key];
+      if (valueData?.value === value && valueData.history !== undefined) {
+        const keys = Object.keys(valueData.history);
+        const lastConfirmedValue = valueData.history[keys[keys.length - 1]];
+        if (lastConfirmedValue.value === value) {
+          throw new RequestError('Property already set');
+        }
       }
     }
   }
-  await database.setAssetInstanceProperty(assetInstanceID, author, key, value, false, utils.getTimestamp(), undefined);
-  await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
-  // TODO
+  const timestamp = utils.getTimestamp();
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  await database.setSubmittedAssetInstanceProperty(assetInstanceID, author, key, value, timestamp, receipt);
 };
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
@@ -242,7 +247,7 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   if (!event.key) {
     throw new Error('Invalid property key');
   }
-  await database.setAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, true, Number(event.timestamp), blockchainData);
+  await database.setConfirmedAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
 };
 
 export const handleTradeAssetRequest = async (requesterAddress: string, assetInstanceID: string) => {
