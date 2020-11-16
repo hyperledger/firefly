@@ -3,11 +3,9 @@ import RequestError from '../lib/request-error';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
-import Ajv from 'ajv';
 
 const router = Router();
 
-const ajv = new Ajv();
 const MongoQS = require('mongo-querystring');
 const qs = new MongoQS({
   blacklist: { skip: true, limit: true }
@@ -48,12 +46,6 @@ router.post('/', async (req, res, next) => {
     }
     if (typeof req.body.isContentUnique !== 'boolean') {
       throw new RequestError('Missing asset definition content uniqueness', 400);
-    }
-    if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
-      throw new RequestError('Invalid description schema', 400);
-    }
-    if (req.body.contentSchema && !ajv.validateSchema(req.body.contentSchema)) {
-      throw new RequestError('Invalid content schema', 400);
     }
     const sync = req.query.sync === 'true';
     const assetDefinitionID = await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,

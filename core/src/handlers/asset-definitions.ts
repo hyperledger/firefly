@@ -1,10 +1,13 @@
 import { v4 as uuidV4 } from 'uuid';
+import Ajv from 'ajv';
 import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
+
+const ajv = new Ajv();
 
 export const handleGetAssetDefinitionsRequest = (query: object, skip: number, limit: number) => {
   return database.retrieveAssetDefinitions(query, skip, limit);
@@ -20,6 +23,12 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
   author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
+  if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
+    throw new RequestError('Invalid description schema', 400);
+  }
+  if (contentSchema !== undefined && !ajv.validateSchema(contentSchema)) {
+    throw new RequestError('Invalid content schema', 400);
+  }
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
@@ -88,7 +97,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
   }
   let contentSchema;
   if (event.contentSchemaHash) {
-    if(event.contentSchemaHash === dbAssetDefinitionByID?.contentSchemaHash) {
+    if (event.contentSchemaHash === dbAssetDefinitionByID?.contentSchemaHash) {
       contentSchema = dbAssetDefinitionByID.contentSchema;
     } else {
       contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));

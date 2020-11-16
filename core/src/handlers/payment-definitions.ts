@@ -1,10 +1,13 @@
 import { v4 as uuidV4 } from 'uuid';
+import Ajv from 'ajv';
 import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
+
+const ajv = new Ajv();
 
 export const handleGetPaymentDefinitionsRequest = (query: object, skip: number, limit: number) => {
   return database.retrievePaymentDefinitions(query, skip, limit);
@@ -19,6 +22,9 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
 };
 
 export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
+  if(descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
+    throw new RequestError('Invalid description schema', 400);
+  }
   if (await database.retrievePaymentDefinitionByName(name) !== null) {
     throw new RequestError('Payment definition name conflict', 409);
   }
