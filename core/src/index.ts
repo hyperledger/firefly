@@ -7,6 +7,7 @@ import assetInstancesRouter from './routers/asset-instances';
 import paymentDefinitionsRouter from './routers/payment-definitions';
 import paymentInstancesRouter from './routers/payment-instances';
 import { errorHandler } from './lib/request-error';
+import * as settings from './lib/settings';
 import * as utils from './lib/utils';
 import * as ipfs from './clients/ipfs';
 import * as app2app from './clients/app2app';
@@ -18,6 +19,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 export const promise = initConfig(() => { app2app.reset(); docExchange.reset() })
+  .then(() => settings.init())
   .then(() => ipfs.init())
   .then(() => app2app.init())
   .then(() => docExchange.init())

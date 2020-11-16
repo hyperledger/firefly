@@ -50,7 +50,6 @@ const watchConfigFile = () => {
   });
 };
 
-
 export const shutDown = () => {
   fsWatcher.close();
 };
