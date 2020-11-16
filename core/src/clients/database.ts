@@ -54,10 +54,6 @@ export const upsertMember = (member: IDBMember) => {
   }, { upsert: true });
 };
 
-export const isMemberOwned = async (address: string): Promise<boolean> => {
-  return (await membersDb.count({ address, owned: true })) === 1;
-};
-
 // Asset definition queries
 
 export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
@@ -125,6 +121,10 @@ export const upsertAssetInstance = (assetInstance: IDBAssetInstance) => {
   return assetInstancesDb.update({ assetInstanceID: assetInstance.assetInstanceID }, {
     $set: assetInstance
   }, { upsert: true });
+};
+
+export const setAssetInstancePrivateContent = (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
+  return assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename } });
 };
 
 export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: number) => {

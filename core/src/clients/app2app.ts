@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 import { createLogger, LogLevelString } from 'bunyan';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IApp2AppMessage, IApp2AppMessageListener } from '../lib/interfaces';
+import { AssetTradeMessage, IApp2AppMessage, IApp2AppMessageListener } from '../lib/interfaces';
 
 const log = createLogger({ name: 'clients/app2app.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
@@ -38,8 +38,13 @@ const establishSocketIOConnection = () => {
     log.error(`App2app messaging Socket IO error. ${err.toString()}`);
   }).on('data', (app2appMessage: IApp2AppMessage) => {
     log.trace(`App2App message ${JSON.stringify(app2appMessage)}`);
-    for (const listener of listeners) {
-      listener(app2appMessage);
+    try {
+      const content: AssetTradeMessage = JSON.parse(app2appMessage.content);
+      for (const listener of listeners) {
+        listener(app2appMessage.headers, content);
+      }
+    } catch (err) {
+      log.error(`App2App message error ${err}`);
     }
   });
 };

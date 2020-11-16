@@ -88,13 +88,13 @@ router.put('/:assetInstanceID', async (req, res, next) => {
   }
 });
 
-router.patch(':/assetInstanceID', async (req, res, next) => {
+router.patch('/:assetInstanceID', async (req, res, next) => {
   try {
     if (!utils.regexps.ACCOUNT.test(req.body.requester)) {
       throw new RequestError(`Missing requester`);
     }
-    await assetInstancesHandler.handleAssetTradeRequest(req.body.requester, req.params.assetInstanceID);
-    res.send({ status: 'submitted' });
+    await assetInstancesHandler.handleAssetInstanceTradeRequest(req.body.requester, req.params.assetInstanceID, req.body.metadata);
+    res.send({ status: 'success' });
   } catch (err) {
     next(err);
   }
