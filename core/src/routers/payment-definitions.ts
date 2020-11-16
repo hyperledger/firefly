@@ -3,11 +3,8 @@ import RequestError from '../lib/request-error';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
-import Ajv from 'ajv';
 
 const router = Router();
-
-const ajv = new Ajv();
 const MongoQS = require('mongo-querystring');
 const qs = new MongoQS({
   blacklist: { skip: true, limit: true }
@@ -42,9 +39,6 @@ router.post('/', async (req, res, next) => {
     }
     if (!utils.regexps.ACCOUNT.test(req.body.author)) {
       throw new RequestError('Missing or invalid payment definition author', 400);
-    }
-    if (req.body.descriptionSchema && !ajv.validateSchema(req.body.descriptionSchema)) {
-      throw new RequestError('Invalid description schema', 400);
     }
     const sync = req.query.sync === 'true';
     const paymentDefinitionID = await paymentDefinitionsHandler.handleCreatePaymentDefinitionRequest(req.body.name,

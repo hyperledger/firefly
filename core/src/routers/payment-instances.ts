@@ -5,7 +5,6 @@ import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
 
 const router = Router();
-
 const MongoQS = require('mongo-querystring');
 const qs = new MongoQS({
   blacklist: { skip: true, limit: true }
