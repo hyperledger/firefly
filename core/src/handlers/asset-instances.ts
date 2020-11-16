@@ -1,13 +1,14 @@
 import Ajv from 'ajv';
 import { v4 as uuidV4 } from 'uuid';
+import { config } from '../lib/config';
 import * as database from '../clients/database';
 import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
-import * as app2app from '../clients/app2app';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradeRequest, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import * as assetTrade from '../lib/asset-trade';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -98,7 +99,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   return assetInstanceID;
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, _contentFileName: string, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -139,6 +140,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     descriptionHash,
     description,
     contentHash,
+    filename,
     submitted: timestamp,
     receipt
   });
@@ -250,12 +252,16 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   await database.setConfirmedAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
 };
 
-export const handleAssetTradeRequest = async (requesterAddress: string, assetInstanceID: string) => {
+export const handleAssetInstanceTradeRequest = async (requesterAddress: string, assetInstanceID: string, metadata: object | undefined) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Uknown asset instance', 404);
   }
-  if (database.isMemberOwned(assetInstance.author)) {
+  const author = await database.retrieveMemberByAddress(assetInstance.author);
+  if (author === null) {
+    throw new RequestError('Asset author must be registered', 400);
+  }
+  if (author.assetTrailInstanceID === config.assetTrailInstanceID) {
     throw new RequestError('Asset instance authored', 400);
   }
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
@@ -263,28 +269,24 @@ export const handleAssetTradeRequest = async (requesterAddress: string, assetIns
     throw new RequestError('Unknown asset definition', 500);
   }
   if (assetDefinition.contentSchema !== undefined) {
-    const documentDetails = await docExchange.getDocumentDetails(utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
-    if (documentDetails.hash === assetInstance.contentHash) {
-      throw new RequestError('Asset content already available', 400);
-    }
-  } else {
     if (assetInstance.content !== undefined) {
       throw new RequestError('Asset content already available', 400);
     }
-  }
-  const author = await database.retrieveMemberByAddress(assetInstance.author);
-  if (author === null) {
-    throw new RequestError('Asset author must be registered', 400);
+  } else {
+    try {
+      const documentDetails = await docExchange.getDocumentDetails(utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
+      if (documentDetails.hash === assetInstance.contentHash) {
+        throw new RequestError('Asset content already available', 400);
+      }
+    } catch (err) {
+      if (err.response?.status !== 404) {
+        throw new RequestError(err, 500);
+      }
+    }
   }
   const requester = await database.retrieveMemberByAddress(requesterAddress);
   if (requester === null) {
     throw new RequestError('Requester must be registered', 400);
   }
-  const tradeRequest: IAssetTradeRequest = {
-    type: 'asset-request',
-    assetInstanceID,
-    requester: requester.address,
-    metadata: {}
-  };
-  app2app.dispatchMessage(requester.app2appDestination, author.app2appDestination, JSON.stringify(tradeRequest));
+  await assetTrade.coordinateAssetTrade(assetInstanceID, assetDefinition, requester.address, metadata, author.app2appDestination);
 };

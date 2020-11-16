@@ -208,6 +208,7 @@ export interface IDBAssetInstance {
   blockNumber?: number
   transactionHash?: string
   timestamp?: number
+  filename?: string
   properties?: {
     [author: string]: {
       [key: string]: {
@@ -245,16 +246,18 @@ export interface IDBPaymentInstance {
 
 // APP2APP INTERFACES
 
+export interface IApp2AppMessageHeader {
+  from: string
+  to: string
+}
+
 export interface IApp2AppMessage {
-  headers: {
-    from: string
-    to: string
-  },
+  headers: IApp2AppMessageHeader
   content: string
 }
 
 export interface IApp2AppMessageListener {
-  (message: IApp2AppMessage): void
+  (header: IApp2AppMessageHeader, content: AssetTradeMessage): void
 }
 
 // DOCUMENT EXCHANGE INTERFACES
@@ -285,9 +288,24 @@ export interface IDocExchangeListener {
 
 // ASSET TRADE INTERFACES
 
-export interface IAssetTradeRequest {
-  type: 'asset-request'
+export type AssetTradeMessage = IAssetTradePrivateAssetInstanceRequest | IAssetTradePrivateAssetInstanceResponse
+
+export interface IAssetTradePrivateAssetInstanceRequest {
+  type: 'private-asset-instance-request'
+  tradeID: string
   assetInstanceID: string
-  requester: string
-  metadata: { [key: string]: string }
+  requester: {
+    assetTrailInstanceID: string
+    address: string
+  }
+  metadata?: object
+}
+
+export interface IAssetTradePrivateAssetInstanceResponse {
+  type: 'private-asset-instance-response'
+  tradeID: string
+  assetInstanceID: string
+  rejection?: string
+  content?: object
+  filename?: string
 }
