@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 import Ajv from 'ajv';
 import { config } from './config';
-import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition } from "./interfaces";
+import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
 import * as utils from './utils';
 import * as database from '../clients/database';
 import * as app2app from '../clients/app2app';
@@ -76,7 +76,47 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
   }
 };
 
-export const coordinateAssetTrade = (assetInstanceID: string, assetDefinition: IDBAssetDefinition, requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
+// export const coordinateAssetTrade = (assetInstanceID: string, assetDefinition: IDBAssetDefinition, requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
+//   const tradeID = uuidV4();
+//   const tradeRequest: IAssetTradePrivateAssetInstanceRequest = {
+//     type: 'private-asset-instance-request',
+//     tradeID,
+//     assetInstanceID,
+//     requester: {
+//       assetTrailInstanceID: config.assetTrailInstanceID,
+//       address: requesterAddress
+//     },
+//     metadata
+//   };
+//   return new Promise((resolve, reject) => {
+//     const timeout = setTimeout(() => {
+//       app2app.removeListener(listener);
+//       reject(new Error('Asset instance author response timed out'));
+//     }, utils.constants.ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS * 1000);
+//     const listener: IApp2AppMessageListener = (_headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
+//       if (content.type === 'private-asset-instance-response' && content.tradeID === tradeID) {
+//         clearTimeout(timeout);
+//         app2app.removeListener(listener);
+//         if (content.rejection) {
+//           reject(new Error(content.rejection));
+//         } else {
+//           if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
+//             reject(new Error('Asset instance content does not conform to schema'));
+//           } else {
+//             database.setAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename);
+//             resolve();
+//           }
+//         }
+//       }
+//     };
+//     app2app.addListener(listener);
+//     app2app.dispatchMessage(config.app2app.destination, authorDestination, JSON.stringify(tradeRequest));
+//   });
+// };
+
+
+export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinition: IDBAssetDefinition,
+  requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
   const tradeID = uuidV4();
   const tradeRequest: IAssetTradePrivateAssetInstanceRequest = {
     type: 'private-asset-instance-request',
@@ -88,15 +128,16 @@ export const coordinateAssetTrade = (assetInstanceID: string, assetDefinition: I
     },
     metadata
   };
-  return new Promise((resolve, reject) => {
+  const docExchangePromise = assetDefinition.contentSchema === undefined? getDocumentExchangePromise(assetInstanceID) : Promise.resolve();
+  const app2appPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      app2app.removeListener(listener);
+      app2app.removeListener(app2appListener);
       reject(new Error('Asset instance author response timed out'));
     }, utils.constants.ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS * 1000);
-    const listener: IApp2AppMessageListener = (_headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
+    const app2appListener: IApp2AppMessageListener = (_headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
       if (content.type === 'private-asset-instance-response' && content.tradeID === tradeID) {
         clearTimeout(timeout);
-        app2app.removeListener(listener);
+        app2app.removeListener(app2appListener);
         if (content.rejection) {
           reject(new Error(content.rejection));
         } else {
@@ -109,7 +150,25 @@ export const coordinateAssetTrade = (assetInstanceID: string, assetDefinition: I
         }
       }
     };
-    app2app.addListener(listener);
+    app2app.addListener(app2appListener);
     app2app.dispatchMessage(config.app2app.destination, authorDestination, JSON.stringify(tradeRequest));
+  });
+  await Promise.all([app2appPromise, docExchangePromise]);
+};
+
+const getDocumentExchangePromise = (assetInstanceID: string) => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      docExchange.removeListener(docExchangeListener);
+      reject(new Error('Off-chain asset transfer timeout'));
+    }, utils.constants.DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS * 1000);
+    const docExchangeListener: IDocExchangeListener = (event: IDocExchangeTransferData) => {
+      if (event.document === utils.getUnstructuredFilePathInDocExchange(assetInstanceID)) {
+        clearTimeout(timeout);
+        docExchange.removeListener(docExchangeListener);
+        resolve();
+      }
+    };
+    docExchange.addListener(docExchangeListener);
   });
 };

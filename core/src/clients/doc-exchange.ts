@@ -9,6 +9,7 @@ import * as utils from '../lib/utils';
 
 const log = createLogger({ name: 'clients/doc-exchange.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
+let socket: SocketIOClient.Socket
 let listeners: IDocExchangeListener[] = [];
 
 export const init = async () => {
@@ -31,7 +32,7 @@ export const init = async () => {
 
 const establishSocketIOConnection = () => {
   let error = false;
-  io.connect(config.docExchange.socketIOEndpoint, {
+  socket = io.connect(config.docExchange.socketIOEndpoint, {
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -56,7 +57,7 @@ const establishSocketIOConnection = () => {
     for (const listener of listeners) {
       listener(transferData);
     }
-  });
+  }) as SocketIOClient.Socket;
 };
 
 export const addListener = (listener: IDocExchangeListener) => {
@@ -147,4 +148,12 @@ export const getDocumentDetails = async (filePath: string): Promise<IDocExchange
     }
   });
   return result.data;
+};
+
+export const reset = () => {
+  if (socket) {
+    log.info('Document exchange Socket IO connection reset');
+    socket.close();
+    establishSocketIOConnection();
+  }
 };
