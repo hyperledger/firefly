@@ -127,10 +127,9 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
   if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(utils.uuidToHex(assetInstanceID),
-      utils.uuidToHex(assetDefinitionID), author, descriptionHash, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createAssetInstance(utils.uuidToHex(assetInstanceID), utils.uuidToHex(assetDefinitionID), author, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetInstance({
