@@ -6,8 +6,8 @@ import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
 
-export const handleGetAssetDefinitionsRequest = (skip: number, limit: number) => {
-  return database.retrieveAssetDefinitions(skip, limit);
+export const handleGetAssetDefinitionsRequest = (query: object, skip: number, limit: number) => {
+  return database.retrieveAssetDefinitions(query, skip, limit);
 };
 
 export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string) => {

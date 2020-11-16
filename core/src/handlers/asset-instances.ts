@@ -12,8 +12,8 @@ import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, I
 
 const ajv = new Ajv();
 
-export const handleGetAssetInstancesRequest = (skip: number, limit: number) => {
-  return database.retrieveAssetInstances(skip, limit);
+export const handleGetAssetInstancesRequest = (query: object, skip: number, limit: number) => {
+  return database.retrieveAssetInstances(query, skip, limit);
 };
 
 export const handleGetAssetInstanceRequest = async (assetInstanceID: string, content: boolean) => {

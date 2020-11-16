@@ -40,11 +40,7 @@ export const retrieveMemberByAddress = (address: string): Promise<IDBMember | nu
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
 };
 
-export const retrieveMembers = (skip: number, limit: number, owned: boolean): Promise<IDBMember[]> => {
-  let query: any = {};
-  if (owned) {
-    query.owned = true;
-  }
+export const retrieveMembers = (query: object, skip: number, limit: number): Promise<IDBMember[]> => {
   return membersDb.find<IDBMember>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
 };
 
@@ -56,8 +52,8 @@ export const upsertMember = (member: IDBMember) => {
 
 // Asset definition queries
 
-export const retrieveAssetDefinitions = (skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
-  return assetDefinitionsDb.find<IDBAssetDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
+export const retrieveAssetDefinitions = (query: object, skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
+  return assetDefinitionsDb.find<IDBAssetDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
 export const retrieveAssetDefinitionByID = (assetDefinitionID: string): Promise<IDBAssetDefinition | null> => {
@@ -80,8 +76,8 @@ export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timesta
 
 // Payment definition queries
 
-export const retrievePaymentDefinitions = (skip: number, limit: number): Promise<IDBPaymentDefinition[]> => {
-  return paymentDefinitionsDb.find<IDBPaymentDefinition>({}, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
+export const retrievePaymentDefinitions = (query: object, skip: number, limit: number): Promise<IDBPaymentDefinition[]> => {
+  return paymentDefinitionsDb.find<IDBPaymentDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
 export const retrievePaymentDefinitionByID = (paymentDefinitionID: string): Promise<IDBPaymentDefinition | null> => {
@@ -104,8 +100,8 @@ export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, tim
 
 // Asset instance queries
 
-export const retrieveAssetInstances = (skip: number, limit: number): Promise<IDBAssetInstance[]> => {
-  return assetInstancesDb.find<IDBAssetInstance>({}, { _id: 0 }).skip(skip).limit(limit);
+export const retrieveAssetInstances = (query: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
+  return assetInstancesDb.find<IDBAssetInstance>(query, { _id: 0 }).skip(skip).limit(limit);
 };
 
 export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBAssetInstance | null> => {
@@ -155,8 +151,8 @@ export const setConfirmedAssetInstanceProperty = (assetInstanceID: string, autho
 
 // Payment instance queries
 
-export const retrievePaymentInstances = (skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
-  return paymentInstancesDb.find<IDBPaymentInstance>({}, { _id: 0 }).skip(skip).limit(limit);
+export const retrievePaymentInstances = (query: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
+  return paymentInstancesDb.find<IDBPaymentInstance>(query, { _id: 0 }).skip(skip).limit(limit);
 };
 
 export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<IDBPaymentInstance | null> => {

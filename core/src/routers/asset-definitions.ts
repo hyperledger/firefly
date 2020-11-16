@@ -5,18 +5,23 @@ import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
 import Ajv from 'ajv';
 
-const ajv = new Ajv();
-
 const router = Router();
+
+const ajv = new Ajv();
+const MongoQS = require('mongo-querystring');
+const qs = new MongoQS({
+  blacklist: { skip: true, limit: true }
+});
 
 router.get('/', async (req, res, next) => {
   try {
+    const query = qs.parse(req.query);
     const skip = Number(req.query.skip || 0);
     const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionsRequest(skip, limit));
+    res.send(await assetDefinitionsHandler.handleGetAssetDefinitionsRequest(query, skip, limit));
   } catch (err) {
     next(err);
   }

@@ -9,8 +9,8 @@ import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, I
 
 const ajv = new Ajv();
 
-export const handleGetPaymentInstancesRequest = (skip: number, limit: number) => {
-  return database.retrievePaymentInstances(skip, limit);
+export const handleGetPaymentInstancesRequest = (query: object, skip: number, limit: number) => {
+  return database.retrievePaymentInstances(query, skip, limit);
 };
 
 export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string) => {

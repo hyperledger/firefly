@@ -6,8 +6,8 @@ import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
 
-export const handleGetPaymentDefinitionsRequest = (skip: number, limit: number) => {
-  return database.retrievePaymentDefinitions(skip, limit);
+export const handleGetPaymentDefinitionsRequest = (query: object, skip: number, limit: number) => {
+  return database.retrievePaymentDefinitions(query, skip, limit);
 };
 
 export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: string) => {
