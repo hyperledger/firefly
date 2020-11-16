@@ -1,22 +1,22 @@
 import { v4 as uuidV4 } from 'uuid';
+import axios from 'axios';
 import Ajv from 'ajv';
 import { config } from './config';
-import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
+import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDBAssetInstance, IDBMember, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
+import * as settings from './settings';
 import * as utils from './utils';
 import * as database from '../clients/database';
 import * as app2app from '../clients/app2app';
 import * as docExchange from '../clients/doc-exchange';
 import { createLogger, LogLevelString } from 'bunyan';
 
-const ajv = new Ajv();
-
 const log = createLogger({ name: 'lib/asset-trade.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+
+const ajv = new Ajv();
 
 export const assetTradeHandler = async (headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
   if (content.type === 'private-asset-instance-request') {
     processPrivateAssetInstanceRequest(headers, content);
-  } else {
-    log.error('Unrecognized App2App message');
   }
 };
 
@@ -57,11 +57,10 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
     if (!assetDefinition.isContentPrivate) {
       throw new Error(`Asset instance ${assetInstance.assetInstanceID} not private`);
     }
-
-    // * * * * * * * * * * * * * * * * * * * * * 
-    // * TODO: if not authorized, throw error
-    // * * * * * * * * * * * * * * * * * * * * * 
-
+    const authorized = await handlePrivateAssetInstanceAuthorization(assetInstance, requester, request.metadata);
+    if(authorized !== true) {
+      throw new Error('Access denied');
+    }
     if (assetDefinition.contentSchemaHash) {
       tradeResponse.content = assetInstance.content;
     } else {
@@ -70,50 +69,32 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
       tradeResponse.filename = assetInstance.filename;
     }
   } catch (err) {
-    tradeResponse.rejection = err.toString();
+    tradeResponse.rejection = err.message;
   } finally {
     app2app.dispatchMessage(config.app2app.destination, headers.from, JSON.stringify(tradeResponse));
   }
 };
 
-// export const coordinateAssetTrade = (assetInstanceID: string, assetDefinition: IDBAssetDefinition, requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
-//   const tradeID = uuidV4();
-//   const tradeRequest: IAssetTradePrivateAssetInstanceRequest = {
-//     type: 'private-asset-instance-request',
-//     tradeID,
-//     assetInstanceID,
-//     requester: {
-//       assetTrailInstanceID: config.assetTrailInstanceID,
-//       address: requesterAddress
-//     },
-//     metadata
-//   };
-//   return new Promise((resolve, reject) => {
-//     const timeout = setTimeout(() => {
-//       app2app.removeListener(listener);
-//       reject(new Error('Asset instance author response timed out'));
-//     }, utils.constants.ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS * 1000);
-//     const listener: IApp2AppMessageListener = (_headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
-//       if (content.type === 'private-asset-instance-response' && content.tradeID === tradeID) {
-//         clearTimeout(timeout);
-//         app2app.removeListener(listener);
-//         if (content.rejection) {
-//           reject(new Error(content.rejection));
-//         } else {
-//           if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
-//             reject(new Error('Asset instance content does not conform to schema'));
-//           } else {
-//             database.setAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename);
-//             resolve();
-//           }
-//         }
-//       }
-//     };
-//     app2app.addListener(listener);
-//     app2app.dispatchMessage(config.app2app.destination, authorDestination, JSON.stringify(tradeRequest));
-//   });
-// };
-
+const handlePrivateAssetInstanceAuthorization = async (assetInstance: IDBAssetInstance, requester: IDBMember, metadata: object | undefined) => {
+  const authorizationWebhook = settings.values[utils.settingsKeys.PRIVATE_ASSET_INSTANCE_AUTHORIZATION_WEBHOOK];
+  if (authorizationWebhook === undefined) {
+    throw new Error('Authorization webhook not set');
+  }
+  try {
+    const response = await axios({
+      url: authorizationWebhook,
+      data: {
+        assetInstance,
+        requester,
+        metadata
+      }
+    });
+    return response.data.authorized;
+  } catch(err) {
+    log.error(`Private asset instance authorization webhook error. ${err}`);
+    throw new Error('Failed to access private asset instance authorization webhook');
+  }
+};
 
 export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinition: IDBAssetDefinition,
   requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
@@ -128,7 +109,7 @@ export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinit
     },
     metadata
   };
-  const docExchangePromise = assetDefinition.contentSchema === undefined? getDocumentExchangePromise(assetInstanceID) : Promise.resolve();
+  const docExchangePromise = assetDefinition.contentSchema === undefined ? getDocumentExchangePromise(assetInstanceID) : Promise.resolve();
   const app2appPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       app2app.removeListener(app2appListener);
@@ -139,7 +120,7 @@ export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinit
         clearTimeout(timeout);
         app2app.removeListener(app2appListener);
         if (content.rejection) {
-          reject(new Error(content.rejection));
+          reject(new Error(`Asset instance request rejected. ${content.rejection}`));
         } else {
           if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
             reject(new Error('Asset instance content does not conform to schema'));

@@ -5,6 +5,7 @@ export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   CONFIG_FILE_NAME: 'config.json',
+  SETTINGS_FILE_NAME: 'settings.json',
   IPFS_TIMEOUT_MS: 15000,
   DEFAULT_PAGINATION_LIMIT: 100,
   MEMBERS_DATABASE_FILE_NAME: 'members.json',
@@ -29,6 +30,10 @@ export const requestKeys = {
   ASSET_DESCRIPTION: 'description',
   ASSET_CONTENT: 'content'
 };
+
+export const settingsKeys = {
+  PRIVATE_ASSET_INSTANCE_AUTHORIZATION_WEBHOOK: 'privateAssetInstanceAuthorizationWebhook'
+}
 
 export const contractEventSignatures = {
   MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
