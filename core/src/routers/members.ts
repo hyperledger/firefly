@@ -5,15 +5,20 @@ import { constants } from '../lib/utils';
 
 const router = Router();
 
+const MongoQS = require('mongo-querystring');
+const qs = new MongoQS({
+  blacklist: { skip: true, limit: true }
+});
+
 router.get('/', async (req, res, next) => {
-  const skip = Number(req.query.skip || 0);
-  const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
-  const owned = req.query.owned === 'true';
   try {
+    const query = qs.parse(req.query);
+    const skip = Number(req.query.skip || 0);
+    const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await membersHandler.handleGetMembersRequest(skip, limit, owned));
+    res.send(await membersHandler.handleGetMembersRequest(query, skip, limit));
   } catch (err) {
     next(err);
   }

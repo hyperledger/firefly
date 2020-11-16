@@ -8,14 +8,20 @@ import { IRequestMultiPartContent } from '../lib/interfaces';
 
 const router = Router();
 
+const MongoQS = require('mongo-querystring');
+const qs = new MongoQS({
+  blacklist: { skip: true, limit: true }
+});
+
 router.get('/', async (req, res, next) => {
   try {
+    const query = qs.parse(req.query);
     const skip = Number(req.query.skip || 0);
     const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest(skip, limit));
+    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest(query, skip, limit));
   } catch (err) {
     next(err);
   }

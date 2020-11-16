@@ -5,8 +5,8 @@ import { IDBBlockchainData, IEventMemberRegistered } from '../lib/interfaces';
 import RequestError from '../lib/request-error';
 import { config } from '../lib/config';
 
-export const handleGetMembersRequest = (skip: number, limit: number, owned: boolean) => {
-  return database.retrieveMembers(skip, limit, owned);
+export const handleGetMembersRequest = (query: object, skip: number, limit: number) => {
+  return database.retrieveMembers(query, skip, limit);
 };
 
 export const handleGetMemberRequest = async (address: string) => {
