@@ -17,7 +17,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
-export const promise = initConfig()
+export const promise = initConfig(() => { app2app.reset() })
   .then(() => ipfs.init())
   .then(() => app2app.init())
   .then(() => docExchange.init())

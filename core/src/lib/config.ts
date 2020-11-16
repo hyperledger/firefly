@@ -17,10 +17,12 @@ const configFilePath = path.join(utils.constants.DATA_DIRECTORY, utils.constants
 
 export let config: IConfig;
 let fsWatcher: FSWatcher;
+let configChangeListener: () => void;
 
-export const init = async () => {
+export const init = async (listener: () => void) => {
   await loadConfigFile();
   watchConfigFile();
+  configChangeListener = listener;
 };
 
 const loadConfigFile = async () => {
@@ -41,11 +43,13 @@ const watchConfigFile = () => {
     try {
       await loadConfigFile();
       log.info('Loaded configuration file changes');
+      configChangeListener();
     } catch(err) {
       log.error(`Failed to load configuration file. ${err}`);
     }
   });
 };
+
 
 export const shutDown = () => {
   fsWatcher.close();

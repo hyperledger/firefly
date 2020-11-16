@@ -6,7 +6,7 @@ import { AssetTradeMessage, IApp2AppMessage, IApp2AppMessageListener } from '../
 
 const log = createLogger({ name: 'clients/app2app.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
-let socket: SocketIOClient.Emitter;
+let socket: SocketIOClient.Socket
 let listeners: IApp2AppMessageListener[] = [];
 
 export const init = async () => {
@@ -46,7 +46,7 @@ const establishSocketIOConnection = () => {
     } catch (err) {
       log.error(`App2App message error ${err}`);
     }
-  });
+  }) as SocketIOClient.Socket;
 };
 
 export const addListener = (listener: IApp2AppMessageListener) => {
@@ -65,4 +65,12 @@ export const dispatchMessage = (from: string, to: string, content: string) => {
     },
     content
   });
+};
+
+export const reset = () => {
+  if (socket) {
+    log.info('App2App Socket IO connection reset');
+    socket.close();
+    establishSocketIOConnection();
+  }
 };
