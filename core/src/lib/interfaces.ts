@@ -32,6 +32,12 @@ export interface IConfig {
   }
 }
 
+// SETTINGS
+
+export interface ISettings {
+  clientEvents: string[]
+}
+
 // API GATEWAY INTERFACES
 
 export interface IAPIGatewayAsyncResponse {
@@ -292,8 +298,8 @@ export interface IDocExchangeListener {
 // ASSET TRADE INTERFACES
 
 export type AssetTradeMessage =
-IAssetTradePrivateAssetInstanceRequest
-  | IAssetTradePrivateAssetInstanceResponse 
+  IAssetTradePrivateAssetInstanceRequest
+  | IAssetTradePrivateAssetInstanceResponse
   | IAssetTradePrivateAssetInstanceAuthorizationResponse
 
 export interface IAssetTradePrivateAssetInstanceRequest {
@@ -328,4 +334,26 @@ export interface IAssetTradePrivateAssetInstanceAuthorizationResponse {
   type: 'private-asset-instance-authorization-response'
   authorizationID: string
   authorized: boolean
+}
+
+// CLIENT EVENT INTERFACES
+
+export type ClientEventType =
+'asset-definition-submitted'
+  | 'asset-definition-created'
+  | 'asset-definition-name-conflict'
+  | 'payment-definition-submitted'
+  | 'payment-definition-created'
+  | 'payment-definition-name-conflict'
+  | 'asset-instance-submitted'
+  | 'asset-instance-created'
+  | 'asset-instance-content-conflict'
+  | 'payment-instance-submitted'
+  | 'payment-instance-created'
+  | 'private-asset-instance-content-stored'
+  | 'asset-instance-property-submitted'
+  | 'asset-instance-property-set'
+
+export interface IClientEventListener {
+  (eventType: ClientEventType, content: object): void
 }

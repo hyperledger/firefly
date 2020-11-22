@@ -1,7 +1,9 @@
 import Datastore from 'nedb-promises';
 import { constants } from '../lib/utils';
 import path from 'path';
-import { IDBAssetDefinition, IDBAssetInstance, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
+import { ClientEventType, IClientEventListener, IDBAssetDefinition, IDBAssetInstance, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
+
+let listeners: IClientEventListener[] = [];
 
 const membersDb = Datastore.create({
   filename: path.join(constants.DATA_DIRECTORY, constants.MEMBERS_DATABASE_FILE_NAME),
@@ -34,7 +36,7 @@ paymentDefinitionsDb.ensureIndex({ fieldName: 'paymentDefinitionID', unique: tru
 assetInstancesDb.ensureIndex({ fieldName: 'assetInstanceID', unique: true });
 paymentInstancesDb.ensureIndex({ fieldName: 'paymentInstanceID', unique: true });
 
-// Member queries
+// MEMBER QUERIES
 
 export const retrieveMemberByAddress = (address: string): Promise<IDBMember | null> => {
   return membersDb.findOne<IDBMember>({ address }, { _id: 0 });
@@ -50,7 +52,7 @@ export const upsertMember = (member: IDBMember) => {
   }, { upsert: true });
 };
 
-// Asset definition queries
+// ASSET DEFINITION QUERIES
 
 export const retrieveAssetDefinitions = (query: object, skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
   return assetDefinitionsDb.find<IDBAssetDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
@@ -68,17 +70,23 @@ export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDef
   return assetDefinitionsDb.findOne<IDBAssetDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertAssetDefinition = (assetDefinition: IDBAssetDefinition) => {
-  return assetDefinitionsDb.update({ assetDefinitionID: assetDefinition.assetDefinitionID }, {
+export const upsertAssetDefinition = async (assetDefinition: IDBAssetDefinition) => {
+  await assetDefinitionsDb.update({ assetDefinitionID: assetDefinition.assetDefinitionID }, {
     $set: assetDefinition
   }, { upsert: true });
+  if(assetDefinition.submitted !== undefined) {
+    emitEvent('asset-definition-submitted', assetDefinition);
+  } else if(assetDefinition.transactionHash !== undefined) {
+    emitEvent('asset-definition-created', assetDefinition);
+  }
 };
 
-export const markAssetDefinitionAsConflict = (assetDefinitionID: string, timestamp: number) => {
-  return assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
+export const markAssetDefinitionAsConflict = async (assetDefinitionID: string, timestamp: number) => {
+  await assetDefinitionsDb.update({ assetDefinitionID }, { $set: { timestamp, conflict: true } });
+  emitEvent('asset-definition-name-conflict', { assetDefinitionID })
 };
 
-// Payment definition queries
+// PAYMENT DEFINITION QUERIES
 
 export const retrievePaymentDefinitions = (query: object, skip: number, limit: number): Promise<IDBPaymentDefinition[]> => {
   return paymentDefinitionsDb.find<IDBPaymentDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
@@ -96,17 +104,23 @@ export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymen
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ name }, { _id: 0 });
 };
 
-export const upsertPaymentDefinition = (paymentDefinition: IDBPaymentDefinition) => {
-  return paymentDefinitionsDb.update({ paymentDefinitionID: paymentDefinition.paymentDefinitionID }, {
+export const upsertPaymentDefinition = async (paymentDefinition: IDBPaymentDefinition) => {
+  await paymentDefinitionsDb.update({ paymentDefinitionID: paymentDefinition.paymentDefinitionID }, {
     $set: paymentDefinition
   }, { upsert: true });
+  if(paymentDefinition.submitted !== undefined) {
+    emitEvent('payment-definition-submitted', paymentDefinition);
+  } else if(paymentDefinition.transactionHash !== undefined) {
+    emitEvent('payment-definition-created', paymentDefinition);
+  }
 };
 
-export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, timestamp: number) => {
-  return paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { conflict: true, timestamp } });
+export const markPaymentDefinitionAsConflict = async (paymentDefinitionID: string, timestamp: number) => {
+  await paymentDefinitionsDb.update({ paymentDefinitionID }, { $set: { conflict: true, timestamp } });
+  emitEvent('payment-definition-name-conflict', { paymentDefinitionID })
 };
 
-// Asset instance queries
+// ASSET INSTANCE QUERIES
 
 export const retrieveAssetInstances = (query: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
   return assetInstancesDb.find<IDBAssetInstance>(query, { _id: 0 }).skip(skip).limit(limit);
@@ -125,43 +139,52 @@ export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitio
   return assetInstancesDb.findOne<IDBAssetInstance>({ assetDefinitionID, contentHash }, { _id: 0 });;
 };
 
-export const upsertAssetInstance = (assetInstance: IDBAssetInstance) => {
-  return assetInstancesDb.update({ assetInstanceID: assetInstance.assetInstanceID }, {
+export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
+  await assetInstancesDb.update({ assetInstanceID: assetInstance.assetInstanceID }, {
     $set: assetInstance
   }, { upsert: true });
+  if(assetInstance.submitted !== undefined) {
+    emitEvent('asset-instance-submitted', assetInstance);
+  } else if(assetInstance.transactionHash !== undefined) {
+    emitEvent('asset-instance-created', assetInstance);
+  }
 };
 
-export const setAssetInstancePrivateContent = (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename } });
+export const setAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
+  await assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename } });
+  emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename })
 };
 
-export const markAssetInstanceAsConflict = (assetInstanceID: string, timestamp: number) => {
-  return assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
+export const markAssetInstanceAsConflict = async (assetInstanceID: string, timestamp: number) => {
+  await assetInstancesDb.update({ assetInstanceID }, { $set: { conflict: true, timestamp } });
+  emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
-export const setSubmittedAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, submitted: number,
+export const setSubmittedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, submitted: number,
   receipt: string | undefined) => {
-  return assetInstancesDb.update({ assetInstanceID }, {
+  await assetInstancesDb.update({ assetInstanceID }, {
     $set: {
       [`properties.${author}.${key}.value`]: value,
       [`properties.${author}.${key}.submitted`]: submitted,
       [`properties.${author}.${key}.receipt`]: receipt,
     }
   });
+  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, receipt });
 };
 
-export const setConfirmedAssetInstanceProperty = (assetInstanceID: string, author: string, key: string, value: string, timestamp: number,
+export const setConfirmedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, timestamp: number,
   { blockNumber, transactionHash }: IDBBlockchainData) => {
-  return assetInstancesDb.update({ assetInstanceID }, {
+  await assetInstancesDb.update({ assetInstanceID }, {
     $set: {
       [`properties.${author}.${key}.value`]: value,
       [`properties.${author}.${key}.history.${timestamp}`]:
         { value, timestamp, blockNumber, transactionHash }
     }
   });
+  emitEvent('asset-instance-property-set', { assetInstanceID, key, value, timestamp, blockNumber, transactionHash });
 };
 
-// Payment instance queries
+// PAYMENT INSTANCE QUERIES
 
 export const retrievePaymentInstances = (query: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
   return paymentInstancesDb.find<IDBPaymentInstance>(query, { _id: 0 }).skip(skip).limit(limit);
@@ -175,8 +198,29 @@ export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<
   return paymentInstancesDb.findOne<IDBPaymentInstance>({ paymentInstanceID }, { _id: 0 });
 };
 
-export const upsertPaymentInstance = (paymentInstance: IDBPaymentInstance) => {
-  return paymentInstancesDb.update({ paymentInstanceID: paymentInstance.paymentInstanceID }, {
+export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance) => {
+  await paymentInstancesDb.update({ paymentInstanceID: paymentInstance.paymentInstanceID }, {
     $set: paymentInstance
   }, { upsert: true });
+  if(paymentInstance.submitted !== undefined) {
+    emitEvent('payment-instance-submitted', paymentInstance);
+  } else {
+    emitEvent('payment-instance-created', paymentInstance);
+  }
+};
+
+// EVENT HANDLING
+
+export const addListener = (listener: IClientEventListener) => {
+  listeners.push(listener);
+};
+
+export const removeListener = (listener: IClientEventListener) => {
+  listeners = listeners.filter(entry => entry != listener);
+};
+
+const emitEvent = (eventType: ClientEventType, content: object) => {
+  for (const listener of listeners) {
+    listener(eventType, content);
+  }
 };
