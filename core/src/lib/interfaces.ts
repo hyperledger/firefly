@@ -16,7 +16,10 @@ export interface IConfig {
   },
   app2app: {
     socketIOEndpoint: string
-    destination: string
+    destinations: {
+      internal: string
+      external: string
+    }
   },
   docExchange: {
     apiEndpoint: string

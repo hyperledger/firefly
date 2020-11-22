@@ -71,7 +71,7 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
   } catch (err) {
     tradeResponse.rejection = err.message;
   } finally {
-    app2app.dispatchMessage(config.app2app.destination, headers.from, JSON.stringify(tradeResponse));
+    app2app.dispatchMessage(headers.from, JSON.stringify(tradeResponse), false);
   }
 };
 
@@ -112,13 +112,13 @@ export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinit
   const docExchangePromise = assetDefinition.contentSchema === undefined ? getDocumentExchangePromise(assetInstanceID) : Promise.resolve();
   const app2appPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      app2app.removeListener(app2appListener);
+      app2app.removeListener(app2appListener, false);
       reject(new Error('Asset instance author response timed out'));
     }, utils.constants.ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS * 1000);
     const app2appListener: IApp2AppMessageListener = (_headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
       if (content.type === 'private-asset-instance-response' && content.tradeID === tradeID) {
         clearTimeout(timeout);
-        app2app.removeListener(app2appListener);
+        app2app.removeListener(app2appListener, false);
         if (content.rejection) {
           reject(new Error(`Asset instance request rejected. ${content.rejection}`));
         } else {
@@ -131,8 +131,8 @@ export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinit
         }
       }
     };
-    app2app.addListener(app2appListener);
-    app2app.dispatchMessage(config.app2app.destination, authorDestination, JSON.stringify(tradeRequest));
+    app2app.addListener(app2appListener, false);
+    app2app.dispatchMessage(authorDestination, JSON.stringify(tradeRequest), false);
   });
   await Promise.all([app2appPromise, docExchangePromise]);
 };

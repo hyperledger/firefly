@@ -62,14 +62,26 @@
       "type": "object",
       "required": [
         "socketIOEndpoint",
-        "destination"
+        "destinations"
       ],
       "properties": {
         "socketIOEndpoint": {
           "type": "string"
         },
-        "destination": {
-          "type": "string"
+        "destinations": {
+          "type": "object",
+          "required": [
+            "internal",
+            "external"
+          ],
+          "properties": {
+            "internal": {
+              "type": "string"
+            },
+            "external": {
+              "type": "string"
+            }
+          }
         }
       }
     },
