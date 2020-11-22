@@ -15,8 +15,8 @@
   "app2app": {
     "socketIOEndpoint": "wss://app2app.ws.kaleido.io",
     "destinations": {
-      "internal": "kld://app2app/internal",
-      "external": "kld://app2app/external"
+      "kat": "kld://app2app/internal",
+      "client": "kld://app2app/external"
     }
   },
   "docExchange": {
