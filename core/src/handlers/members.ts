@@ -19,13 +19,13 @@ export const handleGetMemberRequest = async (address: string) => {
 
 export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
   const timestamp = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.internal, config.docExchange.destination, sync);
+  const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.kat, config.docExchange.destination, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertMember({
     address,
     name,
     assetTrailInstanceID: config.assetTrailInstanceID,
-    app2appDestination: config.app2app.destinations.internal,
+    app2appDestination: config.app2app.destinations.kat,
     docExchangeDestination: config.docExchange.destination,
     submitted: timestamp,
     receipt

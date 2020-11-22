@@ -71,14 +71,14 @@
         "destinations": {
           "type": "object",
           "required": [
-            "internal",
-            "external"
+            "kat",
+            "client"
           ],
           "properties": {
-            "internal": {
+            "kat": {
               "type": "string"
             },
-            "external": {
+            "client": {
               "type": "string"
             }
           }

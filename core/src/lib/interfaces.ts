@@ -17,8 +17,8 @@ export interface IConfig {
   app2app: {
     socketIOEndpoint: string
     destinations: {
-      internal: string
-      external: string
+      kat: string
+      client: string
     }
   },
   docExchange: {
@@ -291,7 +291,10 @@ export interface IDocExchangeListener {
 
 // ASSET TRADE INTERFACES
 
-export type AssetTradeMessage = IAssetTradePrivateAssetInstanceRequest | IAssetTradePrivateAssetInstanceResponse
+export type AssetTradeMessage =
+IAssetTradePrivateAssetInstanceRequest
+  | IAssetTradePrivateAssetInstanceResponse 
+  | IAssetTradePrivateAssetInstanceAuthorizationResponse
 
 export interface IAssetTradePrivateAssetInstanceRequest {
   type: 'private-asset-instance-request'
@@ -311,4 +314,18 @@ export interface IAssetTradePrivateAssetInstanceResponse {
   rejection?: string
   content?: object
   filename?: string
+}
+
+export interface IAssetTradePrivateAssetInstanceAuthorizationRequest {
+  type: 'private-asset-instance-authorization-request'
+  authorizationID: string
+  assetInstance: IDBAssetInstance
+  requester: IDBMember
+  metadata?: object
+}
+
+export interface IAssetTradePrivateAssetInstanceAuthorizationResponse {
+  type: 'private-asset-instance-authorization-response'
+  authorizationID: string
+  authorized: boolean
 }

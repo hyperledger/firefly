@@ -38,7 +38,7 @@ export const promise = initConfig(() => { app2app.reset(); docExchange.reset() }
 
     app.use(errorHandler);
 
-    app2app.addListener(assetTradeHandler, false);
+    app2app.addListener(assetTradeHandler);
 
     const server = app.listen(config.port, () => {
       log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);
