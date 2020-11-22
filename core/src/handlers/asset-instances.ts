@@ -4,11 +4,12 @@ import { config } from '../lib/config';
 import * as database from '../clients/database';
 import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
+import * as app2app from '../clients/app2app';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
 import * as assetTrade from '../lib/asset-trade';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -292,4 +293,38 @@ export const handleAssetInstanceTradeRequest = async (requesterAddress: string, 
     throw new RequestError('Requester must be registered', 400);
   }
   await assetTrade.coordinateAssetTrade(assetInstanceID, assetDefinition, requester.address, metadata, author.app2appDestination);
+};
+
+export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: string, recipientAddress: string) => {
+  const recipient = await database.retrieveMemberByAddress(recipientAddress);
+  if (recipient === null) {
+    throw new RequestError('Unknown recipient', 400);
+  }
+  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  if (assetInstance === null) {
+    throw new RequestError('Unknown asset instance', 400);
+  }
+  const author = await database.retrieveMemberByAddress(assetInstance.author);
+  if (author === null) {
+    throw new RequestError('Unknown asset author', 500);
+  }
+  if (author.assetTrailInstanceID !== config.assetTrailInstanceID) {
+    throw new RequestError('Must be asset instance author', 403);
+  }
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
+  if (assetDefinition === null) {
+    throw new RequestError('Unknown asset definition', 500);
+  }
+  let privateAssetTradePrivateInstancePush: IAssetTradePrivateAssetInstancePush = {
+    type: 'private-asset-instance-push',
+    assetInstanceID
+  };
+  if (assetDefinition.contentSchema !== undefined) {
+    privateAssetTradePrivateInstancePush.content = assetInstance.content;
+  } else {
+    await docExchange.transfer(author.docExchangeDestination, recipient.docExchangeDestination,
+      utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
+      privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
+  }
+  app2app.dispatchMessage(recipient.app2appDestination, JSON.stringify(privateAssetTradePrivateInstancePush));
 };

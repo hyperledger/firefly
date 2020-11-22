@@ -90,18 +90,31 @@ router.post('/', async (req, res, next) => {
 
 router.put('/:assetInstanceID', async (req, res, next) => {
   try {
-    if (!req.body.key) {
-      throw new RequestError('Missing asset property key', 400);
+    switch (req.body.action) {
+      case 'set-property':
+        if (!req.body.key) {
+          throw new RequestError('Missing asset property key', 400);
+        }
+        if (!req.body.value) {
+          throw new RequestError('Missing asset property value', 400);
+        }
+        if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+          throw new RequestError('Missing or invalid asset property author', 400);
+        }
+        const sync = req.query.sync === 'true';
+        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
+        res.send({ status: sync ? 'success' : 'submitted' });
+        break;
+      case 'push':
+        if (!req.body.recipientAddress) {
+          throw new RequestError('Missing recipient address', 400);
+        }
+        await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetInstanceID, req.body.recipientAddress);
+        res.send({ status: 'success' });
+        break;
+      default:
+        throw new RequestError('Missing or invalid action');
     }
-    if (!req.body.value) {
-      throw new RequestError('Missing asset property value', 400);
-    }
-    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
-      throw new RequestError('Missing or invalid asset property author', 400);
-    }
-    const sync = req.query.sync === 'true';
-    await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
-    res.send({ status: sync ? 'success' : 'submitted' });
   } catch (err) {
     next(err);
   }
