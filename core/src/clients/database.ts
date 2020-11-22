@@ -53,7 +53,11 @@ export const upsertMember = (member: IDBMember) => {
 // Asset definition queries
 
 export const retrieveAssetDefinitions = (query: object, skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
-  return assetDefinitionsDb.find<IDBAssetDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
+  return assetDefinitionsDb.find<IDBAssetDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 });
+};
+
+export const countAssetDefinitions = (query: object): Promise<number> => {
+  return assetDefinitionsDb.count(query);
 };
 
 export const retrieveAssetDefinitionByID = (assetDefinitionID: string): Promise<IDBAssetDefinition | null> => {
@@ -80,6 +84,10 @@ export const retrievePaymentDefinitions = (query: object, skip: number, limit: n
   return paymentDefinitionsDb.find<IDBPaymentDefinition>(query, { _id: 0 }).skip(skip).limit(limit).sort({ name: 1 })
 };
 
+export const countPaymentDefinitions = (query: object,): Promise<number> => {
+  return paymentDefinitionsDb.count(query);
+};
+
 export const retrievePaymentDefinitionByID = (paymentDefinitionID: string): Promise<IDBPaymentDefinition | null> => {
   return paymentDefinitionsDb.findOne<IDBPaymentDefinition>({ paymentDefinitionID }, { _id: 0 });
 };
@@ -102,6 +110,10 @@ export const markPaymentDefinitionAsConflict = (paymentDefinitionID: string, tim
 
 export const retrieveAssetInstances = (query: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
   return assetInstancesDb.find<IDBAssetInstance>(query, { _id: 0 }).skip(skip).limit(limit);
+};
+
+export const countAssetInstances = (query: object): Promise<number> => {
+  return assetInstancesDb.count(query);
 };
 
 export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBAssetInstance | null> => {
@@ -153,6 +165,10 @@ export const setConfirmedAssetInstanceProperty = (assetInstanceID: string, autho
 
 export const retrievePaymentInstances = (query: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
   return paymentInstancesDb.find<IDBPaymentInstance>(query, { _id: 0 }).skip(skip).limit(limit);
+};
+
+export const countPaymentInstances = (query: object): Promise<number> => {
+  return paymentInstancesDb.count(query);
 };
 
 export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<IDBPaymentInstance | null> => {

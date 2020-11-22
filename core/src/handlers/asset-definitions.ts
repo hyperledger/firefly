@@ -13,6 +13,10 @@ export const handleGetAssetDefinitionsRequest = (query: object, skip: number, li
   return database.retrieveAssetDefinitions(query, skip, limit);
 };
 
+export const handleCountAssetDefinitionsRequest = async (query: object) => {
+  return { count: await database.countAssetDefinitions(query) };
+};
+
 export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string) => {
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (assetDefinition === null) {
