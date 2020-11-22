@@ -17,6 +17,7 @@ export const constants = {
   DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets',
   EVENT_STREAM_PING_TIMEOUT_SECONDS: 60,
   ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS: 15,
+  TRADE_AUTHORIZATION_TIMEOUT_SECONDS: 10,
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15
 };
 
@@ -31,9 +32,9 @@ export const requestKeys = {
   ASSET_CONTENT: 'content'
 };
 
-export const settingsKeys = {
-  PRIVATE_ASSET_INSTANCE_AUTHORIZATION_WEBHOOK: 'privateAssetInstanceAuthorizationWebhook'
-}
+// export const settingsKeys = {
+//   PRIVATE_ASSET_INSTANCE_AUTHORIZATION_WEBHOOK: 'privateAssetInstanceAuthorizationWebhook'
+// }
 
 export const contractEventSignatures = {
   MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
