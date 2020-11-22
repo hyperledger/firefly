@@ -14,7 +14,10 @@
   },
   "app2app": {
     "socketIOEndpoint": "wss://app2app.ws.kaleido.io",
-    "destination": "kld://app2app/dest"
+    "destinations": {
+      "internal": "kld://app2app/internal",
+      "external": "kld://app2app/external"
+    }
   },
   "docExchange": {
     "apiEndpoint": "https://docexchange.kaleido.io",

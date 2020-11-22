@@ -31,7 +31,7 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 1');
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/internal');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
     assert.strictEqual(typeof member.submitted, 'number');
 
@@ -54,7 +54,7 @@ describe('Members - registration', async () => {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 1',
       assetTrailInstanceID: 'service-id',
-      app2appDestination: 'kld://app2app/dest',
+      app2appDestination: 'kld://app2app/internal',
       docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampCreation
     };
@@ -75,7 +75,7 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 1');
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/internal');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
     assert.strictEqual(member.blockNumber, 123);
     assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
@@ -107,7 +107,7 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 2');
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/internal');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
     assert.strictEqual(member.blockNumber, 123);
     assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
@@ -132,7 +132,7 @@ describe('Members - registration', async () => {
       member: '0x0000000000000000000000000000000000000011',
       name: 'Member 2',
       assetTrailInstanceID: 'service-id',
-      app2appDestination: 'kld://app2app/dest',
+      app2appDestination: 'kld://app2app/internal',
       docExchangeDestination: 'kld://docstore/dest',
       timestamp: timestampUpdate
     };
@@ -153,7 +153,7 @@ describe('Members - registration', async () => {
     assert.strictEqual(member.address, '0x0000000000000000000000000000000000000011');
     assert.strictEqual(member.name, 'Member 2');
     assert.strictEqual(member.assetTrailInstanceID, 'service-id');
-    assert.strictEqual(member.app2appDestination, 'kld://app2app/dest');
+    assert.strictEqual(member.app2appDestination, 'kld://app2app/internal');
     assert.strictEqual(member.docExchangeDestination, 'kld://docstore/dest');
     assert.strictEqual(member.blockNumber, 456);
     assert.strictEqual(member.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000001');
