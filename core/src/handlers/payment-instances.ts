@@ -13,6 +13,10 @@ export const handleGetPaymentInstancesRequest = (query: object, skip: number, li
   return database.retrievePaymentInstances(query, skip, limit);
 };
 
+export const handleCountPaymentInstancesRequest = async (query: object) => {
+  return { count: await database.countPaymentInstances(query) };
+};
+
 export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string) => {
   const assetInstance = await database.retrievePaymentInstanceByID(paymentInstanceID);
   if (assetInstance === null) {

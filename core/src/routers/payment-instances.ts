@@ -5,20 +5,15 @@ import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
 
 const router = Router();
-const MongoQS = require('mongo-querystring');
-const qs = new MongoQS({
-  blacklist: { skip: true, limit: true }
-});
 
 router.get('/', async (req, res, next) => {
   try {
-    const query = qs.parse(req.query);
     const skip = Number(req.query.skip || 0);
     const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await paymentInstancesHandler.handleGetPaymentInstancesRequest(query, skip, limit));
+    res.send(await paymentInstancesHandler.handleGetPaymentInstancesRequest({}, skip, limit));
   } catch (err) {
     next(err);
   }
@@ -27,6 +22,25 @@ router.get('/', async (req, res, next) => {
 router.get('/:assetInstanceID', async (req, res, next) => {
   try {
     res.send(await paymentInstancesHandler.handleGetPaymentInstanceRequest(req.params.assetInstanceID));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/search', async (req, res, next) => {
+  try {
+    const skip = Number(req.body.skip || 0);
+    const limit = Number(req.body.limit || constants.DEFAULT_PAGINATION_LIMIT);
+    if (isNaN(skip) || isNaN(limit)) {
+      throw new RequestError('Invalid skip / limit', 400);
+    }
+    if (!req.body.query) {
+      throw new RequestError('Missing search query', 400);
+    }
+    res.send(req.body.count === true ?
+      await paymentInstancesHandler.handleCountPaymentInstancesRequest(req.body.query) :
+      await paymentInstancesHandler.handleGetPaymentInstancesRequest(req.body.query, skip, limit)
+    );
   } catch (err) {
     next(err);
   }

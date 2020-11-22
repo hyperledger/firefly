@@ -13,6 +13,10 @@ export const handleGetPaymentDefinitionsRequest = (query: object, skip: number, 
   return database.retrievePaymentDefinitions(query, skip, limit);
 };
 
+export const handleCountPaymentDefinitionsRequest = async (query: object) => {
+  return { count: await database.countPaymentDefinitions(query) };
+};
+
 export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: string) => {
   const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
   if (paymentDefinition === null) {
