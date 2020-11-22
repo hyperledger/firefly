@@ -300,6 +300,7 @@ export interface IDocExchangeListener {
 export type AssetTradeMessage =
   IAssetTradePrivateAssetInstanceRequest
   | IAssetTradePrivateAssetInstanceResponse
+  | IAssetTradePrivateAssetInstancePush
   | IAssetTradePrivateAssetInstanceAuthorizationResponse
 
 export interface IAssetTradePrivateAssetInstanceRequest {
@@ -318,6 +319,13 @@ export interface IAssetTradePrivateAssetInstanceResponse {
   tradeID: string
   assetInstanceID: string
   rejection?: string
+  content?: object
+  filename?: string
+}
+
+export interface IAssetTradePrivateAssetInstancePush {
+  type: 'private-asset-instance-push'
+  assetInstanceID: string
   content?: object
   filename?: string
 }

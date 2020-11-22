@@ -1,7 +1,7 @@
 import { v4 as uuidV4 } from 'uuid';
 import Ajv from 'ajv';
 import { config } from './config';
-import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceAuthorizationRequest, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDBAssetInstance, IDBMember, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
+import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceAuthorizationRequest, IAssetTradePrivateAssetInstancePush, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDBAssetInstance, IDBMember, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
 import * as utils from './utils';
 import * as database from '../clients/database';
 import * as app2app from '../clients/app2app';
@@ -9,9 +9,11 @@ import * as docExchange from '../clients/doc-exchange';
 
 const ajv = new Ajv();
 
-export const assetTradeHandler = async (headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
+export const assetTradeHandler = (headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
   if (content.type === 'private-asset-instance-request') {
     processPrivateAssetInstanceRequest(headers, content);
+  } else if(content.type === 'private-asset-instance-push') {
+    processPrivateAssetInstancePush(content);
   }
 };
 
@@ -153,4 +155,8 @@ const getDocumentExchangePromise = (assetInstanceID: string) => {
     };
     docExchange.addListener(docExchangeListener);
   });
+};
+
+const processPrivateAssetInstancePush = (push: IAssetTradePrivateAssetInstancePush) => {
+  database.setAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename);
 };
