@@ -32,10 +32,6 @@ export const requestKeys = {
   ASSET_CONTENT: 'content'
 };
 
-// export const settingsKeys = {
-//   PRIVATE_ASSET_INSTANCE_AUTHORIZATION_WEBHOOK: 'privateAssetInstanceAuthorizationWebhook'
-// }
-
 export const contractEventSignatures = {
   MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
   DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedStructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,bytes32,uint256)',
