@@ -31,7 +31,7 @@ router.post('/search', async (req, res, next) => {
   try {
     const skip = Number(req.body.skip || 0);
     const limit = Number(req.body.limit || constants.DEFAULT_PAGINATION_LIMIT);
-    if (isNaN(skip) || isNaN(limit)) {
+    if (req.body.count !== true && (isNaN(skip) || isNaN(limit))) {
       throw new RequestError('Invalid skip / limit', 400);
     }
     if (!req.body.query) {
