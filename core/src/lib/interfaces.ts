@@ -324,7 +324,6 @@ export interface IAssetTradePrivateAssetInstanceResponse {
 }
 
 export interface IAssetTradePrivateAssetInstancePush {
-  _id?: string
   type: 'private-asset-instance-push'
   assetInstanceID: string
   content?: object
@@ -365,4 +364,11 @@ export type ClientEventType =
 
 export interface IClientEventListener {
   (eventType: ClientEventType, content: object): void
+}
+
+export interface IPendingAssetInstancePrivateContentDelivery {
+  assetInstanceID: string
+  fromDestination: string
+  content?: object
+  filename?: string
 }

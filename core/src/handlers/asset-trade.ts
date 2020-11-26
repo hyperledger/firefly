@@ -162,6 +162,7 @@ const getDocumentExchangePromise = (assetInstanceID: string) => {
 };
 
 const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
+
   const assetInstance = await database.retrieveAssetInstanceByID(push.assetInstanceID);
   if (assetInstance !== null) {
     const author = await database.retrieveMemberByAddress(assetInstance.author);
@@ -179,6 +180,6 @@ const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, p
     }
     await database.setAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename);
   } else {
-    pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = push;
+    pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = { ...push, fromDestination: headers.from };
   }
 }
