@@ -10,14 +10,19 @@
       "items": {
         "type": "string",
         "enum": [
+          "asset-definition-submitted",
           "asset-definition-created",
           "asset-definition-name-conflict",
+          "payment-definition-submitted",
           "payment-definition-created",
           "payment-definition-name-conflict",
+          "asset-instance-submitted",
           "asset-instance-created",
           "asset-instance-content-conflict",
+          "payment-instance-submitted",
           "payment-instance-created",
           "private-asset-instance-content-stored",
+          "asset-instance-property-submitted",
           "asset-instance-property-set"
         ]
       }
