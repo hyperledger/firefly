@@ -324,6 +324,7 @@ export interface IAssetTradePrivateAssetInstanceResponse {
 }
 
 export interface IAssetTradePrivateAssetInstancePush {
+  _id?: string
   type: 'private-asset-instance-push'
   assetInstanceID: string
   content?: object

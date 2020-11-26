@@ -12,8 +12,8 @@ const ajv = new Ajv();
 export const assetTradeHandler = (headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
   if (content.type === 'private-asset-instance-request') {
     processPrivateAssetInstanceRequest(headers, content);
-  } else if(content.type === 'private-asset-instance-push') {
-    processPrivateAssetInstancePush(content);
+  } else if (content.type === 'private-asset-instance-push') {
+    processPrivateAssetInstancePush(headers, content);
   }
 };
 
@@ -99,20 +99,20 @@ const handlePrivateAssetInstanceAuthorization = (assetInstance: IDBAssetInstance
   });
 };
 
-export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinition: IDBAssetDefinition,
+export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, assetDefinition: IDBAssetDefinition,
   requesterAddress: string, metadata: object | undefined, authorDestination: string) => {
   const tradeID = uuidV4();
   const tradeRequest: IAssetTradePrivateAssetInstanceRequest = {
     type: 'private-asset-instance-request',
     tradeID,
-    assetInstanceID,
+    assetInstanceID: assetInstance.assetInstanceID,
     requester: {
       assetTrailInstanceID: config.assetTrailInstanceID,
       address: requesterAddress
     },
     metadata
   };
-  const docExchangePromise = assetDefinition.contentSchema === undefined ? getDocumentExchangePromise(assetInstanceID) : Promise.resolve();
+  const docExchangePromise = assetDefinition.contentSchema === undefined ? getDocumentExchangePromise(assetInstance.assetInstanceID) : Promise.resolve();
   const app2appPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       app2app.removeListener(app2appListener);
@@ -125,10 +125,13 @@ export const coordinateAssetTrade = async (assetInstanceID: string, assetDefinit
         if (content.rejection) {
           reject(new Error(`Asset instance request rejected. ${content.rejection}`));
         } else {
-          if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
+          const contentHash = `0x${utils.getSha256(JSON.stringify(content.content))}`;
+          if(contentHash !== assetInstance.contentHash) {
+            reject(new Error('Asset instance content hash mismatch'));
+          } else if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
             reject(new Error('Asset instance content does not conform to schema'));
           } else {
-            database.setAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename);
+            database.upsertAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename, contentHash);
             resolve();
           }
         }
@@ -157,6 +160,23 @@ const getDocumentExchangePromise = (assetInstanceID: string) => {
   });
 };
 
-const processPrivateAssetInstancePush = (push: IAssetTradePrivateAssetInstancePush) => {
-  database.setAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename);
-};
+const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(push.assetInstanceID);
+  let contentHash: string | undefined = undefined;
+  if (push.content) {
+    contentHash = `0x${utils.getSha256(JSON.stringify(push.content))}`;
+  }
+  if (assetInstance !== null) {
+    const author = await database.retrieveMemberByAddress(assetInstance.author);
+    if (author === null) {
+      throw new Error(`Unknown author for asset ${assetInstance.assetInstanceID}`);
+    }
+    if (author.app2appDestination !== headers.from) {
+      throw new Error(`Asset instance author destination mismatch ${author.app2appDestination} - ${headers.from}`);
+    }
+    if (assetInstance.contentHash !== undefined && assetInstance.contentHash !== contentHash) {
+      throw new Error('Private asset content hash mismatch');
+    }
+  }
+  await database.upsertAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename, contentHash);
+}

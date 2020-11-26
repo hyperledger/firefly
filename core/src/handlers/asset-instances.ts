@@ -9,7 +9,7 @@ import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
 import * as assetTrade from '../lib/asset-trade';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -227,18 +227,23 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  database.upsertAssetInstance({
+  let entry: IDBAssetInstance = {
     assetInstanceID: eventAssetInstanceID,
     author: event.author,
     assetDefinitionID: assetDefinition.assetDefinitionID,
     descriptionHash: event.descriptionHash,
     description,
     contentHash: event.contentHash,
-    content,
     timestamp: Number(event.timestamp),
     blockNumber,
     transactionHash
-  });
+  }
+
+  if(content !== undefined) {
+    entry.content = content;
+  }
+
+  database.upsertAssetInstance(entry);
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
@@ -292,7 +297,7 @@ export const handleAssetInstanceTradeRequest = async (requesterAddress: string, 
   if (requester === null) {
     throw new RequestError('Requester must be registered', 400);
   }
-  await assetTrade.coordinateAssetTrade(assetInstanceID, assetDefinition, requester.address, metadata, author.app2appDestination);
+  await assetTrade.coordinateAssetTrade(assetInstance, assetDefinition, requester.address, metadata, author.app2appDestination);
 };
 
 export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: string, recipientAddress: string) => {
