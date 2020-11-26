@@ -74,9 +74,9 @@ export const upsertAssetDefinition = async (assetDefinition: IDBAssetDefinition)
   await assetDefinitionsDb.update({ assetDefinitionID: assetDefinition.assetDefinitionID }, {
     $set: assetDefinition
   }, { upsert: true });
-  if(assetDefinition.submitted !== undefined) {
+  if (assetDefinition.submitted !== undefined) {
     emitEvent('asset-definition-submitted', assetDefinition);
-  } else if(assetDefinition.transactionHash !== undefined) {
+  } else if (assetDefinition.transactionHash !== undefined) {
     emitEvent('asset-definition-created', assetDefinition);
   }
 };
@@ -108,9 +108,9 @@ export const upsertPaymentDefinition = async (paymentDefinition: IDBPaymentDefin
   await paymentDefinitionsDb.update({ paymentDefinitionID: paymentDefinition.paymentDefinitionID }, {
     $set: paymentDefinition
   }, { upsert: true });
-  if(paymentDefinition.submitted !== undefined) {
+  if (paymentDefinition.submitted !== undefined) {
     emitEvent('payment-definition-submitted', paymentDefinition);
-  } else if(paymentDefinition.transactionHash !== undefined) {
+  } else if (paymentDefinition.transactionHash !== undefined) {
     emitEvent('payment-definition-created', paymentDefinition);
   }
 };
@@ -143,15 +143,15 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
   await assetInstancesDb.update({ assetInstanceID: assetInstance.assetInstanceID }, {
     $set: assetInstance
   }, { upsert: true });
-  if(assetInstance.submitted !== undefined) {
+  if (assetInstance.submitted !== undefined) {
     emitEvent('asset-instance-submitted', assetInstance);
-  } else if(assetInstance.transactionHash !== undefined) {
+  } else if (assetInstance.transactionHash !== undefined) {
     emitEvent('asset-instance-created', assetInstance);
   }
 };
 
-export const setAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
-  await assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename } });
+export const upsertAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined, contentHash: string | undefined) => {
+  await assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename, contentHash } }, { upsert: true });
   emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename })
 };
 
@@ -202,7 +202,7 @@ export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance)
   await paymentInstancesDb.update({ paymentInstanceID: paymentInstance.paymentInstanceID }, {
     $set: paymentInstance
   }, { upsert: true });
-  if(paymentInstance.submitted !== undefined) {
+  if (paymentInstance.submitted !== undefined) {
     emitEvent('payment-instance-submitted', paymentInstance);
   } else {
     emitEvent('payment-instance-created', paymentInstance);
