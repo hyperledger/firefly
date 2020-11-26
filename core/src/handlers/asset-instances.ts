@@ -9,11 +9,11 @@ import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
 import * as assetTrade from './asset-trade';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
-export let pendingAssetInstancePrivateContentDeliveries: { [assetInstanceID: string]: IAssetTradePrivateAssetInstancePush } = {};
+export let pendingAssetInstancePrivateContentDeliveries: { [assetInstanceID: string]: IPendingAssetInstancePrivateContentDelivery } = {};
 
 export const handleGetAssetInstancesRequest = (query: object, skip: number, limit: number) => {
   return database.retrieveAssetInstances(query, skip, limit);
@@ -244,10 +244,17 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition.isContentPrivate) {
     const privateData = pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     if (privateData !== undefined) {
+      const author = await database.retrieveMemberByAddress(event.author);
+      if(author === null) {
+        throw new Error('Pending private data author unknown');
+      }
+      if(author.app2appDestination !== privateData.fromDestination) {
+        throw new Error('Pending private data destination mismatch');
+      }
       if (privateData.content !== undefined) {
         const privateDataHash = `0x${utils.getSha256(JSON.stringify(privateData.content))}`;
         if (privateDataHash !== event.contentHash) {
-          throw new Error('Pending private data hash mismatch');
+          throw new Error('Pending private data content hash mismatch');
         }
       }
       await database.setAssetInstancePrivateContent(eventAssetInstanceID, privateData.content, privateData.filename);
