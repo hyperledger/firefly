@@ -8,10 +8,12 @@ import * as app2app from '../clients/app2app';
 import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import * as assetTrade from '../lib/asset-trade';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
+import * as assetTrade from './asset-trade';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet } from '../lib/interfaces';
 
 const ajv = new Ajv();
+
+export let pendingAssetInstancePrivateContentDeliveries: { [assetInstanceID: string]: IAssetTradePrivateAssetInstancePush } = {};
 
 export const handleGetAssetInstancesRequest = (query: object, skip: number, limit: number) => {
   return database.retrieveAssetInstances(query, skip, limit);
@@ -227,7 +229,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  let entry: IDBAssetInstance = {
+  await database.upsertAssetInstance({
     assetInstanceID: eventAssetInstanceID,
     author: event.author,
     assetDefinitionID: assetDefinition.assetDefinitionID,
@@ -235,15 +237,23 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     description,
     contentHash: event.contentHash,
     timestamp: Number(event.timestamp),
+    content,
     blockNumber,
     transactionHash
+  });
+  if (assetDefinition.isContentPrivate) {
+    const privateData = pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
+    if (privateData !== undefined) {
+      if (privateData.content !== undefined) {
+        const privateDataHash = `0x${utils.getSha256(JSON.stringify(privateData.content))}`;
+        if (privateDataHash !== event.contentHash) {
+          throw new Error('Pending private data hash mismatch');
+        }
+      }
+      await database.setAssetInstancePrivateContent(eventAssetInstanceID, privateData.content, privateData.filename);
+      delete pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
+    }
   }
-
-  if(content !== undefined) {
-    entry.content = content;
-  }
-
-  database.upsertAssetInstance(entry);
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
@@ -329,7 +339,7 @@ export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: str
   } else {
     await docExchange.transfer(author.docExchangeDestination, recipient.docExchangeDestination,
       utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
-      privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
+    privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
   }
   app2app.dispatchMessage(recipient.app2appDestination, JSON.stringify(privateAssetTradePrivateInstancePush));
 };

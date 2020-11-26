@@ -1,11 +1,12 @@
 import { v4 as uuidV4 } from 'uuid';
 import Ajv from 'ajv';
-import { config } from './config';
-import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceAuthorizationRequest, IAssetTradePrivateAssetInstancePush, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDBAssetInstance, IDBMember, IDocExchangeListener, IDocExchangeTransferData } from "./interfaces";
-import * as utils from './utils';
+import { config } from '../lib/config';
+import { AssetTradeMessage, IApp2AppMessageHeader, IApp2AppMessageListener, IAssetTradePrivateAssetInstanceAuthorizationRequest, IAssetTradePrivateAssetInstancePush, IAssetTradePrivateAssetInstanceRequest, IAssetTradePrivateAssetInstanceResponse, IDBAssetDefinition, IDBAssetInstance, IDBMember, IDocExchangeListener, IDocExchangeTransferData } from "../lib/interfaces";
+import * as utils from '../lib/utils';
 import * as database from '../clients/database';
 import * as app2app from '../clients/app2app';
 import * as docExchange from '../clients/doc-exchange';
+import { pendingAssetInstancePrivateContentDeliveries } from './asset-instances';
 
 const ajv = new Ajv();
 
@@ -126,12 +127,12 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
           reject(new Error(`Asset instance request rejected. ${content.rejection}`));
         } else {
           const contentHash = `0x${utils.getSha256(JSON.stringify(content.content))}`;
-          if(contentHash !== assetInstance.contentHash) {
+          if (contentHash !== assetInstance.contentHash) {
             reject(new Error('Asset instance content hash mismatch'));
           } else if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
             reject(new Error('Asset instance content does not conform to schema'));
           } else {
-            database.upsertAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename, contentHash);
+            database.setAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename);
             resolve();
           }
         }
@@ -162,10 +163,6 @@ const getDocumentExchangePromise = (assetInstanceID: string) => {
 
 const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
   const assetInstance = await database.retrieveAssetInstanceByID(push.assetInstanceID);
-  let contentHash: string | undefined = undefined;
-  if (push.content) {
-    contentHash = `0x${utils.getSha256(JSON.stringify(push.content))}`;
-  }
   if (assetInstance !== null) {
     const author = await database.retrieveMemberByAddress(assetInstance.author);
     if (author === null) {
@@ -174,9 +171,14 @@ const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, p
     if (author.app2appDestination !== headers.from) {
       throw new Error(`Asset instance author destination mismatch ${author.app2appDestination} - ${headers.from}`);
     }
-    if (assetInstance.contentHash !== undefined && assetInstance.contentHash !== contentHash) {
-      throw new Error('Private asset content hash mismatch');
+    if (push.content) {
+      const contentHash = `0x${utils.getSha256(JSON.stringify(push.content))}`;
+      if (assetInstance.contentHash !== contentHash) {
+        throw new Error('Private asset content hash mismatch');
+      }
     }
+    await database.setAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename);
+  } else {
+    pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = push;
   }
-  await database.upsertAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename, contentHash);
 }
