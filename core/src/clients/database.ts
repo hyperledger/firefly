@@ -150,9 +150,9 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
   }
 };
 
-export const upsertAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined, contentHash: string | undefined) => {
-  await assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename, contentHash } }, { upsert: true });
-  emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename })
+export const setAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
+  await assetInstancesDb.update({ assetInstanceID }, { $set: { content, filename } });
+  emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename });
 };
 
 export const markAssetInstanceAsConflict = async (assetInstanceID: string, timestamp: number) => {

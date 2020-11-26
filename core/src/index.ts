@@ -14,7 +14,7 @@ import * as ipfs from './clients/ipfs';
 import * as app2app from './clients/app2app';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
-import { assetTradeHandler } from './lib/asset-trade';
+import { assetTradeHandler } from './handlers/asset-trade';
 import { clientEventHandler } from './handlers/client-events';
 import { createLogger, LogLevelString } from 'bunyan';
 
