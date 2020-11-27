@@ -227,9 +227,9 @@ export interface IDBAssetInstance {
         history?: {
           [timestamp: string]: {
             value: string
-            timestamp?: number
-            blockNumber?: number
-            transactionHash?: string
+            timestamp: number
+            blockNumber: number
+            transactionHash: string
           }
         }
       } | undefined
