@@ -174,10 +174,10 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
       }
     }
   }
-  const timestamp = utils.getTimestamp();
+  const submitted = utils.getTimestamp();
   const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.setSubmittedAssetInstanceProperty(assetInstanceID, author, key, value, timestamp, receipt);
+  await database.setSubmittedAssetInstanceProperty(assetInstanceID, author, key, value, submitted, receipt);
 };
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {

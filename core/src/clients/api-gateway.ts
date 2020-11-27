@@ -24,7 +24,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -52,7 +52,7 @@ export const createDescribedStructuredAssetDefinition = async (assetDefinitionID
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 }
 
@@ -76,7 +76,7 @@ export const createDescribedUnstructuredAssetDefinition = async (assetDefinition
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 }
 
@@ -101,7 +101,7 @@ export const createStructuredAssetDefinition = async (assetDefinitionID: string,
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 }
 
@@ -124,7 +124,7 @@ export const createUnstructuredAssetDefinition = async (assetDefinitionID: strin
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 }
 
@@ -148,7 +148,7 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -169,7 +169,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -194,7 +194,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -216,7 +216,7 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -238,7 +238,7 @@ export const setAssetInstanceProperty = async (assetInstanceID: string, author: 
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -265,7 +265,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
 
@@ -288,6 +288,6 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err);
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
