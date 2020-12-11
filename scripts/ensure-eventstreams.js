@@ -37,7 +37,7 @@ const errorLogger = (err) => {
 };
 
 const apiKaleido = axios.default.create({
-  baseURL: 'https://console-us1.kaleido.io/api/v1',
+  baseURL: process.env.KALEIDO_URL || 'https://console-us1.kaleido.io/api/v1',
   headers: {
     Authorization: `Bearer ${AuthToken}`
   }
@@ -108,7 +108,7 @@ async function setupEventStreams(kaleidoConnectAPI, membership) {
     batchSize: 50,
     type: "websocket",
     websocket: {
-      topic: 'synaptic'
+      topic: argv.topic || 'synaptic'
     }
   };
   if (!stream) {
