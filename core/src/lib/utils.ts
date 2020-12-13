@@ -8,11 +8,6 @@ export const constants = {
   SETTINGS_FILE_NAME: 'settings.json',
   IPFS_TIMEOUT_MS: 15000,
   DEFAULT_PAGINATION_LIMIT: 100,
-  MEMBERS_DATABASE_FILE_NAME: 'members.json',
-  ASSET_DEFINITIONS_DATABASE_FILE_NAME: 'asset-definitions.json',
-  PAYMENT_DEFINITIONS_DATABASE_FILE_NAME: 'payment-definitions.json',
-  ASSET_INSTANCES_DATABASE_FILE_NAME: 'asset-instances.json',
-  PAYMENT_INSTANCES_DATABASE_FILE_NAME: 'payment-instances.json',
   EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5,
   DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets',
   EVENT_STREAM_PING_TIMEOUT_SECONDS: 60,
@@ -20,6 +15,39 @@ export const constants = {
   TRADE_AUTHORIZATION_TIMEOUT_SECONDS: 10,
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15
 };
+
+// export enum databaseCollectionNames {
+//   MEMBERS = 'members',
+//   ASSET_DEFINITIONS = 'assetDefinitions',
+//   PAYMENT_DEFINITIONS = 'paymentDefinitions',
+//   ASSET_INSTANCES = 'assetInstances',
+//   PAYMENT_INSTANCES = 'paymentInstances'
+// }
+
+export enum databaseCollectionKeys {
+  MEMBERS,
+  ASSET_DEFINITIONS,
+  PAYMENT_DEFINITIONS,
+  ASSET_INSTANCES,
+  PAYMENT_INSTANCES 
+}
+
+export const databaseCollections: {[key in databaseCollectionKeys]: { name: string, key: string}} = {
+  [databaseCollectionKeys.MEMBERS]: { name: 'members', key: 'address' },
+  [databaseCollectionKeys.ASSET_DEFINITIONS]: { name: 'asset-definitions', key: 'assetDefinitionID' },
+  [databaseCollectionKeys.PAYMENT_DEFINITIONS]: { name: 'payment-definitions', key: 'paymentDefinitionID' },
+  [databaseCollectionKeys.ASSET_INSTANCES]: { name: 'asset-instances', key: 'assetInstanceID' },
+  [databaseCollectionKeys.PAYMENT_INSTANCES]: { name: 'payment-instances', key: 'paymentInstanceID' }
+}
+
+// export const databaseCollections: {[key in databaseCollectionNames]: { name: string, key: string}} = {
+//   members: { name: 'members', key: 'address' },
+//   assetDefinitions: { name: 'asset-definitions', key: 'assetDefinitionID' },
+//   paymentDefinitions: { name: 'payment-definitions', key: 'paymentDefinitionID' },
+//   assetInstances: { name: 'asset-instances', key: 'assetInstanceID' },
+//   paymentInstances: { name: 'payment-instances', key: 'paymentInstanceID' }
+// }
+
 
 export const regexps = {
   ACCOUNT: /^0x[a-fA-F0-9]{40}$/
@@ -43,7 +71,7 @@ export const contractEventSignatures = {
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,bytes32,address,bytes32,bytes32,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,bytes32,address,bytes32,uint256)',
   DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
-  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',  
+  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',
   ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
 };
 

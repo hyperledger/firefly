@@ -118,6 +118,19 @@
           "type": "string"
         }
       }
+    },
+    "mongodb": {
+      "type": "object",
+      "required": [
+        "connectionUrl",
+        "databaseName"
+      ],
+      "connectionUrl": {
+        "type": "string"
+      },
+      "databaseName": {
+        "type": "string"
+      }
     }
   }
 }
