@@ -1,5 +1,6 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
+import { databaseCollectionName } from './interfaces';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -16,38 +17,13 @@ export const constants = {
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15
 };
 
-// export enum databaseCollectionNames {
-//   MEMBERS = 'members',
-//   ASSET_DEFINITIONS = 'assetDefinitions',
-//   PAYMENT_DEFINITIONS = 'paymentDefinitions',
-//   ASSET_INSTANCES = 'assetInstances',
-//   PAYMENT_INSTANCES = 'paymentInstances'
-// }
-
-export enum databaseCollectionKeys {
-  MEMBERS,
-  ASSET_DEFINITIONS,
-  PAYMENT_DEFINITIONS,
-  ASSET_INSTANCES,
-  PAYMENT_INSTANCES 
-}
-
-export const databaseCollections: {[key in databaseCollectionKeys]: { name: string, key: string}} = {
-  [databaseCollectionKeys.MEMBERS]: { name: 'members', key: 'address' },
-  [databaseCollectionKeys.ASSET_DEFINITIONS]: { name: 'asset-definitions', key: 'assetDefinitionID' },
-  [databaseCollectionKeys.PAYMENT_DEFINITIONS]: { name: 'payment-definitions', key: 'paymentDefinitionID' },
-  [databaseCollectionKeys.ASSET_INSTANCES]: { name: 'asset-instances', key: 'assetInstanceID' },
-  [databaseCollectionKeys.PAYMENT_INSTANCES]: { name: 'payment-instances', key: 'paymentInstanceID' }
-}
-
-// export const databaseCollections: {[key in databaseCollectionNames]: { name: string, key: string}} = {
-//   members: { name: 'members', key: 'address' },
-//   assetDefinitions: { name: 'asset-definitions', key: 'assetDefinitionID' },
-//   paymentDefinitions: { name: 'payment-definitions', key: 'paymentDefinitionID' },
-//   assetInstances: { name: 'asset-instances', key: 'assetInstanceID' },
-//   paymentInstances: { name: 'payment-instances', key: 'paymentInstanceID' }
-// }
-
+export const databaseCollectionIndexFields: {[name in databaseCollectionName]: string} = {
+  members: 'address',
+  'asset-definitions': 'assetDefinitionID',
+  'payment-definitions': 'paymentDefinitionID',
+  'asset-instances': 'assetInstanceID',
+  'payment-instances': 'paymentInstanceID'
+};
 
 export const regexps = {
   ACCOUNT: /^0x[a-fA-F0-9]{40}$/
