@@ -22,6 +22,7 @@ const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as
 
 export const promise = initConfig(() => { app2app.reset(); docExchange.reset() })
   .then(() => settings.init())
+  .then(() => database.init())
   .then(() => ipfs.init())
   .then(() => app2app.init())
   .then(() => docExchange.init())
@@ -50,6 +51,7 @@ export const promise = initConfig(() => { app2app.reset(); docExchange.reset() }
     const shutDown = () => {
       server.close();
       eventStreams.shutDown();
+      database.shutDown();
       shutDownConfig();
     };
 
@@ -58,3 +60,4 @@ export const promise = initConfig(() => { app2app.reset(); docExchange.reset() }
   }).catch(err => {
     log.error(`Failed to start asset trail. ${err}`);
   });
+  
