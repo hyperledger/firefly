@@ -20,7 +20,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
-export function start() {
+export const start = () => {
   return initConfig(() => { app2app.reset(); docExchange.reset() })
   .then(() => settings.init())
   .then(() => database.init())
