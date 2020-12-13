@@ -153,12 +153,14 @@ export interface IEventAssetInstancePropertySet {
 
 // DATABASE INTERFACES
 
+export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'asset-instances' | 'payment-instances'
+
 export interface IDatabaseProvider {
   init: () => Promise<void>
-  count: (collectionName: string, query: object) => Promise<number>
-  find: <T>(collectionName: string, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
-  findOne: <T>(collectionName: string, query: object) => Promise<T | null>
-  updateOne: (collectionName: string, query: object, value: object, upsert: boolean) => Promise<void>
+  count: (collectionName: databaseCollectionName, query: object) => Promise<number>
+  find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
+  findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
+  updateOne: (collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) => Promise<void>
   shutDown: () => void
 }
 

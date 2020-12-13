@@ -1,7 +1,6 @@
 import { config } from '../lib/config';
 import MongoDBProvider from './db-providers/mongodb';
 import NEDBProvider from './db-providers/nedb';
-import * as utils from '../lib/utils';
 import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
 
 let databaseProvider: IDatabaseProvider;
@@ -20,38 +19,38 @@ let listeners: IClientEventListener[] = [];
 // MEMBER QUERIES
 
 export const retrieveMemberByAddress = (address: string): Promise<IDBMember | null> => {
-  return databaseProvider.findOne<IDBMember>(utils.databaseCollections[utils.databaseCollectionKeys.MEMBERS].name, { address });
+  return databaseProvider.findOne<IDBMember>('members', { address });
 };
 
 export const retrieveMembers = (query: object, skip: number, limit: number): Promise<IDBMember[]> => {
-  return databaseProvider.find<IDBMember>(utils.databaseCollections[utils.databaseCollectionKeys.MEMBERS].name, query, { name: 1 }, skip, limit);
+  return databaseProvider.find<IDBMember>('members', query, { name: 1 }, skip, limit);
 };
 
 export const upsertMember = async (member: IDBMember) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.MEMBERS].name, { address: member.address }, { $set: member }, true);
+  await databaseProvider.updateOne('members', { address: member.address }, { $set: member }, true);
   emitEvent('member-registered', member);
 };
 
 // ASSET DEFINITION QUERIES
 
 export const retrieveAssetDefinitions = (query: object, skip: number, limit: number): Promise<IDBAssetDefinition[]> => {
-  return databaseProvider.find<IDBAssetDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, query, { name: 1 }, skip, limit)
+  return databaseProvider.find<IDBAssetDefinition>('asset-definitions', query, { name: 1 }, skip, limit)
 };
 
 export const countAssetDefinitions = (query: object): Promise<number> => {
-  return databaseProvider.count(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, query);
+  return databaseProvider.count('asset-definitions', query);
 };
 
 export const retrieveAssetDefinitionByID = (assetDefinitionID: string): Promise<IDBAssetDefinition | null> => {
-  return databaseProvider.findOne<IDBAssetDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, { assetDefinitionID });
+  return databaseProvider.findOne<IDBAssetDefinition>('asset-definitions', { assetDefinitionID });
 };
 
 export const retrieveAssetDefinitionByName = (name: string): Promise<IDBAssetDefinition | null> => {
-  return databaseProvider.findOne<IDBAssetDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, { name });
+  return databaseProvider.findOne<IDBAssetDefinition>('asset-definitions', { name });
 };
 
 export const upsertAssetDefinition = async (assetDefinition: IDBAssetDefinition) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, { assetDefinitionID: assetDefinition.assetDefinitionID }, { $set: assetDefinition }, true);
+  await databaseProvider.updateOne('asset-definitions', { assetDefinitionID: assetDefinition.assetDefinitionID }, { $set: assetDefinition }, true);
   if (assetDefinition.submitted !== undefined) {
     emitEvent('asset-definition-submitted', assetDefinition);
   } else if (assetDefinition.transactionHash !== undefined) {
@@ -60,30 +59,30 @@ export const upsertAssetDefinition = async (assetDefinition: IDBAssetDefinition)
 };
 
 export const markAssetDefinitionAsConflict = async (assetDefinitionID: string, timestamp: number) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_DEFINITIONS].name, { assetDefinitionID }, { $set: { timestamp, conflict: true } }, false);
+  await databaseProvider.updateOne('asset-definitions', { assetDefinitionID }, { $set: { timestamp, conflict: true } }, false);
   emitEvent('asset-definition-name-conflict', { assetDefinitionID })
 };
 
 // PAYMENT DEFINITION QUERIES
 
 export const retrievePaymentDefinitions = (query: object, skip: number, limit: number): Promise<IDBPaymentDefinition[]> => {
-  return databaseProvider.find<IDBPaymentDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, query, { name: 1 }, skip, limit);
+  return databaseProvider.find<IDBPaymentDefinition>('payment-definitions', query, { name: 1 }, skip, limit);
 };
 
 export const countPaymentDefinitions = (query: object): Promise<number> => {
-  return databaseProvider.count(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, query);
+  return databaseProvider.count('payment-definitions', query);
 };
 
 export const retrievePaymentDefinitionByID = (paymentDefinitionID: string): Promise<IDBPaymentDefinition | null> => {
-  return databaseProvider.findOne<IDBPaymentDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, { paymentDefinitionID });
+  return databaseProvider.findOne<IDBPaymentDefinition>('payment-definitions', { paymentDefinitionID });
 };
 
 export const retrievePaymentDefinitionByName = (name: string): Promise<IDBPaymentDefinition | null> => {
-  return databaseProvider.findOne<IDBPaymentDefinition>(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, { name });
+  return databaseProvider.findOne<IDBPaymentDefinition>('payment-definitions', { name });
 };
 
 export const upsertPaymentDefinition = async (paymentDefinition: IDBPaymentDefinition) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, { paymentDefinitionID: paymentDefinition.paymentDefinitionID }, { $set: paymentDefinition }, true)
+  await databaseProvider.updateOne('payment-definitions', { paymentDefinitionID: paymentDefinition.paymentDefinitionID }, { $set: paymentDefinition }, true)
   if (paymentDefinition.submitted !== undefined) {
     emitEvent('payment-definition-submitted', paymentDefinition);
   } else if (paymentDefinition.transactionHash !== undefined) {
@@ -92,30 +91,30 @@ export const upsertPaymentDefinition = async (paymentDefinition: IDBPaymentDefin
 };
 
 export const markPaymentDefinitionAsConflict = async (paymentDefinitionID: string, timestamp: number) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_DEFINITIONS].name, { paymentDefinitionID }, { $set: { conflict: true, timestamp } }, false);
+  await databaseProvider.updateOne('payment-definitions', { paymentDefinitionID }, { $set: { conflict: true, timestamp } }, false);
   emitEvent('payment-definition-name-conflict', { paymentDefinitionID })
 };
 
 // ASSET INSTANCE QUERIES
 
 export const retrieveAssetInstances = (query: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
-  return databaseProvider.find<IDBAssetInstance>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, query, {}, skip, limit);
+  return databaseProvider.find<IDBAssetInstance>('asset-instances', query, {}, skip, limit);
 };
 
 export const countAssetInstances = (query: object): Promise<number> => {
-  return databaseProvider.count(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, query);
+  return databaseProvider.count('asset-instances', query);
 };
 
 export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBAssetInstance | null> => {
-  return databaseProvider.findOne<IDBAssetInstance>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID });
+  return databaseProvider.findOne<IDBAssetInstance>('asset-instances', { assetInstanceID });
 };
 
 export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
-  return databaseProvider.findOne<IDBAssetInstance>(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetDefinitionID, contentHash });
+  return databaseProvider.findOne<IDBAssetInstance>('asset-instances', { assetDefinitionID, contentHash });
 };
 
 export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID: assetInstance.assetInstanceID }, { $set: assetInstance }, true);
+  await databaseProvider.updateOne('asset-instances', { assetInstanceID: assetInstance.assetInstanceID }, { $set: assetInstance }, true);
   if (assetInstance.submitted !== undefined) {
     emitEvent('asset-instance-submitted', assetInstance);
   } else if (assetInstance.transactionHash !== undefined) {
@@ -124,17 +123,17 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
 };
 
 export const setAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID }, { $set: { content, filename } }, true);
+  await databaseProvider.updateOne('asset-instances', { assetInstanceID }, { $set: { content, filename } }, true);
   emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename });
 };
 
 export const markAssetInstanceAsConflict = async (assetInstanceID: string, timestamp: number) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID }, { $set: { conflict: true, timestamp } }, false);
+  await databaseProvider.updateOne('asset-instances', { assetInstanceID }, { $set: { conflict: true, timestamp } }, false);
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
 export const setSubmittedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, submitted: number, receipt: string | undefined) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID },
+  await databaseProvider.updateOne('asset-instances', { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
@@ -146,7 +145,7 @@ export const setSubmittedAssetInstanceProperty = async (assetInstanceID: string,
 };
 
 export const setConfirmedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, timestamp: number, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.ASSET_INSTANCES].name, { assetInstanceID },
+  await databaseProvider.updateOne('asset-instances', { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
@@ -159,19 +158,19 @@ export const setConfirmedAssetInstanceProperty = async (assetInstanceID: string,
 // PAYMENT INSTANCE QUERIES
 
 export const retrievePaymentInstances = (query: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
-  return databaseProvider.find<IDBPaymentInstance>(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_INSTANCES].name, query, {}, skip, limit);
+  return databaseProvider.find<IDBPaymentInstance>('payment-instances', query, {}, skip, limit);
 };
 
 export const countPaymentInstances = (query: object): Promise<number> => {
-  return databaseProvider.count(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_INSTANCES].name, query);
+  return databaseProvider.count('payment-instances', query);
 };
 
 export const retrievePaymentInstanceByID = (paymentInstanceID: string): Promise<IDBPaymentInstance | null> => {
-  return databaseProvider.findOne<IDBPaymentInstance>(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_INSTANCES].name, { paymentInstanceID });
+  return databaseProvider.findOne<IDBPaymentInstance>('payment-instances', { paymentInstanceID });
 };
 
 export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance) => {
-  await databaseProvider.updateOne(utils.databaseCollections[utils.databaseCollectionKeys.PAYMENT_INSTANCES].name, { paymentInstanceID: paymentInstance.paymentInstanceID }, { $set: paymentInstance }, true);
+  await databaseProvider.updateOne('payment-instances', { paymentInstanceID: paymentInstance.paymentInstanceID }, { $set: paymentInstance }, true);
   if (paymentInstance.submitted !== undefined) {
     emitEvent('payment-instance-submitted', paymentInstance);
   } else {
