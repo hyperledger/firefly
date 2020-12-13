@@ -20,7 +20,8 @@ import { createLogger, LogLevelString } from 'bunyan';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
-export const promise = initConfig(() => { app2app.reset(); docExchange.reset() })
+export const start = () => {
+  return initConfig(() => { app2app.reset(); docExchange.reset() })
   .then(() => settings.init())
   .then(() => database.init())
   .then(() => ipfs.init())
@@ -61,3 +62,4 @@ export const promise = initConfig(() => { app2app.reset(); docExchange.reset() }
     log.error(`Failed to start asset trail. ${err}`);
   });
   
+}
