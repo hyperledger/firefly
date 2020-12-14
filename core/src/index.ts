@@ -58,8 +58,6 @@ export const start = () => {
 
     return { app, shutDown };
 
-  }).catch(err => {
-    log.error(`Failed to start asset trail. ${err}`);
   });
   
 }
