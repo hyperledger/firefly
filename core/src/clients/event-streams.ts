@@ -77,6 +77,7 @@ const heartBeat = () => {
 
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = JSON.parse(message);
+  log.info(`Event batch (${messageArray.length})`)
   for (const message of messageArray) {
     log.trace(`Event ${JSON.stringify(message)}`);
     const blockchainData: IDBBlockchainData = {
@@ -105,7 +106,7 @@ const handleMessage = async (message: string) => {
           await assetInstancesHandler.handleSetAssetInstancePropertyEvent(message.data as IEventAssetInstancePropertySet, blockchainData); break;
       }
     } catch (err) {
-      log.error(`Failed to handle event ${message.signature} ${err}`);
+      log.error(`Failed to handle event: ${message.signature} for message: ${JSON.stringify(message)} with error: ${err}`);
     }
   }
 };

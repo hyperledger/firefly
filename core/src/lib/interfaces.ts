@@ -9,18 +9,18 @@ export interface IConfig {
   eventStreams: {
     wsEndpoint: string
     topic: string
-  },
+  }
   ipfs: {
     apiEndpoint: string
     gatewayEndpoint: string
-  },
+  }
   app2app: {
     socketIOEndpoint: string
     destinations: {
       kat: string
       client: string
     }
-  },
+  }
   docExchange: {
     apiEndpoint: string
     socketIOEndpoint: string
@@ -29,6 +29,10 @@ export interface IConfig {
   appCredentials: {
     user: string
     password: string
+  }
+  mongodb: {
+    connectionUrl: string
+    databaseName: string
   }
 }
 
@@ -148,6 +152,17 @@ export interface IEventAssetInstancePropertySet {
 }
 
 // DATABASE INTERFACES
+
+export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'asset-instances' | 'payment-instances'
+
+export interface IDatabaseProvider {
+  init: () => Promise<void>
+  count: (collectionName: databaseCollectionName, query: object) => Promise<number>
+  find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
+  findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
+  updateOne: (collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) => Promise<void>
+  shutDown: () => void
+}
 
 export interface IDBBlockchainData {
   blockNumber: number,
@@ -347,7 +362,8 @@ export interface IAssetTradePrivateAssetInstanceAuthorizationResponse {
 // CLIENT EVENT INTERFACES
 
 export type ClientEventType =
-'asset-definition-submitted'
+  'member-registered'
+  | 'asset-definition-submitted'
   | 'asset-definition-created'
   | 'asset-definition-name-conflict'
   | 'payment-definition-submitted'
