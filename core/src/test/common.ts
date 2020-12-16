@@ -58,7 +58,7 @@ before(async () => {
     }
   });
 
-  const { promise } = require('../index');
+  const { promise } = require('../app');
   ({ app, shutDown } = await promise);
 
   const eventPromise = new Promise((resolve) => {

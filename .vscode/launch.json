@@ -9,7 +9,7 @@
       "runtimeExecutable": "nodemon",
       "env": {
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/OrgA",
-        "LOG_LEVEL": "trace"
+        "LOG_LEVEL": "info"
       },
       "args": ["|", "bunyan", "-o", "short"],
       "outputCapture": "std",
@@ -25,7 +25,7 @@
       "runtimeExecutable": "nodemon",
       "env": {
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/OrgB",
-        "LOG_LEVEL": "trace"
+        "LOG_LEVEL": "info"
       },
       "args": ["|", "bunyan", "-o", "short"],
       "outputCapture": "std",

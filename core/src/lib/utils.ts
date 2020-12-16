@@ -1,5 +1,6 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
+import { databaseCollectionName } from './interfaces';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -8,17 +9,20 @@ export const constants = {
   SETTINGS_FILE_NAME: 'settings.json',
   IPFS_TIMEOUT_MS: 15000,
   DEFAULT_PAGINATION_LIMIT: 100,
-  MEMBERS_DATABASE_FILE_NAME: 'members.json',
-  ASSET_DEFINITIONS_DATABASE_FILE_NAME: 'asset-definitions.json',
-  PAYMENT_DEFINITIONS_DATABASE_FILE_NAME: 'payment-definitions.json',
-  ASSET_INSTANCES_DATABASE_FILE_NAME: 'asset-instances.json',
-  PAYMENT_INSTANCES_DATABASE_FILE_NAME: 'payment-instances.json',
   EVENT_STREAM_WEBSOCKET_RECONNECTION_DELAY_SECONDS: 5,
   DOC_EXCHANGE_ASSET_FOLDER_NAME: 'assets',
   EVENT_STREAM_PING_TIMEOUT_SECONDS: 60,
   ASSET_INSTANCE_TRADE_TIMEOUT_SECONDS: 15,
   TRADE_AUTHORIZATION_TIMEOUT_SECONDS: 10,
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15
+};
+
+export const databaseCollectionIndexFields: {[name in databaseCollectionName]: string} = {
+  members: 'address',
+  'asset-definitions': 'assetDefinitionID',
+  'payment-definitions': 'paymentDefinitionID',
+  'asset-instances': 'assetInstanceID',
+  'payment-instances': 'paymentInstanceID'
 };
 
 export const regexps = {
@@ -43,7 +47,7 @@ export const contractEventSignatures = {
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,bytes32,address,bytes32,bytes32,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,bytes32,address,bytes32,uint256)',
   DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
-  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',  
+  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',
   ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
 };
 
