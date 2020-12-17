@@ -1,6 +1,7 @@
 const axios = require('axios');
 const argv = require('yargs')
   .option('gateway', { alias: 'g', type: 'string' })
+  .option('topic', { alias: 't', type: 'string' })
   .argv;
 const { promisify } = require('util');
 const sleep = promisify(require('timers').setTimeout);
@@ -96,7 +97,7 @@ async function getKaleidoConnectAPI(membership) {
 
 
 async function setupEventStreams(kaleidoConnectAPI, membership) {
-  const EventStreamName = `${membership.org_name} Event Streams`;
+  const EventStreamName = `${membership.org_name} ${argv.topic} Event Streams`;
   const {data: eventStreams} = await kaleidoConnectAPI.get('/eventstreams');
   let stream = eventStreams.find(e => e.name === EventStreamName);
   const streamDetails = {
@@ -108,7 +109,7 @@ async function setupEventStreams(kaleidoConnectAPI, membership) {
     batchSize: 50,
     type: "websocket",
     websocket: {
-      topic: argv.topic || 'synaptic'
+      topic: argv.topic
     }
   };
   if (!stream) {
@@ -137,15 +138,16 @@ async function ensureSubscriptions(kaleidoConnectAPI, stream) {
     ['Described structured asset definition created', 'DescribedStructuredAssetDefinitionCreated'],
     ['Member registered', 'MemberRegistered']
   ]) {
-    let sub = existing.find(s => s.name === eventName);
+    const fullName = `${argv.topic}-${eventName}`;
+    let sub = existing.find(s => s.name === fullName);
     if (!sub) {
       sub = await kaleidoConnectAPI.post(`/instances/${argv.gateway}/${eventName}/Subscribe`, {
         description,
-        name: eventName,
+        name: fullName,
         stream: stream.id,
       }).then(r => r.data);
     }
-    log(`Subscription ${eventName}: ${sub.id}`);
+    log(`Subscription ${fullName}: ${sub.id}`);
   }
 }
 
