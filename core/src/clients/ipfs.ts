@@ -21,7 +21,8 @@ export const init = async () => {
 };
 
 export const downloadJSON = async <T>(hash: string): Promise<T> => {
-  const response = await axios.get(`${config.ipfs.apiEndpoint}/ipfs/${hash}`, {
+  // Allow gatewayEndpoint endpoint to be separate to apiEndpoint, but fallback to the same (as is true for Kaleido boundary API)
+  const response = await axios.get(`${config.ipfs.gatewayEndpoint || config.ipfs.apiEndpoint}/ipfs/${hash}`, {
     responseType: 'json',
     timeout: constants.IPFS_TIMEOUT_MS,
     auth: {
