@@ -13,6 +13,18 @@ export const init = async () => {
   establishSocketIOConnection();
 };
 
+function subscribeWithRetry() {
+  log.info(`App2App subscription: ${config.app2app.destinations.kat}`)
+  socket.emit('subscribe', [config.app2app.destinations.kat], (err: any, data: any) => {
+    if (err) {
+      log.error(`App2App subscription failure (retrying): ${err}`);
+      setTimeout(subscribeWithRetry, utils.constants.SUBSCRIBE_RETRY_INTERVAL);
+      return;
+    }
+    log.info(`App2App subscription succeeded: ${JSON.stringify(data)}`);
+  });
+}
+
 const establishSocketIOConnection = () => {
   let error = false;
   socket = io.connect(config.app2app.socketIOEndpoint, {
@@ -29,7 +41,7 @@ const establishSocketIOConnection = () => {
       error = false;
       log.info('App2App messaging Socket IO connection restored');
     }
-    socket.emit('subscribe', [config.app2app.destinations.kat]);
+    subscribeWithRetry();
   }).on('connect_error', (err: Error) => {
     error = true;
     log.error(`App2App messaging Socket IO connection error. ${err.toString()}`);
