@@ -69,7 +69,7 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
   } catch (err) {
     tradeResponse.rejection = err.message;
   } finally {
-    app2app.dispatchMessage(headers.from, JSON.stringify(tradeResponse));
+    app2app.dispatchMessage(headers.from, tradeResponse);
   }
 };
 
@@ -96,7 +96,7 @@ const handlePrivateAssetInstanceAuthorization = (assetInstance: IDBAssetInstance
       }
     };
     app2app.addListener(app2appListener);
-    app2app.dispatchMessage(config.app2app.destinations.client, JSON.stringify(authorizationRequest));
+    app2app.dispatchMessage(config.app2app.destinations.client, authorizationRequest);
   });
 };
 
@@ -139,7 +139,7 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
       }
     };
     app2app.addListener(app2appListener);
-    app2app.dispatchMessage(authorDestination, JSON.stringify(tradeRequest));
+    app2app.dispatchMessage(authorDestination, tradeRequest);
   });
   await Promise.all([app2appPromise, docExchangePromise]);
 };

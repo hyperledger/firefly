@@ -52,6 +52,7 @@ const establishSocketIOConnection = () => {
     log.trace(`App2App message ${JSON.stringify(app2appMessage)}`);
     try {
       const content: AssetTradeMessage = JSON.parse(app2appMessage.content);
+      log.info(`App2App message type=${content.type}`)
       for (const listener of listeners) {
         listener(app2appMessage.headers, content);
       }
@@ -70,13 +71,14 @@ export const removeListener = (listener: IApp2AppMessageListener) => {
   listeners = listeners.filter(entry => entry != listener);
 };
 
-export const dispatchMessage = (to: string, content: string) => {
+export const dispatchMessage = (to: string, content: any) => {
+  log.info(`App2App dispatch type=${content.type}`)
   socket.emit('produce', {
     headers: {
       from: config.app2app.destinations.kat,
       to
     },
-    content
+    content: JSON.stringify(content)
   });
 };
 
