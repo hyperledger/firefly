@@ -348,5 +348,5 @@ export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: str
       utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
     privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
   }
-  app2app.dispatchMessage(recipient.app2appDestination, JSON.stringify(privateAssetTradePrivateInstancePush));
+  app2app.dispatchMessage(recipient.app2appDestination, privateAssetTradePrivateInstancePush);
 };
