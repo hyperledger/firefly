@@ -10,6 +10,6 @@ const log = createLogger({ name: 'handlers/client-events.ts', level: utils.const
 export const clientEventHandler = (eventType: ClientEventType, content: object) => {
   if (settings.clientEvents.includes(eventType)) {
     log.trace(`Dispatched client event ${eventType}`);
-    app2app.dispatchMessage(config.app2app.destinations.client, JSON.stringify({ type: eventType, content }));
+    app2app.dispatchMessage(config.app2app.destinations.client, { type: eventType, content });
   }
 };
