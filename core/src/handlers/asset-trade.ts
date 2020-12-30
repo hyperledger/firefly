@@ -114,7 +114,7 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
     metadata
   };
   const docExchangePromise = assetDefinition.contentSchema === undefined ? getDocumentExchangePromise(assetInstance.assetInstanceID) : Promise.resolve();
-  const app2appPromise = new Promise((resolve, reject) => {
+  const app2appPromise: Promise<void> = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       app2app.removeListener(app2appListener);
       reject(new Error('Asset instance author response timed out'));
@@ -144,7 +144,7 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
   await Promise.all([app2appPromise, docExchangePromise]);
 };
 
-const getDocumentExchangePromise = (assetInstanceID: string) => {
+const getDocumentExchangePromise = (assetInstanceID: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       docExchange.removeListener(docExchangeListener);
@@ -162,7 +162,6 @@ const getDocumentExchangePromise = (assetInstanceID: string) => {
 };
 
 const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
-
   const assetInstance = await database.retrieveAssetInstanceByID(push.assetInstanceID);
   if (assetInstance !== null) {
     const author = await database.retrieveMemberByAddress(assetInstance.author);

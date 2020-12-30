@@ -27,7 +27,7 @@ function subscribeWithRetry() {
 
 const establishSocketIOConnection = () => {
   let error = false;
-  socket = io.connect(config.app2app.socketIOEndpoint, {
+  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -58,8 +58,9 @@ const establishSocketIOConnection = () => {
       }
     } catch (err) {
       log.error(`App2App message error ${err}`);
+    } finally {
+      socket.emit('commit');
     }
-
   }) as SocketIOClient.Socket;
 };
 
