@@ -14,20 +14,20 @@ export const init = async () => {
 };
 
 function subscribeWithRetry() {
-  log.info(`App2App subscription: ${config.app2app.destinations.kat}`)
+  log.trace(`App2App subscription: ${config.app2app.destinations.kat}`)
   socket.emit('subscribe', [config.app2app.destinations.kat], (err: any, data: any) => {
     if (err) {
       log.error(`App2App subscription failure (retrying): ${err}`);
       setTimeout(subscribeWithRetry, utils.constants.SUBSCRIBE_RETRY_INTERVAL);
       return;
     }
-    log.info(`App2App subscription succeeded: ${JSON.stringify(data)}`);
+    log.trace(`App2App subscription succeeded: ${JSON.stringify(data)}`);
   });
 }
 
 const establishSocketIOConnection = () => {
   let error = false;
-  socket = io.connect(config.app2app.socketIOEndpoint, {
+  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -52,14 +52,15 @@ const establishSocketIOConnection = () => {
     log.trace(`App2App message ${JSON.stringify(app2appMessage)}`);
     try {
       const content: AssetTradeMessage = JSON.parse(app2appMessage.content);
-      log.info(`App2App message type=${content.type}`)
+      log.trace(`App2App message type=${content.type}`)
       for (const listener of listeners) {
         listener(app2appMessage.headers, content);
       }
     } catch (err) {
       log.error(`App2App message error ${err}`);
+    } finally {
+      socket.emit('commit');
     }
-
   }) as SocketIOClient.Socket;
 };
 
@@ -72,7 +73,7 @@ export const removeListener = (listener: IApp2AppMessageListener) => {
 };
 
 export const dispatchMessage = (to: string, content: any) => {
-  log.info(`App2App dispatch type=${content.type}`)
+  log.trace(`App2App dispatch type=${content.type}`)
   socket.emit('produce', {
     headers: {
       from: config.app2app.destinations.kat,
