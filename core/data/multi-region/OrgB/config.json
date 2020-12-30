@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../src/schemas/config.json",
+  "port": 4002,
+  "assetTrailInstanceID": "asset-trail-org-b",
+  "apiGateway": {
+    "apiEndpoint": "https://zzdk0au9rl-zzxtrleuk4-connect.azdev.photic.io/instances/0x1fc8898c69211ff0140765b3fccde27878a9939f"
+  },
+  "eventStreams": {
+    "wsEndpoint": "wss://zzdk0au9rl-zzxtrleuk4-connect.azdev-ws.photic.io/ws",
+    "topic": "B"
+  },
+  "ipfs": {
+    "apiEndpoint": "https://zzdk0au9rl-zzeab6gkxq-ipfs.azdev.photic.io"
+  },
+  "app2app": {
+    "socketIOEndpoint": "wss://zzdk0au9rl-zzyy8m38ff.azdev-ws.photic.io/api/v1",
+    "destinations": {
+      "kat": "kld://app2app/z/azdev/m/zzzohltm98/e/zzdk0au9rl/s/zzyy8m38ff/d/kat",
+      "client": "kld://app2app/z/azdev/m/zzzohltm98/e/zzdk0au9rl/s/zzyy8m38ff/d/client"
+    }
+  },
+  "docExchange": {
+    "apiEndpoint": "https://zzdk0au9rl-zzleq01yh6-documentstore.azdev.photic.io/api/v1",
+    "socketIOEndpoint": "wss://zzdk0au9rl-zzleq01yh6.azdev-ws.photic.io/api/v1",
+    "destination": "kld://documentstore/z/azdev/m/zzzohltm98/e/zzdk0au9rl/s/zzleq01yh6/d/b"
+  },
+  "appCredentials": {
+    "user": "zzv7dyg5d0",
+    "password": "2tyAt2ZaavAd76jmzP01X6fhAvp8pmh2qoLXkgBm2ps"
+  },
+  "mongodb": {
+    "connectionUrl": "mongodb://localhost:27017",
+    "databaseName": "synaptic-mr-org-b"
+  }
+}
