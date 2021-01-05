@@ -61,7 +61,20 @@ describe('Utils', () => {
           url: 'https://kaleido.io/test'
         });
       } catch (err) {
-        assert.strictEqual(err.message, 'Error: Request failed with status code 500');
+        assert.strictEqual(err.response.status, 500);
+      }
+    });
+
+    it('Not found should return immediately', async () => {
+      nock('https://kaleido.io')
+        .get('/test')
+        .reply(404);
+      try {
+        await utils.axiosWithRetry({
+          url: 'https://kaleido.io/test'
+        });
+      } catch (err) {
+        assert.deepStrictEqual(err.response.status, 404);
       }
     });
 

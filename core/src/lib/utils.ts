@@ -96,10 +96,14 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
     try {
       return await axios(config);
     } catch (err) {
-      currentError = err;
-      attempts++;
-      await new Promise(resolve => setTimeout(resolve, constants.REST_API_CALL_RETRY_DELAY_MS));
+      if(err.response.status === 404) {
+        throw err;
+      } else {
+        currentError = err;
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, constants.REST_API_CALL_RETRY_DELAY_MS));
+      }
     }
   }
-  throw new Error(currentError);
+  throw currentError;
 };
