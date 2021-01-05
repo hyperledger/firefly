@@ -17,8 +17,8 @@ export const constants = {
   TRADE_AUTHORIZATION_TIMEOUT_SECONDS: 10,
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15,
   SUBSCRIBE_RETRY_INTERVAL: 5 * 1000,
-  REST_API_CALL_MAX_ATTEMPTS: 5,
-  REST_API_CALL_RETRY_DELAY_MS: 500
+  REST_API_CALL_MAX_ATTEMPTS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS) || 5,
+  REST_API_CALL_RETRY_DELAY_MS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS) || 500
 };
 
 export const databaseCollectionIndexFields: { [name in databaseCollectionName]: string } = {
