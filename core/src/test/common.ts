@@ -52,8 +52,7 @@ before(async () => {
   mock('ws', MockWebSocket);
 
   mock('socket.io-client', {
-    connect: (_url: string) => {
-      // assert.strictEqual(url, 'http://docexchange.ws.kaleido.io');
+    connect: () => {
       return mockDocExchangeSocketIO;
     }
   });
@@ -61,7 +60,7 @@ before(async () => {
   const { promise } = require('../app');
   ({ app, shutDown } = await promise);
 
-  const eventPromise = new Promise((resolve) => {
+  const eventPromise = new Promise<void>((resolve) => {
     mockEventStreamWebSocket.once('send', message => {
       assert.strictEqual(message, '{"type":"listen","topic":"dev"}');
       resolve();
@@ -89,7 +88,7 @@ const setupSampleMembers = async () => {
       app2appDestination: 'kld://app2app_1',
       docExchangeDestination: 'kld://docexchange_1'
     })
-  const eventPromise = new Promise((resolve) => {
+  const eventPromise = new Promise<void>((resolve) => {
     mockEventStreamWebSocket.once('send', message => {
       assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
       resolve();

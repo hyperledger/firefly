@@ -1,5 +1,6 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
+import axios, { AxiosRequestConfig } from 'axios';
 import { databaseCollectionName } from './interfaces';
 
 export const constants = {
@@ -16,9 +17,11 @@ export const constants = {
   TRADE_AUTHORIZATION_TIMEOUT_SECONDS: 10,
   DOCUMENT_EXCHANGE_TRANSFER_TIMEOUT_SECONDS: 15,
   SUBSCRIBE_RETRY_INTERVAL: 5 * 1000,
+  REST_API_CALL_MAX_ATTEMPTS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS) || 5,
+  REST_API_CALL_RETRY_DELAY_MS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS) || 500
 };
 
-export const databaseCollectionIndexFields: {[name in databaseCollectionName]: string} = {
+export const databaseCollectionIndexFields: { [name in databaseCollectionName]: string } = {
   members: 'address',
   'asset-definitions': 'assetDefinitionID',
   'payment-definitions': 'paymentDefinitionID',
@@ -84,4 +87,23 @@ export const hexToUuid = (hex: string) => {
   return decodedTransferID.substr(0, 8) + '-' + decodedTransferID.substr(8, 4) + '-' +
     decodedTransferID.substr(12, 4) + '-' + decodedTransferID.substr(16, 4) + '-' +
     decodedTransferID.substr(20, 12);
+};
+
+export const axiosWithRetry = async (config: AxiosRequestConfig) => {
+  let attempts = 0;
+  let currentError;
+  while (attempts < constants.REST_API_CALL_MAX_ATTEMPTS) {
+    try {
+      return await axios(config);
+    } catch (err) {
+      if(err.response.status === 404) {
+        throw err;
+      } else {
+        currentError = err;
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, constants.REST_API_CALL_RETRY_DELAY_MS));
+      }
+    }
+  }
+  throw currentError;
 };
