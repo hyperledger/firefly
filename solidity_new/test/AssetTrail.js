@@ -55,6 +55,11 @@ const testContentSchemaHashes = [
 
 // Asset instance constants
 
+const testAssetInstanceBatchHashes = [
+  '0xa15abc51152dad05919a79966dc784f37491fa1c394b7935afcc5516b65ec98c',
+  '0xd5cc610cc1373b3f26238641e51bf4d3cb20068ea3f589bfac413417b4d46f23'
+];
+
 const testAssetInstanceIDs = [
   '0x1ebb3de9307e8c992e7b18f1f48767f6b83eb6befb72985a4f3043609ffa1e96',
   '0x82459a7f3e4b132093db4d651c74e384e72f8a808c2b321d7b3343d6fb872187'
@@ -272,24 +277,11 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Asset instances', () => {
 
-      it('createDescribedAssetInstance should create a new described asset instance and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createDescribedAssetInstance(testAssetInstanceIDs[0], testAssetDefinitionIDs[0], testDescriptionHashes[0], testContentHashes[0]);
+      it('createAssetInstanceBatch should emit the corresponding event', async () => {
+        const result = await assetTrailContract.createAssetInstanceBatch(testAssetInstanceBatchHashes[0]);
         const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[0]);
+        assert.equal(logArgs.batchHash, testAssetInstanceBatchHashes[0]);
         assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.descriptionHash, testDescriptionHashes[0]);
-        assert.equal(logArgs.contentHash, testContentHashes[0]);
-        assert(logArgs.timestamp.toNumber() > 0);
-      });
-
-      it('createAssetInstance should create a new asset instance and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createAssetInstance(testAssetInstanceIDs[1], testAssetDefinitionIDs[2], testContentHashes[0]);
-        const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[1]);
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[2]);
-        assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.contentHash, testContentHashes[0]);
         assert(logArgs.timestamp.toNumber() > 0);
       });
 

@@ -53,20 +53,9 @@ contract AssetTrail {
         uint timestamp
     );
 
-    event DescribedAssetInstanceCreated (
-        bytes32 assetInstanceID,
-        bytes32 assetDefinitionID,
+    event AssetInstanceBatchCreated (
+        bytes32 batchHash,
         address author,
-        bytes32 descriptionHash,
-        bytes32 contentHash,
-        uint timestamp
-    );
-
-    event AssetInstanceCreated (
-        bytes32 assetInstanceID,
-        bytes32 assetDefinitionID,
-        address author,
-        bytes32 contentHash,
         uint timestamp
     );
     
@@ -153,12 +142,8 @@ contract AssetTrail {
         emit PaymentDefinitionCreated(paymentDefinitionID, msg.sender, name, now);
     }
     
-    function createDescribedAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
-        emit DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, descriptionHash, contentHash, now);
-    }
-    
-    function createAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 contentHash) public {
-        emit AssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, contentHash, now);
+    function createAssetInstanceBatch(bytes32 batchHash) public {
+        emit AssetInstanceBatchCreated(batchHash, msg.sender, now);
     }
 
     function createDescribedPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address recipient, uint amount, bytes32 descriptionHash) public {
