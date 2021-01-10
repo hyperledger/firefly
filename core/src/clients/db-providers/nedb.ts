@@ -10,12 +10,14 @@ export default class NEDBProvider implements IDatabaseProvider {
 
   async init() {
     try {
-      for (const [collectionName, indexField] of Object.entries(databaseCollectionIndexFields)) {
+      for (const [collectionName, indexFields] of Object.entries(databaseCollectionIndexFields)) {
         const collection = Datastore.create({
           filename: path.join(constants.DATA_DIRECTORY, `${collectionName}.json`),
           autoload: true
         });
-        collection.ensureIndex({ fieldName: indexField, unique: true });
+        for (const indexField of indexFields) {
+          collection.ensureIndex({ fieldName: indexField, unique: true });
+        }
         collections[collectionName] = collection;
       }
     } catch (err) {

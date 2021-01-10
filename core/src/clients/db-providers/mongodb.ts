@@ -13,8 +13,10 @@ export default class MongoDBProvider implements IDatabaseProvider {
       mongoClient = await MongoClient.connect(config.mongodb.connectionUrl,
         { useNewUrlParser: true, useUnifiedTopology: true, ignoreUndefined: true });
       db = mongoClient.db(config.mongodb.databaseName);
-      for(const [collectionName, indexField] of Object.entries(databaseCollectionIndexFields)) {
-        db.collection(collectionName).createIndex({ [indexField]: 1 }, { unique: true });
+      for(const [collectionName, indexFields] of Object.entries(databaseCollectionIndexFields)) {
+        for (const indexField of indexFields) {
+          db.collection(collectionName).createIndex({ [indexField]: 1 }, { unique: true });
+        }
       }
     } catch (err) {
       throw new Error(`Failed to connect to Mongodb. ${err}`);
