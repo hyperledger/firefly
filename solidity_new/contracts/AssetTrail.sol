@@ -53,6 +53,23 @@ contract AssetTrail {
         uint timestamp
     );
 
+    event DescribedAssetInstanceCreated (
+        bytes32 assetInstanceID,
+        bytes32 assetDefinitionID,
+        address author,
+        bytes32 descriptionHash,
+        bytes32 contentHash,
+        uint timestamp
+    );
+
+    event AssetInstanceCreated (
+        bytes32 assetInstanceID,
+        bytes32 assetDefinitionID,
+        address author,
+        bytes32 contentHash,
+        uint timestamp
+    );
+
     event AssetInstanceBatchCreated (
         bytes32 batchHash,
         address author,
@@ -140,6 +157,14 @@ contract AssetTrail {
     function createPaymentDefinition(bytes32 paymentDefinitionID, string memory name) public {
         require(bytes(name).length != 0, "Invalid name");
         emit PaymentDefinitionCreated(paymentDefinitionID, msg.sender, name, now);
+    }
+
+    function createDescribedAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 descriptionHash, bytes32 contentHash) public {
+        emit DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, descriptionHash, contentHash, now);
+    }
+
+    function createAssetInstance(bytes32 assetInstanceID, bytes32 assetDefinitionID, bytes32 contentHash) public {
+        emit AssetInstanceCreated(assetInstanceID, assetDefinitionID, msg.sender, contentHash, now);
     }
     
     function createAssetInstanceBatch(bytes32 batchHash) public {

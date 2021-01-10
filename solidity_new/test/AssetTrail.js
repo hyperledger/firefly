@@ -277,6 +277,31 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Asset instances', () => {
 
+      it('createDescribedAssetInstance should create a new described asset instance and emit the corresponding event', async () => {
+        const result = await assetTrailContract.createDescribedAssetInstance(testAssetInstanceIDs[0], testAssetDefinitionIDs[0], testDescriptionHashes[0], testContentHashes[0]);
+        const logArgs = result.logs[0].args;
+        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[0]);
+        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[0]);
+        assert.equal(logArgs.author, accounts[0]);
+        assert.equal(logArgs.descriptionHash, testDescriptionHashes[0]);
+        assert.equal(logArgs.contentHash, testContentHashes[0]);
+        assert(logArgs.timestamp.toNumber() > 0);
+      });
+
+      it('createAssetInstance should create a new asset instance and emit the corresponding event', async () => {
+        const result = await assetTrailContract.createAssetInstance(testAssetInstanceIDs[1], testAssetDefinitionIDs[2], testContentHashes[0]);
+        const logArgs = result.logs[0].args;
+        assert.equal(logArgs.assetInstanceID, testAssetInstanceIDs[1]);
+        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[2]);
+        assert.equal(logArgs.author, accounts[0]);
+        assert.equal(logArgs.contentHash, testContentHashes[0]);
+        assert(logArgs.timestamp.toNumber() > 0);
+      });
+
+    });
+
+    describe('Asset instance batches', () => {
+
       it('createAssetInstanceBatch should emit the corresponding event', async () => {
         const result = await assetTrailContract.createAssetInstanceBatch(testAssetInstanceBatchHashes[0]);
         const logArgs = result.logs[0].args;
