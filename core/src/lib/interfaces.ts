@@ -153,7 +153,7 @@ export interface IEventAssetInstancePropertySet {
 
 // DATABASE INTERFACES
 
-export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'asset-instances' | 'payment-instances'
+export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'asset-instances' | 'payment-instances' | 'batches'
 
 export interface IDatabaseProvider {
   init: () => Promise<void>
@@ -266,6 +266,16 @@ export interface IDBPaymentInstance {
   timestamp?: number
   blockNumber?: number
   transactionHash?: string
+}
+
+export interface IDBBatch<IRecordType> {
+  _id?: string;
+  batchID: string,
+  type: string;
+  author: string;
+  created: number;
+  completed: number | null;
+  records: IRecordType[];
 }
 
 // APP2APP INTERFACES

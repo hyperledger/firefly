@@ -8,7 +8,7 @@
     "build": "rimraf ./build && tsc",
     "start": "npm run build && node build/app.js",
     "test2": "mocha test/*.js 'test/**/*.js'",
-    "test": "env DATA_DIRECTORY=$PWD/test-resources/sandbox mocha --timeout 15000 -r ts-node/register \"src/test/**/*.ts\""
+    "test": "env DATA_DIRECTORY=$PWD/test-resources/sandbox nyc mocha --timeout 15000 \"src/test/**/*.ts\""
   },
   "keywords": [],
   "author": "",
@@ -53,9 +53,38 @@
     "mocha": "^8.2.0",
     "nock": "^13.0.4",
     "nodemon": "^2.0.4",
+    "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "supertest": "^6.0.0",
     "ts-node": "^9.0.0",
     "typescript": "^4.0.3"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "coverage",
+      "test",
+      "dist",
+      "**/*.d.ts"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ],
+    "all": true,
+    "check-coverage": true,
+    "statements": 83,
+    "branches": 38,
+    "functions": 83,
+    "lines": 82
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
+    ]
   }
 }
