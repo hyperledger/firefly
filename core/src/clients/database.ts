@@ -181,8 +181,8 @@ export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance)
 
 // BATCH QUERIES
 
-export const retrieveBatches = (query: object, skip: number, limit: number): Promise<IDBBatch<any>[]> => {
-  return databaseProvider.find<IDBBatch<any>>('batches', query, {}, skip, limit);
+export const retrieveBatches = (query: object, skip: number, limit: number, sort: {[f: string]: number} = {}): Promise<IDBBatch<any>[]> => {
+  return databaseProvider.find<IDBBatch<any>>('batches', query, sort, skip, limit);
 };
 
 export const upsertBatch = async (batch: IDBBatch<any>) => {
