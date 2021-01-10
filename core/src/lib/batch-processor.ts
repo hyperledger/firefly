@@ -51,7 +51,7 @@ export class BatchProcessor<IRecordType> {
   constructor(
     private author: string,
     private type: string,
-    private processBatchCallack: (batch: IDBBatch<IRecordType>) => Promise<void>,
+    private processBatchCallback: (batch: IDBBatch<IRecordType>) => Promise<void>,
     private processorCompleteCallback: (author: string, type: string) => void,
     config?: Partial<IBatchProcessorConfig>,
   ) {
@@ -216,7 +216,7 @@ export class BatchProcessor<IRecordType> {
     while (!complete) {
       try {
         attempt++;
-        await this.processBatchCallack(batch);
+        await this.processBatchCallback(batch);
 
         // Update the batch as complete
         batch.completed = Date.now();

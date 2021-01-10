@@ -68,7 +68,8 @@
       "coverage",
       "test",
       "dist",
-      "**/*.d.ts"
+      "**/*.d.ts",
+      "src/test"
     ],
     "reporter": [
       "html",
@@ -76,10 +77,10 @@
     ],
     "all": true,
     "check-coverage": true,
-    "statements": 83,
+    "statements": 64,
     "branches": 38,
-    "functions": 83,
-    "lines": 82
+    "functions": 59,
+    "lines": 64
   },
   "mocha": {
     "require": [
