@@ -80,7 +80,7 @@
     "statements": 65,
     "branches": 39,
     "functions": 61,
-    "lines": 66
+    "lines": 65
   },
   "mocha": {
     "require": [

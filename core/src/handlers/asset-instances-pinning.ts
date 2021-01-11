@@ -33,8 +33,7 @@ export class AssetInstancesPinning {
       batchID: batch.batchID,
       records: batch.records,
     };
-    const payload = JSON.stringify(pinnedBatch);
-    batch.batchHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(payload)));;
+    batch.batchHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(pinnedBatch)));;
 
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
     apiGatewayResponse = await apiGateway.createAssetInstanceBatch(batch.batchHash, batch.author);
