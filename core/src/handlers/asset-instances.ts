@@ -1,15 +1,19 @@
 import Ajv from 'ajv';
+import { createLogger, LogLevelString } from 'bunyan';
 import { v4 as uuidV4 } from 'uuid';
-import { config } from '../lib/config';
-import * as database from '../clients/database';
-import * as ipfs from '../clients/ipfs';
-import * as utils from '../lib/utils';
-import * as app2app from '../clients/app2app';
-import * as docExchange from '../clients/doc-exchange';
 import * as apiGateway from '../clients/api-gateway';
+import * as app2app from '../clients/app2app';
+import * as database from '../clients/database';
+import * as docExchange from '../clients/doc-exchange';
+import * as ipfs from '../clients/ipfs';
+import { config } from '../lib/config';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
 import RequestError from '../lib/request-error';
+import * as utils from '../lib/utils';
+import { assetInstancesPinning } from './asset-instances-pinning';
 import * as assetTrade from './asset-trade';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetTradePrivateAssetInstancePush, IDBBlockchainData, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
+
+const log = createLogger({ name: 'handlers/asset-instances.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 const ajv = new Ajv();
 
@@ -70,39 +74,46 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     if (!ajv.validate(assetDefinition.descriptionSchema, description)) {
       throw new RequestError('Description does not conform to asset definition schema', 400);
     }
-    descriptionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(description)));
+    descriptionHash = `0x${utils.getSha256(JSON.stringify(description))}`;
   }
   if (!ajv.validate(assetDefinition.contentSchema, content)) {
     throw new RequestError('Content does not conform to asset definition schema', 400);
   }
-  if (assetDefinition.isContentPrivate) {
-    contentHash = `0x${utils.getSha256(JSON.stringify(content))}`;
-  } else {
-    contentHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(content)));
-  }
+  contentHash = `0x${utils.getSha256(JSON.stringify(content))}`;
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
     throw new RequestError(`Asset instance content conflict`);
   }
   const assetInstanceID = uuidV4();
-  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
-  if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
-  } else {
-    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
-  }
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.upsertAssetInstance({
+  const assetInstance: IAssetInstance = {
     assetInstanceID,
     author,
     assetDefinitionID,
     descriptionHash,
     description,
     contentHash,
-    content,
-    submitted: timestamp,
-    receipt
-  });
+    content
+  };
+
+  let dbAssetInstance: IDBAssetInstance = assetInstance;
+  dbAssetInstance.submitted = timestamp;
+  // If there are public IPFS shared parts of this instance, we can batch it together with all other
+  // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
+  // most importantly the number of IPFS transactions.
+  if (assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) {
+    dbAssetInstance.batchID = await assetInstancesPinning.pin(assetDefinition, assetInstance);
+  } else {
+    // One-for-one blockchain transactions to instances
+    let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
+    if (descriptionHash) {
+      apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+    } else {
+      apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+    }
+    dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  }
+
+  await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 };
 
@@ -120,7 +131,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     if (!ajv.validate(assetDefinition.descriptionSchema, description)) {
       throw new RequestError('Description does not conform to asset definition schema', 400);
     }
-    descriptionHash = await ipfs.uploadString(JSON.stringify(description));
+    descriptionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(description)));
   }
   const assetInstanceID = uuidV4();
   if (assetDefinition.isContentPrivate) {
@@ -180,13 +191,51 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
   await database.setSubmittedAssetInstanceProperty(assetInstanceID, author, key, value, submitted, receipt);
 };
 
-export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
+
+  let batch = await database.retrieveBatchByHash(event.batchHash);
+  if (!batch) {
+    batch = await ipfs.downloadJSON(utils.sha256ToIPFSHash(event.batchHash));
+  }
+  if (!batch) {
+    throw new Error('Unknown batch hash: ' + event.batchHash);
+  }
+
+  // Process each record within the batch, as if it we its own individual event
+  for (let record of batch.records as IAssetInstance[]) {
+    const recordEvent: IEventAssetInstanceCreated = {
+      assetDefinitionID: '',
+      assetInstanceID: '',
+      author: record.author,
+      contentHash: record.contentHash!,
+      descriptionHash: record.descriptionHash!,
+      timestamp: event.timestamp,
+    };
+    try {
+      await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
+    } catch(err) {
+      // We failed to process this record, but continue to attempt the other records in the batch
+      log.error(`${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+    }
+  }
+
+  // Write the batch itself to our local database
+  await database.upsertBatch({
+    ...batch,
+    timestamp: Number(event.timestamp),
+    blockNumber,
+    transactionHash
+  });
+
+}
+
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
+  const eventAssetInstanceID = batchInstance ? batchInstance.assetInstanceID : utils.hexToUuid(event.assetInstanceID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
   }
-  const assetDefinition = await database.retrieveAssetDefinitionByID(utils.hexToUuid(event.assetDefinitionID));
+  const assetDefinition = await database.retrieveAssetDefinitionByID(batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID));
   if (assetDefinition === null) {
     throw new Error('Uknown asset definition');
   }
@@ -203,8 +252,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  let description: Object | undefined = undefined;
-  if (assetDefinition.descriptionSchema) {
+  let description: Object | undefined = batchInstance?.description;
+  if (assetDefinition.descriptionSchema && !description) {
     if (event.descriptionHash) {
       if (event.descriptionHash === dbAssetInstance?.descriptionHash) {
         description = dbAssetInstance.description;
@@ -218,8 +267,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       throw new Error('Missing asset instance description');
     }
   }
-  let content: Object | undefined = undefined;
-  if (assetDefinition.contentSchema) {
+  let content: Object | undefined = batchInstance?.content;
+  if (assetDefinition.contentSchema && !content) {
     if (event.contentHash === dbAssetInstance?.contentHash) {
       content = dbAssetInstance.content;
     } else if (!assetDefinition.isContentPrivate) {
@@ -229,6 +278,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
+  log.trace(`Updating asset instance ${eventAssetInstanceID} with blockchain pinned info blockNumber=${blockNumber} hash=${transactionHash}`)
   await database.upsertAssetInstance({
     assetInstanceID: eventAssetInstanceID,
     author: event.author,

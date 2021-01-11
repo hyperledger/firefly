@@ -132,6 +132,11 @@ export interface IEventAssetInstanceCreated {
   contentHash: string
   timestamp: string
 }
+export interface IEventAssetInstanceBatchCreated {
+  batchHash: string;
+  author: string
+  timestamp: string
+}
 
 export interface IEventPaymentInstanceCreated {
   paymentInstanceID: string
@@ -169,21 +174,22 @@ export interface IDBBlockchainData {
   transactionHash: string
 }
 
-export interface IDBMember {
+export interface IDBBlockchainPinned extends Partial<IDBBlockchainData> {
+  submitted?: number
+  timestamp?: number
+  receipt?: string
+}
+
+export interface IDBMember extends IDBBlockchainPinned {
   _id?: string
   address: string
   name: string
   assetTrailInstanceID: string
   app2appDestination: string
   docExchangeDestination: string
-  submitted?: number
-  timestamp?: number
-  blockNumber?: number
-  transactionHash?: string
-  receipt?: string
 }
 
-export interface IDBAssetDefinition {
+export interface IDBAssetDefinition extends IDBBlockchainPinned {
   _id?: string
   assetDefinitionID: string
   author: string
@@ -194,31 +200,20 @@ export interface IDBAssetDefinition {
   descriptionSchema?: object
   contentSchemaHash?: string
   contentSchema?: object
-  submitted?: number
-  timestamp?: number
-  blockNumber?: number
-  transactionHash?: string
-  receipt?: string
   conflict?: boolean
 }
 
-export interface IDBPaymentDefinition {
+export interface IDBPaymentDefinition extends IDBBlockchainPinned {
   _id?: string
   paymentDefinitionID: string
   author: string
   name: string
   descriptionSchema?: object
   descriptionSchemaHash?: string
-  submitted?: number
-  receipt?: string
-  timestamp?: number
-  blockNumber?: number
-  transactionHash?: string
   conflict?: boolean
 }
 
-export interface IDBAssetInstance {
-  _id?: string
+export interface IAssetInstance {
   assetInstanceID: string
   assetDefinitionID: string
   author: string
@@ -226,12 +221,7 @@ export interface IDBAssetInstance {
   description?: object
   content?: object
   contentHash?: string
-  submitted?: number
-  receipt?: string
   conflict?: boolean
-  blockNumber?: number
-  transactionHash?: string
-  timestamp?: number
   filename?: string
   properties?: {
     [author: string]: {
@@ -252,7 +242,12 @@ export interface IDBAssetInstance {
   }
 }
 
-export interface IDBPaymentInstance {
+export interface IDBAssetInstance extends IAssetInstance, IDBBlockchainPinned {
+  _id?: string
+  batchID?: string;
+}
+
+export interface IDBPaymentInstance extends IDBBlockchainPinned {
   _id?: string
   paymentInstanceID: string
   paymentDefinitionID: string
@@ -261,21 +256,20 @@ export interface IDBPaymentInstance {
   amount: number
   descriptionHash?: string
   description?: object
-  receipt?: string
-  submitted?: number
-  timestamp?: number
-  blockNumber?: number
-  transactionHash?: string
 }
 
-export interface IDBBatch<IRecordType> {
-  _id?: string;
-  batchID: string,
+export interface IPinnedBatch<IRecordType> {
   type: string;
   author: string;
   created: number;
   completed: number | null;
+  batchID: string,
   records: IRecordType[];
+}
+
+export interface IDBBatch<IRecordType> extends IPinnedBatch<IRecordType>, IDBBlockchainPinned {
+  _id?: string;
+  batchHash?: string,
 }
 
 // APP2APP INTERFACES

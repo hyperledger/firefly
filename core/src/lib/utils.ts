@@ -2,6 +2,7 @@ import { encode, decode } from 'bs58';
 import crypto from 'crypto';
 import axios, { AxiosRequestConfig } from 'axios';
 import { databaseCollectionName } from './interfaces';
+import { createLogger, LogLevelString } from 'bunyan';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -30,13 +31,19 @@ export const constants = {
 
 };
 
-export const databaseCollectionIndexFields: { [name in databaseCollectionName]: string[] } = {
-  members: ['address'],
-  'asset-definitions': ['assetDefinitionID'],
-  'payment-definitions': ['paymentDefinitionID'],
-  'asset-instances': ['assetInstanceID'],
-  'payment-instances': ['paymentInstanceID'],
-  'batches': ['batchID', 'type', 'completed', 'author'],
+const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
+
+export const databaseCollectionIndexes: { [name in databaseCollectionName]: {fields: string[], unique?: boolean}[] } = {
+  members: [{fields: ['address'], unique: true}],
+  'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
+  'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],
+  'asset-instances': [{fields: ['assetInstanceID'], unique: true}],
+  'payment-instances': [{fields: ['paymentInstanceID'], unique: true}],
+  'batches': [
+    {fields: ['batchID'], unique: true}, // Primary key
+    {fields: ['type','author','completed','created']}, // Search index for startup processing, and other queries
+    {fields: ['batchHash']} // To retrieve a batch by its hash, in response to a blockchain event
+  ],
 };
 
 export const regexps = {
@@ -59,6 +66,7 @@ export const contractEventSignatures = {
   DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(bytes32,address,string,bytes32,uint256)',
   PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
   DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,bytes32,address,bytes32,bytes32,uint256)',
+  ASSET_INSTANCE_BATCH_CREATED: 'AssetInstanceBatchCreated(bytes32,address,uint256)',
   ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,bytes32,address,bytes32,uint256)',
   DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
   PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',
@@ -106,7 +114,9 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
     try {
       return await axios(config);
     } catch (err) {
-      if(err.response.status === 404) {
+      const data = err.response?.data;
+      log.error(`${config.method} ${config.url} attempt ${attempts} [${err.response?.status}]`, (data && !data.on) ? data : err.stack)
+      if(err.response?.status === 404) {
         throw err;
       } else {
         currentError = err;

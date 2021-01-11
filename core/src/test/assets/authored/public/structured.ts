@@ -1,15 +1,33 @@
-import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent } from '../../../samples';
+import assert from 'assert';
+import { createHash, randomBytes } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
-import assert from 'assert';
-import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceCreated } from '../../../../lib/interfaces';
+import { promisify } from 'util';
+import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { app, mockEventStreamWebSocket } from '../../../common';
+import { testContent } from '../../../samples';
+const delay = promisify(setTimeout);
 
 describe('Assets: authored - public - structured', async () => {
 
   let assetDefinitionID: string;
   const timestamp = utils.getTimestamp();
+  const batchHashSha256 = '0x' + createHash('sha256').update(randomBytes(10)).digest().toString('hex');
+  const batchHashIPFSMulti = utils.sha256ToIPFSHash(batchHashSha256);
+
+  let batchMaxRecordsToRestore: number;
+  beforeEach(() => {
+    nock.cleanAll();
+    // Force batches to close immediately
+    batchMaxRecordsToRestore = utils.constants.BATCH_MAX_RECORDS;
+    utils.constants.BATCH_MAX_RECORDS = 1;
+  });
+
+  afterEach(() => {
+    assert.deepStrictEqual(nock.pendingMocks(), []);
+    utils.constants.BATCH_MAX_RECORDS = batchMaxRecordsToRestore;
+  });
 
   describe('Create asset definition', () => {
 
@@ -106,14 +124,14 @@ describe('Assets: authored - public - structured', async () => {
     let assetInstanceID: string;
 
     it('Checks that an asset instance can be created', async () => {
-
+      
       nock('https://apigateway.kaleido.io')
-        .post('/createAssetInstance?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetInstanceBatch?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testContent.sample.ipfsMultiHash })
+        .reply(200, { Hash: batchHashIPFSMulti })
 
       const result = await request(app)
         .post('/api/v1/assets/instances')
@@ -132,10 +150,29 @@ describe('Assets: authored - public - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
+      assert.strictEqual(assetInstance.contentHash,'0x' + utils.getSha256(JSON.stringify(testContent.sample.object)));
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
-      assert.strictEqual(assetInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(assetInstance.receipt, undefined); // As this has been batched
       assert.strictEqual(typeof assetInstance.submitted, 'number');
+      assert.strictEqual(typeof assetInstance.batchID, 'string');
+
+      // Expect the batch to have been submitted
+      let getBatchResponse: any;
+      for (let i = 0; i < 10; i++) {
+        getBatchResponse = await request(app)
+          .get(`/api/v1/batches/${assetInstance.batchID}`)
+          .expect(200);
+        if (getBatchResponse.body.completed) break;
+        await delay(1);
+      }
+      assert.strictEqual(typeof getBatchResponse.body.completed, 'number');
+      assert.strictEqual(typeof getBatchResponse.body.batchHash, 'string');
+      assert.strictEqual(getBatchResponse.body.receipt, 'my-receipt-id');
+      assert.strictEqual(getBatchResponse.body.batchHash, batchHashSha256);
+      // As this is a public asset, the full content will have been written to IPFS in the batch
+      assert.deepStrictEqual(getBatchResponse.body.records[0].content, testContent.sample.object);
+      // There is no description, as this is not a described asset type
+      assert.deepStrictEqual(getBatchResponse.body.records[0].description, undefined);
 
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/instances/${assetInstanceID}`)
@@ -151,15 +188,13 @@ describe('Assets: authored - public - structured', async () => {
           resolve();
         })
       });
-      const data: IEventAssetInstanceCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+      const data: IEventAssetInstanceBatchCreated = {
         author: '0x0000000000000000000000000000000000000001',
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
-        contentHash: testContent.sample.ipfsSha256,
+        batchHash: batchHashSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED,
+        signature: utils.contractEventSignatures.ASSET_INSTANCE_BATCH_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -174,9 +209,9 @@ describe('Assets: authored - public - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.ipfsSha256);
+      assert.strictEqual(assetInstance.contentHash, '0x' + utils.getSha256(JSON.stringify(testContent.sample.object)));
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
-      assert.strictEqual(assetInstance.receipt, 'my-receipt-id');
+      assert.strictEqual(assetInstance.receipt, undefined); // the batch has the receipt
       assert.strictEqual(assetInstance.timestamp, timestamp);
       assert.strictEqual(typeof assetInstance.submitted, 'number');
       assert.strictEqual(assetInstance.blockNumber, 123);

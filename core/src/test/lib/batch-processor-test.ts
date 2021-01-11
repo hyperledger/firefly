@@ -1,5 +1,5 @@
-import sinon, { SinonStub } from 'sinon';
 import assert from 'assert';
+import sinon, { SinonStub } from 'sinon';
 import { promisify } from 'util';
 import * as database from '../../clients/database';
 import { BatchProcessor } from '../../lib/batch-processor';

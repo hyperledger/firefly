@@ -216,10 +216,12 @@ export class BatchProcessor<IRecordType> {
     while (!complete) {
       try {
         attempt++;
+
+        // Set the completed time in memory - forms part of uniqueness in the pinning process.
+        batch.completed = Date.now();
         await this.processBatchCallback(batch);
 
-        // Update the batch as complete
-        batch.completed = Date.now();
+        // Update the batch as complete - writes the now final completed timestamp, along with any updates made in processBatchCallback
         await database.upsertBatch(batch);
         
         // Ok, we're done here.
