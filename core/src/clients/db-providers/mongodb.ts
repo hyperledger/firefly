@@ -1,7 +1,7 @@
 import { Db, MongoClient } from 'mongodb';
 import { config } from '../../lib/config';
 import { databaseCollectionName, IDatabaseProvider } from '../../lib/interfaces';
-import { databaseCollectionIndexFields } from '../../lib/utils';
+import { databaseCollectionIndexes } from '../../lib/utils';
 
 let db: Db;
 let mongoClient: MongoClient;
@@ -13,9 +13,11 @@ export default class MongoDBProvider implements IDatabaseProvider {
       mongoClient = await MongoClient.connect(config.mongodb.connectionUrl,
         { useNewUrlParser: true, useUnifiedTopology: true, ignoreUndefined: true });
       db = mongoClient.db(config.mongodb.databaseName);
-      for(const [collectionName, indexFields] of Object.entries(databaseCollectionIndexFields)) {
-        for (const indexField of indexFields) {
-          db.collection(collectionName).createIndex({ [indexField]: 1 }, { unique: true });
+      for(const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
+        for (const index of indexes) {
+          const fields: {[f: string]: number} = {};
+          for (let f of index.fields) fields[f] = 1; // all ascending currently
+          db.collection(collectionName).createIndex(fields, { unique: !!index.unique });
         }
       }
     } catch (err) {
