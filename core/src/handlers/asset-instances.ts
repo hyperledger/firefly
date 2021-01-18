@@ -15,8 +15,8 @@ const ajv = new Ajv();
 
 export let pendingAssetInstancePrivateContentDeliveries: { [assetInstanceID: string]: IPendingAssetInstancePrivateContentDelivery } = {};
 
-export const handleGetAssetInstancesRequest = (query: object, skip: number, limit: number) => {
-  return database.retrieveAssetInstances(query, skip, limit);
+export const handleGetAssetInstancesRequest = (query: object, sort: object, skip: number, limit: number) => {
+  return database.retrieveAssetInstances(query, sort, skip, limit);
 };
 
 export const handleCountAssetInstancesRequest = async (query: object) => {
