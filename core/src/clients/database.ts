@@ -97,8 +97,8 @@ export const markPaymentDefinitionAsConflict = async (paymentDefinitionID: strin
 
 // ASSET INSTANCE QUERIES
 
-export const retrieveAssetInstances = (query: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
-  return databaseProvider.find<IDBAssetInstance>('asset-instances', query, {}, skip, limit);
+export const retrieveAssetInstances = (query: object, sort: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
+  return databaseProvider.find<IDBAssetInstance>('asset-instances', query, sort, skip, limit);
 };
 
 export const countAssetInstances = (query: object): Promise<number> => {

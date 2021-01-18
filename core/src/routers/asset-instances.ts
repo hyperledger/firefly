@@ -15,7 +15,13 @@ router.get('/', async (req, res, next) => {
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest({}, skip, limit));
+    let query: {
+      assetDefinitionID?: string
+    } = {};
+    if(req.query.assetDefinitionID !== undefined) {
+      query.assetDefinitionID = req.query.assetDefinitionID as string;
+    }
+    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest(query, {}, skip, limit));
   } catch (err) {
     next(err);
   }
@@ -42,7 +48,7 @@ router.post('/search', async (req, res, next) => {
     }
     res.send(req.body.count === true ?
       await assetInstancesHandler.handleCountAssetInstancesRequest(req.body.query) :
-      await assetInstancesHandler.handleGetAssetInstancesRequest(req.body.query, skip, limit)
+      await assetInstancesHandler.handleGetAssetInstancesRequest(req.body.query, req.body.sort || {}, skip, limit)
     );
   } catch (err) {
     next(err);
