@@ -2,7 +2,7 @@ import { app } from '../common';
 import request from 'supertest';
 import assert from 'assert';
 
-describe('Asset definitions - argument validation', async () => {
+describe('Aggregation', async () => {
 
   it('Missing aggregation query', async () => {
     const result = await request(app)
@@ -21,7 +21,7 @@ describe('Asset definitions - argument validation', async () => {
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid aggregation query' });
   });
 
-  it('Aggregation unsupported with NeDB', async () => {
+  it('Aggregation not supported in NeDB', async () => {
     const result = await request(app)
       .post('/api/v1/assets/instances/aggregate')
       .send({
