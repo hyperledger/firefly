@@ -14,11 +14,12 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
 
     const timestamp = utils.getTimestamp();
 
-    nock('https://ipfs.kaleido.io')
-    .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
-    .reply(200, testDescription.schema.object);
-
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
+
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
+        .reply(200, testDescription.schema.object);
+
       const eventPromise = new Promise((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');

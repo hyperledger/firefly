@@ -126,6 +126,7 @@ async function ensureSubscriptions(kaleidoConnectAPI, stream) {
   const {data: existing} = await kaleidoConnectAPI.get(url);
   for ([description, eventName] of [
     ['Asset instance created', 'AssetInstanceCreated'],
+    ['Asset instance batch created', 'AssetInstanceBatchCreated'],
     ['Payment instance created', 'PaymentInstanceCreated'],
     ['Payment definition created', 'PaymentDefinitionCreated'],
     ['Described unstructured asset definition created', 'DescribedUnstructuredAssetDefinitionCreated'],
