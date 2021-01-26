@@ -55,6 +55,17 @@ router.post('/search', async (req, res, next) => {
   }
 });
 
+router.post('/aggregate', async (req, res, next) => {
+  try {
+    if (!Array.isArray(req.body.query)) {
+      throw new RequestError('Missing or invalid aggregation query', 400);
+    }
+    res.send(await assetInstancesHandler.handleAggregateAssetInstancesRequest(req.body.query));
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/', async (req, res, next) => {
   try {
     let assetInstanceID: string;
