@@ -2,6 +2,7 @@ import Datastore from 'nedb-promises';
 import { constants, databaseCollectionIndexFields } from '../../lib/utils';
 import path from 'path';
 import { databaseCollectionName, IDatabaseProvider } from '../../lib/interfaces';
+import RequestError from '../../lib/request-error';
 
 const projection = { _id: 0 };
 let collections: { [name: string]: Datastore } = {};
@@ -33,6 +34,10 @@ export default class NEDBProvider implements IDatabaseProvider {
 
   findOne<T>(collectionName: databaseCollectionName, query: object): Promise<T | null> {
     return collections[collectionName].findOne<T>(query, projection);
+  }
+
+  aggregate<T>(_collectionName: databaseCollectionName, _query: object[]): Promise<T[]> {
+    throw new RequestError('Aggregation not supported in NeDB', 400);
   }
 
   async updateOne(collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) {
