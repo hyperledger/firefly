@@ -6,6 +6,7 @@ import assetDefinitionsRouter from './routers/asset-definitions';
 import assetInstancesRouter from './routers/asset-instances';
 import paymentDefinitionsRouter from './routers/payment-definitions';
 import paymentInstancesRouter from './routers/payment-instances';
+import batchesRouter from './routers/batches';
 import { errorHandler } from './lib/request-error';
 import * as database from './clients/database';
 import * as settings from './lib/settings';
@@ -17,6 +18,7 @@ import * as eventStreams from './clients/event-streams';
 import { assetTradeHandler } from './handlers/asset-trade';
 import { clientEventHandler } from './handlers/client-events';
 import { createLogger, LogLevelString } from 'bunyan';
+import { assetInstancesPinning } from './handlers/asset-instances-pinning';
 
 const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
@@ -27,6 +29,7 @@ export const start = () => {
   .then(() => ipfs.init())
   .then(() => app2app.init())
   .then(() => docExchange.init())
+  .then(() => assetInstancesPinning.init())
   .then(() => {
     eventStreams.init();
     const app = express();
@@ -39,6 +42,7 @@ export const start = () => {
     app.use('/api/v1/assets/instances', assetInstancesRouter);
     app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
     app.use('/api/v1/payments/instances', paymentInstancesRouter);
+    app.use('/api/v1/batches', batchesRouter);
 
     app.use(errorHandler);
 

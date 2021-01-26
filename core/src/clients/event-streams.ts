@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IDBBlockchainData, IEventAssetDefinitionCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated, IEventStreamMessage } from '../lib/interfaces';
+import { IDBBlockchainData, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated, IEventStreamMessage } from '../lib/interfaces';
 import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
@@ -99,6 +99,8 @@ const handleMessage = async (message: string) => {
         case utils.contractEventSignatures.ASSET_INSTANCE_CREATED:
         case utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED:
           await assetInstancesHandler.handleAssetInstanceCreatedEvent(message.data as IEventAssetInstanceCreated, blockchainData); break;
+        case utils.contractEventSignatures.ASSET_INSTANCE_BATCH_CREATED:
+          await assetInstancesHandler.handleAssetInstanceBatchCreatedEvent(message.data as IEventAssetInstanceBatchCreated, blockchainData); break;
         case utils.contractEventSignatures.DESCRIBED_PAYMENT_INSTANCE_CREATED:
         case utils.contractEventSignatures.PAYMENT_INSTANCE_CREATED:
           await paymentInstanceHandler.handlePaymentInstanceCreatedEvent(message.data as IEventPaymentInstanceCreated, blockchainData); break;
@@ -106,7 +108,7 @@ const handleMessage = async (message: string) => {
           await assetInstancesHandler.handleSetAssetInstancePropertyEvent(message.data as IEventAssetInstancePropertySet, blockchainData); break;
       }
     } catch (err) {
-      log.error(`Failed to handle event: ${message.signature} for message: ${JSON.stringify(message)} with error: ${err}`);
+      log.error(`Failed to handle event: ${message.signature} for message: ${JSON.stringify(message)} with error`, err.stack);
     }
   }
 };
