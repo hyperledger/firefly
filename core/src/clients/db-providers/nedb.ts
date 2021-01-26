@@ -1,7 +1,7 @@
 import Datastore from 'nedb-promises';
-import { constants, databaseCollectionIndexFields } from '../../lib/utils';
 import path from 'path';
 import { databaseCollectionName, IDatabaseProvider } from '../../lib/interfaces';
+import { constants, databaseCollectionIndexes } from '../../lib/utils';
 
 const projection = { _id: 0 };
 let collections: { [name: string]: Datastore } = {};
@@ -10,12 +10,17 @@ export default class NEDBProvider implements IDatabaseProvider {
 
   async init() {
     try {
-      for (const [collectionName, indexField] of Object.entries(databaseCollectionIndexFields)) {
+      for (const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
         const collection = Datastore.create({
           filename: path.join(constants.DATA_DIRECTORY, `${collectionName}.json`),
           autoload: true
         });
-        collection.ensureIndex({ fieldName: indexField, unique: true });
+        for (const index of indexes) {
+          // No compound indexes here
+          for (let fieldName of index.fields) {
+            collection.ensureIndex({ fieldName, unique: !!index.unique });            
+          }
+        }
         collections[collectionName] = collection;
       }
     } catch (err) {
