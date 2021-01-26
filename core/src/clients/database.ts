@@ -1,7 +1,7 @@
 import { config } from '../lib/config';
 import MongoDBProvider from './db-providers/mongodb';
 import NEDBProvider from './db-providers/nedb';
-import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
+import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
 
 let databaseProvider: IDatabaseProvider;
 
@@ -176,6 +176,25 @@ export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance)
   } else {
     emitEvent('payment-instance-created', paymentInstance);
   }
+};
+
+
+// BATCH QUERIES
+
+export const retrieveBatches = (query: object, skip: number, limit: number, sort: {[f: string]: number} = {}): Promise<IDBBatch<any>[]> => {
+  return databaseProvider.find<IDBBatch<any>>('batches', query, sort, skip, limit);
+};
+
+export const retrieveBatchByID = (batchID: string): Promise<IDBBatch<any> | null> => {
+  return databaseProvider.findOne<IDBBatch<any>>('batches', { batchID });
+};
+
+export const retrieveBatchByHash = (batchHash: string): Promise<IDBBatch<any> | null> => {
+  return databaseProvider.findOne<IDBBatch<any>>('batches', { batchHash });
+};
+
+export const upsertBatch = async (batch: IDBBatch<any>) => {
+  await databaseProvider.updateOne('batches', { batchID: batch.batchID }, { $set: batch }, true);
 };
 
 // EVENT HANDLING
