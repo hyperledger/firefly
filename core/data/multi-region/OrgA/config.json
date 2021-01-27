@@ -3,14 +3,14 @@
   "port": 4001,
   "assetTrailInstanceID": "asset-trail-org-a",
   "apiGateway": {
-    "apiEndpoint": "https://zzdk0au9rl-zznm62sm1o-connect.dev2.photic.io/instances/0x1fc8898c69211ff0140765b3fccde27878a9939f"
+    "apiEndpoint": "https://zzdk0au9rl-zznm62sm1o-connect.dev2.photic.io/instances/0xc4ed58b23059e5b2f867b6040b46dcea04396c8b"
   },
   "eventStreams": {
     "wsEndpoint": "wss://zzdk0au9rl-zznm62sm1o-connect.dev2-ws.photic.io/ws",
     "topic": "A"
   },
   "ipfs": {
-    "apiEndpoint": "https://zzdk0au9rl-zzbj5neshi-ipfs.dev2.photic.io"
+    "apiEndpoint": "https://zzdk0au9rl-zzrgeqp403-ipfs.dev2.photic.io"
   },
   "app2app": {
     "socketIOEndpoint": "wss://zzdk0au9rl-zzspcgumw6.dev2-ws.photic.io/api/v1",
