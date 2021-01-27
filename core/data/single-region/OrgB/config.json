@@ -1,13 +1,13 @@
 {
-  "$schema": "../../src/schemas/config.json",
+  "$schema": "../../../src/schemas/config.json",
   "port": 4002,
   "assetTrailInstanceID": "asset-trail-org-b",
   "apiGateway": {
-    "apiEndpoint": "https://zzkuwhhizm-zzyi4f2hqt-connect.dev2.photic.io/instances/0xe6719e4f7379e583046376f522a5efc30ca358f3"
+    "apiEndpoint": "https://zzkuwhhizm-zzyi4f2hqt-connect.dev2.photic.io/instances/0x2af2b71292fcb2af2423b1820cfb0d6e2be2c4a4"
   },
   "eventStreams": {
     "wsEndpoint": "wss://zzkuwhhizm-zzyi4f2hqt-connect.dev2-ws.photic.io/ws",
-    "topic": "B"
+    "topic": "synaptic"
   },
   "ipfs": {
     "apiEndpoint": "https://zzkuwhhizm-zzvosyrz5t-ipfs.dev2.photic.io"
@@ -30,6 +30,6 @@
   },
   "mongodb": {
     "connectionUrl": "mongodb://localhost:27017",
-    "databaseName": "synaptic-org-b"
+    "databaseName": "synaptic-sr-org-b"
   }
 }
