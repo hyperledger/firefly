@@ -19,7 +19,7 @@ describe('Payment definitions: unauthored - described', async () => {
       .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
       .reply(200, testDescription.schema.object);
 
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -71,7 +71,7 @@ describe('Payment definitions: unauthored - described', async () => {
       .get(`/ipfs/${testDescription.sample.ipfsMultiHash}`)
       .reply(200, testDescription.sample.object);
 
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();

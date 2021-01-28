@@ -71,6 +71,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     submitted: timestamp,
     receipt
   });
+
   return assetDefinitionID;
 };
 
@@ -121,4 +122,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     blockNumber,
     transactionHash
   });
+
+  const collectionName = `asset-instance-${assetDefinitionID}`;
+  await database.createCollection(collectionName, [{fields: ['assetDefinitionID'], unique: true}]);
 };

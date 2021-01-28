@@ -40,7 +40,7 @@ export const start = () => {
 
     app.use('/api/v1/members', membersRouter);
     app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
-    app.use('/api/v1/assets/instances', assetInstancesRouter);
+    app.use('/api/v1/assets', assetInstancesRouter);
     app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
     app.use('/api/v1/payments/instances', paymentInstancesRouter);
     app.use('/api/v1/settings', settingsRouter);

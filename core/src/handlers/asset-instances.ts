@@ -19,24 +19,24 @@ const ajv = new Ajv();
 
 export let pendingAssetInstancePrivateContentDeliveries: { [assetInstanceID: string]: IPendingAssetInstancePrivateContentDelivery } = {};
 
-export const handleGetAssetInstancesRequest = (query: object, sort: object, skip: number, limit: number) => {
-  return database.retrieveAssetInstances(query, sort, skip, limit);
+export const handleGetAssetInstancesRequest = (assetDefinitionID: string, query: object, sort: object, skip: number, limit: number) => {
+  return database.retrieveAssetInstances(assetDefinitionID, query, sort, skip, limit);
 };
 
-export const handleAggregateAssetInstancesRequest = (query: object[]) => {
-  return database.aggregateAssetInstances(query);
+export const handleAggregateAssetInstancesRequest = (assetDefinitonID: string, query: object[]) => {
+  return database.aggregateAssetInstances(assetDefinitonID, query);
 };
 
-export const handleCountAssetInstancesRequest = async (query: object) => {
-  return { count: await database.countAssetInstances(query) };
+export const handleCountAssetInstancesRequest = async (assetDefinitionID: string, query: object) => {
+  return { count: await database.countAssetInstances(assetDefinitionID, query) };
 };
 
-export const handleGetAssetInstanceRequest = async (assetInstanceID: string, content: boolean) => {
-  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, assetInstanceID: string, content: boolean) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Asset instance not found', 404);
   }
-  const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (assetDefinition === null) {
     throw new RequestError('Asset definition not found', 500);
   }
@@ -168,8 +168,8 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   return assetInstanceID;
 }
 
-export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
-  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
   }
@@ -192,7 +192,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetInstanceID: str
   const submitted = utils.getTimestamp();
   const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.setSubmittedAssetInstanceProperty(assetInstanceID, author, key, value, submitted, receipt);
+  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
 
 export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
@@ -235,7 +235,8 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
   const eventAssetInstanceID = batchInstance ? batchInstance.assetInstanceID : utils.hexToUuid(event.assetInstanceID);
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
+  const eventAssetDefinitionID = batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
   }
@@ -319,7 +320,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetInstanceID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
   }
@@ -332,8 +333,8 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   await database.setConfirmedAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
 };
 
-export const handleAssetInstanceTradeRequest = async (requesterAddress: string, assetInstanceID: string, metadata: object | undefined) => {
-  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+export const handleAssetInstanceTradeRequest = async (assetDefinitionID: string, requesterAddress: string, assetInstanceID: string, metadata: object | undefined) => {
+  const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Uknown asset instance', 404);
   }
@@ -344,7 +345,7 @@ export const handleAssetInstanceTradeRequest = async (requesterAddress: string, 
   if (author.assetTrailInstanceID === config.assetTrailInstanceID) {
     throw new RequestError('Asset instance authored', 400);
   }
-  const assetDefinition = await database.retrieveAssetDefinitionByID(assetInstance.assetDefinitionID);
+  const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 500);
   }
@@ -371,12 +372,12 @@ export const handleAssetInstanceTradeRequest = async (requesterAddress: string, 
   await assetTrade.coordinateAssetTrade(assetInstance, assetDefinition, requester.address, metadata, author.app2appDestination);
 };
 
-export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: string, recipientAddress: string) => {
+export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: string, assetInstanceID: string, recipientAddress: string) => {
   const recipient = await database.retrieveMemberByAddress(recipientAddress);
   if (recipient === null) {
     throw new RequestError('Unknown recipient', 400);
   }
-  const assetInstance = await database.retrieveAssetInstanceByID(assetInstanceID);
+  const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
   }
@@ -393,7 +394,8 @@ export const handlePushPrivateAssetInstanceRequest = async (assetInstanceID: str
   }
   let privateAssetTradePrivateInstancePush: IAssetTradePrivateAssetInstancePush = {
     type: 'private-asset-instance-push',
-    assetInstanceID
+    assetInstanceID,
+    assetDefinitionID
   };
   if (assetDefinition.contentSchema !== undefined) {
     privateAssetTradePrivateInstancePush.content = assetInstance.content;

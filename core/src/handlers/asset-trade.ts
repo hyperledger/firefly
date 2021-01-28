@@ -37,7 +37,7 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
       throw new Error(`Requester App2App destination mismatch. Expected ${requester.app2appDestination}, ` +
         `actual ${headers.from}`);
     }
-    const assetInstance = await database.retrieveAssetInstanceByID(request.assetInstanceID);
+    const assetInstance = await database.retrieveAssetInstanceByID(request.assetDefinitionID, request.assetInstanceID);
     if (assetInstance === null) {
       throw new Error(`Unknown asset instance ${request.assetInstanceID}`);
     }
@@ -107,6 +107,7 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
     type: 'private-asset-instance-request',
     tradeID,
     assetInstanceID: assetInstance.assetInstanceID,
+    assetDefinitionID: assetInstance.assetDefinitionID,
     requester: {
       assetTrailInstanceID: config.assetTrailInstanceID,
       address: requesterAddress
@@ -162,7 +163,7 @@ const getDocumentExchangePromise = (assetInstanceID: string): Promise<void> => {
 };
 
 const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
-  const assetInstance = await database.retrieveAssetInstanceByID(push.assetInstanceID);
+  const assetInstance = await database.retrieveAssetInstanceByID(push.assetDefinitionID, push.assetInstanceID);
   if (assetInstance !== null) {
     const author = await database.retrieveMemberByAddress(assetInstance.author);
     if (author === null) {

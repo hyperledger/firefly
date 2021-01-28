@@ -6,14 +6,14 @@ describe('Aggregation', async () => {
 
   it('Missing aggregation query', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances/aggregate')
+      .post('/api/v1/assets/aggregate/1111')
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid aggregation query' });
   });
 
   it('Invalid aggregation query', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances/aggregate')
+      .post('/api/v1/assets/aggregate/1111')
       .send({
         query: 'INVALID'
       })
@@ -23,7 +23,7 @@ describe('Aggregation', async () => {
 
   it('Aggregation not supported in NeDB', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances/aggregate')
+      .post('/api/v1/assets/aggregate/1111')
       .send({
         query: []
       })
