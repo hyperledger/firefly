@@ -45,7 +45,7 @@ describe('Assets: authored - unstructured', async () => {
     });
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();

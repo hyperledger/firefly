@@ -16,6 +16,11 @@ export const init = async () => {
 
 let listeners: IClientEventListener[] = [];
 
+// COLLECTION AGNOSTIC QUERIES
+export const createCollection = (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => {
+  return databaseProvider.createCollection(collectionName, indexes);
+};
+
 // MEMBER QUERIES
 
 export const retrieveMemberByAddress = (address: string): Promise<IDBMember | null> => {
@@ -97,28 +102,28 @@ export const markPaymentDefinitionAsConflict = async (paymentDefinitionID: strin
 
 // ASSET INSTANCE QUERIES
 
-export const retrieveAssetInstances = (query: object, sort: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
-  return databaseProvider.find<IDBAssetInstance>('asset-instances', query, sort, skip, limit);
+export const retrieveAssetInstances = (assetDefinitionID: string, query: object, sort: object, skip: number, limit: number): Promise<IDBAssetInstance[]> => {
+  return databaseProvider.find<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, query, sort, skip, limit);
 };
 
-export const aggregateAssetInstances = (query: object[]): Promise<IDBAssetInstance[]> => {
-  return databaseProvider.aggregate<IDBAssetInstance>('asset-instances', query);
+export const aggregateAssetInstances = (assetDefinitionID: string, query: object[]): Promise<IDBAssetInstance[]> => {
+  return databaseProvider.aggregate<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, query);
 };
 
-export const countAssetInstances = (query: object): Promise<number> => {
-  return databaseProvider.count('asset-instances', query);
+export const countAssetInstances = (assetDefinitionID: string, query: object): Promise<number> => {
+  return databaseProvider.count(`asset-instance-${assetDefinitionID}`, query);
 };
 
-export const retrieveAssetInstanceByID = (assetInstanceID: string): Promise<IDBAssetInstance | null> => {
-  return databaseProvider.findOne<IDBAssetInstance>('asset-instances', { assetInstanceID });
+export const retrieveAssetInstanceByID = (assetDefinitionID:string, assetInstanceID: string): Promise<IDBAssetInstance | null> => {
+  return databaseProvider.findOne<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, { assetInstanceID });
 };
 
 export const retrieveAssetInstanceByDefinitionIDAndContentHash = (assetDefinitionID: string, contentHash: string): Promise<IDBAssetInstance | null> => {
-  return databaseProvider.findOne<IDBAssetInstance>('asset-instances', { assetDefinitionID, contentHash });
+  return databaseProvider.findOne<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, { contentHash });
 };
 
 export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
-  await databaseProvider.updateOne('asset-instances', { assetInstanceID: assetInstance.assetInstanceID }, { $set: assetInstance }, true);
+  await databaseProvider.updateOne(`asset-instance-${assetInstance.assetDefinitionID}`, { assetInstanceID: assetInstance.assetInstanceID }, { $set: assetInstance }, true);
   if (assetInstance.submitted !== undefined) {
     emitEvent('asset-instance-submitted', assetInstance);
   } else if (assetInstance.transactionHash !== undefined) {
@@ -136,8 +141,8 @@ export const markAssetInstanceAsConflict = async (assetInstanceID: string, times
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
-export const setSubmittedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, submitted: number, receipt: string | undefined) => {
-  await databaseProvider.updateOne('asset-instances', { assetInstanceID },
+export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number, receipt: string | undefined) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,

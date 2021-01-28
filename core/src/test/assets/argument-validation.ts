@@ -81,7 +81,7 @@ describe('Asset instances - argument validation', async () => {
 
   it('Attempting to add an asset instance without specifying the asset definition ID should raise an error', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances')
+      .post('/api/v1/assets')
       .send({
         author: '0x0000000000000000000000000000000000000001',
         content: {}
@@ -92,7 +92,7 @@ describe('Asset instances - argument validation', async () => {
 
   it('Attempting to add an asset instance without specifying the author should raise an error', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances')
+      .post('/api/v1/assets')
       .send({
         assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
         content: {}
@@ -103,7 +103,7 @@ describe('Asset instances - argument validation', async () => {
 
   it('Attempting to add an asset instance without specifying the content should raise an error', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances')
+      .post('/api/v1/assets')
       .send({
         assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
         author: '0x0000000000000000000000000000000000000001'

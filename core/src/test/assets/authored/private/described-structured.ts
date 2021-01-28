@@ -15,7 +15,7 @@ describe('Assets: authored - private - described - structured', async () => {
   const timestamp = utils.getTimestamp();
   const batchHashSha256 = '0x' + createHash('sha256').update(randomBytes(10)).digest().toString('hex');
   const batchHashIPFSMulti = utils.sha256ToIPFSHash(batchHashSha256);
-  
+
   let batchMaxRecordsToRestore: number;
   beforeEach(() => {
     nock.cleanAll();
@@ -78,7 +78,7 @@ describe('Assets: authored - private - described - structured', async () => {
     });
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -143,8 +143,9 @@ describe('Assets: authored - private - described - structured', async () => {
         .post('/api/v0/add')
         .reply(200, { Hash: batchHashIPFSMulti })
 
+        console.log("ASSET DEFINITIONS:", assetDefinitionID);
       const result = await request(app)
-        .post('/api/v1/assets/instances')
+        .post('/api/v1/assets')
         .send({
           assetDefinitionID,
           author: '0x0000000000000000000000000000000000000001',
@@ -156,7 +157,7 @@ describe('Assets: authored - private - described - structured', async () => {
       assetInstanceID = result.body.assetInstanceID;
 
       const getAssetInstancesResponse = await request(app)
-        .get('/api/v1/assets/instances')
+        .get(`/api/v1/assets/${assetDefinitionID}`)
         .expect(200);
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
@@ -187,14 +188,14 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.deepStrictEqual(getBatchResponse.body.records[0].description, testDescription.sample.object);
 
       const getAssetInstanceResponse = await request(app)
-        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
         .expect(200);
       assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
 
     });
 
     it('Checks that the event stream notification for confirming the asset instance creation is handled', async () => {
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -216,7 +217,7 @@ describe('Assets: authored - private - described - structured', async () => {
 
     it('Checks that the asset instance is confirmed', async () => {
       const getAssetInstancesResponse = await request(app)
-        .get('/api/v1/assets/instances')
+        .get(`/api/v1/assets/${assetDefinitionID}`)
         .expect(200);
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
@@ -232,7 +233,7 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.strictEqual(assetInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
-        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
         .expect(200);
       assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });

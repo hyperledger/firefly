@@ -43,7 +43,7 @@ describe('Members - registration', async () => {
 
   it('Checks that event stream notification for confirming member registrations is handled', async () => {
 
-    const eventPromise = new Promise((resolve) => {
+    const eventPromise = new Promise<void>((resolve) => {
       mockEventStreamWebSocket.once('send', message => {
         assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
         resolve();
@@ -121,7 +121,7 @@ describe('Members - registration', async () => {
 
   it('Checks that event stream notification for confirming member registrations are handled', async () => {
 
-    const eventPromise = new Promise((resolve) => {
+    const eventPromise = new Promise<void>((resolve) => {
       mockEventStreamWebSocket.once('send', message => {
         assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
         resolve();

@@ -14,14 +14,22 @@ export default class MongoDBProvider implements IDatabaseProvider {
         { useNewUrlParser: true, useUnifiedTopology: true, ignoreUndefined: true });
       db = mongoClient.db(config.mongodb.databaseName);
       for(const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
-        for (const index of indexes) {
-          const fields: {[f: string]: number} = {};
-          for (let f of index.fields) fields[f] = 1; // all ascending currently
-          db.collection(collectionName).createIndex(fields, { unique: !!index.unique });
-        }
+        this.createCollection(collectionName, indexes);
       }
     } catch (err) {
       throw new Error(`Failed to connect to Mongodb. ${err}`);
+    }
+  }
+
+  async createCollection(collectionName: string, indexes: {fields: string[], unique?: boolean}[]) {
+    try {
+      for (const index of indexes) {
+        const fields: {[f: string]: number} = {};
+        for (let f of index.fields) fields[f] = 1; // all ascending currently
+          db.collection(collectionName).createIndex(fields, { unique: !!index.unique });
+      }
+    } catch (err) {
+      throw new Error(`Failed to create collection. ${err}`);
     }
   }
 
