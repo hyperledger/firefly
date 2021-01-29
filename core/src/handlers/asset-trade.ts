@@ -133,7 +133,7 @@ export const coordinateAssetTrade = async (assetInstance: IDBAssetInstance, asse
           } else if (assetDefinition.contentSchema && !ajv.validate(assetDefinition.contentSchema, content.content)) {
             reject(new Error('Asset instance content does not conform to schema'));
           } else {
-            database.setAssetInstancePrivateContent(content.assetInstanceID, content.content, content.filename);
+            database.setAssetInstancePrivateContent(assetInstance.assetDefinitionID, content.assetInstanceID, content.content, content.filename);
             resolve();
           }
         }
@@ -178,7 +178,7 @@ const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, p
         throw new Error('Private asset content hash mismatch');
       }
     }
-    await database.setAssetInstancePrivateContent(push.assetInstanceID, push.content, push.filename);
+    await database.setAssetInstancePrivateContent(push.assetDefinitionID, push.assetInstanceID, push.content, push.filename);
   } else {
     pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = { ...push, fromDestination: headers.from };
   }
