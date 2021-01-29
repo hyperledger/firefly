@@ -253,7 +253,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       if (assetInstanceByContentID.transactionHash !== undefined) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);
       } else {
-        await database.markAssetInstanceAsConflict(assetInstanceByContentID.assetInstanceID, Number(event.timestamp));
+        await database.markAssetInstanceAsConflict(eventAssetDefinitionID, assetInstanceByContentID.assetInstanceID, Number(event.timestamp));
       }
     }
   }
@@ -312,7 +312,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
           throw new Error('Pending private data content hash mismatch');
         }
       }
-      await database.setAssetInstancePrivateContent(eventAssetInstanceID, privateData.content, privateData.filename);
+      await database.setAssetInstancePrivateContent(eventAssetDefinitionID, eventAssetInstanceID, privateData.content, privateData.filename);
       delete pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     }
   }
@@ -320,6 +320,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+  const eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
   const dbAssetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
@@ -330,7 +331,7 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
   if (!event.key) {
     throw new Error('Invalid property key');
   }
-  await database.setConfirmedAssetInstanceProperty(eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
+  await database.setConfirmedAssetInstanceProperty(eventAssetDefinitionID, eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
 };
 
 export const handleAssetInstanceTradeRequest = async (assetDefinitionID: string, requesterAddress: string, assetInstanceID: string, metadata: object | undefined) => {

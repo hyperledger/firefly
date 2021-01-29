@@ -131,13 +131,13 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
   }
 };
 
-export const setAssetInstancePrivateContent = async (assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
-  await databaseProvider.updateOne('asset-instances', { assetInstanceID }, { $set: { content, filename } }, true);
+export const setAssetInstancePrivateContent = async (assetDefinitionID: string, assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { content, filename } }, true);
   emitEvent('private-asset-instance-content-stored', { assetInstanceID, content, filename });
 };
 
-export const markAssetInstanceAsConflict = async (assetInstanceID: string, timestamp: number) => {
-  await databaseProvider.updateOne('asset-instances', { assetInstanceID }, { $set: { conflict: true, timestamp } }, false);
+export const markAssetInstanceAsConflict = async (assetDefinitionID: string, assetInstanceID: string, timestamp: number) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { conflict: true, timestamp } }, false);
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
@@ -153,8 +153,8 @@ export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: strin
   emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, receipt });
 };
 
-export const setConfirmedAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string, timestamp: number, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  await databaseProvider.updateOne('asset-instances', { assetInstanceID },
+export const setConfirmedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, timestamp: number, { blockNumber, transactionHash }: IDBBlockchainData) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
