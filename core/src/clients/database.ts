@@ -114,7 +114,7 @@ export const countAssetInstances = (assetDefinitionID: string, query: object): P
   return databaseProvider.count(`asset-instance-${assetDefinitionID}`, query);
 };
 
-export const retrieveAssetInstanceByID = (assetDefinitionID:string, assetInstanceID: string): Promise<IDBAssetInstance | null> => {
+export const retrieveAssetInstanceByID = (assetDefinitionID: string, assetInstanceID: string): Promise<IDBAssetInstance | null> => {
   return databaseProvider.findOne<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, { assetInstanceID });
 };
 
