@@ -143,7 +143,6 @@ describe('Assets: authored - private - described - structured', async () => {
         .post('/api/v0/add')
         .reply(200, { Hash: batchHashIPFSMulti })
 
-        console.log("ASSET DEFINITIONS:", assetDefinitionID);
       const result = await request(app)
         .post('/api/v1/assets')
         .send({

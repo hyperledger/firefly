@@ -12,18 +12,7 @@ export default class NEDBProvider implements IDatabaseProvider {
   async init() {
     try {
       for (const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
-        // this.createCollection(collectionName, indexes);
-        const collection = Datastore.create({
-          filename: path.join(constants.DATA_DIRECTORY, `${collectionName}.json`),
-          autoload: true
-        });
-        for (const index of indexes) {
-          // No compound indexes here
-          for (let fieldName of index.fields) {
-            collection.ensureIndex({ fieldName, unique: !!index.unique });
-          }
-        }
-        collections[collectionName] = collection;
+        this.createCollection(collectionName, indexes);
       }
     } catch (err) {
       throw new Error(`Failed to initialize NEDB. ${err}`);

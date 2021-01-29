@@ -71,7 +71,6 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     submitted: timestamp,
     receipt
   });
-
   return assetDefinitionID;
 };
 
