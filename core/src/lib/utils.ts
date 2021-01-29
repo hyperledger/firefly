@@ -37,7 +37,6 @@ export const databaseCollectionIndexes: { [name in databaseCollectionName]: {fie
   members: [{fields: ['address'], unique: true}],
   'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
   'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],
-  'asset-instances': [{fields: ['assetInstanceID'], unique: true}],
   'payment-instances': [{fields: ['paymentInstanceID'], unique: true}],
   'batches': [
     {fields: ['batchID'], unique: true}, // Primary key
