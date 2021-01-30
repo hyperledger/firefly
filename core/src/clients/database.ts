@@ -156,7 +156,7 @@ export const setConfirmedAssetInstanceProperty = async (assetInstanceID: string,
         [`properties.${author}.${key}.history.${timestamp}`]: { value, timestamp, blockNumber, transactionHash }
       }
     }, false);
-  emitEvent('asset-instance-property-set', { assetInstanceID, key, value, timestamp, blockNumber, transactionHash });
+  emitEvent('asset-instance-property-set', { assetInstanceID, author, key, value, timestamp, blockNumber, transactionHash });
 };
 
 // PAYMENT INSTANCE QUERIES
