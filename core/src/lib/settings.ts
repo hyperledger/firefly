@@ -6,6 +6,7 @@ import * as utils from './utils';
 import { createLogger, LogLevelString } from 'bunyan';
 import { ISettings } from './interfaces';
 import settingsSchema from '../schemas/settings.json';
+import RequestError from './request-error';
 
 const log = createLogger({ name: 'lib/settings.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
@@ -37,6 +38,15 @@ const readSettingsFile = async () => {
       throw new Error(`Failed to read settings file. ${err}`);
     }
   }
+};
+
+export const updateSettings = async (key: string, value: any) => {
+  const updatedSettings = {...settings, [key]: value};
+  if (!validateSettings(updatedSettings)) {
+    throw new RequestError('Invalid Settings', 400);
+  }
+  settings = updatedSettings;
+  await persistSettings();
 };
 
 export const setClientEvents = (clientEvents: string[]) => {

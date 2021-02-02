@@ -20,6 +20,7 @@ before(async () => {
   await fs.rmdir(sandboxPath, { recursive: true });
   await fs.mkdir(sandboxPath);
   await fs.copyFile(path.join(__dirname, '../../test-resources/config.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
+  await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(__dirname, '../../test-resources/sandbox/settings.json'));
 
   // IPFS
   nock('https://ipfs.kaleido.io')
