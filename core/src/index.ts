@@ -6,6 +6,7 @@ import assetDefinitionsRouter from './routers/asset-definitions';
 import assetInstancesRouter from './routers/asset-instances';
 import paymentDefinitionsRouter from './routers/payment-definitions';
 import paymentInstancesRouter from './routers/payment-instances';
+import settingsRouter from './routers/settings';
 import batchesRouter from './routers/batches';
 import { errorHandler } from './lib/request-error';
 import * as database from './clients/database';
@@ -42,6 +43,7 @@ export const start = () => {
     app.use('/api/v1/assets/instances', assetInstancesRouter);
     app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
     app.use('/api/v1/payments/instances', paymentInstancesRouter);
+    app.use('/api/v1/settings', settingsRouter);
     app.use('/api/v1/batches', batchesRouter);
 
     app.use(errorHandler);
@@ -63,5 +65,4 @@ export const start = () => {
     return { app, shutDown };
 
   });
-  
 }
