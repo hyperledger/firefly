@@ -2,12 +2,12 @@
 
 ![Kaleido Asset Trail](asset_trail_overview.png)
 
-## Kaleido Environment Setup
+## Setup
 
-Kaleido Asset Trail is currently only supported on the Ethereum backend.
+Kaleido asset trail can be run as a Kaleido member service or as a standalone application.
+For the latter, deploy an ERC20 token and use its address in the constructure of the [asset Trail smart contract](solidity_new/contracts/AssetTrail.sol),
 
-It requires a deployed instance of the [Asset Trail smart contract](solidity_new/contracts/AssetTrail.sol),
-and one each of the following runtimes:
+For each participating member, deploy the following runtimes:
 * IPFS
 * App2App Messaging (with 2 destinations representing KAT and the client)
 * Document Exchange (with 1 destination)
@@ -15,9 +15,7 @@ and one each of the following runtimes:
 You must also define an Event Stream with subscriptions to all relevant
 events for your use case (subscribe to all events if unsure).
 
-## Running Locally
-
-To run an instance of the application, you will require Node.js (`nodemon` also recommended) and MongoDB.
+Asset trail has built-in storage and can optionally be configured to use MongoDB.
 
 Edit one of the configuration files in [core/data](core/data), or create a new folder for your config.
 Populate `config.json` with the URLs for the deployed contract API, the event stream, the IPFS/App2App/Document
