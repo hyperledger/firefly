@@ -5,7 +5,7 @@
 ## Setup
 
 Kaleido asset trail can be run as a Kaleido member service or as a standalone application.
-For the latter, deploy an ERC20 token and use its address in the constructure of the [asset Trail smart contract](solidity_new/contracts/AssetTrail.sol),
+For the latter, deploy an ERC20 token and use its address in the constructor of the [asset Trail smart contract](solidity_new/contracts/AssetTrail.sol),
 
 For each participating member, deploy the following runtimes:
 * IPFS
