@@ -37,7 +37,7 @@ export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, a
     throw new RequestError('Asset definition not found', 500);
   }
   if (content) {
-    if (assetDefinition.contentSchemaHash) {
+    if (assetDefinition.contentSchema) {
       return assetInstance.content;
     } else {
       try {
