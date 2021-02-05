@@ -111,8 +111,6 @@ export interface IEventAssetDefinitionCreated {
   name: string
   isContentPrivate: boolean
   isContentUnique: boolean
-  contentSchemaHash?: string
-  descriptionSchemaHash?: string
   assetDefinitionHash: string
   timestamp: string
 }
@@ -201,11 +199,9 @@ export interface IDBAssetDefinition extends IDBBlockchainPinned {
   name: string
   isContentPrivate: boolean
   isContentUnique: boolean
-  descriptionSchemaHash?: string
   descriptionSchema?: object
-  contentSchemaHash?: string
   contentSchema?: object
-  assetDefinitionHash?: string
+  assetDefinitionHash: string
   conflict?: boolean
 }
 

@@ -88,10 +88,6 @@ const handleMessage = async (message: string) => {
       switch (message.signature) {
         case utils.contractEventSignatures.MEMBER_REGISTERED:
           await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered, blockchainData); break;
-        case utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
         case utils.contractEventSignatures.ASSET_DEFINITION_CREATED:
           await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated, blockchainData); break;
         case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:

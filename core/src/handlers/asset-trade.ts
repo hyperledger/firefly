@@ -59,7 +59,7 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
     if (authorized !== true) {
       throw new Error('Access denied');
     }
-    if (assetDefinition.contentSchemaHash) {
+    if (assetDefinition.contentSchema) {
       tradeResponse.content = assetInstance.content;
     } else {
       await docExchange.transfer(config.docExchange.destination, requester.docExchangeDestination,

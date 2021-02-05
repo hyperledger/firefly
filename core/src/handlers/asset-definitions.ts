@@ -86,7 +86,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       throw new Error(`Asset definition ID conflict ${assetDefinition.assetDefinitionID}`);
     }
   } else {
-    const dbAssetDefinitionByName = await database.retrieveAssetDefinitionByName(event.name);
+    const dbAssetDefinitionByName = await database.retrieveAssetDefinitionByName(assetDefinition.name);
     if (dbAssetDefinitionByName !== null) {
       if (dbAssetDefinitionByName.transactionHash !== undefined) {
         throw new Error(`Asset definition name conflict ${event.name}`);
@@ -98,6 +98,8 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
 
   database.upsertAssetDefinition({
     ...assetDefinition,
+    author: event.author,
+    assetDefinitionHash: event.assetDefinitionHash,
     timestamp: Number(event.timestamp),
     blockNumber,
     transactionHash
