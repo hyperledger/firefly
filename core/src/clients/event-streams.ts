@@ -92,6 +92,7 @@ const handleMessage = async (message: string) => {
         case utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
         case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
         case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+        case utils.contractEventSignatures.ASSET_DEFINITION_CREATED:
           await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated, blockchainData); break;
         case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
         case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
