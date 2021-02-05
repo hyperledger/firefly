@@ -55,6 +55,7 @@ export const requestKeys = {
 };
 
 export const contractEventSignatures = {
+  ASSET_DEFINITION_CREATED: 'AssetDefinitionCreated(bytes32,uint256)',
   MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
   DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedStructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,bytes32,uint256)',
   DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedUnstructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,uint256)',

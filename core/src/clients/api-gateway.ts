@@ -30,6 +30,26 @@ export const upsertMember = async (address: string, name: string, app2appDestina
 
 // Asset definition APIs
 
+export const createAssetDefinition = async (author: string, sync: boolean, assetDefinitionHash: string):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  try {
+    const response = await axios({
+      method: 'post',
+      url: `${config.apiGateway.apiEndpoint}/createAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
+      auth: {
+        username: config.appCredentials.user,
+        password: config.appCredentials.password
+      },
+      data: {
+        assetDefinitionHash
+      }
+    });
+    return { ...response.data, type: sync ? 'sync' : 'async' };
+  } catch (err) {
+    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+  }
+};
+
 export const createDescribedStructuredAssetDefinition = async (assetDefinitionID: string, name: string, author: string,
   isContentPrivate: boolean, isContentUnique: boolean, descriptionSchemaHash: string, contentSchemaHash: string,
   sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
