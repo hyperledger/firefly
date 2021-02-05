@@ -1,0 +1,34 @@
+plugins {
+    id 'net.corda.plugins.cordapp' version '5.0.8'
+}
+
+allprojects {
+    apply plugin: 'net.corda.plugins.cordapp'
+
+    repositories {
+        jcenter()
+        maven {
+            url 'https://software.r3.com/artifactory/corda-dependencies'
+            }
+        maven { url 'https://software.r3.com/artifactory/corda/' }
+    }
+
+    // Corda serialization requires function parameter names to be included in the class file
+    compileJava {
+        options.compilerArgs << '-parameters'
+    }
+
+    task buildAll {
+        doLast { task ->
+            println "Building $task.project.name"
+        }
+    }
+}
+
+subprojects {
+    version = '1.0'
+
+    buildAll {
+        dependsOn 'build'
+    }
+}
