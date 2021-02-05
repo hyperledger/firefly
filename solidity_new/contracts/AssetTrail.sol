@@ -15,6 +15,7 @@ contract AssetTrail {
 
     event AssetDefinitionCreated (
         bytes32 assetDefinitionHash,
+        address author,
         uint timestamp
     );
 
@@ -96,7 +97,7 @@ contract AssetTrail {
     }
 
     function createAssetDefinition(bytes32 assetDefinitionHash) public {
-        emit AssetDefinitionCreated(assetDefinitionHash, now);
+        emit AssetDefinitionCreated(assetDefinitionHash, msg.sender, now);
     }
 
     function createDescribedPaymentDefinition(bytes32 paymentDefinitionID, string memory name, bytes32 descriptionSchemaHash) public {
