@@ -83,6 +83,17 @@ export interface IRequestMultiPartContent {
   contentFileName: string
 }
 
+export interface IIPFSAssetDefinitionRequest {
+  assetDefinitionID: string
+  name: string
+  author?: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  indexes?: {fields: string[], unique?: boolean}[]
+  descriptionSchema?: object
+  contentSchema?: object
+}
+
 // EVENT STREAM INTERFACES
 
 export interface IEventStreamMessage {
@@ -161,6 +172,7 @@ export type customCollectionName = string
 export interface IDatabaseProvider {
   init: () => Promise<void>
   createCollection: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
+  createIndexes: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
   count: (collectionName: databaseCollectionName, query: object) => Promise<number>
   find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
   findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
@@ -199,6 +211,7 @@ export interface IDBAssetDefinition extends IDBBlockchainPinned {
   contentSchema?: object
   assetDefinitionHash: string
   conflict?: boolean
+  indexes?: {fields: string[], unique?: boolean}[]
 }
 
 export interface IDBPaymentDefinition extends IDBBlockchainPinned {

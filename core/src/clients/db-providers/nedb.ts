@@ -32,6 +32,15 @@ export default class NEDBProvider implements IDatabaseProvider {
     collections[collectionName] = collection;
   }
 
+  async createIndexes(collectionName: string, indexes: {fields: string[], unique?: boolean}[]) {
+    for (const index of indexes) {
+      // No compound indexes here
+      for (let fieldName of index.fields) {
+        collections[collectionName].ensureIndex({ fieldName, unique: !!index.unique });
+      }
+    }
+  }
+
   count(collectionName: databaseCollectionName, query: object): Promise<number> {
     return collections[collectionName].count(query);
   }

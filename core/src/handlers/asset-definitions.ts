@@ -5,12 +5,14 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
+import indexSchema from '../schemas/indexes.json'
 import {
   IAPIGatewayAsyncResponse,
   IAPIGatewaySyncResponse,
   IDBBlockchainData,
   IDBAssetDefinition,
-  IEventAssetDefinitionCreated
+  IEventAssetDefinitionCreated,
+  IIPFSAssetDefinitionRequest
 } from '../lib/interfaces';
 
 const ajv = new Ajv();
@@ -32,15 +34,15 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
-  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexSchema: Object | undefined, sync: boolean) => {
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: {fields: string[], unique?: boolean}[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
   if (contentSchema !== undefined && !ajv.validateSchema(contentSchema)) {
     throw new RequestError('Invalid content schema', 400);
   }
-  if (indexSchema !== undefined && !ajv.validateSchema(indexSchema)) {
-    throw new RequestError('Invalid index schema', 400);
+  if (indexes !== undefined && !ajv.validate(indexSchema, indexes)) {
+    throw new RequestError('Indexes do not conform to index schema', 400);
   }
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
@@ -50,13 +52,14 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
   const timestamp = utils.getTimestamp();
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
 
-  const assetDefinition = {
+  const assetDefinition: IIPFSAssetDefinitionRequest = {
     assetDefinitionID,
     name,
     isContentPrivate,
     isContentUnique,
     descriptionSchema,
-    contentSchema
+    contentSchema,
+    indexes
   };
 
   const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
@@ -106,5 +109,9 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
   });
 
   const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
+  // always create assetInstanceID index
   await database.createCollection(collectionName, [{fields: ['assetInstanceID'], unique: true}]);
+  if (assetDefinition.indexes) {
+    database.createIndexes(collectionName, assetDefinition.indexes);
+  }
 };
