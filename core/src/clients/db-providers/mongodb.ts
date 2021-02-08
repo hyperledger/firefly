@@ -35,6 +35,10 @@ export default class MongoDBProvider implements IDatabaseProvider {
     }
   }
 
+  async createIndexes(collectionName: string, indexes: {fields: string[], unique?: boolean}[]){
+    this.createCollection(collectionName, indexes);
+  }
+
   count(collectionName: databaseCollectionName, query: object): Promise<number> {
     return db.collection(collectionName).find(query).count();
   }
