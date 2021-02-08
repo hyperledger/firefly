@@ -6,7 +6,7 @@ import { promisify } from 'util';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent, testDescription } from '../../../samples';
+import { testContent, testDescription, testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 const delay = promisify(setTimeout);
 
 describe('Assets: authored - private - described - structured', async () => {
@@ -34,14 +34,12 @@ describe('Assets: authored - private - described - structured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createDescribedStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.schema.ipfsMultiHash })
-        .post('/api/v0/add')
-        .reply(200, { Hash: testContent.schema.ipfsMultiHash });
+        .reply(200, { Hash: testAssetDefinition.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -84,18 +82,18 @@ describe('Assets: authored - private - described - structured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'authored - private - described - structured', true));
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - private - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -160,9 +158,7 @@ describe('Assets: authored - private - described - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.descriptionHash, '0x' + utils.getSha256(JSON.stringify(testDescription.sample.object)));
       assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.docExchangeSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(typeof assetInstance.submitted, 'number');
       assert.strictEqual(typeof assetInstance.batchID, 'string');
@@ -220,9 +216,7 @@ describe('Assets: authored - private - described - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.descriptionHash, '0x' + utils.getSha256(JSON.stringify(testDescription.sample.object)));
       assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.docExchangeSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(assetInstance.timestamp, timestamp);
       assert.strictEqual(typeof assetInstance.submitted, 'number');

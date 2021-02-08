@@ -6,7 +6,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { IAssetInstance, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent, testDescription } from '../../../samples';
+import { getMockedAssetDefinition, testAssetDefinition, testContent, testDescription } from '../../../samples';
 
 describe('Assets: unauthored - private - described - structured', async () => {
 
@@ -31,10 +31,8 @@ describe('Assets: unauthored - private - described - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
-        .reply(200, testDescription.schema.object)
-        .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
-        .reply(200, testContent.schema.object);
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'unauthored - private - described - structured', true));
 
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -43,17 +41,12 @@ describe('Assets: unauthored - private - described - structured', async () => {
         })
       });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - private - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
