@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testDescription, testContent } from '../../../samples';
+import { testDescription, testContent, testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -15,30 +15,22 @@ describe('Assets: unauthored - public - described - structured', async () => {
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
-      nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
-      .reply(200, testDescription.schema.object)
-      .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
-      .reply(200, testContent.schema.object);
-
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
         })
       });
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'unauthored - public - described - structured', false));
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - public - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: false,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

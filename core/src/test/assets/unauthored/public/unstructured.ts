@@ -1,8 +1,10 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
 import request from 'supertest';
 import assert from 'assert';
+import nock from 'nock'
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testAssetDefinition, getUnstructuredAssetDefinition } from '../../../samples';
 
 describe('Assets: unauthored - public - unstructured', async () => {
 
@@ -19,16 +21,17 @@ describe('Assets: unauthored - public - unstructured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getUnstructuredAssetDefinition(assetDefinitionID, 'unauthored - public - unstructured', false));
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - public - unstructured',
-        isContentPrivate: false,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

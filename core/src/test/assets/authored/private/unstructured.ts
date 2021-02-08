@@ -4,6 +4,7 @@ import request from 'supertest';
 import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testAssetDefinition, getUnstructuredAssetDefinition } from '../../../samples';
 
 describe('Assets: authored - private - unstructured', async () => {
 
@@ -16,8 +17,12 @@ describe('Assets: authored - private - unstructured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createUnstructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
+
+      nock('https://ipfs.kaleido.io')
+        .post('/api/v0/add')
+        .reply(200, { Hash: testAssetDefinition.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -51,16 +56,18 @@ describe('Assets: authored - private - unstructured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getUnstructuredAssetDefinition(assetDefinitionID, 'authored - private - unstructured', true));
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - private - unstructured',
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

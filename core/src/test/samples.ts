@@ -47,8 +47,6 @@ export const testContent = {
         }
       }
     },
-    ipfsSha256: '0x64c97929fb90da1b94d560a29d8522c77b6c662588abb6ad23f1a0377250a2b0',
-    ipfsMultiHash: 'QmV85fRf9jng5zhcSC4Zef2dy8ypouazgckRz4GhA5cUgw'
   },
   sample: {
     object: {
@@ -62,3 +60,50 @@ export const testContent = {
   }
 };
 
+
+export const testAssetDefinition = {
+    sample: {
+      isContentUnique: true,
+      descriptionSchema: testDescription.schema.object,
+      contentSchema: testContent.schema.object,
+      assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+      blockNumber: 123,
+      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+    },
+    ipfsSha256: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    ipfsMultiHash: 'QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV',
+};
+
+export const getMockedAssetDefinition = (assetDefinitionID: string, name: string, contentPrivate: boolean) => {
+  return {
+    assetDefinitionID: assetDefinitionID,
+    name: name,
+    isContentPrivate: contentPrivate,
+    ...testAssetDefinition.sample,
+  };
+};
+
+export const getStructuredAssetDefinition = (assetDefinitionID: string, name: string, contentPrivate: boolean) => {
+  return {
+    assetDefinitionID: assetDefinitionID,
+    name: name,
+    isContentPrivate: contentPrivate,
+    isContentUnique: true,
+    contentSchema: testContent.schema.object,
+    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    blockNumber: 123,
+    transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+  }
+};
+
+export const getUnstructuredAssetDefinition = (assetDefinitionID: string, name: string, contentPrivate: boolean) => {
+  return {
+    assetDefinitionID: assetDefinitionID,
+    name: name,
+    isContentPrivate: contentPrivate,
+    isContentUnique: true,
+    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    blockNumber: 123,
+    transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+  }
+};

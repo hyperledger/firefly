@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent } from '../../../samples';
+import { getStructuredAssetDefinition, testAssetDefinition, testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -16,8 +16,8 @@ describe('Assets: unauthored - private - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
-        .reply(200, testContent.schema.object);
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getStructuredAssetDefinition(assetDefinitionID, 'unauthored - private - structured', true));
 
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -26,16 +26,12 @@ describe('Assets: unauthored - private - structured', async () => {
         })
       });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - private - structured',
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

@@ -106,11 +106,7 @@ export interface IEventMemberRegistered {
 }
 
 export interface IEventAssetDefinitionCreated {
-  assetDefinitionID: string
   author: string
-  name: string
-  isContentPrivate: boolean
-  isContentUnique: boolean
   assetDefinitionHash: string
   timestamp: string
 }

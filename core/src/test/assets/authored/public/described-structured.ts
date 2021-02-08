@@ -6,7 +6,7 @@ import { promisify } from 'util';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent, testDescription } from '../../../samples';
+import { getStructuredAssetDefinition, testAssetDefinition, testContent, testDescription } from '../../../samples';
 const delay = promisify(setTimeout);
 
 describe('Assets: authored - public - described - structured', async () => {
@@ -34,14 +34,12 @@ describe('Assets: authored - public - described - structured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createDescribedStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
         .reply(200, { Hash: testDescription.schema.ipfsMultiHash })
-        .post('/api/v0/add')
-        .reply(200, { Hash: testContent.schema.ipfsMultiHash });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -79,18 +77,16 @@ describe('Assets: authored - public - described - structured', async () => {
           resolve();
         })
       });
+      nock('https://ipfs.kaleido.io')
+        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
+        .reply(200, getStructuredAssetDefinition(assetDefinitionID, 'authored - public - described - structured', false));
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - public - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: false,
-        isContentUnique: true,
+        assetDefinitionHash: testAssetDefinition.ipfsSha256,
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
