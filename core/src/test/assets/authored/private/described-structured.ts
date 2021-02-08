@@ -48,8 +48,8 @@ describe('Assets: authored - private - described - structured', async () => {
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
-          descriptionSchema: testDescription.schema.object,
-          contentSchema: testContent.schema.object,
+          descriptionSchema: testAssetDefinition.sample.descriptionSchema,
+          contentSchema: testAssetDefinition.sample.contentSchema,
           indexes: testIndexes
         })
         .expect(200);
@@ -111,8 +111,8 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
       assert.strictEqual(assetDefinition.name, 'authored - private - described - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

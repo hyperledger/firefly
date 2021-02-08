@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testAssetDefinition, testDescription, getMockedAssetDefinition } from '../../../samples';
+import { testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -48,7 +48,7 @@ describe('Assets: unauthored - public - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
       assert.strictEqual(assetDefinition.name, 'unauthored - public - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
       assert.strictEqual(assetDefinition.submitted, undefined);

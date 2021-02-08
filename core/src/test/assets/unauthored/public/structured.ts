@@ -47,7 +47,7 @@ describe('Assets: unauthored - public - structured', async () => {
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(assetDefinition.name, 'unauthored - public - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
       assert.strictEqual(assetDefinition.submitted, undefined);

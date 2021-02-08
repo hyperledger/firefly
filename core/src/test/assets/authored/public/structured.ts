@@ -48,7 +48,7 @@ describe('Assets: authored - public - structured', async () => {
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: false,
           isContentUnique: true,
-          contentSchema: testContent.schema.object
+          contentSchema: testAssetDefinition.sample.contentSchema
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
@@ -62,7 +62,7 @@ describe('Assets: authored - public - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(assetDefinition.name, 'authored - public - structured');
       assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
@@ -101,7 +101,7 @@ describe('Assets: authored - public - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(assetDefinition.name, 'authored - public - structured');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

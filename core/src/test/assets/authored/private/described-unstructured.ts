@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testDescription, testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
+import { testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -31,7 +31,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
-          descriptionSchema: testDescription.schema.object
+          descriptionSchema: testAssetDefinition.sample.descriptionSchema
         })
         .expect(200);
         assert.deepStrictEqual(result.body.status, 'submitted');
@@ -83,7 +83,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
       assert.strictEqual(typeof assetDefinition.submitted, 'number');

@@ -39,7 +39,7 @@ describe('Assets: authored - public - described - structured', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.schema.ipfsMultiHash })
+        .reply(200, { Hash: testAssetDefinition.ipfsMultiHash })
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
@@ -48,8 +48,8 @@ describe('Assets: authored - public - described - structured', async () => {
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: false,
           isContentUnique: true,
-          descriptionSchema: testDescription.schema.object,
-          contentSchema: testContent.schema.object
+          descriptionSchema: testAssetDefinition.sample.descriptionSchema,
+          contentSchema: testAssetDefinition.sample.contentSchema
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
@@ -63,8 +63,8 @@ describe('Assets: authored - public - described - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(assetDefinition.name, 'authored - public - described - structured');
       assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
@@ -103,8 +103,8 @@ describe('Assets: authored - public - described - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
       assert.strictEqual(assetDefinition.name, 'authored - public - described - structured');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
