@@ -6,7 +6,7 @@ import { promisify } from 'util';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent, testDescription, testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
+import { testContent, testDescription, testAssetDefinition, getMockedAssetDefinition, testIndexes } from '../../../samples';
 const delay = promisify(setTimeout);
 
 describe('Assets: authored - private - described - structured', async () => {
@@ -49,7 +49,8 @@ describe('Assets: authored - private - described - structured', async () => {
           isContentPrivate: true,
           isContentUnique: true,
           descriptionSchema: testDescription.schema.object,
-          contentSchema: testContent.schema.object
+          contentSchema: testContent.schema.object,
+          indexes: testIndexes
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');

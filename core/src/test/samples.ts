@@ -60,18 +60,29 @@ export const testContent = {
   }
 };
 
+export const testIndexes = [
+  {
+    fields: ["author"],
+    unique: false
+  },
+  {
+    fields: ["author", "assetDefinitionID"],
+    unique: false
+  }
+];
+
 
 export const testAssetDefinition = {
-    sample: {
-      isContentUnique: true,
-      descriptionSchema: testDescription.schema.object,
-      contentSchema: testContent.schema.object,
-      assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
-      blockNumber: 123,
-      transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
-    },
-    ipfsSha256: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
-    ipfsMultiHash: 'QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV',
+  sample: {
+    isContentUnique: true,
+    descriptionSchema: testDescription.schema.object,
+    contentSchema: testContent.schema.object,
+    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    blockNumber: 123,
+    transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+  },
+  ipfsSha256: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+  ipfsMultiHash: 'QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV',
 };
 
 export const getMockedAssetDefinition = (assetDefinitionID: string, name: string, contentPrivate: boolean) => {
