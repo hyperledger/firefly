@@ -1,4 +1,5 @@
 rootProject.name = 'kaleido-corda-kat'
 include 'kat-contracts'
 include 'kat-flows'
+include 'rest-server'
 
