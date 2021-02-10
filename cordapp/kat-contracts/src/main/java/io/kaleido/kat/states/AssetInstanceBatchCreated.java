@@ -34,4 +34,8 @@ public class AssetInstanceBatchCreated implements   AssetEventState {
     public Party getAuthor() {
         return author;
     }
+
+    public String getBatchHash() {
+        return batchHash;
+    }
 }
