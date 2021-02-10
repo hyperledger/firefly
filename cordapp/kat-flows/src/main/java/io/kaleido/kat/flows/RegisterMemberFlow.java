@@ -1,5 +1,6 @@
 package io.kaleido.kat.flows;
 
+import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import io.kaleido.kat.contracts.KatContract;
 import io.kaleido.kat.states.KatOrderingContext;
@@ -7,10 +8,7 @@ import io.kaleido.kat.states.MemberRegistered;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.FinalityFlow;
-import net.corda.core.flows.FlowException;
-import net.corda.core.flows.FlowLogic;
-import net.corda.core.flows.FlowSession;
+import net.corda.core.flows.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
@@ -22,6 +20,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@InitiatingFlow
+@StartableByRPC
 public class RegisterMemberFlow extends FlowLogic<SignedTransaction> {
     private final String name;
     private final String assetTrailInstanceID;
@@ -55,6 +55,7 @@ public class RegisterMemberFlow extends FlowLogic<SignedTransaction> {
         this.observers = observers;
     }
 
+    @Suspendable
     @Override
     public SignedTransaction call() throws FlowException {
         // Obtain a reference to the notary we want to use.
