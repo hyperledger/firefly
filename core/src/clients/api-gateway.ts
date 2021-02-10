@@ -161,7 +161,7 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
   }
 };
 
-export const setAssetInstanceProperty = async (assetInstanceID: string, author: string, key: string, value: string,
+export const setAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string,
   sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   try {
     const response = await axios({
@@ -172,6 +172,7 @@ export const setAssetInstanceProperty = async (assetInstanceID: string, author: 
         password: config.appCredentials.password
       },
       data: {
+        assetDefinitionID,
         assetInstanceID,
         key,
         value

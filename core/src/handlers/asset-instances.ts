@@ -186,7 +186,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
