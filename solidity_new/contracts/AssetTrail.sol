@@ -111,6 +111,7 @@ contract AssetTrail {
     );
 
     event AssetInstancePropertySet (
+        bytes32 assetDefinitionID,
         bytes32 assetInstanceID,
         address author,
         string key,
@@ -185,9 +186,9 @@ contract AssetTrail {
         emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, now);
     }
     
-    function setAssetInstanceProperty(bytes32 assetInstanceID, string memory key, string memory value) public {
+    function setAssetInstanceProperty(bytes32 assetDefinitionID, bytes32 assetInstanceID, string memory key, string memory value) public {
         require(bytes(key).length > 0, "Invalid key");
-        emit AssetInstancePropertySet(assetInstanceID, msg.sender, key, value, now);
+        emit AssetInstancePropertySet(assetDefinitionID, assetInstanceID, msg.sender, key, value, now);
     }
     
 }
