@@ -20,7 +20,6 @@ export const constants = {
   SUBSCRIBE_RETRY_INTERVAL: 5 * 1000,
   REST_API_CALL_MAX_ATTEMPTS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS || "5"),
   REST_API_CALL_RETRY_DELAY_MS: parseInt(<string>process.env.REST_API_CALL_MAX_ATTEMPTS || "500"),
-
   BATCH_ADD_TIMEOUT_MILLIS: parseInt(<string>process.env.BATCH_ADD_TIMEOUT_MILLIS || '30000'),
   BATCH_TIMEOUT_OVERALL_MILLIS: parseInt(<string>process.env.BATCH_TIMEOUT_OVERALL_MILLIS || '2500'),
   BATCH_TIMEOUT_ARRIVAL_MILLIS: parseInt(<string>process.env.BATCH_TIMEOUT_ARRIVAL_MILLIS || '250'),
@@ -28,7 +27,6 @@ export const constants = {
   BATCH_RETRY_INITIAL_DELAY_MILLIS: parseInt(<string>process.env.BATCH_RETRY_INITIAL_DELAY_MILLIS || '100'),
   BATCH_RETRY_MAX_DELAY_MILLIS: parseInt(<string>process.env.BATCH_RETRY_MAX_DELAY_MILLIS || '10000'),
   BATCH_RETRY_MULTIPLIER: parseFloat(<string>process.env.BATCH_RETRY_MULTIPLIER || '2.0'),
-
 };
 
 const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
@@ -37,7 +35,6 @@ export const databaseCollectionIndexes: { [name in databaseCollectionName]: {fie
   members: [{fields: ['address'], unique: true}],
   'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
   'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],
-  'asset-instances': [{fields: ['assetInstanceID'], unique: true}],
   'payment-instances': [{fields: ['paymentInstanceID'], unique: true}],
   'batches': [
     {fields: ['batchID'], unique: true}, // Primary key

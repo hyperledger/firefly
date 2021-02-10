@@ -121,4 +121,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     blockNumber,
     transactionHash
   });
+
+  const collectionName = `asset-instance-${assetDefinitionID}`;
+  await database.createCollection(collectionName, [{fields: ['assetInstanceID'], unique: true}]);
 };

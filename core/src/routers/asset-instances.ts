@@ -8,35 +8,29 @@ import { IRequestMultiPartContent } from '../lib/interfaces';
 
 const router = Router();
 
-router.get('/', async (req, res, next) => {
+router.get('/:assetDefinitionID', async (req, res, next) => {
   try {
     const skip = Number(req.query.skip || 0);
     const limit = Number(req.query.limit || constants.DEFAULT_PAGINATION_LIMIT);
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    let query: {
-      assetDefinitionID?: string
-    } = {};
-    if(req.query.assetDefinitionID !== undefined) {
-      query.assetDefinitionID = req.query.assetDefinitionID as string;
-    }
-    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest(query, {}, skip, limit));
+    res.send(await assetInstancesHandler.handleGetAssetInstancesRequest(req.params.assetDefinitionID, {}, {}, skip, limit));
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/:assetInstanceID', async (req, res, next) => {
+router.get('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   try {
     const content = req.query.content === 'true';
-    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetInstanceID, content));
+    res.send(await assetInstancesHandler.handleGetAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, content));
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/search', async (req, res, next) => {
+router.post('/search/:assetDefinitionID', async (req, res, next) => {
   try {
     const skip = Number(req.body.skip || 0);
     const limit = Number(req.body.limit || constants.DEFAULT_PAGINATION_LIMIT);
@@ -47,35 +41,21 @@ router.post('/search', async (req, res, next) => {
       throw new RequestError('Missing search query', 400);
     }
     res.send(req.body.count === true ?
-      await assetInstancesHandler.handleCountAssetInstancesRequest(req.body.query) :
-      await assetInstancesHandler.handleGetAssetInstancesRequest(req.body.query, req.body.sort || {}, skip, limit)
+      await assetInstancesHandler.handleCountAssetInstancesRequest(req.params.assetDefinitionID, req.body.query) :
+      await assetInstancesHandler.handleGetAssetInstancesRequest(req.params.assetDefinitionID, req.body.query, req.body.sort || {}, skip, limit)
     );
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/aggregate', async (req, res, next) => {
-  try {
-    if (!Array.isArray(req.body.query)) {
-      throw new RequestError('Missing or invalid aggregation query', 400);
-    }
-    res.send(await assetInstancesHandler.handleAggregateAssetInstancesRequest(req.body.query));
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/', async (req, res, next) => {
+router.post('/:assetDefinitionID', async (req, res, next) => {
   try {
     let assetInstanceID: string;
     const sync = req.query.sync === 'true';
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
       const formData = await extractDataFromMultipartForm(req);
-      if (!formData.assetDefinitionID) {
-        throw new RequestError('Missing asset definition ID', 400);
-      }
       if (formData.description !== undefined) {
         try {
           description = JSON.parse(await formData.description);
@@ -86,18 +66,15 @@ router.post('/', async (req, res, next) => {
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
-      if (!req.body.assetDefinitionID) {
-        throw new RequestError('Missing asset definition ID', 400);
-      }
       if (!utils.regexps.ACCOUNT.test(req.body.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, sync);
     }
     res.send({ status: sync ? 'success' : 'submitted', assetInstanceID });
   } catch (err) {
@@ -105,7 +82,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.put('/:assetInstanceID', async (req, res, next) => {
+router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   try {
     switch (req.body.action) {
       case 'set-property':
@@ -119,14 +96,14 @@ router.put('/:assetInstanceID', async (req, res, next) => {
           throw new RequestError('Missing or invalid asset property author', 400);
         }
         const sync = req.query.sync === 'true';
-        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
+        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
         res.send({ status: sync ? 'success' : 'submitted' });
         break;
       case 'push':
         if (!req.body.recipientAddress) {
           throw new RequestError('Missing recipient address', 400);
         }
-        await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetInstanceID, req.body.recipientAddress);
+        await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.recipientAddress);
         res.send({ status: 'success' });
         break;
       default:
@@ -137,12 +114,12 @@ router.put('/:assetInstanceID', async (req, res, next) => {
   }
 });
 
-router.patch('/:assetInstanceID', async (req, res, next) => {
+router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   try {
     if (!utils.regexps.ACCOUNT.test(req.body.requester)) {
       throw new RequestError(`Missing requester`);
     }
-    await assetInstancesHandler.handleAssetInstanceTradeRequest(req.body.requester, req.params.assetInstanceID, req.body.metadata);
+    await assetInstancesHandler.handleAssetInstanceTradeRequest(req.params.assetDefinitionID, req.body.requester, req.params.assetInstanceID, req.body.metadata);
     res.send({ status: 'success' });
   } catch (err) {
     next(err);
@@ -170,6 +147,6 @@ const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartCo
         reject(new RequestError('Missing content', 400));
       });
   });
-}
+};
 
 export default router;
