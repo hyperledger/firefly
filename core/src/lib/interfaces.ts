@@ -168,7 +168,6 @@ export interface IDatabaseProvider {
   count: (collectionName: databaseCollectionName, query: object) => Promise<number>
   find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
   findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
-  aggregate: <T>(collectionName: databaseCollectionName, query: object[]) => Promise<T[]>
   updateOne: (collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) => Promise<void>
   shutDown: () => void
 }
