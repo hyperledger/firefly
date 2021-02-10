@@ -17,6 +17,7 @@ export const init = async () => {
 let listeners: IClientEventListener[] = [];
 
 // COLLECTION AGNOSTIC QUERIES
+
 export const createCollection = (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => {
   return databaseProvider.createCollection(collectionName, indexes);
 };
