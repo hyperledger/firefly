@@ -1,6 +1,10 @@
 package io.kaleido.kat.server.data;
 
-public class CreateUnstructuredAssetDefinitionRequest extends AssetRequest {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.io.Serializable;
+
+public class CreateUnstructuredAssetDefinitionRequest extends AssetRequest implements Serializable {
     private String assetDefinitionID;
     private String name;
     private boolean isContentPrivate;
@@ -25,6 +29,7 @@ public class CreateUnstructuredAssetDefinitionRequest extends AssetRequest {
         this.name = name;
     }
 
+    @JsonProperty(value="isContentPrivate")
     public boolean isContentPrivate() {
         return isContentPrivate;
     }
@@ -33,6 +38,7 @@ public class CreateUnstructuredAssetDefinitionRequest extends AssetRequest {
         isContentPrivate = contentPrivate;
     }
 
+    @JsonProperty(value="isContentUnique")
     public boolean isContentUnique() {
         return isContentUnique;
     }
