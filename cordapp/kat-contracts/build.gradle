@@ -2,7 +2,6 @@ plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
 }
-
 dependencies {
     // these dependencies will be included in the contract jar
     cordaRuntime 'net.corda:corda:4.4'
@@ -11,9 +10,6 @@ dependencies {
     cordaCompile 'net.corda:corda-core:4.4'
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:26.0-jre'
-
-    // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
 }
 
 cordapp {
