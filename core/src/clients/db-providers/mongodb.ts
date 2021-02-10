@@ -45,10 +45,6 @@ export default class MongoDBProvider implements IDatabaseProvider {
     return db.collection(collectionName).findOne<T>(query, { projection: { _id: 0 } });
   }
 
-  aggregate<T>(collectionName: databaseCollectionName, query: object[]): Promise<T[]> {
-    return db.collection(collectionName).aggregate<T>(query).toArray();
-  }
-
   async updateOne(collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) {
     await db.collection(collectionName).updateOne(query, value, { upsert });
   }

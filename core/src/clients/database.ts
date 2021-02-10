@@ -106,10 +106,6 @@ export const retrieveAssetInstances = (assetDefinitionID: string, query: object,
   return databaseProvider.find<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, query, sort, skip, limit);
 };
 
-export const aggregateAssetInstances = (assetDefinitionID: string, query: object[]): Promise<IDBAssetInstance[]> => {
-  return databaseProvider.aggregate<IDBAssetInstance>(`asset-instance-${assetDefinitionID}`, query);
-};
-
 export const countAssetInstances = (assetDefinitionID: string, query: object): Promise<number> => {
   return databaseProvider.count(`asset-instance-${assetDefinitionID}`, query);
 };

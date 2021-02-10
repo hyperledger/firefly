@@ -23,10 +23,6 @@ export const handleGetAssetInstancesRequest = (assetDefinitionID: string, query:
   return database.retrieveAssetInstances(assetDefinitionID, query, sort, skip, limit);
 };
 
-export const handleAggregateAssetInstancesRequest = (assetDefinitonID: string, query: object[]) => {
-  return database.aggregateAssetInstances(assetDefinitonID, query);
-};
-
 export const handleCountAssetInstancesRequest = async (assetDefinitionID: string, query: object) => {
   return { count: await database.countAssetInstances(assetDefinitionID, query) };
 };
