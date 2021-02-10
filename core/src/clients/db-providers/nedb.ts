@@ -18,18 +18,18 @@ export default class NEDBProvider implements IDatabaseProvider {
     }
   }
 
-  async createCollection(collectionName: string, indexes: {fields: string[], unique?: boolean}[]) {
-        const collection = Datastore.create({
-          filename: path.join(constants.DATA_DIRECTORY, `${collectionName}.json`),
-          autoload: true
-        });
-        for (const index of indexes) {
-          // No compound indexes here
-          for (let fieldName of index.fields) {
-            collection.ensureIndex({ fieldName, unique: !!index.unique });
-          }
-        }
-        collections[collectionName] = collection;
+  async createCollection(collectionName: string, indexes: { fields: string[], unique?: boolean }[]) {
+    const collection = Datastore.create({
+      filename: path.join(constants.DATA_DIRECTORY, `${collectionName}.json`),
+      autoload: true
+    });
+    for (const index of indexes) {
+      // No compound indexes here
+      for (let fieldName of index.fields) {
+        collection.ensureIndex({ fieldName, unique: !!index.unique });
+      }
+    }
+    collections[collectionName] = collection;
   }
 
   count(collectionName: databaseCollectionName, query: object): Promise<number> {

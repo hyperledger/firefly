@@ -160,7 +160,8 @@ export interface IEventAssetInstancePropertySet {
 // DATABASE INTERFACES
 
 //TODO: figure out how to handle variable asset-instance collection names
-export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'payment-instances' | 'batches' | string
+export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'payment-instances' | 'batches' | customCollectionName
+export type customCollectionName = string
 
 export interface IDatabaseProvider {
   init: () => Promise<void>
