@@ -21,7 +21,7 @@ describe('Assets: unauthored - public - described - structured', async () => {
       .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
       .reply(200, testContent.schema.object);
 
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -83,7 +83,7 @@ describe('Assets: unauthored - public - described - structured', async () => {
       .get(`/ipfs/${testContent.sample.ipfsMultiHash}`)
       .reply(200, testContent.sample.object)
 
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -108,7 +108,7 @@ describe('Assets: unauthored - public - described - structured', async () => {
 
     it('Checks that the asset instance is confirmed', async () => {
       const getAssetInstancesResponse = await request(app)
-        .get('/api/v1/assets/instances')
+        .get(`/api/v1/assets/${assetDefinitionID}`)
         .expect(200);
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000002');
@@ -124,7 +124,7 @@ describe('Assets: unauthored - public - described - structured', async () => {
       assert.strictEqual(assetInstance.transactionHash, '0x0000000000000000000000000000000000000000000000000000000000000000');
 
       const getAssetInstanceResponse = await request(app)
-        .get(`/api/v1/assets/instances/${assetInstanceID}`)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
         .expect(200);
       assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });

@@ -79,22 +79,11 @@ describe('Asset definitions - argument validation', async () => {
 
 describe('Asset instances - argument validation', async () => {
 
-  it('Attempting to add an asset instance without specifying the asset definition ID should raise an error', async () => {
-    const result = await request(app)
-      .post('/api/v1/assets/instances')
-      .send({
-        author: '0x0000000000000000000000000000000000000001',
-        content: {}
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing asset definition ID' });
-  });
-
   it('Attempting to add an asset instance without specifying the author should raise an error', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances')
+      .post('/api/v1/assets/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
       .send({
-        assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
+        assetDefinitionID: '',
         content: {}
       })
       .expect(400);
@@ -103,9 +92,8 @@ describe('Asset instances - argument validation', async () => {
 
   it('Attempting to add an asset instance without specifying the content should raise an error', async () => {
     const result = await request(app)
-      .post('/api/v1/assets/instances')
+      .post('/api/v1/assets/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
       .send({
-        assetDefinitionID: 'c3ff75aa-a068-473f-8c7e-55d39808c25d',
         author: '0x0000000000000000000000000000000000000001'
       })
       .expect(400);

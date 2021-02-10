@@ -13,15 +13,25 @@ export default class MongoDBProvider implements IDatabaseProvider {
       mongoClient = await MongoClient.connect(config.mongodb.connectionUrl,
         { useNewUrlParser: true, useUnifiedTopology: true, ignoreUndefined: true });
       db = mongoClient.db(config.mongodb.databaseName);
-      for(const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
-        for (const index of indexes) {
-          const fields: {[f: string]: number} = {};
-          for (let f of index.fields) fields[f] = 1; // all ascending currently
-          db.collection(collectionName).createIndex(fields, { unique: !!index.unique });
-        }
+      for (const [collectionName, indexes] of Object.entries(databaseCollectionIndexes)) {
+        this.createCollection(collectionName, indexes);
       }
     } catch (err) {
       throw new Error(`Failed to connect to Mongodb. ${err}`);
+    }
+  }
+
+  async createCollection(collectionName: string, indexes: { fields: string[], unique?: boolean }[]) {
+    try {
+      for (const index of indexes) {
+        const fields: { [f: string]: number } = {};
+        for (const field of index.fields) {
+          fields[field] = 1; // all ascending currently
+        }
+        db.collection(collectionName).createIndex(fields, { unique: !!index.unique });
+      }
+    } catch (err) {
+      throw new Error(`Failed to create collection. ${err}`);
     }
   }
 
@@ -35,10 +45,6 @@ export default class MongoDBProvider implements IDatabaseProvider {
 
   findOne<T>(collectionName: databaseCollectionName, query: object): Promise<T | null> {
     return db.collection(collectionName).findOne<T>(query, { projection: { _id: 0 } });
-  }
-
-  aggregate<T>(collectionName: databaseCollectionName, query: object[]): Promise<T[]> {
-    return db.collection(collectionName).aggregate<T>(query).toArray();
   }
 
   async updateOne(collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) {

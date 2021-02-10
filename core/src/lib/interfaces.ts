@@ -150,6 +150,7 @@ export interface IEventPaymentInstanceCreated {
 
 export interface IEventAssetInstancePropertySet {
   assetInstanceID: string
+  assetDefinitionID: string
   author: string
   key: string
   value: string
@@ -158,14 +159,16 @@ export interface IEventAssetInstancePropertySet {
 
 // DATABASE INTERFACES
 
-export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'asset-instances' | 'payment-instances' | 'batches'
+//TODO: figure out how to handle variable asset-instance collection names
+export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'payment-instances' | 'batches' | customCollectionName
+export type customCollectionName = string
 
 export interface IDatabaseProvider {
   init: () => Promise<void>
+  createCollection: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
   count: (collectionName: databaseCollectionName, query: object) => Promise<number>
   find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
   findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
-  aggregate: <T>(collectionName: databaseCollectionName, query: object[]) => Promise<T[]>
   updateOne: (collectionName: databaseCollectionName, query: object, value: object, upsert: boolean) => Promise<void>
   shutDown: () => void
 }
@@ -327,6 +330,7 @@ export interface IAssetTradePrivateAssetInstanceRequest {
   type: 'private-asset-instance-request'
   tradeID: string
   assetInstanceID: string
+  assetDefinitionID: string
   requester: {
     assetTrailInstanceID: string
     address: string
@@ -346,6 +350,7 @@ export interface IAssetTradePrivateAssetInstanceResponse {
 export interface IAssetTradePrivateAssetInstancePush {
   type: 'private-asset-instance-push'
   assetInstanceID: string
+  assetDefinitionID: string
   content?: object
   filename?: string
 }

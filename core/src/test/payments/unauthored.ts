@@ -13,7 +13,7 @@ describe('Payment definitions: unauthored', async () => {
 
     it('Checks that the event stream notification for confirming the payment definition creation is handled', async () => {
 
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
@@ -59,7 +59,7 @@ describe('Payment definitions: unauthored', async () => {
     const paymentInstanceID = '646a2a24-319e-408b-a099-fc163ff3e692';
 
     it('Checks that the event stream notification for confirming the payment instance creation is handled', async () => {
-      const eventPromise = new Promise((resolve) => {
+      const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
