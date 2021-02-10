@@ -172,8 +172,8 @@ public class KatController {
         }
     }
 
-    @PostMapping(value = "/createStructuredAssetDefinition", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public AssetResponse createStructuredAssetDefinition(@RequestBody CreateStructuredAssetDefinitionRequest request) {
+    @PostMapping(value = "/createAssetDefinition", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public AssetResponse createAssetDefinition(@RequestBody CreateAssetDefinitionRequest request) {
         // get ordering context
         List<AbstractParty> participantList = new ArrayList<>();
         for(String observer: request.getParticipants()) {
@@ -189,17 +189,17 @@ public class KatController {
         UniqueIdentifier contextId = createOrGetOrderingContext(partiesInContext);
         AssetResponse response = new AssetResponse();
         try {
-            SignedTransaction assetTxResult = proxy.startFlowDynamic(CreateStructuredAssetDefinitionFlow.class, request.getAssetDefinitionID(), request.getName(), request.isContentPrivate(),request.isContentUnique(), request.getContentSchemaHash(), participantList, contextId).getReturnValue().get();
+            SignedTransaction assetTxResult = proxy.startFlowDynamic(CreateAssetDefinitionFlow.class, request.getAssetDefinitionHash(), participantList, contextId).getReturnValue().get();
             response.setTxHash(assetTxResult.getId().toString());
             return response;
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("failed to create structuredAssetDefinition", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create structuredAssetDefinition", e);
+            logger.error("failed to create assetDefinition", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create assetDefinition", e);
         }
     }
 
-    @PostMapping(value = "/createUnstructuredAssetDefinition", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public AssetResponse createUnstructuredAssetDefinition(@RequestBody CreateUnstructuredAssetDefinitionRequest request) {
+    @PostMapping(value = "/createDescribedAssetInstance", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public AssetResponse createDescribedAssetInstance(@RequestBody CreateDescribedAssetInstanceRequest request) {
         // get ordering context
         List<AbstractParty> participantList = new ArrayList<>();
         for(String observer: request.getParticipants()) {
@@ -215,12 +215,12 @@ public class KatController {
         UniqueIdentifier contextId = createOrGetOrderingContext(partiesInContext);
         AssetResponse response = new AssetResponse();
         try {
-            SignedTransaction assetTxResult = proxy.startFlowDynamic(CreateUnstructuredAssetDefinitionFlow.class, request.getAssetDefinitionID(), request.getName(), request.isContentPrivate(), request.isContentUnique(), participantList, contextId).getReturnValue().get();
+            SignedTransaction assetTxResult = proxy.startFlowDynamic(CreateDescribedAssetInstanceFlow.class, request.getAssetInstanceID(), request.getAssetDefinitionID(), request.getDescriptionHash(), request.getContentHash(), participantList, contextId).getReturnValue().get();
             response.setTxHash(assetTxResult.getId().toString());
             return response;
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("failed to create unstructuredAssetDefinition", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create unstructuredAssetDefinition", e);
+            logger.error("failed to create describedAssetInstance", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create describedAssetInstance", e);
         }
     }
 

@@ -5,11 +5,11 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
-
 import java.util.List;
 
-@InitiatingFlow
+
 @StartableByRPC
+@InitiatingFlow
 public class CreateDescribedAssetInstanceFlow extends CreateAssetEventFlow<DescribedAssetInstanceCreated>{
     private final String assetInstanceID;
     private final String assetDefinitionID;
@@ -26,6 +26,6 @@ public class CreateDescribedAssetInstanceFlow extends CreateAssetEventFlow<Descr
 
     @Override
     public DescribedAssetInstanceCreated getAssetEvent() {
-        return new DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID, getOurIdentity(), descriptionHash, contentHash);
+        return new DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID,getOurIdentity(), descriptionHash, contentHash);
     }
 }

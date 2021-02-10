@@ -38,4 +38,16 @@ public class AssetInstancePropertySet implements AssetEventState {
     public Party getAuthor() {
         return author;
     }
+
+    public String getAssetInstanceID() {
+        return assetInstanceID;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getValue() {
+        return value;
+    }
 }

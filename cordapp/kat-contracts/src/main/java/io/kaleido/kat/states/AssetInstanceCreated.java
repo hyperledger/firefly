@@ -38,4 +38,16 @@ public class AssetInstanceCreated implements AssetEventState {
     public Party getAuthor() {
         return author;
     }
+
+    public String getAssetInstanceID() {
+        return assetInstanceID;
+    }
+
+    public String getAssetDefinitionID() {
+        return assetDefinitionID;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
 }

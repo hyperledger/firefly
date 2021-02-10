@@ -35,4 +35,24 @@ public class MemberRegistered implements ContractState {
     public String toString() {
         return String.format("MemberRegistered(member=%s, name=%s, assetTrailInstanceID=%s, app2appDestination=%s, docExchangeDestination=%s)", member, name, assetTrailInstanceID, app2appDestination, docExchangeDestination);
     }
+
+    public Party getMember() {
+        return member;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getAssetTrailInstanceID() {
+        return assetTrailInstanceID;
+    }
+
+    public String getApp2appDestination() {
+        return app2appDestination;
+    }
+
+    public String getDocExchangeDestination() {
+        return docExchangeDestination;
+    }
 }
