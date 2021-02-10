@@ -49,16 +49,13 @@ router.post('/search/:assetDefinitionID', async (req, res, next) => {
   }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/:assetDefinitionID', async (req, res, next) => {
   try {
     let assetInstanceID: string;
     const sync = req.query.sync === 'true';
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
       const formData = await extractDataFromMultipartForm(req);
-      if (!formData.assetDefinitionID) {
-        throw new RequestError('Missing asset definition ID', 400);
-      }
       if (formData.description !== undefined) {
         try {
           description = JSON.parse(await formData.description);
@@ -69,18 +66,15 @@ router.post('/', async (req, res, next) => {
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, formData.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
     } else {
-      if (!req.body.assetDefinitionID) {
-        throw new RequestError('Missing asset definition ID', 400);
-      }
       if (!utils.regexps.ACCOUNT.test(req.body.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.body.assetDefinitionID, req.body.description, req.body.content, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, sync);
     }
     res.send({ status: sync ? 'success' : 'submitted', assetInstanceID });
   } catch (err) {

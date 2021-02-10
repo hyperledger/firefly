@@ -134,7 +134,7 @@ describe('Assets: authored - public - structured', async () => {
         .reply(200, { Hash: batchHashIPFSMulti })
 
       const result = await request(app)
-        .post('/api/v1/assets')
+        .post(`/api/v1/assets/${assetDefinitionID}`)
         .send({
           assetDefinitionID,
           author: '0x0000000000000000000000000000000000000001',
