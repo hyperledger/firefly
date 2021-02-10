@@ -18,11 +18,11 @@ let listeners: IClientEventListener[] = [];
 
 // COLLECTION AGNOSTIC QUERIES
 
-export const createCollection = (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => {
+export const createCollection = (collectionName: string, indexes: { fields: string[], unique?: boolean }[]) => {
   return databaseProvider.createCollection(collectionName, indexes);
 };
 
-export const createIndexes = (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => {
+export const createIndexes = (collectionName: string, indexes: { fields: string[], unique?: boolean }[]) => {
   return databaseProvider.createIndexes(collectionName, indexes);
 };
 

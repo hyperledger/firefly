@@ -32,7 +32,7 @@ export default class NEDBProvider implements IDatabaseProvider {
     collections[collectionName] = collection;
   }
 
-  async createIndexes(collectionName: string, indexes: {fields: string[], unique?: boolean}[]) {
+  async createIndexes(collectionName: string, indexes: { fields: string[], unique?: boolean }[]) {
     for (const index of indexes) {
       // No compound indexes here
       for (let fieldName of index.fields) {

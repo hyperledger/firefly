@@ -35,7 +35,7 @@ export default class MongoDBProvider implements IDatabaseProvider {
     }
   }
 
-  async createIndexes(collectionName: string, indexes: {fields: string[], unique?: boolean}[]){
+  async createIndexes(collectionName: string, indexes: { fields: string[], unique?: boolean }[]){
     this.createCollection(collectionName, indexes);
   }
 
