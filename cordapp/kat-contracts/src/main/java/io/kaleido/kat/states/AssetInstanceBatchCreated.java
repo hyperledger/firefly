@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 @BelongsToContract(KatContract.class)
-public class AssetInstanceBatchCreated implements AssetEventState {
+public class AssetInstanceBatchCreated implements   AssetEventState {
     private final Party author;
     private final String batchHash;
 

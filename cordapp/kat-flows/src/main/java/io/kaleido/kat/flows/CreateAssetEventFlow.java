@@ -1,5 +1,6 @@
 package io.kaleido.kat.flows;
 
+import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import io.kaleido.kat.contracts.KatContract;
 import io.kaleido.kat.states.KatOrderingContext;
@@ -10,15 +11,17 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.FlowSession;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<SignedTransaction> {
     private final List<Party> observers;
@@ -32,7 +35,6 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
             return FinalityFlow.Companion.tracker();
         }
     };
-    private final ProgressTracker.Step SENDING_TRANSACTION_TO_OBSERVERS = new ProgressTracker.Step("Sending final transaction to observers");
 
     // The progress tracker checkpoints each stage of the flow and outputs the specified messages when each
     // checkpoint is reached in the code. See the 'progressTracker.currentStep' expressions within the call()
@@ -76,6 +78,7 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
         return progressTracker;
     }
 
+    @Suspendable
     @Override
     public SignedTransaction call() throws FlowException {
         // Obtain a reference to the notary we want to use.
@@ -100,12 +103,7 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
         final SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 
         progressTracker.setCurrentStep(FINALISING_TRANSACTION);
-        final SignedTransaction finalTx = subFlow(new FinalityFlow(signedTx, Collections.emptyList()));
-
-        progressTracker.setCurrentStep(SENDING_TRANSACTION_TO_OBSERVERS);
-        for(Party observer: observers) {
-            subFlow(new SendTxToObserverNodeFlow(observer, finalTx));
-        }
-        return finalTx;
+        Set<FlowSession> flowSessions = observers.stream().map(this::initiateFlow).collect(Collectors.toSet());
+        return subFlow(new FinalityFlow(signedTx, flowSessions));
     }
 }

@@ -1,0 +1,134 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "commons-io:commons-io:2+"
+    }
+}
+
+import org.apache.commons.io.FileUtils
+import java.nio.file.Paths
+
+
+repositories {
+    mavenLocal()
+    jcenter()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
+    maven { url 'https://software.r3.com/artifactory/corda' }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'io.spring.dependency-management'
+
+// See https://docs.spring.io/dependency-management-plugin/docs/current/reference/html
+dependencyManagement {
+    dependencies {
+        dependency "org.apache.logging.log4j:log4j-slf4j-impl:2.11.2"
+    }
+}
+
+dependencies {
+    // CorDapp dependencies
+    compile project(":kat-contracts")
+    compile project(":kat-flows")
+
+    testCompile "junit:junit:4.12"
+
+    // Corda dependencies.
+    compile "net.corda:corda-core:4.4"
+    compile "net.corda:corda-jackson:4.4"
+    compile "net.corda:corda-rpc:4.4"
+    compile "net.corda:corda:4.4"
+
+    compile("org.springframework.boot:spring-boot-starter-websocket:2.0.2.RELEASE") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+    compile "org.springframework.boot:spring-boot-starter-log4j2:2.0.2.RELEASE"
+    compile "org.apache.logging.log4j:log4j-web:2.11.2"
+}
+
+task copyCordappsToNodeA(type: Copy) {
+    println "copying cordapps to node A..."
+    from "$projectDir/../kat-flows/build/libs/kat-flows-1.0.jar", "$projectDir/../kat-contracts/build/libs/kat-contracts-1.0.jar"
+    into "$projectDir/src/test/resources/config/partyA/cordapps"
+}
+
+task copyCordappsToNodeB(type: Copy) {
+    println "copying cordapps to node B..."
+    from "$projectDir/../kat-flows/build/libs/kat-flows-1.0.jar", "$projectDir/../kat-contracts/build/libs/kat-contracts-1.0.jar"
+    into "$projectDir/src/test/resources/config/partyB/cordapps"
+}
+
+task launchCordaNotary(type: JavaExec) {
+    def tmpdir = getTemporaryDir()
+    def dest = Paths.get(tmpdir.getPath(), "notary").toFile()
+    def src = Paths.get("$projectDir/src/test/resources/config/notary").toFile()
+    dest.deleteDir()
+    FileUtils.deleteDirectory(dest)
+    FileUtils.copyDirectory(src, dest)
+    println "Starting notary node using working dir $dest ..."
+    ext.process = new ProcessBuilder()
+            .directory(dest)
+            .command("java", "-jar", "$projectDir/src/test/resources/corda.jar", "--log-to-console", "--base-directory", dest.toString())
+            .start()
+}
+
+task launchCordaNodeA(type: JavaExec) {
+    def tmpdir = getTemporaryDir()
+    def dest = Paths.get(tmpdir.getPath(), "partyA").toFile()
+    def src = Paths.get("$projectDir/src/test/resources/config/partyA").toFile()
+    FileUtils.deleteDirectory(dest)
+    FileUtils.copyDirectory(src, dest)
+    println "Starting party A node using working dir $dest ..."
+    ext.process = new ProcessBuilder()
+            .directory(dest)
+            .command("java", "-jar", "$projectDir/src/test/resources/corda.jar", "--log-to-console", "--base-directory", dest.toString())
+            .start()
+}
+
+task launchCordaNodeB(type: JavaExec) {
+    def tmpdir = getTemporaryDir()
+    def dest = Paths.get(tmpdir.getPath(), "partyB").toFile()
+    def src = Paths.get("$projectDir/src/test/resources/config/partyB").toFile()
+    FileUtils.deleteDirectory(dest)
+    FileUtils.copyDirectory(src, dest)
+    println "Starting party B node using working dir $dest ..."
+    ext.process = new ProcessBuilder()
+            .directory(dest)
+            .command("java", "-jar", "$projectDir/src/test/resources/corda.jar", "--log-to-console", "--base-directory", dest.toString())
+            .start()
+}
+launchCordaNodeA.mustRunAfter(copyCordappsToNodeA)
+launchCordaNodeB.mustRunAfter(copyCordappsToNodeB)
+
+test {
+    doFirst {
+        launchCordaNotary
+        launchCordaNodeA
+        launchCordaNodeB
+    }
+    doLast {
+        println "Stopping Corda nodes..."
+        if (tasks.launchCordaNotary.process != null) {
+            tasks.launchCordaNotary.process.destroy()
+        }
+        if (tasks.launchCordaNodeA.process != null) {
+            tasks.launchCordaNodeA.process.destroy()
+        }
+        if (tasks.launchCordaNodeB.process != null) {
+            tasks.launchCordaNodeB.process.destroy()
+        }
+    }
+}
+cordapp.signing.enabled false
+mainClassName = 'io.kaleido.kat.server.Server'
+
+task deployKatServer(type: JavaExec, dependsOn: jar) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = mainClassName
+}
