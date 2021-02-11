@@ -3,6 +3,7 @@
 export interface IConfig {
   port: number
   assetTrailInstanceID: string
+  protocol: 'ethereum' | 'corda'
   apiGateway: {
     apiEndpoint: string
   }

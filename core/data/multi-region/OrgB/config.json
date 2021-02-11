@@ -2,6 +2,7 @@
   "$schema": "../../../src/schemas/config.json",
   "port": 4002,
   "assetTrailInstanceID": "asset-trail-org-b",
+  "protocol": "ethereum",
   "apiGateway": {
     "apiEndpoint": "https://zzdk0au9rl-zzxtrleuk4-connect.azdev.photic.io/instances/0xc4ed58b23059e5b2f867b6040b46dcea04396c8b"
   },
