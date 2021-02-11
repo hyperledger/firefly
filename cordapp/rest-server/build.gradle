@@ -43,8 +43,6 @@ dependencies {
     compile "net.corda:corda-core:4.4"
     compile "net.corda:corda-jackson:4.4"
     compile "net.corda:corda-rpc:4.4"
-    compile "net.corda:corda:4.4"
-
     compile("org.springframework.boot:spring-boot-starter-websocket:2.0.2.RELEASE") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
