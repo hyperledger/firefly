@@ -4,6 +4,7 @@
   "required": [
     "port",
     "assetTrailInstanceID",
+    "protocol",
     "apiGateway",
     "eventStreams",
     "ipfs",
@@ -17,6 +18,10 @@
     },
     "assetTrailInstanceID": {
       "type": "string"
+    },
+    "protocol": {
+      "type": "string",
+      "enum": ["ethereum", "corda"]
     },
     "apiGateway": {
       "type": "object",
