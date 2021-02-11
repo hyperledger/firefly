@@ -11,12 +11,14 @@ import java.util.List;
 @StartableByRPC
 @InitiatingFlow
 public class SetAssetInstancePropertyFlow extends CreateAssetEventFlow<AssetInstancePropertySet>{
+    private final String assetDefinitionID;
     private final String assetInstanceID;
     private final String key;
     private final String value;
 
-    public SetAssetInstancePropertyFlow(String assetInstanceID, String key, String value, List<Party> observers, UniqueIdentifier orderingContext) {
+    public SetAssetInstancePropertyFlow(String assetDefinitionID, String assetInstanceID, String key, String value, List<Party> observers, UniqueIdentifier orderingContext) {
         super(observers, orderingContext);
+        this.assetDefinitionID = assetDefinitionID;
         this.assetInstanceID = assetInstanceID;
         this.key = key;
         this.value = value;
@@ -24,6 +26,6 @@ public class SetAssetInstancePropertyFlow extends CreateAssetEventFlow<AssetInst
 
     @Override
     public AssetInstancePropertySet getAssetEvent(){
-        return new AssetInstancePropertySet(assetInstanceID, getOurIdentity(), key, value);
+        return new AssetInstancePropertySet(assetDefinitionID, assetInstanceID, getOurIdentity(), key, value);
     }
 }

@@ -11,12 +11,14 @@ import java.util.List;
 
 @BelongsToContract(KatContract.class)
 public class AssetInstancePropertySet implements AssetEventState {
+    private final String assetDefinitionID;
     private final String assetInstanceID;
     private final Party author;
     private final String key;
     private final String value;
 
-    public AssetInstancePropertySet(String assetInstanceID, Party author, String key, String value) {
+    public AssetInstancePropertySet(String assetDefinitionID, String assetInstanceID, Party author, String key, String value) {
+        this.assetDefinitionID = assetDefinitionID;
         this.assetInstanceID = assetInstanceID;
         this.author = author;
         this.key = key;
@@ -31,7 +33,7 @@ public class AssetInstancePropertySet implements AssetEventState {
 
     @Override
     public String toString() {
-        return String.format("AssetInstancePropertySet(assetInstanceID=%s, author=%s, key=%s, value=%s)", assetInstanceID, author, key, value);
+        return String.format("AssetInstancePropertySet(assetDefinitionID=%s, assetInstanceID=%s, author=%s, key=%s, value=%s)", assetDefinitionID, assetInstanceID, author, key, value);
     }
 
     @Override
@@ -49,5 +51,9 @@ public class AssetInstancePropertySet implements AssetEventState {
 
     public String getValue() {
         return value;
+    }
+
+    public String getAssetDefinitionID() {
+        return assetDefinitionID;
     }
 }

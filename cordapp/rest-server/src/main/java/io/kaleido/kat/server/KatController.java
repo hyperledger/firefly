@@ -241,7 +241,7 @@ public class KatController {
         UniqueIdentifier contextId = createOrGetOrderingContext(partiesInContext);
         AssetResponse response = new AssetResponse();
         try {
-            SignedTransaction assetTxResult = proxy.startFlowDynamic(SetAssetInstancePropertyFlow.class, request.getAssetInstanceID(), request.getKey(), request.getValue(), participantList, contextId).getReturnValue().get();
+            SignedTransaction assetTxResult = proxy.startFlowDynamic(SetAssetInstancePropertyFlow.class, request.getAssetDefinitionID(), request.getAssetInstanceID(), request.getKey(), request.getValue(), participantList, contextId).getReturnValue().get();
             response.setTxHash(assetTxResult.getId().toString());
             return response;
         } catch (InterruptedException | ExecutionException e) {
