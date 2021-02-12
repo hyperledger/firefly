@@ -31,6 +31,10 @@ export interface IConfig {
     user: string
     password: string
   }
+  protocolAppCredentials: {
+    user: string
+    password: string
+  }
   mongodb: {
     connectionUrl: string
     databaseName: string
@@ -92,8 +96,12 @@ interface IStateRefCorda {
   index: number
 }
 
+interface IStateCorda {
+  data: object
+}
+
 export interface IEventStreamRawMessageCorda {
-  data: object,
+  data: IStateCorda,
   subId: string,
   signature: string,
   stateRef: IStateRefCorda,
