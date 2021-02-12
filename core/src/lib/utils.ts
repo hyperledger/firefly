@@ -54,21 +54,38 @@ export const requestKeys = {
   ASSET_CONTENT: 'content'
 };
 
-export const contractEventSignatures = {
-  MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
-  DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedStructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,bytes32,uint256)',
-  DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedUnstructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,uint256)',
-  STRUCTURED_ASSET_DEFINITION_CREATED: 'StructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,uint256)',
-  UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'UnstructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,uint256)',
-  DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(bytes32,address,string,bytes32,uint256)',
-  PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
-  DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,bytes32,address,bytes32,bytes32,uint256)',
-  ASSET_INSTANCE_BATCH_CREATED: 'AssetInstanceBatchCreated(bytes32,address,uint256)',
-  ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,bytes32,address,bytes32,uint256)',
-  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
-  PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',
-  ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
+export const contractEventSignaturesCorda = {
+  MEMBER_REGISTERED: 'io.kaleido.kat.states.MemberRegistered',
+  DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'io.kaleido.kat.states.DescribedStructuredAssetDefinitionCreated',
+  DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'io.kaleido.kat.states.DescribedUnstructuredAssetDefinitionCreated',
+  STRUCTURED_ASSET_DEFINITION_CREATED: 'io.kaleido.kat.states.StructuredAssetDefinitionCreated',
+  UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'io.kaleido.kat.states.UnstructuredAssetDefinitionCreated',
+  DESCRIBED_PAYMENT_DEFINITION_CREATED: 'io.kaleido.kat.states.DescribedPaymentDefinitionCreated',
+  PAYMENT_DEFINITION_CREATED: 'io.kaleido.kat.states.PaymentDefinitionCreated',
+  DESCRIBED_ASSET_INSTANCE_CREATED: 'io.kaleido.kat.states.DescribedAssetInstanceCreated',
+  ASSET_INSTANCE_BATCH_CREATED: 'io.kaleido.kat.states.AssetInstanceBatchCreated',
+  ASSET_INSTANCE_CREATED: 'io.kaleido.kat.states.AssetInstanceCreated',
+  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'io.kaleido.kat.states.DescribedPaymentInstanceCreated',
+  PAYMENT_INSTANCE_CREATED: 'io.kaleido.kat.states.PaymentInstanceCreated',
+  ASSET_PROPERTY_SET: 'io.kaleido.kat.states.AssetInstancePropertySet'
 };
+
+export const contractEventSignatures = 
+  {
+    MEMBER_REGISTERED: 'MemberRegistered(address,string,string,string,string,uint256)',
+    DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedStructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,bytes32,uint256)',
+    DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'DescribedUnstructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,uint256)',
+    STRUCTURED_ASSET_DEFINITION_CREATED: 'StructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,bytes32,uint256)',
+    UNSTRUCTURED_ASSET_DEFINITION_CREATED: 'UnstructuredAssetDefinitionCreated(bytes32,address,string,bool,bool,uint256)',
+    DESCRIBED_PAYMENT_DEFINITION_CREATED: 'DescribedPaymentDefinitionCreated(bytes32,address,string,bytes32,uint256)',
+    PAYMENT_DEFINITION_CREATED: 'PaymentDefinitionCreated(bytes32,address,string,uint256)',
+    DESCRIBED_ASSET_INSTANCE_CREATED: 'DescribedAssetInstanceCreated(bytes32,bytes32,address,bytes32,bytes32,uint256)',
+    ASSET_INSTANCE_BATCH_CREATED: 'AssetInstanceBatchCreated(bytes32,address,uint256)',
+    ASSET_INSTANCE_CREATED: 'AssetInstanceCreated(bytes32,bytes32,address,bytes32,uint256)',
+    DESCRIBED_PAYMENT_INSTANCE_CREATED: 'DescribedPaymentInstanceCreated(bytes32,bytes32,address,address,uint256,bytes32,uint256)',
+    PAYMENT_INSTANCE_CREATED: 'PaymentInstanceCreated(bytes32,bytes32,address,address,uint256,uint256)',
+    ASSET_PROPERTY_SET: 'AssetInstancePropertySet(bytes32,address,string,string,uint256)'
+  };
 
 export const getSha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 

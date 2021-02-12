@@ -20,7 +20,7 @@ let disconnectionTimeout: NodeJS.Timeout;
 export const init = () => {
   ws = new WebSocket(config.eventStreams.wsEndpoint, {
     headers: {
-      Authorization: 'Basic ' + Buffer.from(`${config.appCredentials.user}:${config.appCredentials.password}`).toString('base64')
+      Authorization: 'Basic ' + Buffer.from(`${config.protocolAppCredentials.user}:${config.protocolAppCredentials.password}`).toString('base64')
     }
   });
   addEventHandlers();
@@ -86,8 +86,8 @@ const processRawMessage = (message: string) => {
       processedMessages = cordaMessages.map(msg => {
         var processedMessage: IEventStreamMessage = {
           data: {
-            ...msg.data,
-            timestamp: msg.recordedTime
+            ...msg.data.data,
+            timestamp: Date.parse(msg.recordedTime)
           },
           transactionHash: msg.stateRef.txhash,
           subId: msg.subId,
@@ -119,6 +119,19 @@ const getBlockchainData = (message: IEventStreamMessage) => {
   return blockchainData;
 }
 
+const eventSignature = () => {
+  var signatures;
+  switch(config.protocol) {
+    case 'ethereum': 
+    signatures = utils.contractEventSignatures
+      break;
+    case 'corda': 
+      signatures = utils.contractEventSignaturesCorda
+      break;
+    }
+  return signatures;
+} 
+
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = processRawMessage(message);
   log.info(`Event batch (${messageArray.length})`)
@@ -127,25 +140,25 @@ const handleMessage = async (message: string) => {
     const blockchainData: IDBBlockchainData = getBlockchainData(message);
     try {
       switch (message.signature) {
-        case utils.contractEventSignatures.MEMBER_REGISTERED:
+        case eventSignature().MEMBER_REGISTERED:
           await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered, blockchainData); break;
-        case utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED:
-        case utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+        case eventSignature().DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
+        case eventSignature().DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+        case eventSignature().STRUCTURED_ASSET_DEFINITION_CREATED:
+        case eventSignature().UNSTRUCTURED_ASSET_DEFINITION_CREATED:
           await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated, blockchainData); break;
-        case utils.contractEventSignatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
-        case utils.contractEventSignatures.PAYMENT_DEFINITION_CREATED:
+        case eventSignature().DESCRIBED_PAYMENT_DEFINITION_CREATED:
+        case eventSignature().PAYMENT_DEFINITION_CREATED:
           await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated, blockchainData); break;
-        case utils.contractEventSignatures.ASSET_INSTANCE_CREATED:
-        case utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED:
+        case eventSignature().ASSET_INSTANCE_CREATED:
+        case eventSignature().DESCRIBED_ASSET_INSTANCE_CREATED:
           await assetInstancesHandler.handleAssetInstanceCreatedEvent(message.data as IEventAssetInstanceCreated, blockchainData); break;
-        case utils.contractEventSignatures.ASSET_INSTANCE_BATCH_CREATED:
+        case eventSignature().ASSET_INSTANCE_BATCH_CREATED:
           await assetInstancesHandler.handleAssetInstanceBatchCreatedEvent(message.data as IEventAssetInstanceBatchCreated, blockchainData); break;
-        case utils.contractEventSignatures.DESCRIBED_PAYMENT_INSTANCE_CREATED:
-        case utils.contractEventSignatures.PAYMENT_INSTANCE_CREATED:
+        case eventSignature().DESCRIBED_PAYMENT_INSTANCE_CREATED:
+        case eventSignature().PAYMENT_INSTANCE_CREATED:
           await paymentInstanceHandler.handlePaymentInstanceCreatedEvent(message.data as IEventPaymentInstanceCreated, blockchainData); break;
-        case utils.contractEventSignatures.ASSET_PROPERTY_SET:
+        case eventSignature().ASSET_PROPERTY_SET:
           await assetInstancesHandler.handleSetAssetInstancePropertyEvent(message.data as IEventAssetInstancePropertySet, blockchainData); break;
       }
     } catch (err) {
