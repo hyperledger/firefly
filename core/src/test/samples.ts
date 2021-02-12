@@ -77,7 +77,7 @@ export const testAssetDefinition = {
     isContentUnique: true,
     descriptionSchema: testDescription.schema.object,
     contentSchema: testContent.schema.object,
-    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    // assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
   },
   ipfsSha256: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
   ipfsMultiHash: 'QmPcTWXWiUEwect513QdDtw1wa9QWcRgGTVebGbjhMKNxV',
@@ -99,7 +99,7 @@ export const getStructuredAssetDefinition = (assetDefinitionID: string, name: st
     isContentPrivate: contentPrivate,
     isContentUnique: true,
     contentSchema: testContent.schema.object,
-    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    // assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
   }
 };
 
@@ -109,6 +109,6 @@ export const getUnstructuredAssetDefinition = (assetDefinitionID: string, name: 
     name: name,
     isContentPrivate: contentPrivate,
     isContentUnique: true,
-    assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
+    // assetDefinitionHash: '0x12e850feabadae5158666a3d03b449fbd4f04582ef0c9b5a91247a02af110016',
   }
 };

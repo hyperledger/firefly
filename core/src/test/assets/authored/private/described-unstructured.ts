@@ -1,14 +1,15 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testDescription } from '../../../samples';
 
 describe('Assets: authored - private - described - unstructured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - described - unstructured';
 
   describe('Create asset definition', () => {
 
@@ -22,16 +23,16 @@ describe('Assets: authored - private - described - unstructured', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testAssetDefinition.ipfsMultiHash });
+        .reply(200, { Hash: 'QmdkH21EiyQXrgo2sPKtSijtvfYBKqQedBxB7W4RJ4m6jo' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - described - unstructured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
-          descriptionSchema: testAssetDefinition.sample.descriptionSchema
+          descriptionSchema: testDescription.schema.object
         })
         .expect(200);
         assert.deepStrictEqual(result.body.status, 'submitted');
@@ -58,11 +59,17 @@ describe('Assets: authored - private - described - unstructured', async () => {
         })
       });
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'authored - private - described - unstructured', true));
+        .get('/ipfs/QmdkH21EiyQXrgo2sPKtSijtvfYBKqQedBxB7W4RJ4m6jo')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object
+        });
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000001',
-        assetDefinitionHash: testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0xe4ecb77d78de507f68f5b410e0972cd5c05959ec1de041bb56bde25277786f96',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -83,7 +90,7 @@ describe('Assets: authored - private - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
       assert.strictEqual(typeof assetDefinition.submitted, 'number');

@@ -6,13 +6,15 @@ import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import indexSchema from '../schemas/indexes.json'
+import assetDefinitionSchema from '../schemas/asset-definition.json'
+
 import {
   IAPIGatewayAsyncResponse,
   IAPIGatewaySyncResponse,
   IDBBlockchainData,
   IDBAssetDefinition,
   IEventAssetDefinitionCreated,
-  IIPFSAssetDefinitionRequest
+  IAssetDefinitionRequest
 } from '../lib/interfaces';
 
 const ajv = new Ajv();
@@ -52,7 +54,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
   const timestamp = utils.getTimestamp();
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
 
-  const assetDefinition: IIPFSAssetDefinitionRequest = {
+  const assetDefinition: IAssetDefinitionRequest = {
     assetDefinitionID,
     name,
     isContentPrivate,
@@ -82,7 +84,13 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
 };
 
 export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
+  ////
   let assetDefinition = await ipfs.downloadJSON<IDBAssetDefinition>(utils.sha256ToIPFSHash(event.assetDefinitionHash));
+
+  if (!ajv.validate(assetDefinitionSchema, assetDefinition)) {
+    throw new RequestError(`Invalid asset definition content ${JSON.stringify(ajv.errors)}`, 400);
+  }
+
   const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinition.assetDefinitionID);
   if (dbAssetDefinitionByID !== null) {
     if (dbAssetDefinitionByID.transactionHash !== undefined) {

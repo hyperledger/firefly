@@ -74,6 +74,18 @@ export interface IAPIGatewaySyncResponse {
 
 }
 
+// IPFS INTERFACES
+
+export interface IIPFSAssetDefinition {
+  assetDefinitionID: string
+  name: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  descriptionSchema?: object
+  contentSchema?: object
+  indexes?: {fields: string[], unique?: boolean}[]
+}
+
 // REQUEST INTERFACES
 
 export interface IRequestMultiPartContent {
@@ -84,7 +96,7 @@ export interface IRequestMultiPartContent {
   contentFileName: string
 }
 
-export interface IIPFSAssetDefinitionRequest {
+export interface IAssetDefinitionRequest {
   assetDefinitionID: string
   name: string
   author?: string
@@ -201,18 +213,11 @@ export interface IDBMember extends IDBBlockchainPinned {
   docExchangeDestination: string
 }
 
-export interface IDBAssetDefinition extends IDBBlockchainPinned {
+export interface IDBAssetDefinition extends IIPFSAssetDefinition, IDBBlockchainPinned {
   _id?: string
-  assetDefinitionID: string
   author: string
-  name: string
-  isContentPrivate: boolean
-  isContentUnique: boolean
-  descriptionSchema?: object
-  contentSchema?: object
   assetDefinitionHash: string
   conflict?: boolean
-  indexes?: {fields: string[], unique?: boolean}[]
 }
 
 export interface IDBPaymentDefinition extends IDBBlockchainPinned {
