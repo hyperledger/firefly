@@ -86,15 +86,30 @@ export interface IRequestMultiPartContent {
 
 // EVENT STREAM INTERFACES
 
+
+interface IStateRefCorda {
+  txhash: string,
+  index: number
+}
+
+export interface IEventStreamRawMessageCorda {
+  data: object,
+  subId: string,
+  signature: string,
+  stateRef: IStateRefCorda,
+  recordedTime: string,
+  consumedTime: string
+}
+
 export interface IEventStreamMessage {
-  address: string
-  blockNumber: string
-  transactionIndex: string
+  address?: string
+  blockNumber?: string
+  transactionIndex?: string
   transactionHash: string
   data: object
   subId: string
   signature: string
-  logIndex: string
+  logIndex?: string
 }
 
 export interface IEventMemberRegistered {
@@ -175,7 +190,7 @@ export interface IDatabaseProvider {
 }
 
 export interface IDBBlockchainData {
-  blockNumber: number,
+  blockNumber?: number,
   transactionHash: string
 }
 

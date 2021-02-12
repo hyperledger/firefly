@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
-import { IDBBlockchainData, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated, IEventStreamMessage } from '../lib/interfaces';
+import { IDBBlockchainData, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated, IEventStreamMessage, IEventStreamRawMessageCorda } from '../lib/interfaces';
 import * as membersHandler from '../handlers/members';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
@@ -75,15 +75,56 @@ const heartBeat = () => {
   }, utils.constants.EVENT_STREAM_PING_TIMEOUT_SECONDS * 1000);
 }
 
+const processRawMessage = (message: string) => {
+  var processedMessages: Array<IEventStreamMessage>;
+  switch(config.protocol) {
+    case 'ethereum':
+      processedMessages = JSON.parse(message);
+      break;
+    case 'corda':
+      const cordaMessages: Array<IEventStreamRawMessageCorda> = JSON.parse(message);
+      processedMessages = cordaMessages.map(msg => {
+        var processedMessage: IEventStreamMessage = {
+          data: {
+            ...msg.data,
+            timestamp: msg.recordedTime
+          },
+          transactionHash: msg.stateRef.txhash,
+          subId: msg.subId,
+          signature: msg.signature
+          };
+        return processedMessage
+      }) 
+      break;
+  }
+  return processedMessages;
+}
+
+const getBlockchainData = (message: IEventStreamMessage) => {
+  var blockchainData: IDBBlockchainData;
+  switch(config.protocol) {
+    case 'ethereum': 
+      blockchainData = {
+        blockNumber: Number(message.blockNumber),
+        transactionHash: message.transactionHash
+      }
+      break;
+    case 'corda': {
+      blockchainData = {
+        transactionHash: message.transactionHash
+      }
+      break;
+    }
+  }
+  return blockchainData;
+}
+
 const handleMessage = async (message: string) => {
-  const messageArray: Array<IEventStreamMessage> = JSON.parse(message);
+  const messageArray: Array<IEventStreamMessage> = processRawMessage(message);
   log.info(`Event batch (${messageArray.length})`)
   for (const message of messageArray) {
     log.trace(`Event ${JSON.stringify(message)}`);
-    const blockchainData: IDBBlockchainData = {
-      blockNumber: Number(message.blockNumber),
-      transactionHash: message.transactionHash
-    }
+    const blockchainData: IDBBlockchainData = getBlockchainData(message);
     try {
       switch (message.signature) {
         case utils.contractEventSignatures.MEMBER_REGISTERED:
