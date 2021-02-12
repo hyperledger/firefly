@@ -4,7 +4,6 @@ import request from 'supertest';
 import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
-import { testAssetDefinition, getUnstructuredAssetDefinition } from '../../../samples';
 
 describe('Asset definitions: unauthored - unstructured', async () => {
 
@@ -22,11 +21,17 @@ describe('Asset definitions: unauthored - unstructured', async () => {
         })
       });
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getUnstructuredAssetDefinition(assetDefinitionID, 'unauthored - private - unstructured', true));
+        .get('/ipfs/QmVB7euGyrkSZPTaoBEZB4rou3A7Za48GNKidL1hSK2bsA')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - private - unstructured',
+          isContentPrivate: true,
+          isContentUnique: true
+        });
+
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000002',
-        assetDefinitionHash: testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0x65907788050862e3317097ac1b1b7dc6cd9c7b35ea11dcccbcef727aae01450d',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{

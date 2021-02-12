@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { getStructuredAssetDefinition, testAssetDefinition, testContent } from '../../../samples';
+import { testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -16,8 +16,14 @@ describe('Assets: unauthored - private - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getStructuredAssetDefinition(assetDefinitionID, 'unauthored - private - structured', true));
+        .get('/ipfs/QmUsjZyav8UhEvK41EGCgntbfGJT3fQx5KRzFw8uCFhqTe')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - private - structured',
+          isContentPrivate: true,
+          isContentUnique: true,
+          contentSchema: testContent.schema.object,
+        });
 
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -27,7 +33,7 @@ describe('Assets: unauthored - private - structured', async () => {
       });
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000002',
-        assetDefinitionHash: testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0x611c9f2515ec393c0fd9cacaf51caff2a4462b6d0571b2b5600dc7ea961b8c49',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -46,7 +52,7 @@ describe('Assets: unauthored - private - structured', async () => {
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - private - structured');
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
-      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
