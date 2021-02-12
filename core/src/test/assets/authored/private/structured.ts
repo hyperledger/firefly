@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testAssetDefinition, testContent, getStructuredAssetDefinition } from '../../../samples';
+import { testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -9,6 +9,7 @@ import * as utils from '../../../../lib/utils';
 describe('Assets: authored - structured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - structured';
   const timestamp = utils.getTimestamp();
 
   describe('Create asset definition', () => {
@@ -21,16 +22,16 @@ describe('Assets: authored - structured', async () => {
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: 'QmV85fRf9jng5zhcSC4Zef2dy8ypouazgckRz4GhA5cUgw' });
+        .reply(200, { Hash: 'Qmf71q7zspRmzvH6yVhkrpWCnK54rvxyj6XSTJ5tgBiZfV' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - structured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
-          contentSchema: testAssetDefinition.sample.contentSchema
+          contentSchema: testContent.schema.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
@@ -44,7 +45,7 @@ describe('Assets: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - structured');
       assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
@@ -59,11 +60,17 @@ describe('Assets: authored - structured', async () => {
       });
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getStructuredAssetDefinition(assetDefinitionID, 'authored - private - structured', true),);
+        .get('/ipfs/Qmf71q7zspRmzvH6yVhkrpWCnK54rvxyj6XSTJ5tgBiZfV')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+          contentSchema: testContent.schema.object
+        });
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000001',
-        assetDefinitionHash: testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0xf9186d8e20d9e6786aa5e99e8c83be79ef719ddb1482ddcdf3dccf98bf24cd60',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -84,7 +91,7 @@ describe('Assets: authored - structured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - structured');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
