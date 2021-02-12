@@ -1,10 +1,10 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testDescription } from '../../../samples';
 
 describe('Assets: unauthored - private - described - unstructured', async () => {
 
@@ -17,8 +17,14 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'unauthored - private - described - unstructured', true));
+        .get('/ipfs/QmbUq3WLWyrXcEtBH8LTpiq3Usg5mkWb4kAGPigg4a7YKU')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - private - described - unstructured',
+          isContentPrivate: true,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object,
+        });
 
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -28,7 +34,7 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
       });
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000002',
-        assetDefinitionHash:testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0xc34043022814b07d606980cbd6d605952943faddadac9f32419ee33c2bdf0eab',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -47,7 +53,7 @@ describe('Assets: unauthored - private - described - unstructured', async () => 
       const assetDefinition = getAssetDefinitionsResponse.body.find((assetDefinition: IDBAssetDefinition) => assetDefinition.name === 'unauthored - private - described - unstructured');
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - described - unstructured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
