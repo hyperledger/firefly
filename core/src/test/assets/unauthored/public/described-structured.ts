@@ -15,30 +15,30 @@ describe('Assets: unauthored - public - described - structured', async () => {
 
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
-      nock('https://ipfs.kaleido.io')
-      .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
-      .reply(200, testDescription.schema.object)
-      .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
-      .reply(200, testContent.schema.object);
-
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
           assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
           resolve();
         })
       });
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/Qma49mzceUqCmZrBsFAzC26XnwT1gVzhTBkby2JZsYiaUF')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - public - described - structured',
+          isContentPrivate: false,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object,
+          contentSchema: testContent.schema.object
+        });
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - public - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: false,
-        isContentUnique: true,
+        assetDefinitionHash: '0xae123c4d3b9e77716be55ea8ad616b74ac67c455951698f4e40f22e1ed7981e8',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

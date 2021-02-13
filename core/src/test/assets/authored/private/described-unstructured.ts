@@ -1,14 +1,15 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testDescription } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testDescription } from '../../../samples';
 
 describe('Assets: authored - private - described - unstructured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - described - unstructured';
 
   describe('Create asset definition', () => {
 
@@ -17,17 +18,17 @@ describe('Assets: authored - private - described - unstructured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createDescribedUnstructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.schema.ipfsMultiHash });
+        .reply(200, { Hash: 'QmdkH21EiyQXrgo2sPKtSijtvfYBKqQedBxB7W4RJ4m6jo' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - described - unstructured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
@@ -45,7 +46,6 @@ describe('Assets: authored - private - described - unstructured', async () => {
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.isContentUnique, true);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
       assert.strictEqual(assetDefinition.name, 'authored - private - described - unstructured');
       assert.strictEqual(assetDefinition.receipt, 'my-receipt-id');
       assert.strictEqual(typeof assetDefinition.submitted, 'number');
@@ -58,17 +58,22 @@ describe('Assets: authored - private - described - unstructured', async () => {
           resolve();
         })
       });
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/QmdkH21EiyQXrgo2sPKtSijtvfYBKqQedBxB7W4RJ4m6jo')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object
+        });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        name: 'authored - private - described - unstructured',
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: '0xe4ecb77d78de507f68f5b410e0972cd5c05959ec1de041bb56bde25277786f96',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

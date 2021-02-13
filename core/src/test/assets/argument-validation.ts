@@ -35,6 +35,20 @@ describe('Asset definitions - argument validation', async () => {
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition author' });
   });
 
+  it('Attempting to add an asset definition with an invalid index schema should raise an error', async () => {
+    const result = await request(app)
+      .post('/api/v1/assets/definitions')
+      .send({
+        name: 'My asset definition',
+        author: '0x0000000000000000000000000000000000000001',
+        isContentPrivate: false,
+        isContentUnique: true,
+        indexes: {}
+      })
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Indexes do not conform to index schema' });
+  });
+
   it('Attempting to add an asset definition without indicating if the content should be private or not should raise an error', async () => {
     const result = await request(app)
       .post('/api/v1/assets/definitions')
