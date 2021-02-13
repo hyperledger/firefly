@@ -1,6 +1,6 @@
 import { Db, MongoClient } from 'mongodb';
 import { config } from '../../lib/config';
-import { databaseCollectionName, IDatabaseProvider } from '../../lib/interfaces';
+import { databaseCollectionName, IDatabaseProvider, indexes } from '../../lib/interfaces';
 import { databaseCollectionIndexes } from '../../lib/utils';
 
 let db: Db;
@@ -21,7 +21,7 @@ export default class MongoDBProvider implements IDatabaseProvider {
     }
   }
 
-  async createCollection(collectionName: string, indexes: { fields: string[], unique?: boolean }[]) {
+  async createCollection(collectionName: string, indexes: indexes) {
     try {
       for (const index of indexes) {
         const fields: { [f: string]: number } = {};
@@ -33,10 +33,6 @@ export default class MongoDBProvider implements IDatabaseProvider {
     } catch (err) {
       throw new Error(`Failed to create collection. ${err}`);
     }
-  }
-
-  async createIndexes(collectionName: string, indexes: { fields: string[], unique?: boolean }[]) {
-    this.createCollection(collectionName, indexes);
   }
 
   count(collectionName: databaseCollectionName, query: object): Promise<number> {

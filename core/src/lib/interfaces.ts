@@ -83,7 +83,7 @@ export interface IIPFSAssetDefinition {
   isContentUnique: boolean
   descriptionSchema?: object
   contentSchema?: object
-  indexes?: {fields: string[], unique?: boolean}[]
+  indexes?: indexes
 }
 
 // REQUEST INTERFACES
@@ -102,7 +102,7 @@ export interface IAssetDefinitionRequest {
   author?: string
   isContentPrivate: boolean
   isContentUnique: boolean
-  indexes?: {fields: string[], unique?: boolean}[]
+  indexes?: indexes
   descriptionSchema?: object
   contentSchema?: object
 }
@@ -182,10 +182,11 @@ export interface IEventAssetInstancePropertySet {
 export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'payment-instances' | 'batches' | customCollectionName
 export type customCollectionName = string
 
+export type indexes = {fields: string[], unique?: boolean}[];
+
 export interface IDatabaseProvider {
   init: () => Promise<void>
-  createCollection: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
-  createIndexes: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
+  createCollection: (collectionName: string, indexes: indexes) => Promise<void>
   count: (collectionName: databaseCollectionName, query: object) => Promise<number>
   find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
   findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
