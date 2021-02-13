@@ -22,10 +22,6 @@ export const createCollection = (collectionName: string, indexes: { fields: stri
   return databaseProvider.createCollection(collectionName, indexes);
 };
 
-export const createIndexes = (collectionName: string, indexes: { fields: string[], unique?: boolean }[]) => {
-  return databaseProvider.createIndexes(collectionName, indexes);
-};
-
 // MEMBER QUERIES
 
 export const retrieveMemberByAddress = (address: string): Promise<IDBMember | null> => {

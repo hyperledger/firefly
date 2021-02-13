@@ -1,7 +1,7 @@
 import { encode, decode } from 'bs58';
 import crypto from 'crypto';
 import axios, { AxiosRequestConfig } from 'axios';
-import { databaseCollectionName } from './interfaces';
+import { databaseCollectionName, indexes } from './interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
 
 export const constants = {
@@ -31,7 +31,7 @@ export const constants = {
 
 const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
 
-export const databaseCollectionIndexes: { [name in databaseCollectionName]: {fields: string[], unique?: boolean}[] } = {
+export const databaseCollectionIndexes: { [name in databaseCollectionName]: indexes } = {
   members: [{fields: ['address'], unique: true}],
   'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
   'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],

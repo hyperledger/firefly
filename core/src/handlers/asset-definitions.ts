@@ -14,7 +14,8 @@ import {
   IDBBlockchainData,
   IDBAssetDefinition,
   IEventAssetDefinitionCreated,
-  IAssetDefinitionRequest
+  IAssetDefinitionRequest,
+  indexes
 } from '../lib/interfaces';
 
 const ajv = new Ajv();
@@ -77,6 +78,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     descriptionSchema,
     assetDefinitionHash,
     contentSchema,
+    indexes,
     submitted: timestamp,
     receipt
   });
@@ -114,9 +116,10 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
   });
 
   const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
-  // always create assetInstanceID index
-  await database.createCollection(collectionName, [{ fields: ['assetInstanceID'], unique: true }]);
-  if (assetDefinition.indexes) {
-    database.createIndexes(collectionName, assetDefinition.indexes);
+  let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
+  if (assetDefinition.indexes !== undefined) {
+    indexes = indexes.concat(assetDefinition.indexes)
   }
+  await database.createCollection(collectionName, indexes);
+
 };
