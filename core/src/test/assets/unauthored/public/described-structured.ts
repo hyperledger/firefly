@@ -1,5 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testDescription, testContent, testAssetDefinition, getMockedAssetDefinition } from '../../../samples';
+import { testDescription, testContent } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
@@ -22,11 +22,19 @@ describe('Assets: unauthored - public - described - structured', async () => {
         })
       });
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testAssetDefinition.ipfsMultiHash}`)
-        .reply(200, getMockedAssetDefinition(assetDefinitionID, 'unauthored - public - described - structured', false));
+        .get('/ipfs/Qma49mzceUqCmZrBsFAzC26XnwT1gVzhTBkby2JZsYiaUF')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - public - described - structured',
+          isContentPrivate: false,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object,
+          contentSchema: testContent.schema.object
+        });
+
       const data: IEventAssetDefinitionCreated = {
         author: '0x0000000000000000000000000000000000000002',
-        assetDefinitionHash: testAssetDefinition.ipfsSha256,
+        assetDefinitionHash: '0xae123c4d3b9e77716be55ea8ad616b74ac67c455951698f4e40f22e1ed7981e8',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -46,8 +54,8 @@ describe('Assets: unauthored - public - described - structured', async () => {
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(assetDefinition.isContentPrivate, false);
-      assert.deepStrictEqual(assetDefinition.descriptionSchema, testAssetDefinition.sample.descriptionSchema);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testAssetDefinition.sample.contentSchema);
+      assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
       assert.strictEqual(assetDefinition.name, 'unauthored - public - described - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);
       assert.strictEqual(assetDefinition.submitted, undefined);
