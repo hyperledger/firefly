@@ -36,7 +36,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
-  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: {fields: string[], unique?: boolean}[] | undefined, sync: boolean) => {
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
@@ -84,13 +84,10 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
 };
 
 export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  ////
   let assetDefinition = await ipfs.downloadJSON<IDBAssetDefinition>(utils.sha256ToIPFSHash(event.assetDefinitionHash));
-
   if (!ajv.validate(assetDefinitionSchema, assetDefinition)) {
     throw new RequestError(`Invalid asset definition content ${JSON.stringify(ajv.errors)}`, 400);
   }
-
   const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinition.assetDefinitionID);
   if (dbAssetDefinitionByID !== null) {
     if (dbAssetDefinitionByID.transactionHash !== undefined) {
@@ -118,7 +115,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
 
   const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
   // always create assetInstanceID index
-  await database.createCollection(collectionName, [{fields: ['assetInstanceID'], unique: true}]);
+  await database.createCollection(collectionName, [{ fields: ['assetInstanceID'], unique: true }]);
   if (assetDefinition.indexes) {
     database.createIndexes(collectionName, assetDefinition.indexes);
   }
