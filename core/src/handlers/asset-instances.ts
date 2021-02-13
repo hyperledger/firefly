@@ -317,7 +317,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID, eventAssetInstanceID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
   }
