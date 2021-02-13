@@ -37,7 +37,7 @@ export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, a
     throw new RequestError('Asset definition not found', 500);
   }
   if (content) {
-    if (assetDefinition.contentSchemaHash) {
+    if (assetDefinition.contentSchema) {
       return assetInstance.content;
     } else {
       try {
@@ -186,7 +186,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
@@ -317,7 +317,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
   const eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
-  const dbAssetInstance = await database.retrieveAssetInstanceByID(event.assetDefinitionID, eventAssetInstanceID);
+  const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
   }
