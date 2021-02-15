@@ -1,14 +1,15 @@
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testDescription } from '../../../samples';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
 import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
+import { testDescription } from '../../../samples';
 
 describe('Asset definitions: authored - public - described - unstructured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - public - described - unstructured';
 
   describe('Create asset definition', () => {
 
@@ -17,17 +18,17 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createDescribedUnstructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.schema.ipfsMultiHash });
+        .reply(200, { Hash: 'QmedsLGSbtuo3GsNjh2F4u2nDpNyjVSTkYGet9KtG1WCY5' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - public - described - unstructured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: false,
           isContentUnique: true,
@@ -58,17 +59,24 @@ describe('Asset definitions: authored - public - described - unstructured', asyn
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/QmedsLGSbtuo3GsNjh2F4u2nDpNyjVSTkYGet9KtG1WCY5')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: false,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object
+        });
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - public - described - unstructured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        isContentPrivate: false,
-        isContentUnique: true,
+        assetDefinitionHash: '0xf22423517fb1783b6b1e913f3915fa3215396000412d3420204b1394ab31e03e',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

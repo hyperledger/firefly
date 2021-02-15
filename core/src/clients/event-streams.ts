@@ -20,7 +20,7 @@ let disconnectionTimeout: NodeJS.Timeout;
 export const init = () => {
   ws = new WebSocket(config.eventStreams.wsEndpoint, {
     headers: {
-      Authorization: 'Basic ' + Buffer.from(`${config.protocolAppCredentials.user}:${config.protocolAppCredentials.password}`).toString('base64')
+      Authorization: 'Basic ' + Buffer.from(`${config.ledgerAppCredentials.user}:${config.ledgerAppCredentials.password}`).toString('base64')
     }
   });
   addEventHandlers();
@@ -142,10 +142,7 @@ const handleMessage = async (message: string) => {
       switch (message.signature) {
         case eventSignature().MEMBER_REGISTERED:
           await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered, blockchainData); break;
-        case eventSignature().DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED:
-        case eventSignature().DESCRIBED_UNSTRUCTURED_ASSET_DEFINITION_CREATED:
-        case eventSignature().STRUCTURED_ASSET_DEFINITION_CREATED:
-        case eventSignature().UNSTRUCTURED_ASSET_DEFINITION_CREATED:
+        case eventSignature().ASSET_DEFINITION_CREATED:
           await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated, blockchainData); break;
         case eventSignature().DESCRIBED_PAYMENT_DEFINITION_CREATED:
         case eventSignature().PAYMENT_DEFINITION_CREATED:

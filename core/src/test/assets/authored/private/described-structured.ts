@@ -6,12 +6,13 @@ import { promisify } from 'util';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
 import * as utils from '../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent, testDescription } from '../../../samples';
+import { testContent, testDescription, testIndexes } from '../../../samples';
 const delay = promisify(setTimeout);
 
 describe('Assets: authored - private - described - structured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - described - structured';
   const timestamp = utils.getTimestamp();
   const batchHashSha256 = '0x' + createHash('sha256').update(randomBytes(10)).digest().toString('hex');
   const batchHashIPFSMulti = utils.sha256ToIPFSHash(batchHashSha256);
@@ -34,24 +35,23 @@ describe('Assets: authored - private - described - structured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createDescribedStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: testDescription.schema.ipfsMultiHash })
-        .post('/api/v0/add')
-        .reply(200, { Hash: testContent.schema.ipfsMultiHash });
+        .reply(200, { Hash: 'QmQX1g8GwrMuACuMfQmKXzeYd7yXMXPpcUaFMqLUzSv1yL' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - described - structured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
           descriptionSchema: testDescription.schema.object,
-          contentSchema: testContent.schema.object
+          contentSchema: testContent.schema.object,
+          indexes: testIndexes
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
@@ -84,18 +84,25 @@ describe('Assets: authored - private - described - structured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/QmQX1g8GwrMuACuMfQmKXzeYd7yXMXPpcUaFMqLUzSv1yL')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object,
+          contentSchema: testContent.schema.object
+        });
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - private - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: '0x205ee35b47f713845ea616c805e346cb90e9de82e56069f0de318c59e57d867b',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -160,9 +167,7 @@ describe('Assets: authored - private - described - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.descriptionHash, '0x' + utils.getSha256(JSON.stringify(testDescription.sample.object)));
       assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.docExchangeSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(typeof assetInstance.submitted, 'number');
       assert.strictEqual(typeof assetInstance.batchID, 'string');
@@ -220,9 +225,7 @@ describe('Assets: authored - private - described - structured', async () => {
       const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
       assert.strictEqual(assetInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
-      assert.strictEqual(assetInstance.descriptionHash, '0x' + utils.getSha256(JSON.stringify(testDescription.sample.object)));
       assert.deepStrictEqual(assetInstance.description, testDescription.sample.object);
-      assert.strictEqual(assetInstance.contentHash, testContent.sample.docExchangeSha256);
       assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
       assert.strictEqual(assetInstance.timestamp, timestamp);
       assert.strictEqual(typeof assetInstance.submitted, 'number');

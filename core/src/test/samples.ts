@@ -47,8 +47,6 @@ export const testContent = {
         }
       }
     },
-    ipfsSha256: '0x64c97929fb90da1b94d560a29d8522c77b6c662588abb6ad23f1a0377250a2b0',
-    ipfsMultiHash: 'QmV85fRf9jng5zhcSC4Zef2dy8ypouazgckRz4GhA5cUgw'
   },
   sample: {
     object: {
@@ -62,3 +60,13 @@ export const testContent = {
   }
 };
 
+export const testIndexes = [
+  {
+    fields: ["author"],
+    unique: false
+  },
+  {
+    fields: ["author", "assetDefinitionID"],
+    unique: false
+  }
+];
