@@ -20,7 +20,7 @@ let disconnectionTimeout: NodeJS.Timeout;
 export const init = () => {
   ws = new WebSocket(config.eventStreams.wsEndpoint, {
     headers: {
-      Authorization: 'Basic ' + Buffer.from(`${config.ledgerAppCredentials.user}:${config.ledgerAppCredentials.password}`).toString('base64')
+      Authorization: 'Basic ' + Buffer.from(`${getAppCreds().user}:${getAppCreds().password}`).toString('base64')
     }
   });
   addEventHandlers();
@@ -34,6 +34,11 @@ export const shutDown = () => {
     clearTimeout(heartBeatTimeout);
     ws.close();
   }
+};
+
+const getAppCreds = () => {
+  if(config.ledgerAppCredentials) return config.ledgerAppCredentials;
+  return config.appCredentials;
 };
 
 const addEventHandlers = () => {

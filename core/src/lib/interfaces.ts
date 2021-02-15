@@ -31,7 +31,7 @@ export interface IConfig {
     user: string
     password: string
   }
-  protocolAppCredentials: {
+  ledgerAppCredentials?: {
     user: string
     password: string
   }
