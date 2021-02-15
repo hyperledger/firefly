@@ -6,10 +6,18 @@ export interface IConfig {
   protocol: 'ethereum' | 'corda'
   apiGateway: {
     apiEndpoint: string
+    auth?: {
+      user: string
+      password: string
+    }
   }
   eventStreams: {
     wsEndpoint: string
     topic: string
+    auth?: {
+      user: string
+      password: string
+    }
   }
   ipfs: {
     apiEndpoint: string
@@ -28,10 +36,6 @@ export interface IConfig {
     destination: string
   }
   appCredentials: {
-    user: string
-    password: string
-  }
-  ledgerAppCredentials?: {
     user: string
     password: string
   }

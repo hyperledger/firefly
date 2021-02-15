@@ -37,7 +37,7 @@ export const shutDown = () => {
 };
 
 const getAppCreds = () => {
-  if(config.ledgerAppCredentials) return config.ledgerAppCredentials;
+  if(config.eventStreams.auth) return config.eventStreams.auth;
   return config.appCredentials;
 };
 
@@ -124,7 +124,7 @@ const getBlockchainData = (message: IEventStreamMessage) => {
   return blockchainData;
 }
 
-const eventSignature = () => {
+const eventSignatures = () => {
   var signatures;
   switch(config.protocol) {
     case 'ethereum': 
@@ -140,27 +140,28 @@ const eventSignature = () => {
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = processRawMessage(message);
   log.info(`Event batch (${messageArray.length})`)
+  const signatures = eventSignatures();
   for (const message of messageArray) {
     log.trace(`Event ${JSON.stringify(message)}`);
     const blockchainData: IDBBlockchainData = getBlockchainData(message);
     try {
       switch (message.signature) {
-        case eventSignature().MEMBER_REGISTERED:
+        case signatures.MEMBER_REGISTERED:
           await membersHandler.handleMemberRegisteredEvent(message.data as IEventMemberRegistered, blockchainData); break;
-        case eventSignature().ASSET_DEFINITION_CREATED:
+        case signatures.ASSET_DEFINITION_CREATED:
           await assetDefinitionsHandler.handleAssetDefinitionCreatedEvent(message.data as IEventAssetDefinitionCreated, blockchainData); break;
-        case eventSignature().DESCRIBED_PAYMENT_DEFINITION_CREATED:
-        case eventSignature().PAYMENT_DEFINITION_CREATED:
+        case signatures.DESCRIBED_PAYMENT_DEFINITION_CREATED:
+        case signatures.PAYMENT_DEFINITION_CREATED:
           await paymentDefinitionsHandler.handlePaymentDefinitionCreatedEvent(message.data as IEventPaymentDefinitionCreated, blockchainData); break;
-        case eventSignature().ASSET_INSTANCE_CREATED:
-        case eventSignature().DESCRIBED_ASSET_INSTANCE_CREATED:
+        case signatures.ASSET_INSTANCE_CREATED:
+        case signatures.DESCRIBED_ASSET_INSTANCE_CREATED:
           await assetInstancesHandler.handleAssetInstanceCreatedEvent(message.data as IEventAssetInstanceCreated, blockchainData); break;
-        case eventSignature().ASSET_INSTANCE_BATCH_CREATED:
+        case signatures.ASSET_INSTANCE_BATCH_CREATED:
           await assetInstancesHandler.handleAssetInstanceBatchCreatedEvent(message.data as IEventAssetInstanceBatchCreated, blockchainData); break;
-        case eventSignature().DESCRIBED_PAYMENT_INSTANCE_CREATED:
-        case eventSignature().PAYMENT_INSTANCE_CREATED:
+        case signatures.DESCRIBED_PAYMENT_INSTANCE_CREATED:
+        case signatures.PAYMENT_INSTANCE_CREATED:
           await paymentInstanceHandler.handlePaymentInstanceCreatedEvent(message.data as IEventPaymentInstanceCreated, blockchainData); break;
-        case eventSignature().ASSET_PROPERTY_SET:
+        case signatures.ASSET_PROPERTY_SET:
           await assetInstancesHandler.handleSetAssetInstancePropertyEvent(message.data as IEventAssetInstancePropertySet, blockchainData); break;
       }
     } catch (err) {
