@@ -5,7 +5,18 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventAssetDefinitionCreated } from '../lib/interfaces';
+import indexSchema from '../schemas/indexes.json'
+import assetDefinitionSchema from '../schemas/asset-definition.json'
+
+import {
+  IAPIGatewayAsyncResponse,
+  IAPIGatewaySyncResponse,
+  IDBBlockchainData,
+  IDBAssetDefinition,
+  IEventAssetDefinitionCreated,
+  IAssetDefinitionRequest,
+  indexes
+} from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -26,37 +37,37 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
-  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, sync: boolean) => {
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
   if (contentSchema !== undefined && !ajv.validateSchema(contentSchema)) {
     throw new RequestError('Invalid content schema', 400);
   }
+  if (indexes !== undefined && !ajv.validate(indexSchema, indexes)) {
+    throw new RequestError('Indexes do not conform to index schema', 400);
+  }
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
+
   const assetDefinitionID = uuidV4();
   const timestamp = utils.getTimestamp();
-  let descriptionSchemaHash: string | undefined;
-  let contentSchemaHash: string | undefined;
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
-  if (descriptionSchema) {
-    descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    if (contentSchema) {
-      contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-      apiGatewayResponse = await apiGateway.createDescribedStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
-        descriptionSchemaHash, contentSchemaHash, sync);
-    } else {
-      apiGatewayResponse = await apiGateway.createDescribedUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique,
-        descriptionSchemaHash, sync);
-    }
-  } else if (contentSchema) {
-    contentSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(contentSchema)));
-    apiGatewayResponse = await apiGateway.createStructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, contentSchemaHash, sync);
-  } else {
-    apiGatewayResponse = await apiGateway.createUnstructuredAssetDefinition(assetDefinitionID, name, author, isContentPrivate, isContentUnique, sync);
-  }
+
+  const assetDefinition: IAssetDefinitionRequest = {
+    assetDefinitionID,
+    name,
+    isContentPrivate,
+    isContentUnique,
+    descriptionSchema,
+    contentSchema,
+    indexes
+  };
+
+  const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
+
+  apiGatewayResponse = await apiGateway.createAssetDefinition(author, sync, assetDefinitionHash);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetDefinition({
     assetDefinitionID,
@@ -64,10 +75,10 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     name,
     isContentPrivate,
     isContentUnique,
-    descriptionSchemaHash,
     descriptionSchema,
-    contentSchemaHash,
+    assetDefinitionHash,
     contentSchema,
+    indexes,
     submitted: timestamp,
     receipt
   });
@@ -75,53 +86,40 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
 };
 
 export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefinitionCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  const assetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
-  const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinitionID);
+  let assetDefinition = await ipfs.downloadJSON<IDBAssetDefinition>(utils.sha256ToIPFSHash(event.assetDefinitionHash));
+  if (!ajv.validate(assetDefinitionSchema, assetDefinition)) {
+    throw new RequestError(`Invalid asset definition content ${JSON.stringify(ajv.errors)}`, 400);
+  }
+  const dbAssetDefinitionByID = await database.retrieveAssetDefinitionByID(assetDefinition.assetDefinitionID);
   if (dbAssetDefinitionByID !== null) {
     if (dbAssetDefinitionByID.transactionHash !== undefined) {
-      throw new Error(`Asset definition ID conflict ${assetDefinitionID}`);
+      throw new Error(`Asset definition ID conflict ${assetDefinition.assetDefinitionID}`);
     }
   } else {
-    const dbAssetDefinitionByName = await database.retrieveAssetDefinitionByName(event.name);
+    const dbAssetDefinitionByName = await database.retrieveAssetDefinitionByName(assetDefinition.name);
     if (dbAssetDefinitionByName !== null) {
       if (dbAssetDefinitionByName.transactionHash !== undefined) {
-        throw new Error(`Asset definition name conflict ${event.name}`);
+        throw new Error(`Asset definition name conflict ${dbAssetDefinitionByName.name}`);
       } else {
-        await database.markAssetDefinitionAsConflict(assetDefinitionID, Number(event.timestamp));
+        await database.markAssetDefinitionAsConflict(assetDefinition.assetDefinitionID, Number(event.timestamp));
       }
     }
   }
-  let descriptionSchema;
-  if (event.descriptionSchemaHash) {
-    if (event.descriptionSchemaHash === dbAssetDefinitionByID?.descriptionSchemaHash) {
-      descriptionSchema = dbAssetDefinitionByID?.descriptionSchema
-    } else {
-      descriptionSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.descriptionSchemaHash));
-    }
-  }
-  let contentSchema;
-  if (event.contentSchemaHash) {
-    if (event.contentSchemaHash === dbAssetDefinitionByID?.contentSchemaHash) {
-      contentSchema = dbAssetDefinitionByID.contentSchema;
-    } else {
-      contentSchema = await ipfs.downloadJSON<Object>(utils.sha256ToIPFSHash(event.contentSchemaHash));
-    }
-  }
+
   database.upsertAssetDefinition({
-    assetDefinitionID,
-    name: event.name,
+    ...assetDefinition,
     author: event.author,
-    isContentPrivate: event.isContentPrivate,
-    isContentUnique: event.isContentUnique,
-    descriptionSchemaHash: event.descriptionSchemaHash,
-    descriptionSchema,
-    contentSchemaHash: event.contentSchemaHash,
-    contentSchema,
+    assetDefinitionHash: event.assetDefinitionHash,
     timestamp: Number(event.timestamp),
     blockNumber,
     transactionHash
   });
 
-  const collectionName = `asset-instance-${assetDefinitionID}`;
-  await database.createCollection(collectionName, [{fields: ['assetInstanceID'], unique: true}]);
+  const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
+  let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
+  if (assetDefinition.indexes !== undefined) {
+    indexes = indexes.concat(assetDefinition.indexes)
+  }
+  await database.createCollection(collectionName, indexes);
+
 };

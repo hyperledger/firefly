@@ -38,7 +38,7 @@ const errorLogger = (err) => {
 };
 
 const apiKaleido = axios.default.create({
-  baseURL: process.env.KALEIDO_URL || 'https://console-us1.kaleido.io/api/v1',
+  baseURL: process.env.KALEIDO_URL || 'https://console-us1.kaleido.io/api/v1', // use 'https://control-dev.photic.io/api/v1' for Dev
   headers: {
     Authorization: `Bearer ${AuthToken}`
   }
@@ -129,14 +129,11 @@ async function ensureSubscriptions(kaleidoConnectAPI, stream) {
     ['Asset instance batch created', 'AssetInstanceBatchCreated'],
     ['Payment instance created', 'PaymentInstanceCreated'],
     ['Payment definition created', 'PaymentDefinitionCreated'],
-    ['Described unstructured asset definition created', 'DescribedUnstructuredAssetDefinitionCreated'],
-    ['Unstructured asset definition created', 'UnstructuredAssetDefinitionCreated'],
-    ['Structured asset definition created', 'StructuredAssetDefinitionCreated'],
+    ['Asset definition created', 'AssetDefinitionCreated'],
     ['Asset instance property set', 'AssetInstancePropertySet'],
     ['Described payment instance created', 'DescribedPaymentInstanceCreated'],
     ['Described asset instance created', 'DescribedAssetInstanceCreated'],
     ['Described payment definition created', 'DescribedPaymentDefinitionCreated'],
-    ['Described structured asset definition created', 'DescribedStructuredAssetDefinitionCreated'],
     ['Member registered', 'MemberRegistered']
   ]) {
     const fullName = `${argv.topic}-${eventName}`;

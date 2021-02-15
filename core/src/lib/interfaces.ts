@@ -78,6 +78,18 @@ export interface IAPIGatewaySyncResponse {
 
 }
 
+// IPFS INTERFACES
+
+export interface IIPFSAssetDefinition {
+  assetDefinitionID: string
+  name: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  descriptionSchema?: object
+  contentSchema?: object
+  indexes?: indexes
+}
+
 // REQUEST INTERFACES
 
 export interface IRequestMultiPartContent {
@@ -86,6 +98,17 @@ export interface IRequestMultiPartContent {
   description?: Promise<string>
   contentStream: NodeJS.ReadableStream
   contentFileName: string
+}
+
+export interface IAssetDefinitionRequest {
+  assetDefinitionID: string
+  name: string
+  author?: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  indexes?: indexes
+  descriptionSchema?: object
+  contentSchema?: object
 }
 
 // EVENT STREAM INTERFACES
@@ -130,13 +153,8 @@ export interface IEventMemberRegistered {
 }
 
 export interface IEventAssetDefinitionCreated {
-  assetDefinitionID: string
   author: string
-  name: string
-  isContentPrivate: boolean
-  isContentUnique: boolean
-  contentSchemaHash?: string
-  descriptionSchemaHash?: string
+  assetDefinitionHash: string
   timestamp: string
 }
 
@@ -187,9 +205,11 @@ export interface IEventAssetInstancePropertySet {
 export type databaseCollectionName = 'members' | 'asset-definitions' | 'payment-definitions' | 'payment-instances' | 'batches' | customCollectionName
 export type customCollectionName = string
 
+export type indexes = {fields: string[], unique?: boolean}[];
+
 export interface IDatabaseProvider {
   init: () => Promise<void>
-  createCollection: (collectionName: string, indexes: {fields: string[], unique?: boolean}[]) => Promise<void>
+  createCollection: (collectionName: string, indexes: indexes) => Promise<void>
   count: (collectionName: databaseCollectionName, query: object) => Promise<number>
   find: <T>(collectionName: databaseCollectionName, query: object, sort: object, skip: number, limit: number) => Promise<T[]>
   findOne: <T>(collectionName: databaseCollectionName, query: object) => Promise<T | null>
@@ -217,17 +237,10 @@ export interface IDBMember extends IDBBlockchainPinned {
   docExchangeDestination: string
 }
 
-export interface IDBAssetDefinition extends IDBBlockchainPinned {
+export interface IDBAssetDefinition extends IIPFSAssetDefinition, IDBBlockchainPinned {
   _id?: string
-  assetDefinitionID: string
   author: string
-  name: string
-  isContentPrivate: boolean
-  isContentUnique: boolean
-  descriptionSchemaHash?: string
-  descriptionSchema?: object
-  contentSchemaHash?: string
-  contentSchema?: object
+  assetDefinitionHash: string
   conflict?: boolean
 }
 

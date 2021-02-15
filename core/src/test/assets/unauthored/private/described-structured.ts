@@ -31,10 +31,15 @@ describe('Assets: unauthored - private - described - structured', async () => {
     it('Checks that the event stream notification for confirming the asset definition creation is handled', async () => {
 
       nock('https://ipfs.kaleido.io')
-        .get(`/ipfs/${testDescription.schema.ipfsMultiHash}`)
-        .reply(200, testDescription.schema.object)
-        .get(`/ipfs/${testContent.schema.ipfsMultiHash}`)
-        .reply(200, testContent.schema.object);
+        .get('/ipfs/QmbGq3hw6r5C3yUkGvqJHq7c67pyMHXxQJ6XBHUh9kf5Ex')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: 'unauthored - private - described - structured',
+          isContentPrivate: true,
+          isContentUnique: true,
+          descriptionSchema: testDescription.schema.object,
+          contentSchema: testContent.schema.object
+        });
 
       const eventPromise = new Promise<void>((resolve) => {
         mockEventStreamWebSocket.once('send', message => {
@@ -43,17 +48,12 @@ describe('Assets: unauthored - private - described - structured', async () => {
         })
       });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000002',
-        name: 'unauthored - private - described - structured',
-        descriptionSchemaHash: testDescription.schema.ipfsSha256,
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: '0xc02d4bc2c162538e1ca45d20c472b608520d99d6d3988383251d626b8a3411d9',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.DESCRIBED_STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -69,7 +69,7 @@ describe('Assets: unauthored - private - described - structured', async () => {
       assert.strictEqual(assetDefinition.assetDefinitionID, assetDefinitionID);
       assert.strictEqual(assetDefinition.author, '0x0000000000000000000000000000000000000002');
       assert.deepStrictEqual(assetDefinition.descriptionSchema, testDescription.schema.object);
-      assert.deepStrictEqual(assetDefinition.contentSchema, testContent.schema.object);
+      assert.deepStrictEqual(assetDefinition.contentSchema,testContent.schema.object);
       assert.strictEqual(assetDefinition.isContentPrivate, true);
       assert.strictEqual(assetDefinition.name, 'unauthored - private - described - structured');
       assert.strictEqual(assetDefinition.timestamp, timestamp);

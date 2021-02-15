@@ -1,6 +1,7 @@
 {
   "$schema": "../src/schemas/config.json",
   "port": 3000,
+  "protocol": "ethereum",
   "assetTrailInstanceID": "service-id",
   "apiGateway": {
     "apiEndpoint": "https://apigateway.kaleido.io"

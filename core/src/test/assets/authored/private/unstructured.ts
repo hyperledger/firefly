@@ -8,6 +8,7 @@ import * as utils from '../../../../lib/utils';
 describe('Assets: authored - private - unstructured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - unstructured';
 
   describe('Create private asset definition', async () => {
 
@@ -16,13 +17,17 @@ describe('Assets: authored - private - unstructured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createUnstructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
+
+      nock('https://ipfs.kaleido.io')
+        .post('/api/v0/add')
+        .reply(200, { Hash: 'QmZCxXPtG4t9QR5VWWrGsPzc5S7cY3dHmwGSwkobcdavpb' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - unstructured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
@@ -51,16 +56,23 @@ describe('Assets: authored - private - unstructured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/QmZCxXPtG4t9QR5VWWrGsPzc5S7cY3dHmwGSwkobcdavpb')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+        });
+
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - private - unstructured',
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: '0xa1780db691781aa3c276e32b24ca552eb08aef5af4671c65426653fda2996804',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.UNSTRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

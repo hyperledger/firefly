@@ -9,6 +9,7 @@ import * as utils from '../../../../lib/utils';
 describe('Assets: authored - structured', async () => {
 
   let assetDefinitionID: string;
+  const assetDefinitionName = 'authored - private - structured';
   const timestamp = utils.getTimestamp();
 
   describe('Create asset definition', () => {
@@ -16,17 +17,17 @@ describe('Assets: authored - structured', async () => {
     it('Checks that the asset definition can be added', async () => {
 
       nock('https://apigateway.kaleido.io')
-        .post('/createStructuredAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .post('/createAssetDefinition?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
         .reply(200, { id: 'my-receipt-id' });
 
       nock('https://ipfs.kaleido.io')
         .post('/api/v0/add')
-        .reply(200, { Hash: 'QmV85fRf9jng5zhcSC4Zef2dy8ypouazgckRz4GhA5cUgw' });
+        .reply(200, { Hash: 'Qmf71q7zspRmzvH6yVhkrpWCnK54rvxyj6XSTJ5tgBiZfV' });
 
       const result = await request(app)
         .post('/api/v1/assets/definitions')
         .send({
-          name: 'authored - private - structured',
+          name: assetDefinitionName,
           author: '0x0000000000000000000000000000000000000001',
           isContentPrivate: true,
           isContentUnique: true,
@@ -57,17 +58,23 @@ describe('Assets: authored - structured', async () => {
           resolve();
         })
       });
+
+      nock('https://ipfs.kaleido.io')
+        .get('/ipfs/Qmf71q7zspRmzvH6yVhkrpWCnK54rvxyj6XSTJ5tgBiZfV')
+        .reply(200, {
+          assetDefinitionID: assetDefinitionID,
+          name: assetDefinitionName,
+          isContentPrivate: true,
+          isContentUnique: true,
+          contentSchema: testContent.schema.object
+        });
       const data: IEventAssetDefinitionCreated = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: '0x0000000000000000000000000000000000000001',
-        name: 'authored - private - structured',
-        contentSchemaHash: testContent.schema.ipfsSha256,
-        isContentPrivate: true,
-        isContentUnique: true,
+        assetDefinitionHash: '0xf9186d8e20d9e6786aa5e99e8c83be79ef719ddb1482ddcdf3dccf98bf24cd60',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
-        signature: utils.contractEventSignatures.STRUCTURED_ASSET_DEFINITION_CREATED,
+        signature: utils.contractEventSignatures.ASSET_DEFINITION_CREATED,
         data,
         blockNumber: '123',
         transactionHash: '0x0000000000000000000000000000000000000000000000000000000000000000'

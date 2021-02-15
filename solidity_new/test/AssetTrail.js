@@ -38,19 +38,8 @@ const testAssetDefinitionIDs = [
   '0x4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a'
 ];
 
-const testAssetDefinitionNames = [
-  'My described structured asset',
-  'My described unstructured asset',
-  'My structured asset',
-  'My unstructured asset',
-];
-
-const testDescriptionSchemaHashes = [
+const testAssetDefinitionHashes = [
   '0x6ab9f1eb8f7d3388f4f9d586f66e99fd54080df2c446f0e58668b09c08a16dd0'
-];
-
-const testContentSchemaHashes = [
-  '0xd0f631ca1ddba8db3bcfcb9e057cdc98d0379f1bee00e75a545147a27dadd982'
 ];
 
 // Asset instance constants
@@ -171,106 +160,12 @@ contract('AssetTrail.sol', accounts => {
 
     });
 
-    describe('Described structured asset definitions', () => {
+    describe('Assets definitions', () => {
 
-      it('createDescribedStructuredAssetDefinition should raise an error if the name is empty', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createDescribedStructuredAssetDefinition(testAssetDefinitionIDs[0], '', true, true, testDescriptionSchemaHashes[0], testContentSchemaHashes[0]);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Invalid name'));
-      });
-
-      it('createDescribedStructuredAssetDefinition should create a new described structured asset definition and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createDescribedStructuredAssetDefinition(testAssetDefinitionIDs[0], testAssetDefinitionNames[0], true, true, testDescriptionSchemaHashes[0], testContentSchemaHashes[0]);
+      it('createAssetDefiniton should create a new asset definition and emit the corresponding event', async () => {
+        const result = await assetTrailContract.createAssetDefinition(testAssetDefinitionHashes[0]);
         const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[0]);
-        assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.name, testAssetDefinitionNames[0]);
-        assert.equal(logArgs.isContentPrivate, true);
-        assert.equal(logArgs.isContentUnique, true);
-        assert.equal(logArgs.descriptionSchemaHash, testDescriptionSchemaHashes[0]);
-        assert.equal(logArgs.contentSchemaHash, testContentSchemaHashes[0]);
-        assert(logArgs.timestamp.toNumber() > 0);
-      });
-
-    });
-
-    describe('Described unstructured asset definitions', () => {
-
-      it('createDescribedUnstructuredAssetDefinition should raise an error if the name is empty', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createDescribedUnstructuredAssetDefinition(testAssetDefinitionIDs[1], '', true, true, testDescriptionSchemaHashes[0]);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Invalid name'));
-      });
-
-      it('createDescribedUnstructuredAssetDefinition should create a new described unstructured asset definition and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createDescribedUnstructuredAssetDefinition(testAssetDefinitionIDs[1], testAssetDefinitionNames[1], true, true, testDescriptionSchemaHashes[0]);
-        const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[1]);
-        assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.name, testAssetDefinitionNames[1]);
-        assert.equal(logArgs.isContentPrivate, true);
-        assert.equal(logArgs.isContentUnique, true);
-        assert.equal(logArgs.descriptionSchemaHash, testDescriptionSchemaHashes[0]);
-        assert(logArgs.timestamp.toNumber() > 0);
-      });
-
-    });
-
-    describe('Structured asset definitions', () => {
-
-      it('createStructuredAssetDefinition should raise an error if the name is empty', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createStructuredAssetDefinition(testAssetDefinitionIDs[2], '', true, true, testContentSchemaHashes[0]);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Invalid name'));
-      });
-
-      it('createStructuredAssetDefinition should create a new structured asset definition and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createStructuredAssetDefinition(testAssetDefinitionIDs[2], testAssetDefinitionNames[2], true, true, testContentSchemaHashes[0]);
-        const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[2]);
-        assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.name, testAssetDefinitionNames[2]);
-        assert.equal(logArgs.isContentPrivate, true);
-        assert.equal(logArgs.isContentUnique, true);
-        assert.equal(logArgs.contentSchemaHash, testContentSchemaHashes[0]);
-        assert(logArgs.timestamp.toNumber() > 0);
-      });
-
-    });
-
-    describe('Unatructured asset definitions', () => {
-
-      it('createUnstructuredAssetDefinition should raise an error if the name is empty', async () => {
-        let exceptionMessage;
-        try {
-          await assetTrailContract.createUnstructuredAssetDefinition(testAssetDefinitionIDs[3], '', true, true);
-        } catch (err) {
-          exceptionMessage = err.message;
-        }
-        assert(exceptionMessage.includes('Invalid name'));
-      });
-
-      it('createUnstructuredAssetDefinition should create a new unstructured asset definition and emit the corresponding event', async () => {
-        const result = await assetTrailContract.createUnstructuredAssetDefinition(testAssetDefinitionIDs[3], testAssetDefinitionNames[3], true, true);
-        const logArgs = result.logs[0].args;
-        assert.equal(logArgs.assetDefinitionID, testAssetDefinitionIDs[3]);
-        assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.name, testAssetDefinitionNames[3]);
-        assert.equal(logArgs.isContentPrivate, true);
-        assert.equal(logArgs.isContentUnique, true);
-        assert(logArgs.timestamp.toNumber() > 0);
+        assert.equal(logArgs.assetDefinitionHash, testAssetDefinitionHashes[0]);
       });
 
     });

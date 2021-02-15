@@ -124,7 +124,7 @@
         }
       }
     },
-    "protocolAppCredentials": {
+    "ledgerAppCredentials": {
       "type": "object",
       "required": [
         "user",
