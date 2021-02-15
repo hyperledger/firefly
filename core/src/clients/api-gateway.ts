@@ -12,8 +12,8 @@ export const upsertMember = async (address: string, name: string, app2appDestina
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         name,
@@ -37,8 +37,8 @@ export const createAssetDefinition = async (author: string, sync: boolean, asset
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         assetDefinitionHash
@@ -59,8 +59,8 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
@@ -81,8 +81,8 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
@@ -104,8 +104,8 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -127,8 +127,8 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -148,8 +148,8 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstanceBatch?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         batchHash,
@@ -168,8 +168,8 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         assetDefinitionID,
@@ -194,8 +194,8 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
@@ -218,8 +218,8 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
+        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
+        password: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
