@@ -2,7 +2,7 @@ package io.kaleido.kat.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import io.kaleido.kat.contracts.KatContract;
+import io.kaleido.kat.contracts.AssetTrailContract;
 import io.kaleido.kat.states.KatOrderingContext;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
@@ -86,15 +86,15 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
         // Generate an unsigned transaction.
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         Party me = getOurIdentity();
-        final Command<KatContract.Commands.AssetEventCreate> txCommand = new Command<>(
-                new KatContract.Commands.AssetEventCreate(),
+        final Command<AssetTrailContract.Commands.AssetEventCreate> txCommand = new Command<>(
+                new AssetTrailContract.Commands.AssetEventCreate(),
                 ImmutableList.of(me.getOwningKey()));
         final StateAndRef<KatOrderingContext> inContext = getOrderingContext(orderingContext);
         final T output = getAssetEvent();
         final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(inContext)
-                .addOutputState(output, KatContract.ID)
-                .addOutputState(updateOrderingContext(inContext.getState().getData()), KatContract.ID)
+                .addOutputState(output, AssetTrailContract.ID)
+                .addOutputState(updateOrderingContext(inContext.getState().getData()), AssetTrailContract.ID)
                 .addCommand(txCommand);
         progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
         txBuilder.verify(getServiceHub());

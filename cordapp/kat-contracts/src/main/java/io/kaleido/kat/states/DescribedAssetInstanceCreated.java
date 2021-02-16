@@ -1,6 +1,6 @@
 package io.kaleido.kat.states;
 
-import io.kaleido.kat.contracts.KatContract;
+import io.kaleido.kat.contracts.AssetTrailContract;
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-@BelongsToContract(KatContract.class)
+@BelongsToContract(AssetTrailContract.class)
 public class DescribedAssetInstanceCreated implements AssetEventState {
     private final String assetInstanceID;
     private final String assetDefinitionID;

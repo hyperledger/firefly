@@ -1,6 +1,6 @@
 package io.kaleido.kat.flows;
 import co.paralleluniverse.fibers.Suspendable;
-import io.kaleido.kat.contracts.KatContract;
+import io.kaleido.kat.contracts.AssetTrailContract;
 import io.kaleido.kat.states.KatOrderingContext;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -61,13 +61,13 @@ public class CreateOrderingContextFlow extends FlowLogic<SignedTransaction> {
         // Generate an unsigned transaction.
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         final List<PublicKey> signers = partiesForContext.stream().map(AbstractParty::getOwningKey).collect(Collectors.toList());
-        final Command<KatContract.Commands.OrderingContextCreate> txCommand = new Command<>(
-                new KatContract.Commands.OrderingContextCreate(),
+        final Command<AssetTrailContract.Commands.OrderingContextCreate> txCommand = new Command<>(
+                new AssetTrailContract.Commands.OrderingContextCreate(),
                 signers);
         final KatOrderingContext newContext = new KatOrderingContext(contextId, partiesForContext, 0);
 
         final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addOutputState(newContext, KatContract.ID)
+                .addOutputState(newContext, AssetTrailContract.ID)
                 .addCommand(txCommand);
         progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
         txBuilder.verify(getServiceHub());
