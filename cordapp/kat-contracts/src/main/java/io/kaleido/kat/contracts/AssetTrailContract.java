@@ -33,8 +33,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class KatContract implements Contract {
-    public static final String ID = "io.kaleido.kat.contracts.KatContract";
+public class AssetTrailContract implements Contract {
+    public static final String ID = "io.kaleido.kat.contracts.AssetTrailContract";
 
     @Override
     public void verify(LedgerTransaction tx) {

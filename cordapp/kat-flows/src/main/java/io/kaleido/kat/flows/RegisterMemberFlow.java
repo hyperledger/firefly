@@ -2,20 +2,15 @@ package io.kaleido.kat.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import io.kaleido.kat.contracts.KatContract;
-import io.kaleido.kat.states.KatOrderingContext;
+import io.kaleido.kat.contracts.AssetTrailContract;
 import io.kaleido.kat.states.MemberRegistered;
 import net.corda.core.contracts.Command;
-import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
-import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -63,12 +58,12 @@ public class RegisterMemberFlow extends FlowLogic<SignedTransaction> {
         // Generate an unsigned transaction.
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         Party me = getOurIdentity();
-        final Command<KatContract.Commands.MemberCreate> txCommand = new Command<>(
-                new KatContract.Commands.MemberCreate(),
+        final Command<AssetTrailContract.Commands.MemberCreate> txCommand = new Command<>(
+                new AssetTrailContract.Commands.MemberCreate(),
                 ImmutableList.of(me.getOwningKey()));
         final MemberRegistered output = new MemberRegistered(getOurIdentity(), name, assetTrailInstanceID, app2appDestination, docExchangeDestination);
         final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addOutputState(output, KatContract.ID)
+                .addOutputState(output, AssetTrailContract.ID)
                 .addCommand(txCommand);
         progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
         txBuilder.verify(getServiceHub());
