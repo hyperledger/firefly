@@ -37,7 +37,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
-  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, participants: string[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
@@ -67,7 +67,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
 
   const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
 
-  apiGatewayResponse = await apiGateway.createAssetDefinition(author, sync, assetDefinitionHash);
+  apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetDefinition({
     assetDefinitionID,
@@ -80,7 +80,8 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     contentSchema,
     indexes,
     submitted: timestamp,
-    receipt
+    receipt,
+    participants
   });
   return assetDefinitionID;
 };

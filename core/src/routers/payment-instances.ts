@@ -64,7 +64,7 @@ router.post('/', async (req, res, next) => {
       throw new RequestError('Missing or invalid payment amount', 400);
     }
     const sync = req.query.sync === 'true';
-    const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, sync);
+    const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, req.body.participants, sync);
     res.send({ status: sync? 'success' : 'submitted', paymentInstanceID });
   } catch (err) {
     next(err);

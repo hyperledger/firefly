@@ -25,7 +25,7 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
   return paymentDefinition;
 };
 
-export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
+export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, participants: string[] | undefined, sync: boolean) => {
   if(descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
@@ -39,9 +39,9 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
   const paymentDefinitionID = uuidV4();
   if (descriptionSchema) {
     descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, participants, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
+    apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertPaymentDefinition({
@@ -51,7 +51,8 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
     descriptionSchemaHash,
     descriptionSchema,
     submitted: timestamp,
-    receipt
+    receipt,
+    participants
   });
   return paymentDefinitionID;
 };
