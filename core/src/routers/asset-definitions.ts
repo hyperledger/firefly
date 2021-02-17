@@ -51,7 +51,7 @@ router.post('/', async (req, res, next) => {
     if (!req.body.name || req.body.name === '') {
       throw new RequestError('Missing or invalid asset definition name', 400);
     }
-    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+    if (!utils.regexps.ACCOUNT.test(req.body.author) && !utils.regexps.CORDA_ACCOUNT.test(req.body.author)) {
       throw new RequestError('Missing or invalid asset definition author', 400);
     }
     if (typeof req.body.isContentPrivate !== 'boolean') {
@@ -62,7 +62,7 @@ router.post('/', async (req, res, next) => {
     }
     const sync = req.query.sync === 'true';
     const assetDefinitionID = await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(req.body.name, req.body.isContentPrivate,
-      req.body.isContentUnique, req.body.author, req.body.descriptionSchema, req.body.contentSchema, req.body.indexes, sync);
+      req.body.isContentUnique, req.body.author, req.body.descriptionSchema, req.body.contentSchema, req.body.indexes, req.body.participants, sync);
     res.send({ status: sync? 'success' : 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);

@@ -54,7 +54,7 @@ export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, a
   return assetInstance;
 };
 
-export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, sync: boolean) => {
+export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -106,18 +106,18 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     // One-for-one blockchain transactions to instances
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
     if (descriptionHash) {
-      apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+      apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
     } else {
-      apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+      apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
     }
     dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   }
-
+  dbAssetInstance.participants = participants;
   await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -145,9 +145,9 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
   if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetInstance({
@@ -159,12 +159,13 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     contentHash,
     filename,
     submitted: timestamp,
-    receipt
+    receipt,
+    participants
   });
   return assetInstanceID;
 }
 
-export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
+export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, participants: string[] | undefined, sync: boolean) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
@@ -186,7 +187,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };

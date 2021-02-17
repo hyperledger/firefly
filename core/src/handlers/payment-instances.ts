@@ -26,7 +26,7 @@ export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string)
 };
 
 export const handleCreatePaymentInstanceRequest = async (author: string, paymentDefinitionID: string,
-  recipient: string, description: object | undefined, amount: number, sync: boolean) => {
+  recipient: string, description: object | undefined, amount: number, participants: string[] | undefined, sync: boolean) => {
   const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
   if (paymentDefinition === null) {
     throw new RequestError('Unknown payment definition', 400);
@@ -49,10 +49,10 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   if (descriptionHash) {
     apiGatewayResponse = await apiGateway.createDescribedPaymentInstance(paymentInstanceID,
-      paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
+      paymentDefinitionID, author, recipient, amount, descriptionHash, participants,sync);
   } else {
     apiGatewayResponse = await apiGateway.createPaymentInstance(paymentInstanceID,
-      paymentDefinitionID, author, recipient, amount, sync);
+      paymentDefinitionID, author, recipient, amount, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertPaymentInstance({
@@ -64,7 +64,8 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     recipient,
     amount,
     receipt,
-    submitted: timestamp
+    submitted: timestamp,
+    participants
   });
 
   return paymentInstanceID;

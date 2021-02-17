@@ -53,48 +53,36 @@ export interface ISettings {
 
 // API GATEWAY INTERFACES
 
-// based on local setup will be updated
-export interface IAPIGatewayAsyncResponseCorda extends IAPIGatewayAsyncResponse {
+export interface IAPIGatewayAsyncResponseCorda {
   txhash: string
 }
 
-// based on local setup will be updated
-export interface IAPIGatewaySyncResponseCorda extends IAPIGatewaySyncResponse {
-  txhash: string
-}
-
-export interface IAPIGatewayAsyncResponseEthereum extends IAPIGatewayAsyncResponse {
+export interface IAPIGatewayAsyncResponse {
+  type: 'async'
+  id: string
   msg: string
   sent: boolean
 }
 
-export interface IAPIGatewaySyncResponseEthereum extends IAPIGatewaySyncResponse {
-  blockHash: string
-  blockNumber: string
-  cumulativeGasUsed: string
-  from: string
-  gasUsed: string
-  headers: {
+export interface IAPIGatewaySyncResponse {
+  type: 'sync'
+  blockHash?: string
+  blockNumber?: string
+  cumulativeGasUsed?: string
+  from?: string
+  gasUsed?: string
+  headers?: {
     id: string
     type: 'string',
     timeReceived: 'string',
     timeElapsed: number
     requestOffset: string
   }
-  nonce: string
-  status: string
-  to: string
+  nonce?: string
+  status?: string
+  to?: string
   transactionHash: string
-  transactionIndex: string
-}
-
-export interface IAPIGatewayAsyncResponse {
-  type: 'async'
-  id: string
-}
-
-export interface IAPIGatewaySyncResponse {
-  type: 'sync'
+  transactionIndex?: string
 }
 
 // IPFS INTERFACES
@@ -237,8 +225,9 @@ export interface IDatabaseProvider {
 }
 
 export interface IDBBlockchainData {
-  blockNumber?: number,
+  blockNumber?: number
   transactionHash: string
+  participants?: string[]
 }
 
 export interface IDBBlockchainPinned extends Partial<IDBBlockchainData> {

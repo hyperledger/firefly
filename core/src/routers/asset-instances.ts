@@ -66,15 +66,15 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
       if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, req.body.participants, sync);
     } else {
-      if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+      if (!utils.regexps.ACCOUNT.test(req.body.author) && !utils.regexps.CORDA_ACCOUNT.test(req.body.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, req.body.participants, sync);
     }
     res.send({ status: sync ? 'success' : 'submitted', assetInstanceID });
   } catch (err) {
@@ -96,7 +96,7 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
           throw new RequestError('Missing or invalid asset property author', 400);
         }
         const sync = req.query.sync === 'true';
-        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
+        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, req.body.participants, sync);
         res.send({ status: sync ? 'success' : 'submitted' });
         break;
       case 'push':

@@ -17,9 +17,9 @@ export const handleGetMemberRequest = async (address: string) => {
   return member;
 };
 
-export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
+export const handleUpsertMemberRequest = async (address: string, name: string, participants: string[] | undefined, sync: boolean) => {
   const timestamp = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.kat, config.docExchange.destination, sync);
+  const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.kat, config.docExchange.destination, participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertMember({
     address,
@@ -28,7 +28,8 @@ export const handleUpsertMemberRequest = async (address: string, name: string, s
     app2appDestination: config.app2app.destinations.kat,
     docExchangeDestination: config.docExchange.destination,
     submitted: timestamp,
-    receipt
+    receipt,
+    participants
   });
 };
 

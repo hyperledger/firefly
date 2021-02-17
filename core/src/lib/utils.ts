@@ -44,7 +44,8 @@ export const databaseCollectionIndexes: { [name in databaseCollectionName]: inde
 };
 
 export const regexps = {
-  ACCOUNT: /^0x[a-fA-F0-9]{40}$/
+  ACCOUNT: /^0x[a-fA-F0-9]{40}$/,
+  CORDA_ACCOUNT: /.*/
 }
 
 export const requestKeys = {
