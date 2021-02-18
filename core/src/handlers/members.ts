@@ -28,8 +28,7 @@ export const handleUpsertMemberRequest = async (address: string, name: string, p
     app2appDestination: config.app2app.destinations.kat,
     docExchangeDestination: config.docExchange.destination,
     submitted: timestamp,
-    receipt,
-    participants
+    receipt
   });
 };
 

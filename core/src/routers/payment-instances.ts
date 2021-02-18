@@ -51,10 +51,10 @@ router.post('/', async (req, res, next) => {
     if (!req.body.paymentDefinitionID) {
       throw new RequestError('Missing payment definition ID', 400);
     }
-    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+    if (!utils.isAuthorValid(req.body.author)) {
       throw new RequestError('Missing or invalid payment author', 400);
     }
-    if (!utils.regexps.ACCOUNT.test(req.body.recipient)) {
+    if (!utils.isAuthorValid(req.body.recipient)) {
       throw new RequestError('Missing or invalid payment recipient', 400);
     }
     if (req.body.author === req.body.recipient) {

@@ -63,12 +63,12 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
           throw new RequestError(`Invalid description. ${err}`, 400);
         }
       }
-      if (!formData.author || !utils.regexps.ACCOUNT.test(formData.author)) {
+      if (!formData.author ||!utils.isAuthorValid(req.body.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, req.body.participants, sync);
     } else {
-      if (!utils.regexps.ACCOUNT.test(req.body.author) && !utils.regexps.CORDA_ACCOUNT.test(req.body.author)) {
+      if (!utils.isAuthorValid(req.body.author)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
@@ -92,7 +92,7 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
         if (!req.body.value) {
           throw new RequestError('Missing asset property value', 400);
         }
-        if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+        if (!utils.isAuthorValid(req.body.author)) {
           throw new RequestError('Missing or invalid asset property author', 400);
         }
         const sync = req.query.sync === 'true';
@@ -116,7 +116,7 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
 
 router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   try {
-    if (!utils.regexps.ACCOUNT.test(req.body.requester)) {
+    if (!utils.isAuthorValid(req.body.author)) {
       throw new RequestError(`Missing requester`);
     }
     await assetInstancesHandler.handleAssetInstanceTradeRequest(req.params.assetDefinitionID, req.body.requester, req.params.assetInstanceID, req.body.metadata);

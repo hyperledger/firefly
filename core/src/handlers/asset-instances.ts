@@ -83,6 +83,18 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
     throw new RequestError(`Asset instance content conflict`);
   }
+  if(config.protocol === 'corda') {
+    // validate participants are subset of participants in asset definition 
+    if(participants) {
+      for(var participant  of participants) {
+        if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
+          throw new RequestError(`Participant ${participant} is doesn't have asset definition`, 409);
+        }
+      }
+    } else {
+      throw new RequestError(`Missing asset participants`, 400);
+    }
+  }
   const assetInstanceID = uuidV4();
   const timestamp = utils.getTimestamp();
   const assetInstance: IAssetInstance = {
@@ -100,7 +112,8 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   // If there are public IPFS shared parts of this instance, we can batch it together with all other
   // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
   // most importantly the number of IPFS transactions.
-  if (assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) {
+  // Curently we do batching only for ethereum
+  if ((assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) && config.protocol === 'ethereum') {
     dbAssetInstance.batchID = await assetInstancesPinning.pin(assetDefinition, assetInstance);
   } else {
     // One-for-one blockchain transactions to instances
@@ -112,7 +125,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     }
     dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   }
-  dbAssetInstance.participants = participants;
+  if(config.protocol === 'corda') {
+    dbAssetInstance.participants = participants;
+  }
   await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 };
@@ -142,6 +157,18 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
     throw new RequestError('Asset instance content conflict', 409);
   }
+  if(config.protocol === 'corda') {
+    // validate participants are subset of participants in asset definition 
+    if(participants) {
+      for(var participant  of participants) {
+        if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
+          throw new RequestError(`Participant ${participant} is doesn't have asset definition`, 409);
+        }
+      }
+    } else {
+      throw new RequestError(`Missing asset participants`, 400);
+    }
+  }
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
   if (descriptionHash) {
@@ -150,7 +177,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.upsertAssetInstance({
+  var dbAssetInstance: IDBAssetInstance = {
     assetInstanceID,
     author,
     assetDefinitionID,
@@ -159,9 +186,12 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     contentHash,
     filename,
     submitted: timestamp,
-    receipt,
-    participants
-  });
+    receipt
+  }
+  if(config.protocol === 'corda') {
+    dbAssetInstance.participants = participants;
+  }
+  await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 }
 

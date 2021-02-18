@@ -17,6 +17,7 @@ import {
   IAssetDefinitionRequest,
   indexes
 } from '../lib/interfaces';
+import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
@@ -51,6 +52,19 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     throw new RequestError('Asset definition name conflict', 409);
   }
 
+  if(config.protocol === 'corda') {
+    //check participants are valid addresses of registered members
+    if(participants) {
+      for(var participant  of participants) {
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError(`Participant ${participant} is not a registered member`, 409);
+        }
+      }
+    } else {
+      throw new RequestError(`Missing asset definition participants`, 400);
+    }
+  }
+
   const assetDefinitionID = uuidV4();
   const timestamp = utils.getTimestamp();
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
@@ -66,10 +80,9 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
   };
 
   const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
-
   apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.upsertAssetDefinition({
+  const assetDefinitionDB: IDBAssetDefinition = {
     assetDefinitionID,
     author,
     name,
@@ -80,9 +93,12 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     contentSchema,
     indexes,
     submitted: timestamp,
-    receipt,
-    participants
-  });
+    receipt
+  };
+  if(config.protocol === 'corda') {
+    assetDefinitionDB.participants = participants;
+  }
+  await database.upsertAssetDefinition(assetDefinitionDB);
   return assetDefinitionID;
 };
 
