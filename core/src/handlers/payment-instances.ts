@@ -5,7 +5,8 @@ import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentInstance, IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
@@ -34,6 +35,18 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
   if (paymentDefinition.transactionHash === undefined) {
     throw new RequestError('Payment definition transaction must be mined', 400);
   }
+  if(config.protocol === 'corda') {
+    // validate participants are subset of participants in asset definition 
+    if(participants) {
+      for(var participant  of participants) {
+        if (!paymentDefinition.participants || paymentDefinition.participants.indexOf(participant) === -1) {
+          throw new RequestError(`Participant ${participant} doesn't have payment definition`, 409);
+        }
+      }
+    } else {
+      throw new RequestError(`Missing payment participants`, 400);
+    }
+  }
   let descriptionHash: string | undefined;
   if (paymentDefinition.descriptionSchema) {
     if (!description) {
@@ -55,7 +68,7 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
       paymentDefinitionID, author, recipient, amount, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.upsertPaymentInstance({
+  var paymentInstanceDB: IDBPaymentInstance = {
     paymentInstanceID,
     author,
     paymentDefinitionID: paymentDefinition.paymentDefinitionID,
@@ -64,10 +77,12 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     recipient,
     amount,
     receipt,
-    submitted: timestamp,
-    participants
-  });
-
+    submitted: timestamp
+  };
+  if(config.protocol === 'corda') {
+    paymentInstanceDB.participants = participants
+  }
+  await database.upsertPaymentInstance(paymentInstanceDB);
   return paymentInstanceID;
 };
 

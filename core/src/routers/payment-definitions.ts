@@ -51,7 +51,7 @@ router.post('/', async (req, res, next) => {
     if (!req.body.name || req.body.name === '') {
       throw new RequestError('Missing or invalid payment definition name', 400);
     }
-    if (!utils.regexps.ACCOUNT.test(req.body.author)) {
+    if (!utils.isAuthorValid(req.body.author)) {
       throw new RequestError('Missing or invalid payment definition author', 400);
     }
     const sync = req.query.sync === 'true';

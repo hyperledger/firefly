@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import axios, { AxiosRequestConfig } from 'axios';
 import { databaseCollectionName, indexes } from './interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
+import { parseDN } from 'ldapjs';
+import { config } from './config';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -43,9 +45,28 @@ export const databaseCollectionIndexes: { [name in databaseCollectionName]: inde
   ],
 };
 
-export const regexps = {
+const regexps = {
   ACCOUNT: /^0x[a-fA-F0-9]{40}$/,
-  CORDA_ACCOUNT: /.*/
+}
+
+const isValidX500Name = (name: string) => {
+  try {
+    parseDN(name);
+  } catch (e) {
+    return false;
+  }
+  return true; 
+};
+
+export const isAuthorValid = (author: string) => {
+  switch(config.protocol) {
+    case 'corda':
+      return isValidX500Name(author);
+    case 'ethereum':
+      return regexps.ACCOUNT.test(author);
+    default:
+      return false;
+  }
 }
 
 export const requestKeys = {
