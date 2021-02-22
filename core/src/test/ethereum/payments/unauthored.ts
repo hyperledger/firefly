@@ -1,4 +1,4 @@
-import { app, mockEventStreamWebSocket } from '../..';
+import { app, mockEventStreamWebSocket } from '../../common';
 import request from 'supertest';
 import assert from 'assert';
 import { IEventPaymentDefinitionCreated, IDBPaymentDefinition, IEventPaymentInstanceCreated, IDBPaymentInstance } from '../../../lib/interfaces';

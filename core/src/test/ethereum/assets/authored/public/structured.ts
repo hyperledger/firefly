@@ -5,7 +5,7 @@ import request from 'supertest';
 import { promisify } from 'util';
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
-import { app, mockEventStreamWebSocket } from '../../../..';
+import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent } from '../../../../samples';
 const delay = promisify(setTimeout);
 

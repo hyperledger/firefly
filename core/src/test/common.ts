@@ -36,7 +36,11 @@ class MockWebSocket extends EventEmitter {
 
 const setUp = async (protocol: string) => {
     const sandboxPath = path.join(__dirname, '../../test-resources/sandbox');
-    await fs.mkdir(sandboxPath);
+    try {
+      await fs.mkdir(sandboxPath);
+    } catch(err) {
+      console.error(err);
+    }
     await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(__dirname, '../../test-resources/sandbox/settings.json'));
     if(protocol === 'corda') {
         await fs.copyFile(path.join(__dirname, '../../test-resources/config-corda.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
@@ -58,8 +62,6 @@ const setUp = async (protocol: string) => {
     nock('https://docexchange.kaleido.io')
     .get('/documents')
     .reply(200, { entries: [] });
-    delete require.cache[require('..')]
-    delete require.cache[require('../app')];
     const { promise } = require('../app');
   ({ app, shutDown } = await promise);
 
@@ -204,7 +206,7 @@ const cleanUp = async () => {
 };
 
 describe('All tests', async () => {
-    describe.only('ethereum tests', async () => {
+    describe('ethereum tests', async () => {
         before(async () => {
             await setUp('ethereum');
         });

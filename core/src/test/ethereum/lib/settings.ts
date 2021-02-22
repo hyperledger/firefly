@@ -1,4 +1,4 @@
-import { app } from '../..';
+import { app } from '../../common';
 import assert from 'assert';
 import request from 'supertest';
 import { ISettings } from '../../../lib/interfaces';
