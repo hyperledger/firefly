@@ -38,6 +38,19 @@ describe('Asset definitions - argument validation', async () => {
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition author' });
   });
 
+  it('Attempting to add an asset definition without an valid author name should raise an error', async () => {
+    const result = await request(app)
+      .post('/api/v1/assets/definitions')
+      .send({
+        name: 'My asset definition',
+        isContentPrivate: false,
+        isContentUnique: true,
+        author: "invalid name"
+      })
+      .expect(400);
+    assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset definition author' });
+  });
+
   it('Attempting to add an asset definition with an invalid index schema should raise an error', async () => {
     const result = await request(app)
       .post('/api/v1/assets/definitions')
