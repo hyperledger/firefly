@@ -40,7 +40,7 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     if(participants) {
       for(var participant  of participants) {
         if (!paymentDefinition.participants || paymentDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`Participant ${participant} doesn't have payment definition`, 409);
+          throw new RequestError(`One or more participant don't have payment definition`, 409);
         }
       }
     } else {

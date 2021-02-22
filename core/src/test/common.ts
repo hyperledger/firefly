@@ -108,7 +108,7 @@ const setupSampleMembersCorda = async () => {
     }
     const dataMember2: any =
     {
-      member: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+      member: 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US',
       name: 'Test Member 2',
       assetTrailInstanceID: 'service-instance',
       app2appDestination: 'kld://app2app_2',

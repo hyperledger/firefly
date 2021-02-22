@@ -88,7 +88,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     if(participants) {
       for(var participant  of participants) {
         if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`Participant ${participant} is doesn't have asset definition`, 409);
+          throw new RequestError(`One or more participants don't have the asset definition`, 409);
         }
       }
     } else {
@@ -162,7 +162,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     if(participants) {
       for(var participant  of participants) {
         if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`Participant ${participant} is doesn't have asset definition`, 409);
+          throw new RequestError(`One or more participants don't have the asset definition`, 409);
         }
       }
     } else {

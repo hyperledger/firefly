@@ -38,7 +38,7 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
     if(participants) {
       for(var participant  of participants) {
         if (await database.retrieveMemberByAddress(participant) === null) {
-          throw new RequestError(`Participant ${participant} is not a registered member`, 409);
+          throw new RequestError(`One or more participants are not registered`, 409);
         }
       }
     } else {
