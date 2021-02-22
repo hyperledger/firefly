@@ -3,6 +3,7 @@ import RequestError from '../lib/request-error';
 import * as paymentInstancesHandler from '../handlers/payment-instances';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
+import { config } from '../lib/config';
 
 const router = Router();
 
@@ -51,10 +52,10 @@ router.post('/', async (req, res, next) => {
     if (!req.body.paymentDefinitionID) {
       throw new RequestError('Missing payment definition ID', 400);
     }
-    if (!utils.isAuthorValid(req.body.author)) {
+    if (!utils.isAuthorValid(req.body.author, config.protocol)) {
       throw new RequestError('Missing or invalid payment author', 400);
     }
-    if (!utils.isAuthorValid(req.body.recipient)) {
+    if (!utils.isAuthorValid(req.body.recipient, config.protocol)) {
       throw new RequestError('Missing or invalid payment recipient', 400);
     }
     if (req.body.author === req.body.recipient) {

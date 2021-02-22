@@ -3,6 +3,7 @@ import RequestError from '../lib/request-error';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';
+import { config } from '../lib/config';
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.post('/', async (req, res, next) => {
     if (!req.body.name || req.body.name === '') {
       throw new RequestError('Missing or invalid asset definition name', 400);
     }
-    if (!utils.isAuthorValid(req.body.author)) {
+    if (!utils.isAuthorValid(req.body.author, config.protocol)) {
       throw new RequestError('Missing or invalid asset definition author', 400);
     }
     if (typeof req.body.isContentPrivate !== 'boolean') {
