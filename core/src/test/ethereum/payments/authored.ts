@@ -5,7 +5,7 @@ import assert from 'assert';
 import { IDBPaymentDefinition, IDBPaymentInstance, IEventPaymentDefinitionCreated, IEventPaymentInstanceCreated } from '../../../lib/interfaces';
 import * as utils from '../../../lib/utils';
 
-export const testPaymentDefinitions10 = async () => {
+export const testAuthored = async () => {
 describe('Payment definitions: authored', async () => {
 
   let paymentDefinitionID: string;
