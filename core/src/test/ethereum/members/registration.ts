@@ -1,4 +1,4 @@
-import { app, mockEventStreamWebSocket } from '../..';
+import { app, mockEventStreamWebSocket } from '../../common';
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';

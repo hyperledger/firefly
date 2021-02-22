@@ -5,7 +5,7 @@ import request from 'supertest';
 import { v4 as uuidV4 } from 'uuid';
 import { IAssetInstance, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
-import { app, mockEventStreamWebSocket } from '../../../..';
+import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent, testDescription } from '../../../../samples';
 
 export const testSuite0011 = () => {

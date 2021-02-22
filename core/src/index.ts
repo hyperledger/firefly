@@ -56,7 +56,13 @@ export const start = () => {
     });
 
     const shutDown = () => {
-      server.close();
+      server.close(err => {
+        if(err) {
+          log.error(`Error closing server. ${err}`);
+        } else {
+          log.info(`Stopped server.`)
+        }
+      });
       eventStreams.shutDown();
       database.shutDown();
       shutDownConfig();

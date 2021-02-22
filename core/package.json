@@ -8,7 +8,7 @@
     "build": "rimraf ./build && tsc",
     "start": "npm run build && node build/app.js",
     "test2": "mocha test/*.js 'test/**/*.js'",
-    "test": "env DATA_DIRECTORY=$PWD/test-resources/sandbox mocha --bail --timeout 25000 \"src/test/index.ts\""
+    "test": "env DATA_DIRECTORY=$PWD/test-resources/sandbox mocha --bail --timeout 25000 \"src/test/common.ts\""
   },
   "keywords": [],
   "author": "",

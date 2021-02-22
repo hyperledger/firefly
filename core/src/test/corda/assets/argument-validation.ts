@@ -1,4 +1,4 @@
-import { app } from '../..';
+import { app } from '../../common';
 import request from 'supertest';
 import assert from 'assert';
 
