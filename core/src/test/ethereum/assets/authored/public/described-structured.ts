@@ -9,7 +9,7 @@ import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent, testDescription } from '../../../../samples';
 const delay = promisify(setTimeout);
 
-export const testSuite1111 = () => {
+export const testAuthoredPublicDescribedStructured = () => {
 
 describe('Assets: authored - public - described - structured', async () => {
 

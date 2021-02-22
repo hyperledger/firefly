@@ -5,7 +5,7 @@ import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 
-export const testSuite1000 = () => {
+export const testAuthoredPrivateUnstructured = () => {
 
 describe('Assets: authored - private - unstructured', async () => {
 

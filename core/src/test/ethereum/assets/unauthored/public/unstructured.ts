@@ -5,7 +5,7 @@ import nock from 'nock'
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 
-export const testSuite0100 = () => {
+export const testUnauthoredPublicUnstructured = () => {
 
 describe('Assets: unauthored - public - unstructured', async () => {
 

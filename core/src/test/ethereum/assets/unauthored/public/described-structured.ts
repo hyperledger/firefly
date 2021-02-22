@@ -6,7 +6,7 @@ import assert from 'assert';
 import { IEventAssetDefinitionCreated, IDBAssetDefinition, IEventAssetInstanceCreated, IDBAssetInstance } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 
-export const testSuite0111 = () => {
+export const testUnauthoredPublicDescribedStructured = () => {
 
 describe('Assets: unauthored - public - described - structured', async () => {
 
