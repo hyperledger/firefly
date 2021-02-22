@@ -1,5 +1,3 @@
-import { cordaTests } from "./corda";
-import { ethereumTests } from "./ethereum";
 import { EventEmitter } from 'events';
 import rimraf from 'rimraf';
 import nock from 'nock';
@@ -34,19 +32,16 @@ class MockWebSocket extends EventEmitter {
 
 };
 
-const setUp = async (protocol: string) => {
-    const sandboxPath = path.join(__dirname, '../../test-resources/sandbox');
+export const setUp = async (protocol: string) => {
+    const sandboxPath = path.join(__dirname, `../../test-resources/sandbox/${protocol}`);
     try {
-      await fs.mkdir(sandboxPath);
+      await fs.mkdir(sandboxPath, {recursive: true});
     } catch(err) {
       console.error(err);
     }
-    await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(__dirname, '../../test-resources/sandbox/settings.json'));
-    if(protocol === 'corda') {
-        await fs.copyFile(path.join(__dirname, '../../test-resources/config-corda.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
-    } else {
-        await fs.copyFile(path.join(__dirname, '../../test-resources/config-ethereum.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
-    }
+    await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(sandboxPath, 'settings.json'));
+    await fs.copyFile(path.join(__dirname, `../../test-resources/config-${protocol}.json`), path.join(sandboxPath, 'config.json'));
+    
     mock('ws', MockWebSocket);
     mock('socket.io-client', {
         connect: () => {
@@ -193,9 +188,9 @@ const setupSampleMembersCorda = async () => {
     await eventPromise;
   };
 
-const cleanUp = async () => {
+export const cleanUp = async (protocol: string) => {
     shutDown(); 
-    await rimraf(path.join(__dirname, '../../test-resources/sandbox'), {}, ( err ) => {
+    await rimraf(path.join(__dirname, `../../test-resources/sandbox/${protocol}`), {}, ( err ) => {
       if(err) {
         console.error(err);
       }
@@ -204,25 +199,3 @@ const cleanUp = async () => {
     mock.stop('socket.io-client');
     nock.restore();
 };
-
-describe('All tests', async () => {
-    describe('ethereum tests', async () => {
-        before(async () => {
-            await setUp('ethereum');
-        });
-        ethereumTests();
-        after(async () => {
-          await cleanUp();
-        });
-    });
-    describe('corda tests', async () => {
-        before(async () => {
-            await setUp('corda');
-        });
-        cordaTests();
-        after(async () => {
-          await cleanUp();
-        });
-    });
-    
-});

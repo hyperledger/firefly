@@ -5,7 +5,6 @@ import assert from 'assert';
 export const testAssetArgumentValidation = () => {
 describe('Asset definitions - argument validation', async () => {
   it('Attempting to get an asset definition that does not exist should raise an error', async () => {
-    console.log(">>>>>asset test started.");
     const result = await request(app)
       .get('/api/v1/assets/definitions/1000000')
       .expect(404);

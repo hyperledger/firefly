@@ -53,6 +53,8 @@ export const start = () => {
 
     const server = app.listen(config.port, () => {
       log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);
+    }).on('error', (err) => {
+      log.error(err);
     });
 
     const shutDown = () => {
