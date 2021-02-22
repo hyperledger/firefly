@@ -8,7 +8,7 @@ import * as utils from '../../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent, testDescription } from '../../../../samples';
 
-export const testSuite0011 = () => {
+export const testUnauthoredPrivateDescribedStructured = () => {
 
 describe('Assets: unauthored - private - described - structured', async () => {
 

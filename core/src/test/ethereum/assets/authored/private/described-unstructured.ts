@@ -6,7 +6,7 @@ import { IDBAssetDefinition, IEventAssetDefinitionCreated } from '../../../../..
 import * as utils from '../../../../../lib/utils';
 import { testDescription } from '../../../../samples';
 
-export const testSuite1010 = () => {
+export const testAuthoredPrivateDescribedUnstructured = () => {
 
 describe('Assets: authored - private - described - unstructured', async () => {
 
