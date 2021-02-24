@@ -9,8 +9,6 @@ import indexSchema from '../schemas/indexes.json'
 import assetDefinitionSchema from '../schemas/asset-definition.json'
 
 import {
-  IAPIGatewayAsyncResponse,
-  IAPIGatewaySyncResponse,
   IDBBlockchainData,
   IDBAssetDefinition,
   IEventAssetDefinitionCreated,
@@ -38,7 +36,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
 };
 
 export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
-  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, participants: string[] | undefined, sync: boolean) => {
+  author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
@@ -52,23 +50,8 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     throw new RequestError('Asset definition name conflict', 409);
   }
 
-  if(config.protocol === 'corda') {
-    //check participants are valid addresses of registered members
-    if(participants) {
-      for(var participant  of participants) {
-        if (await database.retrieveMemberByAddress(participant) === null) {
-          throw new RequestError(`One or more participants are not registered`, 409);
-        }
-      }
-    } else {
-      throw new RequestError(`Missing asset definition participants`, 400);
-    }
-  }
-
   const assetDefinitionID = uuidV4();
   const timestamp = utils.getTimestamp();
-  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
-
   const assetDefinition: IAssetDefinitionRequest = {
     assetDefinitionID,
     name,
@@ -77,26 +60,35 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     descriptionSchema,
     contentSchema,
     indexes
-  };
-
-  const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
-  apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, participants, sync);
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  const assetDefinitionDB: IDBAssetDefinition = {
+  }
+  let assetDefinitionDB: IDBAssetDefinition = {
     assetDefinitionID,
     author,
     name,
     isContentPrivate,
     isContentUnique,
     descriptionSchema,
-    assetDefinitionHash,
+    assetDefinitionHash: "",
     contentSchema,
     indexes,
-    submitted: timestamp,
-    receipt
+    submitted: timestamp
   };
-  if(config.protocol === 'corda') {
-    assetDefinitionDB.participants = participants;
+
+  if(config.protocol === 'ethereum') {
+    const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
+    const apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, sync);
+    if(apiGatewayResponse.type === 'async'){
+      assetDefinitionDB.receipt = apiGatewayResponse.id;
+    }
+  } else {
+    // create asset instance collection for corda/others, as no transactions are created for asset definitions
+    // for ethereum it is created when transaction is mined
+    const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
+    let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
+    if (assetDefinition.indexes !== undefined) {
+      indexes = indexes.concat(assetDefinition.indexes)
+    }
+    await database.createCollection(collectionName, indexes);
   }
   await database.upsertAssetDefinition(assetDefinitionDB);
   return assetDefinitionID;

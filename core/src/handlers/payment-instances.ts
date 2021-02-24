@@ -39,8 +39,8 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     // validate participants are subset of participants in asset definition 
     if(participants) {
       for(var participant  of participants) {
-        if (!paymentDefinition.participants || paymentDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`One or more participant don't have payment definition`, 409);
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError(`One or more participants are not registered`, 409);
         }
       }
     } else {
@@ -96,7 +96,7 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
   if (paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }
-  if (paymentDefinition.transactionHash === undefined) {
+  if (config.protocol === 'ethereum' && paymentDefinition.transactionHash === undefined) {
     throw new Error('Payment definition transaction must be mined');
   }
   let description: Object | undefined = undefined;

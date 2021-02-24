@@ -6,10 +6,8 @@ import * as utils from '../lib/utils';
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, participants: string[] | undefined, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
     switch (config.protocol) {
-      case 'corda':
-        return upsertMemberCorda(name, app2appDestination, docExchangeDestination, participants);
       case 'ethereum':
         return upsertMemberEthereum(address, name, app2appDestination, docExchangeDestination, sync);
       default:
@@ -40,36 +38,11 @@ const upsertMemberEthereum = async (address: string, name: string, app2appDestin
   }
 };
 
-const upsertMemberCorda = async (name: string, app2appDestination: string, docExchangeDestination: string, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/registerMember`,
-      auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
-      },
-      data: {
-        name,
-        assetTrailInstanceID: config.assetTrailInstanceID,
-        app2appDestination,
-        docExchangeDestination,
-        participants
-      }
-    });
-    return { ...response.data, type:'sync' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
-};
-
 // Asset definition APIs
 
-export const createAssetDefinition = async (author: string,  assetDefinitionHash: string, participants: string[] | undefined, sync: boolean):
+export const createAssetDefinition = async (author: string,  assetDefinitionHash: string, sync: boolean):
 Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   switch (config.protocol) {
-    case 'corda':
-      return createAssetDefinitionCorda(assetDefinitionHash, participants);
     case 'ethereum':
       return createAssetDefinitionEthereum(author, assetDefinitionHash, sync);
     default:
@@ -97,32 +70,10 @@ const createAssetDefinitionEthereum = async (author: string, assetDefinitionHash
   }
 };
 
-const createAssetDefinitionCorda = async (assetDefinitionHash: string, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createAssetDefinition`,
-      auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
-      },
-      data: {
-        assetDefinitionHash,
-        participants
-      }
-    });
-    return { ...response.data, type: 'sync'};
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
-};
-
 // Payment definition APIs
 export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
-  descriptionSchemaHash: string, participants: string[] | undefined, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
     switch (config.protocol) {
-      case 'corda':
-        return createDescribedPaymentDefinitionCorda(paymentDefinitionID, name, descriptionSchemaHash, participants);
       case 'ethereum':
         return createDescribedPaymentDefinitionEthereum(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
       default:
@@ -153,34 +104,9 @@ const createDescribedPaymentDefinitionEthereum = async (paymentDefinitionID: str
   }
 };
 
-const createDescribedPaymentDefinitionCorda = async (paymentDefinitionID: string, name: string,
-  descriptionSchemaHash: string, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition`,
-      auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
-      },
-      data: {
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        name,
-        descriptionSchemaHash,
-        participants
-      }
-    });
-    return { ...response.data, type: 'sync'};
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
-};
-
-export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, participants: string[] | undefined, sync: boolean):
+export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
     switch (config.protocol) {
-      case 'corda':
-        return createPaymentDefinitionCorda(paymentDefinitionID, name, participants);
       case 'ethereum':
         return createPaymentDefinitionEthereum(paymentDefinitionID, name, author, sync);
       default:
@@ -204,28 +130,6 @@ const createPaymentDefinitionEthereum = async (paymentDefinitionID: string, name
       }
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
-};
-
-const createPaymentDefinitionCorda = async (paymentDefinitionID: string, name: string, participants: string[] | undefined):
-  Promise<IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition`,
-      auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
-      },
-      data: {
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        name,
-        participants
-      }
-    });
-    return { ...response.data, type:'sync' };
   } catch (err) {
     throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }

@@ -1,8 +1,6 @@
 import { app } from '../../common';
 import request from 'supertest';
 import assert from 'assert';
-import { testContent } from '../../samples';
-
 
 export const testAssetArgumentValidation = () => {
 describe('Asset definitions - argument validation', async () => {
@@ -104,36 +102,6 @@ describe('Asset definitions - argument validation', async () => {
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Invalid content schema' });
   });
-
-  it('Attempting to add an asset definition without participants should raise an error', async () => {
-    const result = await request(app)
-      .post('/api/v1/assets/definitions')
-      .send({
-        name: 'My asset definition',
-        author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
-        contentSchema: testContent.schema.object,
-        isContentPrivate: false,
-        isContentUnique: true
-      })
-      .expect(400);
-    assert.deepStrictEqual(result.body, { error: 'Missing asset definition participants' });
-  });
-
-  it('Attempting to add an asset definition without registered participants should raise an error', async () => {
-    const result = await request(app)
-      .post('/api/v1/assets/definitions')
-      .send({
-        name: 'My asset definition',
-        author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
-        contentSchema: testContent.schema.object,
-        isContentPrivate: false,
-        isContentUnique: true,
-        participants: ['CN=Node of node3 for env1, O=Kaleido, L=Raleigh, C=US']
-      })
-      .expect(409);
-    assert.deepStrictEqual(result.body, { error: 'One or more participants are not registered' });
-  });
-
 });
 
 describe('Asset instances - argument validation', async () => {
@@ -158,6 +126,5 @@ describe('Asset instances - argument validation', async () => {
       .expect(400);
     assert.deepStrictEqual(result.body, { error: 'Missing or invalid asset content' });
   });
-
 });
 };

@@ -6,7 +6,6 @@ import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentDefinition, IEventPaymentDefinitionCreated } from '../lib/interfaces';
-import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
@@ -26,24 +25,12 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
   return paymentDefinition;
 };
 
-export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, participants: string[] | undefined, sync: boolean) => {
+export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
   if(descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
   if (await database.retrievePaymentDefinitionByName(name) !== null) {
     throw new RequestError('Payment definition name conflict', 409);
-  }
-  if(config.protocol === 'corda') {
-    //check participants are valid addresses of registered members
-    if(participants) {
-      for(var participant  of participants) {
-        if (await database.retrieveMemberByAddress(participant) === null) {
-          throw new RequestError(`One or more participants are not registered`, 409);
-        }
-      }
-    } else {
-      throw new RequestError(`Missing payment definition participants`, 400);
-    }
   }
   let descriptionSchemaHash: string | undefined;
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
@@ -52,9 +39,9 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
   const paymentDefinitionID = uuidV4();
   if (descriptionSchema) {
     descriptionSchemaHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(descriptionSchema)));
-    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, participants, sync);
+    apiGatewayResponse = await apiGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, participants, sync);
+    apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   var paymentDefinitionDB: IDBPaymentDefinition = {
@@ -66,9 +53,6 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
     submitted: timestamp,
     receipt
   };
-  if(config.protocol === 'corda') {
-    paymentDefinitionDB.participants = participants;
-  }
   await database.upsertPaymentDefinition(paymentDefinitionDB);
   return paymentDefinitionID;
 };
