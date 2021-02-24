@@ -81,10 +81,6 @@ export const setUp = async (protocol: string) => {
 
 const setupSampleMembersCorda = async () => {
   console.log('Setting up corda members');
-
-    nock('https://apigateway.kaleido.io')
-      .post('/registerMember')
-      .reply(200);
     await request(app)
       .put('/api/v1/members')
       .send({
@@ -92,50 +88,16 @@ const setupSampleMembersCorda = async () => {
         name: 'Test Member 1',
         app2appDestination: 'kld://app2app_1',
         docExchangeDestination: 'kld://docexchange_1'
-      })
-    const eventPromise = new Promise<void>((resolve) => {
-      mockEventStreamWebSocket.once('send', message => {
-        assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
-        resolve();
-      })
-    });
-    const dataMember1: any = {
-      member: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
-      name: 'Test Member 1',
-      assetTrailInstanceID: 'service-instance',
-      app2appDestination: 'kld://app2app_1',
-      docExchangeDestination: 'kld://docexchange_1',
-    }
-    const dataMember2: any =
-    {
-      member: 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US',
-      name: 'Test Member 2',
-      assetTrailInstanceID: 'service-instance',
-      app2appDestination: 'kld://app2app_2',
-      docExchangeDestination: 'kld://docexchange_2'
-    };
-    mockEventStreamWebSocket.emit('message', JSON.stringify([{
-      signature: utils.contractEventSignaturesCorda.MEMBER_REGISTERED,
-      data: {data: dataMember1},
-      stateRef: {
-          txhash: "85D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE",
-          index: 0
-      },
-      subId: "sb-f5abe54b-53fb-4f63-8236-f3a8a6bc1c60",
-      consumedTime: utils.getTimestamp(),
-      recordedTime: null
-    }, {
-      signature: utils.contractEventSignaturesCorda.MEMBER_REGISTERED,
-      data: {data: dataMember2},
-      stateRef: {
-          txhash: "85D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE",
-          index: 0
-      },
-      subId: "sb-f5abe54b-53fb-4f63-8236-f3a8a6bc1c60",
-      consumedTime: utils.getTimestamp(),
-      recordedTime: null
-    }]));
-    await eventPromise;
+      });
+
+    await request(app)
+      .put('/api/v1/members')
+      .send({
+        address: 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US',
+        name: 'Test Member 2',
+        app2appDestination: 'kld://app2app_2',
+        docExchangeDestination: 'kld://docexchange_2'
+      });
   };
 
   const setupSampleMembersEthereum = async () => {

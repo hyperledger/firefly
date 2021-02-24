@@ -35,7 +35,7 @@ router.put('/', async (req, res, next) => {
       throw new RequestError('Missing member name', 400);
     }
     const sync = req.query.sync === 'true';
-    await membersHandler.handleUpsertMemberRequest(req.body.address, req.body.name, req.body.participants, sync);
+    await membersHandler.handleUpsertMemberRequest(req.body.address, req.body.name, sync);
     res.send({ status: sync? 'success' : 'submitted' });
   } catch (err) {
     next(err);

@@ -61,7 +61,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 400);
   }
-  if (assetDefinition.transactionHash === undefined) {
+
+  // For ethereum, we need to make asset definition transaction is mined
+  if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new RequestError('Asset definition transaction must be mined', 400);
   }
   if (!assetDefinition.contentSchema) {
@@ -87,8 +89,8 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     // validate participants are subset of participants in asset definition 
     if(participants) {
       for(var participant  of participants) {
-        if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`One or more participants don't have the asset definition`, 409);
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError(`One or more participants are not registered`, 409);
         }
       }
     } else {
@@ -158,11 +160,11 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     throw new RequestError('Asset instance content conflict', 409);
   }
   if(config.protocol === 'corda') {
-    // validate participants are subset of participants in asset definition 
+    // validate participants are registered
     if(participants) {
       for(var participant  of participants) {
-        if (!assetDefinition.participants || assetDefinition.participants.indexOf(participant) === -1) {
-          throw new RequestError(`One or more participants don't have the asset definition`, 409);
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError(`One or more participants are not registered`, 409);
         }
       }
     } else {
@@ -271,7 +273,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   if (assetDefinition === null) {
     throw new Error('Uknown asset definition');
   }
-  if (assetDefinition.transactionHash === undefined) {
+  // For ethereum, we need to make asset definition transaction is mined
+  if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new Error('Asset definition transaction must be mined');
   }
   if (assetDefinition.isContentUnique) {
