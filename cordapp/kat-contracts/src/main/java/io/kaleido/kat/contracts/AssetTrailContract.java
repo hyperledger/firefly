@@ -21,7 +21,6 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 import io.kaleido.kat.states.AssetEventState;
 import io.kaleido.kat.states.KatOrderingContext;
-import io.kaleido.kat.states.MemberRegistered;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.CommandWithParties;
 import net.corda.core.contracts.Contract;
@@ -45,8 +44,6 @@ public class AssetTrailContract implements Contract {
             verifyAssetEventCreate(tx, setOfSigners);
         } else if(commandData instanceof Commands.OrderingContextCreate) {
             verifyOrderingContextCreate(tx, setOfSigners);
-        } else if(commandData instanceof Commands.MemberCreate) {
-            verifyMemberCreate(tx, setOfSigners);
         } else {
             throw new IllegalArgumentException("Unrecognised command.");
         }
@@ -85,22 +82,8 @@ public class AssetTrailContract implements Contract {
         });
     }
 
-    private void verifyMemberCreate(LedgerTransaction tx, Set<PublicKey> signers) {
-        requireThat(require -> {
-            require.using("No inputs should be consumed when creating member create event",
-                    tx.getInputs().isEmpty());
-            require.using("Only one output state should be created.",
-                    tx.getOutputs().size() == 1);
-            final MemberRegistered out = tx.outputsOfType(MemberRegistered.class).get(0);
-            require.using("All of the participants must be signers.",
-                    signers.containsAll(out.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList())));
-            return null;
-        });
-    }
-
     public interface Commands extends CommandData {
         class AssetEventCreate implements Commands {}
         class OrderingContextCreate implements Commands {}
-        class MemberCreate implements Commands {}
     }
 }

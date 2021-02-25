@@ -147,57 +147,6 @@ public class KatController {
         }
     }
 
-    @PostMapping(value = "/registerMember", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public AssetResponse registerMember(@RequestBody RegisterMemberRequest request) {
-        // get ordering context
-        List<AbstractParty> participantList = new ArrayList<>();
-        for(String observer: request.getParticipants()) {
-            Party party = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(observer));
-            if(party == null) {
-                logger.error("No party with name {} found", observer);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No party with name "+observer+" found.");
-            }
-            participantList.add(party);
-        }
-        List<AbstractParty> partiesInContext = new ArrayList<>(participantList);
-        partiesInContext.add(proxy.nodeInfo().getLegalIdentities().get(0));
-        AssetResponse response = new AssetResponse();
-        try {
-            SignedTransaction assetTxResult = proxy.startFlowDynamic(RegisterMemberFlow.class, request.getName(), request.getAssetTrailInstanceID(), request.getApp2appDestination(), request.getDocExchangeDestination(), participantList).getReturnValue().get();
-            response.setTxHash(assetTxResult.getId().toString());
-            return response;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("failed to create registerMember", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create registerMember", e);
-        }
-    }
-
-    @PostMapping(value = "/createAssetDefinition", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-    public AssetResponse createAssetDefinition(@RequestBody CreateAssetDefinitionRequest request) {
-        // get ordering context
-        List<AbstractParty> participantList = new ArrayList<>();
-        for(String observer: request.getParticipants()) {
-            Party party = proxy.wellKnownPartyFromX500Name(CordaX500Name.parse(observer));
-            if(party == null) {
-                logger.error("No party with name {} found", observer);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No party with name "+observer+" found.");
-            }
-            participantList.add(party);
-        }
-        List<AbstractParty> partiesInContext = new ArrayList<>(participantList);
-        partiesInContext.add(proxy.nodeInfo().getLegalIdentities().get(0));
-        UniqueIdentifier contextId = createOrGetOrderingContext(partiesInContext);
-        AssetResponse response = new AssetResponse();
-        try {
-            SignedTransaction assetTxResult = proxy.startFlowDynamic(CreateAssetDefinitionFlow.class, request.getAssetDefinitionHash(), participantList, contextId).getReturnValue().get();
-            response.setTxHash(assetTxResult.getId().toString());
-            return response;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("failed to create assetDefinition", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to create assetDefinition", e);
-        }
-    }
-
     @PostMapping(value = "/createDescribedAssetInstance", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public AssetResponse createDescribedAssetInstance(@RequestBody CreateDescribedAssetInstanceRequest request) {
         // get ordering context
