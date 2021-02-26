@@ -22,8 +22,8 @@ const upsertMemberEthereum = async (address: string, name: string, app2appDestin
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         name,
@@ -57,8 +57,8 @@ const createAssetDefinitionEthereum = async (author: string, assetDefinitionHash
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetDefinitionHash
@@ -81,7 +81,6 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
     }
 };
 
-
 const createDescribedPaymentDefinitionEthereum = async (paymentDefinitionID: string, name: string, author: string,
   descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   try {
@@ -89,8 +88,8 @@ const createDescribedPaymentDefinitionEthereum = async (paymentDefinitionID: str
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
@@ -121,8 +120,8 @@ const createPaymentDefinitionEthereum = async (paymentDefinitionID: string, name
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
@@ -157,8 +156,8 @@ const createDescribedAssetInstanceEthereum = async (assetInstanceID: string, ass
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -180,8 +179,8 @@ const createDescribedAssetInstanceCorda = async (assetInstanceID: string, assetD
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -216,8 +215,8 @@ const createAssetInstanceEthereum = async (assetInstanceID: string, assetDefinit
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -271,8 +270,8 @@ const createAssetInstanceBatchEthereum = async (batchHash: string, author: strin
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstanceBatch?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         batchHash,
@@ -290,8 +289,8 @@ const createAssetInstanceBatchCorda = async (batchHash: string, participants: st
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstanceBatch`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         batchHash,
@@ -323,8 +322,8 @@ const setAssetInstancePropertyEthereum = async (assetDefinitionID: string, asset
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetDefinitionID,
@@ -346,8 +345,8 @@ const setAssetInstancePropertyCorda = async (assetDefinitionID: string, assetIns
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetDefinitionID,
@@ -386,8 +385,8 @@ const createDescribedPaymentInstanceEthereum = async (paymentInstanceID: string,
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
@@ -410,8 +409,8 @@ const createDescribedPaymentInstanceCorda = async (paymentInstanceID: string, pa
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
@@ -448,8 +447,8 @@ const createPaymentInstanceEthereum = async (paymentInstanceID: string, paymentD
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
@@ -471,8 +470,8 @@ const createPaymentInstanceCorda = async (paymentInstanceID: string, paymentDefi
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createPaymentInstance`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
