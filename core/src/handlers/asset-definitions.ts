@@ -1,4 +1,3 @@
-import { v4 as uuidV4 } from 'uuid';
 import Ajv from 'ajv';
 import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
@@ -35,7 +34,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
   return assetDefinition;
 };
 
-export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
+export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: string, name: string, isContentPrivate: boolean, isContentUnique: boolean,
   author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
@@ -49,8 +48,6 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
-
-  const assetDefinitionID = uuidV4();
   const timestamp = utils.getTimestamp();
   const assetDefinition: IAssetDefinitionRequest = {
     assetDefinitionID,
