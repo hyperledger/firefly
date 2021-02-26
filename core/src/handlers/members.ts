@@ -17,18 +17,18 @@ export const handleGetMemberRequest = async (address: string) => {
   return member;
 };
 
-export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
+export const handleUpsertMemberRequest = async (address: string, name: string, assetTrailInstanceID: string,  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
   const timestamp = utils.getTimestamp();
   let memberDB: IDBMember = {
     address,
     name,
-    assetTrailInstanceID: config.assetTrailInstanceID,
-    app2appDestination: config.app2app.destinations.kat,
-    docExchangeDestination: config.docExchange.destination,
+    assetTrailInstanceID,
+    app2appDestination,
+    docExchangeDestination,
     submitted: timestamp
   };
   if(config.protocol === 'ethereum') {
-    const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.kat, config.docExchange.destination, sync);
+    const apiGatewayResponse = await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
     if(apiGatewayResponse.type === 'async') {
       memberDB.receipt = apiGatewayResponse.id
     }

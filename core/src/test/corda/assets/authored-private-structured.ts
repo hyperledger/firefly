@@ -1,4 +1,5 @@
 import { app, mockEventStreamWebSocket } from '../../common';
+import { v4 as uuidV4 } from 'uuid';
 import { testContent } from '../../samples';
 import nock from 'nock';
 import request from 'supertest';
@@ -10,7 +11,7 @@ export const testAssetsAuthoredPrivateStructured = () => {
 
 describe('Assets: authored - structured', async () => {
 
-  let assetDefinitionID: string;
+  let assetDefinitionID = uuidV4();
   const assetDefinitionName = 'authored - private - structured';
   const timestamp = new Date();
 
@@ -31,13 +32,13 @@ describe('Assets: authored - structured', async () => {
         .send({
           name: assetDefinitionName,
           author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+          assetDefinitionID,
           isContentPrivate: true,
           isContentUnique: true,
           contentSchema: testContent.schema.object
         })
         .expect(200);
       assert.deepStrictEqual(result.body.status, 'submitted');
-      assetDefinitionID = result.body.assetDefinitionID;
 
       const getAssetDefinitionsResponse = await request(app)
         .get('/api/v1/assets/definitions')

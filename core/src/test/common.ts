@@ -86,6 +86,7 @@ const setupSampleMembersCorda = async () => {
       .send({
         address: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
         name: 'Test Member 1',
+        assetTrailInstanceID: 'service-id_1',
         app2appDestination: 'kld://app2app_1',
         docExchangeDestination: 'kld://docexchange_1'
       });
@@ -95,6 +96,7 @@ const setupSampleMembersCorda = async () => {
       .send({
         address: 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US',
         name: 'Test Member 2',
+        assetTrailInstanceID: 'service-id_2',
         app2appDestination: 'kld://app2app_2',
         docExchangeDestination: 'kld://docexchange_2'
       });
