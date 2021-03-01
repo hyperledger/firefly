@@ -1,4 +1,4 @@
-import { cleanUp, setUp } from "./common";
+import { closeDown, setUp } from "./common";
 import { ethereumTests } from "./ethereum";
 describe('ethereum tests', async () => {
     before(async () => {
@@ -6,6 +6,6 @@ describe('ethereum tests', async () => {
     });
     ethereumTests();
     after(async () => {
-      await cleanUp('ethereum');
+      await closeDown();
     });
 });
