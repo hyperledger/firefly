@@ -87,7 +87,7 @@ describe('Assets: authored - structured', async () => {
             author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
             participants: ['CN=Node of node3 for env1, O=Kaleido, L=Raleigh, C=US']
           })
-          .expect(409);
+          .expect(400);
         assert.deepStrictEqual(result.body, { error: `One or more participants are not registered` });
       });
     });
