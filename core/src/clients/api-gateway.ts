@@ -1,18 +1,18 @@
 import axios from 'axios';
 import { config } from '../lib/config';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse} from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../lib/interfaces';
 import * as utils from '../lib/utils';
 
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch (config.protocol) {
-      case 'ethereum':
-        return upsertMemberEthereum(address, name, app2appDestination, docExchangeDestination, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'ethereum':
+      return upsertMemberEthereum(address, name, app2appDestination, docExchangeDestination, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const upsertMemberEthereum = async (address: string, name: string, app2appDestination: string,
@@ -40,8 +40,8 @@ const upsertMemberEthereum = async (address: string, name: string, app2appDestin
 
 // Asset definition APIs
 
-export const createAssetDefinition = async (author: string,  assetDefinitionHash: string, sync: boolean):
-Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+export const createAssetDefinition = async (author: string, assetDefinitionHash: string, sync: boolean):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   switch (config.protocol) {
     case 'ethereum':
       return createAssetDefinitionEthereum(author, assetDefinitionHash, sync);
@@ -73,12 +73,12 @@ const createAssetDefinitionEthereum = async (author: string, assetDefinitionHash
 // Payment definition APIs
 export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
   descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch (config.protocol) {
-      case 'ethereum':
-        return createDescribedPaymentDefinitionEthereum(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'ethereum':
+      return createDescribedPaymentDefinitionEthereum(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const createDescribedPaymentDefinitionEthereum = async (paymentDefinitionID: string, name: string, author: string,
@@ -105,12 +105,12 @@ const createDescribedPaymentDefinitionEthereum = async (paymentDefinitionID: str
 
 export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch (config.protocol) {
-      case 'ethereum':
-        return createPaymentDefinitionEthereum(paymentDefinitionID, name, author, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'ethereum':
+      return createPaymentDefinitionEthereum(paymentDefinitionID, name, author, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const createPaymentDefinitionEthereum = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
@@ -142,7 +142,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
     case 'corda':
       return createDescribedAssetInstanceCorda(assetInstanceID, assetDefinitionID, descriptionHash, contentHash, participants);
     case 'ethereum':
-      return createDescribedAssetInstanceEthereum(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash ,sync);
+      return createDescribedAssetInstanceEthereum(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
     default:
       throw new Error("Unsupported protocol.");
   }
@@ -190,7 +190,7 @@ const createDescribedAssetInstanceCorda = async (assetInstanceID: string, assetD
         participants
       }
     });
-    return { ...response.data, type:'sync' };
+    return { ...response.data, type: 'sync' };
   } catch (err) {
     throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
@@ -202,10 +202,10 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
     case 'corda':
       return createAssetInstanceCorda(assetInstanceID, assetDefinitionID, contentHash, participants);
     case 'ethereum':
-      return createAssetInstanceEthereum(assetInstanceID, assetDefinitionID, author, contentHash ,sync);
+      return createAssetInstanceEthereum(assetInstanceID, assetDefinitionID, author, contentHash, sync);
     default:
       throw new Error("Unsupported protocol.");
-  }  
+  }
 };
 
 const createAssetInstanceEthereum = async (assetInstanceID: string, assetDefinitionID: string, author: string,
@@ -237,8 +237,8 @@ const createAssetInstanceCorda = async (assetInstanceID: string, assetDefinition
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstance`,
       auth: {
-        username: config.apiGateway.auth?config.apiGateway.auth.user:config.appCredentials.user,
-        password: config.apiGateway.auth?config.apiGateway.auth.password:config.appCredentials.password
+        username: config.apiGateway.auth ? config.apiGateway.auth.user : config.appCredentials.user,
+        password: config.apiGateway.auth ? config.apiGateway.auth.password : config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
@@ -258,7 +258,7 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
     case 'corda':
       return createAssetInstanceBatchCorda(batchHash, participants);
     case 'ethereum':
-      return createAssetInstanceBatchEthereum(batchHash,author,sync);
+      return createAssetInstanceBatchEthereum(batchHash, author, sync);
     default:
       throw new Error("Unsupported protocol.");
   }
@@ -305,14 +305,14 @@ const createAssetInstanceBatchCorda = async (batchHash: string, participants: st
 
 export const setAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string,
   participants: string[] | undefined, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch(config.protocol) {
-      case 'corda':
-        return setAssetInstancePropertyCorda(assetDefinitionID, assetInstanceID, key, value, participants);
-      case 'ethereum':
-        return setAssetInstancePropertyEthereum(assetDefinitionID, assetInstanceID, author, key, value, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'corda':
+      return setAssetInstancePropertyCorda(assetDefinitionID, assetInstanceID, key, value, participants);
+    case 'ethereum':
+      return setAssetInstancePropertyEthereum(assetDefinitionID, assetInstanceID, author, key, value, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const setAssetInstancePropertyEthereum = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string,
@@ -352,7 +352,7 @@ const setAssetInstancePropertyCorda = async (assetDefinitionID: string, assetIns
         assetDefinitionID,
         assetInstanceID,
         key,
-        value, 
+        value,
         participants
       }
     });
@@ -367,14 +367,14 @@ const setAssetInstancePropertyCorda = async (assetDefinitionID: string, assetIns
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
   author: string, recipient: string, amount: number, descriptionHash: string, participants: string[] | undefined, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch(config.protocol) {
-      case 'corda':
-        return createDescribedPaymentInstanceCorda(paymentInstanceID, paymentDefinitionID, recipient,amount, descriptionHash, participants);
-      case 'ethereum':
-        return createDescribedPaymentInstanceEthereum(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'corda':
+      return createDescribedPaymentInstanceCorda(paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash, participants);
+    case 'ethereum':
+      return createDescribedPaymentInstanceEthereum(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const createDescribedPaymentInstanceEthereum = async (paymentInstanceID: string, paymentDefinitionID: string,
@@ -430,14 +430,14 @@ const createDescribedPaymentInstanceCorda = async (paymentInstanceID: string, pa
 export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
   author: string, recipient: string, amount: number, participants: string[] | undefined, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-    switch(config.protocol) {
-      case 'corda':
-        return createPaymentInstanceCorda(paymentInstanceID, paymentDefinitionID, recipient,amount, participants);
-      case 'ethereum':
-        return createPaymentInstanceEthereum(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
-      default:
-        throw new Error("Unsupported protocol.");
-    }
+  switch (config.protocol) {
+    case 'corda':
+      return createPaymentInstanceCorda(paymentInstanceID, paymentDefinitionID, recipient, amount, participants);
+    case 'ethereum':
+      return createPaymentInstanceEthereum(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
+    default:
+      throw new Error("Unsupported protocol.");
+  }
 };
 
 const createPaymentInstanceEthereum = async (paymentInstanceID: string, paymentDefinitionID: string, author: string,
