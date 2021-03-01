@@ -83,8 +83,8 @@ const processRawMessage = (message: string): Array<IEventStreamMessage> => {
       return JSON.parse(message);
     case 'corda':
       const cordaMessages: Array<IEventStreamRawMessageCorda> = JSON.parse(message);
-      return cordaMessages.map(msg => {
-        var processedMessage: IEventStreamMessage = {
+      return cordaMessages.map(msg => (
+        {
           data: {
             ...msg.data.data,
             timestamp: Date.parse(msg.recordedTime)
@@ -92,42 +92,33 @@ const processRawMessage = (message: string): Array<IEventStreamMessage> => {
           transactionHash: msg.stateRef.txhash,
           subId: msg.subId,
           signature: msg.signature
-        };
-        return processedMessage
-      });
+        }
+      )
+      );
   }
 }
 
-const getBlockchainData = (message: IEventStreamMessage) => {
-  var blockchainData: IDBBlockchainData;
+const getBlockchainData = (message: IEventStreamMessage): IDBBlockchainData => {
   switch (config.protocol) {
     case 'ethereum':
-      blockchainData = {
+      return {
         blockNumber: Number(message.blockNumber),
         transactionHash: message.transactionHash
       }
-      break;
     case 'corda': {
-      blockchainData = {
+      return {
         transactionHash: message.transactionHash
       }
-      break;
     }
   }
-  return blockchainData;
 }
 
 const eventSignatures = () => {
-  var signatures;
   switch (config.protocol) {
-    case 'ethereum':
-      signatures = utils.contractEventSignatures
-      break;
-    case 'corda':
-      signatures = utils.contractEventSignaturesCorda
-      break;
+    case 'ethereum': return utils.contractEventSignatures
+    case 'corda': return utils.contractEventSignaturesCorda
+    default: throw new Error('Unsupported protocol.');
   }
-  return signatures;
 }
 
 const handleMessage = async (message: string) => {
