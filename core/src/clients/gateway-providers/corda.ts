@@ -3,6 +3,8 @@ import { config } from '../../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
 
+// Asset instance APIs
+
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string,
   descriptionHash: string, contentHash: string, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
   try {
