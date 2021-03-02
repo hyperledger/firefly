@@ -3,7 +3,6 @@ import { createHash, randomBytes } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 import { promisify } from 'util';
-<<<<<<< HEAD:core/src/test/ethereum/assets/authored/public/structured.ts
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../../common';
@@ -11,13 +10,6 @@ import { testContent } from '../../../../samples';
 const delay = promisify(setTimeout);
 
 export const testAuthoredPublicStructured = () => {
-=======
-import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
-import * as utils from '../../../../lib/utils';
-import { app, mockEventStreamWebSocket } from '../../../common';
-import { testContent } from '../../../samples';
-const delay = promisify(setTimeout);
->>>>>>> master:core/src/test/assets/authored/public/structured.ts
 
 describe('Assets: authored - public - structured', async () => {
 

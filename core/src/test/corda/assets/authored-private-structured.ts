@@ -137,7 +137,8 @@ describe('Assets: authored - structured', async () => {
         assetDefinitionID: utils.uuidToHex(assetDefinitionID),
         author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
         assetInstanceID: utils.uuidToHex(assetInstanceID),
-        contentHash: testContent.sample.docExchangeSha256
+        contentHash: testContent.sample.docExchangeSha256,
+        participants: ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US']
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignaturesCorda.ASSET_INSTANCE_CREATED,
@@ -165,7 +166,7 @@ describe('Assets: authored - structured', async () => {
       assert.strictEqual(assetInstance.timestamp, timestamp.getTime());
       assert.strictEqual(typeof assetInstance.submitted, 'number');
       assert.strictEqual(assetInstance.transactionHash, '25D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE');
-
+      assert.deepStrictEqual(assetInstance.participants, ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US'])
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
         .expect(200);

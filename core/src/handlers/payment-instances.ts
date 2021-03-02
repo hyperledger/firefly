@@ -5,7 +5,7 @@ import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentInstance, IEventPaymentInstanceCreated } from '../lib/interfaces';
 import { config } from '../lib/config';
 
 const ajv = new Ajv();
@@ -114,7 +114,7 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
       throw new Error('Missing payment instance description');
     }
   }
-  database.upsertPaymentInstance({
+  let paymentInstanceDB: IDBPaymentInstance = {
     paymentInstanceID: eventPaymentInstanceID,
     author: event.author,
     paymentDefinitionID: paymentDefinition.paymentDefinitionID,
@@ -125,5 +125,9 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
     timestamp: Number(event.timestamp),
     blockNumber,
     transactionHash
-  });
+  };
+  if(config.protocol === 'corda') {
+    paymentInstanceDB.participants = event.participants;
+  }
+  database.upsertPaymentInstance(paymentInstanceDB);
 };
