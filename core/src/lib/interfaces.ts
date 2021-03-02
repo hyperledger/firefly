@@ -97,6 +97,18 @@ export interface IIPFSAssetDefinition {
   indexes?: indexes
 }
 
+// IPFS INTERFACES
+
+export interface IIPFSAssetDefinition {
+  assetDefinitionID: string
+  name: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  descriptionSchema?: object
+  contentSchema?: object
+  indexes?: indexes
+}
+
 // REQUEST INTERFACES
 
 export interface IRequestMultiPartContent {

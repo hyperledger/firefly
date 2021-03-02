@@ -2,10 +2,15 @@ import { app, mockEventStreamWebSocket } from '../../../../common';
 import request from 'supertest';
 import assert from 'assert';
 import nock from 'nock'
+<<<<<<< HEAD:core/src/test/ethereum/assets/unauthored/public/unstructured.ts
 import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 
 export const testUnauthoredPublicUnstructured = () => {
+=======
+import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
+import * as utils from '../../../../lib/utils';
+>>>>>>> master:core/src/test/assets/unauthored/public/unstructured.ts
 
 describe('Assets: unauthored - public - unstructured', async () => {
 

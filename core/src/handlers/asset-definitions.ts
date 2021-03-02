@@ -122,7 +122,6 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
   });
 
   await createCollection(assetDefinition.assetDefinitionID, assetDefinition.indexes);
-
 };
 
 const createCollection = async (assetDefinitionID: string, assetDefinitionIndexes: indexes | undefined) => {

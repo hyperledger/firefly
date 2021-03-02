@@ -3,12 +3,19 @@ import { createHash, randomBytes } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 import { v4 as uuidV4 } from 'uuid';
+<<<<<<< HEAD:core/src/test/ethereum/assets/unauthored/private/described-structured.ts
 import { IAssetInstance, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent, testDescription } from '../../../../samples';
 
 export const testUnauthoredPrivateDescribedStructured = () => {
+=======
+import { IAssetInstance, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
+import * as utils from '../../../../lib/utils';
+import { app, mockEventStreamWebSocket } from '../../../common';
+import { testContent, testDescription } from '../../../samples';
+>>>>>>> master:core/src/test/assets/unauthored/private/described-structured.ts
 
 describe('Assets: unauthored - private - described - structured', async () => {
 
