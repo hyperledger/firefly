@@ -74,8 +74,6 @@ export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: stri
       assetDefinitionHash = utils.getSha256(JSON.stringify(assetDefinition));
       await createCollection(assetDefinitionID, indexes);
       break;
-    default:
-      throw new RequestError('Unsupported protocol', 400);
   }
   let assetDefinitionDB: IDBAssetDefinition = {
     assetDefinitionID,

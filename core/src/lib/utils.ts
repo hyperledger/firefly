@@ -61,8 +61,6 @@ export const isAuthorValid = (author: string, protocol: string) => {
       return isValidX500Name(author);
     case 'ethereum':
       return ETHEREUM_ACCOUNT_REGEXP.test(author);
-    default:
-      throw new Error('Unsupported protocol');
   }
 }
 

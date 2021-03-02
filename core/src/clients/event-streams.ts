@@ -117,7 +117,6 @@ const eventSignatures = () => {
   switch (config.protocol) {
     case 'ethereum': return utils.contractEventSignatures
     case 'corda': return utils.contractEventSignaturesCorda
-    default: throw new Error('Unsupported protocol.');
   }
 }
 
