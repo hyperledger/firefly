@@ -6,6 +6,7 @@ import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @InitiatingFlow
@@ -24,6 +25,8 @@ public class CreateAssetInstanceFlow extends CreateAssetEventFlow<AssetInstanceC
 
     @Override
     public AssetInstanceCreated getAssetEvent(){
-        return new AssetInstanceCreated(assetInstanceID, assetDefinitionID, getOurIdentity(), contentHash, this.observers);
+        List<Party> participants = new ArrayList<>(this.observers);
+        participants.add(getOurIdentity());
+        return new AssetInstanceCreated(assetInstanceID, assetDefinitionID, getOurIdentity(), contentHash, participants);
     }
 }
