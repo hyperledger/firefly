@@ -26,6 +26,6 @@ public class SetAssetInstancePropertyFlow extends CreateAssetEventFlow<AssetInst
 
     @Override
     public AssetInstancePropertySet getAssetEvent(){
-        return new AssetInstancePropertySet(assetDefinitionID, assetInstanceID, getOurIdentity(), key, value);
+        return new AssetInstancePropertySet(assetDefinitionID, assetInstanceID, getOurIdentity(), key, value, this.observers);
     }
 }

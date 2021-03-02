@@ -26,6 +26,6 @@ public class CreateDescribedAssetInstanceFlow extends CreateAssetEventFlow<Descr
 
     @Override
     public DescribedAssetInstanceCreated getAssetEvent() {
-        return new DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID,getOurIdentity(), descriptionHash, contentHash);
+        return new DescribedAssetInstanceCreated(assetInstanceID, assetDefinitionID,getOurIdentity(), descriptionHash, contentHash, this.observers);
     }
 }
