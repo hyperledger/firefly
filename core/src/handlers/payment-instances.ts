@@ -88,17 +88,22 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
 
 export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
   let eventPaymentInstanceID: string;
+  let eventPaymentDefinitionID: string;
   switch(config.protocol) {
     case 'corda':
+      eventPaymentDefinitionID = event.paymentDefinitionID;
       eventPaymentInstanceID = event.paymentInstanceID;
+      break;
    case 'ethereum':
+      eventPaymentDefinitionID = utils.hexToUuid(event.paymentDefinitionID)
       eventPaymentInstanceID = utils.hexToUuid(event.paymentInstanceID);
+      break;
   }
   const dbPaymentInstance = await database.retrievePaymentInstanceByID(eventPaymentInstanceID);
   if (dbPaymentInstance !== null && dbPaymentInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate payment instance ID`);
   }
-  const paymentDefinition = await database.retrievePaymentDefinitionByID(utils.hexToUuid(event.paymentDefinitionID));
+  const paymentDefinition = await database.retrievePaymentDefinitionByID(eventPaymentDefinitionID);
   if (paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }

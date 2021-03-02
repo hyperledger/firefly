@@ -215,7 +215,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, assetInstance.participants, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
@@ -266,29 +266,31 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       case 'corda':
         eventAssetInstanceID = event.assetInstanceID;
         eventAssetDefinitionID = event.assetDefinitionID;
+        break;
       case 'ethereum':
         eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
         eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+        break;
     }
   } else {
     eventAssetInstanceID = batchInstance.assetInstanceID;
     eventAssetDefinitionID = batchInstance.assetDefinitionID;
+    log.info(`batch instance ${eventAssetDefinitionID}:${eventAssetInstanceID}`);
   }
-
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
   }
-  const assetDefinition = await database.retrieveAssetDefinitionByID(batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID));
+  const assetDefinition = await database.retrieveAssetDefinitionByID(eventAssetDefinitionID);
   if (assetDefinition === null) {
-    throw new Error('Uknown asset definition');
+    throw new Error('Unkown asset definition');
   }
   // For ethereum, we need to make asset definition transaction is mined
   if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new Error('Asset definition transaction must be mined');
   }
   if (assetDefinition.isContentUnique) {
-    const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, event.contentHash);
+    const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(eventAssetDefinitionID, event.contentHash);
     if (assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
       if (assetInstanceByContentID.transactionHash !== undefined) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);
@@ -369,9 +371,11 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
     case 'corda':
       eventAssetInstanceID = event.assetInstanceID;
       eventAssetDefinitionID = event.assetDefinitionID;
+      break;
     case 'ethereum':
       eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
       eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+      break;
   }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {

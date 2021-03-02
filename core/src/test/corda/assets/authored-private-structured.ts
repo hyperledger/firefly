@@ -90,6 +90,29 @@ describe('Assets: authored - structured', async () => {
           .expect(400);
         assert.deepStrictEqual(result.body, { error: `One or more participants are not registered` });
       });
+
+      it('Attempting to set an asset instance property without specifying key should raise an error', async () => {
+        const result = await request(app)
+          .put(`/api/v1/assets/some-asset-def-id/some-asset-id`)
+          .send({
+            action: 'set-property',
+            author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+          })
+          .expect(400);
+        assert.deepStrictEqual(result.body, { error: `Missing asset property key` });
+      });
+
+      it('Attempting to set an asset instance property without specifying value should raise an error', async () => {
+        const result = await request(app)
+          .put(`/api/v1/assets/some-asset-def-id/some-asset-id`)
+          .send({
+            action: 'set-property',
+            key: 'key',
+            author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+          })
+          .expect(400);
+        assert.deepStrictEqual(result.body, { error: `Missing asset property value` });
+      });
     });
 
     it('Checks that an asset instance can be created', async () => {
@@ -134,9 +157,9 @@ describe('Assets: authored - structured', async () => {
         })
       });
       const assetData: any = {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        assetDefinitionID: assetDefinitionID,
         author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
+        assetInstanceID: assetInstanceID,
         contentHash: testContent.sample.docExchangeSha256,
         participants: ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US']
       };
@@ -167,6 +190,88 @@ describe('Assets: authored - structured', async () => {
       assert.strictEqual(typeof assetInstance.submitted, 'number');
       assert.strictEqual(assetInstance.transactionHash, '25D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE');
       assert.deepStrictEqual(assetInstance.participants, ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US'])
+      const getAssetInstanceResponse = await request(app)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .expect(200);
+      assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
+    });
+
+    it('Checks that the asset instance property can be set', async () => {
+      nock('https://apigateway.kaleido.io')
+      .post('/setAssetInstanceProperty')
+      .reply(200);
+
+      const result = await request(app)
+        .put(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .send({
+          author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+          action: 'set-property',
+          key: 'key1',
+          value: 'value1'
+         })
+        .expect(200);
+      assert.deepStrictEqual(result.body.status, 'submitted');
+
+      const getAssetInstancesResponse = await request(app)
+        .get(`/api/v1/assets/${assetDefinitionID}`)
+        .expect(200);
+      const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
+      assert.strictEqual(assetInstance.author, 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US');
+      assert.strictEqual(assetInstance.properties[assetInstance.author]['key1'].value, 'value1');
+      assert.strictEqual(typeof assetInstance.properties[assetInstance.author]['key1'].submitted, 'number');
+      const getAssetInstanceResponse = await request(app)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .expect(200);
+      assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
+
+    });
+
+    it('Checks that the event stream notification for confirming the asset instance set property is handled', async () => {
+      const eventPromise = new Promise<void>((resolve) => {
+        mockEventStreamWebSocket.once('send', message => {
+          assert.strictEqual(message, '{"type":"ack","topic":"dev"}');
+          resolve();
+        })
+      });
+      const assetData: any = {
+        assetDefinitionID: assetDefinitionID,
+        author: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+        assetInstanceID: assetInstanceID,
+        key: 'key1',
+        value: 'value1',
+        participants: ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US']
+      };
+      mockEventStreamWebSocket.emit('message', JSON.stringify([{
+        signature: utils.contractEventSignaturesCorda.ASSET_PROPERTY_SET,
+        data: {data: assetData},
+        stateRef: {
+          txhash: "35D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE",
+          index: 0
+        },
+        subId: "sb-f5abe54b-53fb-4f63-8236-f3a8a6bc1c60",
+        recordedTime: timestamp.toISOString(),
+        consumedTime: null
+      }]));
+      await eventPromise;
+    });
+
+    it('Checks that the asset instance property set is confirmed', async () => {
+      const getAssetInstancesResponse = await request(app)
+        .get(`/api/v1/assets/${assetDefinitionID}`)
+        .expect(200);
+      const assetInstance = getAssetInstancesResponse.body.find((assetInstance: IDBAssetInstance) => assetInstance.assetInstanceID === assetInstanceID);
+      assert.strictEqual(assetInstance.author, 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US');
+      assert.strictEqual(assetInstance.assetDefinitionID, assetDefinitionID);
+      assert.strictEqual(assetInstance.contentHash, testContent.sample.docExchangeSha256);
+      assert.deepStrictEqual(assetInstance.content, testContent.sample.object);
+      assert.strictEqual(assetInstance.timestamp, timestamp.getTime());
+      assert.strictEqual(typeof assetInstance.submitted, 'number');
+      assert.strictEqual(assetInstance.transactionHash, '25D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE');
+      assert.deepStrictEqual(assetInstance.participants, ['CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US', 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US'])
+      assert.strictEqual(assetInstance.properties[assetInstance.author]['key1'].value, 'value1');
+      assert.strictEqual(typeof assetInstance.properties[assetInstance.author]['key1'].submitted, 'number');
+      assert.strictEqual(assetInstance.properties[assetInstance.author]['key1'].history[assetInstance.timestamp].transactionHash, '35D867CC5D19AB40AE46E6262F3C274A6B772D68A0AA522F4C5A96196EAF5FCE');
+
       const getAssetInstanceResponse = await request(app)
         .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
         .expect(200);
