@@ -75,7 +75,7 @@ export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: stri
       await createCollection(assetDefinitionID, indexes);
       break;
   }
-  let assetDefinitionDB: IDBAssetDefinition = {
+  await database.upsertAssetDefinition({
     assetDefinitionID,
     author,
     name,
@@ -87,8 +87,7 @@ export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: stri
     receipt,
     indexes,
     submitted: timestamp
-  };
-  await database.upsertAssetDefinition(assetDefinitionDB);
+  });
   return assetDefinitionID;
 };
 
