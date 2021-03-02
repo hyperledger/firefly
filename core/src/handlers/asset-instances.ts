@@ -65,9 +65,6 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new RequestError('Asset definition transaction must be mined', 400);
   }
-  if (config.protocol === 'ethereum' && participants !== undefined) {
-    throw new RequestError('Participants not supported in Ethereum', 400);
-  }
   if (!assetDefinition.contentSchema) {
     throw new RequestError('Unstructured asset instances must be created using multipart/form-data', 400);
   }
