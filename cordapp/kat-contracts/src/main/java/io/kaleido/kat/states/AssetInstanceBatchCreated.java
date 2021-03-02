@@ -6,22 +6,27 @@ import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @BelongsToContract(AssetTrailContract.class)
-public class AssetInstanceBatchCreated implements   AssetEventState {
+public class AssetInstanceBatchCreated implements AssetEventState {
     private final Party author;
     private final String batchHash;
+    private final List<Party> participants;
 
-    public AssetInstanceBatchCreated(Party author, String batchHash) {
+    public AssetInstanceBatchCreated(Party author, String batchHash, List<Party> otherParties) {
         this.author = author;
         this.batchHash = batchHash;
+        this.participants = otherParties;
+        this.participants.add(author);
     }
 
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return List.of(author);
+        return new ArrayList<>(participants);
     }
 
     @Override
@@ -32,6 +37,11 @@ public class AssetInstanceBatchCreated implements   AssetEventState {
     @Override
     public Party getAuthor() {
         return author;
+    }
+
+    @Override
+    public List<Party> getAssetParticipants() {
+        return participants;
     }
 
     public String getBatchHash() {

@@ -20,6 +20,6 @@ public class CreateAssetInstanceBatchFlow extends CreateAssetEventFlow<AssetInst
 
     @Override
     public AssetInstanceBatchCreated getAssetEvent(){
-        return new AssetInstanceBatchCreated(getOurIdentity(), batchHash);
+        return new AssetInstanceBatchCreated(getOurIdentity(), batchHash, this.observers);
     }
 }
