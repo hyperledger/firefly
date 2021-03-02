@@ -14,24 +14,23 @@ import java.util.stream.Collectors;
 public class AssetInstanceBatchCreated implements AssetEventState {
     private final Party author;
     private final String batchHash;
-    private final List<Party> participants;
+    private final List<Party> assetParticipants;
 
-    public AssetInstanceBatchCreated(Party author, String batchHash, List<Party> otherParties) {
+    public AssetInstanceBatchCreated(Party author, String batchHash, List<Party> assetParticipants) {
         this.author = author;
         this.batchHash = batchHash;
-        this.participants = otherParties;
-        this.participants.add(author);
+        this.assetParticipants = assetParticipants;
     }
 
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return new ArrayList<>(participants);
+        return new ArrayList<>(assetParticipants);
     }
 
     @Override
     public String toString() {
-        return String.format("AssetInstanceBatchCreated(author=%s, batchHash=%s)", author, batchHash);
+        return String.format("AssetInstanceBatchCreated(author=%s, batchHash=%s, participants=%s)", author, batchHash, assetParticipants);
     }
 
     @Override
@@ -41,7 +40,7 @@ public class AssetInstanceBatchCreated implements AssetEventState {
 
     @Override
     public List<Party> getAssetParticipants() {
-        return participants;
+        return assetParticipants;
     }
 
     public String getBatchHash() {
