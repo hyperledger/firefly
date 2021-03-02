@@ -7,6 +7,7 @@ import net.corda.core.identity.Party;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @InitiatingFlow
@@ -20,6 +21,8 @@ public class CreateAssetInstanceBatchFlow extends CreateAssetEventFlow<AssetInst
 
     @Override
     public AssetInstanceBatchCreated getAssetEvent(){
-        return new AssetInstanceBatchCreated(getOurIdentity(), batchHash, this.observers);
+        List<Party> participants = new ArrayList<>(this.observers);
+        participants.add(getOurIdentity());
+        return new AssetInstanceBatchCreated(getOurIdentity(), batchHash, participants);
     }
 }

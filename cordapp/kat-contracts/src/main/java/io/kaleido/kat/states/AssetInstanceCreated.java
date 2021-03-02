@@ -15,26 +15,25 @@ public class AssetInstanceCreated implements AssetEventState {
     private final String assetDefinitionID;
     private final Party author;
     private final String contentHash;
-    private final List<Party> participants;
+    private final List<Party> assetParticipants;
 
-    public AssetInstanceCreated(String assetInstanceID, String assetDefinitionID, Party author, String contentHash, List<Party> otherParties) {
+    public AssetInstanceCreated(String assetInstanceID, String assetDefinitionID, Party author, String contentHash, List<Party> assetParticipants) {
         this.assetInstanceID = assetInstanceID;
         this.assetDefinitionID = assetDefinitionID;
         this.author = author;
         this.contentHash = contentHash;
-        this.participants = otherParties;
-        this.participants.add(this.author);
+        this.assetParticipants = assetParticipants;
     }
 
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return new ArrayList<>(participants);
+        return new ArrayList<>(assetParticipants);
     }
 
     @Override
     public String toString() {
-        return String.format("AssetInstanceCreated(assetInstanceID=%s, assetDefinitionID=%s, author=%s, contentHash=%s)", assetInstanceID, assetDefinitionID, author, contentHash);
+        return String.format("AssetInstanceCreated(assetInstanceID=%s, assetDefinitionID=%s, author=%s, contentHash=%s, participants=%s)", assetInstanceID, assetDefinitionID, author, contentHash, assetParticipants);
     }
 
     @Override
@@ -44,7 +43,7 @@ public class AssetInstanceCreated implements AssetEventState {
 
     @Override
     public List<Party> getAssetParticipants() {
-        return participants;
+        return assetParticipants;
     }
 
     public String getAssetInstanceID() {
