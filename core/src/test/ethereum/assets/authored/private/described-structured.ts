@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 import { promisify } from 'util';
+<<<<<<< HEAD:core/src/test/ethereum/assets/authored/private/described-structured.ts
 import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../../common';
@@ -10,6 +11,14 @@ import { testContent, testDescription, testIndexes } from '../../../../samples';
 const delay = promisify(setTimeout);
 
 export const testAuthoredPrivateDescribedStructured = () => {
+=======
+import { IDBAssetDefinition, IDBAssetInstance, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../lib/interfaces';
+import * as utils from '../../../../lib/utils';
+import { app, mockEventStreamWebSocket } from '../../../common';
+import { testContent, testDescription, testIndexes } from '../../../samples';
+const delay = promisify(setTimeout);
+
+>>>>>>> master:core/src/test/assets/authored/private/described-structured.ts
 describe('Assets: authored - private - described - structured', async () => {
 
   let assetDefinitionID: string;

@@ -1,4 +1,8 @@
+<<<<<<< HEAD:core/src/test/ethereum/assets/unauthored/private/unstructured.ts
 import { app, mockEventStreamWebSocket } from '../../../../common';
+=======
+import { app, mockEventStreamWebSocket } from '../../../common';
+>>>>>>> master:core/src/test/assets/unauthored/private/unstructured.ts
 import nock from 'nock';
 import request from 'supertest';
 import assert from 'assert';
