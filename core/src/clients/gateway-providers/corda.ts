@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { config } from '../../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../../lib/interfaces';
-import * as utils from '../../lib/utils';
-
 // Asset instance APIs
 
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string,
@@ -16,8 +14,8 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        assetInstanceID: assetInstanceID,
+        assetDefinitionID: assetDefinitionID,
         descriptionHash,
         contentHash,
         participants
@@ -40,8 +38,8 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        assetInstanceID: assetInstanceID,
+        assetDefinitionID: assetDefinitionID,
         contentHash,
         participants
       }
@@ -83,8 +81,8 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
+        assetDefinitionID: assetDefinitionID,
+        assetInstanceID: assetInstanceID,
         key,
         value,
         participants
@@ -107,8 +105,8 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        paymentInstanceID: utils.uuidToHex(paymentInstanceID),
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
+        paymentInstanceID: paymentInstanceID,
+        paymentDefinitionID: paymentDefinitionID,
         recipient,
         amount,
         descriptionHash,
@@ -132,8 +130,8 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        paymentInstanceID: utils.uuidToHex(paymentInstanceID),
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
+        paymentInstanceID: paymentInstanceID,
+        paymentDefinitionID: paymentDefinitionID,
         recipient,
         amount,
         participants

@@ -259,8 +259,22 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 }
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
-  const eventAssetInstanceID = batchInstance ? batchInstance.assetInstanceID : utils.hexToUuid(event.assetInstanceID);
-  const eventAssetDefinitionID = batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID);
+  let eventAssetInstanceID: string;
+  let eventAssetDefinitionID: string;
+  if(batchInstance === undefined) {
+    switch(config.protocol) {
+      case 'corda':
+        eventAssetInstanceID = event.assetInstanceID;
+        eventAssetDefinitionID = event.assetDefinitionID;
+      case 'ethereum':
+        eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+        eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+    }
+  } else {
+    eventAssetInstanceID = batchInstance.assetInstanceID;
+    eventAssetDefinitionID = batchInstance.assetDefinitionID;
+  }
+
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
@@ -349,8 +363,16 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
-  const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
-  const eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+  let eventAssetInstanceID: string;
+  let eventAssetDefinitionID: string;
+  switch(config.protocol) {
+    case 'corda':
+      eventAssetInstanceID = event.assetInstanceID;
+      eventAssetDefinitionID = event.assetDefinitionID;
+    case 'ethereum':
+      eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+      eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+  }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');
