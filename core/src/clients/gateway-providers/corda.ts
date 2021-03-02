@@ -36,8 +36,8 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
       method: 'post',
       url: `${config.apiGateway.apiEndpoint}/createAssetInstance`,
       auth: {
-        username: config.apiGateway.auth ? config.apiGateway.auth.user : config.appCredentials.user,
-        password: config.apiGateway.auth ? config.apiGateway.auth.password : config.appCredentials.password
+        username: config.apiGateway.auth?.user ?? config.appCredentials.user,
+        password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
