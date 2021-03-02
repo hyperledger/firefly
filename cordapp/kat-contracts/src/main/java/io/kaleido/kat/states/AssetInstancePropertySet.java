@@ -16,26 +16,26 @@ public class AssetInstancePropertySet implements AssetEventState {
     private final Party author;
     private final String key;
     private final String value;
-    private final List<Party> assetParticipants;
+    private final List<Party> participants;
 
-    public AssetInstancePropertySet(String assetDefinitionID, String assetInstanceID, Party author, String key, String value, List<Party> assetParticipants) {
+    public AssetInstancePropertySet(String assetDefinitionID, String assetInstanceID, Party author, String key, String value, List<Party> participants) {
         this.assetDefinitionID = assetDefinitionID;
         this.assetInstanceID = assetInstanceID;
         this.author = author;
         this.key = key;
         this.value = value;
-        this.assetParticipants = assetParticipants;
+        this.participants = participants;
     }
 
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return new ArrayList<>(assetParticipants);
+        return new ArrayList<>(participants);
     }
 
     @Override
     public String toString() {
-        return String.format("AssetInstancePropertySet(assetDefinitionID=%s, assetInstanceID=%s, author=%s, key=%s, value=%s, participants=%s)", assetDefinitionID, assetInstanceID, author, key, value, assetParticipants);
+        return String.format("AssetInstancePropertySet(assetDefinitionID=%s, assetInstanceID=%s, author=%s, key=%s, value=%s, participants=%s)", assetDefinitionID, assetInstanceID, author, key, value, participants);
     }
 
     @Override
@@ -43,10 +43,6 @@ public class AssetInstancePropertySet implements AssetEventState {
         return author;
     }
 
-    @Override
-    public List<Party> getAssetParticipants() {
-        return assetParticipants;
-    }
 
     public String getAssetInstanceID() {
         return assetInstanceID;
