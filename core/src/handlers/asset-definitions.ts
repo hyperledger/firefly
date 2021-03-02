@@ -58,36 +58,36 @@ export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: stri
     contentSchema,
     indexes
   }
-  let assetDefinitionDB: IDBAssetDefinition = {
+
+  let assetDefinitionHash: string;
+  let receipt: string | undefined;
+
+  switch (config.protocol) {
+    case 'ethereum':
+      assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
+      const apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, sync);
+      if (apiGatewayResponse.type === 'async') {
+        receipt = apiGatewayResponse.id;
+      }
+      break;
+    case 'corda':
+      assetDefinitionHash = utils.getSha256(JSON.stringify(assetDefinition));
+      await createCollection(assetDefinitionID, indexes);
+      break;
+  }
+  await database.upsertAssetDefinition({
     assetDefinitionID,
     author,
     name,
     isContentPrivate,
     isContentUnique,
     descriptionSchema,
-    assetDefinitionHash: "",
+    assetDefinitionHash,
     contentSchema,
+    receipt,
     indexes,
     submitted: timestamp
-  };
-
-  if(config.protocol === 'ethereum') {
-    const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
-    const apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, sync);
-    if(apiGatewayResponse.type === 'async'){
-      assetDefinitionDB.receipt = apiGatewayResponse.id;
-    }
-  } else {
-    // create asset instance collection for corda/others, as no transactions are created for asset definitions
-    // for ethereum it is created when transaction is mined
-    const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
-    let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
-    if (assetDefinition.indexes !== undefined) {
-      indexes = indexes.concat(assetDefinition.indexes)
-    }
-    await database.createCollection(collectionName, indexes);
-  }
-  await database.upsertAssetDefinition(assetDefinitionDB);
+  });
   return assetDefinitionID;
 };
 
@@ -121,11 +121,15 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     transactionHash
   });
 
-  const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
+  await createCollection(assetDefinition.assetDefinitionID, assetDefinition.indexes);
+
+};
+
+const createCollection = async (assetDefinitionID: string, assetDefinitionIndexes: indexes | undefined) => {
+  const collectionName = `asset-instance-${assetDefinitionID}`;
   let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
-  if (assetDefinition.indexes !== undefined) {
-    indexes = indexes.concat(assetDefinition.indexes)
+  if (assetDefinitionIndexes !== undefined) {
+    indexes = indexes.concat(assetDefinitionIndexes)
   }
   await database.createCollection(collectionName, indexes);
-
 };

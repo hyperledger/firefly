@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "build/index.js",
   "scripts": {
@@ -79,10 +79,10 @@
     ],
     "all": true,
     "check-coverage": true,
-    "statements": 43,
-    "branches": 22,
-    "functions": 38,
-    "lines": 50
+    "statements": 37,
+    "branches": 20,
+    "functions": 32,
+    "lines": 49
   },
   "mocha": {
     "require": [

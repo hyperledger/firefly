@@ -33,14 +33,14 @@ export const constants = {
 const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
 
 export const databaseCollectionIndexes: { [name in databaseCollectionName]: indexes } = {
-  members: [{fields: ['address'], unique: true}],
-  'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
-  'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],
-  'payment-instances': [{fields: ['paymentInstanceID'], unique: true}],
+  members: [{ fields: ['address'], unique: true }],
+  'asset-definitions': [{ fields: ['assetDefinitionID'], unique: true }],
+  'payment-definitions': [{ fields: ['paymentDefinitionID'], unique: true }],
+  'payment-instances': [{ fields: ['paymentInstanceID'], unique: true }],
   'batches': [
-    {fields: ['batchID'], unique: true}, // Primary key
-    {fields: ['type','author','completed','created']}, // Search index for startup processing, and other queries
-    {fields: ['batchHash']} // To retrieve a batch by its hash, in response to a blockchain event
+    { fields: ['batchID'], unique: true }, // Primary key
+    { fields: ['type', 'author', 'completed', 'created'] }, // Search index for startup processing, and other queries
+    { fields: ['batchHash'] } // To retrieve a batch by its hash, in response to a blockchain event
   ],
 };
 
@@ -52,17 +52,15 @@ const isValidX500Name = (name: string) => {
   } catch (e) {
     return false;
   }
-  return true; 
+  return true;
 };
 
 export const isAuthorValid = (author: string, protocol: string) => {
-  switch(protocol) {
+  switch (protocol) {
     case 'corda':
       return isValidX500Name(author);
     case 'ethereum':
       return ETHEREUM_ACCOUNT_REGEXP.test(author);
-    default:
-      return false;
   }
 }
 
@@ -142,7 +140,7 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
     } catch (err) {
       const data = err.response?.data;
       log.error(`${config.method} ${config.url} attempt ${attempts} [${err.response?.status}]`, (data && !data.on) ? data : err.stack)
-      if(err.response?.status === 404) {
+      if (err.response?.status === 404) {
         throw err;
       } else {
         currentError = err;
