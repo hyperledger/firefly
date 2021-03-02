@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<SignedTransaction> {
-    private final List<Party> observers;
+    protected final List<Party> observers;
     private final UniqueIdentifier orderingContext;
     private final ProgressTracker.Step GENERATING_TRANSACTION = new ProgressTracker.Step("Generating transaction based on new AssetInstanceBatchCreated.");
     private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
