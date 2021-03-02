@@ -6,6 +6,5 @@ import java.util.List;
 
 public interface AssetEventState extends ContractState {
     Party getAuthor();
-    List<Party> getAssetParticipants();
 }
 
