@@ -16,35 +16,30 @@ public class DescribedAssetInstanceCreated implements AssetEventState {
     private final Party author;
     private final String descriptionHash;
     private final String contentHash;
-    private final List<Party> assetParticipants;
+    private final List<Party> participants;
 
-    public DescribedAssetInstanceCreated(String assetInstanceID, String assetDefinitionID, Party author, String descriptionHash, String contentHash, List<Party> assetParticipants) {
+    public DescribedAssetInstanceCreated(String assetInstanceID, String assetDefinitionID, Party author, String descriptionHash, String contentHash, List<Party> participants) {
         this.assetInstanceID = assetInstanceID;
         this.assetDefinitionID = assetDefinitionID;
         this.author = author;
         this.descriptionHash = descriptionHash;
         this.contentHash = contentHash;
-        this.assetParticipants = assetParticipants;
+        this.participants = participants;
     }
 
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return new ArrayList<>(assetParticipants);
+        return new ArrayList<>(participants);
     }
 
     @Override
     public String toString() {
-        return String.format("DescribedAssetInstanceCreated(assetInstanceID=%s, assetDefinitionID=%s, author=%s, descriptionHash=%s, contentHash=%s, participants=%s)", assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, assetParticipants);
+        return String.format("DescribedAssetInstanceCreated(assetInstanceID=%s, assetDefinitionID=%s, author=%s, descriptionHash=%s, contentHash=%s, participants=%s)", assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants);
     }
 
     @Override
     public Party getAuthor() {
         return author;
-    }
-
-    @Override
-    public List<Party> getAssetParticipants() {
-        return assetParticipants;
     }
 }
