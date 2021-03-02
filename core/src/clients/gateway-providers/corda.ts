@@ -83,8 +83,8 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
         password: config.apiGateway.auth?.password ?? config.appCredentials.password
       },
       data: {
-        assetDefinitionID,
-        assetInstanceID,
+        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
+        assetInstanceID: utils.uuidToHex(assetInstanceID),
         key,
         value,
         participants
