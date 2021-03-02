@@ -28,6 +28,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
   }
 };
 
+
 // Asset definition APIs
 
 export const createAssetDefinition = async (author: string, assetDefinitionHash: string, sync: boolean):
@@ -49,6 +50,7 @@ export const createAssetDefinition = async (author: string, assetDefinitionHash:
     throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
+
 
 // Payment definition APIs
 
@@ -94,6 +96,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
     throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
   }
 };
+
 
 // Asset instance APIs
 
