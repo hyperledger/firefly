@@ -62,19 +62,22 @@ router.post('/', async (req, res, next) => {
     if (typeof req.body.isContentUnique !== 'boolean') {
       throw new RequestError('Missing asset definition content uniqueness', 400);
     }
-    let assetDefinitionID; 
-    if(config.protocol === 'corda') {
-      if (!req.body.assetDefinitionID) {
-        throw new RequestError('Missing asset definition id', 400);
-      }
-      assetDefinitionID = req.body.assetDefinitionID;
-    } else {
-      assetDefinitionID = uuidV4();
+    let assetDefinitionID;
+    switch (config.protocol) {
+      case 'corda':
+        if (!req.body.assetDefinitionID) {
+          throw new RequestError('Missing asset definition id', 400);
+        }
+        assetDefinitionID = req.body.assetDefinitionID;
+        break;
+      case 'ethereum':
+        assetDefinitionID = uuidV4();
+        break;
     }
     const sync = req.query.sync === 'true';
     await assetDefinitionsHandler.handleCreateAssetDefinitionRequest(assetDefinitionID, req.body.name, req.body.isContentPrivate,
       req.body.isContentUnique, req.body.author, req.body.descriptionSchema, req.body.contentSchema, req.body.indexes, sync);
-    res.send({ status: sync? 'success' : 'submitted', assetDefinitionID });
+    res.send({ status: sync ? 'success' : 'submitted', assetDefinitionID });
   } catch (err) {
     next(err);
   }

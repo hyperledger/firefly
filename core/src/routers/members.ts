@@ -22,7 +22,7 @@ router.get('/', async (req, res, next) => {
 router.get('/:memberAddress', async (req, res, next) => {
   try {
     res.send(await membersHandler.handleGetMemberRequest(req.params.memberAddress));
-  } catch(err) {
+  } catch (err) {
     next(err)
   }
 });
@@ -36,28 +36,30 @@ router.put('/', async (req, res, next) => {
       throw new RequestError('Missing member name', 400);
     }
     let assetTrailInstanceID, app2appDestination, docExchangeDestination;
-    if(config.protocol === 'corda') {
-      if (!req.body.assetTrailInstanceID) {
-        throw new RequestError('Missing member assetTrailInstanceID', 400);
-      }
-      if (!req.body.app2appDestination) {
-        throw new RequestError('Missing member app2appDestination', 400);
-      }
-      if (!req.body.docExchangeDestination) {
-        throw new RequestError('Missing member docExchangeDestination', 400);
-      }
-      assetTrailInstanceID = req.body.assetTrailInstanceID;
-      app2appDestination = req.body.app2appDestination;
-      docExchangeDestination = req.body.docExchangeDestination;
-    } else {
-      assetTrailInstanceID = config.assetTrailInstanceID;
-      app2appDestination = config.app2app.destinations.kat;
-      docExchangeDestination = config.docExchange.destination;
+    switch (config.protocol) {
+      case 'corda':
+        if (!req.body.assetTrailInstanceID) {
+          throw new RequestError('Missing member assetTrailInstanceID', 400);
+        }
+        if (!req.body.app2appDestination) {
+          throw new RequestError('Missing member app2appDestination', 400);
+        }
+        if (!req.body.docExchangeDestination) {
+          throw new RequestError('Missing member docExchangeDestination', 400);
+        }
+        assetTrailInstanceID = req.body.assetTrailInstanceID;
+        app2appDestination = req.body.app2appDestination;
+        docExchangeDestination = req.body.docExchangeDestination;
+        break;
+      case 'ethereum':
+        assetTrailInstanceID = config.assetTrailInstanceID;
+        app2appDestination = config.app2app.destinations.kat;
+        docExchangeDestination = config.docExchange.destination;
+        break;
     }
-
     const sync = req.query.sync === 'true';
-    await membersHandler.handleUpsertMemberRequest(req.body.address, req.body.name, assetTrailInstanceID,app2appDestination,docExchangeDestination,sync);
-    res.send({ status: sync? 'success' : 'submitted' });
+    await membersHandler.handleUpsertMemberRequest(req.body.address, req.body.name, assetTrailInstanceID, app2appDestination, docExchangeDestination, sync);
+    res.send({ status: sync ? 'success' : 'submitted' });
   } catch (err) {
     next(err);
   }
