@@ -1,13 +1,13 @@
 import { config } from '../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../lib/interfaces';
-import * as ethrereumGateay from './gateway-providers/ethereum';
+import * as ethereumGateway from './gateway-providers/ethereum';
 import * as cordaGateway from './gateway-providers/corda';
 
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  return ethrereumGateay.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
+  return ethereumGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
 };
 
 
@@ -15,7 +15,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
 
 export const createAssetDefinition = async (author: string, assetDefinitionHash: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  return ethrereumGateay.createAssetDefinition(author, assetDefinitionHash, sync);
+  return ethereumGateway.createAssetDefinition(author, assetDefinitionHash, sync);
 };
 
 
@@ -23,12 +23,12 @@ export const createAssetDefinition = async (author: string, assetDefinitionHash:
 
 export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
   descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  return ethrereumGateay.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
+  return ethereumGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
 };
 
 export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  return ethrereumGateay.createPaymentDefinition(paymentDefinitionID, name, author, sync);
+  return ethereumGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
 };
 
 
@@ -40,7 +40,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
     case 'corda':
       return cordaGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, descriptionHash, contentHash, participants);
     case 'ethereum':
-      return ethrereumGateay.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+      return ethereumGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
   }
 };
 
@@ -50,7 +50,7 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
     case 'corda':
       return cordaGateway.createAssetInstance(assetInstanceID, assetDefinitionID, contentHash, participants);
     case 'ethereum':
-      return ethrereumGateay.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+      return ethereumGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
   }
 };
 
@@ -59,7 +59,7 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
     case 'corda':
       return cordaGateway.createAssetInstanceBatch(batchHash, participants);
     case 'ethereum':
-      return ethrereumGateay.createAssetInstanceBatch(batchHash, author, sync);
+      return ethereumGateway.createAssetInstanceBatch(batchHash, author, sync);
   }
 }
 
@@ -69,7 +69,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
     case 'corda':
       return cordaGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, key, value, participants);
     case 'ethereum':
-      return ethrereumGateay.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, sync);
+      return ethereumGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, sync);
   }
 };
 
@@ -83,7 +83,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
     case 'corda':
       return cordaGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash, participants);
     case 'ethereum':
-      return ethrereumGateay.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
+      return ethereumGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
   }
 };
 
@@ -94,6 +94,6 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
     case 'corda':
       return cordaGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, participants);
     case 'ethereum':
-      return ethrereumGateay.createPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
+      return ethereumGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
   }
 };
