@@ -39,7 +39,7 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     throw new RequestError('Participants not supported in Ethereum', 400);
   }
   if(config.protocol === 'corda') {
-    // validate participants are subset of participants in asset definition 
+    // validate participants are registered members
     if(participants !== undefined) {
       for(const participant  of participants) {
         if (await database.retrieveMemberByAddress(participant) === null) {
