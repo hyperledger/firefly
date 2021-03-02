@@ -1,4 +1,4 @@
-import { cleanUp, setUp } from "./common";
+import { closeDown, setUp } from "./common";
 import { cordaTests } from "./corda";
 
 describe('corda tests', async () => {
@@ -7,6 +7,6 @@ describe('corda tests', async () => {
     });
     cordaTests();
     after(async () => {
-       await cleanUp('corda');
+       await closeDown();
     });
 });

@@ -5,7 +5,7 @@ import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentDefinition, IEventPaymentDefinitionCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
 
 const ajv = new Ajv();
 
@@ -26,7 +26,7 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
 };
 
 export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
-  if(descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
+  if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
   if (await database.retrievePaymentDefinitionByName(name) !== null) {
@@ -44,7 +44,7 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
     apiGatewayResponse = await apiGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  var paymentDefinitionDB: IDBPaymentDefinition = {
+  await database.upsertPaymentDefinition({
     paymentDefinitionID,
     name,
     author,
@@ -52,8 +52,7 @@ export const handleCreatePaymentDefinitionRequest = async (name: string, author:
     descriptionSchema,
     submitted: timestamp,
     receipt
-  };
-  await database.upsertPaymentDefinition(paymentDefinitionDB);
+  });
   return paymentDefinitionID;
 };
 

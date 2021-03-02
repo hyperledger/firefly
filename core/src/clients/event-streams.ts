@@ -20,7 +20,9 @@ let disconnectionTimeout: NodeJS.Timeout;
 export const init = () => {
   ws = new WebSocket(config.eventStreams.wsEndpoint, {
     headers: {
-      Authorization: 'Basic ' + Buffer.from(`${getAppCreds().user}:${getAppCreds().password}`).toString('base64')
+      Authorization: 'Basic ' + Buffer.from(`${config.eventStreams.auth?.user ?? config.appCredentials.user}` +
+        `:${config.eventStreams.auth?.password ?? config.appCredentials.password}`).toString('base64')
+
     }
   });
   addEventHandlers();
@@ -34,11 +36,6 @@ export const shutDown = () => {
     clearTimeout(heartBeatTimeout);
     ws.close();
   }
-};
-
-const getAppCreds = () => {
-  if(config.eventStreams.auth) return config.eventStreams.auth;
-  return config.appCredentials;
 };
 
 const addEventHandlers = () => {
@@ -80,16 +77,14 @@ const heartBeat = () => {
   }, utils.constants.EVENT_STREAM_PING_TIMEOUT_SECONDS * 1000);
 }
 
-const processRawMessage = (message: string) => {
-  var processedMessages: Array<IEventStreamMessage>;
-  switch(config.protocol) {
+const processRawMessage = (message: string): Array<IEventStreamMessage> => {
+  switch (config.protocol) {
     case 'ethereum':
-      processedMessages = JSON.parse(message);
-      break;
+      return JSON.parse(message);
     case 'corda':
       const cordaMessages: Array<IEventStreamRawMessageCorda> = JSON.parse(message);
-      processedMessages = cordaMessages.map(msg => {
-        var processedMessage: IEventStreamMessage = {
+      return cordaMessages.map(msg => (
+        {
           data: {
             ...msg.data.data,
             timestamp: Date.parse(msg.recordedTime)
@@ -97,45 +92,33 @@ const processRawMessage = (message: string) => {
           transactionHash: msg.stateRef.txhash,
           subId: msg.subId,
           signature: msg.signature
-          };
-        return processedMessage
-      }) 
-      break;
+        }
+      )
+      );
   }
-  return processedMessages;
 }
 
-const getBlockchainData = (message: IEventStreamMessage) => {
-  var blockchainData: IDBBlockchainData;
-  switch(config.protocol) {
-    case 'ethereum': 
-      blockchainData = {
+const getBlockchainData = (message: IEventStreamMessage): IDBBlockchainData => {
+  switch (config.protocol) {
+    case 'ethereum':
+      return {
         blockNumber: Number(message.blockNumber),
         transactionHash: message.transactionHash
       }
-      break;
     case 'corda': {
-      blockchainData = {
+      return {
         transactionHash: message.transactionHash
       }
-      break;
     }
   }
-  return blockchainData;
 }
 
 const eventSignatures = () => {
-  var signatures;
-  switch(config.protocol) {
-    case 'ethereum': 
-    signatures = utils.contractEventSignatures
-      break;
-    case 'corda': 
-      signatures = utils.contractEventSignaturesCorda
-      break;
-    }
-  return signatures;
-} 
+  switch (config.protocol) {
+    case 'ethereum': return utils.contractEventSignatures
+    case 'corda': return utils.contractEventSignaturesCorda
+  }
+}
 
 const handleMessage = async (message: string) => {
   const messageArray: Array<IEventStreamMessage> = processRawMessage(message);
