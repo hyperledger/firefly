@@ -97,7 +97,7 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
           throw new RequestError('Missing or invalid asset property author', 400);
         }
         const sync = req.query.sync === 'true';
-        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, req.body.participants, sync);
+        await assetInstancesHandler.handleSetAssetInstancePropertyRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.author, req.body.key, req.body.value, sync);
         res.send({ status: sync ? 'success' : 'submitted' });
         break;
       case 'push':

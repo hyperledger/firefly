@@ -192,11 +192,13 @@ export interface IEventAssetInstanceCreated {
   descriptionHash?: string
   contentHash: string
   timestamp: string
+  participants?: string[]
 }
 export interface IEventAssetInstanceBatchCreated {
   batchHash: string;
   author: string
   timestamp: string
+  participants?: string[]
 }
 
 export interface IEventPaymentInstanceCreated {
@@ -207,6 +209,7 @@ export interface IEventPaymentInstanceCreated {
   descriptionHash?: string
   amount: string
   timestamp: string
+  participants?: string[]
 }
 
 export interface IEventAssetInstancePropertySet {
@@ -216,6 +219,7 @@ export interface IEventAssetInstancePropertySet {
   key: string
   value: string
   timestamp: string
+  participants?: string[]
 }
 
 // DATABASE INTERFACES

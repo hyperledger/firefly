@@ -193,7 +193,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   return assetInstanceID;
 }
 
-export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, participants: string[] | undefined, sync: boolean) => {
+export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, sync: boolean) => {
   const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
     throw new RequestError('Unknown asset instance', 400);
@@ -215,7 +215,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, participants, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, assetInstance.participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
@@ -309,8 +309,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  log.trace(`Updating asset instance ${eventAssetInstanceID} with blockchain pinned info blockNumber=${blockNumber} hash=${transactionHash}`)
-  await database.upsertAssetInstance({
+  log.trace(`Updating asset instance ${eventAssetInstanceID} with blockchain pinned info blockNumber=${blockNumber} hash=${transactionHash}`);
+  let assetInstanceDB: IDBAssetInstance = {
     assetInstanceID: eventAssetInstanceID,
     author: event.author,
     assetDefinitionID: assetDefinition.assetDefinitionID,
@@ -321,7 +321,11 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     content,
     blockNumber,
     transactionHash
-  });
+  };
+  if(config.protocol === 'corda') {
+    assetInstanceDB.participants = event.participants;
+  }
+  await database.upsertAssetInstance(assetInstanceDB);
   if (assetDefinition.isContentPrivate) {
     const privateData = pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     if (privateData !== undefined) {

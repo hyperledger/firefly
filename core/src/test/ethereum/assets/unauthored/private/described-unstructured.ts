@@ -1,4 +1,3 @@
-<<<<<<< HEAD:core/src/test/ethereum/assets/unauthored/private/described-unstructured.ts
 import { app, mockEventStreamWebSocket } from '../../../../common';
 import nock from 'nock';
 import request from 'supertest';
@@ -8,15 +7,6 @@ import * as utils from '../../../../../lib/utils';
 import { testDescription } from '../../../../samples';
 
 export const testUnauthoredPrivateDescribedUnstructured = () => {
-=======
-import { app, mockEventStreamWebSocket } from '../../../common';
-import nock from 'nock';
-import request from 'supertest';
-import assert from 'assert';
-import { IEventAssetDefinitionCreated, IDBAssetDefinition } from '../../../../lib/interfaces';
-import * as utils from '../../../../lib/utils';
-import { testDescription } from '../../../samples';
->>>>>>> master:core/src/test/assets/unauthored/private/described-unstructured.ts
 
 describe('Assets: unauthored - private - described - unstructured', async () => {
 
