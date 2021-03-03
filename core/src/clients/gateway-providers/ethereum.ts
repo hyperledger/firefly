@@ -1,12 +1,12 @@
 import axios from 'axios';
 import { config } from '../../lib/config';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponseEthereum } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
 
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
-  docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -32,7 +32,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
 // Asset definition APIs
 
 export const createAssetDefinition = async (author: string, assetDefinitionHash: string, sync: boolean):
-  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -55,7 +55,7 @@ export const createAssetDefinition = async (author: string, assetDefinitionHash:
 // Payment definition APIs
 
 export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
-  descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -77,7 +77,7 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
 };
 
 export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
-  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -101,7 +101,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
 // Asset instance APIs
 
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
-  descriptionHash: string, contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  descriptionHash: string, contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -124,7 +124,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
 };
 
 export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
-  contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -145,7 +145,7 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
   }
 };
 
-export const createAssetInstanceBatch = async (batchHash: string, author: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+export const createAssetInstanceBatch = async (batchHash: string, author: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -165,7 +165,7 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
 };
 
 export const setAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string,
-  sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -192,7 +192,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
 
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
   author: string, recipient: string, amount: number, descriptionHash: string, sync: boolean):
-  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -216,7 +216,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
 };
 
 export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string,
-  recipient: string, amount: number, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  recipient: string, amount: number, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',

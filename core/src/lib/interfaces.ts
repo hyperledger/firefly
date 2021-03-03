@@ -53,10 +53,6 @@ export interface ISettings {
 
 // API GATEWAY INTERFACES
 
-export interface IAPIGatewayAsyncResponseCorda {
-  txhash: string
-}
-
 export interface IAPIGatewayAsyncResponse {
   type: 'async'
   id: string
@@ -66,23 +62,27 @@ export interface IAPIGatewayAsyncResponse {
 
 export interface IAPIGatewaySyncResponse {
   type: 'sync'
-  blockHash?: string
-  blockNumber?: string
-  cumulativeGasUsed?: string
-  from?: string
-  gasUsed?: string
-  headers?: {
+  transactionHash: string
+}
+
+export interface IAPIGatewaySyncResponseEthereum extends IAPIGatewaySyncResponse {
+  protocol: 'ethereum'
+  blockHash: string
+  blockNumber: string
+  cumulativeGasUsed: string
+  from: string
+  gasUsed: string
+  headers: {
     id: string
     type: 'string',
     timeReceived: 'string',
     timeElapsed: number
     requestOffset: string
   }
-  nonce?: string
-  status?: string
-  to?: string
-  transactionHash: string
-  transactionIndex?: string
+  nonce: string
+  status: string
+  to: string
+  transactionIndex: string
 }
 
 // IPFS INTERFACES
