@@ -4,7 +4,7 @@
   "assetTrailInstanceID": "asset-trail-org-a",
   "protocol": "ethereum",
   "apiGateway": {
-    "apiEndpoint": "https://zzdk0au9rl-zznm62sm1o-connect.dev2.photic.io/instances/0xc4ed58b23059e5b2f867b6040b46dcea04396c8b"
+    "apiEndpoint": "https://zzdk0au9rl-zznm62sm1o-connect.dev2.photic.io/instances/0x6c3972915c731402469a53471703ef2024fe7906"
   },
   "eventStreams": {
     "wsEndpoint": "wss://zzdk0au9rl-zznm62sm1o-connect.dev2-ws.photic.io/ws",
