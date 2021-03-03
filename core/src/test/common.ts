@@ -1,27 +1,59 @@
-import { promises as fs } from 'fs';
-import path from 'path';
+import { EventEmitter } from 'events';
+import rimraf from 'rimraf';
 import nock from 'nock';
 import mock from 'mock-require';
-import { EventEmitter } from 'events';
+import { promises as fs } from 'fs';
+import path from 'path';
 import assert from 'assert';
 import request from 'supertest';
-import { IEventMemberRegistered } from '../lib/interfaces';
 import * as utils from '../lib/utils';
-
+import { IEventMemberRegistered } from "../lib/interfaces";
 export let app: Express.Application;
 export let mockEventStreamWebSocket: EventEmitter;
 export let mockDocExchangeSocketIO = new EventEmitter();
 
 let shutDown: () => void;
 
-before(async () => {
+class MockWebSocket extends EventEmitter {
 
-  const sandboxPath = path.join(__dirname, '../../test-resources/sandbox');
-  await fs.rmdir(sandboxPath, { recursive: true });
-  await fs.mkdir(sandboxPath);
-  await fs.copyFile(path.join(__dirname, '../../test-resources/config.json'), path.join(__dirname, '../../test-resources/sandbox/config.json'));
-  await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(__dirname, '../../test-resources/sandbox/settings.json'));
+  constructor(url: string) {
+    super();
+    assert.strictEqual(url, 'ws://eventstreams.kaleido.io');
+    mockEventStreamWebSocket = this;
+  }
 
+  send(message: string) {
+    mockEventStreamWebSocket.emit('send', message);
+  }
+
+  ping() { }
+
+  close() { }
+
+};
+
+export const setUp = async (protocol: string) => {
+  await new Promise<void>((resolve, reject) => {
+    rimraf(path.join(__dirname, `../../test-resources/sandbox/${protocol}`), {}, (err) => {
+      if (err) {
+        reject()
+      } else {
+        resolve();
+      }
+    });
+  });
+
+  const sandboxPath = path.join(__dirname, `../../test-resources/sandbox/${protocol}`);
+  await fs.mkdir(sandboxPath, { recursive: true });
+  await fs.copyFile(path.join(__dirname, '../../test-resources/settings.json'), path.join(sandboxPath, 'settings.json'));
+  await fs.copyFile(path.join(__dirname, `../../test-resources/config-${protocol}.json`), path.join(sandboxPath, 'config.json'));
+
+  mock('ws', MockWebSocket);
+  mock('socket.io-client', {
+    connect: () => {
+      return mockDocExchangeSocketIO;
+    }
+  });
   // IPFS
   nock('https://ipfs.kaleido.io')
     .post('/api/v0/version')
@@ -31,33 +63,6 @@ before(async () => {
   nock('https://docexchange.kaleido.io')
     .get('/documents')
     .reply(200, { entries: [] });
-
-  class MockWebSocket extends EventEmitter {
-
-    constructor(url: string) {
-      super();
-      assert.strictEqual(url, 'ws://eventstreams.kaleido.io');
-      mockEventStreamWebSocket = this;
-    }
-
-    send(message: string) {
-      mockEventStreamWebSocket.emit('send', message);
-    }
-
-    ping() { }
-
-    close() { }
-
-  };
-
-  mock('ws', MockWebSocket);
-
-  mock('socket.io-client', {
-    connect: () => {
-      return mockDocExchangeSocketIO;
-    }
-  });
-
   const { promise } = require('../app');
   ({ app, shutDown } = await promise);
 
@@ -73,11 +78,38 @@ before(async () => {
 
   await eventPromise;
 
-  await setupSampleMembers();
+  if (protocol === 'corda') {
+    await setupSampleMembersCorda();
+  } else {
+    await setupSampleMembersEthereum();
+  }
+}
 
-});
+const setupSampleMembersCorda = async () => {
+  console.log('Setting up corda members');
+  await request(app)
+    .put('/api/v1/members')
+    .send({
+      address: 'CN=Node of node1 for env1, O=Kaleido, L=Raleigh, C=US',
+      name: 'Test Member 1',
+      assetTrailInstanceID: 'service-id_1',
+      app2appDestination: 'kld://app2app_1',
+      docExchangeDestination: 'kld://docexchange_1'
+    });
 
-const setupSampleMembers = async () => {
+  await request(app)
+    .put('/api/v1/members')
+    .send({
+      address: 'CN=Node of node2 for env1, O=Kaleido, L=Raleigh, C=US',
+      name: 'Test Member 2',
+      assetTrailInstanceID: 'service-id_2',
+      app2appDestination: 'kld://app2app_2',
+      docExchangeDestination: 'kld://docexchange_2'
+    });
+};
+
+const setupSampleMembersEthereum = async () => {
+  console.log('Setting up ethereum members');
   nock('https://apigateway.kaleido.io')
     .post('/registerMember?kld-from=0x0000000000000000000000000000000000000001&kld-sync=true')
     .reply(200);
@@ -126,6 +158,9 @@ const setupSampleMembers = async () => {
   await eventPromise;
 };
 
-after(() => {
+export const closeDown = async () => {
   shutDown();
-});
+  mock.stop('ws');
+  mock.stop('socket.io-client');
+  nock.restore();
+};

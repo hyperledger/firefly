@@ -54,14 +54,15 @@ export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, a
   return assetInstance;
 };
 
-export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, sync: boolean) => {
+export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
   if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 400);
   }
-  if (assetDefinition.transactionHash === undefined) {
+  // For ethereum, we need to make assert definition transaction is mined
+  if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new RequestError('Asset definition transaction must be mined', 400);
   }
   if (!assetDefinition.contentSchema) {
@@ -83,6 +84,18 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
     throw new RequestError(`Asset instance content conflict`);
   }
+  if (config.protocol === 'corda') {
+    // validate participants are registered members
+    if (participants !== undefined) {
+      for (const participant of participants) {
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError('One or more participants are not registered', 400);
+        }
+      }
+    } else {
+      throw new RequestError('Missing asset participants', 400);
+    }
+  }
   const assetInstanceID = uuidV4();
   const timestamp = utils.getTimestamp();
   const assetInstance: IAssetInstance = {
@@ -100,24 +113,27 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   // If there are public IPFS shared parts of this instance, we can batch it together with all other
   // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
   // most importantly the number of IPFS transactions.
-  if (assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) {
+  // Curently we do batching only for ethereum
+  if ((assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) && config.protocol === 'ethereum') {
     dbAssetInstance.batchID = await assetInstancesPinning.pin(assetDefinition, assetInstance);
   } else {
     // One-for-one blockchain transactions to instances
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
     if (descriptionHash) {
-      apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+      apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
     } else {
-      apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+      apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
     }
     dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   }
-
+  if (config.protocol === 'corda') {
+    dbAssetInstance.participants = participants;
+  }
   await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -142,12 +158,24 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinitionID, contentHash)) !== null) {
     throw new RequestError('Asset instance content conflict', 409);
   }
+  if (config.protocol === 'corda') {
+    // validate participants are registered
+    if (participants) {
+      for (const participant of participants) {
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError(`One or more participants are not registered`, 400);
+        }
+      }
+    } else {
+      throw new RequestError(`Missing asset participants`, 400);
+    }
+  }
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
   if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
   } else {
-    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
+    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetInstance({
@@ -158,6 +186,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     description,
     contentHash,
     filename,
+    participants,
     submitted: timestamp,
     receipt
   });
@@ -186,7 +215,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(utils.uuidToHex(assetDefinitionID), utils.uuidToHex(assetInstanceID), author, key, value, sync);
+  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
 };
@@ -213,7 +242,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
     };
     try {
       await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
-    } catch(err) {
+    } catch (err) {
       // We failed to process this record, but continue to attempt the other records in the batch
       log.error(`${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
     }
@@ -230,21 +259,38 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 }
 
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
-  const eventAssetInstanceID = batchInstance ? batchInstance.assetInstanceID : utils.hexToUuid(event.assetInstanceID);
-  const eventAssetDefinitionID = batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID);
+  let eventAssetInstanceID: string;
+  let eventAssetDefinitionID: string;
+  if(batchInstance === undefined) {
+    switch(config.protocol) {
+      case 'corda':
+        eventAssetInstanceID = event.assetInstanceID;
+        eventAssetDefinitionID = event.assetDefinitionID;
+        break;
+      case 'ethereum':
+        eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+        eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+        break;
+    }
+  } else {
+    eventAssetInstanceID = batchInstance.assetInstanceID;
+    eventAssetDefinitionID = batchInstance.assetDefinitionID;
+    log.info(`batch instance ${eventAssetDefinitionID}:${eventAssetInstanceID}`);
+  }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance !== null && dbAssetInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate asset instance ID`);
   }
-  const assetDefinition = await database.retrieveAssetDefinitionByID(batchInstance ? batchInstance.assetDefinitionID : utils.hexToUuid(event.assetDefinitionID));
+  const assetDefinition = await database.retrieveAssetDefinitionByID(eventAssetDefinitionID);
   if (assetDefinition === null) {
-    throw new Error('Uknown asset definition');
+    throw new Error('Unkown asset definition');
   }
-  if (assetDefinition.transactionHash === undefined) {
+  // For ethereum, we need to make asset definition transaction is mined
+  if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new Error('Asset definition transaction must be mined');
   }
   if (assetDefinition.isContentUnique) {
-    const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, event.contentHash);
+    const assetInstanceByContentID = await database.retrieveAssetInstanceByDefinitionIDAndContentHash(eventAssetDefinitionID, event.contentHash);
     if (assetInstanceByContentID !== null && eventAssetInstanceID !== assetInstanceByContentID.assetInstanceID) {
       if (assetInstanceByContentID.transactionHash !== undefined) {
         throw new Error(`Asset instance content conflict ${event.contentHash}`);
@@ -279,8 +325,8 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       }
     }
   }
-  log.trace(`Updating asset instance ${eventAssetInstanceID} with blockchain pinned info blockNumber=${blockNumber} hash=${transactionHash}`)
-  await database.upsertAssetInstance({
+  log.trace(`Updating asset instance ${eventAssetInstanceID} with blockchain pinned info blockNumber=${blockNumber} hash=${transactionHash}`);
+  let assetInstanceDB: IDBAssetInstance = {
     assetInstanceID: eventAssetInstanceID,
     author: event.author,
     assetDefinitionID: assetDefinition.assetDefinitionID,
@@ -291,15 +337,19 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     content,
     blockNumber,
     transactionHash
-  });
+  };
+  if(config.protocol === 'corda') {
+    assetInstanceDB.participants = event.participants;
+  }
+  await database.upsertAssetInstance(assetInstanceDB);
   if (assetDefinition.isContentPrivate) {
     const privateData = pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     if (privateData !== undefined) {
       const author = await database.retrieveMemberByAddress(event.author);
-      if(author === null) {
+      if (author === null) {
         throw new Error('Pending private data author unknown');
       }
-      if(author.app2appDestination !== privateData.fromDestination) {
+      if (author.app2appDestination !== privateData.fromDestination) {
         throw new Error('Pending private data destination mismatch');
       }
       if (privateData.content !== undefined) {
@@ -315,8 +365,18 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
-  const eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
-  const eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+  let eventAssetInstanceID: string;
+  let eventAssetDefinitionID: string;
+  switch(config.protocol) {
+    case 'corda':
+      eventAssetInstanceID = event.assetInstanceID;
+      eventAssetDefinitionID = event.assetDefinitionID;
+      break;
+    case 'ethereum':
+      eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+      eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
+      break;
+  }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
     throw new Error('Uknown asset instance');

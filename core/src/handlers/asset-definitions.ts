@@ -1,4 +1,3 @@
-import { v4 as uuidV4 } from 'uuid';
 import Ajv from 'ajv';
 import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
@@ -9,14 +8,13 @@ import indexSchema from '../schemas/indexes.json'
 import assetDefinitionSchema from '../schemas/asset-definition.json'
 
 import {
-  IAPIGatewayAsyncResponse,
-  IAPIGatewaySyncResponse,
   IDBBlockchainData,
   IDBAssetDefinition,
   IEventAssetDefinitionCreated,
   IAssetDefinitionRequest,
   indexes
 } from '../lib/interfaces';
+import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
@@ -36,7 +34,7 @@ export const handleGetAssetDefinitionRequest = async (assetDefinitionID: string)
   return assetDefinition;
 };
 
-export const handleCreateAssetDefinitionRequest = async (name: string, isContentPrivate: boolean, isContentUnique: boolean,
+export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: string, name: string, isContentPrivate: boolean, isContentUnique: boolean,
   author: string, descriptionSchema: Object | undefined, contentSchema: Object | undefined, indexes: { fields: string[], unique?: boolean }[] | undefined, sync: boolean) => {
   if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
@@ -50,11 +48,7 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
   if (await database.retrieveAssetDefinitionByName(name) !== null) {
     throw new RequestError('Asset definition name conflict', 409);
   }
-
-  const assetDefinitionID = uuidV4();
   const timestamp = utils.getTimestamp();
-  let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
-
   const assetDefinition: IAssetDefinitionRequest = {
     assetDefinitionID,
     name,
@@ -63,12 +57,24 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     descriptionSchema,
     contentSchema,
     indexes
-  };
+  }
 
-  const assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
+  let assetDefinitionHash: string;
+  let receipt: string | undefined;
 
-  apiGatewayResponse = await apiGateway.createAssetDefinition(author, sync, assetDefinitionHash);
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+  switch (config.protocol) {
+    case 'ethereum':
+      assetDefinitionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(assetDefinition)));
+      const apiGatewayResponse = await apiGateway.createAssetDefinition(author, assetDefinitionHash, sync);
+      if (apiGatewayResponse.type === 'async') {
+        receipt = apiGatewayResponse.id;
+      }
+      break;
+    case 'corda':
+      assetDefinitionHash = utils.getSha256(JSON.stringify(assetDefinition));
+      await createCollection(assetDefinitionID, indexes);
+      break;
+  }
   await database.upsertAssetDefinition({
     assetDefinitionID,
     author,
@@ -78,9 +84,9 @@ export const handleCreateAssetDefinitionRequest = async (name: string, isContent
     descriptionSchema,
     assetDefinitionHash,
     contentSchema,
+    receipt,
     indexes,
-    submitted: timestamp,
-    receipt
+    submitted: timestamp
   });
   return assetDefinitionID;
 };
@@ -101,7 +107,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       if (dbAssetDefinitionByName.transactionHash !== undefined) {
         throw new Error(`Asset definition name conflict ${dbAssetDefinitionByName.name}`);
       } else {
-        await database.markAssetDefinitionAsConflict(assetDefinition.assetDefinitionID, Number(event.timestamp));
+        await database.markAssetDefinitionAsConflict(dbAssetDefinitionByName.assetDefinitionID, Number(event.timestamp));
       }
     }
   }
@@ -115,11 +121,14 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     transactionHash
   });
 
-  const collectionName = `asset-instance-${assetDefinition.assetDefinitionID}`;
+  await createCollection(assetDefinition.assetDefinitionID, assetDefinition.indexes);
+};
+
+const createCollection = async (assetDefinitionID: string, assetDefinitionIndexes: indexes | undefined) => {
+  const collectionName = `asset-instance-${assetDefinitionID}`;
   let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
-  if (assetDefinition.indexes !== undefined) {
-    indexes = indexes.concat(assetDefinition.indexes)
+  if (assetDefinitionIndexes !== undefined) {
+    indexes = indexes.concat(assetDefinitionIndexes)
   }
   await database.createCollection(collectionName, indexes);
-
 };

@@ -31,6 +31,21 @@
       "properties": {
         "apiEndpoint": {
           "type": "string"
+        }, 
+        "auth": {
+          "type": "object",
+          "required": [
+            "user",
+            "password"
+          ],
+          "properties": {
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -46,6 +61,21 @@
         },
         "topic": {
           "type": "string"
+        },
+        "auth": {
+          "type": "object",
+          "required": [
+            "user",
+            "password"
+          ],
+          "properties": {
+            "user": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
         }
       }
     },

@@ -1,14 +1,14 @@
 {
-  "name": "core",
-  "version": "1.0.1",
-  "description": "",
+  "name": "kaleido-asset-trail",
+  "version": "1.0.2",
+  "description": "Kaleido Asset Trail",
   "main": "build/index.js",
   "scripts": {
     "start:dev": "nodemon",
     "build": "rimraf ./build && tsc",
     "start": "npm run build && node build/app.js",
-    "test2": "mocha test/*.js 'test/**/*.js'",
-    "test": "env DATA_DIRECTORY=$PWD/test-resources/sandbox nyc mocha --bail --timeout 15000 \"src/test/**/*.ts\""
+    "test_wc": "env DATA_DIRECTORY=$PWD/test-resources/sandbox/ethereum mocha --bail --timeout 25000 \"src/test/ethereum-suite.ts\" && env DATA_DIRECTORY=$PWD/test-resources/sandbox/corda mocha --bail --timeout 25000 \"src/test/corda-suite.ts\"",
+    "test": "nyc npm run test_wc"
   },
   "keywords": [],
   "author": "",
@@ -31,7 +31,8 @@
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.1",
     "uuid": "^8.3.1",
-    "ws": "^7.3.1"
+    "ws": "^7.3.1",
+    "ldapjs": "^2.2.3"
   },
   "devDependencies": {
     "@types/bs58": "^4.0.1",
@@ -50,6 +51,7 @@
     "@types/supertest": "^2.0.10",
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.2.7",
+    "@types/ldapjs": "^1.0.9",
     "mocha": "^8.2.1",
     "nock": "^13.0.4",
     "nodemon": "^2.0.4",
@@ -77,10 +79,10 @@
     ],
     "all": true,
     "check-coverage": true,
-    "statements": 43,
-    "branches": 22,
-    "functions": 38,
-    "lines": 50
+    "statements": 66,
+    "branches": 35,
+    "functions": 66,
+    "lines": 69
   },
   "mocha": {
     "require": [

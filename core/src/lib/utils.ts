@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import axios, { AxiosRequestConfig } from 'axios';
 import { databaseCollectionName, indexes } from './interfaces';
 import { createLogger, LogLevelString } from 'bunyan';
+import { parseDN } from 'ldapjs';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -32,19 +33,35 @@ export const constants = {
 const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
 
 export const databaseCollectionIndexes: { [name in databaseCollectionName]: indexes } = {
-  members: [{fields: ['address'], unique: true}],
-  'asset-definitions': [{fields: ['assetDefinitionID'], unique: true}],
-  'payment-definitions': [{fields: ['paymentDefinitionID'], unique: true}],
-  'payment-instances': [{fields: ['paymentInstanceID'], unique: true}],
+  members: [{ fields: ['address'], unique: true }],
+  'asset-definitions': [{ fields: ['assetDefinitionID'], unique: true }],
+  'payment-definitions': [{ fields: ['paymentDefinitionID'], unique: true }],
+  'payment-instances': [{ fields: ['paymentInstanceID'], unique: true }],
   'batches': [
-    {fields: ['batchID'], unique: true}, // Primary key
-    {fields: ['type','author','completed','created']}, // Search index for startup processing, and other queries
-    {fields: ['batchHash']} // To retrieve a batch by its hash, in response to a blockchain event
+    { fields: ['batchID'], unique: true }, // Primary key
+    { fields: ['type', 'author', 'completed', 'created'] }, // Search index for startup processing, and other queries
+    { fields: ['batchHash'] } // To retrieve a batch by its hash, in response to a blockchain event
   ],
 };
 
-export const regexps = {
-  ACCOUNT: /^0x[a-fA-F0-9]{40}$/
+const ETHEREUM_ACCOUNT_REGEXP = /^0x[a-fA-F0-9]{40}$/;
+
+const isValidX500Name = (name: string) => {
+  try {
+    parseDN(name);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
+export const isAuthorValid = (author: string, protocol: string) => {
+  switch (protocol) {
+    case 'corda':
+      return isValidX500Name(author);
+    case 'ethereum':
+      return ETHEREUM_ACCOUNT_REGEXP.test(author);
+  }
 }
 
 export const requestKeys = {
@@ -53,6 +70,19 @@ export const requestKeys = {
   ASSET_DESCRIPTION: 'description',
   ASSET_CONTENT: 'content'
 };
+
+export const contractEventSignaturesCorda = {
+  ASSET_DEFINITION_CREATED: 'io.kaleido.kat.states.AssetDefinitionCreated',
+  MEMBER_REGISTERED: 'io.kaleido.kat.states.MemberRegistered',
+  DESCRIBED_PAYMENT_DEFINITION_CREATED: 'io.kaleido.kat.states.DescribedPaymentDefinitionCreated',
+  PAYMENT_DEFINITION_CREATED: 'io.kaleido.kat.states.PaymentDefinitionCreated',
+  DESCRIBED_ASSET_INSTANCE_CREATED: 'io.kaleido.kat.states.DescribedAssetInstanceCreated',
+  ASSET_INSTANCE_BATCH_CREATED: 'io.kaleido.kat.states.AssetInstanceBatchCreated',
+  ASSET_INSTANCE_CREATED: 'io.kaleido.kat.states.AssetInstanceCreated',
+  DESCRIBED_PAYMENT_INSTANCE_CREATED: 'io.kaleido.kat.states.DescribedPaymentInstanceCreated',
+  PAYMENT_INSTANCE_CREATED: 'io.kaleido.kat.states.PaymentInstanceCreated',
+  ASSET_PROPERTY_SET: 'io.kaleido.kat.states.AssetInstancePropertySet'
+}
 
 export const contractEventSignatures = {
   ASSET_DEFINITION_CREATED: 'AssetDefinitionCreated(bytes32,address,uint256)',
@@ -110,7 +140,7 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
     } catch (err) {
       const data = err.response?.data;
       log.error(`${config.method} ${config.url} attempt ${attempts} [${err.response?.status}]`, (data && !data.on) ? data : err.stack)
-      if(err.response?.status === 404) {
+      if (err.response?.status === 404) {
         throw err;
       } else {
         currentError = err;
