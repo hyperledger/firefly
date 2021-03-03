@@ -107,7 +107,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
       if (dbAssetDefinitionByName.transactionHash !== undefined) {
         throw new Error(`Asset definition name conflict ${dbAssetDefinitionByName.name}`);
       } else {
-        await database.markAssetDefinitionAsConflict(assetDefinition.assetDefinitionID, Number(event.timestamp));
+        await database.markAssetDefinitionAsConflict(dbAssetDefinitionByName.assetDefinitionID, Number(event.timestamp));
       }
     }
   }
