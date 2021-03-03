@@ -6,10 +6,18 @@ export interface IConfig {
   protocol: 'ethereum' | 'corda'
   apiGateway: {
     apiEndpoint: string
+    auth?: {
+      user: string
+      password: string
+    }
   }
   eventStreams: {
     wsEndpoint: string
     topic: string
+    auth?: {
+      user: string
+      password: string
+    }
   }
   ipfs: {
     apiEndpoint: string
@@ -54,6 +62,11 @@ export interface IAPIGatewayAsyncResponse {
 
 export interface IAPIGatewaySyncResponse {
   type: 'sync'
+  transactionHash: string
+}
+
+export interface IAPIGatewaySyncResponseEthereum extends IAPIGatewaySyncResponse {
+  protocol: 'ethereum'
   blockHash: string
   blockNumber: string
   cumulativeGasUsed: string
@@ -69,9 +82,19 @@ export interface IAPIGatewaySyncResponse {
   nonce: string
   status: string
   to: string
-  transactionHash: string
   transactionIndex: string
+}
 
+// IPFS INTERFACES
+
+export interface IIPFSAssetDefinition {
+  assetDefinitionID: string
+  name: string
+  isContentPrivate: boolean
+  isContentUnique: boolean
+  descriptionSchema?: object
+  contentSchema?: object
+  indexes?: indexes
 }
 
 // IPFS INTERFACES
@@ -109,15 +132,34 @@ export interface IAssetDefinitionRequest {
 
 // EVENT STREAM INTERFACES
 
+
+interface IStateRefCorda {
+  txhash: string,
+  index: number
+}
+
+interface IStateCorda {
+  data: object
+}
+
+export interface IEventStreamRawMessageCorda {
+  data: IStateCorda,
+  subId: string,
+  signature: string,
+  stateRef: IStateRefCorda,
+  recordedTime: string,
+  consumedTime: string
+}
+
 export interface IEventStreamMessage {
-  address: string
-  blockNumber: string
-  transactionIndex: string
+  address?: string
+  blockNumber?: string
+  transactionIndex?: string
   transactionHash: string
   data: object
   subId: string
   signature: string
-  logIndex: string
+  logIndex?: string
 }
 
 export interface IEventMemberRegistered {
@@ -150,11 +192,13 @@ export interface IEventAssetInstanceCreated {
   descriptionHash?: string
   contentHash: string
   timestamp: string
+  participants?: string[]
 }
 export interface IEventAssetInstanceBatchCreated {
   batchHash: string;
   author: string
   timestamp: string
+  participants?: string[]
 }
 
 export interface IEventPaymentInstanceCreated {
@@ -165,6 +209,7 @@ export interface IEventPaymentInstanceCreated {
   descriptionHash?: string
   amount: string
   timestamp: string
+  participants?: string[]
 }
 
 export interface IEventAssetInstancePropertySet {
@@ -174,6 +219,7 @@ export interface IEventAssetInstancePropertySet {
   key: string
   value: string
   timestamp: string
+  participants?: string[]
 }
 
 // DATABASE INTERFACES
@@ -195,8 +241,9 @@ export interface IDatabaseProvider {
 }
 
 export interface IDBBlockchainData {
-  blockNumber: number,
+  blockNumber?: number
   transactionHash: string
+  participants?: string[]
 }
 
 export interface IDBBlockchainPinned extends Partial<IDBBlockchainData> {

@@ -1,7 +1,7 @@
 import * as database from '../clients/database';
 import * as apiGateway from '../clients/api-gateway';
 import * as utils from '../lib/utils';
-import { IDBBlockchainData, IEventMemberRegistered } from '../lib/interfaces';
+import { IDBBlockchainData, IDBMember, IEventMemberRegistered } from '../lib/interfaces';
 import RequestError from '../lib/request-error';
 import { config } from '../lib/config';
 
@@ -17,19 +17,23 @@ export const handleGetMemberRequest = async (address: string) => {
   return member;
 };
 
-export const handleUpsertMemberRequest = async (address: string, name: string, sync: boolean) => {
+export const handleUpsertMemberRequest = async (address: string, name: string, assetTrailInstanceID: string,  app2appDestination: string, docExchangeDestination: string, sync: boolean) => {
   const timestamp = utils.getTimestamp();
-  const apiGatewayResponse = await apiGateway.upsertMember(address, name, config.app2app.destinations.kat, config.docExchange.destination, sync);
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.upsertMember({
+  let memberDB: IDBMember = {
     address,
     name,
-    assetTrailInstanceID: config.assetTrailInstanceID,
-    app2appDestination: config.app2app.destinations.kat,
-    docExchangeDestination: config.docExchange.destination,
-    submitted: timestamp,
-    receipt
-  });
+    assetTrailInstanceID,
+    app2appDestination,
+    docExchangeDestination,
+    submitted: timestamp
+  };
+  if(config.protocol === 'ethereum') {
+    const apiGatewayResponse = await apiGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
+    if(apiGatewayResponse.type === 'async') {
+      memberDB.receipt = apiGatewayResponse.id
+    }
+  }
+  await database.upsertMember(memberDB);
 };
 
 export const handleMemberRegisteredEvent = async ({ member, name, assetTrailInstanceID, app2appDestination, docExchangeDestination, timestamp }:

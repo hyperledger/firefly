@@ -5,7 +5,8 @@ import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as apiGateway from '../clients/api-gateway';
 import RequestError from '../lib/request-error';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentInstance, IEventPaymentInstanceCreated } from '../lib/interfaces';
+import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
@@ -26,13 +27,28 @@ export const handleGetPaymentInstanceRequest = async (paymentInstanceID: string)
 };
 
 export const handleCreatePaymentInstanceRequest = async (author: string, paymentDefinitionID: string,
-  recipient: string, description: object | undefined, amount: number, sync: boolean) => {
+  recipient: string, description: object | undefined, amount: number, participants: string[] | undefined, sync: boolean) => {
   const paymentDefinition = await database.retrievePaymentDefinitionByID(paymentDefinitionID);
   if (paymentDefinition === null) {
     throw new RequestError('Unknown payment definition', 400);
   }
   if (paymentDefinition.transactionHash === undefined) {
     throw new RequestError('Payment definition transaction must be mined', 400);
+  }
+  if(config.protocol === 'ethereum' && participants !== undefined) {
+    throw new RequestError('Participants not supported in Ethereum', 400);
+  }
+  if(config.protocol === 'corda') {
+    // validate participants are registered members
+    if(participants !== undefined) {
+      for(const participant  of participants) {
+        if (await database.retrieveMemberByAddress(participant) === null) {
+          throw new RequestError('One or more participants are not registered', 400);
+        }
+      }
+    } else {
+      throw new RequestError('Missing payment participants', 400);
+    }
   }
   let descriptionHash: string | undefined;
   if (paymentDefinition.descriptionSchema) {
@@ -49,10 +65,10 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   if (descriptionHash) {
     apiGatewayResponse = await apiGateway.createDescribedPaymentInstance(paymentInstanceID,
-      paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
+      paymentDefinitionID, author, recipient, amount, descriptionHash, participants,sync);
   } else {
     apiGatewayResponse = await apiGateway.createPaymentInstance(paymentInstanceID,
-      paymentDefinitionID, author, recipient, amount, sync);
+      paymentDefinitionID, author, recipient, amount, participants, sync);
   }
   const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertPaymentInstance({
@@ -62,25 +78,36 @@ export const handleCreatePaymentInstanceRequest = async (author: string, payment
     descriptionHash,
     description,
     recipient,
+    participants,
     amount,
     receipt,
     submitted: timestamp
   });
-
   return paymentInstanceID;
 };
 
 export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
-  const eventPaymentInstanceID = utils.hexToUuid(event.paymentInstanceID);
+  let eventPaymentInstanceID: string;
+  let eventPaymentDefinitionID: string;
+  switch(config.protocol) {
+    case 'corda':
+      eventPaymentDefinitionID = event.paymentDefinitionID;
+      eventPaymentInstanceID = event.paymentInstanceID;
+      break;
+   case 'ethereum':
+      eventPaymentDefinitionID = utils.hexToUuid(event.paymentDefinitionID)
+      eventPaymentInstanceID = utils.hexToUuid(event.paymentInstanceID);
+      break;
+  }
   const dbPaymentInstance = await database.retrievePaymentInstanceByID(eventPaymentInstanceID);
   if (dbPaymentInstance !== null && dbPaymentInstance.transactionHash !== undefined) {
     throw new Error(`Duplicate payment instance ID`);
   }
-  const paymentDefinition = await database.retrievePaymentDefinitionByID(utils.hexToUuid(event.paymentDefinitionID));
+  const paymentDefinition = await database.retrievePaymentDefinitionByID(eventPaymentDefinitionID);
   if (paymentDefinition === null) {
     throw new Error('Uknown payment definition');
   }
-  if (paymentDefinition.transactionHash === undefined) {
+  if (config.protocol === 'ethereum' && paymentDefinition.transactionHash === undefined) {
     throw new Error('Payment definition transaction must be mined');
   }
   let description: Object | undefined = undefined;
@@ -98,7 +125,7 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
       throw new Error('Missing payment instance description');
     }
   }
-  database.upsertPaymentInstance({
+  let paymentInstanceDB: IDBPaymentInstance = {
     paymentInstanceID: eventPaymentInstanceID,
     author: event.author,
     paymentDefinitionID: paymentDefinition.paymentDefinitionID,
@@ -109,5 +136,9 @@ export const handlePaymentInstanceCreatedEvent = async (event: IEventPaymentInst
     timestamp: Number(event.timestamp),
     blockNumber,
     transactionHash
-  });
+  };
+  if(config.protocol === 'corda') {
+    paymentInstanceDB.participants = event.participants;
+  }
+  database.upsertPaymentInstance(paymentInstanceDB);
 };

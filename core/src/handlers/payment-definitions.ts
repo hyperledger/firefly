@@ -26,7 +26,7 @@ export const handleGetPaymentDefinitionRequest = async (paymentDefinitionID: str
 };
 
 export const handleCreatePaymentDefinitionRequest = async (name: string, author: string, descriptionSchema: Object | undefined, sync: boolean) => {
-  if(descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
+  if (descriptionSchema !== undefined && !ajv.validateSchema(descriptionSchema)) {
     throw new RequestError('Invalid description schema', 400);
   }
   if (await database.retrievePaymentDefinitionByName(name) !== null) {

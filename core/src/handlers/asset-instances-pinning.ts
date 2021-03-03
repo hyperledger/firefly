@@ -36,7 +36,7 @@ export class AssetInstancesPinning {
     batch.batchHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(pinnedBatch)));;
 
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
-    apiGatewayResponse = await apiGateway.createAssetInstanceBatch(batch.batchHash, batch.author);
+    apiGatewayResponse = await apiGateway.createAssetInstanceBatch(batch.batchHash, batch.author, batch.participants);
     batch.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   
     // The batch processor who called us does the store back to the local MongoDB, as part of completing the batch

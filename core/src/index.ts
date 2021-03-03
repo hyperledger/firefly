@@ -25,44 +25,52 @@ const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as
 
 export const start = () => {
   return initConfig(() => { app2app.reset(); docExchange.reset() })
-  .then(() => settings.init())
-  .then(() => database.init())
-  .then(() => ipfs.init())
-  .then(() => app2app.init())
-  .then(() => docExchange.init())
-  .then(() => assetInstancesPinning.init())
-  .then(() => {
-    eventStreams.init();
-    const app = express();
+    .then(() => settings.init())
+    .then(() => database.init())
+    .then(() => ipfs.init())
+    .then(() => app2app.init())
+    .then(() => docExchange.init())
+    .then(() => assetInstancesPinning.init())
+    .then(() => {
+      eventStreams.init();
+      const app = express();
 
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(bodyParser.json());
+      app.use(bodyParser.urlencoded({ extended: true }));
+      app.use(bodyParser.json());
 
-    app.use('/api/v1/members', membersRouter);
-    app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
-    app.use('/api/v1/assets', assetInstancesRouter);
-    app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
-    app.use('/api/v1/payments/instances', paymentInstancesRouter);
-    app.use('/api/v1/settings', settingsRouter);
-    app.use('/api/v1/batches', batchesRouter);
+      app.use('/api/v1/members', membersRouter);
+      app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
+      app.use('/api/v1/assets', assetInstancesRouter);
+      app.use('/api/v1/payments/definitions', paymentDefinitionsRouter);
+      app.use('/api/v1/payments/instances', paymentInstancesRouter);
+      app.use('/api/v1/settings', settingsRouter);
+      app.use('/api/v1/batches', batchesRouter);
 
-    app.use(errorHandler);
+      app.use(errorHandler);
 
-    app2app.addListener(assetTradeHandler);
-    database.addListener(clientEventHandler);
+      app2app.addListener(assetTradeHandler);
+      database.addListener(clientEventHandler);
 
-    const server = app.listen(config.port, () => {
-      log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);
+      const server = app.listen(config.port, () => {
+        log.info(`Asset trail listening on port ${config.port} - log level "${utils.constants.LOG_LEVEL}"`);
+      }).on('error', (err) => {
+        log.error(err);
+      });
+
+      const shutDown = () => {
+        server.close(err => {
+          if (err) {
+            log.error(`Error closing server. ${err}`);
+          } else {
+            log.info(`Stopped server.`)
+          }
+        });
+        eventStreams.shutDown();
+        database.shutDown();
+        shutDownConfig();
+      };
+
+      return { app, shutDown };
+
     });
-
-    const shutDown = () => {
-      server.close();
-      eventStreams.shutDown();
-      database.shutDown();
-      shutDownConfig();
-    };
-
-    return { app, shutDown };
-
-  });
 }

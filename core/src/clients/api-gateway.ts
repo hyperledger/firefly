@@ -1,235 +1,99 @@
-import axios from 'axios';
 import { config } from '../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../lib/interfaces';
-import * as utils from '../lib/utils';
+import * as ethereumGateway from './gateway-providers/ethereum';
+import * as cordaGateway from './gateway-providers/corda';
 
 // Member APIs
 
 export const upsertMember = async (address: string, name: string, app2appDestination: string,
   docExchangeDestination: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/registerMember?kld-from=${address}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        name,
-        assetTrailInstanceID: config.assetTrailInstanceID,
-        app2appDestination,
-        docExchangeDestination
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
+  return ethereumGateway.upsertMember(address, name, app2appDestination, docExchangeDestination, sync);
 };
+
 
 // Asset definition APIs
 
-export const createAssetDefinition = async (author: string, sync: boolean, assetDefinitionHash: string):
+export const createAssetDefinition = async (author: string, assetDefinitionHash: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createAssetDefinition?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        assetDefinitionHash
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
+  return ethereumGateway.createAssetDefinition(author, assetDefinitionHash, sync);
 };
+
 
 // Payment definition APIs
 
 export const createDescribedPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string,
   descriptionSchemaHash: string, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        name,
-        descriptionSchemaHash
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
+  return ethereumGateway.createDescribedPaymentDefinition(paymentDefinitionID, name, author, descriptionSchemaHash, sync);
 };
 
 export const createPaymentDefinition = async (paymentDefinitionID: string, name: string, author: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createPaymentDefinition?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        name
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
-  }
+  return ethereumGateway.createPaymentDefinition(paymentDefinitionID, name, author, sync);
 };
+
 
 // Asset instance APIs
 
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
-  descriptionHash: string, contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createDescribedAssetInstance?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
-        descriptionHash,
-        contentHash
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+  descriptionHash: string, contentHash: string, participants: string[] | undefined, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, descriptionHash, contentHash, participants);
+    case 'ethereum':
+      return ethereumGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, sync);
   }
 };
 
 export const createAssetInstance = async (assetInstanceID: string, assetDefinitionID: string, author: string,
-  contentHash: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createAssetInstance?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        assetInstanceID: utils.uuidToHex(assetInstanceID),
-        assetDefinitionID: utils.uuidToHex(assetDefinitionID),
-        contentHash
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+  contentHash: string, participants: string[] | undefined, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.createAssetInstance(assetInstanceID, assetDefinitionID, contentHash, participants);
+    case 'ethereum':
+      return ethereumGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, sync);
   }
 };
 
-export const createAssetInstanceBatch = async (batchHash: string, author: string, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createAssetInstanceBatch?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        batchHash,
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+export const createAssetInstanceBatch = async (batchHash: string, author: string, participants: string[] | undefined, sync = false): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.createAssetInstanceBatch(batchHash, participants);
+    case 'ethereum':
+      return ethereumGateway.createAssetInstanceBatch(batchHash, author, sync);
   }
-};
+}
 
 export const setAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string,
-  sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/setAssetInstanceProperty?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        assetDefinitionID,
-        assetInstanceID,
-        key,
-        value
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+  participants: string[] | undefined, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, key, value, participants);
+    case 'ethereum':
+      return ethereumGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, sync);
   }
 };
+
 
 // Payment instance APIs
 
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
-  author: string, recipient: string, amount: number, descriptionHash: string, sync: boolean):
+  author: string, recipient: string, amount: number, descriptionHash: string, participants: string[] | undefined, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createDescribedPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        paymentInstanceID: utils.uuidToHex(paymentInstanceID),
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        recipient,
-        amount,
-        descriptionHash
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash, participants);
+    case 'ethereum':
+      return ethereumGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
   }
 };
 
-export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string,
-  recipient: string, amount: number, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
-  try {
-    const response = await axios({
-      method: 'post',
-      url: `${config.apiGateway.apiEndpoint}/createPaymentInstance?kld-from=${author}&kld-sync=${sync}`,
-      auth: {
-        username: config.appCredentials.user,
-        password: config.appCredentials.password
-      },
-      data: {
-        paymentInstanceID: utils.uuidToHex(paymentInstanceID),
-        paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        recipient,
-        amount
-      }
-    });
-    return { ...response.data, type: sync ? 'sync' : 'async' };
-  } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
+  author: string, recipient: string, amount: number, participants: string[] | undefined, sync: boolean):
+  Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
+  switch (config.protocol) {
+    case 'corda':
+      return cordaGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, participants);
+    case 'ethereum':
+      return ethereumGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
   }
 };
