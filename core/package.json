@@ -1,7 +1,7 @@
 {
-  "name": "core",
-  "version": "1.0.1",
-  "description": "",
+  "name": "kaleido-asset-trail",
+  "version": "1.0.2",
+  "description": "Kaleido Asset Trail",
   "main": "build/index.js",
   "scripts": {
     "start:dev": "nodemon",
@@ -79,10 +79,10 @@
     ],
     "all": true,
     "check-coverage": true,
-    "statements": 37,
-    "branches": 20,
-    "functions": 32,
-    "lines": 49
+    "statements": 71,
+    "branches": 42,
+    "functions": 66,
+    "lines": 69
   },
   "mocha": {
     "require": [
