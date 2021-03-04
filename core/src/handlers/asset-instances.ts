@@ -54,7 +54,7 @@ export const handleGetAssetInstanceRequest = async (assetDefinitionID: string, a
   return assetInstance;
 };
 
-export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, participants: string[] | undefined, sync: boolean) => {
+export const handleCreateStructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: Object, isContentPrivate: boolean | undefined, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -79,6 +79,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   }
   if (!ajv.validate(assetDefinition.contentSchema, content)) {
     throw new RequestError('Content does not conform to asset definition schema', 400);
+  }
+  if(isContentPrivate === undefined) {
+    isContentPrivate = assetDefinition.isContentPrivate;
   }
   contentHash = `0x${utils.getSha256(JSON.stringify(content))}`;
   if (assetDefinition.isContentUnique && (await database.retrieveAssetInstanceByDefinitionIDAndContentHash(assetDefinition.assetDefinitionID, contentHash)) !== null) {
@@ -105,7 +108,8 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     descriptionHash,
     description,
     contentHash,
-    content
+    content,
+    isContentPrivate
   };
 
   let dbAssetInstance: IDBAssetInstance = assetInstance;
@@ -114,8 +118,8 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
   // most importantly the number of IPFS transactions.
   // Curently we do batching only for ethereum
-  if ((assetDefinition.descriptionSchema || !assetDefinition.isContentPrivate) && config.protocol === 'ethereum') {
-    dbAssetInstance.batchID = await assetInstancesPinning.pin(assetDefinition, assetInstance);
+  if ((assetDefinition.descriptionSchema || !isContentPrivate) && config.protocol === 'ethereum') {
+    dbAssetInstance.batchID = await assetInstancesPinning.pin(assetInstance);
   } else {
     // One-for-one blockchain transactions to instances
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
@@ -133,7 +137,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   return assetInstanceID;
 };
 
-export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, participants: string[] | undefined, sync: boolean) => {
+export const handleCreateUnstructuredAssetInstanceRequest = async (author: string, assetDefinitionID: string, description: Object | undefined, content: NodeJS.ReadableStream, filename: string, isContentPrivate: boolean | undefined, participants: string[] | undefined, sync: boolean) => {
   let descriptionHash: string | undefined;
   let contentHash: string;
   const assetDefinition = await database.retrieveAssetDefinitionByID(assetDefinitionID);
@@ -148,6 +152,9 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
       throw new RequestError('Description does not conform to asset definition schema', 400);
     }
     descriptionHash = utils.ipfsHashToSha256(await ipfs.uploadString(JSON.stringify(description)));
+  }
+  if(isContentPrivate === undefined) {
+    isContentPrivate = assetDefinition.isContentPrivate;
   }
   const assetInstanceID = uuidV4();
   if (assetDefinition.isContentPrivate) {
@@ -186,6 +193,7 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     description,
     contentHash,
     filename,
+    isContentPrivate,
     participants,
     submitted: timestamp,
     receipt
@@ -239,6 +247,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
       contentHash: record.contentHash!,
       descriptionHash: record.descriptionHash!,
       timestamp: event.timestamp,
+      isContentPrivate: record.isContentPrivate
     };
     try {
       await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
@@ -336,13 +345,14 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     timestamp: Number(event.timestamp),
     content,
     blockNumber,
-    transactionHash
+    transactionHash,
+    isContentPrivate: event.isContentPrivate
   };
   if(config.protocol === 'corda') {
     assetInstanceDB.participants = event.participants;
   }
   await database.upsertAssetInstance(assetInstanceDB);
-  if (assetDefinition.isContentPrivate) {
+  if (assetInstanceDB.isContentPrivate) {
     const privateData = pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     if (privateData !== undefined) {
       const author = await database.retrieveMemberByAddress(event.author);

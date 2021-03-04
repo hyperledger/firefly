@@ -68,7 +68,8 @@ export const requestKeys = {
   ASSET_AUTHOR: 'author',
   ASSET_DEFINITION_ID: 'assetDefinitionID',
   ASSET_DESCRIPTION: 'description',
-  ASSET_CONTENT: 'content'
+  ASSET_CONTENT: 'content',
+  ASSET_IS_CONTENT_PRIVATE: 'isContentPrivate'
 };
 
 export const contractEventSignaturesCorda = {
