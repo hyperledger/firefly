@@ -54,6 +54,7 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
   try {
     let assetInstanceID: string;
     const sync = req.query.sync === 'true';
+
     if (req.headers["content-type"]?.startsWith('multipart/form-data')) {
       let description: Object | undefined;
       const formData = await extractDataFromMultipartForm(req);
@@ -67,7 +68,7 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
       if (!formData.author ||!utils.isAuthorValid(req.body.author, config.protocol)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, req.body.participants, sync);
+      assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, formData.isContentPrivate, req.body.participants, sync);
     } else {
       if (!utils.isAuthorValid(req.body.author, config.protocol)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
@@ -75,7 +76,10 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
       if (!(typeof req.body.content === 'object' && req.body.content !== null)) {
         throw new RequestError('Missing or invalid asset content', 400);
       }
-      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, req.body.participants, sync);
+      if(req.body.isContentPrivate !== undefined && typeof req.body.isContentPrivate !== 'boolean') {
+        throw new RequestError('Invalid isContentPrivate', 400);
+      }
+      assetInstanceID = await assetInstancesHandler.handleCreateStructuredAssetInstanceRequest(req.body.author, req.params.assetDefinitionID, req.body.description, req.body.content, req.body.isContentPrivate, req.body.participants, sync);
     }
     res.send({ status: sync ? 'success' : 'submitted', assetInstanceID });
   } catch (err) {
@@ -132,16 +136,18 @@ const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartCo
     let author: string | undefined;
     let assetDefinitionID: string | undefined;
     let description: Promise<string> | undefined;
+    let isContentPrivate: boolean | undefined = undefined;
     req.pipe(new Busboy({ headers: req.headers })
       .on('field', (fieldname, value) => {
         switch (fieldname) {
           case requestKeys.ASSET_AUTHOR: author = value; break;
           case requestKeys.ASSET_DEFINITION_ID: assetDefinitionID = value; break;
+          case requestKeys.ASSET_IS_CONTENT_PRIVATE: isContentPrivate = value === 'true'; break;
         }
       }).on('file', (fieldname, readableStream, fileName) => {
         switch (fieldname) {
           case requestKeys.ASSET_DESCRIPTION: description = streamToString(readableStream); break;
-          case requestKeys.ASSET_CONTENT: resolve({ author, assetDefinitionID, description, contentStream: readableStream, contentFileName: fileName }); break;
+          case requestKeys.ASSET_CONTENT: resolve({ author, assetDefinitionID, description, contentStream: readableStream, contentFileName: fileName, isContentPrivate }); break;
           default: readableStream.resume();
         }
       })).on('finish', () => {

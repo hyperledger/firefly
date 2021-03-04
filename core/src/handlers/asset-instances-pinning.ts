@@ -2,7 +2,7 @@ import { createLogger, LogLevelString } from 'bunyan';
 import * as apiGateway from '../clients/api-gateway';
 import * as ipfs from '../clients/ipfs';
 import { BatchManager } from '../lib/batch-manager';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IDBAssetDefinition, IDBBatch, IPinnedBatch } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IDBBatch, IPinnedBatch } from '../lib/interfaces';
 import * as utils from '../lib/utils';
 
 const log = createLogger({ name: 'lib/batch-manager.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
@@ -15,9 +15,9 @@ export class AssetInstancesPinning {
     await this.batchManager.init();
   }
 
-  public async pin(definition: IDBAssetDefinition, instance: IAssetInstance): Promise<string> {
+  public async pin(instance: IAssetInstance): Promise<string> {
     const pinnedInstance = { ...instance };
-    if (definition.isContentPrivate) delete pinnedInstance.content;
+    if (instance.isContentPrivate) delete pinnedInstance.content;
     const batchID = await this.batchManager.getProcessor(instance.author).add(pinnedInstance);
     log.trace(`Pinning initiated for asset ${instance.assetInstanceID}/${instance.assetInstanceID} in batch ${batchID}`);
     return batchID;

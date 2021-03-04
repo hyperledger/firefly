@@ -97,7 +97,8 @@ describe('Assets: unauthored - public - described - structured', async () => {
         assetInstanceID: utils.uuidToHex(assetInstanceID),
         descriptionHash: testDescription.sample.ipfsSha256,
         contentHash: testContent.sample.ipfsSha256,
-        timestamp: timestamp.toString()
+        timestamp: timestamp.toString(),
+        isContentPrivate: false
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED,

@@ -109,6 +109,7 @@ describe('Assets: unauthored - private - described - structured', async () => {
           description: testDescription.sample.object,
           descriptionHash: '0x' + utils.getSha256(JSON.stringify(testDescription.sample.object)),
           contentHash: '0x' + utils.getSha256(JSON.stringify(testContent.sample.object)),
+          isContentPrivate: true
         }],
       };
 

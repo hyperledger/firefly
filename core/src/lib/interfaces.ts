@@ -117,6 +117,7 @@ export interface IRequestMultiPartContent {
   description?: Promise<string>
   contentStream: NodeJS.ReadableStream
   contentFileName: string
+  isContentPrivate?: boolean
 }
 
 export interface IAssetDefinitionRequest {
@@ -192,6 +193,7 @@ export interface IEventAssetInstanceCreated {
   descriptionHash?: string
   contentHash: string
   timestamp: string
+  isContentPrivate: boolean
   participants?: string[]
 }
 export interface IEventAssetInstanceBatchCreated {
@@ -286,6 +288,7 @@ export interface IAssetInstance {
   description?: object
   content?: object
   contentHash?: string
+  isContentPrivate: boolean
   conflict?: boolean
   filename?: string
   properties?: {

@@ -88,7 +88,8 @@ describe('Assets: unauthored - private - structured', async () => {
         author: '0x0000000000000000000000000000000000000002',
         assetInstanceID: utils.uuidToHex(assetInstanceID),
         contentHash: testContent.sample.docExchangeSha256,
-        timestamp: timestamp.toString()
+        timestamp: timestamp.toString(),
+        isContentPrivate: true
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
         signature: utils.contractEventSignatures.DESCRIBED_ASSET_INSTANCE_CREATED,
