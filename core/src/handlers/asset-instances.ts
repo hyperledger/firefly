@@ -61,6 +61,9 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if (assetDefinition === null) {
     throw new RequestError('Unknown asset definition', 400);
   }
+  if (assetDefinition.conflict === true) {
+    throw new RequestError('Cannot instantiate assets of conflicted definition', 400);
+  }
   // For ethereum, we need to make assert definition transaction is mined
   if (config.protocol === 'ethereum' && assetDefinition.transactionHash === undefined) {
     throw new RequestError('Asset definition transaction must be mined', 400);
@@ -270,8 +273,8 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
-  if(batchInstance === undefined) {
-    switch(config.protocol) {
+  if (batchInstance === undefined) {
+    switch (config.protocol) {
       case 'corda':
         eventAssetInstanceID = event.assetInstanceID;
         eventAssetDefinitionID = event.assetDefinitionID;
@@ -348,7 +351,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     transactionHash,
     isContentPrivate: event.isContentPrivate
   };
-  if(config.protocol === 'corda') {
+  if (config.protocol === 'corda') {
     assetInstanceDB.participants = event.participants;
   }
   await database.upsertAssetInstance(assetInstanceDB);
@@ -377,7 +380,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
-  switch(config.protocol) {
+  switch (config.protocol) {
     case 'corda':
       eventAssetInstanceID = event.assetInstanceID;
       eventAssetDefinitionID = event.assetDefinitionID;
