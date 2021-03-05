@@ -1,8 +1,0 @@
-# RPC Connection Configs
-server:
-  port: 9991
-rpc:
-  host: localhost
-  port: 10011
-  username: user1
-  password: test
