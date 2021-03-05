@@ -51,7 +51,7 @@ public class AssetTrailContract implements Contract {
 
     private void verifyAssetEventCreate(LedgerTransaction tx, Set<PublicKey> signers) {
         requireThat(require -> {
-            require.using("A ordering context must be  consumed when creating a Kat Event.",
+            require.using("An ordering context must be consumed when creating a Kat Event.",
                     tx.getInputs().size() == 1);
             require.using("One kat event and a new ordering context should be created.",
                     tx.getOutputs().size() == 2);
