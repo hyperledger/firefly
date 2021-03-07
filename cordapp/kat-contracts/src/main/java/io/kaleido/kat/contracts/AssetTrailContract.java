@@ -29,6 +29,7 @@ import net.corda.core.transactions.LedgerTransaction;
 
 import java.security.PublicKey;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,15 +52,18 @@ public class AssetTrailContract implements Contract {
 
     private void verifyAssetEventCreate(LedgerTransaction tx, Set<PublicKey> signers) {
         requireThat(require -> {
+            List<KatOrderingContext> inContexts = tx.inputsOfType(KatOrderingContext.class);
+            List<KatOrderingContext> outContexts = tx.outputsOfType(KatOrderingContext.class);
+            List<AssetEventState> eventStates = tx.outputsOfType(AssetEventState.class);
             require.using("An ordering context must be consumed when creating a Kat Event.",
-                    tx.getInputs().size() == 1);
+                    tx.getInputs().size() == 1 && inContexts.size() == 1);
             require.using("One kat event and a new ordering context should be created.",
-                    tx.getOutputs().size() == 2);
-            final KatOrderingContext inContext = tx.inputsOfType(KatOrderingContext.class).get(0);
-            final KatOrderingContext outContext = tx.outputsOfType(KatOrderingContext.class).get(0);
-            final AssetEventState outState = tx.outputsOfType(AssetEventState.class).get(0);
-            require.using("The nonce value must be incremented.",
-                    outContext.getNonce() > inContext.getNonce());
+                    tx.getOutputs().size() == 2 && outContexts.size() == 1 && eventStates.size() == 1);
+            final KatOrderingContext inContext = inContexts.get(0);
+            final KatOrderingContext outContext = outContexts.get(0);
+            final AssetEventState outState = eventStates.get(0);
+            require.using("The nonce value must be incremented by 1.",
+                    outContext.getNonce() == inContext.getNonce()+1);
             require.using("The linearId value must be same.",
                     outContext.getLinearId().equals(inContext.getLinearId()));
             require.using("author must be a signer", signers.contains(outState.getAuthor().getOwningKey()));
@@ -69,11 +73,12 @@ public class AssetTrailContract implements Contract {
 
     private void verifyOrderingContextCreate(LedgerTransaction tx, Set<PublicKey> signers) {
         requireThat(require -> {
+            List<KatOrderingContext> outContexts = tx.outputsOfType(KatOrderingContext.class);
             require.using("No inputs should be consumed when creating an ordering context between parties.",
                     tx.getInputs().isEmpty());
             require.using("Only one output state should be created.",
-                    tx.getOutputs().size() == 1);
-            final KatOrderingContext out = tx.outputsOfType(KatOrderingContext.class).get(0);
+                    tx.getOutputs().size() == 1 && outContexts.size() == 1);
+            final KatOrderingContext out = outContexts.get(0);
             require.using("All of the participants must be signers.",
                     signers.containsAll(out.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList())));
             require.using("The nonce value must be 0.",
