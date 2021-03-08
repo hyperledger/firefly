@@ -1,0 +1,26 @@
+plugins {
+    // Apply the java-library plugin to add support for Java Library
+    id 'java-library'
+}
+
+cordapp {
+    targetPlatformVersion 4
+    minimumPlatformVersion 4
+    workflow {
+        name "Kat Flows"
+        vendor "Kaleido Open Source"
+        licence "Apache License, Version 2.0"
+        versionId 1
+    }
+}
+
+dependencies {
+    // these dependencies will NOT be included in the contract jar
+    cordaCompile 'net.corda:corda-core:4.4'
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    implementation 'com.google.guava:guava:26.0-jre'
+
+    cordapp project(':kat-contracts')
+}
+
+
