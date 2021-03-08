@@ -112,7 +112,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     }
   }
 
-  database.upsertAssetDefinition({
+  await database.upsertAssetDefinition({
     ...assetDefinition,
     author: event.author,
     assetDefinitionHash: event.assetDefinitionHash,
