@@ -1,0 +1,41 @@
+plugins {
+    id 'net.corda.plugins.cordapp' version '5.0.8'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+}
+
+allprojects {
+    apply plugin: 'net.corda.plugins.cordapp'
+    apply plugin: 'io.spring.dependency-management'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        maven {
+            url 'https://software.r3.com/artifactory/corda-dependencies'
+            }
+        maven { url 'https://software.r3.com/artifactory/corda/' }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+    }
+
+    // Corda serialization requires function parameter names to be included in the class file
+    compileJava {
+        options.compilerArgs << '-parameters'
+    }
+
+    task buildAll {
+        doLast { task ->
+            println "Building $task.project.name"
+        }
+    }
+}
+
+subprojects {
+    version = '1.0'
+
+    buildAll {
+        dependsOn 'build'
+    }
+}
