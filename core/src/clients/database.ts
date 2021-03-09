@@ -128,6 +128,10 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
   }
 };
 
+export const setAssetInstanceReceipt = async (assetDefinitionID: string, assetInstanceID: string, receipt: string) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { receipt } }, true);
+};
+
 export const setAssetInstancePrivateContent = async (assetDefinitionID: string, assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { content, filename } }, true);
   emitEvent('private-asset-instance-content-stored', { assetDefinitionID, assetInstanceID, content, filename });
