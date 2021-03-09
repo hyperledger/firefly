@@ -63,6 +63,73 @@ export const setUp = async (protocol: string) => {
   nock('https://docexchange.kaleido.io')
     .get('/documents')
     .reply(200, { entries: [] });
+
+  // event stream and subscriptions
+  nock('https://apigateway.kaleido.io')
+    .get('/eventstreams')
+    .times(2)
+    .reply(200, []);
+
+  nock('https://apigateway.kaleido.io')
+    .post('/eventstreams', {
+      name: 'dev',
+      errorHandling: "block",
+      blockedReryDelaySec: 30,
+      batchTimeoutMS: 500,
+      retryTimeoutSec: 0,
+      batchSize: 50,
+      type: "websocket",
+      websocket: {
+        topic: 'dev',
+      }
+    })
+    .reply(500);
+
+  nock('https://apigateway.kaleido.io')
+    .post('/eventstreams', {
+      name: 'dev',
+      errorHandling: "block",
+      blockedReryDelaySec: 30,
+      batchTimeoutMS: 500,
+      retryTimeoutSec: 0,
+      batchSize: 50,
+      type: "websocket",
+      websocket: {
+        topic: 'dev',
+      }
+    })
+    .reply(200, {
+      id: 'es12345'
+    });
+
+  nock('https://apigateway.kaleido.io')
+    .get('/subscriptions')
+    .reply(200, [{
+      name: 'AssetInstanceCreated',
+      stream: 'es12345'
+    }]);
+
+  const nockSubscribe = (description: string, name: string) => {
+    nock('https://apigateway.kaleido.io')
+      .post(`/${name}/Subscribe`, {
+        description,
+        name,
+        stream: 'es12345',
+      })
+      .reply(200, {});
+  };
+
+  nockSubscribe('Asset instance created', 'AssetInstanceCreated');
+  nockSubscribe('Asset instance batch created', 'AssetInstanceBatchCreated');
+  nockSubscribe('Payment instance created', 'PaymentInstanceCreated');
+  nockSubscribe('Payment definition created', 'PaymentDefinitionCreated');
+  nockSubscribe('Asset definition created', 'AssetDefinitionCreated');
+  nockSubscribe('Asset instance property set', 'AssetInstancePropertySet');
+  nockSubscribe('Described payment instance created', 'DescribedPaymentInstanceCreated');
+  nockSubscribe('Described asset instance created', 'DescribedAssetInstanceCreated');
+  nockSubscribe('Described payment definition created', 'DescribedPaymentDefinitionCreated');
+  nockSubscribe('Member registered', 'MemberRegistered');
+
   const { promise } = require('../app');
   ({ app, shutDown } = await promise);
 

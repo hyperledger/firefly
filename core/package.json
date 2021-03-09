@@ -35,10 +35,12 @@
     "ldapjs": "^2.2.3"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/bs58": "^4.0.1",
     "@types/bunyan": "^1.8.6",
     "@types/busboy": "^0.2.3",
     "@types/express": "^4.17.8",
+    "@types/ldapjs": "^1.0.9",
     "@types/mocha": "^8.0.3",
     "@types/mock-require": "^2.0.0",
     "@types/mongodb": "^3.6.3",
@@ -51,7 +53,6 @@
     "@types/supertest": "^2.0.10",
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.2.7",
-    "@types/ldapjs": "^1.0.9",
     "mocha": "^8.2.1",
     "nock": "^13.0.4",
     "nodemon": "^2.0.4",

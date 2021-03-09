@@ -85,6 +85,15 @@ export interface IAPIGatewaySyncResponseEthereum extends IAPIGatewaySyncResponse
   transactionIndex: string
 }
 
+export interface IEventStream {
+  id: string
+}
+
+export interface IEventStreamSubscription {
+  name: string
+  stream: string
+}
+
 // IPFS INTERFACES
 
 export interface IIPFSAssetDefinition {

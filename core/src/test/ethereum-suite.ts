@@ -1,6 +1,6 @@
 import { closeDown, setUp } from "./common";
 import { ethereumTests } from "./ethereum";
-describe('ethereum tests', async () => {
+describe('ethereum tests for initial bootstrap', async () => {
     before(async () => {
         await setUp('ethereum');
     });
