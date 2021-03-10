@@ -80,6 +80,30 @@
               "type": "string"
             }
           }
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "batchSize",
+            "batchTimeoutMS",
+            "errorHandling",
+            "blockedRetryDelaySec"
+          ],
+          "properties": {
+            "batchSize": {
+              "type": "number"
+            },
+            "batchTimeoutMS": {
+              "type": "number"
+            },
+            "blockedRetryDelaySec":{
+              "type":"number"
+            },
+            "errorHandling":{
+              "type":"string",
+              "enum": ["block", "skip"]
+            }
+          }
         }
       }
     },

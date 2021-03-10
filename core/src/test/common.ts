@@ -107,7 +107,7 @@ export const setUp = async (protocol: string) => {
       .post('/eventstreams', {
         name: 'dev',
         errorHandling: "block",
-        blockedReryDelaySec: 30,
+        blockedRetryDelaySec: 30,
         batchTimeoutMS: 500,
         retryTimeoutSec: 0,
         batchSize: 50,
@@ -122,7 +122,7 @@ export const setUp = async (protocol: string) => {
       .post('/eventstreams', {
         name: 'dev',
         errorHandling: "block",
-        blockedReryDelaySec: 30,
+        blockedRetryDelaySec: 30,
         batchTimeoutMS: 500,
         retryTimeoutSec: 0,
         batchSize: 50,

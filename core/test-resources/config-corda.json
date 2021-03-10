@@ -13,7 +13,6 @@
     "eventStreams": {
       "wsEndpoint": "ws://eventstreams.kaleido.io",
       "topic": "dev",
-      "skipSetup": true,
       "auth": {
         "user": "testuser",
         "password": "testpassword"
