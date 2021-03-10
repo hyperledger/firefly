@@ -131,6 +131,15 @@ router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   }
 });
 
+router.post('/:assetDefinitionID/:assetInstanceID/push', async (req, res, next) => {
+  try {
+    await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.address);
+    res.send({ status: 'success' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 const extractDataFromMultipartForm = (req: Request): Promise<IRequestMultiPartContent> => {
   return new Promise(async (resolve, reject) => {
     let author: string | undefined;
