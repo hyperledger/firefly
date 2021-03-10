@@ -92,12 +92,17 @@ class EventStreamManager {
       errorHandling: config.eventStreams.config?.errorHandling??'block',
       batchSize: config.eventStreams.config?.batchSize??50,
       batchTimeoutMS: config.eventStreams.config?.batchTimeoutMS??500,
-      blockedRetryDelaySec: config.eventStreams.config?.blockedRetryDelaySec??30, 
       type: "websocket",
       retryTimeoutSec:0,
       websocket: {
         topic: config.eventStreams.topic
       }
+    }
+    if(this.protocol === 'ethereum') {
+      // Due to spell error in ethconnect, we do this for now until ethconnect is updated
+      this.streamDetails.blockedReryDelaySec = config.eventStreams.config?.blockedRetryDelaySec??30;
+    } else {
+      this.streamDetails.blockedRetryDelaySec = config.eventStreams.config?.blockedRetryDelaySec??30;
     }
   }
 
