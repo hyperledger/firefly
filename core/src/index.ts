@@ -27,7 +27,7 @@ const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as
 export const start = () => {
   return initConfig(() => { app2app.reset(); docExchange.reset() })
     .then(() => {
-      if (config.protocol === 'ethereum') {
+      if (config.protocol === 'ethereum' && config.eventStreams.skipSetup !== true) {
         return new EventStreamManager(config).ensureEventStreamsWithRetry();
       }
     })
