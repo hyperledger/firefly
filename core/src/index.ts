@@ -16,7 +16,7 @@ import * as ipfs from './clients/ipfs';
 import * as app2app from './clients/app2app';
 import * as docExchange from './clients/doc-exchange';
 import * as eventStreams from './clients/event-streams';
-import { EventStreamManager } from './lib/event-stream';
+import { ensureEventStreamAndSubscriptions } from './lib/event-stream';
 import { assetTradeHandler } from './handlers/asset-trade';
 import { clientEventHandler } from './handlers/client-events';
 import { createLogger, LogLevelString } from 'bunyan';
@@ -26,16 +26,12 @@ const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as
 
 export const start = () => {
   return initConfig(() => { app2app.reset(); docExchange.reset() })
-    .then(() => {
-      if (config.protocol === 'ethereum') {
-        return new EventStreamManager(config).ensureEventStreamsWithRetry();
-      }
-    })
     .then(() => settings.init())
     .then(() => database.init())
     .then(() => ipfs.init())
     .then(() => app2app.init())
     .then(() => docExchange.init())
+    .then(() => ensureEventStreamAndSubscriptions())
     .then(() => assetInstancesPinning.init())
     .then(() => {
       eventStreams.init();
