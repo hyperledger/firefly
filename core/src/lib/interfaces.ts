@@ -18,6 +18,7 @@ export interface IConfig {
       user: string
       password: string
     }
+    skipSetup?: boolean
   }
   ipfs: {
     apiEndpoint: string
