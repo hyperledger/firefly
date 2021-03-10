@@ -109,7 +109,6 @@ export const setUp = async (protocol: string) => {
         errorHandling: "block",
         blockedReryDelaySec: 30,
         batchTimeoutMS: 500,
-        retryTimeoutSec: 0,
         batchSize: 50,
         type: "websocket",
         websocket: {
@@ -124,7 +123,6 @@ export const setUp = async (protocol: string) => {
         errorHandling: "block",
         blockedReryDelaySec: 30,
         batchTimeoutMS: 500,
-        retryTimeoutSec: 0,
         batchSize: 50,
         type: "websocket",
         websocket: {
@@ -149,7 +147,6 @@ export const setUp = async (protocol: string) => {
         errorHandling: "block",
         blockedRetryDelaySec: 30,
         batchTimeoutMS: 500,
-        retryTimeoutSec: 0,
         batchSize: 50,
         type: "websocket",
         websocket: {
@@ -164,7 +161,6 @@ export const setUp = async (protocol: string) => {
         errorHandling: "block",
         blockedRetryDelaySec: 30,
         batchTimeoutMS: 500,
-        retryTimeoutSec: 0,
         batchSize: 50,
         type: "websocket",
         websocket: {
