@@ -117,13 +117,18 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
 
   let dbAssetInstance: IDBAssetInstance = assetInstance;
   dbAssetInstance.submitted = timestamp;
+  if (config.protocol === 'corda') {
+    dbAssetInstance.participants = participants;
+  }
   // If there are public IPFS shared parts of this instance, we can batch it together with all other
   // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
   // most importantly the number of IPFS transactions.
   // Curently we do batching only for ethereum
   if ((assetDefinition.descriptionSchema || !isContentPrivate) && config.protocol === 'ethereum') {
     dbAssetInstance.batchID = await assetInstancesPinning.pin(assetInstance);
+    await database.upsertAssetInstance(dbAssetInstance);
   } else {
+    await database.upsertAssetInstance(dbAssetInstance);
     // One-for-one blockchain transactions to instances
     let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
     if (descriptionHash) {
@@ -131,12 +136,11 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     } else {
       apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
     }
-    dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+    // dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
+    if(apiGatewayResponse.type === 'async') {
+      await database.setAssetInstanceReceipt(assetDefinitionID, assetInstanceID, apiGatewayResponse.id);
+    }
   }
-  if (config.protocol === 'corda') {
-    dbAssetInstance.participants = participants;
-  }
-  await database.upsertAssetInstance(dbAssetInstance);
   return assetInstanceID;
 };
 
@@ -182,12 +186,6 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   }
   let apiGatewayResponse: IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse;
   const timestamp = utils.getTimestamp();
-  if (descriptionHash) {
-    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
-  } else {
-    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
-  }
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
   await database.upsertAssetInstance({
     assetInstanceID,
     author,
@@ -198,9 +196,16 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
     filename,
     isContentPrivate,
     participants,
-    submitted: timestamp,
-    receipt
+    submitted: timestamp
   });
+  if (descriptionHash) {
+    apiGatewayResponse = await apiGateway.createDescribedAssetInstance(assetInstanceID, assetDefinitionID, author, descriptionHash, contentHash, participants, sync);
+  } else {
+    apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
+  }
+  if(apiGatewayResponse.type === 'async') {
+    await database.setAssetInstanceReceipt(assetDefinitionID, assetInstanceID, apiGatewayResponse.id);
+  }
   return assetInstanceID;
 }
 
@@ -226,9 +231,11 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
+  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
   const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
+  if(apiGatewayResponse.type === 'async') {
+    await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+  }
 };
 
 export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
