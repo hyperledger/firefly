@@ -126,7 +126,7 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
 
 const createCollection = async (assetDefinitionID: string, assetDefinitionIndexes: indexes | undefined) => {
   const collectionName = `asset-instance-${assetDefinitionID}`;
-  let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }];
+  let indexes: indexes = [{ fields: ['assetInstanceID'], unique: true }, { fields: ['author'], unique: false }];
   if (assetDefinitionIndexes !== undefined) {
     indexes = indexes.concat(assetDefinitionIndexes)
   }

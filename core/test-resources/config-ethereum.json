@@ -8,7 +8,8 @@
   },
   "eventStreams": {
     "wsEndpoint": "ws://eventstreams.kaleido.io",
-    "topic": "dev"
+    "topic": "dev",
+    "skipSetup": true
   },
   "ipfs": {
     "apiEndpoint": "https://ipfs.kaleido.io"

@@ -128,6 +128,10 @@ export const upsertAssetInstance = async (assetInstance: IDBAssetInstance) => {
   }
 };
 
+export const setAssetInstanceReceipt = async (assetDefinitionID: string, assetInstanceID: string, receipt: string) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { receipt } }, true);
+};
+
 export const setAssetInstancePrivateContent = async (assetDefinitionID: string, assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { content, filename } }, true);
   emitEvent('private-asset-instance-content-stored', { assetDefinitionID, assetInstanceID, content, filename });
@@ -138,16 +142,24 @@ export const markAssetInstanceAsConflict = async (assetDefinitionID: string, ass
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
-export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number, receipt: string | undefined) => {
+export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
-        [`properties.${author}.${key}.submitted`]: submitted,
+        [`properties.${author}.${key}.submitted`]: submitted
+      }
+    }, false);
+  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted });
+};
+
+export const setAssetInstancePropertyReceipt = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, receipt: string) => {
+  await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
+    {
+      $set: {
         [`properties.${author}.${key}.receipt`]: receipt
       }
     }, false);
-  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, receipt });
 };
 
 export const setConfirmedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, timestamp: number, { blockNumber, transactionHash }: IDBBlockchainData) => {
