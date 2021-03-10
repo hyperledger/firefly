@@ -63,7 +63,8 @@
           "type": "string"
         },
         "skipSetup": {
-          "type": "boolean"
+          "type": "boolean",
+          "$comment": "Should only be set to true in development or testing"
         },
         "auth": {
           "type": "object",
