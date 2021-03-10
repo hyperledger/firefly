@@ -93,7 +93,6 @@ class EventStreamManager {
       batchSize: config.eventStreams.config?.batchSize??50,
       batchTimeoutMS: config.eventStreams.config?.batchTimeoutMS??500,
       type: "websocket",
-      retryTimeoutSec:0,
       websocket: {
         topic: config.eventStreams.topic
       }
