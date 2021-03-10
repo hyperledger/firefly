@@ -231,9 +231,11 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
+  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
   const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
-  const receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
-  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, receipt);
+  if(apiGatewayResponse.type === 'async') {
+    await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+  }
 };
 
 export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
