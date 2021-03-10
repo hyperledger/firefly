@@ -64,44 +64,6 @@ export const setUp = async (protocol: string) => {
     .get('/documents')
     .reply(200, { entries: [] });
 
-  // event stream and subscriptions
-  nock('https://apigateway.kaleido.io')
-    .get('/eventstreams')
-    .times(2)
-    .reply(200, []);
-
-  nock('https://apigateway.kaleido.io')
-    .post('/eventstreams', {
-      name: 'dev',
-      errorHandling: "block",
-      blockedReryDelaySec: 30,
-      batchTimeoutMS: 500,
-      retryTimeoutSec: 0,
-      batchSize: 50,
-      type: "websocket",
-      websocket: {
-        topic: 'dev',
-      }
-    })
-    .reply(500);
-
-  nock('https://apigateway.kaleido.io')
-    .post('/eventstreams', {
-      name: 'dev',
-      errorHandling: "block",
-      blockedReryDelaySec: 30,
-      batchTimeoutMS: 500,
-      retryTimeoutSec: 0,
-      batchSize: 50,
-      type: "websocket",
-      websocket: {
-        topic: 'dev',
-      }
-    })
-    .reply(200, {
-      id: 'es12345'
-    });
-
   nock('https://apigateway.kaleido.io')
     .get('/subscriptions')
     .reply(200, [{
@@ -110,25 +72,128 @@ export const setUp = async (protocol: string) => {
     }]);
 
   const nockSubscribe = (description: string, name: string) => {
-    nock('https://apigateway.kaleido.io')
-      .post(`/${name}/Subscribe`, {
-        description,
-        name,
-        stream: 'es12345',
-      })
-      .reply(200, {});
+    if(protocol === 'ethereum') {
+      nock('https://apigateway.kaleido.io')
+        .post(`/${name}/Subscribe`, {
+          description,
+          name,
+          stream: 'es12345',
+        })
+        .reply(200, {});
+    } else {
+      nock('https://apigateway.kaleido.io')
+        .post(`/subscriptions`, {
+          name,
+          stream: 'es12345',
+          fromTime: null,
+          filter: {
+            stateType: name,
+            stateStatus: "unconsumed",
+            relevancyStatus: "all"
+          }
+        })
+        .reply(200, {});
+    }
   };
 
-  nockSubscribe('Asset instance created', 'AssetInstanceCreated');
-  nockSubscribe('Asset instance batch created', 'AssetInstanceBatchCreated');
-  nockSubscribe('Payment instance created', 'PaymentInstanceCreated');
-  nockSubscribe('Payment definition created', 'PaymentDefinitionCreated');
-  nockSubscribe('Asset definition created', 'AssetDefinitionCreated');
-  nockSubscribe('Asset instance property set', 'AssetInstancePropertySet');
-  nockSubscribe('Described payment instance created', 'DescribedPaymentInstanceCreated');
-  nockSubscribe('Described asset instance created', 'DescribedAssetInstanceCreated');
-  nockSubscribe('Described payment definition created', 'DescribedPaymentDefinitionCreated');
-  nockSubscribe('Member registered', 'MemberRegistered');
+  const nockEventStreamsWithRetry = () => {
+    // event stream and subscriptions
+    nock('https://apigateway.kaleido.io')
+    .get('/eventstreams')
+    .times(2)
+    .reply(200, []);
+
+    nock('https://apigateway.kaleido.io')
+      .post('/eventstreams', {
+        name: 'dev',
+        errorHandling: "block",
+        blockedReryDelaySec: 30,
+        batchTimeoutMS: 500,
+        retryTimeoutSec: 0,
+        batchSize: 50,
+        type: "websocket",
+        websocket: {
+          topic: 'dev',
+        }
+      })
+      .reply(500);
+
+    nock('https://apigateway.kaleido.io')
+      .post('/eventstreams', {
+        name: 'dev',
+        errorHandling: "block",
+        blockedReryDelaySec: 30,
+        batchTimeoutMS: 500,
+        retryTimeoutSec: 0,
+        batchSize: 50,
+        type: "websocket",
+        websocket: {
+          topic: 'dev',
+        }
+      })
+      .reply(200, {
+        id: 'es12345'
+      });
+  }
+
+  const nockEventStreamsWithRetryCorda = () => {
+    // event stream and subscriptions
+    nock('https://apigateway.kaleido.io')
+    .get('/eventstreams')
+    .times(2)
+    .reply(200, []);
+
+    nock('https://apigateway.kaleido.io')
+      .post('/eventstreams', {
+        name: 'dev',
+        errorHandling: "block",
+        blockedRetryDelaySec: 30,
+        batchTimeoutMS: 500,
+        retryTimeoutSec: 0,
+        batchSize: 50,
+        type: "websocket",
+        websocket: {
+          topic: 'dev',
+        }
+      })
+      .reply(500);
+
+    nock('https://apigateway.kaleido.io')
+      .post('/eventstreams', {
+        name: 'dev',
+        errorHandling: "block",
+        blockedRetryDelaySec: 30,
+        batchTimeoutMS: 500,
+        retryTimeoutSec: 0,
+        batchSize: 50,
+        type: "websocket",
+        websocket: {
+          topic: 'dev',
+        }
+      })
+      .reply(200, {
+        id: 'es12345'
+      });
+  }
+  if(protocol === 'ethereum') {
+    nockEventStreamsWithRetry();
+    nockSubscribe('Asset instance created', 'AssetInstanceCreated');
+    nockSubscribe('Asset instance batch created', 'AssetInstanceBatchCreated');
+    nockSubscribe('Payment instance created', 'PaymentInstanceCreated');
+    nockSubscribe('Payment definition created', 'PaymentDefinitionCreated');
+    nockSubscribe('Asset definition created', 'AssetDefinitionCreated');
+    nockSubscribe('Asset instance property set', 'AssetInstancePropertySet');
+    nockSubscribe('Described payment instance created', 'DescribedPaymentInstanceCreated');
+    nockSubscribe('Described asset instance created', 'DescribedAssetInstanceCreated');
+    nockSubscribe('Described payment definition created', 'DescribedPaymentDefinitionCreated');
+    nockSubscribe('Member registered', 'MemberRegistered');
+  } else {
+    nockEventStreamsWithRetryCorda();
+    nockSubscribe('Asset instance created', 'io.kaleido.kat.states.AssetInstanceCreated');
+    nockSubscribe('Asset instance batch created', 'io.kaleido.kat.states.AssetInstanceBatchCreated');
+    nockSubscribe('Asset instance property set', 'io.kaleido.kat.states.AssetInstancePropertySet');
+    nockSubscribe('Described asset instance created', 'io.kaleido.kat.states.DescribedAssetInstanceCreated');
+  }
 
   const { promise } = require('../app');
   ({ app, shutDown } = await promise);

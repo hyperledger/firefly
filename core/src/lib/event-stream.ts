@@ -8,6 +8,7 @@ import * as timers from 'timers';
 const sleep = promisify(timers.setTimeout);
 
 import * as utils from './utils';
+import { config } from './config'
 import { IConfig, IEventStream, IEventStreamSubscription } from './interfaces';
 const logger = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
@@ -35,18 +36,46 @@ const errorLogger = (err: any) => {
   throw err;
 };
 
-export class EventStreamManager {
+const subscriptionsInfoEthereum = [
+  ['Asset instance created', 'AssetInstanceCreated'],
+  ['Asset instance batch created', 'AssetInstanceBatchCreated'],
+  ['Payment instance created', 'PaymentInstanceCreated'],
+  ['Payment definition created', 'PaymentDefinitionCreated'],
+  ['Asset definition created', 'AssetDefinitionCreated'],
+  ['Asset instance property set', 'AssetInstancePropertySet'],
+  ['Described payment instance created', 'DescribedPaymentInstanceCreated'],
+  ['Described asset instance created', 'DescribedAssetInstanceCreated'],
+  ['Described payment definition created', 'DescribedPaymentDefinitionCreated'],
+  ['Member registered', 'MemberRegistered']
+];
+
+const subscriptionInfoCorda = [
+  ['Asset instance created', 'io.kaleido.kat.states.AssetInstanceCreated'],
+  ['Described asset instance created', 'io.kaleido.kat.states.DescribedAssetInstanceCreated'],
+  ['Asset instance batch created', 'io.kaleido.kat.states.AssetInstanceBatchCreated'],
+  ['Asset instance property set', 'io.kaleido.kat.states.AssetInstancePropertySet']
+]
+
+export const ensureEventStreamAndSubscriptions = async () => {
+  if(!config.eventStreams.skipSetup) {
+    const esMgr = new EventStreamManager(config);
+    await esMgr.ensureEventStreamsWithRetry();
+  }
+};
+
+class EventStreamManager {
   private gatewayPath: string;
   private api: AxiosInstance;
-  private streamName: string;
+  private streamDetails: any;
   private retryCount: number;
   private retryDelay: number;
+  private protocol: string;
 
   constructor(config: IConfig) {
     const apiURL = new URL(config.apiGateway.apiEndpoint);
     this.gatewayPath = apiURL.pathname.replace(/^\//, '');
     apiURL.pathname = '';
-    const creds = `${config.appCredentials.user}:${config.appCredentials.password}`;
+    const creds = `${config.apiGateway.auth?.user??config.appCredentials.user}:${config.apiGateway.auth?.password??config.appCredentials.password}`;
     this.api = axios.create({
       baseURL: apiURL.href,
       headers: {
@@ -55,11 +84,26 @@ export class EventStreamManager {
     });
     this.api.interceptors.request.use(requestLogger);
     this.api.interceptors.response.use(responseLogger, errorLogger);
-
-    this.streamName = config.eventStreams.topic;
-
     this.retryCount = 20;
     this.retryDelay = 5000;
+    this.protocol = config.protocol;
+    this.streamDetails = {
+      name: config.eventStreams.topic,
+      errorHandling: config.eventStreams.config?.errorHandling??'block',
+      batchSize: config.eventStreams.config?.batchSize??50,
+      batchTimeoutMS: config.eventStreams.config?.batchTimeoutMS??500,
+      type: "websocket",
+      retryTimeoutSec:0,
+      websocket: {
+        topic: config.eventStreams.topic
+      }
+    }
+    if(this.protocol === 'ethereum') {
+      // Due to spell error in ethconnect, we do this for now until ethconnect is updated
+      this.streamDetails.blockedReryDelaySec = config.eventStreams.config?.blockedRetryDelaySec??30;
+    } else {
+      this.streamDetails.blockedRetryDelaySec = config.eventStreams.config?.blockedRetryDelaySec??30;
+    }
   }
 
   async ensureEventStreamsWithRetry() {
@@ -77,50 +121,57 @@ export class EventStreamManager {
   }
 
   async ensureEventStream(): Promise<IEventStream> {
-    const streamDetails = {
-      name: this.streamName,
-      errorHandling: "block",
-      blockedReryDelaySec: 30,
-      batchTimeoutMS: 500,
-      retryTimeoutSec: 0,
-      batchSize: 50,
-      type: "websocket",
-      websocket: {
-        topic: this.streamName,
-      }
-    };
     const { data: existingStreams } = await this.api.get('eventstreams');
-    let stream = existingStreams.find((s: any) => s.name === this.streamName);
+    let stream = existingStreams.find((s: any) => s.name === this.streamDetails.name);
     if (stream) {
-      const { data: patchedStream } = await this.api.patch(`eventstreams/${stream.id}`, streamDetails);
+      const { data: patchedStream } = await this.api.patch(`eventstreams/${stream.id}`, this.streamDetails);
       return patchedStream;
     }
-    const { data: newStream } = await this.api.post('eventstreams', streamDetails);
+    const { data: newStream } = await this.api.post('eventstreams', this.streamDetails);
     return newStream;
   }
 
+  subscriptionInfo() {
+    switch(this.protocol) {
+      case 'ethereum':
+        return subscriptionsInfoEthereum;
+      case 'corda':
+        return subscriptionInfoCorda;
+      default:
+        throw new Error("Unsupported protocol.");
+    }
+  }
+
+  async createSubscription(eventType: string, streamId: string, description: string){
+    switch(this.protocol) {
+      case 'ethereum':
+        return this.api.post(`${this.gatewayPath}/${eventType}/Subscribe`, {
+          description,
+          name: eventType,
+          stream: streamId
+        }).then(r => logger.info(`Created subscription ${eventType}: ${r.data.id}`));
+      case 'corda': 
+        return this.api.post('subscriptions', {
+          name: eventType,
+          stream: streamId,
+          fromTime: null,
+          filter: {
+            stateType: eventType,
+            stateStatus: "unconsumed",
+            relevancyStatus: "all"
+          }
+        }).then(r => logger.info(`Created subscription ${eventType}: ${r.data.id}`));
+      default:
+        throw new Error("Unsupported protocol.");
+    }
+  }
   async ensureSubscriptions(stream: IEventStream) {
     const { data: existing } = await this.api.get('subscriptions');
     const promises = [];
-    for (const [description, eventName] of [
-      ['Asset instance created', 'AssetInstanceCreated'],
-      ['Asset instance batch created', 'AssetInstanceBatchCreated'],
-      ['Payment instance created', 'PaymentInstanceCreated'],
-      ['Payment definition created', 'PaymentDefinitionCreated'],
-      ['Asset definition created', 'AssetDefinitionCreated'],
-      ['Asset instance property set', 'AssetInstancePropertySet'],
-      ['Described payment instance created', 'DescribedPaymentInstanceCreated'],
-      ['Described asset instance created', 'DescribedAssetInstanceCreated'],
-      ['Described payment definition created', 'DescribedPaymentDefinitionCreated'],
-      ['Member registered', 'MemberRegistered']
-    ]) {
+    for (const [description, eventName] of this.subscriptionInfo()) {
       let sub = existing.find((s: IEventStreamSubscription) => s.name === eventName && s.stream === stream.id);
       if (!sub) {
-        promises.push(this.api.post(`${this.gatewayPath}/${eventName}/Subscribe`, {
-          description,
-          name: eventName,
-          stream: stream.id,
-        }).then(r => logger.info(`Created subscription ${eventName}: ${r.data.id}`)));
+        promises.push(this.createSubscription(eventName, stream.id, description));
       } else {
         logger.info(`Subscription ${eventName}: ${sub.id}`);
       }
