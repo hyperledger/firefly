@@ -22,7 +22,7 @@ const requestLogger = (config: any) => {
 
 /* istanbul ignore next */
 const responseLogger = (response: any) => {
-  const {config,status,data} = response;
+  const { config, status, data } = response;
   logger.info(`<-- ${config.method} ${config.url} [${status}]`);
   logger.debug(data);
   return response;
@@ -30,8 +30,8 @@ const responseLogger = (response: any) => {
 
 /* istanbul ignore next */
 const errorLogger = (err: any) => {
-  const {config = {}, response = {}} = err;
-  const {status,data} = response;
+  const { config = {}, response = {} } = err;
+  const { status, data } = response;
   logger.info(`<-- ${config.method} ${config.url} [${status || err}]: ${JSON.stringify(data)}`);
   throw err;
 };
@@ -95,7 +95,7 @@ class EventStreamManager {
         const stream: IEventStream = await this.ensureEventStream();
         await this.ensureSubscriptions(stream);
         return;
-      } catch(err) {
+      } catch (err) {
         logger.error(`Attempt ${i} to initialize event streams failed`, err);
       }
     }
@@ -115,13 +115,13 @@ class EventStreamManager {
         topic: this.streamName,
       }
     };
-    const {data: existingStreams} = await this.api.get('eventstreams');
+    const { data: existingStreams } = await this.api.get('eventstreams');
     let stream = existingStreams.find((s: any) => s.name === this.streamName);
     if (stream) {
-      const {data: patchedStream} = await this.api.patch(`eventstreams/${stream.id}`, streamDetails);
+      const { data: patchedStream } = await this.api.patch(`eventstreams/${stream.id}`, streamDetails);
       return patchedStream;
     }
-    const {data: newStream} = await this.api.post('eventstreams', streamDetails);
+    const { data: newStream } = await this.api.post('eventstreams', streamDetails);
     return newStream;
   }
   subscriptionInfo() {
@@ -159,7 +159,7 @@ class EventStreamManager {
     }
   }
   async ensureSubscriptions(stream: IEventStream) {
-    const {data: existing} = await this.api.get('subscriptions');
+    const { data: existing } = await this.api.get('subscriptions');
     const promises = [];
     for (const [description, eventName] of this.subscriptionInfo()) {
       let sub = existing.find((s: IEventStreamSubscription) => s.name === eventName && s.stream === stream.id);
