@@ -19,6 +19,12 @@ export interface IConfig {
       password: string
     }
     skipSetup?: boolean
+    config?: {
+      batchSize: number
+      batchTimeoutMS: number
+      blockedRetryDelaySec: number,
+      errorHandling: 'skip' | 'block'
+    }
   }
   ipfs: {
     apiEndpoint: string

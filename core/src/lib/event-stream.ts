@@ -57,14 +57,16 @@ const subscriptionInfoCorda = [
 ]
 
 export const ensureEventStreamAndSubscriptions = async () => {
-  let esMgr = new EventStreamManager(config);
-  await esMgr.ensureEventStreamsWithRetry();
+  if(!config.eventStreams.skipSetup) {
+    const esMgr = new EventStreamManager(config);
+    await esMgr.ensureEventStreamsWithRetry();
+  }
 };
 
 class EventStreamManager {
   private gatewayPath: string;
   private api: AxiosInstance;
-  private streamName: string;
+  private streamDetails: any;
   private retryCount: number;
   private retryDelay: number;
   private protocol: string;
@@ -82,10 +84,21 @@ class EventStreamManager {
     });
     this.api.interceptors.request.use(requestLogger);
     this.api.interceptors.response.use(responseLogger, errorLogger);
-    this.streamName = config.eventStreams.topic;
     this.retryCount = 20;
     this.retryDelay = 5000;
     this.protocol = config.protocol;
+    this.streamDetails = {
+      name: config.eventStreams.topic,
+      errorHandling: config.eventStreams.config?.errorHandling??'block',
+      batchSize: config.eventStreams.config?.batchSize??50,
+      batchTimeoutMS: config.eventStreams.config?.batchTimeoutMS??500,
+      blockedRetryDelaySec: config.eventStreams.config?.blockedRetryDelaySec??30, 
+      type: "websocket",
+      retryTimeoutSec:0,
+      websocket: {
+        topic: config.eventStreams.topic
+      }
+    }
   }
 
   async ensureEventStreamsWithRetry() {
@@ -103,27 +116,16 @@ class EventStreamManager {
   }
 
   async ensureEventStream(): Promise<IEventStream> {
-    const streamDetails = {
-      name: this.streamName,
-      errorHandling: "block",
-      blockedReryDelaySec: 30,
-      batchTimeoutMS: 500,
-      retryTimeoutSec: 0,
-      batchSize: 50,
-      type: "websocket",
-      websocket: {
-        topic: this.streamName,
-      }
-    };
     const { data: existingStreams } = await this.api.get('eventstreams');
-    let stream = existingStreams.find((s: any) => s.name === this.streamName);
+    let stream = existingStreams.find((s: any) => s.name === this.streamDetails.name);
     if (stream) {
-      const { data: patchedStream } = await this.api.patch(`eventstreams/${stream.id}`, streamDetails);
+      const { data: patchedStream } = await this.api.patch(`eventstreams/${stream.id}`, this.streamDetails);
       return patchedStream;
     }
-    const { data: newStream } = await this.api.post('eventstreams', streamDetails);
+    const { data: newStream } = await this.api.post('eventstreams', this.streamDetails);
     return newStream;
   }
+
   subscriptionInfo() {
     switch(this.protocol) {
       case 'ethereum':
