@@ -65,7 +65,7 @@ router.post('/:assetDefinitionID', async (req, res, next) => {
           throw new RequestError(`Invalid description. ${err}`, 400);
         }
       }
-      if (!formData.author ||!utils.isAuthorValid(req.body.author, config.protocol)) {
+      if (!formData.author ||!utils.isAuthorValid(formData.author, config.protocol)) {
         throw new RequestError('Missing or invalid asset instance author', 400);
       }
       assetInstanceID = await assetInstancesHandler.handleCreateUnstructuredAssetInstanceRequest(formData.author, req.params.assetDefinitionID, description, formData.contentStream, formData.contentFileName, formData.isContentPrivate, req.body.participants, sync);
