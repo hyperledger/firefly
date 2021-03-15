@@ -6,9 +6,8 @@ import * as utils from './utils';
 import { IConfig } from './interfaces';
 import path from 'path';
 import chokidar, { FSWatcher } from 'chokidar';
-import { createLogger, LogLevelString } from 'bunyan';
 
-const log = createLogger({ name: 'lib/config.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('lib/config.ts');
 
 const asyncReadFile = promisify(readFile);
 const ajv = new Ajv();

@@ -1,4 +1,3 @@
-import { createLogger, LogLevelString } from 'bunyan';
 import { setTimeout, clearTimeout } from 'timers';
 import * as utils from './utils';
 import { v4 as uuidV4 } from 'uuid';
@@ -8,7 +7,7 @@ import { promisify } from 'util';
 
 const delay = promisify(setTimeout);
 
-const log = createLogger({ name: 'lib/batch-processor.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('lib/batch-processor.ts');
 
 export interface IBatchProcessorConfig {
   addTimeoutMS: number;  

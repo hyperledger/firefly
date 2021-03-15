@@ -152,3 +152,7 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
   }
   throw currentError;
 };
+
+export function getLogger(label: string) {
+  return createLogger({ name: label, level: constants.LOG_LEVEL as LogLevelString });
+}

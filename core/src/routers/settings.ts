@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as settings from '../lib/settings';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 
 const router = Router();
 
