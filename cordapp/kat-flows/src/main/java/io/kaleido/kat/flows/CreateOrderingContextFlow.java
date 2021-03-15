@@ -3,6 +3,7 @@ import co.paralleluniverse.fibers.Suspendable;
 import io.kaleido.kat.contracts.AssetTrailContract;
 import io.kaleido.kat.states.KatOrderingContext;
 import net.corda.core.contracts.Command;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AbstractParty;
@@ -17,8 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @InitiatingFlow
-@StartableByRPC
-public class CreateOrderingContextFlow extends FlowLogic<SignedTransaction> {
+public class CreateOrderingContextFlow extends FlowLogic<StateAndRef<KatOrderingContext>> {
     private final UniqueIdentifier contextId;
     private final Set<AbstractParty> partiesForContext;
     private final ProgressTracker.Step GENERATING_TRANSACTION = new ProgressTracker.Step("Generating transaction based on new AssetInstanceBatchCreated.");
@@ -55,7 +55,7 @@ public class CreateOrderingContextFlow extends FlowLogic<SignedTransaction> {
 
     @Suspendable
     @Override
-    public SignedTransaction call() throws FlowException {
+    public StateAndRef<KatOrderingContext> call() throws FlowException {
         // Obtain a reference to the notary we want to use.
         final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
         // Generate an unsigned transaction.
@@ -64,7 +64,7 @@ public class CreateOrderingContextFlow extends FlowLogic<SignedTransaction> {
         final Command<AssetTrailContract.Commands.OrderingContextCreate> txCommand = new Command<>(
                 new AssetTrailContract.Commands.OrderingContextCreate(),
                 signers);
-        final KatOrderingContext newContext = new KatOrderingContext(contextId, partiesForContext, 0);
+        final KatOrderingContext newContext = new KatOrderingContext(contextId, getOurIdentity(), partiesForContext, 0);
 
         final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addOutputState(newContext, AssetTrailContract.ID)
@@ -79,6 +79,7 @@ public class CreateOrderingContextFlow extends FlowLogic<SignedTransaction> {
         Set<FlowSession> flowSessions = partiesForContext.stream().filter(party -> !party.getOwningKey().equals(getOurIdentity().getOwningKey())).map(this::initiateFlow).collect(Collectors.toSet());
         SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(signedTx, flowSessions, COLLECTING_SIGNATURES.childProgressTracker()));
         progressTracker.setCurrentStep(FINALISING_TRANSACTION);
-        return subFlow(new FinalityFlow(fullySignedTx, flowSessions, FINALISING_TRANSACTION.childProgressTracker()));
+        SignedTransaction confirmedTx = subFlow(new FinalityFlow(fullySignedTx, flowSessions, FINALISING_TRANSACTION.childProgressTracker()));
+        return confirmedTx.getTx().outRef(0);
     }
 }
