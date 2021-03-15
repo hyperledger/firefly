@@ -12,20 +12,24 @@ import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.FlowSession;
+import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.PageSpecification;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.corda.core.node.services.vault.QueryCriteriaUtils.DEFAULT_PAGE_NUM;
+import static net.corda.core.node.services.vault.QueryCriteriaUtils.DEFAULT_PAGE_SIZE;
 
 public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<SignedTransaction> {
     protected final List<Party> observers;
-    private final UniqueIdentifier orderingContext;
     private final ProgressTracker.Step GENERATING_TRANSACTION = new ProgressTracker.Step("Generating transaction based on new AssetInstanceBatchCreated.");
     private final ProgressTracker.Step VERIFYING_TRANSACTION = new ProgressTracker.Step("Verifying contract constraints.");
     private final ProgressTracker.Step SIGNING_TRANSACTION = new ProgressTracker.Step("Signing transaction with our private key.");
@@ -51,24 +55,34 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
     }
 
     public KatOrderingContext updateOrderingContext(KatOrderingContext oldContext) {
-        return new KatOrderingContext(oldContext.getLinearId(), new HashSet(oldContext.getParticipants()), oldContext.getNonce()+1);
+        return new KatOrderingContext(oldContext.getLinearId(), getOurIdentity(), new HashSet<>(oldContext.getParticipants()), oldContext.getNonce()+1);
     }
 
-    public CreateAssetEventFlow(List<Party> observers, UniqueIdentifier orderingContext) {
+    public CreateAssetEventFlow(List<Party> observers) {
         this.observers = observers;
-        this.orderingContext = orderingContext;
     }
 
-    private StateAndRef<KatOrderingContext> getOrderingContext(UniqueIdentifier linearId) throws FlowException {
+    @Suspendable
+    private StateAndRef<KatOrderingContext> getOrderingContext() throws FlowException {
+        Set<AbstractParty> partiesInContext = new HashSet<>(this.observers);
+        partiesInContext.add(getOurIdentity());
+        UniqueIdentifier linearId = new UniqueIdentifier(null, UUID.nameUUIDFromBytes(ByteBuffer.allocate(4).putInt(partiesInContext.hashCode()).array()));
         QueryCriteria queryCriteria = new QueryCriteria.LinearStateQueryCriteria(
-                null,
+                new ArrayList<>(partiesInContext),
                 ImmutableList.of(linearId),
                 Vault.StateStatus.UNCONSUMED,
                 null);
 
-        List<StateAndRef<KatOrderingContext>> existingContexts = getServiceHub().getVaultService().queryBy(KatOrderingContext.class, queryCriteria).getStates();
-        if (existingContexts.size() != 1) {
-            throw new FlowException(String.format("ordering context with id %s not found.", linearId));
+        List<StateAndRef<KatOrderingContext>> existingContexts = getServiceHub().getVaultService().queryBy(KatOrderingContext.class, queryCriteria, new PageSpecification(DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE)).getStates();
+        if (existingContexts.size() == 0) {
+            return subFlow(new CreateOrderingContextFlow(linearId, partiesInContext));
+        } else if(existingContexts.size() > 1) {
+            // Break Ties With nonce's first
+            // If same nonce use author's PublicKey string natural order
+            Comparator<StateAndRef<KatOrderingContext>> sortByNonce = Comparator.comparingLong((StateAndRef<KatOrderingContext> o) -> o.getState().getData().getNonce());
+            Comparator<StateAndRef<KatOrderingContext>> sortByAuthor = Comparator.comparing((StateAndRef<KatOrderingContext> o) -> o.getState().getData().getAuthor().getOwningKey().toString());
+            Collections.sort(existingContexts, sortByNonce.reversed());
+            Collections.sort(existingContexts, sortByAuthor);
         }
         return existingContexts.get(0);
     }
@@ -89,7 +103,7 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
         final Command<AssetTrailContract.Commands.AssetEventCreate> txCommand = new Command<>(
                 new AssetTrailContract.Commands.AssetEventCreate(),
                 ImmutableList.of(me.getOwningKey()));
-        final StateAndRef<KatOrderingContext> inContext = getOrderingContext(orderingContext);
+        final StateAndRef<KatOrderingContext> inContext = getOrderingContext();
         final T output = getAssetEvent();
         final TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(inContext)
