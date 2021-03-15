@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';

@@ -3,9 +3,10 @@ import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import indexSchema from '../schemas/indexes.json'
 import assetDefinitionSchema from '../schemas/asset-definition.json'
+const log = utils.getLogger('handler/asset-definitions.ts');
 
 import {
   IDBBlockchainData,
@@ -88,6 +89,7 @@ export const handleCreateAssetDefinitionRequest = async (assetDefinitionID: stri
     indexes,
     submitted: timestamp
   });
+  log.info(`New asset definition ${assetDefinitionID} from API request published to blockchain and added to local database`);
   return assetDefinitionID;
 };
 
@@ -120,8 +122,9 @@ export const handleAssetDefinitionCreatedEvent = async (event: IEventAssetDefini
     blockNumber,
     transactionHash
   });
-
   await createCollection(assetDefinition.assetDefinitionID, assetDefinition.indexes);
+
+  log.info(`New asset definition ${assetDefinition.assetDefinitionID} from blockchain event added to local database`);
 };
 
 const createCollection = async (assetDefinitionID: string, assetDefinitionIndexes: indexes | undefined) => {

@@ -1,10 +1,9 @@
 import io from 'socket.io-client';
-import { createLogger, LogLevelString } from 'bunyan';
 import { config } from '../lib/config';
 import * as utils from '../lib/utils';
 import { AssetTradeMessage, IApp2AppMessage, IApp2AppMessageListener } from '../lib/interfaces';
 
-const log = createLogger({ name: 'clients/app2app.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('clients/app2app.ts');
 
 let socket: SocketIOClient.Socket
 let listeners: IApp2AppMessageListener[] = [];
