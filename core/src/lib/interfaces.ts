@@ -342,16 +342,17 @@ export interface IDBPaymentInstance extends IDBBlockchainPinned {
   description?: object
 }
 
-export interface IPinnedBatch<IRecordType> {
+export interface IPinnedBatch<IRecordType, IPropertyType> {
   type: string;
   author: string;
   created: number;
   completed: number | null;
   batchID: string,
   records: IRecordType[];
+  properties?: IPropertyType[]; // Marked optional because introduced later, so persisted batches might not have this
 }
 
-export interface IDBBatch<IRecordType> extends IPinnedBatch<IRecordType>, IDBBlockchainPinned {
+export interface IDBBatch<IRecordType, IPropertyType> extends IPinnedBatch<IRecordType, IPropertyType>, IDBBlockchainPinned {
   _id?: string;
   batchHash?: string,
 }

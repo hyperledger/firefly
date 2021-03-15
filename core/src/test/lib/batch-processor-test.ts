@@ -11,6 +11,11 @@ interface TestRecord {
   id: string;
 }
 
+interface TestProperty {
+  key: string;
+  value: string;
+}
+
 describe('BatchProcessor', () => {
 
   beforeEach(() => {
@@ -27,7 +32,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
@@ -50,7 +55,7 @@ describe('BatchProcessor', () => {
 
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch<TestRecord, TestProperty> = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < p.config.batchMaxRecords; i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
@@ -61,14 +66,14 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
       processorCompleteCallback,
     );
 
-    let batch: IDBBatch<TestRecord> = {
+    let batch: IDBBatch<TestRecord, TestProperty> = {
       author: 'author1',
       type: 'type1',
       batchID: 'batch1',
@@ -94,7 +99,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
@@ -132,7 +137,7 @@ describe('BatchProcessor', () => {
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
 
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch<TestRecord, TestProperty> = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < (p.config.batchMaxRecords - 1); i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
@@ -144,7 +149,7 @@ describe('BatchProcessor', () => {
     let totalReceived = 0;
     let batchCount = 0;
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       async b => {totalReceived += b.records.length; batchCount++},
@@ -173,7 +178,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
@@ -211,7 +216,7 @@ describe('BatchProcessor', () => {
 
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch<TestRecord, TestProperty> = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < p.config.batchMaxRecords; i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
@@ -222,7 +227,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
@@ -248,7 +253,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub().callsFake(() => delay(10));
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor<TestRecord, TestProperty>(
       'author1',
       'type1',
       processBatchCallback,
@@ -288,14 +293,14 @@ describe('BatchProcessor', () => {
 
   describe('with test wrapper', () => {
 
-    class TestBatchProcessorWrapper extends BatchProcessor<TestRecord> {
+    class TestBatchProcessorWrapper extends BatchProcessor<TestRecord, TestProperty> {
       public dispatchBatch() {
         return super.dispatchBatch();
       }
-      public processBatch(batch: IDBBatch<TestRecord>) {
+      public processBatch(batch: IDBBatch<TestRecord, TestProperty>) {
         return super.processBatch(batch);
       }
-      public newBatch(): IDBBatch<TestRecord> {
+      public newBatch(): IDBBatch<TestRecord, TestProperty> {
         return super.newBatch();
       }
     }
