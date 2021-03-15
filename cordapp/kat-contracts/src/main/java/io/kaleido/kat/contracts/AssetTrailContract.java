@@ -66,6 +66,9 @@ public class AssetTrailContract implements Contract {
                     outContext.getNonce() == inContext.getNonce()+1);
             require.using("The linearId value must be same.",
                     outContext.getLinearId().equals(inContext.getLinearId()));
+            require.using("participants of input context should be same as output context", inContext.getParticipants().equals(outContext.getParticipants()));
+            require.using("author of output state must be same as author of output context",
+                    outContext.getAuthor().getOwningKey().equals(outState.getAuthor().getOwningKey()));
             require.using("author must be a signer", signers.contains(outState.getAuthor().getOwningKey()));
             return null;
         });
@@ -79,8 +82,10 @@ public class AssetTrailContract implements Contract {
             require.using("Only one output state should be created.",
                     tx.getOutputs().size() == 1 && outContexts.size() == 1);
             final KatOrderingContext out = outContexts.get(0);
+            final List<PublicKey> keys = out.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList());
             require.using("All of the participants must be signers.",
-                    signers.containsAll(out.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList())));
+                    signers.containsAll(keys));
+            require.using("author should be one of the participants", keys.contains(out.getAuthor().getOwningKey()));
             require.using("The nonce value must be 0.",
                     out.getNonce() == 0);
             return null;
