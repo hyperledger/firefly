@@ -73,7 +73,17 @@ public class CreateAssetEventFlow<T extends ContractState> extends FlowLogic<Sig
                 Vault.StateStatus.UNCONSUMED,
                 null);
 
-        List<StateAndRef<KatOrderingContext>> existingContexts = getServiceHub().getVaultService().queryBy(KatOrderingContext.class, queryCriteria, new PageSpecification(DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE)).getStates();
+        List<StateAndRef<KatOrderingContext>> existingContexts = new ArrayList<>();
+        int currentPage = DEFAULT_PAGE_NUM;
+        while(true) {
+            Vault.Page<KatOrderingContext> res = getServiceHub().getVaultService().queryBy(KatOrderingContext.class, queryCriteria, new PageSpecification(currentPage, DEFAULT_PAGE_SIZE));
+            if(res.getStates().isEmpty()) {
+                break;
+            } else {
+                existingContexts.addAll(res.getStates());
+                currentPage++;
+            }
+        }
         if (existingContexts.size() == 0) {
             return subFlow(new CreateOrderingContextFlow(linearId, partiesInContext));
         } else if(existingContexts.size() > 1) {
