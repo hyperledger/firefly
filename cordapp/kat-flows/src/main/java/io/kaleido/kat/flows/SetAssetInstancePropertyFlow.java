@@ -17,8 +17,8 @@ public class SetAssetInstancePropertyFlow extends CreateAssetEventFlow<AssetInst
     private final String key;
     private final String value;
 
-    public SetAssetInstancePropertyFlow(String assetDefinitionID, String assetInstanceID, String key, String value, List<Party> observers, UniqueIdentifier orderingContext) {
-        super(observers, orderingContext);
+    public SetAssetInstancePropertyFlow(String assetDefinitionID, String assetInstanceID, String key, String value, List<Party> observers) {
+        super(observers);
         this.assetDefinitionID = assetDefinitionID;
         this.assetInstanceID = assetInstanceID;
         this.key = key;

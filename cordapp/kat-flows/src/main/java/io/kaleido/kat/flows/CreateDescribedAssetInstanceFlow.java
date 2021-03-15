@@ -18,8 +18,8 @@ public class CreateDescribedAssetInstanceFlow extends CreateAssetEventFlow<Descr
     private final String descriptionHash;
     private final String contentHash;
 
-    public CreateDescribedAssetInstanceFlow(String assetInstanceID, String assetDefinitionID, String descriptionHash, String contentHash, List<Party> observers, UniqueIdentifier orderingContext) {
-        super(observers, orderingContext);
+    public CreateDescribedAssetInstanceFlow(String assetInstanceID, String assetDefinitionID, String descriptionHash, String contentHash, List<Party> observers) {
+        super(observers);
         this.assetInstanceID = assetInstanceID;
         this.assetDefinitionID = assetDefinitionID;
         this.descriptionHash = descriptionHash;

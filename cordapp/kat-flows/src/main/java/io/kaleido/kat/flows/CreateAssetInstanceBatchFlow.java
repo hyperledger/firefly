@@ -14,8 +14,8 @@ import java.util.List;
 @StartableByRPC
 public class CreateAssetInstanceBatchFlow extends CreateAssetEventFlow<AssetInstanceBatchCreated> {
     private final String batchHash;
-    public CreateAssetInstanceBatchFlow(String batchHash, List<Party> observers, UniqueIdentifier orderingContext) {
-        super(observers, orderingContext);
+    public CreateAssetInstanceBatchFlow(String batchHash, List<Party> observers) {
+        super(observers);
         this.batchHash = batchHash;
     }
 
