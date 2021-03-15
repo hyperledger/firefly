@@ -44,9 +44,17 @@ describe('BatchProcessor', () => {
     const scheduleRandomDelayedAdd = async (i: number) => {
       // Introduce some randomness, but with very short delays to keep the test fast
       await delay(Math.ceil(Math.random() * 5));
-      await p.add({
-        id: `test_${i}`,
-      });
+      // Half and half records vs. properties
+      if (i % 2 === 0) {
+        await p.add({
+          id: `test_${i}`,
+        });  
+      } else {
+        await p.addProperty({
+          key: `test_${i}`,
+          value: `value_${i}`,
+        });  
+      }
     }
 
     const promises: Promise<void>[] = [];
@@ -59,12 +67,18 @@ describe('BatchProcessor', () => {
     assert.strictEqual(processorCompleteCallback.callCount, 1);
     const batch: IDBBatch<TestRecord, TestProperty> = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < p.config.batchMaxRecords; i++) {
-      assert(batch.records.find(r => r.id === `test_${i}`));
+      // Half and half records vs. properties
+      if (i % 2 === 0) {
+        assert(batch.records.find(r => r.id === `test_${i}`));
+      } else {
+        assert(batch.properties!.find(r => r.key === `test_${i}`));
+        assert(batch.properties!.find(r => r.value === `value_${i}`));
+      }
     }
 
   });
 
-  it('takes a batch array on input, and dispatches immediately', async () => {
+  it('takes a batch array on input simulating recovery, and dispatches immediately', async () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
@@ -94,6 +108,31 @@ describe('BatchProcessor', () => {
     for (let i = 0; i < p.config.batchMaxRecords-1; i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
+
+  });
+
+  it('ensures the fields of a restored assembly batch are initialized to the latest spec', async () => {
+
+    const processBatchCallback = sinon.stub();
+    const processorCompleteCallback = sinon.stub();
+    const p = new BatchProcessor<TestRecord, TestProperty>(
+      'author1',
+      'type1',
+      processBatchCallback,
+      processorCompleteCallback,
+    );
+
+    assert.strictEqual(p.ensureLatestFields(), undefined);
+
+    const batch: IDBBatch<TestRecord, TestProperty> = {
+      author: 'author1',
+      type: 'type1',
+      batchID: 'batch1',
+      completed: null,
+      created: Date.now(),
+      records: [],
+    };
+    assert.notStrictEqual(p.ensureLatestFields(batch)?.properties, []);
 
   });
 

@@ -70,12 +70,24 @@ export class BatchProcessor<IRecordType, IPropertyType> {
     }
   }
 
+  /**
+   * Ensures a restored batch has all the latest fields that the assember requires to be there.
+   * @param batch 
+   * @returns {*} when done
+   */
+   ensureLatestFields(batch?: IDBBatch<IRecordType, IPropertyType>) {
+    if (!batch) return;
+    if (!batch.properties) batch.properties = [];
+    return batch;
+  }
+
   public async init(incompleteBatches: IDBBatch<IRecordType, IPropertyType>[]) {
     // Treat the stored batches just as we would do filled batches.
     // This logic blocks startup until we queued dispatch of all persisted batches
     // (there should be a maximum of two, for the author+type combination)
     while (incompleteBatches.length) {
       this.assemblyBatch = incompleteBatches.shift();
+      this.ensureLatestFields(this.assemblyBatch);
       await this.dispatchBatch();
     }
   }
@@ -160,7 +172,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
         const batch = this.assemblyBatch;
 
         // Grab as much capacity as we can out of the assemblyList
-        let capacity = this.config.batchMaxRecords - (batch.records.length + (batch.properties?.length || 0));
+        let capacity = this.config.batchMaxRecords - (batch.records.length + batch.properties!.length);
         chosen = this.assemblyList.slice(0, capacity);
         this.assemblyList = this.assemblyList.slice(capacity);
 
@@ -170,8 +182,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
             batch.records.push(a.record);
           }
           if (a.property) {
-            batch.properties = batch.properties || [];
-            batch.properties.push(a.property);
+            batch.properties!.push(a.property);
           }
         }
 
@@ -180,7 +191,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
         await database.upsertBatch(batch);
 
         // Check if the batch is full
-        const newBatchSize = batch.records.length + (batch.properties?.length || 0);
+        const newBatchSize = batch.records.length + batch.properties!.length;
         if (newBatchSize >= this.config.batchMaxRecords) {
           // Only one batch can be dispatched, so this is a blocking call if we manage
           // to run more than one batch ahead of the assembler.
