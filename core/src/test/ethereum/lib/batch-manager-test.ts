@@ -8,6 +8,11 @@ interface TestRecord {
   id: string;
 }
 
+interface TestProperty {
+  key: string;
+  value: string;
+}
+
 export const testBatchManager = async () => {
 
 describe('BatchManager', () => {
@@ -55,7 +60,7 @@ describe('BatchManager', () => {
       },
     ]);
 
-    const bm = new BatchManager<TestRecord>('t1', sinon.stub());
+    const bm = new BatchManager<TestRecord, TestProperty>('t1', sinon.stub());
     await bm.init();
 
     sinon.assert.calledWith(processorInit, [
@@ -95,7 +100,7 @@ describe('BatchManager', () => {
 
   it('caches batch processors', async () => {
 
-    class TestBatchManagerWrapper extends BatchManager<TestRecord> {
+    class TestBatchManagerWrapper extends BatchManager<TestRecord, TestProperty> {
       public processorCompleteCallback(author: string) {
         return super.processorCompleteCallback(author);
       }

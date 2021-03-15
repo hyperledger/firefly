@@ -9,13 +9,13 @@ const log = createLogger({ name: 'lib/batch-manager.ts', level: utils.constants.
 /**
  * Lifecycle manager for BatchProcessor instances, within a single type, across multiple authors
  */
-export class BatchManager<IRecordType> {
+export class BatchManager<IRecordType, IPropertyType> {
 
-  processors: {[author: string]: BatchProcessor<IRecordType>} = {};
+  processors: {[author: string]: BatchProcessor<IRecordType, IPropertyType>} = {};
 
   constructor(
     private type: string,
-    private processBatchCallback: (batch: IDBBatch<IRecordType>) => Promise<void>,
+    private processBatchCallback: (batch: IDBBatch<IRecordType, IPropertyType>) => Promise<void>,
   ) { }
 
   public async init() {
@@ -24,7 +24,7 @@ export class BatchManager<IRecordType> {
       type: this.type,
       completed: null,
     }, 0, 0, { created: 1 });
-    const byAuthor: {[author: string]: IDBBatch<IRecordType>[]} = {};
+    const byAuthor: {[author: string]: IDBBatch<IRecordType, IPropertyType>[]} = {};
     for (const inflight of inflightBatches) {
       const forAuthor = byAuthor[inflight.author] = byAuthor[inflight.author] || [];
       forAuthor.push(inflight);
@@ -44,7 +44,7 @@ export class BatchManager<IRecordType> {
   public getProcessor(author: string) {
     if (!this.processors[author]) {
       log.trace(`${this.type} batch manager: Creating processor for ${author}`);
-      this.processors[author] = new BatchProcessor<IRecordType>(
+      this.processors[author] = new BatchProcessor<IRecordType, IPropertyType>(
         author,
         this.type,
         this.processBatchCallback,
