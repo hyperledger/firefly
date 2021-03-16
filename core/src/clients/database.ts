@@ -142,15 +142,16 @@ export const markAssetInstanceAsConflict = async (assetDefinitionID: string, ass
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
-export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number) => {
+export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number, batchID?: string) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
-        [`properties.${author}.${key}.submitted`]: submitted
+        [`properties.${author}.${key}.submitted`]: submitted,
+        [`properties.${author}.${key}.batchID`]: batchID,
       }
     }, false);
-  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted });
+  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, batchID });
 };
 
 export const setAssetInstancePropertyReceipt = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, receipt: string) => {

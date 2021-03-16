@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import nock from 'nock';
 import request from 'supertest';
 import { v4 as uuidV4 } from 'uuid';
-import { IAssetInstance, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated, IEventAssetInstancePropertySet } from '../../../../../lib/interfaces';
+import { IAssetInstance, IAssetInstancePropertySet, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IEventAssetDefinitionCreated, IEventAssetInstanceBatchCreated } from '../../../../../lib/interfaces';
 import * as utils from '../../../../../lib/utils';
 import { app, mockEventStreamWebSocket } from '../../../../common';
 import { testContent, testDescription } from '../../../../samples';
@@ -96,7 +96,7 @@ describe('Assets: unauthored - private - described - structured', async () => {
 
     it('Checks that the event stream notification for confirming the asset instance creation is handled', async () => {
 
-      const testBatch: IDBBatch<IAssetInstance, IEventAssetInstancePropertySet> = {
+      const testBatch: IDBBatch<IAssetInstance, IAssetInstancePropertySet> = {
         author: '0x0000000000000000000000000000000000000002',
         batchID: uuidV4(),
         completed: Date.now() - 100,

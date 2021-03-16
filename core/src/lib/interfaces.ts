@@ -230,12 +230,7 @@ export interface IEventPaymentInstanceCreated {
   participants?: string[]
 }
 
-export interface IEventAssetInstancePropertySet {
-  assetInstanceID: string
-  assetDefinitionID: string
-  author: string
-  key: string
-  value: string
+export interface IEventAssetInstancePropertySet extends IAssetInstancePropertySet {
   timestamp: string
   participants?: string[]
 }
@@ -329,6 +324,14 @@ export interface IAssetInstance {
 export interface IDBAssetInstance extends IAssetInstance, IDBBlockchainPinned {
   _id?: string
   batchID?: string;
+}
+
+export interface IAssetInstancePropertySet {
+  assetInstanceID: string
+  assetDefinitionID: string
+  author: string
+  key: string
+  value: string
 }
 
 export interface IDBPaymentInstance extends IDBBlockchainPinned {
