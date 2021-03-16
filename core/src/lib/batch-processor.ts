@@ -1,9 +1,9 @@
-import { setTimeout, clearTimeout } from 'timers';
-import * as utils from './utils';
-import { v4 as uuidV4 } from 'uuid';
-import { IDBBatch } from './interfaces';
-import * as database from '../clients/database';
+import { clearTimeout, setTimeout } from 'timers';
 import { promisify } from 'util';
+import { v4 as uuidV4 } from 'uuid';
+import * as database from '../clients/database';
+import { IBatchRecord, IDBBatch } from './interfaces';
+import * as utils from './utils';
 
 const delay = promisify(setTimeout);
 
@@ -19,10 +19,9 @@ export interface IBatchProcessorConfig {
   retryMultiplier: number;
 }
 
-interface BatchAssemblyTask<IRecordType, IPropertyType> {
+interface BatchAssemblyTask {
   timestamp: number;
-  record?: IRecordType;
-  property?: IPropertyType;
+  record: IBatchRecord;
   resolve: (batchID: string) => void;
   reject: (err: Error) => void;
 }
@@ -39,11 +38,11 @@ interface BatchAssemblyTask<IRecordType, IPropertyType> {
  * - Pipelines the processing of one batch, with the building of the next
  * - Retries accepted batches indefinitely
  */
-export class BatchProcessor<IRecordType, IPropertyType> {
+export class BatchProcessor {
 
-  private assemblyList: BatchAssemblyTask<IRecordType, IPropertyType>[];
+  private assemblyList: BatchAssemblyTask[];
   private assembling: boolean;
-  private assemblyBatch?: IDBBatch<IRecordType, IPropertyType>;
+  private assemblyBatch?: IDBBatch;
   private dispatchTimeout?: NodeJS.Timeout;
   private batchInFlight?: Promise<void>;
   public config: IBatchProcessorConfig;
@@ -51,7 +50,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
   constructor(
     private author: string,
     private type: string,
-    private processBatchCallback: (batch: IDBBatch<IRecordType, IPropertyType>) => Promise<void>,
+    private processBatchCallback: (batch: IDBBatch) => Promise<void>,
     private processorCompleteCallback: (author: string, type: string) => void,
     config?: Partial<IBatchProcessorConfig>,
   ) {
@@ -69,24 +68,12 @@ export class BatchProcessor<IRecordType, IPropertyType> {
     }
   }
 
-  /**
-   * Ensures a restored batch has all the latest fields that the assember requires to be there.
-   * @param batch 
-   * @returns {*} when done
-   */
-   ensureLatestFields(batch?: IDBBatch<IRecordType, IPropertyType>) {
-    if (!batch) return;
-    if (!batch.properties) batch.properties = [];
-    return batch;
-  }
-
-  public async init(incompleteBatches: IDBBatch<IRecordType, IPropertyType>[]) {
+  public async init(incompleteBatches: IDBBatch[]) {
     // Treat the stored batches just as we would do filled batches.
     // This logic blocks startup until we queued dispatch of all persisted batches
     // (there should be a maximum of two, for the author+type combination)
     while (incompleteBatches.length) {
       this.assemblyBatch = incompleteBatches.shift();
-      this.ensureLatestFields(this.assemblyBatch);
       await this.dispatchBatch();
     }
   }
@@ -97,7 +84,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
    * @param record the record to add to a batch
    * @returns {string} the batchID the add was persisted into
    */
-  public async add(record: IRecordType): Promise<string> {
+  public async add(record: IBatchRecord): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       // Add our record to the assember queue, to resove the parent promise
       this.assemblyList.push({ timestamp: Date.now(), record, resolve, reject });
@@ -106,21 +93,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
     });
   }
 
-  /**
-   * We allow batches to include whole records, and property updates, as separate collections within a single batch.
-   * @param property the property to add to a batch
-   * @returns {string} the batchID the add was persisted into
-   */
-  public async addProperty(property: IPropertyType): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      // Add our record to the assember queue, to resove the parent promise
-      this.assemblyList.push({ timestamp: Date.now(), property, resolve, reject });
-      // Give the assembler a kick, as it might not be already running
-      this.assembler();
-    });
-  }
-
-  protected newBatch(): IDBBatch<IRecordType, IPropertyType> {
+  protected newBatch(): IDBBatch {
     const timestamp = Date.now();
     return {
       type: this.type,
@@ -129,7 +102,6 @@ export class BatchProcessor<IRecordType, IPropertyType> {
       created: timestamp,
       completed: null,
       records: [],
-      properties: [],
     };
   }
 
@@ -162,7 +134,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
 
     // We are the assembler - stop an duplicate one running (cleared before return)
     this.assembling = true;
-    let chosen: BatchAssemblyTask<IRecordType, IPropertyType>[] = [];
+    let chosen: BatchAssemblyTask[] = [];
     while (this.rejectAnyStale().length) {
       try {
 
@@ -171,18 +143,13 @@ export class BatchProcessor<IRecordType, IPropertyType> {
         const batch = this.assemblyBatch;
 
         // Grab as much capacity as we can out of the assemblyList
-        let capacity = this.config.batchMaxRecords - (batch.records.length + batch.properties!.length);
+        let capacity = this.config.batchMaxRecords - batch.records.length;
         chosen = this.assemblyList.slice(0, capacity);
         this.assemblyList = this.assemblyList.slice(capacity);
 
         // Add these entries to the in-memory batch object
         for (let a of chosen) {
-          if (a.record) {
-            batch.records.push(a.record);
-          }
-          if (a.property) {
-            batch.properties!.push(a.property);
-          }
+          batch.records.push(a.record);
         }
 
         // Persist the batch object to our local database
@@ -190,8 +157,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
         await database.upsertBatch(batch);
 
         // Check if the batch is full
-        const newBatchSize = batch.records.length + batch.properties!.length;
-        if (newBatchSize >= this.config.batchMaxRecords) {
+        if (batch.records.length >= this.config.batchMaxRecords) {
           // Only one batch can be dispatched, so this is a blocking call if we manage
           // to run more than one batch ahead of the assembler.
           await this.dispatchBatch();
@@ -241,7 +207,7 @@ export class BatchProcessor<IRecordType, IPropertyType> {
     this.batchInFlight = this.processBatch(batch);
   }
 
-  protected async processBatch(batch: IDBBatch<IRecordType, IPropertyType>) {
+  protected async processBatch(batch: IDBBatch) {
     // We have accepted the batch at this point, and the REST calls to submit it to us have all completed.
     // So we cannot fail to process it, and we must retry the processing indefinitely
     let attempt = 0;
