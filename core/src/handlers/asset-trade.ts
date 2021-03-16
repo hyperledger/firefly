@@ -7,6 +7,7 @@ import * as database from '../clients/database';
 import * as app2app from '../clients/app2app';
 import * as docExchange from '../clients/doc-exchange';
 import { pendingAssetInstancePrivateContentDeliveries } from './asset-instances';
+const log = utils.getLogger('handlers/asset-trade.ts');
 
 const ajv = new Ajv();
 
@@ -65,6 +66,7 @@ const processPrivateAssetInstanceRequest = async (headers: IApp2AppMessageHeader
       await docExchange.transfer(config.docExchange.destination, requester.docExchangeDestination,
         utils.getUnstructuredFilePathInDocExchange(request.assetInstanceID));
       tradeResponse.filename = assetInstance.filename;
+      log.info(`Private asset instance trade request (instance=${assetInstance.assetDefinitionID}, requester=${request.requester.address}, tradeId=${request.tradeID}) successfully completed`);
     }
   } catch (err) {
     tradeResponse.rejection = err.message;
@@ -163,8 +165,10 @@ const getDocumentExchangePromise = (assetInstanceID: string): Promise<void> => {
 };
 
 const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, push: IAssetTradePrivateAssetInstancePush) => {
+  log.trace(`Handling private asset instance push event (instance=${push.assetInstanceID}, filename=${push.filename})`);
   const assetInstance = await database.retrieveAssetInstanceByID(push.assetDefinitionID, push.assetInstanceID);
   if (assetInstance !== null) {
+    log.trace(`Found existing asset instance, ${JSON.stringify(assetInstance, null, 2)}`);
     const author = await database.retrieveMemberByAddress(assetInstance.author);
     if (author === null) {
       throw new Error(`Unknown author for asset ${assetInstance.assetInstanceID}`);
@@ -179,7 +183,9 @@ const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, p
       }
     }
     await database.setAssetInstancePrivateContent(push.assetDefinitionID, push.assetInstanceID, push.content, push.filename);
+    log.info(`Private asset instance from push event (instance=${push.assetInstanceID}, filename=${push.filename}) saved in local database`);
   } else {
+    log.info(`Private asset instance from push event not found in local database, adding to pending instances`);
     pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = { ...push, fromDestination: headers.from };
   }
 }

@@ -8,7 +8,7 @@ import paymentDefinitionsRouter from './routers/payment-definitions';
 import paymentInstancesRouter from './routers/payment-instances';
 import settingsRouter from './routers/settings';
 import batchesRouter from './routers/batches';
-import { errorHandler } from './lib/request-error';
+import { errorHandler, requestLogger, responseLogger } from './lib/request-handlers';
 import * as database from './clients/database';
 import * as settings from './lib/settings';
 import * as utils from './lib/utils';
@@ -19,10 +19,9 @@ import * as eventStreams from './clients/event-streams';
 import { ensureEventStreamAndSubscriptions } from './lib/event-stream';
 import { assetTradeHandler } from './handlers/asset-trade';
 import { clientEventHandler } from './handlers/client-events';
-import { createLogger, LogLevelString } from 'bunyan';
 import { assetInstancesPinning } from './handlers/asset-instances-pinning';
 
-const log = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('index.ts');
 
 export const start = () => {
   return initConfig(() => { app2app.reset(); docExchange.reset() })
@@ -39,6 +38,7 @@ export const start = () => {
 
       app.use(bodyParser.urlencoded({ extended: true }));
       app.use(bodyParser.json());
+      app.use(requestLogger);
 
       app.use('/api/v1/members', membersRouter);
       app.use('/api/v1/assets/definitions', assetDefinitionsRouter);
@@ -48,6 +48,7 @@ export const start = () => {
       app.use('/api/v1/settings', settingsRouter);
       app.use('/api/v1/batches', batchesRouter);
 
+      app.use(responseLogger);
       app.use(errorHandler);
 
       app2app.addListener(assetTradeHandler);

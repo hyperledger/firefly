@@ -1,5 +1,5 @@
 import * as database from '../clients/database';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 
 export const handleGetBatchRequest = async (batchID: string) => {
   const batch = await database.retrieveBatchByID(batchID);

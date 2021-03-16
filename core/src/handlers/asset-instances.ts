@@ -1,5 +1,4 @@
 import Ajv from 'ajv';
-import { createLogger, LogLevelString } from 'bunyan';
 import { v4 as uuidV4 } from 'uuid';
 import * as apiGateway from '../clients/api-gateway';
 import * as app2app from '../clients/app2app';
@@ -8,12 +7,13 @@ import * as docExchange from '../clients/doc-exchange';
 import * as ipfs from '../clients/ipfs';
 import { config } from '../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import * as utils from '../lib/utils';
 import { assetInstancesPinning } from './asset-instances-pinning';
 import * as assetTrade from './asset-trade';
 
-const log = createLogger({ name: 'handlers/asset-instances.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+
+const log = utils.getLogger('handlers/asset-instances.ts');
 
 const ajv = new Ajv();
 
@@ -127,6 +127,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   if ((assetDefinition.descriptionSchema || !isContentPrivate) && config.protocol === 'ethereum') {
     dbAssetInstance.batchID = await assetInstancesPinning.pin(assetInstance);
     await database.upsertAssetInstance(dbAssetInstance);
+    log.info(`Structured asset instance batch ${dbAssetInstance.batchID} saved in local database and pinned to blockchain`);
   } else {
     await database.upsertAssetInstance(dbAssetInstance);
     // One-for-one blockchain transactions to instances
@@ -136,9 +137,11 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
     } else {
       apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
     }
+    log.info(`Structured asset instance ${assetInstanceID} saved in local database and pinning transaction submitted to the blockchain`);
     // dbAssetInstance.receipt = apiGatewayResponse.type === 'async' ? apiGatewayResponse.id : undefined;
     if(apiGatewayResponse.type === 'async') {
       await database.setAssetInstanceReceipt(assetDefinitionID, assetInstanceID, apiGatewayResponse.id);
+      log.trace(`Structured asset instance ${assetInstanceID} published in the blockchain (gateway receipt=${apiGatewayResponse.id})`);
     }
   }
   return assetInstanceID;
@@ -203,8 +206,10 @@ export const handleCreateUnstructuredAssetInstanceRequest = async (author: strin
   } else {
     apiGatewayResponse = await apiGateway.createAssetInstance(assetInstanceID, assetDefinitionID, author, contentHash, participants, sync);
   }
+  log.info(`Unstructured asset instance ${assetInstanceID} saved in local database and pinning transaction submitted to the blockchain`);
   if(apiGatewayResponse.type === 'async') {
     await database.setAssetInstanceReceipt(assetDefinitionID, assetInstanceID, apiGatewayResponse.id);
+    log.trace(`Unstructured asset instance ${assetInstanceID} published in the blockchain (gateway receipt=${apiGatewayResponse.id})`);
   }
   return assetInstanceID;
 }
@@ -230,8 +235,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
       }
     }
   }
-  const submitted = utils.getTimestamp();
-  
+  const submitted = utils.getTimestamp();  
   if (config.protocol === 'ethereum') {
     const property: IAssetInstancePropertySet = {
       assetDefinitionID,
@@ -242,12 +246,15 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     };
     const batchID = await assetInstancesPinning.pinProperty(property);
     await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, batchID);
+    log.info(`Asset instance property ${key} (instance=${assetInstanceID}) set via batch`);
   } else {
     await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
+    log.info(`Asset instance property ${key} (instance=${assetInstanceID}) set in local database`);
     const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
     if(apiGatewayResponse.type === 'async') {
       await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
     }  
+    log.info(`Asset instance property ${key} (instance=${assetInstanceID}) pinning transaction submitted to blockchain`);
   }
 
 };
@@ -301,6 +308,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
     blockNumber,
     transactionHash
   });
+  log.info(`Asset instance batch ${event.batchHash} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
 
 }
 
@@ -409,6 +417,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       delete pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     }
   }
+  log.info(`Asset instance ${eventAssetDefinitionID} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
@@ -435,6 +444,7 @@ export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInst
     throw new Error('Invalid property key');
   }
   await database.setConfirmedAssetInstanceProperty(eventAssetDefinitionID, eventAssetInstanceID, event.author, event.key, event.value, Number(event.timestamp), blockchainData);
+  log.info(`Asset instance property ${event.key} (instance=${eventAssetDefinitionID}) from blockchain event (blockNumber=${blockchainData.blockNumber} hash=${blockchainData.transactionHash}) saved in local database`);
 };
 
 export const handleAssetInstanceTradeRequest = async (assetDefinitionID: string, requesterAddress: string, assetInstanceID: string, metadata: object | undefined) => {
@@ -474,6 +484,7 @@ export const handleAssetInstanceTradeRequest = async (assetDefinitionID: string,
     throw new RequestError('Requester must be registered', 400);
   }
   await assetTrade.coordinateAssetTrade(assetInstance, assetDefinition, requester.address, metadata, author.app2appDestination);
+  log.info(`Asset instance trade request from requester ${requesterAddress} (instance=${assetInstanceID}) successfully completed`);
 };
 
 export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: string, assetInstanceID: string, recipientAddress: string) => {
@@ -507,6 +518,7 @@ export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: s
     await docExchange.transfer(author.docExchangeDestination, recipient.docExchangeDestination,
       utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
     privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
+    log.info(`Private asset instance push request for recipient ${recipientAddress} (instance=${assetInstanceID}) successfully completed`);
   }
   app2app.dispatchMessage(recipient.app2appDestination, privateAssetTradePrivateInstancePush);
 };

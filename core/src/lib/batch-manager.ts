@@ -1,10 +1,9 @@
-import { createLogger, LogLevelString } from 'bunyan';
 import * as database from '../clients/database';
 import { BatchProcessor } from './batch-processor';
 import { IDBBatch } from './interfaces';
 import * as utils from './utils';
 
-const log = createLogger({ name: 'lib/batch-manager.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('lib/batch-manager.ts');
 
 /**
  * Lifecycle manager for BatchProcessor instances, within a single type, across multiple authors
