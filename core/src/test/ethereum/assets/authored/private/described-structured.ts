@@ -284,8 +284,9 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.strictEqual(getBatchResponse.body.receipt, 'my-receipt-id');
       assert.strictEqual(getBatchResponse.body.batchHash, batchHashSha256);
       // As properties are always public, the full content will have been written to IPFS in the batch
-      assert.deepStrictEqual(getBatchResponse.body.properties[0].key, 'key');
-      assert.deepStrictEqual(getBatchResponse.body.properties[0].value, 'value');
+      assert.deepStrictEqual(getBatchResponse.body.records[0].recordType, 'property');
+      assert.deepStrictEqual(getBatchResponse.body.records[0].key, 'key');
+      assert.deepStrictEqual(getBatchResponse.body.records[0].value, 'value');
 
     });
 

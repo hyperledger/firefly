@@ -345,17 +345,26 @@ export interface IDBPaymentInstance extends IDBBlockchainPinned {
   description?: object
 }
 
-export interface IPinnedBatch<IRecordType, IPropertyType> {
+export enum BatchRecordType {
+  assetInstance = 'instance',
+  assetProperty = 'property',
+}
+
+export interface IBatchRecord {
+  recordType: BatchRecordType,
+  [x: string]: any, 
+}
+
+export interface IPinnedBatch {
   type: string;
   author: string;
   created: number;
   completed: number | null;
   batchID: string,
-  records: IRecordType[];
-  properties?: IPropertyType[]; // Marked optional because introduced later, so persisted batches might not have this
+  records: IBatchRecord[];
 }
 
-export interface IDBBatch<IRecordType, IPropertyType> extends IPinnedBatch<IRecordType, IPropertyType>, IDBBlockchainPinned {
+export interface IDBBatch extends IPinnedBatch, IDBBlockchainPinned {
   _id?: string;
   batchHash?: string,
 }

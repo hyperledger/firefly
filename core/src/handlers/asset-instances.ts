@@ -6,7 +6,7 @@ import * as database from '../clients/database';
 import * as docExchange from '../clients/doc-exchange';
 import * as ipfs from '../clients/ipfs';
 import { config } from '../lib/config';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IAssetTradePrivateAssetInstancePush, IBatchRecord, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery, BatchRecordType } from '../lib/interfaces';
 import RequestError from '../lib/request-handlers';
 import * as utils from '../lib/utils';
 import { assetInstancesPinning } from './asset-instances-pinning';
@@ -270,38 +270,41 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
   }
 
   // Process each record within the batch, as if it is an individual event
-  const records: IAssetInstance[] = batch.records || [];
+  const records: IBatchRecord[] = batch.records || [];
   for (let record of records) {
-    const recordEvent: IEventAssetInstanceCreated = {
-      assetDefinitionID: '',
-      assetInstanceID: '',
-      author: record.author,
-      contentHash: record.contentHash!,
-      descriptionHash: record.descriptionHash!,
-      timestamp: event.timestamp,
-      isContentPrivate: record.isContentPrivate
-    };
-    try {
-      await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
-    } catch (err) {
-      // We failed to process this record, but continue to attempt the other records in the batch
-      log.error(`Record ${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
-    }
-  }
-
-  // Process each property within the batch, as if it is an individual event
-  // Note we process these after the records, to ensure asset creation always comes after setting properties
-  const properties: IAssetInstancePropertySet[] = batch.properties || [];
-  for (let property of properties) {
-    try {
-      const propertyEvent: IEventAssetInstancePropertySet = {
-        ...property,
+    if (!record.recordType || record.recordType === BatchRecordType.assetInstance) {
+      const recordEvent: IEventAssetInstanceCreated = {
+        assetDefinitionID: '',
+        assetInstanceID: '',
+        author: record.author,
+        contentHash: record.contentHash!,
+        descriptionHash: record.descriptionHash!,
         timestamp: event.timestamp,
+        isContentPrivate: record.isContentPrivate
       };
-      await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash }, true);
-    } catch (err) {
-      // We failed to process this record, but continue to attempt the other records in the batch
-      log.error(`Property ${property.assetDefinitionID}/${property.assetInstanceID}/${property.key} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+      try {
+        await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
+      } catch (err) {
+        // We failed to process this record, but continue to attempt the other records in the batch
+        log.error(`Record ${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+      }  
+    } else if (record.recordType === BatchRecordType.assetProperty) {
+      try {
+        const propertyEvent: IEventAssetInstancePropertySet = {
+          assetDefinitionID: record.assetDefinitionID,
+          assetInstanceID: record.assetInstanceID,
+          author: record.author,
+          key: record.key,
+          value: record.value,
+          timestamp: event.timestamp,
+        };
+        await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash }, true);
+      } catch (err) {
+        // We failed to process this record, but continue to attempt the other records in the batch
+        log.error(`Property ${record.assetDefinitionID}/${record.assetInstanceID}/${record.key} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+      }
+    } else {
+      log.error(`Batch record type '${record.recordType}' not known`, record);
     }
   }
 
@@ -316,7 +319,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 
 }
 
-export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IBatchRecord) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
   if (batchInstance === undefined) {

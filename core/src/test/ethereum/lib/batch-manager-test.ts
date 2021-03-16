@@ -1,17 +1,8 @@
+import assert from 'assert';
 import sinon, { SinonStub } from 'sinon';
 import * as database from '../../../clients/database';
 import { BatchManager } from '../../../lib/batch-manager';
 import { BatchProcessor } from '../../../lib/batch-processor';
-import assert from 'assert';
-
-interface TestRecord {
-  id: string;
-}
-
-interface TestProperty {
-  key: string;
-  value: string;
-}
 
 export const testBatchManager = async () => {
 
@@ -60,7 +51,7 @@ describe('BatchManager', () => {
       },
     ]);
 
-    const bm = new BatchManager<TestRecord, TestProperty>('t1', sinon.stub());
+    const bm = new BatchManager('t1', sinon.stub());
     await bm.init();
 
     sinon.assert.calledWith(processorInit, [
@@ -100,7 +91,7 @@ describe('BatchManager', () => {
 
   it('caches batch processors', async () => {
 
-    class TestBatchManagerWrapper extends BatchManager<TestRecord, TestProperty> {
+    class TestBatchManagerWrapper extends BatchManager {
       public processorCompleteCallback(author: string) {
         return super.processorCompleteCallback(author);
       }
