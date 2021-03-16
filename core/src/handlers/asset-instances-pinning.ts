@@ -2,14 +2,14 @@ import { createLogger, LogLevelString } from 'bunyan';
 import * as apiGateway from '../clients/api-gateway';
 import * as ipfs from '../clients/ipfs';
 import { BatchManager } from '../lib/batch-manager';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IDBBatch, IEventAssetInstancePropertySet, IPinnedBatch } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IDBBatch, IPinnedBatch } from '../lib/interfaces';
 import * as utils from '../lib/utils';
 
 const log = createLogger({ name: 'lib/batch-manager.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
 
 export class AssetInstancesPinning {
 
-  private batchManager = new BatchManager<IAssetInstance, IEventAssetInstancePropertySet>('asset-instances', this.processBatch.bind(this));
+  private batchManager = new BatchManager<IAssetInstance, IAssetInstancePropertySet>('asset-instances', this.processBatch.bind(this));
 
   public async init() {
     await this.batchManager.init();
@@ -23,9 +23,16 @@ export class AssetInstancesPinning {
     return batchID;
   }
 
-  private async processBatch(batch: IDBBatch<IAssetInstance, IEventAssetInstancePropertySet>) {
+  public async pinProperty(property: IAssetInstancePropertySet): Promise<string> {
+    const pinnedProperty = { ...property };
+    const batchID = await this.batchManager.getProcessor(property.author).addProperty(pinnedProperty);
+    log.trace(`Pinning initiated for property ${property.assetInstanceID}/${property.assetInstanceID}/${property.key} in batch ${batchID}`);
+    return batchID;
+  }
+
+  private async processBatch(batch: IDBBatch<IAssetInstance, IAssetInstancePropertySet>) {
     // Extract the hashable portion, and write it to IPFS, and store the hash
-    const pinnedBatch: IPinnedBatch<IAssetInstance, IEventAssetInstancePropertySet> = {
+    const pinnedBatch: IPinnedBatch<IAssetInstance, IAssetInstancePropertySet> = {
       type: batch.type,
       created: batch.created,
       author: batch.author,

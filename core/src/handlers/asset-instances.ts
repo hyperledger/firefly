@@ -7,7 +7,7 @@ import * as database from '../clients/database';
 import * as docExchange from '../clients/doc-exchange';
 import * as ipfs from '../clients/ipfs';
 import { config } from '../lib/config';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
 import RequestError from '../lib/request-error';
 import * as utils from '../lib/utils';
 import { assetInstancesPinning } from './asset-instances-pinning';
@@ -231,11 +231,25 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
     }
   }
   const submitted = utils.getTimestamp();
-  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
-  if(apiGatewayResponse.type === 'async') {
-    await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+  
+  if (config.protocol === 'ethereum') {
+    const property: IAssetInstancePropertySet = {
+      assetDefinitionID,
+      assetInstanceID,
+      author,
+      key,
+      value,
+    };
+    const batchID = await assetInstancesPinning.pinProperty(property);
+    await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, batchID);
+  } else {
+    await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
+    const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
+    if(apiGatewayResponse.type === 'async') {
+      await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+    }  
   }
+
 };
 
 export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {

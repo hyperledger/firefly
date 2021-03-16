@@ -240,6 +240,20 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });
 
+    it('sets a property on an asset, which will be public and batched even though the asset is private', async () => {
+      const {body: result} = await request(app)
+        .put(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .send({
+          action: 'set-property',
+          key: 'key',
+          author: '0x0000000000000000000000000000000000000001',
+        })
+        .expect(400);
+      console.log(result);
+      throw new Error('pop')
+
+    });
+
   });
 
 });
