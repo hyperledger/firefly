@@ -16,7 +16,8 @@
       "auth": {
         "user": "testuser",
         "password": "testpassword"
-      }
+      },
+      "skipSetup": true
     },
     "ipfs": {
       "apiEndpoint": "https://ipfs.kaleido.io"

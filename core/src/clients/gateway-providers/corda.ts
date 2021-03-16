@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { config } from '../../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse } from '../../lib/interfaces';
+import { getLogger } from '../../lib/utils';
+const log = getLogger('gateway-providers/corda.ts');
+
 // Asset instance APIs
 
 export const createDescribedAssetInstance = async (assetInstanceID: string, assetDefinitionID: string,
@@ -23,7 +26,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create described asset instance ${assetInstanceID}`, err);
   }
 };
 
@@ -46,7 +49,7 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset instance ${assetInstanceID}`, err);
   }
 };
 
@@ -66,7 +69,7 @@ export const createAssetInstanceBatch = async (batchHash: string, participants: 
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset instance batch ${batchHash}`, err);
   }
 };
 
@@ -90,7 +93,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to set asset instance property ${key} (instance=${assetInstanceID})`, err);
   }
 };
 
@@ -115,7 +118,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create described asset payment instance ${paymentInstanceID}`, err);
   }
 };
 
@@ -139,6 +142,12 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
     });
     return { ...response.data, type: 'sync' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset payment instance ${paymentInstanceID}`, err);
   }
 };
+
+function handleError(msg: string, err: any): Promise<IAPIGatewaySyncResponse> {
+  const errMsg = err.response?.data?.error ?? err.response.data.message ?? err.toString();
+  log.error(`${msg}. ${errMsg}`);
+  throw new Error(msg);
+}

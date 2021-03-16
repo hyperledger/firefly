@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { v4 as uuidV4 } from 'uuid';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import * as assetDefinitionsHandler from '../handlers/asset-definitions';
 import { constants } from '../lib/utils';
 import * as utils from '../lib/utils';

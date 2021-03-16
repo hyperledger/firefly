@@ -8,9 +8,8 @@ import * as paymentDefinitionsHandler from '../handlers/payment-definitions';
 import * as assetInstancesHandler from '../handlers/asset-instances';
 import * as paymentInstanceHandler from '../handlers/payment-instances';
 import { IEventMemberRegistered } from '../lib/interfaces';
-import { createLogger, LogLevelString } from 'bunyan';
 
-const log = createLogger({ name: 'clients/event-streams.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('clients/event-streams.ts');
 
 let ws: WebSocket;
 let heartBeatTimeout: NodeJS.Timeout;
@@ -126,6 +125,7 @@ const handleMessage = async (message: string) => {
   const signatures = eventSignatures();
   for (const message of messageArray) {
     log.trace(`Event ${JSON.stringify(message)}`);
+    log.info(`Event signature: ${message.signature}`);
     const blockchainData: IDBBlockchainData = getBlockchainData(message);
     try {
       switch (message.signature) {
