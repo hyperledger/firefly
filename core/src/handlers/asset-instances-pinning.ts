@@ -1,11 +1,10 @@
-import { createLogger, LogLevelString } from 'bunyan';
 import * as apiGateway from '../clients/api-gateway';
 import * as ipfs from '../clients/ipfs';
 import { BatchManager } from '../lib/batch-manager';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IDBBatch, IPinnedBatch } from '../lib/interfaces';
 import * as utils from '../lib/utils';
 
-const log = createLogger({ name: 'lib/batch-manager.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('lib/asset-instance-pinning.ts');
 
 export class AssetInstancesPinning {
 

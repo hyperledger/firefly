@@ -2,7 +2,7 @@ import * as database from '../clients/database';
 import * as apiGateway from '../clients/api-gateway';
 import * as utils from '../lib/utils';
 import { IDBBlockchainData, IDBMember, IEventMemberRegistered } from '../lib/interfaces';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import { config } from '../lib/config';
 
 export const handleGetMembersRequest = (query: object, skip: number, limit: number) => {

@@ -4,7 +4,7 @@ import * as utils from '../lib/utils';
 import * as ipfs from '../clients/ipfs';
 import * as apiGateway from '../clients/api-gateway';
 import * as database from '../clients/database';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IEventPaymentDefinitionCreated } from '../lib/interfaces';
 
 const ajv = new Ajv();

@@ -4,10 +4,9 @@ import { Stream, Readable } from 'stream';
 import io from 'socket.io-client';
 import FormData from 'form-data';
 import axios from 'axios';
-import { createLogger, LogLevelString } from 'bunyan';
 import * as utils from '../lib/utils';
 
-const log = createLogger({ name: 'clients/doc-exchange.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('clients/doc-exchange.ts');
 
 let socket: SocketIOClient.Socket
 let listeners: IDocExchangeListener[] = [];

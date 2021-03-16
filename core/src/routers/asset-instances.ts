@@ -1,5 +1,5 @@
 import { Router, Request } from 'express';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import * as assetInstancesHandler from '../handlers/asset-instances';
 import { constants, requestKeys, streamToString } from '../lib/utils';
 import Busboy from 'busboy';

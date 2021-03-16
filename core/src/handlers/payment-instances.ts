@@ -4,7 +4,7 @@ import * as database from '../clients/database';
 import * as ipfs from '../clients/ipfs';
 import * as utils from '../lib/utils';
 import * as apiGateway from '../clients/api-gateway';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IDBBlockchainData, IDBPaymentInstance, IEventPaymentInstanceCreated } from '../lib/interfaces';
 import { config } from '../lib/config';
 

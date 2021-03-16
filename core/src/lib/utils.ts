@@ -2,8 +2,8 @@ import { encode, decode } from 'bs58';
 import crypto from 'crypto';
 import axios, { AxiosRequestConfig } from 'axios';
 import { databaseCollectionName, indexes } from './interfaces';
-import { createLogger, LogLevelString } from 'bunyan';
 import { parseDN } from 'ldapjs';
+import { Logger } from './logging';
 
 export const constants = {
   DATA_DIRECTORY: process.env.DATA_DIRECTORY || '/data',
@@ -30,7 +30,7 @@ export const constants = {
   BATCH_RETRY_MULTIPLIER: parseFloat(<string>process.env.BATCH_RETRY_MULTIPLIER || '2.0'),
 };
 
-const log = createLogger({ name: 'utils.ts', level: constants.LOG_LEVEL as LogLevelString });
+const log = new Logger('utis.ts');
 
 export const databaseCollectionIndexes: { [name in databaseCollectionName]: indexes } = {
   members: [{ fields: ['address'], unique: true }],
@@ -152,3 +152,7 @@ export const axiosWithRetry = async (config: AxiosRequestConfig) => {
   }
   throw currentError;
 };
+
+export function getLogger(label: string) {
+  return new Logger(label);
+}
