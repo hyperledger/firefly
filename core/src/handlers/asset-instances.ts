@@ -291,10 +291,14 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 
   // Process each property within the batch, as if it is an individual event
   // Note we process these after the records, to ensure asset creation always comes after setting properties
-  const properties: IEventAssetInstancePropertySet[] = batch.properties || [];
+  const properties: IAssetInstancePropertySet[] = batch.properties || [];
   for (let property of properties) {
     try {
-      await handleSetAssetInstancePropertyEvent(property, { blockNumber, transactionHash });
+      const propertyEvent: IEventAssetInstancePropertySet = {
+        ...property,
+        timestamp: event.timestamp,
+      };
+      await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash });
     } catch (err) {
       // We failed to process this record, but continue to attempt the other records in the batch
       log.error(`Property ${property.assetDefinitionID}/${property.assetInstanceID}/${property.key} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
