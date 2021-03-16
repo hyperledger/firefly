@@ -298,7 +298,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
         ...property,
         timestamp: event.timestamp,
       };
-      await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash });
+      await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash }, true);
     } catch (err) {
       // We failed to process this record, but continue to attempt the other records in the batch
       log.error(`Property ${property.assetDefinitionID}/${property.assetInstanceID}/${property.key} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
@@ -424,18 +424,15 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   log.info(`Asset instance ${eventAssetDefinitionID} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
 };
 
-export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
+export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData, isBatch?: boolean) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
-  switch (config.protocol) {
-    case 'corda':
-      eventAssetInstanceID = event.assetInstanceID;
-      eventAssetDefinitionID = event.assetDefinitionID;
-      break;
-    case 'ethereum':
-      eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
-      eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
-      break;
+  if (config.protocol === 'corda' || isBatch) {
+    eventAssetInstanceID = event.assetInstanceID;
+    eventAssetDefinitionID = event.assetDefinitionID;
+  } else {
+    eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+    eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
   }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
