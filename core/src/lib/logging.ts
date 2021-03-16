@@ -18,7 +18,7 @@ const LEVEL_TAGS = {
 
 let logLevel = LEVEL_ERROR;
 
-function setLogLevel(level?: string) {
+export function setLogLevel(level?: string) {
   if (!level) level = process.env.LOG_LEVEL || 'info';
   for (let [l,t] of Object.entries(LEVEL_TAGS)) {
     if (t.trim().toLowerCase() === level.trim().toLowerCase()) {
@@ -39,12 +39,12 @@ export class Logger {
   
   private log(level: string, ...args: any[]) {
     const logArgs = [];
-    for (const arg of args || []) {
+    for (const arg of args) {
       // Special handling of axios errors to avoid massive dumps in log
       if (arg?.isAxiosError) {
-        let data = arg?.response?.data;
-        data = data.on ? '[stream]' : JSON.stringify(data);
-        logArgs.push(`HTTP [${arg?.response?.status}] ${arg.message}: ${data}`)
+        let data = arg.response?.data;
+        data = data?.on ? '[stream]' : JSON.stringify(data);
+        logArgs.push(`HTTP [${arg.response?.status}] ${arg.message}: ${data}`)
       } else {
         logArgs.push(arg);
       }

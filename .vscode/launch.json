@@ -11,12 +11,6 @@
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/multi-region/OrgA",
         "LOG_LEVEL": "info"
       },
-      "args": [
-        "|",
-        "bunyan",
-        "-o",
-        "short"
-      ],
       "outputCapture": "std",
       "resolveSourceMapLocations": [
         "!**/node_modules/**"
@@ -32,12 +26,6 @@
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/multi-region/OrgB",
         "LOG_LEVEL": "info"
       },
-      "args": [
-        "|",
-        "bunyan",
-        "-o",
-        "short"
-      ],
       "outputCapture": "std",
       "resolveSourceMapLocations": [
         "!**/node_modules/**"
@@ -53,12 +41,6 @@
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/single-region/OrgA",
         "LOG_LEVEL": "info"
       },
-      "args": [
-        "|",
-        "bunyan",
-        "-o",
-        "short"
-      ],
       "outputCapture": "std",
       "resolveSourceMapLocations": [
         "!**/node_modules/**"
@@ -74,12 +56,6 @@
         "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/single-region/OrgB",
         "LOG_LEVEL": "info"
       },
-      "args": [
-        "|",
-        "bunyan",
-        "-o",
-        "short"
-      ],
       "outputCapture": "std",
       "resolveSourceMapLocations": [
         "!**/node_modules/**"
