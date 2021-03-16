@@ -81,10 +81,10 @@
     ],
     "all": true,
     "check-coverage": true,
-    "statements": 66,
-    "branches": 35,
-    "functions": 66,
-    "lines": 68
+    "statements": 64,
+    "branches": 42,
+    "functions": 64,
+    "lines": 66
   },
   "mocha": {
     "require": [
