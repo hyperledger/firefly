@@ -2,6 +2,7 @@ import axios from 'axios';
 import { config } from '../../lib/config';
 import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponseEthereum } from '../../lib/interfaces';
 import * as utils from '../../lib/utils';
+const log = utils.getLogger('gateway-providers/ethereum.ts');
 
 // Member APIs
 
@@ -24,7 +25,7 @@ export const upsertMember = async (address: string, name: string, app2appDestina
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to register new member ${name}`, err);
   }
 };
 
@@ -47,7 +48,7 @@ export const createAssetDefinition = async (author: string, assetDefinitionHash:
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset definition ${assetDefinitionHash}`, err);
   }
 };
 
@@ -72,7 +73,7 @@ export const createDescribedPaymentDefinition = async (paymentDefinitionID: stri
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create described payment definition ${paymentDefinitionID}`, err);
   }
 };
 
@@ -93,7 +94,7 @@ export const createPaymentDefinition = async (paymentDefinitionID: string, name:
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create payment definition ${paymentDefinitionID}`, err);
   }
 };
 
@@ -119,7 +120,7 @@ export const createDescribedAssetInstance = async (assetInstanceID: string, asse
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create described asset instance ${assetInstanceID}`, err);
   }
 };
 
@@ -141,7 +142,7 @@ export const createAssetInstance = async (assetInstanceID: string, assetDefiniti
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset instance ${assetInstanceID}`, err);
   }
 };
 
@@ -160,7 +161,7 @@ export const createAssetInstanceBatch = async (batchHash: string, author: string
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create asset instance batch ${batchHash}`, err);
   }
 };
 
@@ -183,7 +184,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to set asset instance property ${key} (instance=${assetInstanceID})`, err);
   }
 };
 
@@ -211,7 +212,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create described payment instance ${paymentInstanceID}`, err);
   }
 };
 
@@ -234,6 +235,12 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
     });
     return { ...response.data, type: sync ? 'sync' : 'async' };
   } catch (err) {
-    throw new Error(err.response?.data?.error ?? err.response.data.message ?? err.toString());
+    return handleError(`Failed to create payment instance ${paymentInstanceID}`, err);
   }
 };
+
+function handleError(msg: string, err: any): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> {
+  const errMsg = err.response?.data?.error ?? err.response.data.message ?? err.toString();
+  log.error(`${msg}. ${errMsg}`);
+  throw new Error(msg);
+}

@@ -2,6 +2,8 @@ import { config } from '../lib/config';
 import MongoDBProvider from './db-providers/mongodb';
 import NEDBProvider from './db-providers/nedb';
 import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
+import * as utils from '../lib/utils';
+const log = utils.getLogger('handlers/asset-trade.ts');
 
 let databaseProvider: IDatabaseProvider;
 
@@ -134,6 +136,7 @@ export const setAssetInstanceReceipt = async (assetDefinitionID: string, assetIn
 
 export const setAssetInstancePrivateContent = async (assetDefinitionID: string, assetInstanceID: string, content: object | undefined, filename: string | undefined) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { content, filename } }, true);
+  log.info(`Emitting event for private-asset-instance-content-stored`);
   emitEvent('private-asset-instance-content-stored', { assetDefinitionID, assetInstanceID, content, filename });
 };
 

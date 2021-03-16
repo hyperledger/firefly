@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as membersHandler from '../handlers/members';
 import { config } from '../lib/config';
-import RequestError from '../lib/request-error';
+import RequestError from '../lib/request-handlers';
 import { constants } from '../lib/utils';
 
 const router = Router();

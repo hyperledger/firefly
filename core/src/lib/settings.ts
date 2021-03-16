@@ -3,12 +3,11 @@ import { promisify } from 'util';
 import { readFile, writeFile } from 'fs';
 import path from 'path';
 import * as utils from './utils';
-import { createLogger, LogLevelString } from 'bunyan';
 import { ISettings } from './interfaces';
 import settingsSchema from '../schemas/settings.json';
-import RequestError from './request-error';
+import RequestError from './request-handlers';
 
-const log = createLogger({ name: 'lib/settings.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const log = utils.getLogger('lib/settings.ts');
 
 const asyncReadFile = promisify(readFile);
 const asyncWriteFile = promisify(writeFile);

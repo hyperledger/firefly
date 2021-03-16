@@ -1,8 +1,6 @@
 import * as QueryString from 'querystring';
 import { URL } from 'url';
 import axios, { AxiosInstance } from 'axios';
-
-import { createLogger, LogLevelString } from 'bunyan';
 import { promisify } from 'util';
 import * as timers from 'timers';
 const sleep = promisify(timers.setTimeout);
@@ -10,7 +8,7 @@ const sleep = promisify(timers.setTimeout);
 import * as utils from './utils';
 import { config } from './config'
 import { IConfig, IEventStream, IEventStreamSubscription } from './interfaces';
-const logger = createLogger({ name: 'index.ts', level: utils.constants.LOG_LEVEL as LogLevelString });
+const logger = utils.getLogger('lib/event-stream.ts');
 
 /* istanbul ignore next */
 const requestLogger = (config: any) => {
