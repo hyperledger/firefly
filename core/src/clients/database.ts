@@ -145,15 +145,16 @@ export const markAssetInstanceAsConflict = async (assetDefinitionID: string, ass
   emitEvent('asset-instance-content-conflict', { assetInstanceID });
 };
 
-export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number) => {
+export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number, batchID?: string) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID },
     {
       $set: {
         [`properties.${author}.${key}.value`]: value,
-        [`properties.${author}.${key}.submitted`]: submitted
+        [`properties.${author}.${key}.submitted`]: submitted,
+        [`properties.${author}.${key}.batchID`]: batchID,
       }
     }, false);
-  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted });
+  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, batchID });
 };
 
 export const setAssetInstancePropertyReceipt = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, receipt: string) => {
@@ -202,19 +203,19 @@ export const upsertPaymentInstance = async (paymentInstance: IDBPaymentInstance)
 
 // BATCH QUERIES
 
-export const retrieveBatches = (query: object, skip: number, limit: number, sort: {[f: string]: number} = {}): Promise<IDBBatch<any>[]> => {
-  return databaseProvider.find<IDBBatch<any>>('batches', query, sort, skip, limit);
+export const retrieveBatches = (query: object, skip: number, limit: number, sort: {[f: string]: number} = {}): Promise<IDBBatch[]> => {
+  return databaseProvider.find<IDBBatch>('batches', query, sort, skip, limit);
 };
 
-export const retrieveBatchByID = (batchID: string): Promise<IDBBatch<any> | null> => {
-  return databaseProvider.findOne<IDBBatch<any>>('batches', { batchID });
+export const retrieveBatchByID = (batchID: string): Promise<IDBBatch | null> => {
+  return databaseProvider.findOne<IDBBatch>('batches', { batchID });
 };
 
-export const retrieveBatchByHash = (batchHash: string): Promise<IDBBatch<any> | null> => {
-  return databaseProvider.findOne<IDBBatch<any>>('batches', { batchHash });
+export const retrieveBatchByHash = (batchHash: string): Promise<IDBBatch | null> => {
+  return databaseProvider.findOne<IDBBatch>('batches', { batchHash });
 };
 
-export const upsertBatch = async (batch: IDBBatch<any>) => {
+export const upsertBatch = async (batch: IDBBatch) => {
   await databaseProvider.updateOne('batches', { batchID: batch.batchID }, { $set: batch }, true);
 };
 

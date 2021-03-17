@@ -6,11 +6,12 @@ import * as database from '../clients/database';
 import * as docExchange from '../clients/doc-exchange';
 import * as ipfs from '../clients/ipfs';
 import { config } from '../lib/config';
-import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetTradePrivateAssetInstancePush, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery } from '../lib/interfaces';
+import { IAPIGatewayAsyncResponse, IAPIGatewaySyncResponse, IAssetInstance, IAssetInstancePropertySet, IAssetTradePrivateAssetInstancePush, IBatchRecord, IDBAssetInstance, IDBBlockchainData, IEventAssetInstanceBatchCreated, IEventAssetInstanceCreated, IEventAssetInstancePropertySet, IPendingAssetInstancePrivateContentDelivery, BatchRecordType } from '../lib/interfaces';
 import RequestError from '../lib/request-handlers';
 import * as utils from '../lib/utils';
 import { assetInstancesPinning } from './asset-instances-pinning';
 import * as assetTrade from './asset-trade';
+
 
 const log = utils.getLogger('handlers/asset-instances.ts');
 
@@ -234,14 +235,28 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
       }
     }
   }
-  const submitted = utils.getTimestamp();
-  await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
-  const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
-  log.info(`Asset instance property ${key} (instance=${assetInstanceID}) pinning transaction submitted to blockchain`);
-  if(apiGatewayResponse.type === 'async') {
-    await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+  const submitted = utils.getTimestamp();  
+  if (config.protocol === 'ethereum') {
+    const property: IAssetInstancePropertySet = {
+      assetDefinitionID,
+      assetInstanceID,
+      author,
+      key,
+      value,
+    };
+    const batchID = await assetInstancesPinning.pinProperty(property);
+    await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted, batchID);
+    log.info(`Asset instance property ${key} (instance=${assetInstanceID}) set via batch`);
+  } else {
+    await database.setSubmittedAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, submitted);
     log.info(`Asset instance property ${key} (instance=${assetInstanceID}) set in local database`);
+    const apiGatewayResponse = await apiGateway.setAssetInstanceProperty(assetDefinitionID, assetInstanceID, author, key, value, assetInstance.participants, sync);
+    if(apiGatewayResponse.type === 'async') {
+      await database.setAssetInstancePropertyReceipt(assetDefinitionID, assetInstanceID, author, key, apiGatewayResponse.id);
+    }  
+    log.info(`Asset instance property ${key} (instance=${assetInstanceID}) pinning transaction submitted to blockchain`);
   }
+
 };
 
 export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetInstanceBatchCreated, { blockNumber, transactionHash }: IDBBlockchainData) => {
@@ -254,22 +269,42 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
     throw new Error('Unknown batch hash: ' + event.batchHash);
   }
 
-  // Process each record within the batch, as if it we its own individual event
-  for (let record of batch.records as IAssetInstance[]) {
-    const recordEvent: IEventAssetInstanceCreated = {
-      assetDefinitionID: '',
-      assetInstanceID: '',
-      author: record.author,
-      contentHash: record.contentHash!,
-      descriptionHash: record.descriptionHash!,
-      timestamp: event.timestamp,
-      isContentPrivate: record.isContentPrivate
-    };
-    try {
-      await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
-    } catch (err) {
-      // We failed to process this record, but continue to attempt the other records in the batch
-      log.error(`${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+  // Process each record within the batch, as if it is an individual event
+  const records: IBatchRecord[] = batch.records || [];
+  for (let record of records) {
+    if (!record.recordType || record.recordType === BatchRecordType.assetInstance) {
+      const recordEvent: IEventAssetInstanceCreated = {
+        assetDefinitionID: '',
+        assetInstanceID: '',
+        author: record.author,
+        contentHash: record.contentHash!,
+        descriptionHash: record.descriptionHash!,
+        timestamp: event.timestamp,
+        isContentPrivate: record.isContentPrivate
+      };
+      try {
+        await handleAssetInstanceCreatedEvent(recordEvent, { blockNumber, transactionHash }, record);
+      } catch (err) {
+        // We failed to process this record, but continue to attempt the other records in the batch
+        log.error(`Record ${record.assetDefinitionID}/${record.assetInstanceID} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+      }  
+    } else if (record.recordType === BatchRecordType.assetProperty) {
+      try {
+        const propertyEvent: IEventAssetInstancePropertySet = {
+          assetDefinitionID: record.assetDefinitionID,
+          assetInstanceID: record.assetInstanceID,
+          author: record.author,
+          key: record.key,
+          value: record.value,
+          timestamp: event.timestamp,
+        };
+        await handleSetAssetInstancePropertyEvent(propertyEvent, { blockNumber, transactionHash }, true);
+      } catch (err) {
+        // We failed to process this record, but continue to attempt the other records in the batch
+        log.error(`Property ${record.assetDefinitionID}/${record.assetInstanceID}/${record.key} in batch ${batch.batchID} with hash ${event.batchHash} failed`, err.stack);
+      }
+    } else {
+      log.error(`Batch record type '${record.recordType}' not known`, record);
     }
   }
 
@@ -284,7 +319,7 @@ export const handleAssetInstanceBatchCreatedEvent = async (event: IEventAssetIns
 
 }
 
-export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IAssetInstance) => {
+export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstanceCreated, { blockNumber, transactionHash }: IDBBlockchainData, batchInstance?: IBatchRecord) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
   if (batchInstance === undefined) {
@@ -392,18 +427,15 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
   log.info(`Asset instance ${eventAssetDefinitionID} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
 };
 
-export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData) => {
+export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData, isBatch?: boolean) => {
   let eventAssetInstanceID: string;
   let eventAssetDefinitionID: string;
-  switch (config.protocol) {
-    case 'corda':
-      eventAssetInstanceID = event.assetInstanceID;
-      eventAssetDefinitionID = event.assetDefinitionID;
-      break;
-    case 'ethereum':
-      eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
-      eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
-      break;
+  if (config.protocol === 'corda' || isBatch) {
+    eventAssetInstanceID = event.assetInstanceID;
+    eventAssetDefinitionID = event.assetDefinitionID;
+  } else {
+    eventAssetInstanceID = utils.hexToUuid(event.assetInstanceID);
+    eventAssetDefinitionID = utils.hexToUuid(event.assetDefinitionID);
   }
   const dbAssetInstance = await database.retrieveAssetInstanceByID(eventAssetDefinitionID, eventAssetInstanceID);
   if (dbAssetInstance === null) {
