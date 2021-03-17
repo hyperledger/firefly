@@ -240,6 +240,56 @@ describe('Assets: authored - private - described - structured', async () => {
       assert.deepStrictEqual(assetInstance, getAssetInstanceResponse.body);
     });
 
+    it('sets a property on an asset, which will be public and batched even though the asset is private', async () => {
+
+      nock('https://apigateway.kaleido.io')
+        .post('/createAssetInstanceBatch?kld-from=0x0000000000000000000000000000000000000001&kld-sync=false')
+        .reply(200, { id: 'my-receipt-id' });
+
+      nock('https://ipfs.kaleido.io')
+        .post('/api/v0/add')
+        .reply(200, { Hash: batchHashIPFSMulti })
+
+      const {body: result} = await request(app)
+        .put(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .send({
+          action: 'set-property',
+          key: 'key',
+          value: 'value',
+          author: '0x0000000000000000000000000000000000000001',
+        })
+        .expect(200);
+      assert.deepStrictEqual(result.status, 'submitted');
+      
+      const {body: asset} = await request(app)
+        .get(`/api/v1/assets/${assetDefinitionID}/${assetInstanceID}`)
+        .expect(200);
+      const prop = asset.properties['0x0000000000000000000000000000000000000001']['key'];
+      assert.strictEqual(prop.value, 'value');
+      assert(prop.submitted > 0);
+      const {batchID} = prop;
+
+      // Expect the batch to have been submitted
+      let getBatchResponse: any;
+      for (let i = 0; i < 10; i++) {
+        getBatchResponse = await request(app)
+          .get(`/api/v1/batches/${batchID}`)
+          .expect(200);
+        if (getBatchResponse.body.completed) break;
+        await delay(1);
+      }
+  
+      assert.strictEqual(typeof getBatchResponse.body.completed, 'number');
+      assert.strictEqual(typeof getBatchResponse.body.batchHash, 'string');
+      assert.strictEqual(getBatchResponse.body.receipt, 'my-receipt-id');
+      assert.strictEqual(getBatchResponse.body.batchHash, batchHashSha256);
+      // As properties are always public, the full content will have been written to IPFS in the batch
+      assert.deepStrictEqual(getBatchResponse.body.records[0].recordType, 'property');
+      assert.deepStrictEqual(getBatchResponse.body.records[0].key, 'key');
+      assert.deepStrictEqual(getBatchResponse.body.records[0].value, 'value');
+
+    });
+
   });
 
 });

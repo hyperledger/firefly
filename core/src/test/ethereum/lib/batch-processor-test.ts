@@ -3,13 +3,9 @@ import sinon, { SinonStub } from 'sinon';
 import { promisify } from 'util';
 import * as database from '../../../clients/database';
 import { BatchProcessor } from '../../../lib/batch-processor';
-import { IDBBatch } from '../../../lib/interfaces';
+import { IDBBatch, BatchRecordType } from '../../../lib/interfaces';
 
 const delay = promisify(setTimeout);
-
-interface TestRecord {
-  id: string;
-}
 
 export const testBatchProcessor = async () => {
 
@@ -29,7 +25,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
@@ -39,9 +35,19 @@ describe('BatchProcessor', () => {
     const scheduleRandomDelayedAdd = async (i: number) => {
       // Introduce some randomness, but with very short delays to keep the test fast
       await delay(Math.ceil(Math.random() * 5));
-      await p.add({
-        id: `test_${i}`,
-      });
+      // Half and half records vs. properties
+      if (i % 2 === 0) {
+        await p.add({
+          recordType: BatchRecordType.assetInstance,
+          id: `test_${i}`,
+        });  
+      } else {
+        await p.add({
+          recordType: BatchRecordType.assetProperty,
+          key: `test_${i}`,
+          value: `value_${i}`,
+        });  
+      }
     }
 
     const promises: Promise<void>[] = [];
@@ -52,25 +58,31 @@ describe('BatchProcessor', () => {
 
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < p.config.batchMaxRecords; i++) {
-      assert(batch.records.find(r => r.id === `test_${i}`));
+      // Half and half records vs. properties
+      if (i % 2 === 0) {
+        assert(batch.records.find(r => r.id === `test_${i}`));
+      } else {
+        assert(batch.records.find(r => r.key === `test_${i}`));
+        assert(batch.records.find(r => r.value === `value_${i}`));
+      }
     }
 
   });
 
-  it('takes a batch array on input, and dispatches immediately', async () => {
+  it('takes a batch array on input simulating recovery, and dispatches immediately', async () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
       processorCompleteCallback,
     );
 
-    let batch: IDBBatch<TestRecord> = {
+    let batch: IDBBatch = {
       author: 'author1',
       type: 'type1',
       batchID: 'batch1',
@@ -79,7 +91,7 @@ describe('BatchProcessor', () => {
       records: [],
     };
     for (let i = 0; i < p.config.batchMaxRecords-1; i++) {
-      assert(batch.records.push({id: `test_${i}`}));
+      assert(batch.records.push({id: `test_${i}`, recordType: BatchRecordType.assetInstance }));
     }
     await p.init([batch]);
 
@@ -96,7 +108,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
@@ -110,6 +122,7 @@ describe('BatchProcessor', () => {
       // Introduce some randomness, but with very short delays to keep the test fast
       await delay(Math.ceil(Math.random() * 5));
       await p.add({
+        recordType: BatchRecordType.assetInstance,
         id: `test_${i}`,
       });
     }
@@ -134,7 +147,7 @@ describe('BatchProcessor', () => {
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
 
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < (p.config.batchMaxRecords - 1); i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
@@ -146,7 +159,7 @@ describe('BatchProcessor', () => {
     let totalReceived = 0;
     let batchCount = 0;
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       async b => {totalReceived += b.records.length; batchCount++},
@@ -160,6 +173,7 @@ describe('BatchProcessor', () => {
     for (let i = 0; i < 50; i++) {
       await delay(1);
       await p.add({
+        recordType: BatchRecordType.assetInstance,
         id: `test_${i}`,
       });
     }
@@ -175,7 +189,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
@@ -192,6 +206,7 @@ describe('BatchProcessor', () => {
     // Make the adding fast
     const addImmediate = async (i: number) => {
       await p.add({
+        recordType: BatchRecordType.assetInstance,
         id: `test_${i}`,
       });
     }
@@ -213,7 +228,7 @@ describe('BatchProcessor', () => {
 
     assert.strictEqual(processBatchCallback.callCount, 1);
     assert.strictEqual(processorCompleteCallback.callCount, 1);
-    const batch: IDBBatch<TestRecord> = processBatchCallback.getCall(0).args[0];
+    const batch: IDBBatch = processBatchCallback.getCall(0).args[0];
     for (let i = 0; i < p.config.batchMaxRecords; i++) {
       assert(batch.records.find(r => r.id === `test_${i}`));
     }
@@ -224,7 +239,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub();
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
@@ -236,7 +251,10 @@ describe('BatchProcessor', () => {
 
     let failed;
     try {
-      await p.add({ id: `test` });      
+      await p.add({
+        recordType: BatchRecordType.assetInstance,
+        id: `test`
+      });
     }
     catch(err) {
       failed = true;
@@ -250,7 +268,7 @@ describe('BatchProcessor', () => {
 
     const processBatchCallback = sinon.stub().callsFake(() => delay(10));
     const processorCompleteCallback = sinon.stub();
-    const p = new BatchProcessor<TestRecord>(
+    const p = new BatchProcessor(
       'author1',
       'type1',
       processBatchCallback,
@@ -261,7 +279,7 @@ describe('BatchProcessor', () => {
       }
     );
 
-    await p.add({ id: `test-batch1-dispatched` });
+    await p.add({ id: `test-batch1-dispatched`, recordType: BatchRecordType.assetInstance  });
 
     // Make the persistence fail
     (database.upsertBatch as SinonStub).onSecondCall().callsFake(() => delay(10));
@@ -269,8 +287,8 @@ describe('BatchProcessor', () => {
     let failed;
     try {
       await Promise.all([
-        p.add({ id: `test-batch2-blocked` }),
-        p.add({ id: `test-batch3-timeout` }),
+        p.add({ id: `test-batch2-blocked`, recordType: BatchRecordType.assetInstance }),
+        p.add({ id: `test-batch3-timeout`, recordType: BatchRecordType.assetInstance  }),
       ]);
     }
     catch(err) {
@@ -290,14 +308,14 @@ describe('BatchProcessor', () => {
 
   describe('with test wrapper', () => {
 
-    class TestBatchProcessorWrapper extends BatchProcessor<TestRecord> {
+    class TestBatchProcessorWrapper extends BatchProcessor {
       public dispatchBatch() {
         return super.dispatchBatch();
       }
-      public processBatch(batch: IDBBatch<TestRecord>) {
+      public processBatch(batch: IDBBatch) {
         return super.processBatch(batch);
       }
-      public newBatch(): IDBBatch<TestRecord> {
+      public newBatch(): IDBBatch {
         return super.newBatch();
       }
     }

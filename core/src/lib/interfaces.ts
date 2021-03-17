@@ -230,12 +230,7 @@ export interface IEventPaymentInstanceCreated {
   participants?: string[]
 }
 
-export interface IEventAssetInstancePropertySet {
-  assetInstanceID: string
-  assetDefinitionID: string
-  author: string
-  key: string
-  value: string
+export interface IEventAssetInstancePropertySet extends IAssetInstancePropertySet {
   timestamp: string
   participants?: string[]
 }
@@ -331,6 +326,14 @@ export interface IDBAssetInstance extends IAssetInstance, IDBBlockchainPinned {
   batchID?: string;
 }
 
+export interface IAssetInstancePropertySet {
+  assetInstanceID: string
+  assetDefinitionID: string
+  author: string
+  key: string
+  value: string
+}
+
 export interface IDBPaymentInstance extends IDBBlockchainPinned {
   _id?: string
   paymentInstanceID: string
@@ -342,16 +345,26 @@ export interface IDBPaymentInstance extends IDBBlockchainPinned {
   description?: object
 }
 
-export interface IPinnedBatch<IRecordType> {
+export enum BatchRecordType {
+  assetInstance = 'instance',
+  assetProperty = 'property',
+}
+
+export interface IBatchRecord {
+  recordType: BatchRecordType,
+  [x: string]: any, 
+}
+
+export interface IPinnedBatch {
   type: string;
   author: string;
   created: number;
   completed: number | null;
   batchID: string,
-  records: IRecordType[];
+  records: IBatchRecord[];
 }
 
-export interface IDBBatch<IRecordType> extends IPinnedBatch<IRecordType>, IDBBlockchainPinned {
+export interface IDBBatch extends IPinnedBatch, IDBBlockchainPinned {
   _id?: string;
   batchHash?: string,
 }
