@@ -142,7 +142,7 @@ export const setAssetInstancePrivateContent = async (assetDefinitionID: string, 
 
 export const markAssetInstanceAsConflict = async (assetDefinitionID: string, assetInstanceID: string, timestamp: number) => {
   await databaseProvider.updateOne(`asset-instance-${assetDefinitionID}`, { assetInstanceID }, { $set: { conflict: true, timestamp } }, false);
-  emitEvent('asset-instance-content-conflict', { assetInstanceID });
+  emitEvent('asset-instance-content-conflict', { assetDefinitionID, assetInstanceID });
 };
 
 export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, value: string, submitted: number, batchID?: string) => {
@@ -154,7 +154,7 @@ export const setSubmittedAssetInstanceProperty = async (assetDefinitionID: strin
         [`properties.${author}.${key}.batchID`]: batchID,
       }
     }, false);
-  emitEvent('asset-instance-property-submitted', { assetInstanceID, key, value, submitted, batchID });
+  emitEvent('asset-instance-property-submitted', { assetDefinitionID, assetInstanceID, key, value, submitted, batchID });
 };
 
 export const setAssetInstancePropertyReceipt = async (assetDefinitionID: string, assetInstanceID: string, author: string, key: string, receipt: string) => {
@@ -174,7 +174,7 @@ export const setConfirmedAssetInstanceProperty = async (assetDefinitionID: strin
         [`properties.${author}.${key}.history.${timestamp}`]: { value, timestamp, blockNumber, transactionHash }
       }
     }, false);
-  emitEvent('asset-instance-property-set', { assetInstanceID, author, key, value, timestamp, blockNumber, transactionHash });
+  emitEvent('asset-instance-property-set', { assetDefinitionID, assetInstanceID, author, key, value, timestamp, blockNumber, transactionHash });
 };
 
 // PAYMENT INSTANCE QUERIES
