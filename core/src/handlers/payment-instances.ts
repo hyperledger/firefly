@@ -10,8 +10,8 @@ import { config } from '../lib/config';
 
 const ajv = new Ajv();
 
-export const handleGetPaymentInstancesRequest = (query: object, skip: number, limit: number) => {
-  return database.retrievePaymentInstances(query, skip, limit);
+export const handleGetPaymentInstancesRequest = (query: object, sort: object, skip: number, limit: number) => {
+  return database.retrievePaymentInstances(query, sort, skip, limit);
 };
 
 export const handleCountPaymentInstancesRequest = async (query: object) => {

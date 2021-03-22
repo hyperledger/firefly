@@ -179,8 +179,8 @@ export const setConfirmedAssetInstanceProperty = async (assetDefinitionID: strin
 
 // PAYMENT INSTANCE QUERIES
 
-export const retrievePaymentInstances = (query: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
-  return databaseProvider.find<IDBPaymentInstance>('payment-instances', query, {}, skip, limit);
+export const retrievePaymentInstances = (query: object, sort: object, skip: number, limit: number): Promise<IDBPaymentInstance[]> => {
+  return databaseProvider.find<IDBPaymentInstance>('payment-instances', query, sort, skip, limit);
 };
 
 export const countPaymentInstances = (query: object): Promise<number> => {
