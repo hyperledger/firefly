@@ -42,6 +42,7 @@ export const databaseCollectionIndexes: { [name in databaseCollectionName]: inde
     { fields: ['type', 'author', 'completed', 'created'] }, // Search index for startup processing, and other queries
     { fields: ['batchHash'] } // To retrieve a batch by its hash, in response to a blockchain event
   ],
+  'state': [{ fields: ['key'], unique: true }],
 };
 
 const ETHEREUM_ACCOUNT_REGEXP = /^0x[a-fA-F0-9]{40}$/;
