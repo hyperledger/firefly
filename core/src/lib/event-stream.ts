@@ -171,15 +171,16 @@ class EventStreamManager {
     const dbSubscriptions = (await database.retrieveSubscriptions()) || {};
     const { data: existing } = await this.api.get('subscriptions');
     for (const [description, eventName] of this.subscriptionInfo()) {
+      const dbEventName = eventName.replace(/\./g, '_');
       let sub = existing.find((s: IEventStreamSubscription) => s.name === eventName && s.stream === stream.id);
-      let storedSubId = dbSubscriptions[eventName];
+      let storedSubId = dbSubscriptions[dbEventName];
       if (!sub || sub.id !== storedSubId) {
         if (sub) {
           logger.info(`Deleting stale subscription that does not match persisted id ${storedSubId}`, sub);
           await this.api.delete(`subscriptions/${sub.id}`);
         }
         const newSub = await this.createSubscription(eventName, stream.id, description);
-        dbSubscriptions[newSub.name] = newSub.id;
+        dbSubscriptions[dbEventName] = newSub.id;
       } else {
         logger.info(`Subscription ${eventName}: ${sub.id}`);
       }
