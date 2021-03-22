@@ -58,6 +58,12 @@ export interface ISettings {
   clientEvents: string[]
 }
 
+// STORED SUBSCRIPTION CONFIG
+
+export interface IStoredSubscriptions {
+  [sub: string]: string;
+}
+
 // API GATEWAY INTERFACES
 
 export interface IAPIGatewayAsyncResponse {

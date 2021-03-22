@@ -1,8 +1,8 @@
 import { config } from '../lib/config';
+import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance, IStoredSubscriptions } from '../lib/interfaces';
+import * as utils from '../lib/utils';
 import MongoDBProvider from './db-providers/mongodb';
 import NEDBProvider from './db-providers/nedb';
-import { ClientEventType, IClientEventListener, IDatabaseProvider, IDBAssetDefinition, IDBAssetInstance, IDBBatch, IDBBlockchainData, IDBMember, IDBPaymentDefinition, IDBPaymentInstance } from '../lib/interfaces';
-import * as utils from '../lib/utils';
 const log = utils.getLogger('handlers/asset-trade.ts');
 
 let databaseProvider: IDatabaseProvider;
@@ -217,6 +217,16 @@ export const retrieveBatchByHash = (batchHash: string): Promise<IDBBatch | null>
 
 export const upsertBatch = async (batch: IDBBatch) => {
   await databaseProvider.updateOne('batches', { batchID: batch.batchID }, { $set: batch }, true);
+};
+
+// SUBSCRIPTION MANAGEMENT
+
+export const retrieveSubscriptions = (): Promise<IStoredSubscriptions | null> => {
+  return databaseProvider.findOne<IStoredSubscriptions>('state', { key: 'subscriptions' });
+};
+
+export const upsertSubscriptions = (subscriptions: IStoredSubscriptions): Promise<void> => {
+  return databaseProvider.updateOne('state', { key: 'subscriptions' }, { $set: subscriptions }, true);
 };
 
 // EVENT HANDLING

@@ -3,6 +3,7 @@ import { URL } from 'url';
 import axios, { AxiosInstance } from 'axios';
 import { promisify } from 'util';
 import * as timers from 'timers';
+import * as database from '../clients/database';
 const sleep = promisify(timers.setTimeout);
 
 import * as utils from './utils';
@@ -139,41 +140,51 @@ class EventStreamManager {
     }
   }
 
-  async createSubscription(eventType: string, streamId: string, description: string){
+  async createSubscription(eventType: string, streamId: string, description: string): Promise<{id: string, name: string}> {
     switch(this.protocol) {
       case 'ethereum':
         return this.api.post(`${this.gatewayPath}/${eventType}/Subscribe`, {
           description,
           name: eventType,
-          stream: streamId
-        }).then(r => logger.info(`Created subscription ${eventType}: ${r.data.id}`));
+          stream: streamId,
+          fromBlock: "0", // Subscribe from the start of the chain
+        }).then(r => { logger.info(`Created subscription ${eventType}: ${r.data.id}`); return r.data });
       case 'corda': 
         return this.api.post('subscriptions', {
           name: eventType,
           stream: streamId,
-          fromTime: null,
+          fromTime: null, // BEGINNING is specified as `null` in Corda event streams
           filter: {
             stateType: eventType,
             stateStatus: "unconsumed",
             relevancyStatus: "all"
           }
-        }).then(r => logger.info(`Created subscription ${eventType}: ${r.data.id}`));
+        }).then(r => { logger.info(`Created subscription ${eventType}: ${r.data.id}`); return r.data });
       default:
         throw new Error("Unsupported protocol.");
     }
   }
+
+
+
   async ensureSubscriptions(stream: IEventStream) {
+    const dbSubscriptions = (await database.retrieveSubscriptions()) || {};
     const { data: existing } = await this.api.get('subscriptions');
-    const promises = [];
     for (const [description, eventName] of this.subscriptionInfo()) {
       let sub = existing.find((s: IEventStreamSubscription) => s.name === eventName && s.stream === stream.id);
-      if (!sub) {
-        promises.push(this.createSubscription(eventName, stream.id, description));
+      let storedSubId = dbSubscriptions[eventName];
+      if (!sub || sub.id !== storedSubId) {
+        if (sub) {
+          logger.info(`Deleting stale subscription that does not match persisted id ${storedSubId}`, sub);
+          await this.api.delete(`subscriptions/${sub.id}`);
+        }
+        const newSub = await this.createSubscription(eventName, stream.id, description);
+        dbSubscriptions[newSub.name] = newSub.id;
       } else {
         logger.info(`Subscription ${eventName}: ${sub.id}`);
       }
     }
-    await Promise.all(promises);
+    await database.upsertSubscriptions(dbSubscriptions);
   }
 
 }
