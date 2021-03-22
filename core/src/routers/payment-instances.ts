@@ -14,7 +14,7 @@ router.get('/', async (req, res, next) => {
     if (isNaN(skip) || isNaN(limit)) {
       throw new RequestError('Invalid skip / limit', 400);
     }
-    res.send(await paymentInstancesHandler.handleGetPaymentInstancesRequest({}, skip, limit));
+    res.send(await paymentInstancesHandler.handleGetPaymentInstancesRequest({}, req.body.sort || {}, skip, limit));
   } catch (err) {
     next(err);
   }
@@ -40,7 +40,7 @@ router.post('/search', async (req, res, next) => {
     }
     res.send(req.body.count === true ?
       await paymentInstancesHandler.handleCountPaymentInstancesRequest(req.body.query) :
-      await paymentInstancesHandler.handleGetPaymentInstancesRequest(req.body.query, skip, limit)
+      await paymentInstancesHandler.handleGetPaymentInstancesRequest(req.body.query, req.body.sort || {}, skip, limit)
     );
   } catch (err) {
     next(err);
