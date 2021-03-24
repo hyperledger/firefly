@@ -18,7 +18,6 @@ describe('App2App', () => {
       return mocksSocketIo;
     });
     sinon.stub(io, 'connect').returns(mocksSocketIo);
-    app2app.reset();
   });
 
   after(() => {
@@ -27,13 +26,10 @@ describe('App2App', () => {
 
   beforeEach(() => {
     callbacks = {};
+    app2app.reset();
   });
 
   describe('establishSocketIOConnection', () => {
-
-    beforeEach(() => {
-      app2app._establishSocketIOConnection();
-    });
 
     it('subscribes after connect', async () => {    
       sinon.assert.notCalled(mocksSocketIo.emit);

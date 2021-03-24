@@ -9,7 +9,7 @@ let socket: SocketIOClient.Socket
 let listeners: IApp2AppMessageListener[] = [];
 
 export const init = async () => {
-  socket = _establishSocketIOConnection();
+  establishSocketIOConnection();
 };
 
 function subscribeWithRetry() {
@@ -24,9 +24,9 @@ function subscribeWithRetry() {
   });
 }
 
-export const _establishSocketIOConnection = () => {
+const establishSocketIOConnection = () => {
   let error = false;
-  const s = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
+  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -61,10 +61,9 @@ export const _establishSocketIOConnection = () => {
     } catch (err) {
       log.error(`App2App message error ${err}`);
     } finally {
-      s.emit('commit');
+      socket.emit('commit');
     }
   }) as SocketIOClient.Socket;
-  return s;
 };
 
 export const addListener = (listener: IApp2AppMessageListener) => {
@@ -94,6 +93,6 @@ export const reset = () => {
   if (socket) {
     log.info('App2App Socket IO connection reset');
     socket.close();
-    socket = _establishSocketIOConnection();
+    establishSocketIOConnection();
   }
 };
