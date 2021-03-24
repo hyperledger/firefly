@@ -9,7 +9,7 @@ let socket: SocketIOClient.Socket
 let listeners: IApp2AppMessageListener[] = [];
 
 export const init = async () => {
-  establishSocketIOConnection();
+  socket = _establishSocketIOConnection();
 };
 
 function subscribeWithRetry() {
@@ -24,9 +24,9 @@ function subscribeWithRetry() {
   });
 }
 
-const establishSocketIOConnection = () => {
+export const _establishSocketIOConnection = () => {
   let error = false;
-  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
+  const s = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -47,6 +47,9 @@ const establishSocketIOConnection = () => {
   }).on('error', (err: Error) => {
     error = true;
     log.error(`App2app messaging Socket IO error. ${err.toString()}`);
+  }).on('exception', (err: Error, extra?: any) => {
+    // Exceptions are such things as delivery failures. They do not put the connection in error state
+    log.error(`App2app messaging exception. ${err.toString()}`, extra);
   }).on('data', (app2appMessage: IApp2AppMessage) => {
     log.trace(`App2App message ${JSON.stringify(app2appMessage)}`);
     try {
@@ -58,9 +61,10 @@ const establishSocketIOConnection = () => {
     } catch (err) {
       log.error(`App2App message error ${err}`);
     } finally {
-      socket.emit('commit');
+      s.emit('commit');
     }
   }) as SocketIOClient.Socket;
+  return s;
 };
 
 export const addListener = (listener: IApp2AppMessageListener) => {
@@ -90,6 +94,6 @@ export const reset = () => {
   if (socket) {
     log.info('App2App Socket IO connection reset');
     socket.close();
-    establishSocketIOConnection();
+    socket = _establishSocketIOConnection();
   }
 };
