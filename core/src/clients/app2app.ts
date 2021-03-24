@@ -80,7 +80,9 @@ export const dispatchMessage = (to: string, content: any) => {
     },
     content: JSON.stringify(content)
   }, 'kat', (err: any) => {
-    log.error(`Failed to dispatch App2App message.`, err);
+    if(err) {
+      log.error(`Failed to dispatch App2App message.`, err);
+    }
   });
 };
 
