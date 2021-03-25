@@ -90,10 +90,10 @@ const handlePrivateAssetInstanceAuthorization = (assetInstance: IDBAssetInstance
       reject(new Error('Asset instance authorization response timed out'));
     }, utils.constants.TRADE_AUTHORIZATION_TIMEOUT_SECONDS * 1000);
     const app2appListener: IApp2AppMessageListener = (headers: IApp2AppMessageHeader, content: AssetTradeMessage) => {
-      clearTimeout(timeout);
-      app2app.removeListener(app2appListener);
       if (headers.from === config.app2app.destinations.client && content.type === 'private-asset-instance-authorization-response' &&
         content.authorizationID === authorizationID) {
+        clearTimeout(timeout);
+        app2app.removeListener(app2appListener);
         resolve(content.authorized);
       }
     };
