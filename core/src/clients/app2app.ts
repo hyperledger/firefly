@@ -47,6 +47,9 @@ const establishSocketIOConnection = () => {
   }).on('error', (err: Error) => {
     error = true;
     log.error(`App2app messaging Socket IO error. ${err.toString()}`);
+  }).on('exception', (err: Error, extra?: any) => {
+    // Exceptions are such things as delivery failures. They do not put the connection in error state
+    log.error(`App2app messaging exception. ${err.toString()}`, extra);
   }).on('data', (app2appMessage: IApp2AppMessage) => {
     log.trace(`App2App message ${JSON.stringify(app2appMessage)}`);
     try {
