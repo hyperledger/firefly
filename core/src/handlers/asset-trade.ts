@@ -185,7 +185,7 @@ const processPrivateAssetInstancePush = async (headers: IApp2AppMessageHeader, p
     await database.setAssetInstancePrivateContent(push.assetDefinitionID, push.assetInstanceID, push.content, push.filename);
     log.info(`Private asset instance from push event (instance=${push.assetInstanceID}, filename=${push.filename}) saved in local database`);
   } else {
-    log.info(`Private asset instance from push event not found in local database, adding to pending instances`);
+    log.info(`Private asset instance ${push.assetDefinitionID}/${push.assetInstanceID} from push event not found in local database, adding to pending instances`);
     pendingAssetInstancePrivateContentDeliveries[push.assetInstanceID] = { ...push, fromDestination: headers.from };
   }
 }
