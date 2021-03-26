@@ -398,7 +398,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
     content,
     blockNumber,
     transactionHash,
-    isContentPrivate: event.isContentPrivate
+    isContentPrivate: event.isContentPrivate ?? assetDefinition.isContentPrivate
   };
   if (config.protocol === 'corda') {
     assetInstanceDB.participants = event.participants;
