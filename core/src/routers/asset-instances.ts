@@ -133,7 +133,10 @@ router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
 
 router.post('/:assetDefinitionID/:assetInstanceID/push', async (req, res, next) => {
   try {
-    await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.address);
+    if (!req.body.recipientAddress) {
+      throw new RequestError('Missing recipient address', 400);
+    }
+    await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.recipientAddress);
     res.send({ status: 'success' });
   } catch (err) {
     next(err);
