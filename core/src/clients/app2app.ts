@@ -26,7 +26,8 @@ function subscribeWithRetry() {
 
 const establishSocketIOConnection = () => {
   let error = false;
-  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=50`, {
+  const { APP2APP_BATCH_SIZE, APP2APP_BATCH_TIMEOUT, APP2APP_READ_AHEAD } = utils.constants;
+  socket = io.connect(`${config.app2app.socketIOEndpoint}?auto_commit=false&read_ahead=${APP2APP_READ_AHEAD}&batch_size=${APP2APP_BATCH_SIZE}&batch_timeout=${APP2APP_BATCH_TIMEOUT}`, {
     transportOptions: {
       polling: {
         extraHeaders: {

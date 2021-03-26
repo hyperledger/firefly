@@ -424,7 +424,7 @@ export const handleAssetInstanceCreatedEvent = async (event: IEventAssetInstance
       delete pendingAssetInstancePrivateContentDeliveries[eventAssetInstanceID];
     }
   }
-  log.info(`Asset instance ${eventAssetDefinitionID} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
+  log.info(`Asset instance ${eventAssetDefinitionID}/${eventAssetInstanceID} from blockchain event (blockNumber=${blockNumber} hash=${transactionHash}) saved in local database`);
 };
 
 export const handleSetAssetInstancePropertyEvent = async (event: IEventAssetInstancePropertySet, blockchainData: IDBBlockchainData, isBatch?: boolean) => {
