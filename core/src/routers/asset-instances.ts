@@ -121,7 +121,7 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
 
 router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
   try {
-    if (!utils.isAuthorValid(req.body.author, config.protocol)) {
+    if (!utils.isAuthorValid(req.body.requester, config.protocol)) {
       throw new RequestError(`Missing requester`);
     }
     await assetInstancesHandler.handleAssetInstanceTradeRequest(req.params.assetDefinitionID, req.body.requester, req.params.assetInstanceID, req.body.metadata);
