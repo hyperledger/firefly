@@ -10,6 +10,7 @@
       "items": {
         "type": "string",
         "enum": [
+          "member-registered",
           "asset-definition-submitted",
           "asset-definition-created",
           "asset-definition-name-conflict",
