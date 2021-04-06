@@ -230,7 +230,7 @@ export const handleSetAssetInstancePropertyRequest = async (assetDefinitionID: s
         const keys = Object.keys(valueData.history);
         const lastConfirmedValue = valueData.history[keys[keys.length - 1]];
         if (lastConfirmedValue.value === value) {
-          throw new RequestError('Property already set');
+          throw new RequestError('Property already set', 409);
         }
       }
     }
