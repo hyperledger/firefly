@@ -1,6 +1,26 @@
-# Kaleido Asset Trail
+# Kaleido Project Firefly
 
-![Kaleido Asset Trail](asset_trail_overview.png)
+# E2E Event Flow
+
+## REFACTOR IN PROGRESS
+
+In the evolution from Kaleido Asset Trail to Project Firefly, we are taking the opportunity to make significant changes:
+
+- Code implementation moving from Typescript to Go
+- Renaming nouns on the API surface are based on learning from production projects
+- Enhancing the pluggability of the project
+
+## Component Architecture Overview
+
+![Project Firefly Component Architecture](architecture/firefly_component_architecture.jpg)
+
+## Component E2E flow example
+
+![Project Firefly E2E flow example](architecture/firefly_flow_overview_sequencediagram.png)
+
+## Kaleido Asset Trail (KAT) background
+
+![Project Firefly](firefly_overview.png)
 
 ## Setup
 
