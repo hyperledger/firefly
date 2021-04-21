@@ -1,0 +1,154 @@
+title Firefly Example E2E Event Flow
+
+participant "App + Identity" as App
+participant "Firefly Core (FC)" as FC
+participant "Database (DB)" as DB
+participant "Blockchain Agent (BA)" as BI
+participant "Registry Agent (RA)" as RA
+participant "Data Exchange (DX)" as DX
+participant "Flow Runtime (FR)" as FR
+
+group Member onboarding phase: Should be possible for Firefly runtime to automate from config on startup
+
+group Register node
+App->FC: PUT /network/self { }
+abox over FC,RA: Async RA update: ra/v1:async_add_node
+end
+
+group Register identity
+App->FC: PUT /network/identities/:safename { ... }
+abox over FC,RA: Async RA update: ra/v1:async_add_identity
+end
+
+end
+
+group App version setup phase: Should be possible to do this with a single aggregate "deploy" call as well as ad-hc API calls
+
+group Define datatype (inc. detail of an async "definition" update on Firefly)
+App->FC: PUT /ns/:app1/defs/datatypes/:safename { type: "json", desc, ... }
+FC<->DB: Dirty check/reject safename already confirmed
+FC<->RA: ra/v1:async_add_datatype
+FC<->DB: Store unconfirmed definition
+note over FC, RA: We have an unconfirmed local entry we submitted. UUID alloccated for tracking.
+linear
+FC->App: [202 Accepted] { safename, uuid, ... }
+linear off
+
+linear
+RA->FC: ra/v1:event_datatype_confirmed (new/existing/conflict)
+linear off
+FC<->DB: Store confirmed definition
+note over FC, RA: We have exactly one confirmed entry (ours or others) bound to definition "safename"
+FC->App: Notify (optional)
+end
+
+group Define data schema
+App->FC: PUT /ns/:app1/defs/schema/:safename { datatype, semver, schema, ...}
+FC<->DB: Dirty check that datatype exists (unconfirmed is ok)
+FC<->DB: Dirty check/reject datatype/semver combo already confirmed
+abox over FC,RA: Async RA action: ra/v1:async_add_schema
+end
+
+group Define participant group
+App->FC: PUT /ns/:app1/defs/groups/:safename {type, participants, ...}
+FC->DB: Get confirmed identity data to pass to BI and DX
+abox over FC,RA: Async BI update: fr/v1:async_add_group (ret: opaque BI JSON data to pass on each call)
+abox over FC,DX: Async BI update: dx/v1:async_add_group (ret: opaque BI JSON data to pass on each call)
+end
+
+group Define flow
+App->FC: PUT /ns/:app1/defs/flows/:safename {type, autostart, options, ...}
+FC<->FC: Verify flow configuration\nfor chosen FR
+FC<->DB: Store flow
+FC->App: [200 OK] { safename, uuid, ... }
+abox over FC,FR: fr/v1:start_flow (options determines frequency)
+linear
+App<->FC: GET /ns/:app1/defs/flows/:safename {status, stats, type, autostart, options, ...}
+FC<->DB: Get local config
+DB<->FR: Get FR stats/statistics
+linear off
+end
+
+group Subscribe flow to event
+App->FC: PUT /ns/:app1/defs/subscriptions/:safename
+note over App,FC: {\n  "flow": "flow1",\n  "filter": {"eventname": "ev1", "group": "grp.*", "context": "myctx_.*" }\n}
+FC<->DB: Store susbscription
+FC->App: [200 OK] { safename, eventfilter, uuid, ... }
+end
+
+end
+
+group Runtime phase
+
+group Upload JSON data conforming to schema
+App->FC: POST /ns/:app1/data/json/:safename?v=semver (form/JSON)
+FC<->FC: Schema verify + hash
+FC->DB: Store object and assign UUID
+FC->App: [200 OK] { uuid, hash, data ... }
+end
+
+group Upload BLOB data
+App->FC: POST /ns/:app1/data/blob (form only)
+FC-->DX: Calc hash while streaming
+FC->DX: POST /ns/:app1/data/blob (form post, assigns dxid)
+FC<->DB: Store blob reference doc
+FC->App: [200 OK] { uuid, hash, dxid ... }
+end
+
+group Send event: Pinned + scoped to a group
+App->FC: POST /ns/:app1/events
+note over App, FC: <align:left>{\n  "name": "myevent",\n  "context": "anystring", \/\/ omit for global ordering in group,\n  "group": "group1", \/\/ omit for broadcast,\n  "cid": null, \/\/ for reply correlation id\n  "tx": {"type": "pinned"}, \/\/ omit for off-chain only\n  "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n}</align>
+FC->FC: Assign: {id, sender, sent}\n... then hash
+FC->BI: dx/v1:async_send_inline { group: {...dxGroupData}, context, data: {...json} }
+FC->BI: dx/v1:async_send_byref { group: {...dxGroupData}, context, uuid: "blob1" }
+FC->BI: bi/v1:async_tx_pin { group: {...biGroupData}, context, hash }
+linear
+BI->FC: Ack
+FC->App: Ack { id, sender, sent, ...event }
+linear off
+end
+
+group Dispatch event to flow - happens on each member (including sender)
+group Data aggregator
+BI->FC: ba/v1:event_pinned
+FC->FC: Check event complete [no]
+BI->FC: dx/v1:event_data_inline
+FC->FC: Check event complete [no]
+BI->FC: dx/v1:event_data_blobref
+FC->FC: Check event complete [yes]
+end
+group Dispatcher
+FC->FC: Add event to queue on group/context
+FC-->FC: Ready to dispatch next event (readahead aware)
+FC->FC: Find matching subscriptions
+FC->FR: fr/v1:async_dispatch_event
+FR->FC: fr/v1:async_event_processed
+end
+end
+
+group Query history
+
+linear
+App<->FC: GET /ns/:app1/events?page=x&unconfirmed=true&group=g1&context=str1
+FC<->DB: Query events (deterministic order for confirmed)
+note over App, FC: <align:left>{\n  "count": 123,\n  "items": [{\n    "id": "uuid..."\n    "sent": 1032480000000\n    "name": "myevent",\n    "context": "str1",\n    "group": "group1",\n    "cid": null, \n    "tx": {\n      "type": "pinned"\n.     "state": "confirmed",\n      "id": "0x....",\n      "ethereum": { "block": "..."}\n    }, \/\/ omit for off-chain only\n    "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n  }, ...]\n}}</align>
+linear off
+
+linear
+App<->FC: GET /ns/:app1/events/:eventid
+FC<->DB: Get an individual event by ID
+linear off
+
+linear
+App<->FC: GET /ns/:app1/events/:eventid/data/json/:uuid
+FC<->DB: Download JSON data from an event
+linear off
+
+linear
+App<->FC: GET /ns/:app1/events/:eventid/data/blob/:uuid
+FC<->DB: Download BLOB data from an event
+linear off
+
+end
+
+end
