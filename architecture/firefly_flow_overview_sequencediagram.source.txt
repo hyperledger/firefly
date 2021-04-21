@@ -1,4 +1,4 @@
-title Firefly Example E2E Event Flow
+title Firefly E2E Flow - © Copyright 2021 Kaleido, Inc.
 
 participant "App + Identity" as App
 participant "Firefly Core (FC)" as FC
@@ -6,8 +6,9 @@ participant "Database (DB)" as DB
 participant "Blockchain Agent (BA)" as BI
 participant "Registry Agent (RA)" as RA
 participant "Data Exchange (DX)" as DX
-participant "Flow Runtime (FR)" as FR
+participant "Event Processor (EP)" as EP
 
+entryspacing 0.9
 group Member onboarding phase: Should be possible for Firefly runtime to automate from config on startup
 
 group Register node
@@ -49,31 +50,32 @@ FC<->DB: Dirty check/reject datatype/semver combo already confirmed
 abox over FC,RA: Async RA action: ra/v1:async_add_schema
 end
 
-group Define participant group
+
+group Define event stream
+App->FC: PUT /ns/:app1/defs/eventstreams/:safename {processor, autostart, options, ...}
+FC<->FC: Verify consumer configuration\nfor chosen EE
+FC<->DB: Store event stream
+FC->App: [200 OK] { safename, uuid, ... }
+abox over FC,FR: fr/v1:start_consumer (options determines frequency)
+linear
+App<->FC: GET /ns/:app1/defs/eventstreams/:safename {status, stats, type, autostart, options, ...}
+FC<->DB: Get local config
+DB<->EP: Get EP stats/statistics
+linear off
+end
+
+group Subscribe consumer to events
+App->FC: PUT /ns/:app1/defs/subscriptions/:safename
+note over App,FC: {\n  "stream": "stream1",\n  "filter": {"topic": "ev1", "group": "grp.*", "context": "myctx_.*" }\n}
+FC<->DB: Store susbscription
+FC->App: [200 OK] { safename, eventfilter, uuid, ... }
+end
+
+group Define participant group: Optional (can do in-line on send message)
 App->FC: PUT /ns/:app1/defs/groups/:safename {type, participants, ...}
 FC->DB: Get confirmed identity data to pass to BI and DX
 abox over FC,RA: Async BI update: fr/v1:async_add_group (ret: opaque BI JSON data to pass on each call)
 abox over FC,DX: Async BI update: dx/v1:async_add_group (ret: opaque BI JSON data to pass on each call)
-end
-
-group Define flow
-App->FC: PUT /ns/:app1/defs/flows/:safename {type, autostart, options, ...}
-FC<->FC: Verify flow configuration\nfor chosen FR
-FC<->DB: Store flow
-FC->App: [200 OK] { safename, uuid, ... }
-abox over FC,FR: fr/v1:start_flow (options determines frequency)
-linear
-App<->FC: GET /ns/:app1/defs/flows/:safename {status, stats, type, autostart, options, ...}
-FC<->DB: Get local config
-DB<->FR: Get FR stats/statistics
-linear off
-end
-
-group Subscribe flow to event
-App->FC: PUT /ns/:app1/defs/subscriptions/:safename
-note over App,FC: {\n  "flow": "flow1",\n  "filter": {"eventname": "ev1", "group": "grp.*", "context": "myctx_.*" }\n}
-FC<->DB: Store susbscription
-FC->App: [200 OK] { safename, eventfilter, uuid, ... }
 end
 
 end
@@ -95,9 +97,9 @@ FC<->DB: Store blob reference doc
 FC->App: [200 OK] { uuid, hash, dxid ... }
 end
 
-group Send event: Pinned + scoped to a group
-App->FC: POST /ns/:app1/events
-note over App, FC: <align:left>{\n  "name": "myevent",\n  "context": "anystring", \/\/ omit for global ordering in group,\n  "group": "group1", \/\/ omit for broadcast,\n  "cid": null, \/\/ for reply correlation id\n  "tx": {"type": "pinned"}, \/\/ omit for off-chain only\n  "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n}</align>
+group Send message: Pinned + scoped to a group
+App->FC: POST /ns/:app1/messages
+note over App, FC: <align:left>{\n  "topic": "mytopic",\n  "context": "anystring", \/\/ omit for global ordering in group,\n  "group": "group1", \/\/ omit for broadcast,\n  "cid": null, \/\/ for reply correlation id\n  "tx": {"type": "pinned"}, \/\/ omit for off-chain only\n  "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n}</align>
 FC->FC: Assign: {id, sender, sent}\n... then hash
 FC->BI: dx/v1:async_send_inline { group: {...dxGroupData}, context, data: {...json} }
 FC->BI: dx/v1:async_send_byref { group: {...dxGroupData}, context, uuid: "blob1" }
@@ -108,7 +110,7 @@ FC->App: Ack { id, sender, sent, ...event }
 linear off
 end
 
-group Dispatch event to flow - happens on each member (including sender)
+group Dispatch event to consumer - happens on each member (including sender)
 group Data aggregator
 BI->FC: ba/v1:event_pinned
 FC->FC: Check event complete [no]
@@ -129,9 +131,9 @@ end
 group Query history
 
 linear
-App<->FC: GET /ns/:app1/events?page=x&unconfirmed=true&group=g1&context=str1
+App<->FC: GET /ns/:app1/events?page=xgroup=g1&context=str1
 FC<->DB: Query events (deterministic order for confirmed)
-note over App, FC: <align:left>{\n  "count": 123,\n  "items": [{\n    "id": "uuid..."\n    "sent": 1032480000000\n    "name": "myevent",\n    "context": "str1",\n    "group": "group1",\n    "cid": null, \n    "tx": {\n      "type": "pinned"\n.     "state": "confirmed",\n      "id": "0x....",\n      "ethereum": { "block": "..."}\n    }, \/\/ omit for off-chain only\n    "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n  }, ...]\n}}</align>
+note over App, FC: <align:left>{\n  "count": 123,\n  "items": [{\n    "id": "uuid..."\n    "sent": 1032480000000\n    "name": "myevent",\n    "context": "str1",\n    "group": "group1",\n    "cid": null, \n    "tx": {\n      "type": "pinned",\n      "id": "0x....",\n      "ethereum": { "block": "..."}\n    }, \/\/ omit for off-chain only\n    "data": {"blob": ["uuid1"], "json": ["uuid2"]}\n  }, ...]\n}}</align>
 linear off
 
 linear
