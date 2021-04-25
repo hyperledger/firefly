@@ -1,4 +1,5 @@
 {
   "mochaExplorer.files": "core/src/test/**/*.ts",
-  "mochaExplorer.require": "ts-node/register"
+  "mochaExplorer.require": "ts-node/register",
+  "go.lintTool": "golint",
 }
