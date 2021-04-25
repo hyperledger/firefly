@@ -1,0 +1,1 @@
+*.go    licensefile=.githooks/license-maintainer/LICENSE-go

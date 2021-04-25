@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package i18n
 
 import (
-	"fmt"
-	"os"
+	"context"
 
-	"github.com/kaleido-io/firefly/cmd"
+	"github.com/pkg/errors"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	os.Exit(0)
+// NewError creates a new error
+func NewError(ctx context.Context, msg MessageKey, inserts ...string) error {
+	return errors.Errorf(Sprintf(ctx, msg, inserts))
+}
+
+// WrapError wraps an error
+func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...string) error {
+	return errors.Wrap(err, Sprintf(ctx, msg, inserts))
 }

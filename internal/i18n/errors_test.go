@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package i18n
 
 import (
+	"context"
 	"fmt"
-	"os"
+	"testing"
 
-	"github.com/kaleido-io/firefly/cmd"
+	"github.com/stretchr/testify/assert"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	os.Exit(0)
+func TestNewError(t *testing.T) {
+	err := NewError(context.Background(), MsgConfigFailed)
+	assert.Error(t, err)
+}
+
+func TestWrapError(t *testing.T) {
+	err := WrapError(context.Background(), fmt.Errorf("some error"), MsgConfigFailed)
+	assert.Error(t, err)
 }

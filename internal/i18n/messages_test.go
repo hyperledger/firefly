@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package i18n
 
 import (
-	"fmt"
-	"os"
+	"context"
+	"testing"
 
-	"github.com/kaleido-io/firefly/cmd"
+	"golang.org/x/text/language"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	os.Exit(0)
+func TestWithLang(t *testing.T) {
+	lang := language.Make("en")
+	ctx := WithLang(context.Background(), lang)
+	Sprintf(ctx, MsgConfigFailed)
 }

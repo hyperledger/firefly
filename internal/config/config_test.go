@@ -12,19 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package config
 
 import (
-	"fmt"
 	"os"
+	"testing"
 
-	"github.com/kaleido-io/firefly/cmd"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	os.Exit(0)
+func TestInitConfigOK(t *testing.T) {
+	viper.Reset()
+	err := ReadConfig()
+	assert.Regexp(t, "Not Found", err.Error())
+}
+
+func TestDefaults(t *testing.T) {
+	os.Chdir("../../test/config")
+	err := ReadConfig()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "info", GetString(LogLevel))
+	assert.True(t, GetBool(LogColor))
+}
+
+func TestSet(t *testing.T) {
+	Set("any.key", "any.value")
+	assert.Equal(t, GetString("any.key"), "any.value")
 }

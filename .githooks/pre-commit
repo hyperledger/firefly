@@ -1,0 +1,33 @@
+#!/bin/bash
+
+IFS=$'\n'
+year=$(date +'%Y')
+
+files_without_header=()
+required_extensions=(go yaml)
+
+updated_files=$(git diff --name-only --cached)
+if [ -n "$updated_files" ]
+then
+    
+    for updated_file in $updated_files; do
+      for extension in $required_extensions; do
+        if [[ "$updated_file" == *.${extension} ]]; then
+          files_without_header+=($(grep -L "Copyright ©.*$year" $updated_file))
+        fi
+      done
+    done
+
+    if [ -n "$files_without_header" ]
+    then
+        echo "Copyright © $year license header not found in the following newly added files:"
+        for file in "${files_without_header[@]}"
+        do
+            :
+            echo "   - $file";
+        done
+        exit 1;
+    else
+        exit 0;
+    fi
+fi

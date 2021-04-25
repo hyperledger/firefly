@@ -12,19 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package i18n
 
-import (
-	"fmt"
-	"os"
-
-	"github.com/kaleido-io/firefly/cmd"
-)
-
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-		os.Exit(1)
-	}
-	os.Exit(0)
+var enTranslations = []msg{
+	{MsgConfigFailed, "Failed to read config: %s"},
 }
