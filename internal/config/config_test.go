@@ -35,6 +35,7 @@ func TestDefaults(t *testing.T) {
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(LogColor))
+	assert.Equal(t, uint(5000), GetUint(HttpPort))
 }
 
 func TestSet(t *testing.T) {

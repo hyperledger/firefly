@@ -22,10 +22,10 @@ import (
 
 // NewError creates a new error
 func NewError(ctx context.Context, msg MessageKey, inserts ...string) error {
-	return errors.Errorf(Sprintf(ctx, msg, inserts))
+	return errors.Errorf(ExpandWithCode(ctx, msg, inserts))
 }
 
 // WrapError wraps an error
 func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...string) error {
-	return errors.Wrap(err, Sprintf(ctx, msg, inserts))
+	return errors.Wrap(err, ExpandWithCode(ctx, msg, inserts))
 }

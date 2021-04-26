@@ -16,24 +16,23 @@ package i18n
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
-// MessageKey is assigned to each unique message in the system
-type MessageKey int
+// MessageKey is the english translation text
+type MessageKey string
 
-const (
-	// MsgConfigFailed - startup failed
-	MsgConfigFailed MessageKey = 10101
-)
+// Expand for use in docs and logging - returns a translated message, translated the language of the context
+func Expand(ctx context.Context, key MessageKey, inserts ...interface{}) string {
+	return pFor(ctx).Sprintf(string(key), inserts...)
+}
 
-// Sprintf returns a translated message, for the language of the specified context
-func Sprintf(ctx context.Context, key MessageKey, inserts ...interface{}) string {
-	return pFor(ctx).Sprintf(key.String(), inserts...)
+// ExpandWithCode for use in error scenarios - returns a translated message with a "MSG012345:" prefix, translated the language of the context
+func ExpandWithCode(ctx context.Context, key MessageKey, inserts ...interface{}) string {
+	return string(key) + ": " + pFor(ctx).Sprintf(string(key), inserts...)
 }
 
 // WithLang sets the language on the context
@@ -61,15 +60,17 @@ var serverLangs = []language.Tag{
 
 var langMatcher = language.NewMatcher(serverLangs)
 
-var all = [...]lang{
-	{"en", enTranslations},
+// enTranslations are special, as new messages are added here first using the en_translations.go file
+// and are allocated their IDs there
+var enTranslations = []msg{}
+
+func ffm(key, enTranslation string) MessageKey {
+	m := msg{MessageKey(key), enTranslation}
+	enTranslations = append(enTranslations, m)
+	return m.msgid
 }
 
 var defaultLangPrinter *message.Printer
-
-func (m MessageKey) String() string {
-	return fmt.Sprintf("MSG%d", m)
-}
 
 func pFor(ctx context.Context) *message.Printer {
 	lang := ctx.Value(ctxLangKey{})
@@ -80,10 +81,13 @@ func pFor(ctx context.Context) *message.Printer {
 }
 
 func init() {
+	all := [...]lang{
+		{"en", enTranslations},
+	}
 	for _, e := range all {
 		tag := language.MustParse(e.tag)
 		for _, msg := range e.messages {
-			message.SetString(tag, msg.msgid.String(), fmt.Sprintf("%s: %s", msg.msgid, msg.localString))
+			_ = message.SetString(tag, string(msg.msgid), msg.localString)
 		}
 	}
 	// Allow a lang var to be used

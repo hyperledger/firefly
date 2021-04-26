@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/kaleido-io/firefly/internal/config"
@@ -39,6 +41,13 @@ func Execute() error {
 	// Deferred error return from reading config
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed)
+	}
+
+	debugPort := config.GetUint(config.DebugPort)
+	if debugPort > 0 {
+		go func() {
+			log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d: %s", debugPort, http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), nil))
+		}()
 	}
 
 	return nil

@@ -65,16 +65,12 @@ func SetupLogging(ctx context.Context) {
 	switch strings.ToLower(config.GetString(config.LogLevel)) {
 	case "error":
 		logrus.SetLevel(logrus.ErrorLevel)
-		break
 	case "debug":
 		logrus.SetLevel(logrus.DebugLevel)
-		break
 	case "trace":
 		logrus.SetLevel(logrus.TraceLevel)
-		break
 	default:
 		logrus.SetLevel(logrus.InfoLevel)
-		break
 	}
 
 	L(ctx).Debugf("Log level: %s", logrus.GetLevel())
