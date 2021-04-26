@@ -12,26 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package apiserver
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/text/language"
-)
-
-func TestExpand(t *testing.T) {
-	lang := language.Make("en")
-	ctx := WithLang(context.Background(), lang)
-	str := Expand(ctx, MsgConfigFailed, "myinsert")
-	assert.Equal(t, "Failed to read config: myinsert", str)
-}
-
-func TestExpandWithCode(t *testing.T) {
-	lang := language.Make("en")
-	ctx := WithLang(context.Background(), lang)
-	str := ExpandWithCode(ctx, MsgConfigFailed, "myinsert")
-	assert.Equal(t, "FF10101: Failed to read config: myinsert", str)
+type RESTError struct {
+	Message string
 }

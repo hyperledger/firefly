@@ -22,12 +22,18 @@ import (
 type Key string
 
 const (
-	// Lang - sets the server language preference
-	Lang Key = "lang"
-	// LogLevel - sets the logging level
-	LogLevel = "log.level"
-	// LogColor - boolean for if color is enabled on logging
-	LogColor = "log.color"
+	Lang              Key = "lang"
+	LogLevel          Key = "log.level"
+	LogColor          Key = "log.color"
+	DebugPort         Key = "debug.port"
+	HttpAddress       Key = "http.address"
+	HttpPort          Key = "http.port"
+	HttpReadTimeout   Key = "http.readTimeout"
+	HttpWriteTimeout  Key = "http.writeTimeout"
+	HttpTLSEnabled    Key = "http.tls.enabled"
+	HttpTLSClientAuth Key = "http.tls.clientAuth"
+	HttpTLSCertsFile  Key = "http.tls.certsFile"
+	HttpTLSKeyFile    Key = "http.tls.keyFile"
 )
 
 // ReadConfig initializes the config
@@ -37,6 +43,10 @@ func ReadConfig() error {
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogColor), true)
+	viper.SetDefault(string(HttpAddress), "127.0.0.1")
+	viper.SetDefault(string(HttpPort), 5000)
+	viper.SetDefault(string(HttpReadTimeout), 15)
+	viper.SetDefault(string(HttpWriteTimeout), 15)
 
 	// Set precedence order for reading config location
 	viper.AutomaticEnv()
@@ -58,6 +68,11 @@ func GetString(key Key) string {
 // GetBool gets a configuration bool
 func GetBool(key Key) bool {
 	return viper.GetBool(string(key))
+}
+
+// GetUInt gets a configuration uint
+func GetUint(key Key) uint {
+	return viper.GetUint(string(key))
 }
 
 // Set allows runtime setting of config (used in unit tests)

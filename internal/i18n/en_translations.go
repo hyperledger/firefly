@@ -14,6 +14,7 @@
 
 package i18n
 
-var enTranslations = []msg{
-	{MsgConfigFailed, "Failed to read config: %s"},
-}
+var (
+	MsgConfigFailed       = ffm("FF10101", "Failed to read config: %s")
+	MsgPutDefDataTypeDesc = ffm("FF10102", "Asynchronously add a new data type")
+)
