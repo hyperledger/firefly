@@ -27,6 +27,7 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/gorilla/mux"
+	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -135,7 +136,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(route *Route) http.HandlerFunc {
+func jsonHandler(route *apiroutes.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
@@ -206,7 +207,7 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 
 func createMuxRouter() *mux.Router {
 	r := mux.NewRouter()
-	for _, route := range routes {
+	for _, route := range apiroutes.Routes {
 		if route.JSONHandler != nil {
 			r.HandleFunc(route.Path, jsonHandler(route)).
 				HeadersRegexp("Content-Type", "application/json").

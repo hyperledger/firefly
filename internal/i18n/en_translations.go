@@ -15,13 +15,14 @@
 package i18n
 
 var (
-	MsgConfigFailed         = ffm("FF10101", "Failed to read config: %s")
-	MsgPutDefDataTypeDesc   = ffm("FF10102", "Asynchronously add a new data type")
-	MsgJSONDecodeFailed     = ffm("FF10103", "Failed to decode input JSON")
-	MsgAPIServerStartFailed = ffm("FF10104", "Unable to start listener on %s: %s")
-	MsgTLSConfigFailed      = ffm("FF10105", "Failed to initialize TLS configuration")
-	MsgInvalidCAFile        = ffm("FF10106", "Invalid CA certificates file")
-	MsgResponseMarshalError = ffm("FF10107", "Failed to serialize response data")
-	MsgWebsocketClientError = ffm("FF10108", "Error received from WebSocket client: %s")
-	Msg404NotFound          = ffm("FF10109", "Not found")
+	MsgConfigFailed            = ffm("FF10101", "Failed to read config: %s")
+	MsgPutDefDataTypeDesc      = ffm("FF10102", "Asynchronously add a new data type")
+	MsgJSONDecodeFailed        = ffm("FF10103", "Failed to decode input JSON")
+	MsgAPIServerStartFailed    = ffm("FF10104", "Unable to start listener on %s: %s")
+	MsgTLSConfigFailed         = ffm("FF10105", "Failed to initialize TLS configuration")
+	MsgInvalidCAFile           = ffm("FF10106", "Invalid CA certificates file")
+	MsgResponseMarshalError    = ffm("FF10107", "Failed to serialize response data")
+	MsgWebsocketClientError    = ffm("FF10108", "Error received from WebSocket client: %s")
+	Msg404NotFound             = ffm("FF10109", "Not found")
+	MsgUnknownBlockchainPlugin = ffm("FF10110", "Unknown blockchain plugin: %s")
 )
