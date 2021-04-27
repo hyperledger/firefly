@@ -37,8 +37,14 @@ type BlockchainPlugin interface {
 }
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
-// Note: It does not matter which Firefly core runtime the event is dispatched to (it does not need to be
-//       the same runtime as the one that performed the submit).
+//
+// All blockchain-sequenced events MUST be delivered to the same firefly core instance, to allow deterministic ordering of the
+// event delivery. If that firefly core instance terminates/disconnects from the blockchain remote agent, the stream should
+// fail0over to another instance. Then all all un-confirmed messages will be replayed (in the correct sequence) via that node.
+//
+// One example of how this can be acheived, is with a singleton instance of the event stream runtime (with HA failover)
+// and a WebSocket connection from the firefly core runtime to that instance. Then the remote event stream runtime can
+// choose exactly one of those connected WebSockets to dispatch events to.
 type BlockchainEvents interface {
 	// TransactionUpdate notifies firefly of an update to a transaction. Only success/failure and errorMessage (for errors) are modeled.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
