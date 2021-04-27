@@ -17,8 +17,10 @@ package apiserver
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -35,8 +37,11 @@ func Serve(ctx context.Context) error {
 	r := createMuxRouter()
 	l, err := createListener(ctx)
 	if err == nil {
-		s := createServer(ctx, r)
-		err = serveHTTP(ctx, l, s)
+		var s *http.Server
+		s, err = createServer(ctx, r)
+		if err == nil {
+			err = serveHTTP(ctx, l, s)
+		}
 	}
 	return err
 }
@@ -51,17 +56,48 @@ func createListener(ctx context.Context) (net.Listener, error) {
 	return listener, err
 }
 
-func createServer(ctx context.Context, r *mux.Router) *http.Server {
+func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
+
+	// Support client auth
 	clientAuth := tls.NoClientCert
 	if config.GetBool(config.HttpTLSClientAuth) {
 		clientAuth = tls.RequireAndVerifyClientCert
 	}
-	srv := &http.Server{
+
+	// Support custom CA file
+	var rootCAs *x509.CertPool
+	caFile := config.GetString(config.HttpTLSCAFile)
+	if caFile != "" {
+		rootCAs = x509.NewCertPool()
+		var caBytes []byte
+		caBytes, err = ioutil.ReadFile(caFile)
+		if err == nil {
+			ok := rootCAs.AppendCertsFromPEM(caBytes)
+			if !ok {
+				err = i18n.NewError(ctx, i18n.MsgInvalidCAFile)
+			}
+		}
+	} else {
+		rootCAs, err = x509.SystemCertPool()
+	}
+
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgTLSConfigFailed)
+	}
+
+	srv = &http.Server{
 		Handler:      r,
 		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Second,
 		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Second,
 		TLSConfig: &tls.Config{
 			ClientAuth: clientAuth,
+			ClientCAs:  rootCAs,
+			RootCAs:    rootCAs,
+			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+				cert := verifiedChains[0][0]
+				log.L(ctx).Debugf("Client certificate provided Subject=%s Issuer=%s Expiry=%s", cert.Subject, cert.Issuer, cert.NotAfter)
+				return nil
+			},
 		},
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
 			ctx = log.WithLogField(ctx, "r", c.RemoteAddr().String())
@@ -69,7 +105,7 @@ func createServer(ctx context.Context, r *mux.Router) *http.Server {
 			return ctx
 		},
 	}
-	return srv
+	return srv, nil
 }
 
 func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (err error) {
@@ -85,7 +121,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	}()
 
 	if config.GetBool(config.HttpTLSEnabled) {
-		err = srv.ServeTLS(listener, config.GetString(config.HttpTLSCertsFile), config.GetString(config.HttpTLSKeyFile))
+		err = srv.ServeTLS(listener, config.GetString(config.HttpTLSCertFile), config.GetString(config.HttpTLSKeyFile))
 	} else {
 		err = srv.Serve(listener)
 	}
@@ -99,6 +135,9 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 }
 
 func jsonHandlerFor(route *Route) func(res http.ResponseWriter, req *http.Request) {
+	// Check the mandatory parts are ok at startup time
+	route.JSONInputValue()
+	route.JSONOutputValue()
 	return func(res http.ResponseWriter, req *http.Request) {
 		l := log.L(req.Context())
 		l.Infof("--> %s %s (%s)", req.Method, req.URL.Path, route.Name)
@@ -114,7 +153,7 @@ func jsonHandlerFor(route *Route) func(res http.ResponseWriter, req *http.Reques
 		}
 		if err != nil {
 			l.Infof("<-- %s %s ERROR: %s", req.Method, req.URL.Path, err)
-			output = RESTError{
+			output = &RESTError{
 				Message: err.Error(),
 			}
 		}
@@ -122,7 +161,9 @@ func jsonHandlerFor(route *Route) func(res http.ResponseWriter, req *http.Reques
 		res.WriteHeader(status)
 		err = json.NewEncoder(res).Encode(output)
 		if err != nil {
-			l.Errorf("Failed to send HTTP response: %s", err)
+			err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
+			l.Errorf(err.Error())
+			_ = json.NewEncoder(res).Encode(&RESTError{Message: err.Error()})
 		}
 	}
 }

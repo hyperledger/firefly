@@ -15,5 +15,5 @@
 package apiserver
 
 type RESTError struct {
-	Message string
+	Message string `json:"message"`
 }
