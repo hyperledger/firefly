@@ -34,7 +34,8 @@ const (
 	HttpWriteTimeout  Key = "http.writeTimeout"
 	HttpTLSEnabled    Key = "http.tls.enabled"
 	HttpTLSClientAuth Key = "http.tls.clientAuth"
-	HttpTLSCertsFile  Key = "http.tls.certsFile"
+	HttpTLSCAFile     Key = "http.tls.caFile"
+	HttpTLSCertFile   Key = "http.tls.certFile"
 	HttpTLSKeyFile    Key = "http.tls.keyFile"
 )
 
