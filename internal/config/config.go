@@ -15,6 +15,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/spf13/viper"
 )
 
@@ -36,28 +38,41 @@ const (
 	HttpTLSKeyFile    Key = "http.tls.keyFile"
 )
 
-// ReadConfig initializes the config
-func ReadConfig() error {
+func Reset() {
+	viper.Reset()
 
 	// Set defaults
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogColor), true)
+	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(HttpAddress), "127.0.0.1")
 	viper.SetDefault(string(HttpPort), 5000)
 	viper.SetDefault(string(HttpReadTimeout), 15)
 	viper.SetDefault(string(HttpWriteTimeout), 15)
+}
+
+// ReadConfig initializes the config
+func ReadConfig(cfgFile string) error {
+	Reset()
 
 	// Set precedence order for reading config location
 	viper.AutomaticEnv()
-	viper.SetConfigName("firefly.core")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/firefly/")
-	viper.AddConfigPath("$HOME/.firefly")
-	viper.AddConfigPath(".")
-
-	// Read the config itself
-	return viper.ReadInConfig()
+	if cfgFile != "" {
+		f, err := os.Open(cfgFile)
+		if err == nil {
+			defer f.Close()
+			err = viper.ReadConfig(f)
+		}
+		return err
+	} else {
+		viper.SetConfigName("firefly.core")
+		viper.AddConfigPath("/etc/firefly/")
+		viper.AddConfigPath("$HOME/.firefly")
+		viper.AddConfigPath(".")
+		return viper.ReadInConfig()
+	}
 }
 
 // GetString gets a configuration string
@@ -73,6 +88,11 @@ func GetBool(key Key) bool {
 // GetUInt gets a configuration uint
 func GetUint(key Key) uint {
 	return viper.GetUint(string(key))
+}
+
+// GetInt gets a configuration uint
+func GetInt(key Key) int {
+	return viper.GetInt(string(key))
 }
 
 // Set allows runtime setting of config (used in unit tests)

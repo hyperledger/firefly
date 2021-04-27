@@ -2,4 +2,7 @@
   "mochaExplorer.files": "core/src/test/**/*.ts",
   "mochaExplorer.require": "ts-node/register",
   "go.lintTool": "golangci-lint",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true
 }

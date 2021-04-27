@@ -24,18 +24,29 @@ import (
 
 func TestInitConfigOK(t *testing.T) {
 	viper.Reset()
-	err := ReadConfig()
+	err := ReadConfig("")
 	assert.Regexp(t, "Not Found", err.Error())
 }
 
 func TestDefaults(t *testing.T) {
 	os.Chdir("../../test/config")
-	err := ReadConfig()
+	err := ReadConfig("")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(LogColor))
-	assert.Equal(t, uint(5000), GetUint(HttpPort))
+	assert.Equal(t, uint(0), GetUint(HttpPort))
+	assert.Equal(t, int(0), GetInt(DebugPort))
+}
+
+func TestSpecificConfigFileOk(t *testing.T) {
+	err := ReadConfig("../../test/config/firefly.core.yaml")
+	assert.NoError(t, err)
+}
+
+func TestSpecificConfigFileFail(t *testing.T) {
+	err := ReadConfig("../../test/config/no.hope.yaml")
+	assert.Error(t, err)
 }
 
 func TestSet(t *testing.T) {

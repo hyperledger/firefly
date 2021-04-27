@@ -15,6 +15,8 @@
 package i18n
 
 var (
-	MsgConfigFailed       = ffm("FF10101", "Failed to read config: %s")
-	MsgPutDefDataTypeDesc = ffm("FF10102", "Asynchronously add a new data type")
+	MsgConfigFailed         = ffm("FF10101", "Failed to read config: %s")
+	MsgPutDefDataTypeDesc   = ffm("FF10102", "Asynchronously add a new data type")
+	MsgJSONDecodeFailed     = ffm("FF10103", "Failed to decode input JSON")
+	MsgAPIServerStartFailed = ffm("FF10104", "Unable to start listener on %s: %s")
 )

@@ -20,7 +20,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var routes = []Route{
+var routes = []*Route{
 	putDefDatatype,
 }
 
