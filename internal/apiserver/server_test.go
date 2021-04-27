@@ -167,7 +167,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	handler := jsonHandlerFor(&Route{
+	handler := jsonHandler(&Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -192,7 +192,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPServeCustomGETError(t *testing.T) {
-	handler := jsonHandlerFor(&Route{
+	handler := jsonHandler(&Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -216,7 +216,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	handler := jsonHandlerFor(&Route{
+	handler := jsonHandler(&Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -238,4 +238,17 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
 	assert.Regexp(t, "FF10107", resJSON["message"])
+}
+
+func TestNotFound(t *testing.T) {
+	handler := logWrapper(notFoundHandler)
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/test", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10109", resJSON["message"])
 }

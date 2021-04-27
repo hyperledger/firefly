@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/aidarkhanov/nanoid v1.0.8
+	github.com/golangci/golangci-lint v1.39.0 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
