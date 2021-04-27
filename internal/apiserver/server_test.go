@@ -241,7 +241,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	handler := logWrapper(notFoundHandler)
+	handler := apiWrapper(notFoundHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

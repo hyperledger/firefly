@@ -37,6 +37,7 @@ const (
 	HttpTLSCAFile     Key = "http.tls.caFile"
 	HttpTLSCertFile   Key = "http.tls.certFile"
 	HttpTLSKeyFile    Key = "http.tls.keyFile"
+	APIRequestTimeout Key = "api.requestTimeout"
 )
 
 func Reset() {
@@ -51,6 +52,7 @@ func Reset() {
 	viper.SetDefault(string(HttpPort), 5000)
 	viper.SetDefault(string(HttpReadTimeout), 15)
 	viper.SetDefault(string(HttpWriteTimeout), 15)
+	viper.SetDefault(string(APIRequestTimeout), 120)
 }
 
 // ReadConfig initializes the config

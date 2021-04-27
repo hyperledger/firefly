@@ -99,10 +99,11 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 				return nil
 			},
 		},
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			ctx = log.WithLogField(ctx, "r", c.RemoteAddr().String())
-			ctx = log.WithLogField(ctx, "req", nanoid.New())
-			return ctx
+		ConnContext: func(newCtx context.Context, c net.Conn) context.Context {
+			l := log.L(ctx).WithField("req", nanoid.Must(nanoid.Generate(nanoid.DefaultAlphabet, 8)))
+			newCtx = log.WithLogger(newCtx, l)
+			l.Debugf("New HTTP connection: remote=%s local=%s", c.RemoteAddr().String(), c.LocalAddr().String())
+			return newCtx
 		},
 	}
 	return srv, nil
@@ -138,7 +139,7 @@ func jsonHandler(route *Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
-	return logWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		l := log.L(req.Context())
 		input := route.JSONInputValue()
 		output := route.JSONOutputValue()
@@ -162,23 +163,38 @@ func jsonHandler(route *Route) http.HandlerFunc {
 	})
 }
 
-func logWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
+func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
+	apiTimeout := config.GetUint(config.APIRequestTimeout) // Query once at startup when wrapping
 	return func(res http.ResponseWriter, req *http.Request) {
-		l := log.L(req.Context())
+
+		// Configure a server-side timeout on each request, to try and avoid cases where the API requester
+		// times out, and we continue to churn indefinitely processing the request.
+		// Long-running processes should be dispatched asynchronously (API returns 202 Accepted asap),
+		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
+		// This is dependent on the context being passed down through to all blocking operations down the stack
+		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
+		ctx, cancel := context.WithTimeout(req.Context(), time.Duration(apiTimeout)*time.Second)
+		req = req.WithContext(ctx)
+		defer cancel()
+
+		// Wrap the request itself in a log wrapper, that gives minimal request/response and timing info
+		l := log.L(ctx)
 		l.Infof("--> %s %s", req.Method, req.URL.Path)
+		startTime := time.Now()
 		status, err := handler(res, req)
+		duration := float64(time.Since(startTime)) / float64(time.Millisecond)
 		if err != nil {
 			if status < 300 {
 				status = 500
 			} // Ensure we return an error status
-			l.Infof("<-- %s %s [%d]!: %s", req.Method, req.URL.Path, status, err)
+			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, duration, err)
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
 			_ = json.NewEncoder(res).Encode(&RESTError{
 				Message: err.Error(),
 			})
 		} else {
-			l.Infof("<-- %s %s [%d]", req.Method, req.URL.Path, status)
+			l.Infof("<-- %s %s [%d] (%.2fms)", req.Method, req.URL.Path, status, duration)
 		}
 	}
 }
@@ -197,6 +213,6 @@ func createMuxRouter() *mux.Router {
 				Methods(route.Method)
 		}
 	}
-	r.NotFoundHandler = logWrapper(notFoundHandler)
+	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }
