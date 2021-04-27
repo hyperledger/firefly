@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"os"
+	"syscall"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -28,8 +29,11 @@ func TestExecMissingConfig(t *testing.T) {
 	assert.Regexp(t, "Not Found", err.Error())
 }
 
-func TestExecOk(t *testing.T) {
+func TestExecOkExitSIGINT(t *testing.T) {
 	os.Chdir("../test/config")
+	go func() {
+		sigs <- syscall.SIGINT
+	}()
 	err := Execute()
 	assert.NoError(t, err)
 }

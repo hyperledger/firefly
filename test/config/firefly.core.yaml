@@ -1,1 +1,5 @@
 # Example YAML file for testing commandline startup
+debug:
+  port: 0
+http:
+  port: 0

@@ -20,7 +20,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var putDefDatatype = Route{
+var putDefDatatype = &Route{
 
 	Name:            "putDefDatatype",
 	Path:            "defs/datatypes",
