@@ -21,11 +21,11 @@ import (
 )
 
 // NewError creates a new error
-func NewError(ctx context.Context, msg MessageKey, inserts ...string) error {
-	return errors.Errorf(ExpandWithCode(ctx, msg, inserts))
+func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error {
+	return errors.Errorf(ExpandWithCode(ctx, msg, inserts...))
 }
 
 // WrapError wraps an error
-func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...string) error {
-	return errors.Wrap(err, ExpandWithCode(ctx, msg, inserts))
+func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
+	return errors.Wrap(err, ExpandWithCode(ctx, msg, inserts...))
 }
