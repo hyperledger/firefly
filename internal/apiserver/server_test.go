@@ -36,6 +36,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -167,7 +168,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	handler := jsonHandler(&Route{
+	handler := jsonHandler(&apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -192,7 +193,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPServeCustomGETError(t *testing.T) {
-	handler := jsonHandler(&Route{
+	handler := jsonHandler(&apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -216,7 +217,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	handler := jsonHandler(&Route{
+	handler := jsonHandler(&apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",

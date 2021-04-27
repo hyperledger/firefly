@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package plugin
+package blockchain
 
 import (
 	"context"
-	"encoding/hex"
-
-	"github.com/google/uuid"
 )
 
-// BlockchainPlugin is the interface implemented by each blockchain plugin
-type BlockchainPlugin interface {
+// Plugin is the interface implemented by each blockchain plugin
+type Plugin interface {
 
 	// ConfigInterface returns the structure into which to marshal the plugin config
 	ConfigInterface() interface{}
 
 	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config interface{}, events BlockchainEvents) (*BlockchainCapabilities, error)
+	Init(ctx context.Context, config interface{}, events Events) (*Capabilities, error)
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
@@ -38,15 +35,16 @@ type BlockchainPlugin interface {
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
-// All blockchain-sequenced events MUST be delivered to the same firefly core instance, to allow deterministic ordering of the
-// event delivery. If that firefly core instance terminates/disconnects from the blockchain remote agent, the stream should
+// All blockchain-sequenced events MUST be delivered to the same firefly core instance (within a cluster), to allow
+// deterministic ordering of the event delivery to subscribed event handlers (apps etc.).
+// If that firefly core instance terminates/disconnects from the blockchain remote agent, the stream should
 // fail-over to another instance. Then all all un-confirmed messages will be replayed (in the correct sequence) to that node.
 //
 // One example of how this can be acheived, is with a singleton instance of the event stream runtime (with HA failover)
 // and a WebSocket connection from the firefly core runtime to that instance. Then the remote event stream runtime can
 // choose exactly one of those connected WebSockets to dispatch events to, and in the case the websocket disconnects
 // pick the next available connection and re-deliver anything that was missed.
-type BlockchainEvents interface {
+type Events interface {
 	// TransactionUpdate notifies firefly of an update to a transaction. Only success/failure and errorMessage (for errors) are modeled.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
@@ -61,23 +59,10 @@ type BlockchainEvents interface {
 
 // BlockchainCapabilities the supported featureset of the blockchain
 // interface implemented by the plugin, with the specified config
-type BlockchainCapabilities struct {
+type Capabilities struct {
 	// GlobalSequencer means submitting an ordered piece of data visible to all
 	// participants of the network (requires an all-participant chain)
 	GlobalSequencer bool
-}
-
-// Bytes32 is a holder of a hash, that can be used to correlate onchain data with off-chain data.
-type Bytes32 = [32]byte
-
-// HexUUID is 32 character ASCII string containing the hex representation of UUID, with the dashes of the canonical representation removed
-type HexUUID = [32]byte
-
-// HexUUIDFromUUID returns the bytes of a UUID as a compressed hex string
-func HexUUIDFromUUID(u uuid.UUID) HexUUID {
-	var d HexUUID
-	hex.Encode(d[0:15], u[0:7])
-	return d
 }
 
 // TransactionState is the only architecturally significant thing that Firefly tracks on blockchain transactions.
