@@ -23,4 +23,5 @@ var (
 	MsgInvalidCAFile        = ffm("FF10106", "Invalid CA certificates file")
 	MsgResponseMarshalError = ffm("FF10107", "Failed to serialize response data")
 	MsgWebsocketClientError = ffm("FF10108", "Error received from WebSocket client: %s")
+	Msg404NotFound          = ffm("FF10109", "Not found")
 )

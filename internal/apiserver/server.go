@@ -134,48 +134,69 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandlerFor(route *Route) func(res http.ResponseWriter, req *http.Request) {
+func jsonHandler(route *Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
-	return func(res http.ResponseWriter, req *http.Request) {
+	return logWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		l := log.L(req.Context())
-		l.Infof("--> %s %s (%s)", req.Method, req.URL.Path, route.Name)
 		input := route.JSONInputValue()
 		output := route.JSONOutputValue()
-		status := 400
-		var err error
+		status = 400 // default if fail parsing input
 		if input != nil {
 			err = json.NewDecoder(req.Body).Decode(&input)
 		}
 		if err == nil {
 			status, err = route.JSONHandler(req, input, output)
 		}
-		if err != nil {
-			l.Infof("<-- %s %s ERROR: %s", req.Method, req.URL.Path, err)
-			output = &RESTError{
-				Message: err.Error(),
+		if err == nil {
+			res.Header().Add("Content-Type", "application/json")
+			res.WriteHeader(status)
+			err = json.NewEncoder(res).Encode(output)
+			if err != nil {
+				err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
+				l.Errorf(err.Error())
 			}
 		}
-		l.Infof("<-- %s %s [%d]", req.Method, req.URL.Path, status)
-		res.WriteHeader(status)
-		err = json.NewEncoder(res).Encode(output)
+		return status, err
+	})
+}
+
+func logWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		l := log.L(req.Context())
+		l.Infof("--> %s %s", req.Method, req.URL.Path)
+		status, err := handler(res, req)
 		if err != nil {
-			err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
-			l.Errorf(err.Error())
-			_ = json.NewEncoder(res).Encode(&RESTError{Message: err.Error()})
+			if status < 300 {
+				status = 500
+			} // Ensure we return an error status
+			l.Infof("<-- %s %s [%d]!: %s", req.Method, req.URL.Path, status, err)
+			res.Header().Add("Content-Type", "application/json")
+			res.WriteHeader(status)
+			_ = json.NewEncoder(res).Encode(&RESTError{
+				Message: err.Error(),
+			})
+		} else {
+			l.Infof("<-- %s %s [%d]", req.Method, req.URL.Path, status)
 		}
 	}
+}
+
+func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	res.Header().Add("Content-Type", "application/json")
+	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
 func createMuxRouter() *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(route.Path, jsonHandlerFor(route)).
+			r.HandleFunc(route.Path, jsonHandler(route)).
 				HeadersRegexp("Content-Type", "application/json").
 				Methods(route.Method)
 		}
 	}
+	r.NotFoundHandler = logWrapper(notFoundHandler)
 	return r
 }
