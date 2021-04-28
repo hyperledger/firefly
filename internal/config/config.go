@@ -102,3 +102,19 @@ func GetInt(key Key) int {
 func Set(key Key, value interface{}) {
 	viper.Set(string(key), value)
 }
+
+// UintWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
+func UintWithDefault(val *uint, def uint) uint {
+	if val == nil {
+		return def
+	}
+	return *val
+}
+
+// BoolWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
+func BoolWithDefault(val *bool, def bool) bool {
+	if val == nil {
+		return def
+	}
+	return *val
+}

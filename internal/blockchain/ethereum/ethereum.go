@@ -17,18 +17,45 @@ package ethereum
 import (
 	"context"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 type Ethereum struct {
-	// ctx context.Context
-	// cfg *Config
+	ctx    context.Context
+	conf   *Config
+	events blockchain.Events
+	client *resty.Client
 }
 
 func (e *Ethereum) ConfigInterface() interface{} { return &Ethereum{} }
 
-func (e *Ethereum) Init(ctx context.Context, config interface{}, events blockchain.Events) (*blockchain.Capabilities, error) {
-	return &blockchain.Capabilities{}, nil
+func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (*blockchain.Capabilities, error) {
+	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	e.conf = conf.(*Config)
+	e.events = events
+	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
+
+	log.L(e.ctx).Debugf("Config: %+v", e.conf)
+
+	if err := e.ensureEventStreams(); err != nil {
+		return nil, err
+	}
+
+	return &blockchain.Capabilities{
+		GlobalSequencer: true,
+	}, nil
+}
+
+// var subscriptionInfo = map[string]string{
+// 	"AssetInstanceBatchCreated": "Asset instance batch created",
+// }
+
+func (e *Ethereum) ensureEventStreams() error {
+	// TODO: complete setup
+	return nil
 }
 
 func (e *Ethereum) SubmitBroadcastBatch(identity string, broadcast blockchain.BroadcastBatch) (txTrackingID string, err error) {
