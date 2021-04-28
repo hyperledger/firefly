@@ -53,3 +53,15 @@ func TestSet(t *testing.T) {
 	Set("any.key", "any.value")
 	assert.Equal(t, GetString("any.key"), "any.value")
 }
+
+func TestUintWithDefault(t *testing.T) {
+	assert.Equal(t, uint(10), UintWithDefault(nil, 10))
+	var v uint = 10
+	assert.Equal(t, uint(10), UintWithDefault(&v, 99))
+}
+
+func TestBoolWithDefault(t *testing.T) {
+	assert.True(t, BoolWithDefault(nil, true))
+	var v bool = false
+	assert.False(t, BoolWithDefault(&v, true))
+}

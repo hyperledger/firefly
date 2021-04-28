@@ -14,12 +14,14 @@
 
 package ethereum
 
+import "github.com/kaleido-io/firefly/internal/ffresty"
+
 type Config struct {
 	Ethconnect EthconnectConfig `json:"ethconnect"`
 }
 
 type EthconnectConfig struct {
-	URL          string            `json:"url"`
+	ffresty.HTTPConfig
 	Headers      map[string]string `json:"headers"`
 	InstancePath string            `json:"instance"`
 	Topic        string            `json:"topic"`
