@@ -26,10 +26,14 @@ import (
 )
 
 type Ethereum struct {
-	ctx    context.Context
-	conf   *Config
-	events blockchain.Events
-	client *resty.Client
+	ctx      context.Context
+	conf     *Config
+	events   blockchain.Events
+	client   *resty.Client
+	initInfo struct {
+		stream *eventStream
+		subs   []*subscription
+	}
 }
 
 const (
@@ -61,22 +65,24 @@ var requiredSubscriptions = map[string]string{
 }
 
 type eventStream struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	ErrorHandling  string `json:"errorHandling"`
-	BatchSize      uint   `json:"batchSize"`
-	BatchTimeoutMS uint   `json:"batchTimeoutMS"`
-	Type           string `json:"type"`
-	WebSocket      struct {
-		Topic string `json:"topic"`
-	} `json:"websocket"`
+	ID             string               `json:"id"`
+	Name           string               `json:"name"`
+	ErrorHandling  string               `json:"errorHandling"`
+	BatchSize      uint                 `json:"batchSize"`
+	BatchTimeoutMS uint                 `json:"batchTimeoutMS"`
+	Type           string               `json:"type"`
+	WebSocket      eventStreamWebsocket `json:"websocket"`
+}
+
+type eventStreamWebsocket struct {
+	Topic string `json:"topic"`
 }
 
 type subscription struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Name        string `json:"name"`
-	Stream      string `json:"streamId"`
+	StreamID    string `json:"streamId"`
 	FromBlock   string `json:"fromBlock"`
 }
 
@@ -88,14 +94,13 @@ func (e *Ethereum) ensureEventStreams() error {
 		return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 
-	var streamID = ""
 	for _, stream := range existingStreams {
 		if stream.WebSocket.Topic == e.conf.Ethconnect.Topic {
-			streamID = stream.ID
+			e.initInfo.stream = &stream
 		}
 	}
 
-	if streamID == "" {
+	if e.initInfo.stream == nil {
 		newStream := eventStream{
 			Name:           e.conf.Ethconnect.Topic,
 			ErrorHandling:  "block",
@@ -104,16 +109,16 @@ func (e *Ethereum) ensureEventStreams() error {
 			Type:           "websocket",
 		}
 		newStream.WebSocket.Topic = e.conf.Ethconnect.Topic
-		res, err = e.client.R().SetResult(&newStream).SetBody(&newStream).Post("/eventstreams")
+		res, err = e.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
 		if err != nil || !res.IsSuccess() {
 			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
-		streamID = newStream.ID
+		e.initInfo.stream = &newStream
 	}
 
-	log.L(e.ctx).Infof("Event stream: %s", streamID)
+	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
 
-	return e.ensureSusbscriptions(streamID)
+	return e.ensureSusbscriptions(e.initInfo.stream.ID)
 }
 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
@@ -126,28 +131,29 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
 
-		var subID = ""
-		for _, sub := range existingSubs {
-			if sub.Name == eventType {
-				subID = sub.ID
+		var sub *subscription
+		for _, s := range existingSubs {
+			if s.Name == eventType {
+				sub = &s
 			}
 		}
 
-		if subID == "" {
+		if sub == nil {
 			newSub := subscription{
 				Name:        e.conf.Ethconnect.Topic,
 				Description: subDesc,
-				Stream:      streamID,
+				StreamID:    streamID,
 				FromBlock:   "0",
 			}
-			res, err = e.client.R().SetResult(&newSub).SetBody(&newSub).Post("/subscriptions")
+			res, err = e.client.R().SetBody(&newSub).SetResult(&newSub).Post("/subscriptions")
 			if err != nil || !res.IsSuccess() {
 				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
-			subID = newSub.ID
+			sub = &newSub
 		}
 
-		log.L(e.ctx).Infof("%s subscription: %s", eventType, subID)
+		log.L(e.ctx).Infof("%s subscription: %s", eventType, sub.ID)
+		e.initInfo.subs = append(e.initInfo.subs, sub)
 
 	}
 	return nil

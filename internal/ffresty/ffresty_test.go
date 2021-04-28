@@ -28,14 +28,16 @@ import (
 
 func TestRequestOK(t *testing.T) {
 
+	customClient := &http.Client{}
 	conf := &HTTPConfig{
 		URL: "http://localhost:12345",
 		Headers: map[string]string{
 			"authorization": "Bearer tok",
 		},
+		HttpClient: customClient,
 	}
 	c := New(context.Background(), conf)
-	httpmock.ActivateNonDefault(c.GetClient())
+	httpmock.ActivateNonDefault(customClient)
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/test",
