@@ -16,6 +16,7 @@ package ffresty
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/aidarkhanov/nanoid"
@@ -36,6 +37,8 @@ type HTTPConfig struct {
 	URL     string            `json:"url"`
 	Headers map[string]string `json:"headers,omitempty"`
 	Retry   *HTTPRetryConfig  `json:"retry,omitempty"`
+
+	HttpClient *http.Client `json:"-"` // for mocking
 }
 
 type HTTPRetryConfig struct {
@@ -55,7 +58,12 @@ type retryCtx struct {
 
 func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 
-	client := resty.New()
+	var client *resty.Client
+	if conf.HttpClient != nil {
+		client = resty.NewWithClient(conf.HttpClient)
+	} else {
+		client = resty.New()
+	}
 
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
 		rctx := req.Context()
