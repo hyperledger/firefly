@@ -213,7 +213,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 	assert.Equal(t, 503, res.StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Equal(t, "pop", resJSON["message"])
+	assert.Equal(t, "pop", resJSON["error"])
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
@@ -238,7 +238,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	assert.NoError(t, err)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Regexp(t, "FF10107", resJSON["message"])
+	assert.Regexp(t, "FF10107", resJSON["error"])
 }
 
 func TestNotFound(t *testing.T) {
@@ -251,5 +251,5 @@ func TestNotFound(t *testing.T) {
 	assert.Equal(t, 404, res.StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Regexp(t, "FF10109", resJSON["message"])
+	assert.Regexp(t, "FF10109", resJSON["error"])
 }

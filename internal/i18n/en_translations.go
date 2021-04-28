@@ -25,4 +25,5 @@ var (
 	MsgWebsocketClientError    = ffm("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound             = ffm("FF10109", "Not found")
 	MsgUnknownBlockchainPlugin = ffm("FF10110", "Unknown blockchain plugin: %s")
+	MsgEthconnectRESTErr       = ffm("FF10111", "Error from ethconnect: %s")
 )

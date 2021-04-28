@@ -22,7 +22,9 @@ type Config struct {
 
 type EthconnectConfig struct {
 	ffresty.HTTPConfig
-	Headers      map[string]string `json:"headers"`
-	InstancePath string            `json:"instance"`
-	Topic        string            `json:"topic"`
+	Headers        map[string]string `json:"headers"`
+	InstancePath   string            `json:"instance"`
+	Topic          string            `json:"topic"`
+	BatchSize      *uint             `json:"batchSize,omitempty"`
+	BatchTimeoutMS *uint             `json:"batchTimeoutMS,omitempty"`
 }

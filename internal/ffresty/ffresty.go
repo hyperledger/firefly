@@ -21,6 +21,7 @@ import (
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
 
@@ -38,10 +39,10 @@ type HTTPConfig struct {
 }
 
 type HTTPRetryConfig struct {
-	Enabled           *bool `json:"disabled,omitempty"`
-	Count             *uint `json:"count,omitempty"`
-	WaitTimeMillis    *uint `json:"waitTimeMillis,omitempty"`
-	MaxWaitTimeMillis *uint `json:"maxWaitTimeMillis,omitempty"`
+	Enabled       *bool `json:"disabled,omitempty"`
+	Count         *uint `json:"count,omitempty"`
+	WaitTimeMS    *uint `json:"waitTimeMS,omitempty"`
+	MaxWaitTimeMS *uint `json:"maxWaitTimeMS,omitempty"`
 }
 
 type retryCtxKey struct{}
@@ -94,8 +95,8 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 	}
 	if config.BoolWithDefault(retryConf.Enabled, defaultRetryEnabled) {
 		retryCount := int(config.UintWithDefault(retryConf.Count, defaultRetryCount))
-		minTimeout := config.UintWithDefault(retryConf.WaitTimeMillis, defaultRetryWaitTimeMillis)
-		maxTimeout := config.UintWithDefault(retryConf.MaxWaitTimeMillis, defaultRetryMaxWaitTimeMillis)
+		minTimeout := config.UintWithDefault(retryConf.WaitTimeMS, defaultRetryWaitTimeMillis)
+		maxTimeout := config.UintWithDefault(retryConf.MaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
 		client.
 			SetRetryCount(retryCount).
 			SetRetryWaitTime(time.Duration(minTimeout) * time.Millisecond).
@@ -113,4 +114,18 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 	}
 
 	return client
+}
+
+func WrapRestErr(ctx context.Context, res *resty.Response, err error, key i18n.MessageKey) error {
+	var respData string
+	if res != nil {
+		respData = res.String()
+		if len(respData) > 256 {
+			respData = respData[0:256] + "..."
+		}
+	}
+	if err != nil {
+		return i18n.WrapError(ctx, err, key, respData)
+	}
+	return i18n.NewError(ctx, key, respData)
 }
