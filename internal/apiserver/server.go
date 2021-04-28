@@ -192,7 +192,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
 			_ = json.NewEncoder(res).Encode(&RESTError{
-				Message: err.Error(),
+				Error: err.Error(),
 			})
 		} else {
 			l.Infof("<-- %s %s [%d] (%.2fms)", req.Method, req.URL.Path, status, duration)

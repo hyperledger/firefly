@@ -16,10 +16,13 @@ package ffresty
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,14 +54,15 @@ func TestRequestOK(t *testing.T) {
 
 func TestRequestRetry(t *testing.T) {
 
+	ctx := context.Background()
 	var one uint = 1
 	conf := &HTTPConfig{
 		URL: "http://localhost:12345",
 		Retry: &HTTPRetryConfig{
-			MaxWaitTimeMillis: &one,
+			MaxWaitTimeMS: &one,
 		},
 	}
-	c := New(context.Background(), conf)
+	c := New(ctx, conf)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
 
@@ -70,4 +74,59 @@ func TestRequestRetry(t *testing.T) {
 	assert.Equal(t, 500, resp.StatusCode())
 	assert.Equal(t, 6, httpmock.GetTotalCallCount())
 
+	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	assert.Error(t, err)
+
+}
+
+func TestLongResponse(t *testing.T) {
+
+	ctx := context.Background()
+	var no bool = false
+	conf := &HTTPConfig{
+		URL: "http://localhost:12345",
+		Retry: &HTTPRetryConfig{
+			Enabled: &no,
+		},
+	}
+	c := New(ctx, conf)
+	httpmock.ActivateNonDefault(c.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	resText := strings.Builder{}
+	for i := 0; i < 512; i++ {
+		resText.WriteByte(byte('a' + (i % 26)))
+	}
+	httpmock.RegisterResponder("GET", "http://localhost:12345/test",
+		httpmock.NewStringResponder(500, resText.String()))
+
+	resp, err := c.R().Get("/test")
+	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	assert.Error(t, err)
+}
+
+func TestErrResponse(t *testing.T) {
+
+	ctx := context.Background()
+	var no bool = false
+	conf := &HTTPConfig{
+		URL: "http://localhost:12345",
+		Retry: &HTTPRetryConfig{
+			Enabled: &no,
+		},
+	}
+	c := New(ctx, conf)
+	httpmock.ActivateNonDefault(c.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	resText := strings.Builder{}
+	for i := 0; i < 512; i++ {
+		resText.WriteByte(byte('a' + (i % 26)))
+	}
+	httpmock.RegisterResponder("GET", "http://localhost:12345/test",
+		httpmock.NewErrorResponder(fmt.Errorf("pop")))
+
+	resp, err := c.R().Get("/test")
+	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
+	assert.Error(t, err)
 }
