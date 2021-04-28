@@ -16,6 +16,8 @@ package ethereum
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/blockchain"
@@ -34,34 +36,6 @@ type Ethereum struct {
 		stream *eventStream
 		subs   []*subscription
 	}
-}
-
-const (
-	defaultBatchSize    = 50
-	defaultBatchTimeout = 500
-)
-
-func (e *Ethereum) ConfigInterface() interface{} { return &Ethereum{} }
-
-func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (*blockchain.Capabilities, error) {
-	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.conf = conf.(*Config)
-	e.events = events
-	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
-
-	log.L(e.ctx).Debugf("Config: %+v", e.conf)
-
-	if err := e.ensureEventStreams(); err != nil {
-		return nil, err
-	}
-
-	return &blockchain.Capabilities{
-		GlobalSequencer: true,
-	}, nil
-}
-
-var requiredSubscriptions = map[string]string{
-	"AssetInstanceBatchCreated": "Asset instance batch created",
 }
 
 type eventStream struct {
@@ -84,6 +58,43 @@ type subscription struct {
 	Name        string `json:"name"`
 	StreamID    string `json:"streamId"`
 	FromBlock   string `json:"fromBlock"`
+}
+
+type asyncTXSubmission struct {
+	ID string `json:"id"`
+}
+
+type ethBroadcastBatchInput struct {
+	BatchID    string `json:"batchId"`
+	PayloadRef string `json:"payloadRef"`
+}
+
+var requiredSubscriptions = map[string]string{
+	"AssetInstanceBatchCreated": "Asset instance batch created",
+}
+
+const (
+	defaultBatchSize    = 50
+	defaultBatchTimeout = 500
+)
+
+func (e *Ethereum) ConfigInterface() interface{} { return &Config{} }
+
+func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (*blockchain.Capabilities, error) {
+	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	e.conf = conf.(*Config)
+	e.events = events
+	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
+
+	log.L(e.ctx).Debugf("Config: %+v", e.conf)
+
+	if err := e.ensureEventStreams(); err != nil {
+		return nil, err
+	}
+
+	return &blockchain.Capabilities{
+		GlobalSequencer: true,
+	}, nil
 }
 
 func (e *Ethereum) ensureEventStreams() error {
@@ -159,6 +170,25 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	return nil
 }
 
-func (e *Ethereum) SubmitBroadcastBatch(identity string, broadcast blockchain.BroadcastBatch) (txTrackingID string, err error) {
-	return "", nil
+func ethHexFormatB32(b blockchain.Bytes32) string {
+	return "0x" + hex.EncodeToString(b[0:32])
+}
+
+func (e *Ethereum) SubmitBroadcastBatch(identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+	tx := &asyncTXSubmission{}
+	input := &ethBroadcastBatchInput{
+		BatchID:    ethHexFormatB32(broadcast.BatchID),
+		PayloadRef: ethHexFormatB32(broadcast.BatchPaylodRef),
+	}
+	path := fmt.Sprintf("%s/broadcastBatch", e.conf.Ethconnect.InstancePath)
+	res, err := e.client.R().
+		SetQueryParam("kld-from", identity).
+		SetQueryParam("kld-sync", "false").
+		SetBody(input).
+		SetResult(tx).
+		Post(path)
+	if err != nil || !res.IsSuccess() {
+		return "", ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return tx.ID, nil
 }

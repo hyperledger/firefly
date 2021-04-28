@@ -24,7 +24,7 @@ import (
 type Bytes32 = [32]byte
 
 // HexUUID is 32 character ASCII string containing the hex representation of UUID, with the dashes of the canonical representation removed
-type HexUUID = [32]byte
+type HexUUID = Bytes32
 
 // HexUUIDFromUUID returns the bytes of a UUID as a compressed hex string
 func HexUUIDFromUUID(u uuid.UUID) HexUUID {

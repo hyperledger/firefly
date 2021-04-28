@@ -30,7 +30,7 @@ type Plugin interface {
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBroadcastBatch(identity string, broadcast BroadcastBatch) (txTrackingID string, err error)
+	SubmitBroadcastBatch(identity string, broadcast *BroadcastBatch) (txTrackingID string, err error)
 }
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -83,12 +83,12 @@ const (
 // of the network (via a technology like IPFS).
 type BroadcastBatch struct {
 
-	// Timestamp is the time of submission, from the pespective of the submitter
-	Timestamp uint64
-
-	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
-	BatchPaylodRef HexUUID
+	// Timestamp is the nanosecond resolution timestamp of submission, from the pespective of the submitter
+	Timestamp int64
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
 	BatchID Bytes32
+
+	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
+	BatchPaylodRef HexUUID
 }

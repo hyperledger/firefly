@@ -1,9 +1,9 @@
-solidity/node_modules
-solidity/build
-solidity/package-lock.json
-solidity_new/node_modules
-solidity_new/build
-solidity_new/package-lock.json
+solidity_kat/node_modules
+solidity_kat/build
+solidity_kat/package-lock.json
+solidity_firefly/node_modules
+solidity_firefly/build
+solidity_firefly/package-lock.json
 core/node_modules
 core/.nyc_output
 core/coverage
