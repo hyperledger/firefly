@@ -16,15 +16,24 @@ package ethereum
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestConfigInterfaceCorrect(t *testing.T) {
+	e := &Ethereum{}
+	_, ok := e.ConfigInterface().(*Config)
+	assert.True(t, ok)
+}
 
 func TestInitAllNewStreams(t *testing.T) {
 
@@ -225,6 +234,78 @@ func TestSubQueryCreateError(t *testing.T) {
 			Topic: "topic1",
 		},
 	}, &blockchain.MockEvents{})
+
+	assert.Regexp(t, "FF10111", err.Error())
+	assert.Regexp(t, "pop", err.Error())
+
+}
+
+func newTestEthereum() *Ethereum {
+	return &Ethereum{
+		ctx:    context.Background(),
+		client: resty.New().SetHostURL("http://localhost:12345"),
+		conf: &Config{
+			Ethconnect: EthconnectConfig{
+				InstancePath: "instances/0x12345",
+			},
+		},
+	}
+}
+
+func newRandB32() blockchain.Bytes32 {
+	var b [32]byte
+	rand.Read(b[0:32])
+	return b
+}
+
+func TestSubmitBroadcastBatchOK(t *testing.T) {
+
+	e := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(newRandB32())
+	batch := &blockchain.BroadcastBatch{
+		Timestamp:      time.Now().UnixNano(),
+		BatchID:        newRandB32(),
+		BatchPaylodRef: newRandB32(),
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, addr, req.FormValue("kld-from"))
+			assert.Equal(t, "false", req.FormValue("kld-sync"))
+			assert.Equal(t, ethHexFormatB32(batch.BatchID), body["batchId"])
+			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
+		})
+
+	txid, err := e.SubmitBroadcastBatch(addr, batch)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "abcd1234", txid)
+
+}
+
+func TestSubmitBroadcastBatchFail(t *testing.T) {
+
+	e := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(newRandB32())
+	batch := &blockchain.BroadcastBatch{
+		Timestamp:      time.Now().UnixNano(),
+		BatchID:        newRandB32(),
+		BatchPaylodRef: newRandB32(),
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
+		httpmock.NewStringResponder(500, "pop"))
+
+	_, err := e.SubmitBroadcastBatch(addr, batch)
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
