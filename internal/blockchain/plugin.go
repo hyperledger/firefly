@@ -16,6 +16,8 @@ package blockchain
 
 import (
 	"context"
+
+	"github.com/kaleido-io/firefly/internal/apitypes"
 )
 
 // Plugin is the interface implemented by each blockchain plugin
@@ -53,8 +55,11 @@ type Events interface {
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
+	// sequence - <= 48 character alphanumerically sortable entry that reflects the events position in the chain.
+	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
+	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
-	SequencedBroadcastBatch(batch BroadcastBatch, additionalInfo map[string]interface{})
+	SequencedBroadcastBatch(batch BroadcastBatch, pinnedSequence string, additionalInfo map[string]interface{})
 }
 
 // BlockchainCapabilities the supported featureset of the blockchain
@@ -67,16 +72,7 @@ type Capabilities struct {
 
 // TransactionState is the only architecturally significant thing that Firefly tracks on blockchain transactions.
 // All other data is consider protocol specific, and hence stored as opaque data.
-type TransactionState string
-
-const (
-	// TransactionStateSubmitted the transaction has been submitted
-	TransactionStateSubmitted TransactionState = "submitted"
-	// TransactionStateSubmitted the transaction is considered final per the rules of the blockchain technnology
-	TransactionStateConfirmed TransactionState = "confirmed"
-	// TransactionStateSubmitted the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
-	TransactionStateFailed TransactionState = "error"
-)
+type TransactionState = apitypes.TransactionState
 
 // BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
 // Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members
