@@ -12,23 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blockchain
+// +build cgo
+
+package sqlite
 
 import (
-	"encoding/hex"
+	"testing"
 
-	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
-// Bytes32 is a holder of a hash, that can be used to correlate onchain data with off-chain data.
-type Bytes32 = [32]byte
-
-// HexUUID is 32 character ASCII string containing the hex representation of UUID, with the dashes of the canonical representation removed
-type HexUUID = Bytes32
-
-// HexUUIDFromUUID returns the bytes of a UUID as a compressed hex string
-func HexUUIDFromUUID(u uuid.UUID) HexUUID {
-	var d HexUUID
-	hex.Encode(d[0:32], u[0:16])
-	return d
+func TestConfigInterfaceCorrect(t *testing.T) {
+	e := &SQLite{}
+	_, ok := e.ConfigInterface().(*Config)
+	assert.True(t, ok)
 }

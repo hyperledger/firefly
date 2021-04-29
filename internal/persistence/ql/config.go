@@ -12,21 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blockchain
+package ql
 
-import (
-	"encoding/hex"
-	"testing"
-
-	"github.com/google/uuid"
-	"github.com/likexian/gokit/assert"
-)
-
-func TestHexUUIDFromUUID(t *testing.T) {
-	u := uuid.Must(uuid.NewRandom())
-	b := HexUUIDFromUUID(u)
-	var dec [16]byte
-	hex.Decode(dec[0:16], b[0:32])
-	assert.Equal(t, dec[0:16], u[0:16])
-	assert.Equal(t, u.String(), uuid.UUID(dec).String())
+type Config struct {
+	URL string `json:"url"`
 }

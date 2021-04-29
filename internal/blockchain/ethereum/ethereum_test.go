@@ -16,7 +16,6 @@ package ethereum
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -252,23 +252,17 @@ func newTestEthereum() *Ethereum {
 	}
 }
 
-func newRandB32() blockchain.Bytes32 {
-	var b [32]byte
-	rand.Read(b[0:32])
-	return b
-}
-
 func TestSubmitBroadcastBatchOK(t *testing.T) {
 
 	e := newTestEthereum()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	addr := ethHexFormatB32(newRandB32())
+	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      time.Now().UnixNano(),
-		BatchID:        newRandB32(),
-		BatchPaylodRef: newRandB32(),
+		BatchID:        fftypes.NewRandB32(),
+		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
@@ -295,11 +289,11 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	addr := ethHexFormatB32(newRandB32())
+	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      time.Now().UnixNano(),
-		BatchID:        newRandB32(),
-		BatchPaylodRef: newRandB32(),
+		BatchID:        fftypes.NewRandB32(),
+		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,

@@ -17,7 +17,7 @@ package blockchain
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/apitypes"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 )
 
 // Plugin is the interface implemented by each blockchain plugin
@@ -72,7 +72,7 @@ type Capabilities struct {
 
 // TransactionState is the only architecturally significant thing that Firefly tracks on blockchain transactions.
 // All other data is consider protocol specific, and hence stored as opaque data.
-type TransactionState = apitypes.TransactionState
+type TransactionState = fftypes.TransactionState
 
 // BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
 // Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members
@@ -83,8 +83,8 @@ type BroadcastBatch struct {
 	Timestamp int64
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
-	BatchID Bytes32
+	BatchID fftypes.Bytes32
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
-	BatchPaylodRef HexUUID
+	BatchPaylodRef fftypes.HexUUID
 }

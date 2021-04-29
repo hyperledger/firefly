@@ -12,19 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apitypes
+// +build cgo
 
-import "github.com/google/uuid"
+package sqlite
 
-type DataType string
-
-type DataRef struct {
-	Type DataType   `json:"type"`
-	Hash string     `json:"hash,omitempty"`
-	ID   *uuid.UUID `json:"id,omitempty"`
-}
-
-type DataExpanded struct {
-	DataRef
-	Value map[string]interface{} `json:"value,omitempty"`
+type Config struct {
+	URL string `json:"url"`
 }

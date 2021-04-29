@@ -17,29 +17,30 @@ package postgres
 import (
 	"context"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/apitypes"
+	"database/sql"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
+
+	_ "github.com/lib/pq"
 )
 
 type Postgres struct {
-	sqlCommon persistence.PeristenceInterface
+	sqlcommon.SQLCommon
+
+	conf *Config
 }
 
 func (e *Postgres) ConfigInterface() interface{} { return &Config{} }
 
 func (e *Postgres) Init(ctx context.Context, conf interface{}, events persistence.Events) (*persistence.Capabilities, error) {
-	return &persistence.Capabilities{}, nil
-}
+	e.conf = conf.(*Config)
 
-func (e *Postgres) UpsertMessage(ctx context.Context, message *apitypes.MessageRefsOnly) (id uuid.UUID, err error) {
-	return e.sqlCommon.UpsertMessage(ctx, message)
-}
+	db, err := sql.Open("postgres", e.conf.URL)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
+	}
 
-func (e *Postgres) GetMessageById(ctx context.Context, id uuid.UUID) (message *apitypes.MessageRefsOnly, err error) {
-	return e.sqlCommon.GetMessageById(ctx, id)
-}
-
-func (e *Postgres) GetMessages(ctx context.Context, filter *persistence.MessageFilter, skip, limit uint) (message *apitypes.MessageRefsOnly, err error) {
-	return e.sqlCommon.GetMessages(ctx, filter, skip, limit)
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
 }

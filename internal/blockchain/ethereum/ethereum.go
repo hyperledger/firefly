@@ -23,6 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -170,7 +171,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	return nil
 }
 
-func ethHexFormatB32(b blockchain.Bytes32) string {
+func ethHexFormatB32(b fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 

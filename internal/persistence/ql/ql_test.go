@@ -12,26 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
-
-package persistencefactory
+package ql
 
 import (
-	"context"
+	"testing"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/internal/persistence/ql"
-	"github.com/kaleido-io/firefly/internal/persistence/sqlite"
+	"github.com/stretchr/testify/assert"
 )
 
-func GetDatabasePlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
-	switch pluginType {
-	case "ql":
-		return &ql.QL{}, nil
-	case "sqlite":
-		return &sqlite.SQLite{}, nil
-	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
-	}
+func TestConfigInterfaceCorrect(t *testing.T) {
+	e := &QL{}
+	_, ok := e.ConfigInterface().(*Config)
+	assert.True(t, ok)
 }
