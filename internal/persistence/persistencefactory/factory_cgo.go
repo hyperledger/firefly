@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
+// +build cgo
 
 package persistencefactory
 
@@ -21,12 +21,15 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/persistence/postgres"
 	"github.com/kaleido-io/firefly/internal/persistence/ql"
 	"github.com/kaleido-io/firefly/internal/persistence/sqlite"
 )
 
 func GetDatabasePlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
 	switch pluginType {
+	case "postgres":
+		return &postgres.Postgres{}, nil
 	case "ql":
 		return &ql.QL{}, nil
 	case "sqlite":

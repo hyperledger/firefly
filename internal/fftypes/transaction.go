@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apitypes
+package fftypes
 
 import "github.com/google/uuid"
 

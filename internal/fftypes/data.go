@@ -12,26 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
+package fftypes
 
-package persistencefactory
+import "github.com/google/uuid"
 
-import (
-	"context"
+type DataType string
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/internal/persistence/ql"
-	"github.com/kaleido-io/firefly/internal/persistence/sqlite"
-)
+type DataRef struct {
+	Type DataType   `json:"type"`
+	Hash string     `json:"hash,omitempty"`
+	ID   *uuid.UUID `json:"id,omitempty"`
+}
 
-func GetDatabasePlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
-	switch pluginType {
-	case "ql":
-		return &ql.QL{}, nil
-	case "sqlite":
-		return &sqlite.SQLite{}, nil
-	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
-	}
+type DataExpanded struct {
+	DataRef
+	Value map[string]interface{} `json:"value,omitempty"`
 }

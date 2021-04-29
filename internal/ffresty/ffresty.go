@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -71,7 +71,7 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 		if rc == nil {
 			// First attempt
 			r := &retryCtx{
-				id:    nanoid.Must(nanoid.Generate(nanoid.DefaultAlphabet, 8)),
+				id:    fftypes.ShortID(),
 				start: time.Now(),
 			}
 			rctx = context.WithValue(rctx, retryCtxKey{}, r)

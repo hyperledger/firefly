@@ -3,7 +3,7 @@
 package blockchain
 
 import (
-	apitypes "github.com/kaleido-io/firefly/internal/apitypes"
+	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -18,6 +18,6 @@ func (_m *MockEvents) SequencedBroadcastBatch(batch BroadcastBatch, pinnedSequen
 }
 
 // TransactionUpdate provides a mock function with given fields: txTrackingID, txState, errorMessage, additionalInfo
-func (_m *MockEvents) TransactionUpdate(txTrackingID string, txState apitypes.TransactionState, errorMessage string, additionalInfo map[string]interface{}) {
+func (_m *MockEvents) TransactionUpdate(txTrackingID string, txState fftypes.TransactionState, errorMessage string, additionalInfo map[string]interface{}) {
 	_m.Called(txTrackingID, txState, errorMessage, additionalInfo)
 }

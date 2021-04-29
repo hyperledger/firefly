@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apitypes
+package fftypes
 
 import "github.com/google/uuid"
 
@@ -23,30 +23,32 @@ const (
 	MessageTypePrivate   MessageType = "private"
 )
 
-type messageCommon struct {
+// MessageBase is the raw message, without any data relationships
+type MessageBase struct {
 	// Hashed fields
-	ID       *uuid.UUID `json:"id,omitempty"`
-	Type     string     `json:"type"`
-	Author   string     `json:"author,omitempty"`
-	Created  uint64     `json:"created,omitempty"`
-	Topic    string     `json:"topic,omitempty"`
-	Context  string     `json:"context,omitempty"`
-	Group    *uuid.UUID `json:"group,omitempty"`
-	CID      *uuid.UUID `json:"cid,omitempty"`
-	DataHash string     `json:"datahash,omitempty"`
+	ID        *uuid.UUID  `json:"id,omitempty"`
+	CID       *uuid.UUID  `json:"cid,omitempty"`
+	Type      MessageType `json:"type"`
+	Author    string      `json:"author,omitempty"`
+	Created   int64       `json:"created,omitempty"`
+	Namespace string      `json:"namespace,omitempty"`
+	Topic     string      `json:"topic,omitempty"`
+	Context   string      `json:"context,omitempty"`
+	Group     *uuid.UUID  `json:"group,omitempty"`
+	DataHash  *Bytes32    `json:"datahash,omitempty"`
 	// Unhashed fields
-	Hash      string `json:"hash,omitempty"`
-	Confirmed uint64 `json:"confirmed,omitempty"`
+	Hash      *Bytes32 `json:"hash,omitempty"`
+	Confirmed int64    `json:"confirmed,omitempty"`
 }
 
 type MessageExpanded struct {
-	messageCommon
+	MessageBase
 	TX   *Transaction    `json:"tx,omitempty"`
 	Data []*DataExpanded `json:"data"`
 }
 
 type MessageRefsOnly struct {
-	messageCommon
+	MessageBase
 	TX   *uuid.UUID `json:"tx,omitempty"`
 	Data []DataRef  `json:"data"`
 }

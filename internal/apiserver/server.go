@@ -25,10 +25,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aidarkhanov/nanoid"
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -101,7 +101,7 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 			},
 		},
 		ConnContext: func(newCtx context.Context, c net.Conn) context.Context {
-			l := log.L(ctx).WithField("req", nanoid.Must(nanoid.Generate(nanoid.DefaultAlphabet, 8)))
+			l := log.L(ctx).WithField("req", fftypes.ShortID())
 			newCtx = log.WithLogger(newCtx, l)
 			l.Debugf("New HTTP connection: remote=%s local=%s", c.RemoteAddr().String(), c.LocalAddr().String())
 			return newCtx

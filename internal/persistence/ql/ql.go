@@ -12,26 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
-
-package persistencefactory
+package ql
 
 import (
 	"context"
 
+	"database/sql"
+
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/internal/persistence/ql"
-	"github.com/kaleido-io/firefly/internal/persistence/sqlite"
+	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
+
+	_ "modernc.org/ql/driver"
 )
 
-func GetDatabasePlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
-	switch pluginType {
-	case "ql":
-		return &ql.QL{}, nil
-	case "sqlite":
-		return &sqlite.SQLite{}, nil
-	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
+type QL struct {
+	sqlcommon.SQLCommon
+
+	conf *Config
+}
+
+func (e *QL) ConfigInterface() interface{} { return &Config{} }
+
+func (e *QL) Init(ctx context.Context, conf interface{}, events persistence.Events) (*persistence.Capabilities, error) {
+	e.conf = conf.(*Config)
+
+	db, err := sql.Open("ql", e.conf.URL)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
+
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
 }
