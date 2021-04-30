@@ -21,19 +21,9 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/aidarkhanov/nanoid"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
-
-const (
-	// ShortIDlphabet is designed for easy double-click select
-	ShortIDlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
-)
-
-func ShortID() string {
-	return nanoid.Must(nanoid.Generate(ShortIDlphabet, 8))
-}
 
 // Bytes32 is a holder of a hash, that can be used to correlate onchain data with off-chain data.
 type Bytes32 [32]byte
@@ -80,7 +70,7 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 		return nil
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src)
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, b32)
 	}
 
 }

@@ -24,10 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfigInterfaceCorrect(t *testing.T) {
-	assert.Regexp(t, "[a-zA-Z0-9_]{8}", ShortID())
-}
-
 func TestUnmarshalBytes32(t *testing.T) {
 	b := NewRandB32()
 	var empty Bytes32

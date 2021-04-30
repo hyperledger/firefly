@@ -1,0 +1,132 @@
+// Copyright © 2021 Kaleido, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package sqlcommon
+
+import (
+	"context"
+	"database/sql"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
+)
+
+var (
+	dataColumns = []string{
+		"id",
+		"dtype",
+		"namespace",
+		"hash",
+		"created",
+		"value",
+	}
+)
+
+func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err error) {
+	ctx, tx, err := s.beginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx)
+
+	// Do a select within the transaction to detemine if the UUID already exists
+	dataRows, err := s.queryTx(ctx, tx,
+		sq.Select("id").
+			From("data").
+			Where(sq.Eq{"id": data.ID}),
+	)
+	if err != nil {
+		return err
+	}
+	defer dataRows.Close()
+
+	if dataRows.Next() {
+		// Update the data
+		if _, err = s.updateTx(ctx, tx,
+			sq.Update("data").
+				Set("dtype", string(data.Type)).
+				Set("namespace", data.Namespace).
+				Set("hash", data.Hash).
+				Set("created", data.Created).
+				Set("value", data.Value).
+				Where(sq.Eq{"id": data.ID}),
+		); err != nil {
+			return err
+		}
+	} else {
+		if _, err = s.insertTx(ctx, tx,
+			sq.Insert("data").
+				Columns(dataColumns...).
+				Values(
+					data.ID,
+					string(data.Type),
+					data.Namespace,
+					data.Hash,
+					data.Created,
+					data.Value,
+				),
+		); err != nil {
+			return err
+		}
+	}
+
+	if err = s.commitTx(ctx, tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
+	var data fftypes.Data
+	err := row.Scan(
+		&data.ID,
+		&data.Type,
+		&data.Namespace,
+		&data.Hash,
+		&data.Created,
+		&data.Value,
+	)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+	}
+	return &data, nil
+}
+
+func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
+
+	rows, err := s.query(ctx,
+		sq.Select(dataColumns...).
+			From("data").
+			Where(sq.Eq{"id": id}),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rows.Next() {
+		log.L(ctx).Debugf("Data '%s' not found", id)
+		return nil, nil
+	}
+
+	data, err := s.dataResult(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}

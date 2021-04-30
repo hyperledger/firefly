@@ -305,7 +305,6 @@ func TestGetMessageByIdSelectFail(t *testing.T) {
 func TestGetMessageByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
-	// msg := &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{ID: &msgId}}
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetMessageById(context.Background(), &msgId)
 	assert.NoError(t, err)
