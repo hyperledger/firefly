@@ -64,7 +64,7 @@ type PeristenceInterface interface {
 	GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, filter *MessageFilter, skip, limit uint) (message *fftypes.MessageRefsOnly, err error)
+	GetMessages(ctx context.Context, skip, limit uint64, filter *MessageFilter) (message []*fftypes.MessageRefsOnly, err error)
 }
 
 // No events currently defined for the persistence interface

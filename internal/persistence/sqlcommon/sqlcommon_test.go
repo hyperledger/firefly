@@ -17,8 +17,11 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/ql"
 	"github.com/stretchr/testify/assert"
@@ -51,13 +54,55 @@ func ensureTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
-func TestInitSQLCommon(t *testing.T) {
+func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
+	mdb, mock, _ := sqlmock.New()
+	s = &SQLCommon{
+		options: &SQLCommonOptions{
+			PlaceholderFormat: sq.Dollar,
+		},
+		db: mdb,
+	}
+	return s, mock
+}
 
+func TestInitSQLCommon(t *testing.T) {
 	s := &SQLCommon{}
 	c, err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, c)
+}
 
+func TestQueryTxBadSQL(t *testing.T) {
+	s, _ := getMockDB()
+	_, err := s.queryTx(context.Background(), nil, sq.SelectBuilder{})
+	assert.Regexp(t, "FF10113", err.Error())
+}
+
+func TestInsertTxBadSQL(t *testing.T) {
+	s, _ := getMockDB()
+	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{})
+	assert.Regexp(t, "FF10113", err.Error())
+}
+
+func TestUpdateTxBadSQL(t *testing.T) {
+	s, _ := getMockDB()
+	_, err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{})
+	assert.Regexp(t, "FF10113", err.Error())
+}
+
+func TestDeleteTxBadSQL(t *testing.T) {
+	s, _ := getMockDB()
+	_, err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
+	assert.Regexp(t, "FF10113", err.Error())
+}
+
+func TestRollbackFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	tx, _ := s.db.Begin()
+	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
+	s.rollbackTx(context.Background(), tx)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestTeardown(t *testing.T) {

@@ -92,7 +92,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *sql.Tx, q sq.InsertBuilder
 	res, err := tx.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
 	}
 	ra, _ := res.RowsAffected() // currently only used for debugging
 	l.Debugf(`SQL<- insert affected=%d`, ra)
@@ -109,7 +109,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *sql.Tx, q sq.DeleteBuilder
 	res, err := tx.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBDeleteFailed)
 	}
 	ra, _ := res.RowsAffected() // currently only used for debugging
 	l.Debugf(`SQL<- delete affected=%d`, ra)
