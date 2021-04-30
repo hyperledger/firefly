@@ -101,7 +101,7 @@ func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain
 func (e *Ethereum) ensureEventStreams() error {
 
 	var existingStreams []eventStream
-	res, err := e.client.R().SetResult(&existingStreams).Get("/eventstreams")
+	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
 		return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
@@ -157,7 +157,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 				StreamID:    streamID,
 				FromBlock:   "0",
 			}
-			res, err = e.client.R().SetBody(&newSub).SetResult(&newSub).Post("/subscriptions")
+			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post("/subscriptions")
 			if err != nil || !res.IsSuccess() {
 				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
@@ -175,7 +175,7 @@ func ethHexFormatB32(b fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) SubmitBroadcastBatch(identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
 		BatchID:    ethHexFormatB32(broadcast.BatchID),
@@ -183,13 +183,14 @@ func (e *Ethereum) SubmitBroadcastBatch(identity string, broadcast *blockchain.B
 	}
 	path := fmt.Sprintf("%s/broadcastBatch", e.conf.Ethconnect.InstancePath)
 	res, err := e.client.R().
+		SetContext(ctx).
 		SetQueryParam("kld-from", identity).
 		SetQueryParam("kld-sync", "false").
 		SetBody(input).
 		SetResult(tx).
 		Post(path)
 	if err != nil || !res.IsSuccess() {
-		return "", ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return "", ffresty.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return tx.ID, nil
 }

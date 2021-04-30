@@ -39,5 +39,6 @@ var (
 	MsgUnknownDatabasePlugin   = ffm("FF10122", "Unknown database plugin: %s")
 	MsgNullDataReferenceID     = ffm("FF10123", "Data id is null in message data reference %d")
 	MsgDupDataReferenceID      = ffm("FF10124", "Duplicate data ID in message '%s'")
-	MsgScanFailed              = ffm("FF10125", "Scan: unable to restore type %T into %T")
+	MsgScanFailed              = ffm("FF10125", "Failed to restore type %T into %T")
+	MsgSerializeFailed         = ffm("FF10125", "Failed to serialize %T")
 )
