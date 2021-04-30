@@ -18,16 +18,22 @@ import "github.com/google/uuid"
 
 type DataType string
 
+const (
+	DataTypeJSON DataType = "json"
+	DataTypeBLOB DataType = "blob"
+)
+
 type DataRef struct {
 	ID *uuid.UUID `json:"id,omitempty"`
 }
 
 type Data struct {
-	ID        *uuid.UUID             `json:"id,omitempty"`
-	Type      DataType               `json:"type"`
-	Namespace string                 `json:"namespace,omitempty"`
-	Hash      *Bytes32               `json:"hash,omitempty"`
-	Value     map[string]interface{} `json:"value,omitempty"`
+	ID        *uuid.UUID `json:"id,omitempty"`
+	Type      DataType   `json:"type"`
+	Namespace string     `json:"namespace,omitempty"`
+	Hash      *Bytes32   `json:"hash,omitempty"`
+	Created   int64      `json:"created,omitempty"`
+	Value     JSONData   `json:"value,omitempty"`
 }
 
 type DataRefSortable []DataRef
