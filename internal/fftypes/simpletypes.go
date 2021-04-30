@@ -16,7 +16,9 @@ package fftypes
 
 import (
 	"crypto/rand"
+	"database/sql/driver"
 	"encoding/hex"
+	"fmt"
 	"strings"
 
 	"github.com/aidarkhanov/nanoid"
@@ -41,14 +43,10 @@ func NewRandB32() Bytes32 {
 	return b
 }
 
-func (b32 *Bytes32) MarshalText() ([]byte, error) {
+func (b32 Bytes32) MarshalText() ([]byte, error) {
 	hexstr := make([]byte, 64)
 	hex.Encode(hexstr, b32[0:32])
 	return hexstr, nil
-}
-
-func (b32 *Bytes32) String() string {
-	return hex.EncodeToString(b32[0:32])
 }
 
 func (b32 *Bytes32) UnmarshalText(b []byte) error {
@@ -56,6 +54,44 @@ func (b32 *Bytes32) UnmarshalText(b []byte) error {
 	s := strings.TrimPrefix(string(b), "0x")
 	_, err := hex.Decode(b32[0:32], []byte(s))
 	return err
+}
+
+// Scan implements sql.Scanner
+func (b32 *Bytes32) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		return nil
+
+	case string:
+		if src == "" {
+			return nil
+		}
+
+		return b32.UnmarshalText([]byte(src))
+
+	case []byte:
+		if len(src) == 0 {
+			return nil
+		}
+		if len(src) != 32 {
+			return b32.Scan(string(src))
+		}
+		copy((*b32)[:], src)
+
+	default:
+		return fmt.Errorf("Scan: unable to scan type %T into Bytes32", src)
+	}
+
+	return nil
+}
+
+// Value implements sql.Valuer
+func (b32 Bytes32) Value() (driver.Value, error) {
+	return b32.String(), nil
+}
+
+func (b32 *Bytes32) String() string {
+	return hex.EncodeToString(b32[0:32])
 }
 
 // HexUUID is 32 character ASCII string containing the hex representation of UUID, with the dashes of the canonical representation removed

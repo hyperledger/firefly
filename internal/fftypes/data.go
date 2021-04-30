@@ -19,12 +19,21 @@ import "github.com/google/uuid"
 type DataType string
 
 type DataRef struct {
-	Type DataType   `json:"type"`
-	Hash string     `json:"hash,omitempty"`
-	ID   *uuid.UUID `json:"id,omitempty"`
+	ID *uuid.UUID `json:"id,omitempty"`
 }
 
-type DataExpanded struct {
-	DataRef
-	Value map[string]interface{} `json:"value,omitempty"`
+type Data struct {
+	ID        *uuid.UUID             `json:"id,omitempty"`
+	Type      DataType               `json:"type"`
+	Namespace string                 `json:"namespace,omitempty"`
+	Hash      *Bytes32               `json:"hash,omitempty"`
+	Value     map[string]interface{} `json:"value,omitempty"`
+}
+
+type DataRefSortable []DataRef
+
+func (d DataRefSortable) Len() int      { return len(d) }
+func (d DataRefSortable) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
+func (d DataRefSortable) Less(i, j int) bool {
+	return d[j].ID != nil && (d[i].ID == nil || d[j].ID != nil && d[i].ID.String() < d[j].ID.String())
 }
