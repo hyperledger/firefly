@@ -15,14 +15,15 @@
 package fftypes
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql/driver"
 	"encoding/hex"
-	"fmt"
 	"strings"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 const (
@@ -66,7 +67,6 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 		if src == "" {
 			return nil
 		}
-
 		return b32.UnmarshalText([]byte(src))
 
 	case []byte:
@@ -77,12 +77,12 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 			return b32.Scan(string(src))
 		}
 		copy((*b32)[:], src)
+		return nil
 
 	default:
-		return fmt.Errorf("Scan: unable to scan type %T into Bytes32", src)
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src)
 	}
 
-	return nil
 }
 
 // Value implements sql.Valuer

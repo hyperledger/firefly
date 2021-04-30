@@ -71,6 +71,42 @@ func TestMarshalBytes32(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf(`{"value":"0000000000000000000000000000000000000000000000000000000000000000"}`), string(json2))
 }
 
+func TestScanBytes32(t *testing.T) {
+
+	b32 := &Bytes32{}
+
+	b32.Scan(nil)
+	assert.Equal(t, *b32, Bytes32{})
+
+	b32.Scan("")
+	assert.Equal(t, *b32, Bytes32{})
+
+	rand := NewRandB32()
+	b32.Scan(rand.String())
+	assert.Equal(t, *b32, rand)
+
+	b32 = &Bytes32{}
+
+	b32.Scan([]byte{})
+	assert.Equal(t, *b32, Bytes32{})
+
+	b32.Scan([]byte(rand.String()))
+	assert.Equal(t, *b32, rand)
+
+	b32.Scan(rand[:])
+	assert.Equal(t, *b32, rand)
+
+	err := b32.Scan(12345)
+	assert.Error(t, err)
+
+}
+
+func TestValueBytes32(t *testing.T) {
+	b32 := NewRandB32()
+	s, _ := b32.Value()
+	assert.Equal(t, b32.String(), s)
+}
+
 func TestHexUUIDFromUUID(t *testing.T) {
 	u := uuid.Must(uuid.NewRandom())
 	b := HexUUIDFromUUID(u)
