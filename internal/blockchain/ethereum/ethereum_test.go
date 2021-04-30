@@ -276,7 +276,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
 		})
 
-	txid, err := e.SubmitBroadcastBatch(addr, batch)
+	txid, err := e.SubmitBroadcastBatch(context.Background(), addr, batch)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "abcd1234", txid)
@@ -299,7 +299,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	_, err := e.SubmitBroadcastBatch(addr, batch)
+	_, err := e.SubmitBroadcastBatch(context.Background(), addr, batch)
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())

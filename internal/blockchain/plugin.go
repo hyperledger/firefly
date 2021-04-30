@@ -32,7 +32,7 @@ type Plugin interface {
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBroadcastBatch(identity string, broadcast *BroadcastBatch) (txTrackingID string, err error)
+	SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *BroadcastBatch) (txTrackingID string, err error)
 }
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

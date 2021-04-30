@@ -71,6 +71,12 @@ type PeristenceInterface interface {
 
 	// Get a data record by Id
 	GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error)
+
+	// Upsert a batch
+	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
+
+	// Get a batch by Id
+	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
 }
 
 // No events currently defined for the persistence interface
