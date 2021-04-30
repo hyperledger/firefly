@@ -47,7 +47,7 @@ var (
 func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageRefsOnly) (err error) {
 	ctx, tx, err := s.beginTx(ctx)
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBBeginFailed)
+		return err
 	}
 	defer s.rollbackTx(ctx, tx)
 
@@ -238,7 +238,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 	// Ensure we return an empty array if no entries, and a consistent order for the data
 	for _, m := range msgs {
 		if m.Data == nil {
-			m.Data = []fftypes.DataRef{}
+			m.Data = fftypes.DataRefSortable{}
 		} else {
 			sort.Sort(m.Data)
 		}
@@ -297,6 +297,59 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message 
 	return msg, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, filter *persistence.MessageFilter, skip, limit uint) (message *fftypes.MessageRefsOnly, err error) {
-	return nil, err
+func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter *persistence.MessageFilter) (message []*fftypes.MessageRefsOnly, err error) {
+
+	query := sq.Select(msgColumns...).From("messages")
+	if filter.ConfrimedOnly && filter.ConfirmedAfter == 0 {
+		query = query.Where(sq.Gt{"confirmed": 0})
+	}
+	if filter.NamespaceEquals != "" {
+		query = query.Where(sq.Eq{"namespace": filter.NamespaceEquals})
+	}
+	if filter.TypeEquals != "" {
+		query = query.Where(sq.Eq{"mtype": filter.TypeEquals})
+	}
+	if filter.AuthorEquals != "" {
+		query = query.Where(sq.Eq{"author": filter.AuthorEquals})
+	}
+	if filter.TopicEquals != "" {
+		query = query.Where(sq.Eq{"topic": filter.TopicEquals})
+	}
+	if filter.ContextEquals != "" {
+		query = query.Where(sq.Eq{"context": filter.ContextEquals})
+	}
+	if filter.GroupEquals != nil {
+		query = query.Where(sq.Eq{"group_id": filter.GroupEquals})
+	}
+	if filter.CIDEquals != nil {
+		query = query.Where(sq.Eq{"cid": filter.CIDEquals})
+	}
+	if filter.CreatedAfter > 0 {
+		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
+	}
+	if filter.ConfirmedAfter > 0 {
+		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
+	}
+	query = query.Offset(skip).Limit(limit)
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := []*fftypes.MessageRefsOnly{}
+	for rows.Next() {
+		msg, err := s.msgResult(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		msgs = append(msgs, msg)
+	}
+
+	if err = s.loadDataRefs(ctx, msgs); err != nil {
+		return nil, err
+	}
+
+	return msgs, err
+
 }
