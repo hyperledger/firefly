@@ -18,12 +18,9 @@ import (
 	"context"
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/ql"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -63,34 +60,6 @@ func TestInitSQLCommon(t *testing.T) {
 
 }
 
-func TestUpsertNewMessage(t *testing.T) {
-
-	s := &SQLCommon{}
-	InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
-
-	msgId := uuid.New()
-	randB32 := fftypes.NewRandB32()
-	msg := &fftypes.MessageBase{
-		ID:        &msgId,
-		CID:       nil,
-		Type:      fftypes.MessageTypeBroadcast,
-		Author:    "0x12345",
-		Created:   time.Now().UnixNano(),
-		Namespace: "ns12345",
-		Topic:     "topic1",
-		Context:   "context1",
-		Group:     nil,
-		DataHash:  &randB32,
-		Hash:      &randB32,
-		Confirmed: 0,
-	}
-
-	err := s.UpsertMessage(context.Background(), msg)
-	assert.NoError(t, err)
-
-}
-
-// Must be last test in file to ensure cleanup
 func TestTeardown(t *testing.T) {
 	ensureTestDB(t)
 	err := m.Down()

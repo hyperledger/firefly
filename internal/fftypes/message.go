@@ -43,12 +43,12 @@ type MessageBase struct {
 
 type MessageExpanded struct {
 	MessageBase
-	TX   *Transaction    `json:"tx,omitempty"`
-	Data []*DataExpanded `json:"data"`
+	TX   *Transaction `json:"tx,omitempty"`
+	Data []*Data      `json:"data"`
 }
 
 type MessageRefsOnly struct {
 	MessageBase
-	TX   *uuid.UUID `json:"tx,omitempty"`
-	Data []DataRef  `json:"data"`
+	TX   *uuid.UUID      `json:"tx,omitempty"`
+	Data DataRefSortable `json:"data"`
 }
