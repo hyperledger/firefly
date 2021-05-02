@@ -41,6 +41,9 @@ var (
 		"datahash",
 		"hash",
 		"confirmed",
+		"tx_type",
+		"tx_id",
+		"batch_id",
 	}
 )
 
@@ -77,6 +80,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 				Set("datahash", message.DataHash).
 				Set("hash", message.Hash).
 				Set("confirmed", message.Confirmed).
+				Set("tx_type", message.TX.Type).
+				Set("tx_id", message.TX.ID).
+				Set("batch_id", message.TX.BatchID).
 				Where(sq.Eq{"id": message.ID}),
 		); err != nil {
 			return err
@@ -98,6 +104,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 					message.DataHash,
 					message.Hash,
 					message.Confirmed,
+					message.TX.Type,
+					message.TX.ID,
+					message.TX.BatchID,
 				),
 		); err != nil {
 			return err
@@ -262,6 +271,9 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.DataHash,
 		&msg.Hash,
 		&msg.Confirmed,
+		&msg.TX.Type,
+		&msg.TX.ID,
+		&msg.TX.BatchID,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
@@ -300,9 +312,15 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message 
 func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter *persistence.MessageFilter) (message []*fftypes.MessageRefsOnly, err error) {
 
 	query := sq.Select(msgColumns...).From("messages")
-	if filter.ConfrimedOnly && filter.ConfirmedAfter == 0 {
+
+	if filter.ConfirmedAfter > 0 {
+		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
+	} else if filter.ConfrimedOnly {
 		query = query.Where(sq.Gt{"confirmed": 0})
+	} else if filter.UnconfrimedOnly {
+		query = query.Where(sq.Eq{"confirmed": 0})
 	}
+
 	if filter.NamespaceEquals != "" {
 		query = query.Where(sq.Eq{"namespace": filter.NamespaceEquals})
 	}
@@ -327,10 +345,10 @@ func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter 
 	if filter.CreatedAfter > 0 {
 		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
 	}
-	if filter.ConfirmedAfter > 0 {
-		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
+	query = query.OrderBy("confirmed,created DESC")
+	if limit > 0 {
+		query = query.Offset(skip).Limit(limit)
 	}
-	query = query.Offset(skip).Limit(limit)
 
 	rows, err := s.query(ctx, query)
 	if err != nil {

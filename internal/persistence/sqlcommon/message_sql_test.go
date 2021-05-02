@@ -55,7 +55,9 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Hash:      &randB32,
 			Confirmed: 0,
 		},
-		TX: nil,
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeNone,
+		},
 		Data: []fftypes.DataRef{
 			{ID: &dataId1},
 			{ID: &dataId2},
@@ -77,6 +79,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	dataId3 := uuid.New()
 	cid := uuid.New()
 	gid := uuid.New()
+	bid := uuid.New()
+	txid := uuid.New()
 	msgUpdated := &fftypes.MessageRefsOnly{
 		MessageBase: fftypes.MessageBase{
 			ID:        &msgId,
@@ -92,7 +96,11 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Hash:      &randB32,
 			Confirmed: time.Now().UnixNano(),
 		},
-		TX: nil,
+		TX: fftypes.TransactionRef{
+			Type:    fftypes.TransactionTypePin,
+			ID:      &txid,
+			BatchID: &bid,
+		},
 		Data: []fftypes.DataRef{
 			{ID: &dataId1},
 			{ID: &dataId3},
@@ -110,8 +118,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
 	// Query back the message
-	msgs, err := s.GetMessages(ctx, 0, 1, &persistence.MessageFilter{
-		ConfrimedOnly:   true,
+	filter := &persistence.MessageFilter{
 		IDEquals:        msgUpdated.ID,
 		NamespaceEquals: msgUpdated.Namespace,
 		TypeEquals:      string(msgUpdated.Type),
@@ -122,11 +129,20 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		CIDEquals:       msgUpdated.CID,
 		CreatedAfter:    1,
 		ConfirmedAfter:  1,
-	})
+	}
+	msgs, err := s.GetMessages(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
+
+	// Negative test on filter
+	filter.ConfrimedOnly = false
+	filter.UnconfrimedOnly = true
+	filter.ConfirmedAfter = 0
+	msgs, err = s.GetMessages(ctx, 0, 1, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(msgs))
 
 }
 
@@ -326,7 +342,7 @@ func TestGetMessageByIdLoadRefsFail(t *testing.T) {
 	msgId := uuid.New()
 	b32 := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(msgColumns).
-		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0))
+		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageById(context.Background(), &msgId)
 	assert.Regexp(t, "FF10115", err.Error())
@@ -354,7 +370,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	msgId := uuid.New()
 	b32 := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(msgColumns).
-		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0))
+		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessages(context.Background(), 0, 1, &persistence.MessageFilter{ConfrimedOnly: true})
 	assert.Regexp(t, "FF10115", err.Error())

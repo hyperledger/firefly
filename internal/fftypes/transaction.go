@@ -19,8 +19,8 @@ import "github.com/google/uuid"
 type TransactionType string
 
 const (
-	TransactionTypeNone MessageType = "none"
-	TransactionTypePin  MessageType = "pin"
+	TransactionTypeNone TransactionType = "none"
+	TransactionTypePin  TransactionType = "pin"
 )
 
 type TransactionState string
@@ -33,6 +33,12 @@ const (
 	// TransactionStateSubmitted the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
 	TransactionStateFailed TransactionState = "error"
 )
+
+type TransactionRef struct {
+	Type    TransactionType `json:"type"`
+	ID      *uuid.UUID      `json:"id,omitempty"`
+	BatchID *uuid.UUID      `json:"batchId,omitempty"`
+}
 
 type Transaction struct {
 	ID         *uuid.UUID             `json:"id,omitempty"`

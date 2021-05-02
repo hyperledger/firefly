@@ -41,6 +41,9 @@ func WithLogger(ctx context.Context, logger *logrus.Entry) context.Context {
 
 // WithLogField adds the specified field to the logger in the context
 func WithLogField(ctx context.Context, key, value string) context.Context {
+	if len(value) > 61 {
+		value = value[0:61] + "..."
+	}
 	return WithLogger(ctx, loggerFromContext(ctx).WithField(key, value))
 }
 

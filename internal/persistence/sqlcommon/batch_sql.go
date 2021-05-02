@@ -23,15 +23,21 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var (
 	batchColumns = []string{
 		"id",
+		"btype",
+		"namespace",
 		"author",
 		"created",
 		"hash",
 		"payload",
+		"confirmed",
+		"tx_type",
+		"tx_id",
 	}
 )
 
@@ -57,10 +63,15 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 		// Update the batch
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("batches").
+				Set("btype", string(batch.Type)).
+				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("payload", batch.Payload).
+				Set("confirmed", batch.Confirmed).
+				Set("tx_type", batch.TX.Type).
+				Set("tx_id", batch.TX.ID).
 				Where(sq.Eq{"id": batch.ID}),
 		); err != nil {
 			return err
@@ -71,10 +82,15 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 				Columns(batchColumns...).
 				Values(
 					batch.ID,
+					string(batch.Type),
+					batch.Namespace,
 					batch.Author,
 					batch.Created,
 					batch.Hash,
 					batch.Payload,
+					batch.Confirmed,
+					batch.TX.Type,
+					batch.TX.ID,
 				),
 		); err != nil {
 			return err
@@ -92,10 +108,15 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	var batch fftypes.Batch
 	err := row.Scan(
 		&batch.ID,
+		&batch.Type,
+		&batch.Namespace,
 		&batch.Author,
 		&batch.Created,
 		&batch.Hash,
 		&batch.Payload,
+		&batch.Confirmed,
+		&batch.TX.Type,
+		&batch.TX.ID,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "batches")
@@ -125,4 +146,48 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *f
 	}
 
 	return batch, nil
+}
+
+func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter *persistence.BatchFilter) (message []*fftypes.Batch, err error) {
+
+	query := sq.Select(batchColumns...).From("batches")
+
+	if filter.ConfirmedAfter > 0 {
+		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
+	} else if filter.ConfrimedOnly {
+		query = query.Where(sq.Gt{"confirmed": 0})
+	} else if filter.UnconfrimedOnly {
+		query = query.Where(sq.Eq{"confirmed": 0})
+	}
+
+	if filter.NamespaceEquals != "" {
+		query = query.Where(sq.Eq{"namespace": filter.NamespaceEquals})
+	}
+	if filter.AuthorEquals != "" {
+		query = query.Where(sq.Eq{"author": filter.AuthorEquals})
+	}
+	if filter.CreatedAfter > 0 {
+		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
+	}
+	query = query.OrderBy("confirmed,created DESC")
+	if limit > 0 {
+		query = query.Offset(skip).Limit(limit)
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	batches := []*fftypes.Batch{}
+	for rows.Next() {
+		batch, err := s.batchResult(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		batches = append(batches, batch)
+	}
+
+	return batches, err
+
 }
