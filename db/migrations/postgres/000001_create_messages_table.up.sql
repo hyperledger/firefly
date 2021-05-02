@@ -11,7 +11,11 @@ CREATE TABLE messages (
   datahash    CHAR(32)        NOT NULL,
   hash        CHAR(32)        NOT NULL,
   confirmed   BIGINT          NOT NULL,
-  tx_id       CHAR(36)
+  tx_type     CHAR(36)        NOT NULL,
+  tx_id       CHAR(36),
+  batch_id    CHAR(36)
 );
 
-CREATE INDEX messages_search ON messages(namespace,mtype,confirmed,context,topic,group_id,author,cid,hash,created );
+CREATE INDEX messages_search ON messages(namespace,mtype,confirmed,context,topic,group_id,author,cid,hash,created);
+CREATE INDEX messages_batch ON messages(namespace,batch_id);
+CREATE INDEX messages_tx ON messages(namespace,tx_type,tx_id);

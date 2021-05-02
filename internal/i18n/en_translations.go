@@ -41,4 +41,6 @@ var (
 	MsgDupDataReferenceID      = ffm("FF10124", "Duplicate data ID in message '%s'")
 	MsgScanFailed              = ffm("FF10125", "Failed to restore type %T into %T")
 	MsgSerializeFailed         = ffm("FF10125", "Failed to serialize %T")
+	MsgUnregisteredBatchType   = ffm("FF10126", "Unregistered batch type %s")
+	MsgBatchDispatchTimeout    = ffm("FF10127", "Timed out dispatching work to batch")
 )

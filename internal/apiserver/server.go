@@ -28,6 +28,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -35,6 +36,10 @@ import (
 
 // Serve is the main entry point for the API Server
 func Serve(ctx context.Context) error {
+	if err := engine.Init(ctx); err != nil {
+		return err
+	}
+
 	r := createMuxRouter()
 	l, err := createListener(ctx)
 	if err == nil {

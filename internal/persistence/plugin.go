@@ -77,6 +77,9 @@ type PeristenceInterface interface {
 
 	// Get a batch by Id
 	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
+
+	// Get batches
+	GetBatches(ctx context.Context, skip, limit uint64, filter *BatchFilter) (message []*fftypes.Batch, err error)
 }
 
 // No events currently defined for the persistence interface
@@ -89,6 +92,7 @@ type Capabilities struct {
 
 type MessageFilter struct {
 	ConfrimedOnly   bool
+	UnconfrimedOnly bool
 	IDEquals        *uuid.UUID
 	NamespaceEquals string
 	TypeEquals      string
@@ -97,6 +101,16 @@ type MessageFilter struct {
 	ContextEquals   string
 	GroupEquals     *uuid.UUID
 	CIDEquals       *uuid.UUID
+	CreatedAfter    uint64
+	ConfirmedAfter  uint64
+}
+
+type BatchFilter struct {
+	ConfrimedOnly   bool
+	UnconfrimedOnly bool
+	IDEquals        *uuid.UUID
+	AuthorEquals    string
+	NamespaceEquals string
 	CreatedAfter    uint64
 	ConfirmedAfter  uint64
 }

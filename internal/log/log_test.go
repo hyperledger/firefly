@@ -28,6 +28,11 @@ func TestLogContext(t *testing.T) {
 	assert.Equal(t, "myvalue", L(ctx).Data["myfield"])
 }
 
+func TestLogContextLimited(t *testing.T) {
+	ctx := WithLogField(context.Background(), "myfield", "0123456789012345678901234567890123456789012345678901234567890123456789")
+	assert.Equal(t, "0123456789012345678901234567890123456789012345678901234567890...", L(ctx).Data["myfield"])
+}
+
 func TestSettingErrorLevel(t *testing.T) {
 	config.Set(config.LogLevel, "eRrOr")
 	SetupLogging(context.Background())

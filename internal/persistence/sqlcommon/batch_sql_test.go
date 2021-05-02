@@ -24,6 +24,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,12 +40,16 @@ func TestBatch2EWithDB(t *testing.T) {
 	randB32 := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID:     &batchId,
+		Type:   fftypes.BatchTypeBroadcast,
 		Author: "0x12345",
 		Hash:   &randB32,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.MessageRefsOnly{
 				{MessageBase: fftypes.MessageBase{ID: &msgId1}},
 			},
+		},
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeNone,
 		},
 	}
 	err := s.UpsertBatch(ctx, batch)
@@ -60,18 +65,26 @@ func TestBatch2EWithDB(t *testing.T) {
 
 	// Update the batch (this is testing what's possible at the persistence layer,
 	// and does not account for the verification that happens at the higher level)
+	txid := uuid.New()
 	msgId2 := uuid.New()
 	batchUpdated := &fftypes.Batch{
-		ID:      &batchId,
-		Author:  "0x12345",
-		Hash:    &randB32,
-		Created: time.Now().UnixNano(),
+		ID:        &batchId,
+		Type:      fftypes.BatchTypeBroadcast,
+		Author:    "0x12345",
+		Namespace: "ns1",
+		Hash:      &randB32,
+		Created:   time.Now().UnixNano(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.MessageRefsOnly{
 				{MessageBase: fftypes.MessageBase{ID: &msgId1}},
 				{MessageBase: fftypes.MessageBase{ID: &msgId2}},
 			},
 		},
+		TX: fftypes.TransactionRef{
+			ID:   &txid,
+			Type: fftypes.TransactionTypePin,
+		},
+		Confirmed: time.Now().UnixNano(),
 	}
 	err = s.UpsertBatch(context.Background(), batchUpdated)
 	assert.NoError(t, err)
@@ -83,6 +96,27 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchReadJson, _ = json.Marshal(&batchRead)
 	assert.Equal(t, string(batchJson), string(batchReadJson))
 
+	// Query back the batch
+	filter := &persistence.BatchFilter{
+		IDEquals:        batchUpdated.ID,
+		NamespaceEquals: batchUpdated.Namespace,
+		AuthorEquals:    batchUpdated.Author,
+		CreatedAfter:    1,
+		ConfirmedAfter:  1,
+	}
+	batches, err := s.GetBatches(ctx, 0, 1, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batches))
+	batchReadJson, _ = json.Marshal(batches[0])
+	assert.Equal(t, string(batchJson), string(batchReadJson))
+
+	// Negative test on filter
+	filter.ConfrimedOnly = false
+	filter.UnconfrimedOnly = true
+	filter.ConfirmedAfter = 0
+	batches, err = s.GetBatches(ctx, 0, 1, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(batches))
 }
 
 func TestUpsertBatchFailBegin(t *testing.T) {
@@ -164,6 +198,22 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetBatchById(context.Background(), &batchId)
+	assert.Regexp(t, "FF10121", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetBatchesQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetBatches(context.Background(), 0, 1, &persistence.BatchFilter{ConfrimedOnly: true})
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGettBatchesReadMessageFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	_, err := s.GetBatches(context.Background(), 0, 1, &persistence.BatchFilter{})
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
