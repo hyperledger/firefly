@@ -38,6 +38,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,8 +47,14 @@ func TestStartStopServer(t *testing.T) {
 	config.Set(config.HttpPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
-	err := Serve(ctx)
+	err := Serve(ctx, false)
 	assert.NoError(t, err)
+}
+
+func TestEnginInitFail(t *testing.T) {
+	config.Reset()
+	err := Serve(context.Background(), true)
+	assert.Error(t, err)
 }
 
 func TestInvalidListener(t *testing.T) {
@@ -168,13 +175,14 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	handler := jsonHandler(&apiroutes.Route{
+	me := &engine.MockEngine{}
+	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(req *http.Request, input interface{}, output interface{}) (status int, err error) {
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
 			assert.Equal(t, "value1", input.(map[string]interface{})["input1"])
 			output.(map[string]interface{})["output1"] = "value2"
 			return 201, nil
@@ -193,13 +201,14 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPServeCustomGETError(t *testing.T) {
-	handler := jsonHandler(&apiroutes.Route{
+	me := &engine.MockEngine{}
+	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(req *http.Request, input interface{}, output interface{}) (status int, err error) {
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
 			assert.Equal(t, nil, input)
 			return 503, fmt.Errorf("pop")
 		},
@@ -217,13 +226,14 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	handler := jsonHandler(&apiroutes.Route{
+	me := &engine.MockEngine{}
+	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(req *http.Request, input interface{}, output interface{}) (status int, err error) {
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
 			output.(map[string]interface{})["unserializable"] = map[bool]interface{}{
 				true: "not in JSON",
 			}

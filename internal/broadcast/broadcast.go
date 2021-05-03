@@ -16,64 +16,42 @@ package broadcast
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/batching"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-type Broadcast struct {
+type Broadcast interface {
+	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly) error
+	Close()
+}
+
+type broadcast struct {
 	ctx         context.Context
 	persistence persistence.Plugin
 	blockchain  blockchain.Plugin
+	batch       batching.BatchManager
 }
 
-var instance *Broadcast
-
-func Init(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin) error {
-	instance = &Broadcast{
+func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin, batch batching.BatchManager) (Broadcast, error) {
+	if persistence == nil || batch == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
+	b := &broadcast{
 		ctx:         ctx,
 		persistence: persistence,
 		blockchain:  blockchain,
+		batch:       batch,
 	}
+	return b, nil
+}
+
+func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly) error {
 
 	return nil
 }
 
-func GetInstance() *Broadcast {
-	return instance
-}
-
-func (b *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly) error {
-
-	// TODO: Port batching to Go channels
-	batchID := uuid.New()
-	batch := &fftypes.Batch{
-		ID:      &batchID,
-		Author:  identity,
-		Created: time.Now().UnixNano(),
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.MessageRefsOnly{
-				msg,
-			},
-		},
-	}
-	batch.Hash = batch.Payload.Hash()
-
-	if err := b.persistence.UpsertBatch(ctx, batch); err != nil {
-		return err
-	}
-
-	_, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
-		Timestamp:      batch.Created,
-		BatchID:        fftypes.HexUUIDFromUUID(*batch.ID),
-		BatchPaylodRef: *batch.Hash, // TODO: This will move to being an IPFS ID, that's obtained by a publish to IPFS
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+func (b *broadcast) Close() {}

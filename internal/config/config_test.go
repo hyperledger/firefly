@@ -65,3 +65,12 @@ func TestBoolWithDefault(t *testing.T) {
 	var v bool = false
 	assert.False(t, BoolWithDefault(&v, true))
 }
+
+func TestUnmarshalKey(t *testing.T) {
+	err := ReadConfig("../../test/config/firefly.core.yaml")
+	assert.NoError(t, err)
+	var conf map[string]interface{}
+	err = UnmarshalKey(Blockchain, &conf)
+	assert.NoError(t, err)
+	assert.Equal(t, "http://localhost:8000", conf["ethconnect"].(map[string]interface{})["url"])
+}

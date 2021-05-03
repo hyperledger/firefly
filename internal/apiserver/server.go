@@ -35,12 +35,14 @@ import (
 )
 
 // Serve is the main entry point for the API Server
-func Serve(ctx context.Context) error {
-	if err := engine.Init(ctx); err != nil {
+func Serve(ctx context.Context, initEngine bool) error {
+	e, err := engine.NewEngine(ctx, initEngine)
+	if err != nil {
 		return err
 	}
+	defer e.Close()
 
-	r := createMuxRouter()
+	r := createMuxRouter(e)
 	l, err := createListener(ctx)
 	if err == nil {
 		var s *http.Server
@@ -141,7 +143,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(route *apiroutes.Route) http.HandlerFunc {
+func jsonHandler(e engine.Engine, route *apiroutes.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
@@ -154,7 +156,7 @@ func jsonHandler(route *apiroutes.Route) http.HandlerFunc {
 			err = json.NewDecoder(req.Body).Decode(&input)
 		}
 		if err == nil {
-			status, err = route.JSONHandler(req, input, output)
+			status, err = route.JSONHandler(e, req, input, output)
 		}
 		if err == nil {
 			res.Header().Add("Content-Type", "application/json")
@@ -210,11 +212,11 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
-func createMuxRouter() *mux.Router {
+func createMuxRouter(e engine.Engine) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range apiroutes.Routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(route.Path, jsonHandler(route)).
+			r.HandleFunc(route.Path, jsonHandler(e, route)).
 				HeadersRegexp("Content-Type", "application/json").
 				Methods(route.Method)
 		}

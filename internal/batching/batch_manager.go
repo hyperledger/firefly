@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package batching
 
 import (
 	"context"
@@ -27,15 +27,22 @@ import (
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var bm *batchManager
-
-func Init(ctx context.Context, persistence persistence.Plugin) error {
-	bm = &batchManager{
+func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (BatchManager, error) {
+	if persistence == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
+	bm := &batchManager{
 		ctx:         ctx,
 		persistence: persistence,
 		dispatchers: make(map[fftypes.BatchType]*dispatcher),
 	}
-	return nil
+	return bm, nil
+}
+
+type BatchManager interface {
+	RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions)
+	DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error)
+	Close()
 }
 
 type batchManager struct {
@@ -59,7 +66,7 @@ type dispatcher struct {
 	batchOptions BatchOptions
 }
 
-func RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions) {
+func (bm *batchManager) RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions) {
 	bm.dispatchers[batchType] = &dispatcher{
 		handler:      handler,
 		batchOptions: batchOptions,
@@ -99,7 +106,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.BatchType, namespace, aut
 	return processor, nil
 }
 
-func Close() {
+func (bm *batchManager) Close() {
 	if bm != nil {
 		for _, d := range bm.dispatchers {
 			d.mux.Lock()
@@ -112,7 +119,7 @@ func Close() {
 	bm = nil
 }
 
-func DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
+func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(batchType, msg.Namespace, msg.Author)
 	if err != nil {

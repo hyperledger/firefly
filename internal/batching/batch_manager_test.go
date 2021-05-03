@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package batching
 
 import (
 	"context"
@@ -29,8 +29,8 @@ import (
 func TestE2EDispatch(t *testing.T) {
 
 	mp := &persistence.MockPlugin{}
-	Init(context.Background(), mp)
-	defer Close()
+	bm, _ := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
 
 	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 	waitForDispatch := make(chan *fftypes.Batch)
@@ -39,7 +39,7 @@ func TestE2EDispatch(t *testing.T) {
 		return nil
 	}
 
-	RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
+	bm.RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
 		BatchMaxSize:   1,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -52,7 +52,7 @@ func TestE2EDispatch(t *testing.T) {
 		Author:    "0x12345",
 	}}
 
-	id, err := DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
+	id, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
@@ -61,14 +61,19 @@ func TestE2EDispatch(t *testing.T) {
 
 }
 
+func TestInitFail(t *testing.T) {
+	_, err := NewBatchManager(context.Background(), nil)
+	assert.Error(t, err)
+}
+
 func TestGetInvalidBatchType(t *testing.T) {
 
 	mp := &persistence.MockPlugin{}
-	Init(context.Background(), mp)
-	defer Close()
+	bm, _ := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
 
 	msg := &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{}}
-	_, err := DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
+	_, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
 	assert.Regexp(t, "FF10126", err.Error())
 
 }
@@ -76,8 +81,8 @@ func TestGetInvalidBatchType(t *testing.T) {
 func TestTimeout(t *testing.T) {
 
 	mp := &persistence.MockPlugin{}
-	Init(context.Background(), mp)
-	defer Close()
+	bm, _ := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
 
 	blocker := make(chan time.Time)
 	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything)
@@ -87,7 +92,7 @@ func TestTimeout(t *testing.T) {
 		return nil
 	}
 
-	RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
+	bm.RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
 		BatchMaxSize:   1,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -102,7 +107,7 @@ func TestTimeout(t *testing.T) {
 		Namespace: "ns1",
 		Author:    "0x12345",
 	}}
-	_, err := DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg)
+	_, err := bm.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg)
 
 	assert.Regexp(t, "FF10127", err)
 

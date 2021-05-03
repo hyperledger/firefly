@@ -38,6 +38,10 @@ const (
 	HttpTLSCertFile   Key = "http.tls.certFile"
 	HttpTLSKeyFile    Key = "http.tls.keyFile"
 	APIRequestTimeout Key = "api.requestTimeout"
+	PersistenceType   Key = "persistence.type"
+	Persistence       Key = "persistence"
+	BlockchainType    Key = "blockchain.type"
+	Blockchain        Key = "blockchain"
 )
 
 func Reset() {
@@ -101,6 +105,11 @@ func GetInt(key Key) int {
 // Set allows runtime setting of config (used in unit tests)
 func Set(key Key, value interface{}) {
 	viper.Set(string(key), value)
+}
+
+// Unmarshal gets a configuration section into a struct
+func UnmarshalKey(key Key, rawVal interface{}) error {
+	return viper.UnmarshalKey(string(key), rawVal)
 }
 
 // UintWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
