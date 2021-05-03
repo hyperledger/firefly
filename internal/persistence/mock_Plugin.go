@@ -147,6 +147,52 @@ func (_m *MockPlugin) GetMessages(ctx context.Context, skip uint64, limit uint64
 	return r0, r1
 }
 
+// GetTransactionById provides a mock function with given fields: ctx, id
+func (_m *MockPlugin) GetTransactionById(ctx context.Context, id *uuid.UUID) (*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.Transaction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTransactions provides a mock function with given fields: ctx, skip, limit, filter
+func (_m *MockPlugin) GetTransactions(ctx context.Context, skip uint64, limit uint64, filter *TransactionFilter) ([]*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, skip, limit, filter)
+
+	var r0 []*fftypes.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *TransactionFilter) []*fftypes.Transaction); ok {
+		r0 = rf(ctx, skip, limit, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, *TransactionFilter) error); ok {
+		r1 = rf(ctx, skip, limit, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, config, events
 func (_m *MockPlugin) Init(ctx context.Context, config interface{}, events Events) (*Capabilities, error) {
 	ret := _m.Called(ctx, config, events)
@@ -205,6 +251,20 @@ func (_m *MockPlugin) UpsertMessage(ctx context.Context, message *fftypes.Messag
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.MessageRefsOnly) error); ok {
 		r0 = rf(ctx, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertTransaction provides a mock function with given fields: ctx, data
+func (_m *MockPlugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

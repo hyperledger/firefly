@@ -168,8 +168,9 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchTimeout = 100 * time.Second
 	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	waitForCall := make(chan struct{})
+	waitForCall := make(chan bool)
 	mup.RunFn = func(a mock.Arguments) {
+		waitForCall <- true
 		<-waitForCall
 	}
 
@@ -184,6 +185,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	bp.newWork <- work
 
 	// Ensure the mock has been run
+	<-waitForCall
 	close(waitForCall)
 
 	// Close to unblock

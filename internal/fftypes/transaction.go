@@ -35,14 +35,20 @@ const (
 )
 
 type TransactionRef struct {
-	Type    TransactionType `json:"type"`
-	ID      *uuid.UUID      `json:"id,omitempty"`
-	BatchID *uuid.UUID      `json:"batchId,omitempty"`
+	Type TransactionType `json:"type"`
+	// ID is a direct reference to a submitted transaction
+	ID *uuid.UUID `json:"id,omitempty"`
+	// BatchID is an indirect ref, via a batch submission
+	BatchID *uuid.UUID `json:"batchId,omitempty"`
 }
 
 type Transaction struct {
-	ID         *uuid.UUID             `json:"id,omitempty"`
-	TrackingID string                 `json:"trackingId,omitempty"`
-	Sequence   string                 `json:"sequence,omitempty"`
-	Info       map[string]interface{} `json:"info,omitempty"`
+	Type       TransactionType `json:"type"`
+	ID         *uuid.UUID      `json:"id,omitempty"`
+	Author     string          `json:"author"`
+	Created    int64           `json:"created"`
+	TrackingID string          `json:"trackingId,omitempty"`
+	ProtocolID string          `json:"protocolId,omitempty"`
+	Confirmed  int64           `json:"confirmed,omitempty"`
+	Info       JSONData        `json:"info,omitempty"`
 }

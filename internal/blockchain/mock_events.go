@@ -12,12 +12,12 @@ type MockEvents struct {
 	mock.Mock
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, pinnedSequence, additionalInfo
-func (_m *MockEvents) SequencedBroadcastBatch(batch BroadcastBatch, pinnedSequence string, additionalInfo map[string]interface{}) {
-	_m.Called(batch, pinnedSequence, additionalInfo)
+// SequencedBroadcastBatch provides a mock function with given fields: batch, protocolTxId, additionalInfo
+func (_m *MockEvents) SequencedBroadcastBatch(batch BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{}) {
+	_m.Called(batch, protocolTxId, additionalInfo)
 }
 
-// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, errorMessage, additionalInfo
-func (_m *MockEvents) TransactionUpdate(txTrackingID string, txState fftypes.TransactionState, errorMessage string, additionalInfo map[string]interface{}) {
-	_m.Called(txTrackingID, txState, errorMessage, additionalInfo)
+// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
+func (_m *MockEvents) TransactionUpdate(txTrackingID string, txState fftypes.TransactionState, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) {
+	_m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
 }
