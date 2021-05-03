@@ -21,14 +21,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestE2EDispatch(t *testing.T) {
 
-	mp := &persistence.MockPlugin{}
+	mp := &persistencemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 
@@ -68,7 +68,7 @@ func TestInitFail(t *testing.T) {
 
 func TestGetInvalidBatchType(t *testing.T) {
 
-	mp := &persistence.MockPlugin{}
+	mp := &persistencemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 
@@ -80,7 +80,7 @@ func TestGetInvalidBatchType(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 
-	mp := &persistence.MockPlugin{}
+	mp := &persistencemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 

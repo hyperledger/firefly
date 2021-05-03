@@ -15,8 +15,10 @@
 package config
 
 import (
+	"context"
 	"os"
 
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/spf13/viper"
 )
 
@@ -38,8 +40,8 @@ const (
 	HttpTLSCertFile   Key = "http.tls.certFile"
 	HttpTLSKeyFile    Key = "http.tls.keyFile"
 	APIRequestTimeout Key = "api.requestTimeout"
-	PersistenceType   Key = "persistence.type"
-	Persistence       Key = "persistence"
+	DatabaseType      Key = "database.type"
+	Database          Key = "database"
 	BlockchainType    Key = "blockchain.type"
 	Blockchain        Key = "blockchain"
 )
@@ -57,6 +59,8 @@ func Reset() {
 	viper.SetDefault(string(HttpReadTimeout), 15)
 	viper.SetDefault(string(HttpWriteTimeout), 15)
 	viper.SetDefault(string(APIRequestTimeout), 120)
+
+	i18n.SetLang(GetString(Lang))
 }
 
 // ReadConfig initializes the config
@@ -108,8 +112,12 @@ func Set(key Key, value interface{}) {
 }
 
 // Unmarshal gets a configuration section into a struct
-func UnmarshalKey(key Key, rawVal interface{}) error {
-	return viper.UnmarshalKey(string(key), rawVal)
+func UnmarshalKey(ctx context.Context, key Key, rawVal interface{}) error {
+	err := viper.UnmarshalKey(string(key), rawVal)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed, key)
+	}
+	return nil
 }
 
 // UintWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs

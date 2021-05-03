@@ -31,18 +31,22 @@ import (
 type SQLite struct {
 	sqlcommon.SQLCommon
 
-	conf *Config
+	conf         *Config
+	capabilities *persistence.Capabilities
 }
 
 func (e *SQLite) ConfigInterface() interface{} { return &Config{} }
 
-func (e *SQLite) Init(ctx context.Context, conf interface{}, events persistence.Events) (*persistence.Capabilities, error) {
+func (e *SQLite) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
 	e.conf = conf.(*Config)
+	e.capabilities = &persistence.Capabilities{}
 
 	db, err := sql.Open("sqlite", e.conf.URL)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
 }
+
+func (e *SQLite) Capabilities() *persistence.Capabilities { return e.capabilities }

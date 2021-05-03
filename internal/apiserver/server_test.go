@@ -39,6 +39,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/engine"
+	"github.com/kaleido-io/firefly/mocks/enginemocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -175,7 +176,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	me := &engine.MockEngine{}
+	me := &enginemocks.Engine{}
 	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -201,7 +202,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPServeCustomGETError(t *testing.T) {
-	me := &engine.MockEngine{}
+	me := &enginemocks.Engine{}
 	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -226,7 +227,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	me := &engine.MockEngine{}
+	me := &enginemocks.Engine{}
 	handler := jsonHandler(me, &apiroutes.Route{
 		Name:            "testRoute",
 		Path:            "/test",

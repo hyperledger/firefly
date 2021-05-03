@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -70,7 +71,15 @@ func TestUnmarshalKey(t *testing.T) {
 	err := ReadConfig("../../test/config/firefly.core.yaml")
 	assert.NoError(t, err)
 	var conf map[string]interface{}
-	err = UnmarshalKey(Blockchain, &conf)
+	err = UnmarshalKey(context.Background(), Blockchain, &conf)
 	assert.NoError(t, err)
 	assert.Equal(t, "http://localhost:8000", conf["ethconnect"].(map[string]interface{})["url"])
+}
+
+func TestUnmarshalKeyFail(t *testing.T) {
+	err := ReadConfig("../../test/config/firefly.core.yaml")
+	assert.NoError(t, err)
+	var conf map[string]interface{}
+	err = UnmarshalKey(context.Background(), HttpPort, &conf)
+	assert.Regexp(t, "FF10101", err)
 }

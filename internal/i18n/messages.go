@@ -17,7 +17,6 @@ package i18n
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -90,8 +89,11 @@ func init() {
 			_ = message.SetString(tag, string(msg.msgid), msg.localString)
 		}
 	}
+	SetLang("en")
+}
+
+func SetLang(lang string) {
 	// Allow a lang var to be used
-	lang := config.GetString(config.Lang)
 	tag, _, _ := langMatcher.Match(language.Make(lang))
 	defaultLangPrinter = message.NewPrinter(tag)
 }

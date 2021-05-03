@@ -29,11 +29,12 @@ import (
 )
 
 type Ethereum struct {
-	ctx      context.Context
-	conf     *Config
-	events   blockchain.Events
-	client   *resty.Client
-	initInfo struct {
+	ctx          context.Context
+	conf         *Config
+	capabilities *blockchain.Capabilities
+	events       blockchain.Events
+	client       *resty.Client
+	initInfo     struct {
 		stream *eventStream
 		subs   []*subscription
 	}
@@ -81,21 +82,28 @@ const (
 
 func (e *Ethereum) ConfigInterface() interface{} { return &Config{} }
 
-func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (*blockchain.Capabilities, error) {
+func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) error {
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.conf = conf.(*Config)
 	e.events = events
 	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
+	e.capabilities = &blockchain.Capabilities{
+		GlobalSequencer: true,
+	}
 
 	log.L(e.ctx).Debugf("Config: %+v", e.conf)
 
-	if err := e.ensureEventStreams(); err != nil {
-		return nil, err
+	if !e.conf.Ethconnect.SkipEventstreamInit {
+		if err := e.ensureEventStreams(); err != nil {
+			return err
+		}
 	}
 
-	return &blockchain.Capabilities{
-		GlobalSequencer: true,
-	}, nil
+	return nil
+}
+
+func (e *Ethereum) Capabilities() *blockchain.Capabilities {
+	return e.capabilities
 }
 
 func (e *Ethereum) ensureEventStreams() error {

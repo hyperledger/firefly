@@ -26,6 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,18 +58,20 @@ func TestInitAllNewStreams(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
 				HttpClient: mockedClient,
 			},
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+
+	assert.True(t, e.Capabilities().GlobalSequencer)
 
 	assert.NoError(t, err)
 
@@ -90,7 +93,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		},
 		))
 
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
@@ -98,7 +101,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 			},
 			Topic: "topic1",
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -120,7 +123,7 @@ func TestStreamQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
@@ -131,7 +134,7 @@ func TestStreamQueryError(t *testing.T) {
 			},
 			Topic: "topic1",
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -152,7 +155,7 @@ func TestStreamCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
@@ -163,7 +166,7 @@ func TestStreamCreateError(t *testing.T) {
 			},
 			Topic: "topic1",
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -186,7 +189,7 @@ func TestSubQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
@@ -197,7 +200,7 @@ func TestSubQueryError(t *testing.T) {
 			},
 			Topic: "topic1",
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -222,7 +225,7 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
-	_, err := e.Init(context.Background(), &Config{
+	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
 			HTTPConfig: ffresty.HTTPConfig{
 				URL:        "http://localhost:12345",
@@ -233,7 +236,7 @@ func TestSubQueryCreateError(t *testing.T) {
 			},
 			Topic: "topic1",
 		},
-	}, &blockchain.MockEvents{})
+	}, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
