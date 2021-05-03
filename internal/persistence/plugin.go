@@ -80,6 +80,15 @@ type PeristenceInterface interface {
 
 	// Get batches
 	GetBatches(ctx context.Context, skip, limit uint64, filter *BatchFilter) (message []*fftypes.Batch, err error)
+
+	// Upsert a transaction
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
+
+	// Get a transaction by Id
+	GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error)
+
+	// Get transaction
+	GetTransactions(ctx context.Context, skip, limit uint64, filter *TransactionFilter) (message []*fftypes.Transaction, err error)
 }
 
 // No events currently defined for the persistence interface
@@ -113,4 +122,15 @@ type BatchFilter struct {
 	NamespaceEquals string
 	CreatedAfter    uint64
 	ConfirmedAfter  uint64
+}
+
+type TransactionFilter struct {
+	ConfrimedOnly    bool
+	UnconfrimedOnly  bool
+	IDEquals         *uuid.UUID
+	AuthorEquals     string
+	TrackingIDEquals string
+	ProtocolIDEquals string
+	CreatedAfter     uint64
+	ConfirmedAfter   uint64
 }

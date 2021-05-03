@@ -37,29 +37,22 @@ type Plugin interface {
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
-// All blockchain-sequenced events MUST be delivered to the same firefly core instance (within a cluster), to allow
-// deterministic ordering of the event delivery to subscribed event handlers (apps etc.).
-// If that firefly core instance terminates/disconnects from the blockchain remote agent, the stream should
-// fail-over to another instance. Then all all un-confirmed messages will be replayed (in the correct sequence) to that node.
-//
-// One example of how this can be acheived, is with a singleton instance of the event stream runtime (with HA failover)
-// and a WebSocket connection from the firefly core runtime to that instance. Then the remote event stream runtime can
-// choose exactly one of those connected WebSockets to dispatch events to, and in the case the websocket disconnects
-// pick the next available connection and re-deliver anything that was missed.
+// Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
+// has completed. However, it does not matter if these events are workload balance between the firefly core
+// cluster instances of the node.
 type Events interface {
 	// TransactionUpdate notifies firefly of an update to a transaction. Only success/failure and errorMessage (for errors) are modeled.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	TransactionUpdate(txTrackingID string, txState TransactionState, errorMessage string, additionalInfo map[string]interface{})
+	TransactionUpdate(txTrackingID string, txState TransactionState, protocolTxId, errorMessage string, additionalInfo map[string]interface{})
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
-	// sequence - <= 48 character alphanumerically sortable entry that reflects the events position in the chain.
 	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
 	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
-	SequencedBroadcastBatch(batch BroadcastBatch, pinnedSequence string, additionalInfo map[string]interface{})
+	SequencedBroadcastBatch(batch BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{})
 }
 
 // BlockchainCapabilities the supported featureset of the blockchain
