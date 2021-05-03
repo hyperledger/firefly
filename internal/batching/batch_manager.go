@@ -99,6 +99,19 @@ func (bm *batchManager) getProcessor(batchType fftypes.BatchType, namespace, aut
 	return processor, nil
 }
 
+func Close() {
+	if bm != nil {
+		for _, d := range bm.dispatchers {
+			d.mux.Lock()
+			for _, p := range d.processors {
+				p.close()
+			}
+			d.mux.Unlock()
+		}
+	}
+	bm = nil
+}
+
 func DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(batchType, msg.Namespace, msg.Author)

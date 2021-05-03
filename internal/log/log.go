@@ -56,16 +56,8 @@ func loggerFromContext(ctx context.Context) *logrus.Entry {
 	return logger.(*logrus.Entry)
 }
 
-// SetupLogging initializes logging
-func SetupLogging(ctx context.Context) {
-	logrus.SetFormatter(&prefixed.TextFormatter{
-		DisableColors:   !config.GetBool(config.LogColor),
-		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
-		DisableSorting:  true,
-		ForceFormatting: true,
-		FullTimestamp:   true,
-	})
-	switch strings.ToLower(config.GetString(config.LogLevel)) {
+func SetLevel(level string) {
+	switch strings.ToLower(level) {
 	case "error":
 		logrus.SetLevel(logrus.ErrorLevel)
 	case "debug":
@@ -75,6 +67,17 @@ func SetupLogging(ctx context.Context) {
 	default:
 		logrus.SetLevel(logrus.InfoLevel)
 	}
+}
 
+// SetupLogging initializes logging
+func SetupLogging(ctx context.Context) {
+	logrus.SetFormatter(&prefixed.TextFormatter{
+		DisableColors:   !config.GetBool(config.LogColor),
+		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
+		DisableSorting:  true,
+		ForceFormatting: true,
+		FullTimestamp:   true,
+	})
+	SetLevel(config.GetString(config.LogLevel))
 	L(ctx).Debugf("Log level: %s", logrus.GetLevel())
 }
