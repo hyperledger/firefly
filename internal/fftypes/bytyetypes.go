@@ -81,6 +81,9 @@ func (b32 Bytes32) Value() (driver.Value, error) {
 }
 
 func (b32 *Bytes32) String() string {
+	if b32 == nil {
+		return ""
+	}
 	return hex.EncodeToString(b32[0:32])
 }
 

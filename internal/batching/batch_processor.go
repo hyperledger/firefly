@@ -61,7 +61,7 @@ func newBatchProcessor(ctx context.Context, conf *batchProcessorConf) *batchProc
 	a := &batchProcessor{
 		ctx:         log.WithLogField(ctx, "author", conf.author),
 		newWork:     make(chan *batchWork),
-		persistWork: make(chan *batchWork),
+		persistWork: make(chan *batchWork, conf.BatchMaxSize),
 		sealBatch:   make(chan bool),
 		batchSealed: make(chan bool),
 		retry: &retry.Retry{
@@ -210,17 +210,15 @@ func (a *batchProcessor) persistenceLoop() {
 				drained = true
 			}
 		}
-		l.Debugf("Adding %d entries to batch. Seal=%t", len(newWork), seal)
-		if currentBatch == nil {
-			currentBatch = a.createOrAddToBatch(currentBatch, newWork, seal)
-		}
+		currentBatch = a.createOrAddToBatch(currentBatch, newWork, seal)
+		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
 		// Persist the batch - indefinite retry (as context is background)
 		var err error
 		a.retry.Do(a.ctx, func(attempt int) (retry bool) {
-			err := a.conf.persitence.UpsertBatch(a.ctx, currentBatch)
+			err = a.conf.persitence.UpsertBatch(a.ctx, currentBatch)
 			if err != nil {
-				l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
+				l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 				return !a.closed // only case we stop retrying is on close
 			}
 			return false

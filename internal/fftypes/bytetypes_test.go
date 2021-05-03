@@ -103,6 +103,11 @@ func TestValueBytes32(t *testing.T) {
 	assert.Equal(t, b32.String(), s)
 }
 
+func TestValueBytes32Nil(t *testing.T) {
+	var b32 *Bytes32
+	assert.Equal(t, "", b32.String())
+}
+
 func TestHexUUIDFromUUID(t *testing.T) {
 	u := uuid.Must(uuid.NewRandom())
 	b := HexUUIDFromUUID(u)
