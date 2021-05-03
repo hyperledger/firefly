@@ -27,151 +27,149 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDataE2EWithDB(t *testing.T) {
+func TestSchemaE2EWithDB(t *testing.T) {
 
 	s := &SQLCommon{}
 	ctx := context.Background()
 	InitSQLCommon(ctx, s, ensureTestDB(t), nil)
 
-	// Create a new data entry
-	dataId := uuid.New()
+	// Create a new schema entry
+	schemaId := uuid.New()
 	randB32 := fftypes.NewRandB32()
 	val := fftypes.JSONData{
-		"some": "data",
+		"some": "schema",
 		"with": map[string]interface{}{
 			"nesting": 12345,
 		},
 	}
-	data := &fftypes.Data{
-		ID:        &dataId,
-		Type:      fftypes.DataTypeBLOB,
+	schema := &fftypes.Schema{
+		ID:        &schemaId,
+		Type:      fftypes.SchemaTypeJSONSchema,
 		Namespace: "ns1",
 		Hash:      &randB32,
 		Created:   time.Now().UnixNano(),
 		Value:     val,
 	}
-	err := s.UpsertData(ctx, data)
+	err := s.UpsertSchema(ctx, schema)
 	assert.NoError(t, err)
 
-	// Check we get the exact same data back
-	dataRead, err := s.GetDataById(ctx, &dataId)
+	// Check we get the exact same schema back
+	schemaRead, err := s.GetSchemaById(ctx, &schemaId)
 	assert.NoError(t, err)
-	assert.NotNil(t, dataRead)
-	dataJson, _ := json.Marshal(&data)
-	dataReadJson, _ := json.Marshal(&dataRead)
-	assert.Equal(t, string(dataJson), string(dataReadJson))
+	assert.NotNil(t, schemaRead)
+	schemaJson, _ := json.Marshal(&schema)
+	schemaReadJson, _ := json.Marshal(&schemaRead)
+	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
-	// Update the data (this is testing what's possible at the persistence layer,
+	// Update the schema (this is testing what's possible at the persistence layer,
 	// and does not account for the verification that happens at the higher level)
 	val2 := fftypes.JSONData{
 		"another": "set",
 		"of": map[string]interface{}{
-			"data": 12345,
+			"schema": 12345,
 		},
 	}
-	dataUpdated := &fftypes.Data{
-		ID:        &dataId,
-		Type:      fftypes.DataTypeJSON,
+	schemaUpdated := &fftypes.Schema{
+		ID:        &schemaId,
+		Type:      fftypes.SchemaTypeJSONSchema,
 		Namespace: "ns2",
-		Schema: &fftypes.SchemaRef{
-			Entity:  "customer",
-			Version: "0.0.1",
-		},
-		Hash:    &randB32,
-		Created: time.Now().UnixNano(),
-		Value:   val2,
+		Entity:    "customer",
+		Version:   "0.0.1",
+		Hash:      &randB32,
+		Created:   time.Now().UnixNano(),
+		Value:     val2,
 	}
-	err = s.UpsertData(context.Background(), dataUpdated)
+	err = s.UpsertSchema(context.Background(), schemaUpdated)
 	assert.NoError(t, err)
 
-	// Check we get the exact same message back - note the removal of one of the data elements
-	dataRead, err = s.GetDataById(ctx, &dataId)
+	// Check we get the exact same message back - note the removal of one of the schema elements
+	schemaRead, err = s.GetSchemaById(ctx, &schemaId)
 	assert.NoError(t, err)
-	dataJson, _ = json.Marshal(&dataUpdated)
-	dataReadJson, _ = json.Marshal(&dataRead)
-	assert.Equal(t, string(dataJson), string(dataReadJson))
+	schemaJson, _ = json.Marshal(&schemaUpdated)
+	schemaReadJson, _ = json.Marshal(&schemaRead)
+	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
 }
 
-func TestUpsertDataFailBegin(t *testing.T) {
+func TestUpsertSchemaFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{})
+	err := s.UpsertSchema(context.Background(), &fftypes.Schema{})
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataFailSelect(t *testing.T) {
+func TestUpsertSchemaFailSelect(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataId := uuid.New()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId})
+	schemaId := uuid.New()
+	err := s.UpsertSchema(context.Background(), &fftypes.Schema{ID: &schemaId})
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataFailInsert(t *testing.T) {
+func TestUpsertSchemaFailInsert(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataId := uuid.New()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId})
+	schemaId := uuid.New()
+	err := s.UpsertSchema(context.Background(), &fftypes.Schema{ID: &schemaId})
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataFailUpdate(t *testing.T) {
+func TestUpsertSchemaFailUpdate(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := uuid.New()
+	schemaId := uuid.New()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataId.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(schemaId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId})
+	err := s.UpsertSchema(context.Background(), &fftypes.Schema{ID: &schemaId})
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataFailCommit(t *testing.T) {
+func TestUpsertSchemaFailCommit(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := uuid.New()
+	schemaId := uuid.New()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId})
+	err := s.UpsertSchema(context.Background(), &fftypes.Schema{ID: &schemaId})
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdSelectFail(t *testing.T) {
+func TestGetSchemaByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := uuid.New()
+	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataById(context.Background(), &dataId)
+	_, err := s.GetSchemaById(context.Background(), &schemaId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdNotFound(t *testing.T) {
+func TestGetSchemaByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := uuid.New()
+	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataById(context.Background(), &dataId)
+	msg, err := s.GetSchemaById(context.Background(), &schemaId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdScanFail(t *testing.T) {
+func TestGetSchemaByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := uuid.New()
+	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataById(context.Background(), &dataId)
+	_, err := s.GetSchemaById(context.Background(), &schemaId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

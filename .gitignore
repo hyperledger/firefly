@@ -4,11 +4,6 @@ solidity_kat/package-lock.json
 solidity_firefly/node_modules
 solidity_firefly/build
 solidity_firefly/package-lock.json
-core/node_modules
-core/.nyc_output
-core/coverage
-core/build
-core/test-resources/sandbox
 utils/kat-client/node_modules
 **/*.jar
 firefly

@@ -26,19 +26,19 @@ import (
 )
 
 var (
-	dataColumns = []string{
+	schemaColumns = []string{
 		"id",
-		"dtype",
+		"stype",
 		"namespace",
 		"entity",
-		"schema",
+		"version",
 		"hash",
 		"created",
 		"value",
 	}
 )
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err error) {
+func (s *SQLCommon) UpsertSchema(ctx context.Context, schema *fftypes.Schema) (err error) {
 	ctx, tx, err := s.beginTx(ctx)
 	if err != nil {
 		return err
@@ -46,49 +46,44 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 	defer s.rollbackTx(ctx, tx)
 
 	// Do a select within the transaction to detemine if the UUID already exists
-	dataRows, err := s.queryTx(ctx, tx,
+	schemaRows, err := s.queryTx(ctx, tx,
 		sq.Select("id").
-			From("data").
-			Where(sq.Eq{"id": data.ID}),
+			From("schemas").
+			Where(sq.Eq{"id": schema.ID}),
 	)
 	if err != nil {
 		return err
 	}
-	defer dataRows.Close()
+	defer schemaRows.Close()
 
-	schema := data.Schema
-	if schema == nil {
-		schema = &fftypes.SchemaRef{}
-	}
-
-	if dataRows.Next() {
-		// Update the data
+	if schemaRows.Next() {
+		// Update the schema
 		if _, err = s.updateTx(ctx, tx,
-			sq.Update("data").
-				Set("dtype", string(data.Type)).
-				Set("namespace", data.Namespace).
+			sq.Update("schemas").
+				Set("stype", string(schema.Type)).
+				Set("namespace", schema.Namespace).
 				Set("entity", schema.Entity).
-				Set("schema", schema.Version).
-				Set("hash", data.Hash).
-				Set("created", data.Created).
-				Set("value", data.Value).
-				Where(sq.Eq{"id": data.ID}),
+				Set("version", schema.Version).
+				Set("hash", schema.Hash).
+				Set("created", schema.Created).
+				Set("value", schema.Value).
+				Where(sq.Eq{"id": schema.ID}),
 		); err != nil {
 			return err
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("data").
-				Columns(dataColumns...).
+			sq.Insert("schemas").
+				Columns(schemaColumns...).
 				Values(
-					data.ID,
-					string(data.Type),
-					data.Namespace,
+					schema.ID,
+					string(schema.Type),
+					schema.Namespace,
 					schema.Entity,
 					schema.Version,
-					data.Hash,
-					data.Created,
-					data.Value,
+					schema.Hash,
+					schema.Created,
+					schema.Value,
 				),
 		); err != nil {
 			return err
@@ -102,34 +97,29 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 	return nil
 }
 
-func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
-	data := fftypes.Data{
-		Schema: &fftypes.SchemaRef{},
-	}
+func (s *SQLCommon) schemaResult(ctx context.Context, row *sql.Rows) (*fftypes.Schema, error) {
+	var schema fftypes.Schema
 	err := row.Scan(
-		&data.ID,
-		&data.Type,
-		&data.Namespace,
-		&data.Schema.Entity,
-		&data.Schema.Version,
-		&data.Hash,
-		&data.Created,
-		&data.Value,
+		&schema.ID,
+		&schema.Type,
+		&schema.Namespace,
+		&schema.Entity,
+		&schema.Version,
+		&schema.Hash,
+		&schema.Created,
+		&schema.Value,
 	)
-	if data.Schema.Entity == "" && data.Schema.Version == "" {
-		data.Schema = nil
-	}
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "schemas")
 	}
-	return &data, nil
+	return &schema, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetSchemaById(ctx context.Context, id *uuid.UUID) (message *fftypes.Schema, err error) {
 
 	rows, err := s.query(ctx,
-		sq.Select(dataColumns...).
-			From("data").
+		sq.Select(schemaColumns...).
+			From("schemas").
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -137,14 +127,14 @@ func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *ff
 	}
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Data '%s' not found", id)
+		log.L(ctx).Debugf("Schema '%s' not found", id)
 		return nil, nil
 	}
 
-	data, err := s.dataResult(ctx, rows)
+	schema, err := s.schemaResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	return schema, nil
 }

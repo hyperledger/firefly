@@ -16,36 +16,19 @@ package fftypes
 
 import "github.com/google/uuid"
 
-type DataType string
+type SchemaType string
 
 const (
-	DataTypeJSON DataType = "json"
-	DataTypeBLOB DataType = "blob"
+	SchemaTypeJSONSchema SchemaType = "jsonschema"
 )
 
-type DataRef struct {
-	ID *uuid.UUID `json:"id,omitempty"`
-}
-
-type Data struct {
+type Schema struct {
 	ID        *uuid.UUID `json:"id,omitempty"`
-	Type      DataType   `json:"type"`
+	Type      SchemaType `json:"type"`
 	Namespace string     `json:"namespace,omitempty"`
+	Entity    string     `json:"entity,omitempty"`
+	Version   string     `json:"version,omitempty"`
 	Hash      *Bytes32   `json:"hash,omitempty"`
 	Created   int64      `json:"created,omitempty"`
-	Schema    *SchemaRef `json:"schema,omitempty"`
 	Value     JSONData   `json:"value,omitempty"`
-}
-
-type SchemaRef struct {
-	Entity  string `json:"entity,omitempty"`
-	Version string `json:"version,omitempty"`
-}
-
-type DataRefSortable []DataRef
-
-func (d DataRefSortable) Len() int      { return len(d) }
-func (d DataRefSortable) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
-func (d DataRefSortable) Less(i, j int) bool {
-	return d[j].ID != nil && (d[i].ID == nil || d[j].ID != nil && d[i].ID.String() < d[j].ID.String())
 }
