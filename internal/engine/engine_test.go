@@ -15,9 +15,48 @@
 package engine
 
 import (
+	"context"
 	"testing"
+
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/mocks/batchingmocks"
+	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestInitOK(t *testing.T) {
+func TestInitPersistencePluginFail(t *testing.T) {
+	e := NewEngine().(*engine)
+	err := e.Init(context.Background())
+	assert.Regexp(t, "FF10122", err.Error())
+}
 
+func TestInitBlockchainPluginFail(t *testing.T) {
+	e := &engine{
+		persistence: &persistencemocks.Plugin{},
+	}
+	err := e.Init(context.Background())
+	assert.Regexp(t, "FF10110", err.Error())
+}
+
+func TestInitBatchComponentFail(t *testing.T) {
+	e := &engine{}
+	err := e.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
+func TestInitBroadcastComponentFail(t *testing.T) {
+	e := &engine{
+		batch: &batchingmocks.BatchManager{},
+	}
+	err := e.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
+func TestInitOK(t *testing.T) {
+	e := NewEngine()
+	err := config.ReadConfig("../../test/config/firefly.core.yaml")
+	assert.NoError(t, err)
+	err = e.Init(context.Background())
+	assert.NoError(t, err)
+	e.Close()
 }

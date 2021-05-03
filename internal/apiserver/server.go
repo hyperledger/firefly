@@ -36,9 +36,11 @@ import (
 
 // Serve is the main entry point for the API Server
 func Serve(ctx context.Context, initEngine bool) error {
-	e, err := engine.NewEngine(ctx, initEngine)
-	if err != nil {
-		return err
+	e := engine.NewEngine()
+	if initEngine {
+		if err := e.Init(ctx); err != nil {
+			return err
+		}
 	}
 	defer e.Close()
 

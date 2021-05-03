@@ -37,7 +37,7 @@ type broadcast struct {
 }
 
 func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin, batch batching.BatchManager) (Broadcast, error) {
-	if persistence == nil || batch == nil {
+	if persistence == nil || blockchain == nil || batch == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	b := &broadcast{

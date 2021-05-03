@@ -24,13 +24,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/likexian/gokit/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBatchProcessor(dispatch DispatchHandler) (*persistence.MockPlugin, *batchProcessor) {
-	mp := &persistence.MockPlugin{}
+func newTestBatchProcessor(dispatch DispatchHandler) (*persistencemocks.Plugin, *batchProcessor) {
+	mp := &persistencemocks.Plugin{}
 	bp := newBatchProcessor(context.Background(), &batchProcessorConf{
 		namespace:          "ns1",
 		author:             "0x12345",

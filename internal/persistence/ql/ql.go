@@ -29,18 +29,22 @@ import (
 type QL struct {
 	sqlcommon.SQLCommon
 
-	conf *Config
+	conf         *Config
+	capabilities *persistence.Capabilities
 }
 
 func (e *QL) ConfigInterface() interface{} { return &Config{} }
 
-func (e *QL) Init(ctx context.Context, conf interface{}, events persistence.Events) (*persistence.Capabilities, error) {
+func (e *QL) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
 	e.conf = conf.(*Config)
+	e.capabilities = &persistence.Capabilities{}
 
 	db, err := sql.Open("ql", e.conf.URL)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
 }
+
+func (e *QL) Capabilities() *persistence.Capabilities { return e.capabilities }

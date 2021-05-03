@@ -22,7 +22,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 type SQLCommon struct {
@@ -34,7 +33,7 @@ type SQLCommonOptions struct {
 	PlaceholderFormat sq.PlaceholderFormat
 }
 
-func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, options *SQLCommonOptions) (*persistence.Capabilities, error) {
+func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, options *SQLCommonOptions) error {
 	s.db = db
 	if options == nil {
 		options = &SQLCommonOptions{
@@ -42,7 +41,7 @@ func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, options *SQLCo
 		}
 	}
 	s.options = options
-	return &persistence.Capabilities{}, nil
+	return nil
 }
 
 func (s *SQLCommon) beginTx(ctx context.Context) (context.Context, *sql.Tx, error) {

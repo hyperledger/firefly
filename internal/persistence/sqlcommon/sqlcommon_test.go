@@ -67,9 +67,8 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 
 func TestInitSQLCommon(t *testing.T) {
 	s := &SQLCommon{}
-	c, err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
+	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
 	assert.NoError(t, err)
-	assert.NotNil(t, c)
 }
 
 func TestQueryTxBadSQL(t *testing.T) {

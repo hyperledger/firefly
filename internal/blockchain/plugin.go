@@ -28,7 +28,10 @@ type Plugin interface {
 
 	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config interface{}, events Events) (*Capabilities, error)
+	Init(ctx context.Context, config interface{}, events Events) error
+
+	// Capabilities returns capabilities - not called until after Init
+	Capabilities() *Capabilities
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
