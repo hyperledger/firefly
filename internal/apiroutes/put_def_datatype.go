@@ -17,6 +17,7 @@ package apiroutes
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -31,7 +32,7 @@ var putDefDatatype = &Route{
 	JSONInputValue:  func() interface{} { return &PutDefDatatypeInput{} },
 	JSONOutputValue: func() interface{} { return &PutDefDatatypeOutput{} },
 	// TODO: Move to real implementation
-	JSONHandler: func(req *http.Request, input interface{}, output interface{}) (status int, err error) {
+	JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
 		return 200, nil
 	},
 }

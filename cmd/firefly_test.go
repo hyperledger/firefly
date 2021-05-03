@@ -30,6 +30,9 @@ func TestExecMissingConfig(t *testing.T) {
 }
 
 func TestExecOkExitSIGINT(t *testing.T) {
+	_utInitEngine = false
+	defer func() { _utInitEngine = true }()
+
 	os.Chdir("../test/config")
 	go func() {
 		sigs <- syscall.SIGINT

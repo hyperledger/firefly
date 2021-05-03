@@ -26,7 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/persistence/sqlite"
 )
 
-func GetDatabasePlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (persistence.Plugin, error) {
 	switch pluginType {
 	case "postgres":
 		return &postgres.Postgres{}, nil

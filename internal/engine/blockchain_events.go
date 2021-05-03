@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blockchainfactory
+package engine
 
 import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
-	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
-	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
-	switch pluginType {
-	case "ethereum":
-		return &ethereum.Ethereum{}, nil
-	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
-	}
+type blockchainEvents struct {
+	ctx context.Context
+	e   *engine
+}
+
+func (be *blockchainEvents) TransactionUpdate(txTrackingID string, txState blockchain.TransactionState, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) {
+
+}
+
+func (be *blockchainEvents) SequencedBroadcastBatch(batch blockchain.BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{}) {
+
 }

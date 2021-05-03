@@ -3,3 +3,8 @@ debug:
   port: 0
 http:
   port: 0
+blockchain:
+  type: ethereum
+  ethconnect:
+    topic: t1
+    url: http://localhost:8000

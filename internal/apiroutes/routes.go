@@ -17,6 +17,7 @@ package apiroutes
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -46,7 +47,7 @@ type Route struct {
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
-	JSONHandler func(req *http.Request, input interface{}, output interface{}) (status int, err error)
+	JSONHandler func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error)
 	// TODO: Handler for form content type, and/or esacpe valve custom handlers
 }
 

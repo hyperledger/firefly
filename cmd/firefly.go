@@ -44,6 +44,8 @@ to digital transformation your business ecosystem.`,
 
 var cfgFile string
 
+var _utInitEngine = true
+
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
 }
@@ -96,6 +98,6 @@ func run() error {
 	}
 
 	// Run the API Server
-	return apiserver.Serve(ctx)
+	return apiserver.Serve(ctx, _utInitEngine)
 
 }
