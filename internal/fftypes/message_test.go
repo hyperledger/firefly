@@ -53,6 +53,7 @@ func TestSealKnownMessage(t *testing.T) {
 		Data: DataRefSortable{
 			{ID: &data1},
 			{ID: &data2},
+			{ID: nil /* ignored */},
 			{ID: &data3},
 		},
 	}

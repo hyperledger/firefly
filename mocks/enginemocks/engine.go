@@ -16,15 +16,15 @@ type Engine struct {
 }
 
 // BroadcastSchemaDefinition provides a mock function with given fields: ctx, author, s
-func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (*fftypes.MessageExpanded, error) {
+func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error) {
 	ret := _m.Called(ctx, author, s)
 
-	var r0 *fftypes.MessageExpanded
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Schema) *fftypes.MessageExpanded); ok {
+	var r0 *fftypes.MessageRefsOnly
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Schema) *fftypes.MessageRefsOnly); ok {
 		r0 = rf(ctx, author, s)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageExpanded)
+			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
 		}
 	}
 

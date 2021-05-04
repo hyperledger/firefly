@@ -44,6 +44,7 @@ const (
 
 type BatchPayload struct {
 	Messages []*MessageRefsOnly `json:"messages"`
+	Data     []*Data            `json:"data"`
 }
 
 // Value implements sql.Valuer

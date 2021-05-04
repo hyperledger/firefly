@@ -24,13 +24,20 @@ func (_m *BatchManager) Close() {
 	_m.Called()
 }
 
-// DispatchMessage provides a mock function with given fields: ctx, batchType, msg
-func (_m *BatchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
-	ret := _m.Called(ctx, batchType, msg)
+// DispatchMessage provides a mock function with given fields: ctx, batchType, msg, data
+func (_m *BatchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (*uuid.UUID, error) {
+	_va := make([]interface{}, len(data))
+	for _i := range data {
+		_va[_i] = data[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, batchType, msg)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *uuid.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.BatchType, *fftypes.MessageRefsOnly) *uuid.UUID); ok {
-		r0 = rf(ctx, batchType, msg)
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.BatchType, *fftypes.MessageRefsOnly, ...*fftypes.Data) *uuid.UUID); ok {
+		r0 = rf(ctx, batchType, msg, data...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*uuid.UUID)
@@ -38,8 +45,8 @@ func (_m *BatchManager) DispatchMessage(ctx context.Context, batchType fftypes.B
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.BatchType, *fftypes.MessageRefsOnly) error); ok {
-		r1 = rf(ctx, batchType, msg)
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.BatchType, *fftypes.MessageRefsOnly, ...*fftypes.Data) error); ok {
+		r1 = rf(ctx, batchType, msg, data...)
 	} else {
 		r1 = ret.Error(1)
 	}

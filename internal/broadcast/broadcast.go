@@ -21,11 +21,12 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 type Broadcast interface {
-	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly) error
+	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) error
 	Close()
 }
 
@@ -49,7 +50,40 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 	return b, nil
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly) error {
+func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) error {
+
+	// Load all the data - must all be present for us to send
+	for _, dataRef := range msg.Data {
+		if dataRef.ID == nil {
+			continue
+		}
+		var supplied bool
+		for _, d := range data {
+			if d.ID != nil && *d.ID == *dataRef.ID {
+				supplied = true
+				break
+			}
+		}
+		if !supplied {
+			d, err := b.persistence.GetDataById(ctx, dataRef.ID)
+			if err != nil {
+				return err
+			}
+			if d == nil {
+				return i18n.NewError(ctx, i18n.MsgDataNotFound, dataRef.ID)
+			}
+			data = append(data, d)
+		}
+	}
+
+	// Write the message and all the data to a broadcast batch
+	batchID, err := b.batch.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data...)
+	if err != nil {
+		return err
+	}
+	log.L(ctx).Infof("Broadcasted message %s in batch %s", msg.Header.ID, batchID)
+
+	// TODO: The blockchain bit
 
 	return nil
 }

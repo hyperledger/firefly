@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
@@ -40,24 +39,24 @@ func TestE2EDispatch(t *testing.T) {
 	}
 
 	bm.RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
-		BatchMaxSize:   1,
+		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
 	})
 
-	msgid := uuid.New()
 	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
-		ID:        &msgid,
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Author:    "0x12345",
 	}}
+	data := &fftypes.Data{ID: fftypes.NewUUID()}
 
-	id, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
+	id, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg, data)
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
 	b := <-waitForDispatch
-	assert.Equal(t, msgid, *b.Payload.Messages[0].Header.ID)
+	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
 
 }
 
@@ -66,7 +65,7 @@ func TestInitFail(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestGetInvalidBatchType(t *testing.T) {
+func TestGetInvalidBatchTypeMsg(t *testing.T) {
 
 	mp := &persistencemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
@@ -101,13 +100,15 @@ func TestTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
-	msgid := uuid.New()
 	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
-		ID:        &msgid,
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Author:    "0x12345",
 	}}
-	_, err := bm.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg)
+	data := &fftypes.Data{
+		ID: fftypes.NewUUID(),
+	}
+	_, err := bm.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data)
 
 	assert.Regexp(t, "FF10127", err)
 

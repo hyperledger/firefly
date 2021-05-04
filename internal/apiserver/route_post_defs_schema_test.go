@@ -39,7 +39,7 @@ func TestPostDefinitionsSchema(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	e.On("BroadcastSchemaDefinition", mock.Anything, "0x12345", mock.AnythingOfType("*fftypes.Schema")).
-		Return(&fftypes.MessageExpanded{}, nil)
+		Return(&fftypes.MessageRefsOnly{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 201, res.Result().StatusCode)

@@ -115,9 +115,16 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	work := make([]*batchWork, 10)
 	for i := 0; i < 10; i++ {
 		msgid := uuid.New()
-		work[i] = &batchWork{
-			msg:        &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgid}},
-			dispatched: make(chan *uuid.UUID),
+		if i%2 == 0 {
+			work[i] = &batchWork{
+				msg:        &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgid}},
+				dispatched: make(chan *uuid.UUID),
+			}
+		} else {
+			work[i] = &batchWork{
+				data:       []*fftypes.Data{{ID: &msgid}},
+				dispatched: make(chan *uuid.UUID),
+			}
 		}
 	}
 
@@ -143,7 +150,8 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Wait()
 
 	// Check we got all the messages in a single batch
-	assert.Equal(t, len(dispatched[0].Payload.Messages), 10)
+	assert.Equal(t, len(dispatched[0].Payload.Messages), 5)
+	assert.Equal(t, len(dispatched[0].Payload.Data), 5)
 
 	bp.close()
 

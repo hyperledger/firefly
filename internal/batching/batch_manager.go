@@ -41,7 +41,7 @@ func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (Batch
 
 type BatchManager interface {
 	RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions)
-	DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error)
+	DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (*uuid.UUID, error)
 	Close()
 }
 
@@ -119,7 +119,7 @@ func (bm *batchManager) Close() {
 	bm = nil
 }
 
-func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
+func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (*uuid.UUID, error) {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(batchType, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
@@ -128,6 +128,7 @@ func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.B
 	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, batchType)
 	work := &batchWork{
 		msg:        msg,
+		data:       data,
 		dispatched: make(chan *uuid.UUID),
 	}
 	processor.newWork <- work
