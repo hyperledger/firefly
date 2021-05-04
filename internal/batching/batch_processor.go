@@ -33,6 +33,7 @@ const (
 
 type batchWork struct {
 	msg        *fftypes.MessageRefsOnly
+	data       []*fftypes.Data
 	dispatched chan *uuid.UUID
 	abandoned  bool
 }
@@ -159,6 +160,7 @@ func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*bat
 		if w.msg != nil {
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
+		batch.Payload.Data = append(batch.Payload.Data, w.data...)
 	}
 	if seal {
 		batch.Hash = batch.Payload.Hash()
