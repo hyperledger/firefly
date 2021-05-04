@@ -9,6 +9,7 @@ blockchain:
     topic: t1
     skipEventstreamInit: true
     url: http://localhost:8000
+    instance: /instances/0x12345
 database:
   type: ql
   url: memory://

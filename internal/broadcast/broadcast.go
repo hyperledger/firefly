@@ -63,15 +63,49 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 }
 
 func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
-	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	payload, err := json.Marshal(batch)
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+
+	// In a retry scenario we don't need to re-write the batch itself to IPFS
+	if batch.PayloadRef == nil {
+		// Serialize the full payload, which has already been sealed for us by the BatchManager
+		payload, err := json.Marshal(batch)
+		if err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+		}
+
+		// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash)
+		// Note the BatchManager is responsible for writing the updated batch
+		batch.PayloadRef, err = b.p2pfs.PublishData(ctx, bytes.NewReader(payload))
+		if err != nil {
+			return err
+		}
 	}
-	// Write it to IPFS etc. to get a payload reference hash (might not be the sha256 data hash)
-	// Note the BatchManager is responsible for writing the updated batch
-	batch.PayloadRef, err = b.p2pfs.PublishData(ctx, bytes.NewReader(payload))
-	return err
+
+	// Write it to the blockchain
+	batch.TX.ID = fftypes.NewUUID()
+	batch.TX.Type = fftypes.TransactionTypePin
+	trackingId, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+		Timestamp:      batch.Created,
+		BatchID:        fftypes.HexUUIDFromUUID(*batch.ID),
+		BatchPaylodRef: *batch.PayloadRef,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Write the transation to our DB, to collect transaction submission updates
+	tx := &fftypes.Transaction{
+		Type:       batch.TX.Type,
+		ID:         batch.TX.ID,
+		Author:     batch.Author,
+		Created:    fftypes.NowMillis(),
+		TrackingID: trackingId,
+	}
+	err = b.persistence.UpsertTransaction(ctx, tx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (err error) {
@@ -107,8 +141,6 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 		return err
 	}
 	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, msg.TX.BatchID)
-
-	// Write the TX record
 
 	return nil
 }

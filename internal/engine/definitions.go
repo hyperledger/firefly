@@ -45,6 +45,12 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s
 	if err = fftypes.ValidateFFNameField(ctx, s.Version, "version"); err != nil {
 		return nil, err
 	}
+	if author, err = e.blockchain.VerifyIdentitySyntax(ctx, author); err != nil {
+		return nil, err
+	}
+	if len(s.Value) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
+	}
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{

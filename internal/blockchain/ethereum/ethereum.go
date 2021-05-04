@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/blockchain"
@@ -80,6 +82,8 @@ const (
 	defaultBatchTimeout = 500
 )
 
+var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
+
 func (e *Ethereum) ConfigInterface() interface{} { return &Config{} }
 
 func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) error {
@@ -87,7 +91,10 @@ func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain
 	e.conf = conf.(*Config)
 	e.events = events
 	if e.conf.Ethconnect.HTTPConfig.URL == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnecct")
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
+	}
+	if e.conf.Ethconnect.InstancePath == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
 	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
 	e.capabilities = &blockchain.Capabilities{
@@ -181,6 +188,14 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 
 func ethHexFormatB32(b fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
+}
+
+func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
+	identity = strings.ToLower(strings.TrimPrefix(identity, "0x"))
+	if !addressVerify.MatchString(identity) {
+		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
+	}
+	return "0x" + identity, nil
 }
 
 func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
