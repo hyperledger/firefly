@@ -74,7 +74,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	return err
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) error {
+func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (err error) {
 
 	// Load all the data - must all be present for us to send
 	for _, dataRef := range msg.Data {
@@ -101,13 +101,14 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 	}
 
 	// Write the message and all the data to a broadcast batch
-	batchID, err := b.batch.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data...)
+	msg.TX.Type = fftypes.TransactionTypePin
+	msg.TX.BatchID, err = b.batch.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data...)
 	if err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, batchID)
+	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, msg.TX.BatchID)
 
-	// TODO: The blockchain bit
+	// Write the TX record
 
 	return nil
 }

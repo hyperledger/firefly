@@ -15,11 +15,13 @@
 package fftypes
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"sort"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type DataType string
@@ -31,7 +33,8 @@ const (
 )
 
 type DataRef struct {
-	ID *uuid.UUID `json:"id,omitempty"`
+	ID   *uuid.UUID `json:"id,omitempty"`
+	Hash *Bytes32   `json:"hash,omitempty"`
 }
 
 type Data struct {
@@ -54,18 +57,19 @@ type DataRefSortable []DataRef
 func (d DataRefSortable) Len() int      { return len(d) }
 func (d DataRefSortable) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
 func (d DataRefSortable) Less(i, j int) bool {
-	return d[j].ID != nil && (d[i].ID == nil || d[j].ID != nil && d[i].ID.String() < d[j].ID.String())
+	return d[j].Hash != nil && (d[i].Hash == nil || d[j].Hash != nil && d[i].Hash.String() < d[j].Hash.String())
 }
 
-func (d DataRefSortable) Hash() *Bytes32 {
+func (d DataRefSortable) Hash(ctx context.Context) (*Bytes32, error) {
 	sort.Sort(d)
 	var strArray = make([]string, 0, len(d))
-	for _, de := range d {
-		if de.ID != nil {
-			strArray = append(strArray, de.ID.String())
+	for i, de := range d {
+		if de.Hash == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgMissingDataHashIndex, i)
 		}
+		strArray = append(strArray, de.Hash.String())
 	}
 	b, _ := json.Marshal(&strArray)
 	var b32 Bytes32 = sha256.Sum256(b)
-	return &b32
+	return &b32, nil
 }

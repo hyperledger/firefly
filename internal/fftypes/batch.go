@@ -33,7 +33,7 @@ type Batch struct {
 	Created    int64          `json:"created"`
 	Confirmed  int64          `json:"confirmed"`
 	Payload    BatchPayload   `json:"payload"`
-	PayloadRef *Bytes32       `json:"payloadRef"`
+	PayloadRef *Bytes32       `json:"payloadRef,omitempty"`
 	TX         TransactionRef `json:"tx"`
 }
 

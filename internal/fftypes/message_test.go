@@ -15,6 +15,7 @@
 package fftypes
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"testing"
@@ -25,7 +26,8 @@ import (
 
 func TestSealBareMessage(t *testing.T) {
 	msg := MessageRefsOnly{}
-	msg.Seal()
+	err := msg.Seal(context.Background())
+	assert.NoError(t, err)
 	assert.NotNil(t, msg.Header.ID)
 	assert.NotNil(t, msg.Header.DataHash)
 	assert.NotNil(t, msg.Hash)
@@ -38,6 +40,10 @@ func TestSealKnownMessage(t *testing.T) {
 	data1 := uuid.MustParse("e3a3b714-7e49-4c73-a4ea-87a50b19961a")
 	data2 := uuid.MustParse("cc66b23f-d340-4333-82d5-b63adc1c3c07")
 	data3 := uuid.MustParse("189c8185-2b92-481a-847a-e57595ab3541")
+	var hash1, hash2, hash3 Bytes32
+	hash1.UnmarshalText([]byte("3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae"))
+	hash2.UnmarshalText([]byte("1d1462e02d7acee49a8448267c65067e0bec893c9a0c050b9835efa376fec046"))
+	hash3.UnmarshalText([]byte("284b535da66aa0734af56c708426d756331baec3bce3079e508003bcf4738ee6"))
 	msg := MessageRefsOnly{
 		Header: MessageHeader{
 			ID:        &msgid,
@@ -51,25 +57,25 @@ func TestSealKnownMessage(t *testing.T) {
 			Group:     &gid,
 		},
 		Data: DataRefSortable{
-			{ID: &data1},
-			{ID: &data2},
-			{ID: nil /* ignored */},
-			{ID: &data3},
+			{ID: &data1, Hash: &hash1},
+			{ID: &data2, Hash: &hash2},
+			{ID: &data3, Hash: &hash3},
 		},
 	}
-	msg.Seal()
+	err := msg.Seal(context.Background())
+	assert.NoError(t, err)
 
 	// Data IDs have been sorted for hash and JSON encoded
-	dataHashData := `["189c8185-2b92-481a-847a-e57595ab3541","cc66b23f-d340-4333-82d5-b63adc1c3c07","e3a3b714-7e49-4c73-a4ea-87a50b19961a"]`
+	dataHashData := `["1d1462e02d7acee49a8448267c65067e0bec893c9a0c050b9835efa376fec046","284b535da66aa0734af56c708426d756331baec3bce3079e508003bcf4738ee6","3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae"]`
 	var dataHash Bytes32 = sha256.Sum256([]byte(dataHashData))
-	assert.Equal(t, `c26f9e0616d934e5d9cc805c4cb100f5b8b9e7a704a31f8d7db82699c311922e`, dataHash.String())
+	assert.Equal(t, `0d13e20a54f00f0c044c586022a3483ae830b076b0ae9a971c306c788afde9e9`, dataHash.String())
 	assert.Equal(t, dataHash, *msg.Header.DataHash)
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","author":"0x12345","created":1620104103000,"namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"c26f9e0616d934e5d9cc805c4cb100f5b8b9e7a704a31f8d7db82699c311922e"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","author":"0x12345","created":1620104103000,"namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"0d13e20a54f00f0c044c586022a3483ae830b076b0ae9a971c306c788afde9e9"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `6c101b593c7303173378b80bacb85fbe482fef592a2d76a54dbc65fbf3120ed3`, msgHash.String())
+	assert.Equal(t, `37e7ebcf33abe9239ef119dfb74711530d11e222acfdae0c78cbf3ecc6891cfa`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 }
