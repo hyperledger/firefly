@@ -63,9 +63,15 @@ var langMatcher = language.NewMatcher(serverLangs)
 // and are allocated their IDs there
 var enTranslations = []msg{}
 
-func ffm(key, enTranslation string) MessageKey {
+var statusHints = map[string]int{}
+
+// ffm is the enTranslations helper to define a new message (not used in translation files)
+func ffm(key, enTranslation string, statusHint ...int) MessageKey {
 	m := msg{MessageKey(key), enTranslation}
 	enTranslations = append(enTranslations, m)
+	if len(statusHint) > 0 {
+		statusHints[key] = statusHint[0]
+	}
 	return m.msgid
 }
 
@@ -96,4 +102,9 @@ func SetLang(lang string) {
 	// Allow a lang var to be used
 	tag, _, _ := langMatcher.Match(language.Make(lang))
 	defaultLangPrinter = message.NewPrinter(tag)
+}
+
+func GetStatusHint(code string) (int, bool) {
+	i, ok := statusHints[code]
+	return i, ok
 }

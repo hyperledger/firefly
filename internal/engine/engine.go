@@ -22,6 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/persistencefactory"
 )
@@ -30,6 +31,8 @@ import (
 type Engine interface {
 	Init(ctx context.Context) error
 	Close()
+
+	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageExpanded, error)
 }
 
 type engine struct {

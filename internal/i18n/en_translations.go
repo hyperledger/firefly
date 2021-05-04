@@ -16,12 +16,12 @@ package i18n
 
 var (
 	MsgConfigFailed              = ffm("FF10101", "Failed to read config: %s")
-	MsgPutDefDataTypeDesc        = ffm("FF10102", "Asynchronously add a new data type")
+	MsgPostDefinitionsSchema     = ffm("FF10102", "Broadcast a definition of a new entity schema")
 	MsgJSONDecodeFailed          = ffm("FF10103", "Failed to decode input JSON")
 	MsgAPIServerStartFailed      = ffm("FF10104", "Unable to start listener on %s: %s")
 	MsgTLSConfigFailed           = ffm("FF10105", "Failed to initialize TLS configuration")
 	MsgInvalidCAFile             = ffm("FF10106", "Invalid CA certificates file")
-	MsgResponseMarshalError      = ffm("FF10107", "Failed to serialize response data")
+	MsgResponseMarshalError      = ffm("FF10107", "Failed to serialize response data", 400)
 	MsgWebsocketClientError      = ffm("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound               = ffm("FF10109", "Not found")
 	MsgUnknownBlockchainPlugin   = ffm("FF10110", "Unknown blockchain plugin: %s")
@@ -44,4 +44,5 @@ var (
 	MsgUnregisteredBatchType     = ffm("FF10126", "Unregistered batch type '%s'")
 	MsgBatchDispatchTimeout      = ffm("FF10127", "Timed out dispatching work to batch")
 	MsgInitializationNilDepError = ffm("FF10128", "Initialization error due to unmet dependency")
+	MsgNilResponseNon204         = ffm("FF10129", "No output from API call")
 )

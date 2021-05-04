@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -33,6 +34,8 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
+
+var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 // Serve is the main entry point for the API Server
 func Serve(ctx context.Context, initEngine bool) error {
@@ -152,21 +155,27 @@ func jsonHandler(e engine.Engine, route *apiroutes.Route) http.HandlerFunc {
 	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
 		l := log.L(req.Context())
 		input := route.JSONInputValue()
-		output := route.JSONOutputValue()
 		status = 400 // default if fail parsing input
 		if input != nil {
 			err = json.NewDecoder(req.Body).Decode(&input)
 		}
+		var output interface{}
 		if err == nil {
-			status, err = route.JSONHandler(e, req, input, output)
+			output, status, err = route.JSONHandler(e, req, input)
+		}
+		if output == nil && err == nil && status != 204 {
+			l.Errorf("Request return non-204 code [%d] with no error, and no data", status)
+			err = i18n.NewError(req.Context(), i18n.MsgNilResponseNon204)
 		}
 		if err == nil {
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
-			err = json.NewEncoder(res).Encode(output)
-			if err != nil {
-				err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
-				l.Errorf(err.Error())
+			if output != nil {
+				err = json.NewEncoder(res).Encode(output)
+				if err != nil {
+					err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
+					l.Errorf(err.Error())
+				}
 			}
 		}
 		return status, err
@@ -194,9 +203,18 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 		status, err := handler(res, req)
 		duration := float64(time.Since(startTime)) / float64(time.Millisecond)
 		if err != nil {
+			// Routers don't need to tweak the status code when sending errors.
+			// .. either the FF12345 error they raise is mapped to a status hint
+			ffcodeExtract := ffcodeExtractor.FindStringSubmatch(err.Error())
+			if len(ffcodeExtract) >= 2 {
+				if statusHint, ok := i18n.GetStatusHint(ffcodeExtract[1]); ok {
+					status = statusHint
+				}
+			}
+			// ... or we default to 500
 			if status < 300 {
 				status = 500
-			} // Ensure we return an error status
+			}
 			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, duration, err)
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)

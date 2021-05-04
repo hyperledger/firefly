@@ -12,7 +12,7 @@ coverage.html:
 coverage: test coverage.html
 lint:
 		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
-mocks:
+mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/blockchain   --name Plugin       --output mocks/blockchainmocks  --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir internal/blockchain   --name Events       --output mocks/blockchainmocks  --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir internal/persistence  --name Plugin       --output mocks/persistencemocks --outpkg persistencemocks

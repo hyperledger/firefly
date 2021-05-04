@@ -18,27 +18,23 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var putDefDatatype = &Route{
+var postDefinitionsSchema = &Route{
 
-	Name:            "putDefDatatype",
-	Path:            "defs/datatypes",
-	Method:          http.MethodPut,
+	Name:            "postDefinitionsSchema",
+	Path:            "definitions/schema",
+	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     i18n.MsgPutDefDataTypeDesc,
-	JSONInputValue:  func() interface{} { return &PutDefDatatypeInput{} },
-	JSONOutputValue: func() interface{} { return &PutDefDatatypeOutput{} },
-	// TODO: Move to real implementation
-	JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
-		return 200, nil
+	Description:     i18n.MsgPostDefinitionsSchema,
+	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
+	JSONOutputValue: func() interface{} { return &fftypes.MessageExpanded{} },
+	JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		schema := input.(*fftypes.Schema)
+		output, err = e.BroadcastSchemaDefinition(req.Context(), schema)
+		return output, 201, err
 	},
-}
-
-type PutDefDatatypeInput struct {
-}
-
-type PutDefDatatypeOutput struct {
 }

@@ -19,8 +19,9 @@ import "github.com/google/uuid"
 type DataType string
 
 const (
-	DataTypeJSON DataType = "json"
-	DataTypeBLOB DataType = "blob"
+	DataTypeJSONSchema DataType = "jsonschema"
+	DataTypeJSON       DataType = "json"
+	DataTypeBLOB       DataType = "blob"
 )
 
 type DataRef struct {

@@ -19,8 +19,9 @@ import "github.com/google/uuid"
 type MessageType string
 
 const (
-	MessageTypeBroadcast MessageType = "broadcast"
-	MessageTypePrivate   MessageType = "private"
+	MessageTypeDefinition MessageType = "definition"
+	MessageTypeBroadcast  MessageType = "broadcast"
+	MessageTypePrivate    MessageType = "private"
 )
 
 // MessageBase is the raw message, without any data relationships
