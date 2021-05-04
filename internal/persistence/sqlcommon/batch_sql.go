@@ -35,6 +35,7 @@ var (
 		"created",
 		"hash",
 		"payload",
+		"payload_ref",
 		"confirmed",
 		"tx_type",
 		"tx_id",
@@ -70,6 +71,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("payload", batch.Payload).
+				Set("payload_ref", batch.PayloadRef).
 				Set("confirmed", batch.Confirmed).
 				Set("tx_type", batch.TX.Type).
 				Set("tx_id", batch.TX.ID).
@@ -91,6 +93,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 					batch.Created,
 					batch.Hash,
 					batch.Payload,
+					batch.PayloadRef,
 					batch.Confirmed,
 					batch.TX.Type,
 					batch.TX.ID,
@@ -117,6 +120,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Created,
 		&batch.Hash,
 		&batch.Payload,
+		&batch.PayloadRef,
 		&batch.Confirmed,
 		&batch.TX.Type,
 		&batch.TX.ID,

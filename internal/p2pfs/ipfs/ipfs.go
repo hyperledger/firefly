@@ -49,11 +49,11 @@ func (i *IPFS) Init(ctx context.Context, conf interface{}, events p2pfs.Events) 
 	i.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	i.conf = conf.(*Config)
 	i.events = events
+	if i.conf.HTTPConfig.URL == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "p2pfs")
+	}
 	i.client = ffresty.New(i.ctx, &i.conf.HTTPConfig)
 	i.capabilities = &p2pfs.Capabilities{}
-
-	log.L(i.ctx).Debugf("Config: %+v", i.conf)
-
 	return nil
 }
 

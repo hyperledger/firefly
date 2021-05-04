@@ -35,6 +35,12 @@ func TestConfigInterfaceCorrect(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestInitMissingURL(t *testing.T) {
+	e := &Ethereum{}
+	err := e.Init(context.Background(), &Config{}, &blockchainmocks.Events{})
+	assert.Regexp(t, "FF10138", err.Error())
+}
+
 func TestInitAllNewStreams(t *testing.T) {
 
 	e := &Ethereum{}

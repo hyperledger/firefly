@@ -27,6 +27,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInitMissingURL(t *testing.T) {
+	i := &IPFS{}
+	err := i.Init(context.Background(), &Config{}, &p2pfsmocks.Events{})
+	assert.Regexp(t, "FF10138", err.Error())
+}
+
 func TestConfigInterfaceCorrect(t *testing.T) {
 	i := &IPFS{}
 	_, ok := i.ConfigInterface().(*Config)
@@ -35,7 +41,9 @@ func TestConfigInterfaceCorrect(t *testing.T) {
 
 func TestInit(t *testing.T) {
 	i := &IPFS{}
-	err := i.Init(context.Background(), i.ConfigInterface(), &p2pfsmocks.Events{})
+	conf := i.ConfigInterface().(*Config)
+	conf.URL = "http://localhost:2345"
+	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
 }

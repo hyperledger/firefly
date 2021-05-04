@@ -86,13 +86,13 @@ func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.conf = conf.(*Config)
 	e.events = events
+	if e.conf.Ethconnect.HTTPConfig.URL == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnecct")
+	}
 	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
-
-	log.L(e.ctx).Debugf("Config: %+v", e.conf)
-
 	if !e.conf.Ethconnect.SkipEventstreamInit {
 		if err := e.ensureEventStreams(); err != nil {
 			return err

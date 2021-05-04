@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -121,7 +122,14 @@ func Set(key Key, value interface{}) {
 
 // Unmarshal gets a configuration section into a struct
 func UnmarshalKey(ctx context.Context, key Key, rawVal interface{}) error {
-	err := viper.UnmarshalKey(string(key), rawVal)
+	// Viper's unmarshal does not work with our json annotated config
+	// structures, so we have to go from map to JSON, then to unmarshal
+	var intermediate map[string]interface{}
+	err := viper.UnmarshalKey(string(key), &intermediate)
+	if err == nil {
+		b, _ := json.Marshal(intermediate)
+		err = json.Unmarshal(b, rawVal)
+	}
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed, key)
 	}
