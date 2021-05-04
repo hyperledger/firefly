@@ -15,13 +15,13 @@ type Engine struct {
 	mock.Mock
 }
 
-// BroadcastSchemaDefinition provides a mock function with given fields: ctx, s
-func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageExpanded, error) {
-	ret := _m.Called(ctx, s)
+// BroadcastSchemaDefinition provides a mock function with given fields: ctx, author, s
+func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (*fftypes.MessageExpanded, error) {
+	ret := _m.Called(ctx, author, s)
 
 	var r0 *fftypes.MessageExpanded
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Schema) *fftypes.MessageExpanded); ok {
-		r0 = rf(ctx, s)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Schema) *fftypes.MessageExpanded); ok {
+		r0 = rf(ctx, author, s)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.MessageExpanded)
@@ -29,8 +29,8 @@ func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Sche
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Schema) error); ok {
-		r1 = rf(ctx, s)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Schema) error); ok {
+		r1 = rf(ctx, author, s)
 	} else {
 		r1 = ret.Error(1)
 	}

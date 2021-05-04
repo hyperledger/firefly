@@ -15,11 +15,24 @@
 package fftypes
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShortIDGen(t *testing.T) {
-	assert.Regexp(t, "[a-zA-Z0-9_]{8}", ShortID())
+func TestValidateFFNameField(t *testing.T) {
+
+	err := ValidateFFNameField(context.Background(), "_badstart", "badField")
+	assert.Regexp(t, "FF10131.*badField", err.Error())
+
+	err = ValidateFFNameField(context.Background(), "badend_", "badField")
+	assert.Regexp(t, "FF10131.*badField", err.Error())
+
+	err = ValidateFFNameField(context.Background(), "0123456789_123456789-123456789.123456789-123456789_1234567890123", "badField")
+	assert.NoError(t, err)
+
+	err = ValidateFFNameField(context.Background(), "0123456789_123456789-123456789.123456789-123456789_12345678901234", "badField")
+	assert.Regexp(t, "FF10131.*badField", err.Error())
+
 }

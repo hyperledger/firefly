@@ -58,7 +58,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 	msgRows, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("messages").
-			Where(sq.Eq{"id": message.ID}),
+			Where(sq.Eq{"id": message.Header.ID}),
 	)
 	if err != nil {
 		return err
@@ -69,21 +69,21 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 		// Update the message
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("messages").
-				Set("cid", message.CID).
-				Set("mtype", string(message.Type)).
-				Set("author", message.Author).
-				Set("created", message.Created).
-				Set("namespace", message.Namespace).
-				Set("topic", message.Topic).
-				Set("context", message.Context).
-				Set("group_id", message.Group).
-				Set("datahash", message.DataHash).
+				Set("cid", message.Header.CID).
+				Set("mtype", string(message.Header.Type)).
+				Set("author", message.Header.Author).
+				Set("created", message.Header.Created).
+				Set("namespace", message.Header.Namespace).
+				Set("topic", message.Header.Topic).
+				Set("context", message.Header.Context).
+				Set("group_id", message.Header.Group).
+				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.TX.Type).
 				Set("tx_id", message.TX.ID).
 				Set("batch_id", message.TX.BatchID).
-				Where(sq.Eq{"id": message.ID}),
+				Where(sq.Eq{"id": message.Header.ID}),
 		); err != nil {
 			return err
 		}
@@ -92,16 +92,16 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 			sq.Insert("messages").
 				Columns(msgColumns...).
 				Values(
-					message.ID,
-					message.CID,
-					string(message.Type),
-					message.Author,
-					message.Created,
-					message.Namespace,
-					message.Topic,
-					message.Context,
-					message.Group,
-					message.DataHash,
+					message.Header.ID,
+					message.Header.CID,
+					string(message.Header.Type),
+					message.Header.Author,
+					message.Header.Created,
+					message.Header.Namespace,
+					message.Header.Topic,
+					message.Header.Context,
+					message.Header.Group,
+					message.Header.DataHash,
 					message.Hash,
 					message.Confirmed,
 					message.TX.Type,
@@ -148,7 +148,7 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *u
 
 func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, message *fftypes.MessageRefsOnly) error {
 
-	dataIDs, err := s.getMessageDataRefs(ctx, tx, message.ID)
+	dataIDs, err := s.getMessageDataRefs(ctx, tx, message.Header.ID)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 		if _, err = s.deleteTx(ctx, tx,
 			sq.Delete("messages_data").
 				Where(sq.And{
-					sq.Eq{"message_id": message.ID},
+					sq.Eq{"message_id": message.Header.ID},
 					sq.Eq{"data_id": idToDelete},
 				}),
 		); err != nil {
@@ -197,7 +197,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 					"data_id",
 				).
 				Values(
-					message.ID,
+					message.Header.ID,
 					newID,
 				),
 		); err != nil {
@@ -214,7 +214,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 	msgIds := make([]string, len(msgs))
 	for i, m := range msgs {
 		if m != nil {
-			msgIds[i] = m.ID.String()
+			msgIds[i] = m.Header.ID.String()
 		}
 	}
 
@@ -237,7 +237,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
 		}
 		for _, m := range msgs {
-			if *m.ID == msgID {
+			if *m.Header.ID == msgID {
 				m.Data = append(m.Data, fftypes.DataRef{
 					ID: &dataID,
 				})
@@ -259,16 +259,16 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.MessageRefsOnly, error) {
 	var msg fftypes.MessageRefsOnly
 	err := row.Scan(
-		&msg.ID,
-		&msg.CID,
-		&msg.Type,
-		&msg.Author,
-		&msg.Created,
-		&msg.Namespace,
-		&msg.Topic,
-		&msg.Context,
-		&msg.Group,
-		&msg.DataHash,
+		&msg.Header.ID,
+		&msg.Header.CID,
+		&msg.Header.Type,
+		&msg.Header.Author,
+		&msg.Header.Created,
+		&msg.Header.Namespace,
+		&msg.Header.Topic,
+		&msg.Header.Context,
+		&msg.Header.Group,
+		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Confirmed,
 		&msg.TX.Type,

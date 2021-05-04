@@ -22,7 +22,7 @@ import (
 )
 
 var Routes = []*Route{
-	postDefinitionsSchema,
+	postDefsSchema,
 }
 
 // Route defines each API operation on the REST API of Firefly

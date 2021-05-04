@@ -15,6 +15,7 @@
 package fftypes
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -52,4 +53,13 @@ func TestJSONData(t *testing.T) {
 	var wrongType int
 	err = dataRead.Scan(&wrongType)
 	assert.Error(t, err)
+
+	hash, err := dataRead.Hash(context.Background(), "goodStuff")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
+
+	var badJson JSONData = map[string]interface{}{"not": map[bool]string{true: "json"}}
+	hash, err = badJson.Hash(context.Background(), "badStuff")
+	assert.Regexp(t, "FF10125.*badStuff", err.Error())
+	assert.Nil(t, hash)
 }

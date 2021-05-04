@@ -16,6 +16,7 @@ package fftypes
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
 
@@ -51,4 +52,13 @@ func (jd JSONData) Value() (driver.Value, error) {
 func (jd *JSONData) String() string {
 	b, _ := json.Marshal(&jd)
 	return string(b)
+}
+
+func (jd *JSONData) Hash(ctx context.Context, jsonDesc string) (*Bytes32, error) {
+	b, err := json.Marshal(&jd)
+	if err != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgJSONDataParseFailed, jsonDesc)
+	}
+	var b32 Bytes32 = sha256.Sum256(b)
+	return &b32, nil
 }

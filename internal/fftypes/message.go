@@ -14,7 +14,12 @@
 
 package fftypes
 
-import "github.com/google/uuid"
+import (
+	"crypto/sha256"
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 type MessageType string
 
@@ -25,8 +30,7 @@ const (
 )
 
 // MessageBase is the raw message, without any data relationships
-type MessageBase struct {
-	// Hashed fields
+type MessageHeader struct {
 	ID        *uuid.UUID  `json:"id,omitempty"`
 	CID       *uuid.UUID  `json:"cid,omitempty"`
 	Type      MessageType `json:"type"`
@@ -37,19 +41,37 @@ type MessageBase struct {
 	Context   string      `json:"context,omitempty"`
 	Group     *uuid.UUID  `json:"group,omitempty"`
 	DataHash  *Bytes32    `json:"datahash,omitempty"`
-	// Unhashed fields
-	Hash      *Bytes32 `json:"hash,omitempty"`
-	Confirmed int64    `json:"confirmed,omitempty"`
 }
 
 type MessageExpanded struct {
-	MessageBase
-	TX   *Transaction `json:"tx"`
-	Data []*Data      `json:"data"`
+	Header    MessageHeader `json:"header"`
+	Hash      *Bytes32      `json:"hash,omitempty"`
+	Confirmed int64         `json:"confirmed,omitempty"`
+	TX        *Transaction  `json:"tx"`
+	Data      []*Data       `json:"data"`
 }
 
 type MessageRefsOnly struct {
-	MessageBase
-	TX   TransactionRef  `json:"tx,omitempty"`
-	Data DataRefSortable `json:"data"`
+	Header    MessageHeader   `json:"header"`
+	Hash      *Bytes32        `json:"hash,omitempty"`
+	Confirmed int64           `json:"confirmed,omitempty"`
+	TX        TransactionRef  `json:"tx,omitempty"`
+	Data      DataRefSortable `json:"data"`
+}
+
+func (m *MessageRefsOnly) Seal() {
+	if m.Header.ID == nil {
+		m.Header.ID = NewUUID()
+	}
+	if m.Header.Created == 0 {
+		m.Header.Created = NowMillis()
+	}
+	m.Confirmed = 0
+	if m.Data == nil {
+		m.Data = DataRefSortable{}
+	}
+	m.Header.DataHash = m.Data.Hash()
+	b, _ := json.Marshal(&m.Header)
+	var b32 Bytes32 = sha256.Sum256(b)
+	m.Hash = &b32
 }

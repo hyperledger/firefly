@@ -152,7 +152,7 @@ func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*bat
 			Namespace: a.conf.namespace,
 			Author:    a.conf.author,
 			Payload:   fftypes.BatchPayload{},
-			Created:   time.Now().UnixNano(),
+			Created:   fftypes.NowMillis(),
 		}
 	}
 	for _, w := range newWork {

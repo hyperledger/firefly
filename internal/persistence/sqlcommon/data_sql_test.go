@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -47,7 +46,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Type:      fftypes.DataTypeBLOB,
 		Namespace: "ns1",
 		Hash:      &randB32,
-		Created:   time.Now().UnixNano(),
+		Created:   fftypes.NowMillis(),
 		Value:     val,
 	}
 	err := s.UpsertData(ctx, data)
@@ -78,7 +77,7 @@ func TestDataE2EWithDB(t *testing.T) {
 			Version: "0.0.1",
 		},
 		Hash:    &randB32,
-		Created: time.Now().UnixNano(),
+		Created: fftypes.NowMillis(),
 		Value:   val2,
 	}
 	err = s.UpsertData(context.Background(), dataUpdated)

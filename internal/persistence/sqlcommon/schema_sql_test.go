@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -47,7 +46,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 		Type:      fftypes.SchemaTypeJSONSchema,
 		Namespace: "ns1",
 		Hash:      &randB32,
-		Created:   time.Now().UnixNano(),
+		Created:   fftypes.NowMillis(),
 		Value:     val,
 	}
 	err := s.UpsertSchema(ctx, schema)
@@ -76,7 +75,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 		Entity:    "customer",
 		Version:   "0.0.1",
 		Hash:      &randB32,
-		Created:   time.Now().UnixNano(),
+		Created:   fftypes.NowMillis(),
 		Value:     val2,
 	}
 	err = s.UpsertSchema(context.Background(), schemaUpdated)

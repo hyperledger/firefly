@@ -16,10 +16,65 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageExpanded, error) {
-	return nil, nil
+func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (rmsg *fftypes.MessageExpanded, err error) {
+
+	// Validate the input schema data
+	s.ID = fftypes.NewUUID()
+	s.Created = fftypes.NowMillis()
+	if s.Hash, err = s.Value.Hash(ctx, "value"); err != nil {
+		return nil, err
+	}
+	if s.Type == "" {
+		s.Type = fftypes.SchemaTypeJSONSchema
+	}
+	if s.Type != fftypes.SchemaTypeJSONSchema {
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "type")
+	}
+	if err = fftypes.ValidateFFNameField(ctx, s.Namespace, "namespace"); err != nil {
+		return nil, err
+	}
+	if err = fftypes.ValidateFFNameField(ctx, s.Entity, "entity"); err != nil {
+		return nil, err
+	}
+	if err = fftypes.ValidateFFNameField(ctx, s.Version, "version"); err != nil {
+		return nil, err
+	}
+
+	// Serialize it into a data object, as a piece of data we can write to a message
+	data := &fftypes.Data{
+		Type:      fftypes.DataTypeDefinition,
+		ID:        fftypes.NewUUID(),
+		Namespace: s.Namespace,
+		Created:   fftypes.NowMillis(),
+	}
+	b, _ := json.Marshal(&s)
+	_ = json.Unmarshal(b, &data.Value)
+	data.Hash, _ = data.Value.Hash(ctx, "value")
+
+	// Write as data to the local store
+	if err = e.persistence.UpsertData(ctx, data); err != nil {
+		return nil, err
+	}
+
+	// Create a broadcast message referring to the data
+	msg := &fftypes.MessageRefsOnly{
+		Header: fftypes.MessageHeader{
+			Type:    fftypes.MessageTypeDefinition,
+			Author:  author,
+			Topic:   fftypes.SchemaTopicDefinitionName,
+			Context: fftypes.SystemContext,
+		},
+		Data: fftypes.DataRefSortable{
+			{ID: data.ID},
+		},
+	}
+	msg.Seal()
+
+	return rmsg, nil
 }

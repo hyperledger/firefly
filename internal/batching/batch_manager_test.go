@@ -46,7 +46,7 @@ func TestE2EDispatch(t *testing.T) {
 	})
 
 	msgid := uuid.New()
-	msg := &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{
+	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
 		ID:        &msgid,
 		Namespace: "ns1",
 		Author:    "0x12345",
@@ -57,7 +57,7 @@ func TestE2EDispatch(t *testing.T) {
 	assert.NotNil(t, id)
 
 	b := <-waitForDispatch
-	assert.Equal(t, msgid, *b.Payload.Messages[0].ID)
+	assert.Equal(t, msgid, *b.Payload.Messages[0].Header.ID)
 
 }
 
@@ -72,7 +72,7 @@ func TestGetInvalidBatchType(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 
-	msg := &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{}}
+	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{}}
 	_, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
 	assert.Regexp(t, "FF10126", err.Error())
 
@@ -102,7 +102,7 @@ func TestTimeout(t *testing.T) {
 	defer cancel()
 
 	msgid := uuid.New()
-	msg := &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{
+	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
 		ID:        &msgid,
 		Namespace: "ns1",
 		Author:    "0x12345",

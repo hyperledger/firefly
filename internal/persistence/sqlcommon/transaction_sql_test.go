@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -58,13 +57,13 @@ func TestTransaction2EWithDB(t *testing.T) {
 		ID:         &transactionId,
 		Type:       fftypes.TransactionTypePin,
 		Author:     "0x12345",
-		Created:    time.Now().UnixNano(),
+		Created:    fftypes.NowMillis(),
 		TrackingID: "0x22222",
 		ProtocolID: "0x33333",
 		Info: fftypes.JSONData{
 			"some": "data",
 		},
-		Confirmed: time.Now().UnixNano(),
+		Confirmed: fftypes.NowMillis(),
 	}
 	err = s.UpsertTransaction(context.Background(), transactionUpdated)
 	assert.NoError(t, err)
