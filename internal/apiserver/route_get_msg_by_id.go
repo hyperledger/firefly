@@ -23,17 +23,20 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var postDefsSchema = &Route{
-	Name:            "postDefsSchema",
-	Path:            "definitions/schema",
-	Method:          http.MethodPost,
-	PathParams:      nil,
+var getMsgById = &Route{
+	Name:   "getMsgById",
+	Path:   "ns/{ns}/messages/{id}",
+	Method: http.MethodGet,
+	PathParams: []PathParam{
+		{Name: "ns", Description: i18n.MsgTBD},
+		{Name: "id", Description: i18n.MsgTBD},
+	},
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
+	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.MessageRefsOnly{} },
 	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.BroadcastSchemaDefinition(ctx, input.(*fftypes.Schema))
-		return output, 201, err
+		output, err = e.GetMessageById(ctx, pp["ns"], pp["id"])
+		return output, 200, err
 	},
 }

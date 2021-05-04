@@ -35,7 +35,14 @@ type Engine interface {
 	Init(ctx context.Context) error
 	Close()
 
+	// Definitions
 	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error)
+
+	// Data Queryuery
+	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetMessageById(ctx context.Context, ns, id string) (*fftypes.MessageRefsOnly, error)
+	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
+	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
 }
 
 type engine struct {

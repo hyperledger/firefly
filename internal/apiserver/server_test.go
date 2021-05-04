@@ -183,7 +183,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 			assert.Equal(t, "value1", input.(map[string]interface{})["input1"])
 			return map[string]interface{}{"output1": "value2"}, 201, nil
 		},
@@ -208,7 +208,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 			assert.Equal(t, nil, input)
 			return nil, 503, fmt.Errorf("pop")
 		},
@@ -233,7 +233,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
 			return v, 200, nil
 		},
@@ -257,8 +257,32 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 			return nil, 200, nil
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	b, _ := json.Marshal(map[string]interface{}{"input1": "value1"})
+	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/json", bytes.NewReader(b))
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10109", resJSON["error"])
+}
+
+func TestJSONHTTPDefault500Error(t *testing.T) {
+	me := &enginemocks.Engine{}
+	handler := jsonHandler(me, &Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "GET",
+		JSONInputValue:  func() interface{} { return nil },
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+			return nil, 200, fmt.Errorf("pop")
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -270,7 +294,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	assert.Equal(t, 500, res.StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Regexp(t, "FF10129", resJSON["error"])
+	assert.Regexp(t, "pop", resJSON["error"])
 }
 
 func TestStatusCodeHintMapping(t *testing.T) {
@@ -281,8 +305,8 @@ func TestStatusCodeHintMapping(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
-			return nil, 200, i18n.NewError(req.Context(), i18n.MsgResponseMarshalError)
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+			return nil, 200, i18n.NewError(ctx, i18n.MsgResponseMarshalError)
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -305,7 +329,7 @@ func TestStatusInvalidContentType(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 			return nil, 204, nil
 		},
 	})
