@@ -32,7 +32,11 @@ func TestRequestOK(t *testing.T) {
 	conf := &HTTPConfig{
 		URL: "http://localhost:12345",
 		Headers: map[string]string{
-			"authorization": "Bearer tok",
+			"someheader": "headervalue",
+		},
+		Auth: &HTTPAuthConfig{
+			Username: "user",
+			Password: "pass",
 		},
 		HttpClient: customClient,
 	}
@@ -42,7 +46,8 @@ func TestRequestOK(t *testing.T) {
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/test",
 		func(req *http.Request) (*http.Response, error) {
-			assert.Equal(t, "Bearer tok", req.Header.Get("Authorization"))
+			assert.Equal(t, "headervalue", req.Header.Get("someheader"))
+			assert.Equal(t, "Basic dXNlcjpwYXNz", req.Header.Get("Authorization"))
 			return httpmock.NewStringResponder(200, `{"some": "data"}`)(req)
 		})
 

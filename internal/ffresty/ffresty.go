@@ -16,6 +16,8 @@ package ffresty
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -34,11 +36,11 @@ const (
 )
 
 type HTTPConfig struct {
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers,omitempty"`
-	Retry   *HTTPRetryConfig  `json:"retry,omitempty"`
-
-	HttpClient *http.Client `json:"-"` // for mocking
+	URL        string            `json:"url"`
+	Headers    map[string]string `json:"headers,omitempty"`
+	Retry      *HTTPRetryConfig  `json:"retry,omitempty"`
+	Auth       *HTTPAuthConfig   `json:"auth,omitempty"`
+	HttpClient *http.Client      `json:"-"` // for mocking
 }
 
 type HTTPRetryConfig struct {
@@ -46,6 +48,11 @@ type HTTPRetryConfig struct {
 	Count         *uint `json:"count,omitempty"`
 	WaitTimeMS    *uint `json:"waitTimeMS,omitempty"`
 	MaxWaitTimeMS *uint `json:"maxWaitTimeMS,omitempty"`
+}
+
+type HTTPAuthConfig struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type retryCtxKey struct{}
@@ -95,6 +102,9 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 	client.HostURL = conf.URL
 	if len(conf.Headers) > 0 {
 		client.SetHeaders(conf.Headers)
+	}
+	if conf.Auth != nil && conf.Auth.Username != "" && conf.Auth.Password != "" {
+		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Auth.Username, conf.Auth.Password)))))
 	}
 
 	retryConf := conf.Retry
