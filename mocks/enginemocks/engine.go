@@ -43,6 +43,98 @@ func (_m *Engine) Close() {
 	_m.Called()
 }
 
+// GetBatchById provides a mock function with given fields: ctx, ns, id
+func (_m *Engine) GetBatchById(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Batch
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Batch); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDataById provides a mock function with given fields: ctx, ns, id
+func (_m *Engine) GetDataById(ctx context.Context, ns string, id string) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Data)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMessageById provides a mock function with given fields: ctx, ns, id
+func (_m *Engine) GetMessageById(ctx context.Context, ns string, id string) (*fftypes.MessageRefsOnly, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.MessageRefsOnly
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.MessageRefsOnly); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTransactionById provides a mock function with given fields: ctx, ns, id
+func (_m *Engine) GetTransactionById(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Transaction); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx
 func (_m *Engine) Init(ctx context.Context) error {
 	ret := _m.Called(ctx)

@@ -167,12 +167,22 @@ func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
 				err = json.NewDecoder(req.Body).Decode(&input)
 			}
 		}
+		pathParams := make(map[string]string)
+		if len(route.PathParams) > 0 {
+			v := mux.Vars(req)
+			for _, pp := range route.PathParams {
+				pathParams[pp.Name] = v[pp.Name]
+			}
+		}
+		queryParams := make(map[string]string)
+		for _, qp := range route.PathParams {
+			queryParams[qp.Name] = req.Form.Get(qp.Name)
+		}
 		if err == nil {
-			output, status, err = route.JSONHandler(e, req, input)
+			output, status, err = route.JSONHandler(req.Context(), e, pathParams, queryParams, input)
 		}
 		if output == nil && err == nil && status != 204 {
-			l.Errorf("Request return non-204 code [%d] with no error, and no data", status)
-			err = i18n.NewError(req.Context(), i18n.MsgNilResponseNon204)
+			err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
 		}
 		if err == nil {
 			res.Header().Add("Content-Type", "application/json")

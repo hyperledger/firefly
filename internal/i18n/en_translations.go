@@ -16,14 +16,14 @@ package i18n
 
 var (
 	MsgConfigFailed               = ffm("FF10101", "Failed to read config: %s")
-	MsgPostDefinitionsSchema      = ffm("FF10102", "Broadcast a definition of a new entity schema")
+	MsgTBD                        = ffm("FF10102", "TODO: Description")
 	MsgJSONDecodeFailed           = ffm("FF10103", "Failed to decode input JSON")
 	MsgAPIServerStartFailed       = ffm("FF10104", "Unable to start listener on %s: %s")
 	MsgTLSConfigFailed            = ffm("FF10105", "Failed to initialize TLS configuration")
 	MsgInvalidCAFile              = ffm("FF10106", "Invalid CA certificates file")
 	MsgResponseMarshalError       = ffm("FF10107", "Failed to serialize response data", 400)
 	MsgWebsocketClientError       = ffm("FF10108", "Error received from WebSocket client: %s")
-	Msg404NotFound                = ffm("FF10109", "Not found")
+	Msg404NotFound                = ffm("FF10109", "Not found", 404)
 	MsgUnknownBlockchainPlugin    = ffm("FF10110", "Unknown blockchain plugin: %s")
 	MsgEthconnectRESTErr          = ffm("FF10111", "Error from ethconnect: %s")
 	MsgDBInitFailed               = ffm("FF10112", "Database initialization failed")
@@ -57,4 +57,6 @@ var (
 	MsgMissingDataHashIndex       = ffm("FF10139", "Missing data hash for index '%d' in message", 400)
 	MsgMissingRequiredField       = ffm("FF10140", "Field '%s' is required", 400)
 	MsgInvalidEthAddress          = ffm("FF10141", "Supplied ethereum address is invalid", 400)
+	MsgInvalidUUID                = ffm("FF10142", "Invalid UUID supplied", 400)
+	Msg404NoResult                = ffm("FF10109", "No result found", 404)
 )
