@@ -35,3 +35,9 @@ func TestExpandWithCode(t *testing.T) {
 	str := ExpandWithCode(ctx, MsgConfigFailed, "myinsert")
 	assert.Equal(t, "FF10101: Failed to read config: myinsert", str)
 }
+
+func TestGetStatusHint(t *testing.T) {
+	code, ok := GetStatusHint(string(MsgResponseMarshalError))
+	assert.True(t, ok)
+	assert.Equal(t, 400, code)
+}

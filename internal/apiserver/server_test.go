@@ -39,6 +39,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/engine"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/mocks/enginemocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -183,10 +184,9 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
 			assert.Equal(t, "value1", input.(map[string]interface{})["input1"])
-			output.(map[string]interface{})["output1"] = "value2"
-			return 201, nil
+			return map[string]interface{}{"output1": "value2"}, 201, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -209,9 +209,9 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
 			assert.Equal(t, nil, input)
-			return 503, fmt.Errorf("pop")
+			return nil, 503, fmt.Errorf("pop")
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -234,11 +234,9 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}, output interface{}) (status int, err error) {
-			output.(map[string]interface{})["unserializable"] = map[bool]interface{}{
-				true: "not in JSON",
-			}
-			return 200, nil
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
+			return v, 200, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -247,6 +245,54 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	b, _ := json.Marshal(map[string]interface{}{"input1": "value1"})
 	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/json", bytes.NewReader(b))
 	assert.NoError(t, err)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10107", resJSON["error"])
+}
+
+func TestJSONHTTPNilResponseNon204(t *testing.T) {
+	me := &enginemocks.Engine{}
+	handler := jsonHandler(me, &apiroutes.Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "GET",
+		JSONInputValue:  func() interface{} { return nil },
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+			return nil, 200, nil
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	b, _ := json.Marshal(map[string]interface{}{"input1": "value1"})
+	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/json", bytes.NewReader(b))
+	assert.NoError(t, err)
+	assert.Equal(t, 500, res.StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10129", resJSON["error"])
+}
+
+func TestStatusCodeHintMapping(t *testing.T) {
+	me := &enginemocks.Engine{}
+	handler := jsonHandler(me, &apiroutes.Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "GET",
+		JSONInputValue:  func() interface{} { return nil },
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+			return nil, 200, i18n.NewError(req.Context(), i18n.MsgResponseMarshalError)
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	b, _ := json.Marshal(map[string]interface{}{"input1": "value1"})
+	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/json", bytes.NewReader(b))
+	assert.NoError(t, err)
+	assert.Equal(t, 400, res.StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
 	assert.Regexp(t, "FF10107", resJSON["error"])
