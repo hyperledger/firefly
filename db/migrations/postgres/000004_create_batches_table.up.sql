@@ -8,7 +8,7 @@ CREATE TABLE batches (
   payload     JSONB           NOT NULL,
   payload_ref CHAR(64),
   confirmed   BIGINT          NOT NULL,
-  tx_type     CHAR(36)        NOT NULL,
+  tx_type     VARCHAR(64)     NOT NULL,
   tx_id       CHAR(36)
 );
 

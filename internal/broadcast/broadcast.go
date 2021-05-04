@@ -142,7 +142,8 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 	}
 	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, msg.TX.BatchID)
 
-	return nil
+	// Store the message
+	return b.persistence.UpsertMessage(ctx, msg)
 }
 
 func (b *broadcast) Close() {}
