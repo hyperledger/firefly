@@ -105,7 +105,7 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 	if err != nil {
 		return err
 	}
-	log.L(ctx).Infof("Broadcasted message %s in batch %s", msg.Header.ID, batchID)
+	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, batchID)
 
 	// TODO: The blockchain bit
 

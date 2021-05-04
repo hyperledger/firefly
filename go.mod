@@ -9,6 +9,7 @@ require (
 	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
+	github.com/golangci/golangci-lint v1.39.0 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0

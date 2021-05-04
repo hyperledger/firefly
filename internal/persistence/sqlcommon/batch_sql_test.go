@@ -66,6 +66,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	txid := uuid.New()
 	msgId2 := uuid.New()
+	payloadRef := fftypes.NewRandB32()
 	batchUpdated := &fftypes.Batch{
 		ID:        &batchId,
 		Type:      fftypes.BatchTypeBroadcast,
@@ -79,6 +80,7 @@ func TestBatch2EWithDB(t *testing.T) {
 				{Header: fftypes.MessageHeader{ID: &msgId2}},
 			},
 		},
+		PayloadRef: &payloadRef,
 		TX: fftypes.TransactionRef{
 			ID:   &txid,
 			Type: fftypes.TransactionTypePin,

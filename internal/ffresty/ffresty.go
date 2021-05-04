@@ -99,12 +99,15 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 		return nil
 	})
 
-	client.HostURL = conf.URL
 	if len(conf.Headers) > 0 {
 		client.SetHeaders(conf.Headers)
 	}
 	if conf.Auth != nil && conf.Auth.Username != "" && conf.Auth.Password != "" {
 		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Auth.Username, conf.Auth.Password)))))
+	}
+	if conf.URL != "" {
+		client.SetHostURL(conf.URL)
+		log.L(ctx).Debugf("Created REST client to %s", conf.URL)
 	}
 
 	retryConf := conf.Retry
