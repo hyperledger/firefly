@@ -17,6 +17,7 @@ package blockchain
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 )
 
@@ -83,7 +84,7 @@ type BroadcastBatch struct {
 	Timestamp int64
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
-	BatchID fftypes.Bytes32
+	BatchID uuid.UUID
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
 	BatchPaylodRef fftypes.Bytes32

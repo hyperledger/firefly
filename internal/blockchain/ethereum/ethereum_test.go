@@ -287,7 +287,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      fftypes.NowMillis(),
-		BatchID:        fftypes.NewRandB32(),
+		BatchID:        *fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 
@@ -297,7 +297,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, addr, req.FormValue("kld-from"))
 			assert.Equal(t, "false", req.FormValue("kld-sync"))
-			assert.Equal(t, ethHexFormatB32(batch.BatchID), body["batchId"])
+			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)), body["batchId"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
 		})
@@ -318,7 +318,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      fftypes.NowMillis(),
-		BatchID:        fftypes.NewRandB32(),
+		BatchID:        *fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 
