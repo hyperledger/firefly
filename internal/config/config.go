@@ -26,26 +26,29 @@ import (
 type Key string
 
 const (
-	Lang              Key = "lang"
-	LogLevel          Key = "log.level"
-	LogColor          Key = "log.color"
-	DebugPort         Key = "debug.port"
-	HttpAddress       Key = "http.address"
-	HttpPort          Key = "http.port"
-	HttpReadTimeout   Key = "http.readTimeout"
-	HttpWriteTimeout  Key = "http.writeTimeout"
-	HttpTLSEnabled    Key = "http.tls.enabled"
-	HttpTLSClientAuth Key = "http.tls.clientAuth"
-	HttpTLSCAFile     Key = "http.tls.caFile"
-	HttpTLSCertFile   Key = "http.tls.certFile"
-	HttpTLSKeyFile    Key = "http.tls.keyFile"
-	APIRequestTimeout Key = "api.requestTimeout"
-	DatabaseType      Key = "database.type"
-	Database          Key = "database"
-	BlockchainType    Key = "blockchain.type"
-	Blockchain        Key = "blockchain"
-	P2PFSType         Key = "p2pfs.type"
-	P2PFS             Key = "p2pfs"
+	Lang                       Key = "lang"
+	LogLevel                   Key = "log.level"
+	LogColor                   Key = "log.color"
+	DebugPort                  Key = "debug.port"
+	HttpAddress                Key = "http.address"
+	HttpPort                   Key = "http.port"
+	HttpReadTimeout            Key = "http.readTimeout"
+	HttpWriteTimeout           Key = "http.writeTimeout"
+	HttpTLSEnabled             Key = "http.tls.enabled"
+	HttpTLSClientAuth          Key = "http.tls.clientAuth"
+	HttpTLSCAFile              Key = "http.tls.caFile"
+	HttpTLSCertFile            Key = "http.tls.certFile"
+	HttpTLSKeyFile             Key = "http.tls.keyFile"
+	APIRequestTimeout          Key = "api.requestTimeout"
+	DatabaseType               Key = "database.type"
+	Database                   Key = "database"
+	BlockchainType             Key = "blockchain.type"
+	Blockchain                 Key = "blockchain"
+	P2PFSType                  Key = "p2pfs.type"
+	P2PFS                      Key = "p2pfs"
+	BroadcastBatchSize         Key = "broadcast.batch.size"
+	BroadcastBatchTimeout      Key = "broadcast.batch.timeout"
+	BroadcastBatchAgentTimeout Key = "broadcast.batch.agentTimeout"
 )
 
 func Reset() {
@@ -58,9 +61,12 @@ func Reset() {
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(HttpAddress), "127.0.0.1")
 	viper.SetDefault(string(HttpPort), 5000)
-	viper.SetDefault(string(HttpReadTimeout), 15)
-	viper.SetDefault(string(HttpWriteTimeout), 15)
-	viper.SetDefault(string(APIRequestTimeout), 120)
+	viper.SetDefault(string(HttpReadTimeout), 15000)
+	viper.SetDefault(string(HttpWriteTimeout), 15000)
+	viper.SetDefault(string(APIRequestTimeout), 12000)
+	viper.SetDefault(string(BroadcastBatchSize), 200)
+	viper.SetDefault(string(BroadcastBatchTimeout), 500)
+	viper.SetDefault(string(BroadcastBatchAgentTimeout), 120000)
 
 	i18n.SetLang(GetString(Lang))
 }

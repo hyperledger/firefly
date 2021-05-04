@@ -52,4 +52,5 @@ var (
 	MsgUnknownP2PFilesystemPlugin = ffm("FF10134", "Unknown P2P Filesystem plugin '%s'")
 	MsgIPFSHashDecodeFailed       = ffm("FF10135", "Failed to decode IPFS hash into 32byte value '%s'")
 	MsgIPFSRESTErr                = ffm("FF10136", "Error from IPFS: %s")
+	MsgSerializationFailed        = ffm("FF10137", "Serialization failed")
 )

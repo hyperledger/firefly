@@ -85,7 +85,7 @@ func TestIPFSUploadSuccess(t *testing.T) {
 		}))
 
 	data := []byte(`hello world`)
-	hash, err := i.PublishData(bytes.NewReader(data))
+	hash, err := i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.NoError(t, err)
 	assert.Equal(t, `f852c7fa62f971817f54d8a80dcd63fcf7098b3cbde9ae8ec1ee449013ec5db0`, hash.String())
 
@@ -110,7 +110,7 @@ func TestIPFSUploadFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
 	data := []byte(`hello world`)
-	_, err = i.PublishData(bytes.NewReader(data))
+	_, err = i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.Regexp(t, "FF10136", err.Error())
 
 }
