@@ -119,7 +119,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	return &transaction, nil
 }
 
-func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(transactionColumns...).

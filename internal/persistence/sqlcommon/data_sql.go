@@ -128,7 +128,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataColumns...).

@@ -50,13 +50,13 @@ func (_m *Plugin) ConfigInterface() interface{} {
 	return r0
 }
 
-// GetBatchById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchById(ctx context.Context, id *uuid.UUID) (*fftypes.Batch, error) {
-	ret := _m.Called(ctx, id)
+// GetBatchById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Batch, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.Batch); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Batch); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Batch)
@@ -64,8 +64,8 @@ func (_m *Plugin) GetBatchById(ctx context.Context, id *uuid.UUID) (*fftypes.Bat
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,13 +96,13 @@ func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, fil
 	return r0, r1
 }
 
-// GetDataById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataById(ctx context.Context, id *uuid.UUID) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, id)
+// GetDataById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.Data); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -110,8 +110,8 @@ func (_m *Plugin) GetDataById(ctx context.Context, id *uuid.UUID) (*fftypes.Data
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -119,13 +119,13 @@ func (_m *Plugin) GetDataById(ctx context.Context, id *uuid.UUID) (*fftypes.Data
 	return r0, r1
 }
 
-// GetMessageById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetMessageById(ctx context.Context, id *uuid.UUID) (*fftypes.MessageRefsOnly, error) {
-	ret := _m.Called(ctx, id)
+// GetMessageById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.MessageRefsOnly, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.MessageRefsOnly
-	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.MessageRefsOnly); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.MessageRefsOnly); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
@@ -133,8 +133,8 @@ func (_m *Plugin) GetMessageById(ctx context.Context, id *uuid.UUID) (*fftypes.M
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -165,13 +165,13 @@ func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, fi
 	return r0, r1
 }
 
-// GetTransactionById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTransactionById(ctx context.Context, id *uuid.UUID) (*fftypes.Transaction, error) {
-	ret := _m.Called(ctx, id)
+// GetTransactionById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.Transaction); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Transaction); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Transaction)
@@ -179,8 +179,8 @@ func (_m *Plugin) GetTransactionById(ctx context.Context, id *uuid.UUID) (*fftyp
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -123,7 +123,7 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 			}
 		}
 		if !supplied {
-			d, err := b.persistence.GetDataById(ctx, dataRef.ID)
+			d, err := b.persistence.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
 			if err != nil {
 				return err
 			}

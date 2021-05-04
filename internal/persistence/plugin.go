@@ -64,7 +64,7 @@ type PeristenceInterface interface {
 	UpsertMessage(ctx context.Context, message *fftypes.MessageRefsOnly) (err error)
 
 	// Get a message by Id
-	GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error)
+	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, skip, limit uint64, filter *MessageFilter) (message []*fftypes.MessageRefsOnly, err error)
@@ -73,13 +73,13 @@ type PeristenceInterface interface {
 	UpsertData(ctx context.Context, data *fftypes.Data) (err error)
 
 	// Get a data record by Id
-	GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error)
+	GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error)
 
 	// Upsert a batch
 	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
 
 	// Get a batch by Id
-	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
+	GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error)
 
 	// Get batches
 	GetBatches(ctx context.Context, skip, limit uint64, filter *BatchFilter) (message []*fftypes.Batch, err error)
@@ -88,7 +88,7 @@ type PeristenceInterface interface {
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
 	// Get a transaction by Id
-	GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error)
+	GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error)
 
 	// Get transaction
 	GetTransactions(ctx context.Context, skip, limit uint64, filter *TransactionFilter) (message []*fftypes.Transaction, err error)

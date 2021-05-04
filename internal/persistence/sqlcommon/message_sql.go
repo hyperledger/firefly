@@ -300,7 +300,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error) {
+func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(msgColumns...).

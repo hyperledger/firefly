@@ -27,7 +27,7 @@ func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetTransactionById(ctx, &u)
+	return e.persistence.GetTransactionById(ctx, ns, &u)
 }
 
 func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.MessageRefsOnly, error) {
@@ -35,7 +35,7 @@ func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Me
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetMessageById(ctx, &u)
+	return e.persistence.GetMessageById(ctx, ns, &u)
 }
 
 func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -43,7 +43,7 @@ func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batc
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetBatchById(ctx, &u)
+	return e.persistence.GetBatchById(ctx, ns, &u)
 }
 
 func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
@@ -51,5 +51,5 @@ func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data,
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetDataById(ctx, &u)
+	return e.persistence.GetDataById(ctx, ns, &u)
 }
