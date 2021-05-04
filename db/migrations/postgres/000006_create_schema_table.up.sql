@@ -4,9 +4,9 @@ CREATE TABLE schemas (
   namespace   VARCHAR(64)     NOT NULL,
   entity      VARCHAR(64)     NOT NULL,
   version     VARCHAR(64)     NOT NULL,
-  hash        VARCHAR(32)     NOT NULL,
-  created     INTEGER         NOT NULL,
-  value       BLOB
+  hash        CHAR(64)        NOT NULL,
+  created     BIGINT          NOT NULL,
+  value       JSONB
 );
 
 CREATE UNIQUE INDEX schemas_unique ON schemas(namespace,entity,version);

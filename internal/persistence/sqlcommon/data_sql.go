@@ -54,7 +54,6 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 	if err != nil {
 		return err
 	}
-	defer dataRows.Close()
 
 	schema := data.Schema
 	if schema == nil {
@@ -62,6 +61,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 	}
 
 	if dataRows.Next() {
+		dataRows.Close()
+
 		// Update the data
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("data").
@@ -77,6 +78,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 			return err
 		}
 	} else {
+		dataRows.Close()
+
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("data").
 				Columns(dataColumns...).
@@ -135,6 +138,7 @@ func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *ff
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Data '%s' not found", id)

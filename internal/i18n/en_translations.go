@@ -46,7 +46,7 @@ var (
 	MsgInitializationNilDepError  = ffm("FF10128", "Initialization error due to unmet dependency")
 	MsgNilResponseNon204          = ffm("FF10129", "No output from API call")
 	MsgInvalidContentType         = ffm("FF10130", "Invalid content type", 415)
-	MsgInvalidName                = ffm("FF10131", "Field '%s' can contain up to 64 characters, including alphanumerics (a-zA-Z0-9), dot (.), dash (-) and underscore (_), and must start/end in an alphanumeric", 400)
+	MsgInvalidName                = ffm("FF10131", "Field '%s' must be 1-64 characters, including alphanumerics (a-zA-Z0-9), dot (.), dash (-) and underscore (_), and must start/end in an alphanumeric", 400)
 	MsgUnknownFieldValue          = ffm("FF10132", "Unknown '%s", 400)
 	MsgDataNotFound               = ffm("FF10133", "Data not found with UUID '%s", 400)
 	MsgUnknownP2PFilesystemPlugin = ffm("FF10134", "Unknown P2P Filesystem plugin '%s'")

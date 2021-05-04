@@ -54,9 +54,10 @@ func (s *SQLCommon) UpsertSchema(ctx context.Context, schema *fftypes.Schema) (e
 	if err != nil {
 		return err
 	}
-	defer schemaRows.Close()
 
 	if schemaRows.Next() {
+		schemaRows.Close()
+
 		// Update the schema
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("schemas").
@@ -72,6 +73,8 @@ func (s *SQLCommon) UpsertSchema(ctx context.Context, schema *fftypes.Schema) (e
 			return err
 		}
 	} else {
+		schemaRows.Close()
+
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("schemas").
 				Columns(schemaColumns...).
@@ -125,6 +128,7 @@ func (s *SQLCommon) GetSchemaById(ctx context.Context, id *uuid.UUID) (message *
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Schema '%s' not found", id)

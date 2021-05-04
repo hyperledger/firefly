@@ -57,9 +57,10 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 	if err != nil {
 		return err
 	}
-	defer batchRows.Close()
 
 	if batchRows.Next() {
+		batchRows.Close()
+
 		// Update the batch
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("batches").
@@ -77,6 +78,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 			return err
 		}
 	} else {
+		batchRows.Close()
+
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("batches").
 				Columns(batchColumns...).
@@ -134,6 +137,7 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *f
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Batch '%s' not found", id)
@@ -178,6 +182,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter *
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	batches := []*fftypes.Batch{}
 	for rows.Next() {
