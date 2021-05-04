@@ -71,10 +71,12 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s
 			Context: fftypes.SystemContext,
 		},
 		Data: fftypes.DataRefSortable{
-			{ID: data.ID},
+			{ID: data.ID, Hash: data.Hash},
 		},
 	}
-	msg.Seal()
+	if err = msg.Seal(ctx); err != nil {
+		return nil, err
+	}
 
 	// Broadcast the message
 	if err = e.broadcast.BroadcastMessage(ctx, author, msg, data); err != nil {

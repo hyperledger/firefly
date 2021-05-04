@@ -127,9 +127,12 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 	return nil
 }
 
-func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *uuid.UUID) ([]*uuid.UUID, error) {
+func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *uuid.UUID) (fftypes.DataRefSortable, error) {
 	existingRefs, err := s.queryTx(ctx, tx,
-		sq.Select("data_id").
+		sq.Select(
+			"data_id",
+			"data_hash",
+		).
 			From("messages_data").
 			Where(sq.Eq{"message_id": msgId}),
 	)
@@ -138,15 +141,18 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *u
 	}
 	defer existingRefs.Close()
 
-	var dataIDs []*uuid.UUID
+	var dataIDs fftypes.DataRefSortable
 	for existingRefs.Next() {
 		var dataID uuid.UUID
-		if err = existingRefs.Scan(&dataID); err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "message_data")
+		var dataHash fftypes.Bytes32
+		if err = existingRefs.Scan(&dataID, &dataHash); err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
 		}
-		dataIDs = append(dataIDs, &dataID)
+		dataIDs = append(dataIDs, fftypes.DataRef{
+			ID:   &dataID,
+			Hash: &dataHash,
+		})
 	}
-
 	return dataIDs, nil
 }
 
@@ -158,14 +164,17 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 	}
 
 	// Run through the ones in the message, finding ones that already exist, and ones that need to be created
-	missingRefs := make([]*uuid.UUID, 0, len(dataIDs))
+	missingRefs := make([]fftypes.DataRef, 0, len(dataIDs))
 	for msgDataRefIdx, msgDataRef := range message.Data {
 		if msgDataRef.ID == nil {
 			return i18n.NewError(ctx, i18n.MsgNullDataReferenceID, msgDataRefIdx)
 		}
+		if msgDataRef.Hash == nil {
+			return i18n.NewError(ctx, i18n.MsgMissingDataHashIndex, msgDataRefIdx)
+		}
 		var found = false
 		for dataRefIdx, dataID := range dataIDs {
-			if *dataID == *msgDataRef.ID {
+			if *dataID.ID == *msgDataRef.ID {
 				found = true
 				// Remove it from the list, so we can use this list as ones we need to delete
 				copy(dataIDs[dataRefIdx:], dataIDs[dataRefIdx+1:])
@@ -174,7 +183,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 			}
 		}
 		if !found {
-			missingRefs = append(missingRefs, msgDataRef.ID)
+			missingRefs = append(missingRefs, msgDataRef)
 		}
 	}
 
@@ -184,7 +193,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 			sq.Delete("messages_data").
 				Where(sq.And{
 					sq.Eq{"message_id": message.Header.ID},
-					sq.Eq{"data_id": idToDelete},
+					sq.Eq{"data_id": idToDelete.ID},
 				}),
 		); err != nil {
 			return err
@@ -199,10 +208,12 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 				Columns(
 					"message_id",
 					"data_id",
+					"data_hash",
 				).
 				Values(
 					message.Header.ID,
-					newID,
+					newID.ID,
+					newID.Hash,
 				),
 		); err != nil {
 			return err
@@ -226,6 +237,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 		sq.Select(
 			"message_id",
 			"data_id",
+			"data_hash",
 		).
 			From("messages_data").
 			Where(sq.Eq{"message_id": msgIds}),
@@ -238,13 +250,15 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 	for existingRefs.Next() {
 		var msgID uuid.UUID
 		var dataID uuid.UUID
-		if err = existingRefs.Scan(&msgID, &dataID); err != nil {
+		var dataHash fftypes.Bytes32
+		if err = existingRefs.Scan(&msgID, &dataID, &dataHash); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
 		}
 		for _, m := range msgs {
 			if *m.Header.ID == msgID {
 				m.Data = append(m.Data, fftypes.DataRef{
-					ID: &dataID,
+					ID:   &dataID,
+					Hash: &dataHash,
 				})
 			}
 		}

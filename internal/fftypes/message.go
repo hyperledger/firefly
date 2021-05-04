@@ -15,6 +15,7 @@
 package fftypes
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 
@@ -59,7 +60,7 @@ type MessageRefsOnly struct {
 	Data      DataRefSortable `json:"data"`
 }
 
-func (m *MessageRefsOnly) Seal() {
+func (m *MessageRefsOnly) Seal(ctx context.Context) (err error) {
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -70,8 +71,11 @@ func (m *MessageRefsOnly) Seal() {
 	if m.Data == nil {
 		m.Data = DataRefSortable{}
 	}
-	m.Header.DataHash = m.Data.Hash()
-	b, _ := json.Marshal(&m.Header)
-	var b32 Bytes32 = sha256.Sum256(b)
-	m.Hash = &b32
+	m.Header.DataHash, err = m.Data.Hash(ctx)
+	if err == nil {
+		b, _ := json.Marshal(&m.Header)
+		var b32 Bytes32 = sha256.Sum256(b)
+		m.Hash = &b32
+	}
+	return err
 }

@@ -46,7 +46,7 @@ type ipfsUploadResponse struct {
 func (i *IPFS) ConfigInterface() interface{} { return &Config{} }
 
 func (i *IPFS) Init(ctx context.Context, conf interface{}, events p2pfs.Events) error {
-	i.ctx = log.WithLogField(ctx, "proto", "ethereum")
+	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
 	i.conf = conf.(*Config)
 	i.events = events
 	if i.conf.HTTPConfig.URL == "" {
@@ -84,5 +84,6 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 	if err != nil || !res.IsSuccess() {
 		return nil, ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
+	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
 	return i.ipfsHashToBytes32(ipfsResponse.Hash)
 }

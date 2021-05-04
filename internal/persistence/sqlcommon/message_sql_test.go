@@ -38,6 +38,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgId := uuid.New()
 	dataId1 := uuid.New()
 	dataId2 := uuid.New()
+	rand1 := fftypes.NewRandB32()
+	rand2 := fftypes.NewRandB32()
 	randB32 := fftypes.NewRandB32()
 	msg := &fftypes.MessageRefsOnly{
 		Header: fftypes.MessageHeader{
@@ -58,8 +60,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Type: fftypes.TransactionTypeNone,
 		},
 		Data: []fftypes.DataRef{
-			{ID: &dataId1},
-			{ID: &dataId2},
+			{ID: &dataId1, Hash: &rand1},
+			{ID: &dataId2, Hash: &rand2},
 		},
 	}
 	err := s.UpsertMessage(ctx, msg)
@@ -76,6 +78,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	// Update the message (this is testing what's possible at the persistence layer,
 	// and does not account for the verification that happens at the higher level)
 	dataId3 := uuid.New()
+	rand3 := fftypes.NewRandB32()
 	cid := uuid.New()
 	gid := uuid.New()
 	bid := uuid.New()
@@ -101,8 +104,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			BatchID: &bid,
 		},
 		Data: []fftypes.DataRef{
-			{ID: &dataId1},
-			{ID: &dataId3},
+			{ID: &dataId1, Hash: &rand1},
+			{ID: &dataId3, Hash: &rand3},
 		},
 	}
 	err = s.UpsertMessage(context.Background(), msgUpdated)
@@ -229,9 +232,10 @@ func TestUpdateMessageDataRefsNilID(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	dataId := uuid.New()
+	dataHash := fftypes.NewRandB32()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}).AddRow(dataId.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}).AddRow(dataId.String(), dataHash.String()))
 	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.MessageRefsOnly{
 		Header: fftypes.MessageHeader{ID: &msgId},
 		Data:   []fftypes.DataRef{{ID: nil}},
@@ -240,13 +244,30 @@ func TestUpdateMessageDataRefsNilID(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestUpdateMessageDataRefsNilHash(t *testing.T) {
+	s, mock := getMockDB()
+	msgId := uuid.New()
+	dataId := uuid.New()
+	dataHash := fftypes.NewRandB32()
+	mock.ExpectBegin()
+	tx, _ := s.db.Begin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}).AddRow(dataId.String(), dataHash.String()))
+	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.MessageRefsOnly{
+		Header: fftypes.MessageHeader{ID: &msgId},
+		Data:   []fftypes.DataRef{{ID: fftypes.NewUUID()}},
+	})
+	assert.Regexp(t, "FF10139", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestUpdateMessageDataDeleteFail(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	dataId := uuid.New()
+	dataHash := fftypes.NewRandB32()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}).AddRow(dataId.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}).AddRow(dataId.String(), dataHash.String()))
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.MessageRefsOnly{
 		Header: fftypes.MessageHeader{ID: &msgId},
@@ -259,13 +280,14 @@ func TestUpdateMessageDataAddFail(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	dataId := uuid.New()
+	dataHash := fftypes.NewRandB32()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.MessageRefsOnly{
 		Header: fftypes.MessageHeader{ID: &msgId},
-		Data:   []fftypes.DataRef{{ID: &dataId}},
+		Data:   []fftypes.DataRef{{ID: &dataId, Hash: &dataHash}},
 	})
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -301,7 +323,7 @@ func TestLoadMessageDataRefsEmpty(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgId}}
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}))
 	err := s.loadDataRefs(context.Background(), []*fftypes.MessageRefsOnly{msg})
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.DataRefSortable{}, msg.Data)

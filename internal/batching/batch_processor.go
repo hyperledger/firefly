@@ -119,7 +119,7 @@ func (a *batchProcessor) assemblyLoop() {
 
 		// Don't include the sealing time in the duration
 		batchFull := batchSize >= a.conf.BatchMaxSize
-		l.Debugf("Assembly batch size %d - full=%t", batchSize, batchFull)
+		l.Debugf("Assembly batch loop: Size=%d Full=%t", batchSize, batchFull)
 
 		batchDuration := time.Since(lastBatchSealed)
 		if quiescing && batchSize == 0 {
