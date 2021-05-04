@@ -63,9 +63,11 @@ func TestRequestRetry(t *testing.T) {
 
 	ctx := context.Background()
 	var one uint = 1
+	var yes = true
 	conf := &HTTPConfig{
 		URL: "http://localhost:12345",
 		Retry: &HTTPRetryConfig{
+			Enabled:       &yes,
 			MaxWaitTimeMS: &one,
 		},
 	}

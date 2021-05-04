@@ -41,6 +41,18 @@ func TestInitMissingURL(t *testing.T) {
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
+func TestInitMissingInstance(t *testing.T) {
+	e := &Ethereum{}
+	err := e.Init(context.Background(), &Config{
+		Ethconnect: EthconnectConfig{
+			HTTPConfig: ffresty.HTTPConfig{
+				URL: "http://localhost:12345",
+			},
+		},
+	}, &blockchainmocks.Events{})
+	assert.Regexp(t, "FF10138", err.Error())
+}
+
 func TestInitAllNewStreams(t *testing.T) {
 
 	e := &Ethereum{}
@@ -69,6 +81,7 @@ func TestInitAllNewStreams(t *testing.T) {
 				URL:        "http://localhost:12345",
 				HttpClient: mockedClient,
 			},
+			InstancePath: "/instances/0x12345",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -104,7 +117,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 				URL:        "http://localhost:12345",
 				HttpClient: mockedClient,
 			},
-			Topic: "topic1",
+			Topic:        "topic1",
+			InstancePath: "/instances/0x12345",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -137,7 +151,8 @@ func TestStreamQueryError(t *testing.T) {
 					Enabled: &no,
 				},
 			},
-			Topic: "topic1",
+			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -169,7 +184,8 @@ func TestStreamCreateError(t *testing.T) {
 					Enabled: &no,
 				},
 			},
-			Topic: "topic1",
+			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -203,7 +219,8 @@ func TestSubQueryError(t *testing.T) {
 					Enabled: &no,
 				},
 			},
-			Topic: "topic1",
+			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -239,7 +256,8 @@ func TestSubQueryCreateError(t *testing.T) {
 					Enabled: &no,
 				},
 			},
-			Topic: "topic1",
+			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 
@@ -311,5 +329,17 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
+
+}
+
+func TestVerifyEthAddress(t *testing.T) {
+	e := &Ethereum{}
+
+	_, err := e.VerifyIdentitySyntax(context.Background(), "0x12345")
+	assert.Regexp(t, "FF10141", err.Error())
+
+	addr, err := e.VerifyIdentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	assert.NoError(t, err)
+	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", addr)
 
 }

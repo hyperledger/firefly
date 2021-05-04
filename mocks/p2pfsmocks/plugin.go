@@ -64,13 +64,13 @@ func (_m *Plugin) Init(ctx context.Context, config interface{}, events p2pfs.Eve
 	return r0
 }
 
-// PublishData provides a mock function with given fields: data
-func (_m *Plugin) PublishData(data io.Reader) (*fftypes.Bytes32, error) {
-	ret := _m.Called(data)
+// PublishData provides a mock function with given fields: ctx, data
+func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Bytes32, error) {
+	ret := _m.Called(ctx, data)
 
 	var r0 *fftypes.Bytes32
-	if rf, ok := ret.Get(0).(func(io.Reader) *fftypes.Bytes32); ok {
-		r0 = rf(data)
+	if rf, ok := ret.Get(0).(func(context.Context, io.Reader) *fftypes.Bytes32); ok {
+		r0 = rf(ctx, data)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Bytes32)
@@ -78,8 +78,8 @@ func (_m *Plugin) PublishData(data io.Reader) (*fftypes.Bytes32, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(io.Reader) error); ok {
-		r1 = rf(data)
+	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) error); ok {
+		r1 = rf(ctx, data)
 	} else {
 		r1 = ret.Error(1)
 	}

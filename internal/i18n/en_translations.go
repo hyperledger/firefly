@@ -54,5 +54,7 @@ var (
 	MsgIPFSRESTErr                = ffm("FF10136", "Error from IPFS: %s")
 	MsgSerializationFailed        = ffm("FF10137", "Serialization failed")
 	MsgMissingPluginConfig        = ffm("FF10138", "Missing configuration '%s' for %s")
-	MsgMissingDataHashIndex       = ffm("FF10139", "Missing data hash for index '%d' in message")
+	MsgMissingDataHashIndex       = ffm("FF10139", "Missing data hash for index '%d' in message", 400)
+	MsgMissingRequiredField       = ffm("FF10140", "Field '%s' is required", 400)
+	MsgInvalidEthAddress          = ffm("FF10141", "Supplied ethereum address is invalid", 400)
 )

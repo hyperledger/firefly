@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultRetryEnabled           = true
+	defaultRetryEnabled           = false
 	defaultRetryCount             = 5
 	defaultRetryWaitTimeMillis    = 100
 	defaultRetryMaxWaitTimeMillis = 1000
