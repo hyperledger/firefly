@@ -23,6 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
 	"github.com/kaleido-io/firefly/internal/p2pfs/p2pfsfactory"
 	"github.com/kaleido-io/firefly/internal/persistence"
@@ -34,7 +35,7 @@ type Engine interface {
 	Init(ctx context.Context) error
 	Close()
 
-	BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error)
+	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error)
 }
 
 type engine struct {
@@ -44,6 +45,7 @@ type engine struct {
 	blockchainEvents *blockchainEvents
 	batch            batching.BatchManager
 	broadcast        broadcast.Broadcast
+	nodeIdentity     string
 }
 
 func NewEngine() Engine {
@@ -119,6 +121,13 @@ func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, e
 	err = config.UnmarshalKey(ctx, config.Blockchain, &conf)
 	if err == nil {
 		err = blockchain.Init(ctx, conf, e.blockchainEvents)
+	}
+	if err == nil {
+		suppliedIdentity := config.GetString(config.NodeIdentity)
+		e.nodeIdentity, err = blockchain.VerifyIdentitySyntax(ctx, suppliedIdentity)
+		if err != nil {
+			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIdentity)
+		}
 	}
 	return blockchain, err
 }

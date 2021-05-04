@@ -70,3 +70,13 @@ func TestInitOK(t *testing.T) {
 	assert.NoError(t, err)
 	e.Close()
 }
+
+func TestInitBadIdentity(t *testing.T) {
+	e := NewEngine()
+	err := config.ReadConfig("../../test/config/firefly.core.yaml")
+	config.Set(config.NodeIdentity, "wrongun")
+	assert.NoError(t, err)
+	err = e.Init(context.Background())
+	assert.Regexp(t, "FF10141", err.Error())
+	e.Close()
+}

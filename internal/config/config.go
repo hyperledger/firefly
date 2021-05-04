@@ -40,6 +40,7 @@ const (
 	HttpTLSCAFile              Key = "http.tls.caFile"
 	HttpTLSCertFile            Key = "http.tls.certFile"
 	HttpTLSKeyFile             Key = "http.tls.keyFile"
+	NodeIdentity               Key = "node.identity"
 	APIRequestTimeout          Key = "api.requestTimeout"
 	DatabaseType               Key = "database.type"
 	Database                   Key = "database"
