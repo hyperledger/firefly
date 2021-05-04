@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,11 +107,8 @@ func TestValueBytes32Nil(t *testing.T) {
 	assert.Equal(t, "", b32.String())
 }
 
-func TestHexUUIDFromUUID(t *testing.T) {
-	u := uuid.Must(uuid.NewRandom())
-	b := HexUUIDFromUUID(u)
-	var dec [16]byte
-	hex.Decode(dec[0:16], b[0:32])
-	assert.Equal(t, dec[0:16], u[0:16])
-	assert.Equal(t, u.String(), uuid.UUID(dec).String())
+func TestUUIDBytes(t *testing.T) {
+	u := NewUUID()
+	b := UUIDBytes(*u)
+	assert.Equal(t, b[0:16], u[0:16])
 }

@@ -86,5 +86,5 @@ type BroadcastBatch struct {
 	BatchID fftypes.Bytes32
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
-	BatchPaylodRef fftypes.HexUUID
+	BatchPaylodRef fftypes.Bytes32
 }
