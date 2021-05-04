@@ -201,7 +201,7 @@ func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (s
 func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
-		BatchID:    ethHexFormatB32(broadcast.BatchID),
+		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(broadcast.BatchID)),
 		PayloadRef: ethHexFormatB32(broadcast.BatchPaylodRef),
 	}
 	path := fmt.Sprintf("%s/broadcastBatch", e.conf.Ethconnect.InstancePath)
