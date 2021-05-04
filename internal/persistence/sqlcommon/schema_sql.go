@@ -118,7 +118,7 @@ func (s *SQLCommon) schemaResult(ctx context.Context, row *sql.Rows) (*fftypes.S
 	return &schema, nil
 }
 
-func (s *SQLCommon) GetSchemaById(ctx context.Context, id *uuid.UUID) (message *fftypes.Schema, err error) {
+func (s *SQLCommon) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Schema, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(schemaColumns...).

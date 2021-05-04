@@ -53,7 +53,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same schema back
-	schemaRead, err := s.GetSchemaById(ctx, &schemaId)
+	schemaRead, err := s.GetSchemaById(ctx, "ns1", &schemaId)
 	assert.NoError(t, err)
 	assert.NotNil(t, schemaRead)
 	schemaJson, _ := json.Marshal(&schema)
@@ -82,7 +82,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the schema elements
-	schemaRead, err = s.GetSchemaById(ctx, &schemaId)
+	schemaRead, err = s.GetSchemaById(ctx, "ns1", &schemaId)
 	assert.NoError(t, err)
 	schemaJson, _ = json.Marshal(&schemaUpdated)
 	schemaReadJson, _ = json.Marshal(&schemaRead)
@@ -149,7 +149,7 @@ func TestGetSchemaByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetSchemaById(context.Background(), &schemaId)
+	_, err := s.GetSchemaById(context.Background(), "ns1", &schemaId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -158,7 +158,7 @@ func TestGetSchemaByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetSchemaById(context.Background(), &schemaId)
+	msg, err := s.GetSchemaById(context.Background(), "ns1", &schemaId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -168,7 +168,7 @@ func TestGetSchemaByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetSchemaById(context.Background(), &schemaId)
+	_, err := s.GetSchemaById(context.Background(), "ns1", &schemaId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -131,7 +131,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(batchColumns...).

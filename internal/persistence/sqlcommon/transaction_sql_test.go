@@ -44,7 +44,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same transaction back
-	transactionRead, err := s.GetTransactionById(ctx, &transactionId)
+	transactionRead, err := s.GetTransactionById(ctx, "ns1", &transactionId)
 	assert.NoError(t, err)
 	assert.NotNil(t, transactionRead)
 	transactionJson, _ := json.Marshal(&transaction)
@@ -69,7 +69,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the transaction elements
-	transactionRead, err = s.GetTransactionById(ctx, &transactionId)
+	transactionRead, err = s.GetTransactionById(ctx, "ns1", &transactionId)
 	assert.NoError(t, err)
 	transactionJson, _ = json.Marshal(&transactionUpdated)
 	transactionReadJson, _ = json.Marshal(&transactionRead)
@@ -158,7 +158,7 @@ func TestGetTransactionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTransactionById(context.Background(), &transactionId)
+	_, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -167,7 +167,7 @@ func TestGetTransactionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetTransactionById(context.Background(), &transactionId)
+	msg, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -177,7 +177,7 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetTransactionById(context.Background(), &transactionId)
+	_, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -27,9 +27,6 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schem
 	// Validate the input schema data
 	s.ID = fftypes.NewUUID()
 	s.Created = fftypes.NowMillis()
-	if s.Hash, err = s.Value.Hash(ctx, "value"); err != nil {
-		return nil, err
-	}
 	if s.Type == "" {
 		s.Type = fftypes.SchemaTypeJSONSchema
 	}
@@ -47,6 +44,9 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schem
 	}
 	if len(s.Value) == 0 {
 		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
+	}
+	if s.Hash, err = s.Value.Hash(ctx, "value"); err != nil {
+		return nil, err
 	}
 
 	// Serialize it into a data object, as a piece of data we can write to a message
