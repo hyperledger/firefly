@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiroutes
+package apiserver
 
 import (
 	"net/http"
@@ -23,7 +23,6 @@ import (
 )
 
 var postDefinitionsSchema = &Route{
-
 	Name:            "postDefinitionsSchema",
 	Path:            "definitions/schema",
 	Method:          http.MethodPost,

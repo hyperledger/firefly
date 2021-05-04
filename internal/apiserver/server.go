@@ -24,10 +24,10 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
@@ -148,18 +148,25 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(e engine.Engine, route *apiroutes.Route) http.HandlerFunc {
+func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
-	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 		l := log.L(req.Context())
 		input := route.JSONInputValue()
-		status = 400 // default if fail parsing input
-		if input != nil {
-			err = json.NewDecoder(req.Body).Decode(&input)
-		}
 		var output interface{}
+		contentType := req.Header.Get("Content-Type")
+		if req.Method != http.MethodGet && !strings.HasPrefix(strings.ToLower(contentType), "application/json") {
+			return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)
+		}
+		var err error
+		var status = 400 // if fail parsing input
+		if err == nil {
+			if input != nil {
+				err = json.NewDecoder(req.Body).Decode(&input)
+			}
+		}
 		if err == nil {
 			output, status, err = route.JSONHandler(e, req, input)
 		}
@@ -234,10 +241,9 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 
 func createMuxRouter(e engine.Engine) *mux.Router {
 	r := mux.NewRouter()
-	for _, route := range apiroutes.Routes {
+	for _, route := range Routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(route.Path, jsonHandler(e, route)).
-				HeadersRegexp("Content-Type", "application/json").
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), jsonHandler(e, route)).
 				Methods(route.Method)
 		}
 	}

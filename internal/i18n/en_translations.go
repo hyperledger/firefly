@@ -45,4 +45,5 @@ var (
 	MsgBatchDispatchTimeout      = ffm("FF10127", "Timed out dispatching work to batch")
 	MsgInitializationNilDepError = ffm("FF10128", "Initialization error due to unmet dependency")
 	MsgNilResponseNon204         = ffm("FF10129", "No output from API call")
+	MsgInvalidContentType        = ffm("FF10130", "Invalid content type", 415)
 )
