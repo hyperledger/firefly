@@ -36,7 +36,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apiroutes"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -178,7 +177,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 
 func TestJSONHTTPServePOST201(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apiroutes.Route{
+	handler := jsonHandler(me, &Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -203,7 +202,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 
 func TestJSONHTTPServeCustomGETError(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apiroutes.Route{
+	handler := jsonHandler(me, &Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -228,7 +227,7 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apiroutes.Route{
+	handler := jsonHandler(me, &Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -252,7 +251,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apiroutes.Route{
+	handler := jsonHandler(me, &Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -276,7 +275,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 
 func TestStatusCodeHintMapping(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apiroutes.Route{
+	handler := jsonHandler(me, &Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -296,6 +295,29 @@ func TestStatusCodeHintMapping(t *testing.T) {
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
 	assert.Regexp(t, "FF10107", resJSON["error"])
+}
+
+func TestStatusInvalidContentType(t *testing.T) {
+	me := &enginemocks.Engine{}
+	handler := jsonHandler(me, &Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "POST",
+		JSONInputValue:  func() interface{} { return nil },
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
+			return nil, 204, nil
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/text", bytes.NewReader([]byte{}))
+	assert.NoError(t, err)
+	assert.Equal(t, 415, res.StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10130", resJSON["error"])
 }
 
 func TestNotFound(t *testing.T) {
