@@ -90,9 +90,9 @@ func (b32 *Bytes32) String() string {
 // HexUUID is 32 character ASCII string containing the hex representation of UUID, with the dashes of the canonical representation removed
 type HexUUID = Bytes32
 
-// HexUUIDFromUUID returns the bytes of a UUID as a compressed hex string
-func HexUUIDFromUUID(u uuid.UUID) HexUUID {
-	var d HexUUID
-	hex.Encode(d[0:32], u[0:16])
+// UUIDBytes returns the bytes of a UUID as a compressed hex string
+func UUIDBytes(u uuid.UUID) Bytes32 {
+	var d Bytes32
+	copy(d[:], u[:])
 	return d
 }
