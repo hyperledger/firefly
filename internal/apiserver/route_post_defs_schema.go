@@ -29,16 +29,10 @@ var postDefsSchema = &Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	Description:     i18n.MsgPostDefinitionsSchema,
-	JSONInputValue:  func() interface{} { return &PostDefsSchemaInput{} },
+	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
 	JSONOutputValue: func() interface{} { return &fftypes.MessageRefsOnly{} },
 	JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
-		i := input.(*PostDefsSchemaInput)
-		output, err = e.BroadcastSchemaDefinition(req.Context(), i.Author, &i.Schema)
+		output, err = e.BroadcastSchemaDefinition(req.Context(), input.(*fftypes.Schema))
 		return output, 201, err
 	},
-}
-
-type PostDefsSchemaInput struct {
-	fftypes.Schema
-	Author string `json:"author"`
 }

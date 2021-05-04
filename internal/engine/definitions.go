@@ -22,7 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (msg *fftypes.MessageRefsOnly, err error) {
+func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (msg *fftypes.MessageRefsOnly, err error) {
 
 	// Validate the input schema data
 	s.ID = fftypes.NewUUID()
@@ -43,9 +43,6 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s
 		return nil, err
 	}
 	if err = fftypes.ValidateFFNameField(ctx, s.Version, "version"); err != nil {
-		return nil, err
-	}
-	if author, err = e.blockchain.VerifyIdentitySyntax(ctx, author); err != nil {
 		return nil, err
 	}
 	if len(s.Value) == 0 {
@@ -72,7 +69,7 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s
 	msg = &fftypes.MessageRefsOnly{
 		Header: fftypes.MessageHeader{
 			Type:    fftypes.MessageTypeDefinition,
-			Author:  author,
+			Author:  e.nodeIdentity,
 			Topic:   fftypes.SchemaTopicDefinitionName,
 			Context: fftypes.SystemContext,
 		},
@@ -85,7 +82,7 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, author string, s
 	}
 
 	// Broadcast the message
-	if err = e.broadcast.BroadcastMessage(ctx, author, msg, data); err != nil {
+	if err = e.broadcast.BroadcastMessage(ctx, e.nodeIdentity, msg, data); err != nil {
 		return nil, err
 	}
 
