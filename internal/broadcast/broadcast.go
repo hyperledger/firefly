@@ -22,6 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/p2pfs"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
@@ -34,10 +35,11 @@ type broadcast struct {
 	ctx         context.Context
 	persistence persistence.Plugin
 	blockchain  blockchain.Plugin
+	p2pfs       p2pfs.Plugin
 	batch       batching.BatchManager
 }
 
-func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin, batch batching.BatchManager) (Broadcast, error) {
+func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (Broadcast, error) {
 	if persistence == nil || blockchain == nil || batch == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -45,6 +47,7 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 		ctx:         ctx,
 		persistence: persistence,
 		blockchain:  blockchain,
+		p2pfs:       p2pfs,
 		batch:       batch,
 	}
 	return b, nil

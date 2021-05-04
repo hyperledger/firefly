@@ -44,6 +44,8 @@ const (
 	Database          Key = "database"
 	BlockchainType    Key = "blockchain.type"
 	Blockchain        Key = "blockchain"
+	P2PFSType         Key = "p2pfs.type"
+	P2PFS             Key = "p2pfs"
 )
 
 func Reset() {

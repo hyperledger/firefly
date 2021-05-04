@@ -110,7 +110,7 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 			SetRetryWaitTime(time.Duration(minTimeout) * time.Millisecond).
 			SetRetryMaxWaitTime(time.Duration(maxTimeout) * time.Millisecond).
 			AddRetryCondition(func(r *resty.Response, err error) bool {
-				if r.IsSuccess() {
+				if r == nil || r.IsSuccess() {
 					return false
 				}
 				rctx := r.Request.Context()

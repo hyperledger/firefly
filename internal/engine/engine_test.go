@@ -20,6 +20,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/batchingmocks"
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,6 +37,15 @@ func TestInitBlockchainPluginFail(t *testing.T) {
 	}
 	err := e.Init(context.Background())
 	assert.Regexp(t, "FF10110", err.Error())
+}
+
+func TestInitP2PFilesystemPluginFail(t *testing.T) {
+	e := &engine{
+		persistence: &persistencemocks.Plugin{},
+		blockchain:  &blockchainmocks.Plugin{},
+	}
+	err := e.Init(context.Background())
+	assert.Regexp(t, "FF10134", err.Error())
 }
 
 func TestInitBatchComponentFail(t *testing.T) {
