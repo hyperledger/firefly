@@ -24,6 +24,9 @@ import (
 var Routes = []*Route{
 	postDefsSchema,
 	getMsgById,
+	getBatchById,
+	getDataById,
+	getTXById,
 }
 
 // Route defines each API operation on the REST API of Firefly
