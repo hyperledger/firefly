@@ -55,9 +55,10 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 	if err != nil {
 		return err
 	}
-	defer transactionRows.Close()
 
 	if transactionRows.Next() {
+		transactionRows.Close()
+
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
@@ -73,6 +74,8 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			return err
 		}
 	} else {
+		transactionRows.Close()
+
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("transactions").
 				Columns(transactionColumns...).
@@ -126,6 +129,7 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (mess
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Transaction '%s' not found", id)
@@ -173,6 +177,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, skip, limit uint64, fil
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	transactions := []*fftypes.Transaction{}
 	for rows.Next() {

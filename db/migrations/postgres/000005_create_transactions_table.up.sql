@@ -2,11 +2,11 @@ CREATE TABLE transactions (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
   ttype       VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
-  created     INTEGER         NOT NULL,
+  created     BIGINT          NOT NULL,
   tracking_id VARCHAR(256),
   protocol_id VARCHAR(256),
-  confirmed   INTEGER         NOT NULL,
-  info        BLOB
+  confirmed   BIGINT          NOT NULL,
+  info        JSONB
 );
 
 CREATE INDEX transactions_search ON transactions(ttype,author,confirmed,created);

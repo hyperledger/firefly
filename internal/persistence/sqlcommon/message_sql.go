@@ -63,9 +63,10 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 	if err != nil {
 		return err
 	}
-	defer msgRows.Close()
 
 	if msgRows.Next() {
+		msgRows.Close()
+
 		// Update the message
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("messages").
@@ -88,6 +89,8 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 			return err
 		}
 	} else {
+		msgRows.Close()
+
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).
@@ -133,6 +136,7 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *u
 	if err != nil {
 		return nil, err
 	}
+	defer existingRefs.Close()
 
 	var dataIDs []*uuid.UUID
 	for existingRefs.Next() {
@@ -229,6 +233,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 	if err != nil {
 		return err
 	}
+	defer existingRefs.Close()
 
 	for existingRefs.Next() {
 		var msgID uuid.UUID
@@ -291,6 +296,7 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message 
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		log.L(ctx).Debugf("Message '%s' not found", id)
@@ -354,6 +360,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter 
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	msgs := []*fftypes.MessageRefsOnly{}
 	for rows.Next() {

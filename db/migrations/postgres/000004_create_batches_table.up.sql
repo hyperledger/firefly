@@ -3,10 +3,10 @@ CREATE TABLE batches (
   btype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
-  hash        CHAR(32)        NOT NULL,
-  created     INTEGER         NOT NULL,
-  payload     BLOB            NOT NULL,
-  confirmed   INTEGER         NOT NULL,
+  hash        CHAR(64),
+  created     BIGINT          NOT NULL,
+  payload     JSONB           NOT NULL,
+  confirmed   BIGINT          NOT NULL,
   tx_type     CHAR(36)        NOT NULL,
   tx_id       CHAR(36)
 );
