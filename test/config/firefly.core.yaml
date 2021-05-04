@@ -12,3 +12,6 @@ blockchain:
 database:
   type: ql
   url: memory://
+p2pfs:
+  type: ipfs
+  url: http://localhost:8080

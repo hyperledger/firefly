@@ -6,8 +6,8 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/aidarkhanov/nanoid v1.0.8
+	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
 	github.com/go-resty/resty/v2 v2.6.0
-	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golangci/golangci-lint v1.39.0 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
@@ -30,9 +30,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/text v0.3.5
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect

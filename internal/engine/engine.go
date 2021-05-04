@@ -23,6 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/p2pfs"
+	"github.com/kaleido-io/firefly/internal/p2pfs/p2pfsfactory"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/persistencefactory"
 )
@@ -38,6 +40,7 @@ type Engine interface {
 type engine struct {
 	persistence      persistence.Plugin
 	blockchain       blockchain.Plugin
+	p2pfs            p2pfs.Plugin
 	blockchainEvents *blockchainEvents
 	batch            batching.BatchManager
 	broadcast        broadcast.Broadcast
@@ -82,6 +85,12 @@ func (e *engine) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
+	if e.p2pfs == nil {
+		if e.p2pfs, err = e.initP2PFilesystemPlugin(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -93,7 +102,7 @@ func (e *engine) initComponents(ctx context.Context) (err error) {
 	}
 
 	if e.broadcast == nil {
-		if e.broadcast, err = broadcast.NewBroadcast(ctx, e.persistence, e.blockchain, e.batch); err != nil {
+		if e.broadcast, err = broadcast.NewBroadcast(ctx, e.persistence, e.blockchain, e.p2pfs, e.batch); err != nil {
 			return err
 		}
 	}
@@ -126,4 +135,18 @@ func (e *engine) initPersistencePlugin(ctx context.Context) (persistence.Plugin,
 		err = persistence.Init(ctx, conf, e)
 	}
 	return persistence, err
+}
+
+func (e *engine) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, error) {
+	pluginType := config.GetString(config.P2PFSType)
+	p2pfs, err := p2pfsfactory.GetPlugin(ctx, pluginType)
+	if err != nil {
+		return nil, err
+	}
+	conf := p2pfs.ConfigInterface()
+	err = config.UnmarshalKey(ctx, config.P2PFS, &conf)
+	if err == nil {
+		err = p2pfs.Init(ctx, conf, e)
+	}
+	return p2pfs, err
 }
