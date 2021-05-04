@@ -14,12 +14,18 @@
 
 package fftypes
 
-import "github.com/google/uuid"
+import (
+	"crypto/sha256"
+	"encoding/json"
+	"sort"
+
+	"github.com/google/uuid"
+)
 
 type DataType string
 
 const (
-	DataTypeJSONSchema DataType = "jsonschema"
+	DataTypeDefinition DataType = "definition"
 	DataTypeJSON       DataType = "json"
 	DataTypeBLOB       DataType = "blob"
 )
@@ -49,4 +55,15 @@ func (d DataRefSortable) Len() int      { return len(d) }
 func (d DataRefSortable) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
 func (d DataRefSortable) Less(i, j int) bool {
 	return d[j].ID != nil && (d[i].ID == nil || d[j].ID != nil && d[i].ID.String() < d[j].ID.String())
+}
+
+func (d DataRefSortable) Hash() *Bytes32 {
+	sort.Sort(d)
+	var strArray = make([]string, len(d))
+	for i, de := range d {
+		strArray[i] = de.ID.String()
+	}
+	b, _ := json.Marshal(&strArray)
+	var b32 Bytes32 = sha256.Sum256(b)
+	return &b32
 }

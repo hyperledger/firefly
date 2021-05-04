@@ -29,14 +29,16 @@ import (
 func TestPostDefinitionsSchema(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	schema := fftypes.Schema{}
+	input := PostDefsSchemaInput{
+		Author: "0x12345",
+	}
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&schema)
+	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/definitions/schema", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("BroadcastSchemaDefinition", mock.Anything, mock.AnythingOfType("*fftypes.Schema")).
+	e.On("BroadcastSchemaDefinition", mock.Anything, "0x12345", mock.AnythingOfType("*fftypes.Schema")).
 		Return(&fftypes.MessageExpanded{}, nil)
 	r.ServeHTTP(res, req)
 

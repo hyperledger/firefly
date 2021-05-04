@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
@@ -263,7 +262,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      time.Now().UnixNano(),
+		Timestamp:      fftypes.NowMillis(),
 		BatchID:        fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
@@ -294,7 +293,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      time.Now().UnixNano(),
+		Timestamp:      fftypes.NowMillis(),
 		BatchID:        fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
@@ -45,7 +44,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Hash:   &randB32,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.MessageRefsOnly{
-				{MessageBase: fftypes.MessageBase{ID: &msgId1}},
+				{Header: fftypes.MessageHeader{ID: &msgId1}},
 			},
 		},
 		TX: fftypes.TransactionRef{
@@ -73,18 +72,18 @@ func TestBatch2EWithDB(t *testing.T) {
 		Author:    "0x12345",
 		Namespace: "ns1",
 		Hash:      &randB32,
-		Created:   time.Now().UnixNano(),
+		Created:   fftypes.NowMillis(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.MessageRefsOnly{
-				{MessageBase: fftypes.MessageBase{ID: &msgId1}},
-				{MessageBase: fftypes.MessageBase{ID: &msgId2}},
+				{Header: fftypes.MessageHeader{ID: &msgId1}},
+				{Header: fftypes.MessageHeader{ID: &msgId2}},
 			},
 		},
 		TX: fftypes.TransactionRef{
 			ID:   &txid,
 			Type: fftypes.TransactionTypePin,
 		},
-		Confirmed: time.Now().UnixNano(),
+		Confirmed: fftypes.NowMillis(),
 	}
 	err = s.UpsertBatch(context.Background(), batchUpdated)
 	assert.NoError(t, err)

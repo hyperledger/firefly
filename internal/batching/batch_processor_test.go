@@ -65,7 +65,7 @@ func TestUnfilledBatch(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		msgid := uuid.New()
 		work[i] = &batchWork{
-			msg:        &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{ID: &msgid}},
+			msg:        &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgid}},
 			dispatched: make(chan *uuid.UUID),
 		}
 	}
@@ -116,7 +116,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		msgid := uuid.New()
 		work[i] = &batchWork{
-			msg:        &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{ID: &msgid}},
+			msg:        &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgid}},
 			dispatched: make(chan *uuid.UUID),
 		}
 	}
@@ -177,7 +177,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	// Generate the work the work
 	msgid := uuid.New()
 	work := &batchWork{
-		msg:        &fftypes.MessageRefsOnly{MessageBase: fftypes.MessageBase{ID: &msgid}},
+		msg:        &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{ID: &msgid}},
 		dispatched: make(chan *uuid.UUID),
 	}
 

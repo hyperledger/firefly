@@ -22,18 +22,23 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var postDefinitionsSchema = &Route{
-	Name:            "postDefinitionsSchema",
+var postDefsSchema = &Route{
+	Name:            "postDefsSchema",
 	Path:            "definitions/schema",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
 	Description:     i18n.MsgPostDefinitionsSchema,
-	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
+	JSONInputValue:  func() interface{} { return &PostDefsSchemaInput{} },
 	JSONOutputValue: func() interface{} { return &fftypes.MessageExpanded{} },
 	JSONHandler: func(e engine.Engine, req *http.Request, input interface{}) (output interface{}, status int, err error) {
-		schema := input.(*fftypes.Schema)
-		output, err = e.BroadcastSchemaDefinition(req.Context(), schema)
+		i := input.(*PostDefsSchemaInput)
+		output, err = e.BroadcastSchemaDefinition(req.Context(), i.Author, &i.Schema)
 		return output, 201, err
 	},
+}
+
+type PostDefsSchemaInput struct {
+	fftypes.Schema
+	Author string `json:"author"`
 }

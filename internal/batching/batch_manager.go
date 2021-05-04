@@ -121,11 +121,11 @@ func (bm *batchManager) Close() {
 
 func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly) (*uuid.UUID, error) {
 	l := log.L(ctx)
-	processor, err := bm.getProcessor(batchType, msg.Namespace, msg.Author)
+	processor, err := bm.getProcessor(batchType, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
 		return nil, err
 	}
-	l.Debugf("Dispatching message %s to %s batch", msg.ID, batchType)
+	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, batchType)
 	work := &batchWork{
 		msg:        msg,
 		dispatched: make(chan *uuid.UUID),
@@ -133,12 +133,12 @@ func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.B
 	processor.newWork <- work
 	select {
 	case <-ctx.Done():
-		l.Debugf("Dispatch timeout for mesasge %s", msg.ID)
+		l.Debugf("Dispatch timeout for mesasge %s", msg.Header.ID)
 		// Try to avoid the processor picking this up, if it hasn't already (as we've given up waiting)
 		work.abandoned = true
 		return nil, i18n.NewError(ctx, i18n.MsgBatchDispatchTimeout)
 	case batchID := <-work.dispatched:
-		l.Debugf("Dispatched mesasge %s to batch %s", msg.ID, batchID)
+		l.Debugf("Dispatched mesasge %s to batch %s", msg.Header.ID, batchID)
 		return batchID, nil
 	}
 }

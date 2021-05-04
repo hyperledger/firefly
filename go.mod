@@ -32,6 +32,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/text v0.3.5
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect

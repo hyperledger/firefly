@@ -32,7 +32,7 @@ type Engine interface {
 	Init(ctx context.Context) error
 	Close()
 
-	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageExpanded, error)
+	BroadcastSchemaDefinition(ctx context.Context, author string, s *fftypes.Schema) (*fftypes.MessageExpanded, error)
 }
 
 type engine struct {

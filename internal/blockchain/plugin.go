@@ -75,7 +75,7 @@ type TransactionState = fftypes.TransactionState
 // of the network (via a technology like IPFS).
 type BroadcastBatch struct {
 
-	// Timestamp is the nanosecond resolution timestamp of submission, from the pespective of the submitter
+	// Timestamp is the millisecond resolution timestamp of submission, from the pespective of the submitter
 	Timestamp int64
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain

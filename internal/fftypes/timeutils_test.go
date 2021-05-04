@@ -15,14 +15,17 @@
 package fftypes
 
 import (
-	"github.com/aidarkhanov/nanoid"
+	"testing"
+	"time"
+
+	"github.com/likexian/gokit/assert"
 )
 
-const (
-	// ShortIDlphabet is designed for easy double-click select
-	ShortIDlphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
-)
+func TestNowMillis(t *testing.T) {
+	assert.True(t, NowMillis() > 0)
+}
 
-func ShortID() string {
-	return nanoid.Must(nanoid.Generate(ShortIDlphabet, 8))
+func TestTimeMillis(t *testing.T) {
+	ts, _ := time.Parse(time.RFC3339, "2021-05-04T04:55:03Z")
+	assert.Equal(t, int64(1620104103000), TimeMillis(ts))
 }
