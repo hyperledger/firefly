@@ -35,7 +35,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// PublishData publishes data to the P2P Filesystem, and returns a Bytes32 payload reference ID
-	PublishData(data io.Reader) (payloadRef *fftypes.Bytes32, err error)
+	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error)
 }
 
 type Events interface {

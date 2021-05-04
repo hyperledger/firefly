@@ -25,15 +25,16 @@ import (
 )
 
 type Batch struct {
-	ID        *uuid.UUID     `json:"id"`
-	Namespace string         `json:"namespace"`
-	Type      BatchType      `json:"type"`
-	Author    string         `json:"author"`
-	Hash      *Bytes32       `json:"hash"`
-	Created   int64          `json:"created"`
-	Confirmed int64          `json:"confirmed"`
-	Payload   BatchPayload   `json:"payload"`
-	TX        TransactionRef `json:"tx"`
+	ID         *uuid.UUID     `json:"id"`
+	Namespace  string         `json:"namespace"`
+	Type       BatchType      `json:"type"`
+	Author     string         `json:"author"`
+	Hash       *Bytes32       `json:"hash"`
+	Created    int64          `json:"created"`
+	Confirmed  int64          `json:"confirmed"`
+	Payload    BatchPayload   `json:"payload"`
+	PayloadRef *Bytes32       `json:"payloadRef"`
+	TX         TransactionRef `json:"tx"`
 }
 
 type BatchType string

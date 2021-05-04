@@ -100,8 +100,8 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	srv = &http.Server{
 		Handler:      r,
-		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Second,
-		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Second,
+		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Millisecond,
+		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Millisecond,
 		TLSConfig: &tls.Config{
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
@@ -199,7 +199,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
 		// This is dependent on the context being passed down through to all blocking operations down the stack
 		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		ctx, cancel := context.WithTimeout(req.Context(), time.Duration(apiTimeout)*time.Second)
+		ctx, cancel := context.WithTimeout(req.Context(), time.Duration(apiTimeout)*time.Millisecond)
 		req = req.WithContext(ctx)
 		defer cancel()
 

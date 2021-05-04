@@ -171,6 +171,7 @@ func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*bat
 
 func (a *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 	l := log.L(a.ctx)
+	// Call the dispatcher to do the heavy lifting
 	a.retry.Do(a.ctx, func(attempt int) (retry bool) {
 		err := a.conf.dispatch(a.ctx, batch)
 		if err != nil {
@@ -179,6 +180,19 @@ func (a *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 		}
 		return false
 	})
+}
+
+func (a *batchProcessor) persistBatch(batch *fftypes.Batch) (err error) {
+	l := log.L(a.ctx)
+	a.retry.Do(a.ctx, func(attempt int) (retry bool) {
+		err = a.conf.persitence.UpsertBatch(a.ctx, batch)
+		if err != nil {
+			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
+			return !a.closed // only case we stop retrying is on close
+		}
+		return false
+	})
+	return err
 }
 
 func (a *batchProcessor) persistenceLoop() {
@@ -216,16 +230,7 @@ func (a *batchProcessor) persistenceLoop() {
 		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
 		// Persist the batch - indefinite retry (as context is background)
-		var err error
-		a.retry.Do(a.ctx, func(attempt int) (retry bool) {
-			err = a.conf.persitence.UpsertBatch(a.ctx, currentBatch)
-			if err != nil {
-				l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-				return !a.closed // only case we stop retrying is on close
-			}
-			return false
-		})
-		if err != nil {
+		if err := a.persistBatch(currentBatch); err != nil {
 			return
 		}
 
@@ -247,6 +252,9 @@ func (a *batchProcessor) persistenceLoop() {
 
 			// Synchronously dispatch the batch.
 			a.dispatchBatch(currentBatch)
+
+			// Persist updates made to the batch during dispatch
+			_ = a.persistBatch(currentBatch)
 
 			// Move onto the next batch
 			currentBatch = nil

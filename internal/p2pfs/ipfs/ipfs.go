@@ -74,9 +74,10 @@ func (i *IPFS) ipfsHashToBytes32(ipfshash string) (*fftypes.Bytes32, error) {
 	return &b32, nil
 }
 
-func (i *IPFS) PublishData(data io.Reader) (payloadRef *fftypes.Bytes32, err error) {
+func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.client.R().
+		SetContext(ctx).
 		SetFileReader("document", "file.bin", data).
 		SetResult(&ipfsResponse).
 		Post("/api/v0/add")
