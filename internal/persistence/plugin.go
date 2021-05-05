@@ -61,13 +61,13 @@ type Plugin interface {
 //
 type PeristenceInterface interface {
 	// Upsert a message
-	UpsertMessage(ctx context.Context, message *fftypes.MessageRefsOnly) (err error)
+	UpsertMessage(ctx context.Context, message *fftypes.Message) (err error)
 
 	// Get a message by Id
-	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error)
+	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, skip, limit uint64, filter *MessageFilter) (message []*fftypes.MessageRefsOnly, err error)
+	GetMessages(ctx context.Context, skip, limit uint64, filter *MessageFilter) (message []*fftypes.Message, err error)
 
 	// Upsert a data record
 	UpsertData(ctx context.Context, data *fftypes.Data) (err error)

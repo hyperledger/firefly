@@ -31,7 +31,7 @@ func TestBatch2EWithDB(t *testing.T) {
 
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil)
+	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
 
 	// Create a new batch entry
 	batchId := uuid.New()
@@ -39,11 +39,11 @@ func TestBatch2EWithDB(t *testing.T) {
 	randB32 := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID:     &batchId,
-		Type:   fftypes.BatchTypeBroadcast,
+		Type:   fftypes.MessageTypeBroadcast,
 		Author: "0x12345",
 		Hash:   &randB32,
 		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.MessageRefsOnly{
+			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
 			},
 		},
@@ -69,13 +69,13 @@ func TestBatch2EWithDB(t *testing.T) {
 	payloadRef := fftypes.NewRandB32()
 	batchUpdated := &fftypes.Batch{
 		ID:        &batchId,
-		Type:      fftypes.BatchTypeBroadcast,
+		Type:      fftypes.MessageTypeBroadcast,
 		Author:    "0x12345",
 		Namespace: "ns1",
 		Hash:      &randB32,
 		Created:   fftypes.NowMillis(),
 		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.MessageRefsOnly{
+			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
 				{Header: fftypes.MessageHeader{ID: &msgId2}},
 			},

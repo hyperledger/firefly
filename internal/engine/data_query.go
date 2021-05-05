@@ -30,7 +30,7 @@ func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftype
 	return e.persistence.GetTransactionById(ctx, ns, &u)
 }
 
-func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.MessageRefsOnly, error) {
+func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)

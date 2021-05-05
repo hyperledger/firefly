@@ -31,7 +31,7 @@ import (
 )
 
 type Broadcast interface {
-	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) error
+	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) error
 	Close()
 }
 
@@ -54,7 +54,7 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 		p2pfs:       p2pfs,
 		batch:       batch,
 	}
-	batch.RegisterDispatcher(fftypes.BatchTypeBroadcast, b.dispatchBatch, batching.BatchOptions{
+	batch.RegisterDispatcher(fftypes.MessageTypeBroadcast, b.dispatchBatch, batching.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchTimeout:   time.Duration(config.GetUint(config.BroadcastBatchTimeout)) * time.Millisecond,
 		DisposeTimeout: time.Duration(config.GetUint(config.BroadcastBatchAgentTimeout)) * time.Millisecond,
@@ -108,7 +108,12 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	return nil
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (err error) {
+func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) (err error) {
+
+	// Seal the message
+	if err = msg.Seal(ctx); err != nil {
+		return err
+	}
 
 	// Load all the data - must all be present for us to send
 	for _, dataRef := range msg.Data {
@@ -133,16 +138,9 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 			data = append(data, d)
 		}
 	}
+	log.L(ctx).Infof("Added broadcast message %s", msg.Header.ID)
 
-	// Write the message and all the data to a broadcast batch
-	msg.TX.Type = fftypes.TransactionTypePin
-	msg.TX.BatchID, err = b.batch.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data...)
-	if err != nil {
-		return err
-	}
-	log.L(ctx).Infof("Added broadcast message %s to batch %s", msg.Header.ID, msg.TX.BatchID)
-
-	// Store the message
+	// Store the message - this asynchronously triggers the next step in process
 	return b.persistence.UpsertMessage(ctx, msg)
 }
 

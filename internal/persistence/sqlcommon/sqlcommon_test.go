@@ -54,6 +54,13 @@ func ensureTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
+func testSQLOptions() *SQLCommonOptions {
+	return &SQLCommonOptions{
+		PlaceholderFormat: sq.Dollar,
+		SequenceField:     "id()",
+	}
+}
+
 func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 	mdb, mock, _ := sqlmock.New()
 	s = &SQLCommon{
@@ -67,8 +74,14 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 
 func TestInitSQLCommon(t *testing.T) {
 	s := &SQLCommon{}
-	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
+	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), testSQLOptions())
 	assert.NoError(t, err)
+}
+
+func TestInitSQLCommonMissingOptions(t *testing.T) {
+	s := &SQLCommon{}
+	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
+	assert.Regexp(t, "FF10112", err.Error())
 }
 
 func TestQueryTxBadSQL(t *testing.T) {

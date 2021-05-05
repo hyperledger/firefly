@@ -19,6 +19,7 @@ import (
 
 	"database/sql"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
@@ -44,7 +45,10 @@ func (e *QL) Init(ctx context.Context, conf interface{}, events persistence.Even
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, &sqlcommon.SQLCommonOptions{
+		PlaceholderFormat: squirrel.Dollar,
+		SequenceField:     "id()",
+	})
 }
 
 func (e *QL) Capabilities() *persistence.Capabilities { return e.capabilities }

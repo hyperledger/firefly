@@ -1,5 +1,7 @@
+CREATE SEQUENCE schemas_seq;
 CREATE TABLE schemas (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
+  seq         BIGINT,         NOT NULL DEFAULT nextval('schemas_seq'),
   stype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   entity      VARCHAR(64)     NOT NULL,

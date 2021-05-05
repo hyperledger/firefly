@@ -16,15 +16,15 @@ type Engine struct {
 }
 
 // BroadcastSchemaDefinition provides a mock function with given fields: ctx, s
-func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error) {
+func (_m *Engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, s)
 
-	var r0 *fftypes.MessageRefsOnly
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Schema) *fftypes.MessageRefsOnly); ok {
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Schema) *fftypes.Message); ok {
 		r0 = rf(ctx, s)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
+			r0 = ret.Get(0).(*fftypes.Message)
 		}
 	}
 
@@ -90,15 +90,15 @@ func (_m *Engine) GetDataById(ctx context.Context, ns string, id string) (*fftyp
 }
 
 // GetMessageById provides a mock function with given fields: ctx, ns, id
-func (_m *Engine) GetMessageById(ctx context.Context, ns string, id string) (*fftypes.MessageRefsOnly, error) {
+func (_m *Engine) GetMessageById(ctx context.Context, ns string, id string) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 *fftypes.MessageRefsOnly
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.MessageRefsOnly); ok {
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
+			r0 = ret.Get(0).(*fftypes.Message)
 		}
 	}
 

@@ -32,7 +32,7 @@ const (
 )
 
 type batchWork struct {
-	msg        *fftypes.MessageRefsOnly
+	msg        *fftypes.Message
 	data       []*fftypes.Data
 	dispatched chan *uuid.UUID
 	abandoned  bool

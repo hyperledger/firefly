@@ -1,5 +1,7 @@
+CREATE SEQUENCE transactions_seq;
 CREATE TABLE transactions (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
+  seq         BIGINT,         NOT NULL DEFAULT nextval('transactions_seq'),
   ttype       VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
   created     BIGINT          NOT NULL,

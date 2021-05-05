@@ -34,7 +34,7 @@ var getMsgById = &Route{
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.MessageRefsOnly{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 		output, err = e.GetMessageById(ctx, pp["ns"], pp["id"])
 		return output, 200, err

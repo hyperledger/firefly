@@ -38,20 +38,21 @@ func TestE2EDispatch(t *testing.T) {
 		return nil
 	}
 
-	bm.RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
+	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, BatchOptions{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
 	})
 
-	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
+	msg := &fftypes.Message{Header: fftypes.MessageHeader{
+		Type:      fftypes.MessageTypeBroadcast,
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Author:    "0x12345",
 	}}
 	data := &fftypes.Data{ID: fftypes.NewUUID()}
 
-	id, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg, data)
+	id, err := bm.DispatchMessage(context.Background(), msg, data)
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
@@ -71,8 +72,8 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 
-	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{}}
-	_, err := bm.DispatchMessage(context.Background(), fftypes.BatchTypeBroadcast, msg)
+	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
+	_, err := bm.DispatchMessage(context.Background(), msg)
 	assert.Regexp(t, "FF10126", err.Error())
 
 }
@@ -91,7 +92,7 @@ func TestTimeout(t *testing.T) {
 		return nil
 	}
 
-	bm.RegisterDispatcher(fftypes.BatchTypeBroadcast, handler, BatchOptions{
+	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, BatchOptions{
 		BatchMaxSize:   1,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -100,7 +101,8 @@ func TestTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
-	msg := &fftypes.MessageRefsOnly{Header: fftypes.MessageHeader{
+	msg := &fftypes.Message{Header: fftypes.MessageHeader{
+		Type:      fftypes.MessageTypeBroadcast,
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Author:    "0x12345",
@@ -108,7 +110,7 @@ func TestTimeout(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	_, err := bm.DispatchMessage(ctx, fftypes.BatchTypeBroadcast, msg, data)
+	_, err := bm.DispatchMessage(ctx, msg, data)
 
 	assert.Regexp(t, "FF10127", err)
 

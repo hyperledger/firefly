@@ -120,31 +120,6 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBroadcastSealFail(t *testing.T) {
-	e := NewEngine().(*engine)
-	e.nodeIdentity = "0x12345"
-	mp := &persistencemocks.Plugin{}
-	mb := &broadcastmocks.Broadcast{}
-	e.persistence = mp
-	e.broadcast = mb
-
-	mockUpsert := mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
-	mockUpsert.RunFn = func(a mock.Arguments) {
-		a[1].(*fftypes.Data).Hash = nil // To make seal fail
-	}
-	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(nil)
-
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
-		Namespace: "ns1",
-		Entity:    "ent1",
-		Version:   "0.0.1",
-		Value: fftypes.JSONData{
-			"some": "data",
-		},
-	})
-	assert.Regexp(t, "FF10139", err.Error())
-}
-
 func TestBroadcastOk(t *testing.T) {
 	e := NewEngine().(*engine)
 	e.nodeIdentity = "0x12345"

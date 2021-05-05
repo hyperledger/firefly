@@ -31,9 +31,9 @@ var postDefsSchema = &Route{
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
-	JSONOutputValue: func() interface{} { return &fftypes.MessageRefsOnly{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
 		output, err = e.BroadcastSchemaDefinition(ctx, input.(*fftypes.Schema))
-		return output, 201, err
+		return output, 202 /* Accepted - as async */, err
 	},
 }

@@ -15,7 +15,7 @@ type Broadcast struct {
 }
 
 // BroadcastMessage provides a mock function with given fields: ctx, identity, msg, data
-func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) error {
+func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) error {
 	_va := make([]interface{}, len(data))
 	for _i := range data {
 		_va[_i] = data[_i]
@@ -26,7 +26,7 @@ func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg 
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageRefsOnly, ...*fftypes.Data) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Message, ...*fftypes.Data) error); ok {
 		r0 = rf(ctx, identity, msg, data...)
 	} else {
 		r0 = ret.Error(0)
