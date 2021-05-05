@@ -1,1 +1,4 @@
+BEGIN;
 DROP TABLE IF EXISTS schemas;
+DROP SEQUENCE schemas_seq;
+COMMIT;

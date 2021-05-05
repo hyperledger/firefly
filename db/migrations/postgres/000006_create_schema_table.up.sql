@@ -1,7 +1,8 @@
+BEGIN;
 CREATE SEQUENCE schemas_seq;
 CREATE TABLE schemas (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
-  seq         BIGINT,         NOT NULL DEFAULT nextval('schemas_seq'),
+  seq         BIGINT          NOT NULL DEFAULT nextval('schemas_seq'),
   stype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   entity      VARCHAR(64)     NOT NULL,
@@ -14,3 +15,4 @@ CREATE TABLE schemas (
 CREATE UNIQUE INDEX schemas_unique ON schemas(namespace,entity,version);
 CREATE INDEX schemas_search ON schemas(namespace,entity,version,created);
 CREATE INDEX schemas_hash ON schemas(namespace,hash);
+COMMIT;
