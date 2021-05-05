@@ -43,13 +43,12 @@ type MessageHeader struct {
 	Context   string      `json:"context,omitempty"`
 	Group     *uuid.UUID  `json:"group,omitempty"`
 	DataHash  *Bytes32    `json:"datahash,omitempty"`
-	Sequence  int64       `json:"sequence,omitempty"`
 }
 
 type Message struct {
 	Header    MessageHeader  `json:"header"`
 	Hash      *Bytes32       `json:"hash,omitempty"`
-	Sequence  int64          `jaon:"sequence,omitempty"`
+	Sequence  int64          `json:"sequence,omitempty"`
 	Confirmed int64          `json:"confirmed,omitempty"`
 	TX        TransactionRef `json:"tx,omitempty"`
 	Data      DataRefs       `json:"data"`
