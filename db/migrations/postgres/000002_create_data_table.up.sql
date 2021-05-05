@@ -1,7 +1,8 @@
+BEGIN;
 CREATE SEQUENCE data_seq;
 CREATE TABLE data (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
-  seq         BIGINT,         NOT NULL DEFAULT nextval('data_seq'),
+  seq         BIGINT          NOT NULL DEFAULT nextval('data_seq'),
   dtype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   entity      VARCHAR(64)     NOT NULL,
@@ -10,5 +11,5 @@ CREATE TABLE data (
   created     BIGINT          NOT NULL,
   value       JSONB           NOT NULL
 );
-
 CREATE INDEX data_search ON data(namespace,dtype,entity,schema,hash,created);
+COMMIT;

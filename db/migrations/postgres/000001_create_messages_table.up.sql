@@ -1,7 +1,8 @@
+BEGIN;
 CREATE SEQUENCE messages_seq;
 CREATE TABLE messages (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
-  seq         BIGINT,         NOT NULL DEFAULT nextval('messages_seq'),
+  seq         BIGINT          NOT NULL DEFAULT nextval('messages_seq'),
   cid         CHAR(36),
   mtype       VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
@@ -21,3 +22,4 @@ CREATE TABLE messages (
 CREATE INDEX messages_search ON messages(namespace,mtype,confirmed,context,topic,group_id,author,cid,hash,created);
 CREATE INDEX messages_batch ON messages(namespace,batch_id);
 CREATE INDEX messages_tx ON messages(namespace,tx_type,tx_id);
+COMMIT;

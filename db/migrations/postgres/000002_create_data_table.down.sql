@@ -1,1 +1,5 @@
+BEGIN;
 DROP TABLE IF EXISTS data;
+DROP SEQUENCE data_seq;
+COMMIT;
+
