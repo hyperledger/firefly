@@ -47,7 +47,7 @@ func (e *Postgres) Init(ctx context.Context, conf interface{}, events persistenc
 
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "id()",
+		SequenceField:     "seq",
 	})
 }
 
