@@ -34,21 +34,21 @@ func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (Batch
 	bm := &batchManager{
 		ctx:         ctx,
 		persistence: persistence,
-		dispatchers: make(map[fftypes.BatchType]*dispatcher),
+		dispatchers: make(map[fftypes.MessageType]*dispatcher),
 	}
 	return bm, nil
 }
 
 type BatchManager interface {
-	RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions)
-	DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (*uuid.UUID, error)
+	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
+	DispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error)
 	Close()
 }
 
 type batchManager struct {
 	ctx         context.Context
 	persistence persistence.Plugin
-	dispatchers map[fftypes.BatchType]*dispatcher
+	dispatchers map[fftypes.MessageType]*dispatcher
 }
 
 type DispatchHandler func(context.Context, *fftypes.Batch) error
@@ -66,7 +66,7 @@ type dispatcher struct {
 	batchOptions BatchOptions
 }
 
-func (bm *batchManager) RegisterDispatcher(batchType fftypes.BatchType, handler DispatchHandler, batchOptions BatchOptions) {
+func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions) {
 	bm.dispatchers[batchType] = &dispatcher{
 		handler:      handler,
 		batchOptions: batchOptions,
@@ -80,7 +80,7 @@ func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
 	dispatcher.mux.Unlock()
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.BatchType, namespace, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, author string) (*batchProcessor, error) {
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
@@ -119,13 +119,13 @@ func (bm *batchManager) Close() {
 	bm = nil
 }
 
-func (bm *batchManager) DispatchMessage(ctx context.Context, batchType fftypes.BatchType, msg *fftypes.MessageRefsOnly, data ...*fftypes.Data) (*uuid.UUID, error) {
+func (bm *batchManager) DispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error) {
 	l := log.L(ctx)
-	processor, err := bm.getProcessor(batchType, msg.Header.Namespace, msg.Header.Author)
+	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
 		return nil, err
 	}
-	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, batchType)
+	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, msg.Header.Type)
 	work := &batchWork{
 		msg:        msg,
 		data:       data,

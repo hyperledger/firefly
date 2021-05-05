@@ -1,5 +1,7 @@
+CREATE SEQUENCE messages_seq;
 CREATE TABLE messages (
   id          CHAR(36)        NOT NULL PRIMARY KEY,
+  seq         BIGINT,         NOT NULL DEFAULT nextval('messages_seq'),
   cid         CHAR(36),
   mtype       VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,

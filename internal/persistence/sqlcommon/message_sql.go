@@ -17,7 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"sort"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -47,7 +47,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageRefsOnly) (err error) {
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message) (err error) {
 	ctx, tx, err := s.beginTx(ctx)
 	if err != nil {
 		return err
@@ -127,25 +127,28 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.MessageR
 	return nil
 }
 
-func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *uuid.UUID) (fftypes.DataRefSortable, error) {
+func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *uuid.UUID) (fftypes.DataRefs, error) {
 	existingRefs, err := s.queryTx(ctx, tx,
 		sq.Select(
 			"data_id",
 			"data_hash",
+			"data_idx",
 		).
 			From("messages_data").
-			Where(sq.Eq{"message_id": msgId}),
+			Where(sq.Eq{"message_id": msgId}).
+			OrderBy("data_idx"),
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer existingRefs.Close()
 
-	var dataIDs fftypes.DataRefSortable
+	var dataIDs fftypes.DataRefs
 	for existingRefs.Next() {
 		var dataID uuid.UUID
 		var dataHash fftypes.Bytes32
-		if err = existingRefs.Scan(&dataID, &dataHash); err != nil {
+		var dataIdx int
+		if err = existingRefs.Scan(&dataID, &dataHash, &dataIdx); err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
 		}
 		dataIDs = append(dataIDs, fftypes.DataRef{
@@ -156,7 +159,7 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *u
 	return dataIDs, nil
 }
 
-func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, message *fftypes.MessageRefsOnly) error {
+func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, message *fftypes.Message) error {
 
 	dataIDs, err := s.getMessageDataRefs(ctx, tx, message.Header.ID)
 	if err != nil {
@@ -164,7 +167,6 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 	}
 
 	// Run through the ones in the message, finding ones that already exist, and ones that need to be created
-	missingRefs := make([]fftypes.DataRef, 0, len(dataIDs))
 	for msgDataRefIdx, msgDataRef := range message.Data {
 		if msgDataRef.ID == nil {
 			return i18n.NewError(ctx, i18n.MsgNullDataReferenceID, msgDataRefIdx)
@@ -176,6 +178,19 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 		for dataRefIdx, dataID := range dataIDs {
 			if *dataID.ID == *msgDataRef.ID {
 				found = true
+				// Check the index is correct per the new list
+				if msgDataRefIdx != dataRefIdx {
+					if _, err = s.updateTx(ctx, tx,
+						sq.Update("messages_data").
+							Set("data_idx", msgDataRefIdx).
+							Where(sq.And{
+								sq.Eq{"message_id": message.Header.ID},
+								sq.Eq{"data_id": msgDataRef.ID},
+							}),
+					); err != nil {
+						return err
+					}
+				}
 				// Remove it from the list, so we can use this list as ones we need to delete
 				copy(dataIDs[dataRefIdx:], dataIDs[dataRefIdx+1:])
 				dataIDs = dataIDs[:len(dataIDs)-1]
@@ -183,7 +198,24 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 			}
 		}
 		if !found {
-			missingRefs = append(missingRefs, msgDataRef)
+			// Add the linkage
+			if _, err = s.insertTx(ctx, tx,
+				sq.Insert("messages_data").
+					Columns(
+						"message_id",
+						"data_id",
+						"data_hash",
+						"data_idx",
+					).
+					Values(
+						message.Header.ID,
+						msgDataRef.ID,
+						msgDataRef.Hash,
+						msgDataRefIdx,
+					),
+			); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -200,31 +232,11 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, messa
 		}
 	}
 
-	// Run through the ones we need to create
-	for _, newID := range missingRefs {
-		// Add the linkage
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("messages_data").
-				Columns(
-					"message_id",
-					"data_id",
-					"data_hash",
-				).
-				Values(
-					message.Header.ID,
-					newID.ID,
-					newID.Hash,
-				),
-		); err != nil {
-			return err
-		}
-	}
-
 	return nil
 
 }
 
-func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRefsOnly) error {
+func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) error {
 
 	msgIds := make([]string, len(msgs))
 	for i, m := range msgs {
@@ -238,9 +250,11 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 			"message_id",
 			"data_id",
 			"data_hash",
+			"data_idx",
 		).
 			From("messages_data").
-			Where(sq.Eq{"message_id": msgIds}),
+			Where(sq.Eq{"message_id": msgIds}).
+			OrderBy("data_idx"),
 	)
 	if err != nil {
 		return err
@@ -251,7 +265,8 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 		var msgID uuid.UUID
 		var dataID uuid.UUID
 		var dataHash fftypes.Bytes32
-		if err = existingRefs.Scan(&msgID, &dataID, &dataHash); err != nil {
+		var dataIdx int
+		if err = existingRefs.Scan(&msgID, &dataID, &dataHash, &dataIdx); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
 		}
 		for _, m := range msgs {
@@ -266,17 +281,15 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.MessageRef
 	// Ensure we return an empty array if no entries, and a consistent order for the data
 	for _, m := range msgs {
 		if m.Data == nil {
-			m.Data = fftypes.DataRefSortable{}
-		} else {
-			sort.Sort(m.Data)
+			m.Data = fftypes.DataRefs{}
 		}
 	}
 
 	return nil
 }
 
-func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.MessageRefsOnly, error) {
-	var msg fftypes.MessageRefsOnly
+func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Message, error) {
+	var msg fftypes.Message
 	err := row.Scan(
 		&msg.Header.ID,
 		&msg.Header.CID,
@@ -293,6 +306,8 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.TX.Type,
 		&msg.TX.ID,
 		&msg.TX.BatchID,
+		// Must be added to the list of columns in all selects
+		&msg.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
@@ -300,10 +315,12 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.MessageRefsOnly, err error) {
+func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error) {
 
+	cols := append([]string{}, msgColumns...)
+	cols = append(cols, s.options.SequenceField)
 	rows, err := s.query(ctx,
-		sq.Select(msgColumns...).
+		sq.Select(cols...).
 			From("messages").
 			Where(sq.Eq{"id": id}),
 	)
@@ -322,16 +339,18 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID
 		return nil, err
 	}
 
-	if err = s.loadDataRefs(ctx, []*fftypes.MessageRefsOnly{msg}); err != nil {
+	if err = s.loadDataRefs(ctx, []*fftypes.Message{msg}); err != nil {
 		return nil, err
 	}
 
 	return msg, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter *persistence.MessageFilter) (message []*fftypes.MessageRefsOnly, err error) {
+func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter *persistence.MessageFilter) (message []*fftypes.Message, err error) {
 
-	query := sq.Select(msgColumns...).From("messages")
+	cols := append([]string{}, msgColumns...)
+	cols = append(cols, s.options.SequenceField)
+	query := sq.Select(cols...).From("messages")
 
 	if filter.ConfirmedAfter > 0 {
 		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
@@ -365,7 +384,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter 
 	if filter.CreatedAfter > 0 {
 		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
 	}
-	query = query.OrderBy("confirmed,created DESC")
+	query = query.OrderBy(fmt.Sprintf("%s DESC", s.options.SequenceField))
 	if limit > 0 {
 		query = query.Offset(skip).Limit(limit)
 	}
@@ -376,7 +395,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter 
 	}
 	defer rows.Close()
 
-	msgs := []*fftypes.MessageRefsOnly{}
+	msgs := []*fftypes.Message{}
 	for rows.Next() {
 		msg, err := s.msgResult(ctx, rows)
 		if err != nil {

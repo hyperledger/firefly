@@ -27,7 +27,7 @@ func TestSQLSerializedMessageArray(t *testing.T) {
 	msgID1 := uuid.New()
 	msgID2 := uuid.New()
 	batchPayload := BatchPayload{
-		Messages: []*MessageRefsOnly{
+		Messages: []*Message{
 			{Header: MessageHeader{ID: &msgID1}},
 			{Header: MessageHeader{ID: &msgID2}},
 		},

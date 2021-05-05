@@ -37,8 +37,8 @@ func TestPostDefinitionsSchema(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	e.On("BroadcastSchemaDefinition", mock.Anything, mock.AnythingOfType("*fftypes.Schema")).
-		Return(&fftypes.MessageRefsOnly{}, nil)
+		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 201, res.Result().StatusCode)
+	assert.Equal(t, 202, res.Result().StatusCode)
 }

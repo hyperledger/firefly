@@ -18,10 +18,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"sort"
 
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type DataType string
@@ -52,24 +50,10 @@ type SchemaRef struct {
 	Version string `json:"version,omitempty"`
 }
 
-type DataRefSortable []DataRef
+type DataRefs []DataRef
 
-func (d DataRefSortable) Len() int      { return len(d) }
-func (d DataRefSortable) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
-func (d DataRefSortable) Less(i, j int) bool {
-	return d[j].Hash != nil && (d[i].Hash == nil || d[j].Hash != nil && d[i].Hash.String() < d[j].Hash.String())
-}
-
-func (d DataRefSortable) Hash(ctx context.Context) (*Bytes32, error) {
-	sort.Sort(d)
-	var strArray = make([]string, 0, len(d))
-	for i, de := range d {
-		if de.Hash == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgMissingDataHashIndex, i)
-		}
-		strArray = append(strArray, de.Hash.String())
-	}
-	b, _ := json.Marshal(&strArray)
+func (d DataRefs) Hash(ctx context.Context) *Bytes32 {
+	b, _ := json.Marshal(&d)
 	var b32 Bytes32 = sha256.Sum256(b)
-	return &b32, nil
+	return &b32
 }

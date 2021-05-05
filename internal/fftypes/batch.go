@@ -27,7 +27,7 @@ import (
 type Batch struct {
 	ID         *uuid.UUID     `json:"id"`
 	Namespace  string         `json:"namespace"`
-	Type       BatchType      `json:"type"`
+	Type       MessageType    `json:"type"`
 	Author     string         `json:"author"`
 	Hash       *Bytes32       `json:"hash"`
 	Created    int64          `json:"created"`
@@ -37,15 +37,9 @@ type Batch struct {
 	TX         TransactionRef `json:"tx"`
 }
 
-type BatchType string
-
-const (
-	BatchTypeBroadcast BatchType = "broadcast"
-)
-
 type BatchPayload struct {
-	Messages []*MessageRefsOnly `json:"messages"`
-	Data     []*Data            `json:"data"`
+	Messages []*Message `json:"messages"`
+	Data     []*Data    `json:"data"`
 }
 
 // Value implements sql.Valuer

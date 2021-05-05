@@ -36,11 +36,11 @@ type Engine interface {
 	Close()
 
 	// Definitions
-	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.MessageRefsOnly, error)
+	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.Message, error)
 
 	// Data Queryuery
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetMessageById(ctx context.Context, ns, id string) (*fftypes.MessageRefsOnly, error)
+	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
 }

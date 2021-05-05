@@ -22,7 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (msg *fftypes.MessageRefsOnly, err error) {
+func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (msg *fftypes.Message, err error) {
 
 	// Validate the input schema data
 	s.ID = fftypes.NewUUID()
@@ -66,19 +66,16 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schem
 	}
 
 	// Create a broadcast message referring to the data
-	msg = &fftypes.MessageRefsOnly{
+	msg = &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Type:    fftypes.MessageTypeDefinition,
 			Author:  e.nodeIdentity,
 			Topic:   fftypes.SchemaTopicDefinitionName,
 			Context: fftypes.SystemContext,
 		},
-		Data: fftypes.DataRefSortable{
+		Data: fftypes.DataRefs{
 			{ID: data.ID, Hash: data.Hash},
 		},
-	}
-	if err = msg.Seal(ctx); err != nil {
-		return nil, err
 	}
 
 	// Broadcast the message

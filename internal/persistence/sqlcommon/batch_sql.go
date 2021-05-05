@@ -17,6 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -177,7 +178,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter *
 	if filter.CreatedAfter > 0 {
 		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
 	}
-	query = query.OrderBy("confirmed,created DESC")
+	query = query.OrderBy(fmt.Sprintf("%s DESC", s.options.SequenceField))
 	if limit > 0 {
 		query = query.Offset(skip).Limit(limit)
 	}

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type MessageType string
@@ -42,25 +43,25 @@ type MessageHeader struct {
 	Context   string      `json:"context,omitempty"`
 	Group     *uuid.UUID  `json:"group,omitempty"`
 	DataHash  *Bytes32    `json:"datahash,omitempty"`
+	Sequence  int64       `json:"sequence,omitempty"`
 }
 
-type MessageExpanded struct {
-	Header    MessageHeader `json:"header"`
-	Hash      *Bytes32      `json:"hash,omitempty"`
-	Confirmed int64         `json:"confirmed,omitempty"`
-	TX        *Transaction  `json:"tx"`
-	Data      []*Data       `json:"data"`
+type Message struct {
+	Header    MessageHeader  `json:"header"`
+	Hash      *Bytes32       `json:"hash,omitempty"`
+	Sequence  int64          `jaon:"sequence,omitempty"`
+	Confirmed int64          `json:"confirmed,omitempty"`
+	TX        TransactionRef `json:"tx,omitempty"`
+	Data      DataRefs       `json:"data"`
 }
 
-type MessageRefsOnly struct {
-	Header    MessageHeader   `json:"header"`
-	Hash      *Bytes32        `json:"hash,omitempty"`
-	Confirmed int64           `json:"confirmed,omitempty"`
-	TX        TransactionRef  `json:"tx,omitempty"`
-	Data      DataRefSortable `json:"data"`
+func (m *Message) HeaderHash() *Bytes32 {
+	b, _ := json.Marshal(&m.Header)
+	var b32 Bytes32 = sha256.Sum256(b)
+	return &b32
 }
 
-func (m *MessageRefsOnly) Seal(ctx context.Context) (err error) {
+func (m *Message) Seal(ctx context.Context) (err error) {
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -69,13 +70,43 @@ func (m *MessageRefsOnly) Seal(ctx context.Context) (err error) {
 	}
 	m.Confirmed = 0
 	if m.Data == nil {
-		m.Data = DataRefSortable{}
+		m.Data = DataRefs{}
 	}
-	m.Header.DataHash, err = m.Data.Hash(ctx)
+	err = m.DupDataCheck(ctx)
 	if err == nil {
-		b, _ := json.Marshal(&m.Header)
-		var b32 Bytes32 = sha256.Sum256(b)
-		m.Hash = &b32
+		m.Header.DataHash = m.Data.Hash(ctx)
+		m.Hash = m.HeaderHash()
 	}
 	return err
+}
+
+func (m *Message) DupDataCheck(ctx context.Context) (err error) {
+	dupCheck := make(map[string]bool)
+	for i, d := range m.Data {
+		if d.ID == nil || d.Hash == nil {
+			return i18n.NewError(ctx, i18n.MsgNilDataReferenceSealFail, i)
+		}
+		if dupCheck[d.ID.String()] || dupCheck[d.Hash.String()] {
+			return i18n.NewError(ctx, i18n.MsgDupDataReferenceSealFail, i)
+		}
+		dupCheck[d.ID.String()] = true
+		dupCheck[d.Hash.String()] = true
+	}
+	return nil
+}
+
+func (m *Message) Verify(ctx context.Context) error {
+	err := m.DupDataCheck(ctx)
+	if err != nil {
+		return err
+	}
+	if m.Hash == nil || m.Header.DataHash == nil {
+		return i18n.NewError(ctx, i18n.MsgVerifyFailedNilHashes)
+	}
+	headerHash := m.HeaderHash()
+	dataHash := m.Data.Hash(ctx)
+	if *m.Hash != *headerHash || *m.Header.DataHash != *dataHash {
+		return i18n.NewError(ctx, i18n.MsgVerifyFailedInvalidHashes)
+	}
+	return nil
 }

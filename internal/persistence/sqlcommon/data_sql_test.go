@@ -30,7 +30,7 @@ func TestDataE2EWithDB(t *testing.T) {
 
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil)
+	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
 
 	// Create a new data entry
 	dataId := uuid.New()

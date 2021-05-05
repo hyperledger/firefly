@@ -270,7 +270,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	assert.Equal(t, 404, res.StatusCode)
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Regexp(t, "FF10109", resJSON["error"])
+	assert.Regexp(t, "FF10143", resJSON["error"])
 }
 
 func TestJSONHTTPDefault500Error(t *testing.T) {

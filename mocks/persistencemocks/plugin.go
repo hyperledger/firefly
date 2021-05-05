@@ -120,15 +120,15 @@ func (_m *Plugin) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (*f
 }
 
 // GetMessageById provides a mock function with given fields: ctx, ns, id
-func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.MessageRefsOnly, error) {
+func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 *fftypes.MessageRefsOnly
-	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.MessageRefsOnly); ok {
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageRefsOnly)
+			r0 = ret.Get(0).(*fftypes.Message)
 		}
 	}
 
@@ -143,15 +143,15 @@ func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) 
 }
 
 // GetMessages provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, filter *persistence.MessageFilter) ([]*fftypes.MessageRefsOnly, error) {
+func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, filter *persistence.MessageFilter) ([]*fftypes.Message, error) {
 	ret := _m.Called(ctx, skip, limit, filter)
 
-	var r0 []*fftypes.MessageRefsOnly
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *persistence.MessageFilter) []*fftypes.MessageRefsOnly); ok {
+	var r0 []*fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *persistence.MessageFilter) []*fftypes.Message); ok {
 		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.MessageRefsOnly)
+			r0 = ret.Get(0).([]*fftypes.Message)
 		}
 	}
 
@@ -254,11 +254,11 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data) error {
 }
 
 // UpsertMessage provides a mock function with given fields: ctx, message
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.MessageRefsOnly) error {
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message) error {
 	ret := _m.Called(ctx, message)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.MessageRefsOnly) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
 		r0 = rf(ctx, message)
 	} else {
 		r0 = ret.Error(0)
