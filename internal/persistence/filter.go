@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -206,7 +208,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		}
 		value = field.getSerialization()
 		if err = value.Scan(f.value); err != nil {
-			return nil, i18n.NewError(f.fb.ctx, i18n.MsgInvalidValueForFilterField, name)
+			return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
 		}
 	}
 	return &FilterInfo{
@@ -337,7 +339,38 @@ type Filterable interface {
 type FilterableString struct{}
 type stringValue struct{ s string }
 
-func (f *stringValue) Scan(src interface{}) error                 { f.s = src.(string); return nil }
+func (f *stringValue) Scan(src interface{}) error {
+	switch tv := src.(type) {
+	case string:
+		f.s = tv
+	case int:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case int32:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case int64:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case uint:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case uint32:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case uint64:
+		f.s = strconv.FormatInt(int64(tv), 10)
+	case *uuid.UUID:
+		if tv != nil {
+			f.s = tv.String()
+		}
+	case uuid.UUID:
+		f.s = tv.String()
+	case *fftypes.Bytes32:
+		f.s = tv.String()
+	case fftypes.Bytes32:
+		f.s = tv.String()
+	case nil:
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+	}
+	return nil
+}
 func (f *stringValue) Value() (driver.Value, error)               { return f.s, nil }
 func (f *FilterableString) getSerialization() FilterSerialization { return &stringValue{} }
 
@@ -345,8 +378,28 @@ type FilterableInt64 struct{}
 type int64Value struct{ i int64 }
 
 func (f *int64Value) Scan(src interface{}) (err error) {
-	f.i, err = strconv.ParseInt(src.(string), 10, 64)
-	return err
+	switch tv := src.(type) {
+	case int:
+		f.i = int64(tv)
+	case int32:
+		f.i = int64(tv)
+	case int64:
+		f.i = int64(tv)
+	case uint:
+		f.i = int64(tv)
+	case uint32:
+		f.i = int64(tv)
+	case uint64:
+		f.i = int64(tv)
+	case string:
+		f.i, err = strconv.ParseInt(src.(string), 10, 64)
+		if err != nil {
+			return i18n.WrapError(context.Background(), err, i18n.MsgScanFailed, src, int64(0))
+		}
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+	}
+	return nil
 }
 func (f *int64Value) Value() (driver.Value, error)               { return f.i, nil }
 func (f *FilterableInt64) getSerialization() FilterSerialization { return &int64Value{} }

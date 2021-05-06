@@ -23,10 +23,13 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSchemaE2EWithDB(t *testing.T) {
+	log.SetLevel("debug")
 
 	s := &SQLCommon{}
 	ctx := context.Background()
@@ -81,11 +84,27 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	err = s.UpsertSchema(context.Background(), schemaUpdated)
 	assert.NoError(t, err)
 
-	// Check we get the exact same message back - note the removal of one of the schema elements
+	// Check we get the exact same data back - note the removal of one of the schema elements
 	schemaRead, err = s.GetSchemaById(ctx, "ns1", &schemaId)
 	assert.NoError(t, err)
 	schemaJson, _ = json.Marshal(&schemaUpdated)
 	schemaReadJson, _ = json.Marshal(&schemaRead)
+	assert.Equal(t, string(schemaJson), string(schemaReadJson))
+
+	// Query back the data
+	fb := persistence.SchemaFilterBuilder.New(ctx)
+	filter := fb.And(
+		fb.Eq("id", schemaUpdated.ID.String()),
+		fb.Eq("namespace", schemaUpdated.Namespace),
+		fb.Eq("type", string(schemaUpdated.Type)),
+		fb.Eq("entity", schemaUpdated.Entity),
+		fb.Eq("version", schemaUpdated.Version),
+		fb.Gt("created", "0"),
+	)
+	schemas, err := s.GetSchemas(ctx, 0, 1, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(schemas))
+	schemaReadJson, _ = json.Marshal(schemas[0])
 	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
 }
@@ -169,6 +188,31 @@ func TestGetSchemaByIdScanFail(t *testing.T) {
 	schemaId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetSchemaById(context.Background(), "ns1", &schemaId)
+	assert.Regexp(t, "FF10121", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSchemasQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetSchemas(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSchemasBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetSchemas(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestGetSchemasReadMessageFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetSchemas(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -74,11 +74,11 @@ func (_m *Plugin) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (*
 }
 
 // GetBatches provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, filter *persistence.BatchFilter) ([]*fftypes.Batch, error) {
+func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Batch, error) {
 	ret := _m.Called(ctx, skip, limit, filter)
 
 	var r0 []*fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *persistence.BatchFilter) []*fftypes.Batch); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Batch); ok {
 		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -87,7 +87,30 @@ func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, fil
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, *persistence.BatchFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
+		r1 = rf(ctx, skip, limit, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetData provides a mock function with given fields: ctx, skip, limit, filter
+func (_m *Plugin) GetData(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Data, error) {
+	ret := _m.Called(ctx, skip, limit, filter)
+
+	var r0 []*fftypes.Data
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Data); ok {
+		r0 = rf(ctx, skip, limit, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Data)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
 		r1 = rf(ctx, skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -143,11 +166,11 @@ func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) 
 }
 
 // GetMessages provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, filter *persistence.MessageFilter) ([]*fftypes.Message, error) {
+func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Message, error) {
 	ret := _m.Called(ctx, skip, limit, filter)
 
 	var r0 []*fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *persistence.MessageFilter) []*fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Message); ok {
 		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -156,7 +179,53 @@ func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, fi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, *persistence.MessageFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
+		r1 = rf(ctx, skip, limit, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSchemaById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Schema, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Schema
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Schema); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Schema)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSchemas provides a mock function with given fields: ctx, skip, limit, filter
+func (_m *Plugin) GetSchemas(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Schema, error) {
+	ret := _m.Called(ctx, skip, limit, filter)
+
+	var r0 []*fftypes.Schema
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Schema); ok {
+		r0 = rf(ctx, skip, limit, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Schema)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
 		r1 = rf(ctx, skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -189,11 +258,11 @@ func (_m *Plugin) GetTransactionById(ctx context.Context, ns string, id *uuid.UU
 }
 
 // GetTransactions provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetTransactions(ctx context.Context, skip uint64, limit uint64, filter *persistence.TransactionFilter) ([]*fftypes.Transaction, error) {
+func (_m *Plugin) GetTransactions(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, skip, limit, filter)
 
 	var r0 []*fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, *persistence.TransactionFilter) []*fftypes.Transaction); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Transaction); ok {
 		r0 = rf(ctx, skip, limit, filter)
 	} else {
 		if ret.Get(0) != nil {
@@ -202,7 +271,7 @@ func (_m *Plugin) GetTransactions(ctx context.Context, skip uint64, limit uint64
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, *persistence.TransactionFilter) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
 		r1 = rf(ctx, skip, limit, filter)
 	} else {
 		r1 = ret.Error(1)
@@ -260,6 +329,20 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message) e
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
 		r0 = rf(ctx, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertSchema provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertSchema(ctx context.Context, data *fftypes.Schema) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Schema) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

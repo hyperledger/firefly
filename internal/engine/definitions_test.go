@@ -77,7 +77,7 @@ func TestBroadcastSchemaBadValue(t *testing.T) {
 			"json": map[bool]string{false: "unparsable"},
 		},
 	})
-	assert.Regexp(t, "FF10125.*value", err.Error())
+	assert.Regexp(t, "FF10151.*value", err.Error())
 }
 
 func TestBroadcastUpsertFail(t *testing.T) {

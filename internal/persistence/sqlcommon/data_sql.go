@@ -23,6 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var (
@@ -30,11 +31,16 @@ var (
 		"id",
 		"dtype",
 		"namespace",
-		"entity",
-		"schema",
+		"schema_entity",
+		"schema_version",
 		"hash",
 		"created",
 		"value",
+	}
+	dataFilterTypeMap = map[string]string{
+		"type":           "dtype",
+		"schema.entity":  "schema_entity",
+		"schema.version": "schema_version",
 	}
 )
 
@@ -68,8 +74,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 			sq.Update("data").
 				Set("dtype", string(data.Type)).
 				Set("namespace", data.Namespace).
-				Set("entity", schema.Entity).
-				Set("schema", schema.Version).
+				Set("schema_entity", schema.Entity).
+				Set("schema_version", schema.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
 				Set("value", data.Value).
@@ -151,4 +157,30 @@ func (s *SQLCommon) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (
 	}
 
 	return data, nil
+}
+
+func (s *SQLCommon) GetData(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Data, err error) {
+
+	query, err := filterSelect(ctx, sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	data := []*fftypes.Data{}
+	for rows.Next() {
+		d, err := s.dataResult(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, d)
+	}
+
+	return data, err
+
 }

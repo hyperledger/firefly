@@ -40,7 +40,6 @@ var (
 	MsgNullDataReferenceID        = ffm("FF10123", "Data id is null in message data reference %d")
 	MsgDupDataReferenceID         = ffm("FF10124", "Duplicate data ID in message '%s'")
 	MsgScanFailed                 = ffm("FF10125", "Failed to restore type '%T' into '%T'")
-	MsgJSONDataParseFailed        = ffm("FF10125", "Failed to parse '%s' as JSON")
 	MsgUnregisteredBatchType      = ffm("FF10126", "Unregistered batch type '%s'")
 	MsgBatchDispatchTimeout       = ffm("FF10127", "Timed out dispatching work to batch")
 	MsgInitializationNilDepError  = ffm("FF10128", "Initialization error due to unmet dependency")
@@ -66,4 +65,5 @@ var (
 	MsgInvalidFilterField         = ffm("FF10148", "Unknown filter '%s'", 400)
 	MsgInvalidValueForFilterField = ffm("FF10149", "Unable to parse value for filter '%s'", 400)
 	MsgUnsupportedSQLOpInFilter   = ffm("FF10150", "No SQL mapping implemented for filter operator '%s'", 400)
+	MsgJSONDataParseFailed        = ffm("FF10151", "Failed to parse '%s' as JSON")
 )

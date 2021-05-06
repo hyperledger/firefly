@@ -98,13 +98,14 @@ func TestBatch2EWithDB(t *testing.T) {
 	assert.Equal(t, string(batchJson), string(batchReadJson))
 
 	// Query back the batch
-	filter := &persistence.BatchFilter{
-		IDEquals:        batchUpdated.ID,
-		NamespaceEquals: batchUpdated.Namespace,
-		AuthorEquals:    batchUpdated.Author,
-		CreatedAfter:    1,
-		ConfirmedAfter:  1,
-	}
+	fb := persistence.BatchFilterBuilder.New(ctx)
+	filter := fb.And(
+		fb.Eq("id", batchUpdated.ID.String()),
+		fb.Eq("namespace", batchUpdated.Namespace),
+		fb.Eq("author", batchUpdated.Author),
+		fb.Gt("created", "0"),
+		fb.Gt("confirmed", "0"),
+	)
 	batches, err := s.GetBatches(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(batches))
@@ -112,9 +113,10 @@ func TestBatch2EWithDB(t *testing.T) {
 	assert.Equal(t, string(batchJson), string(batchReadJson))
 
 	// Negative test on filter
-	filter.ConfrimedOnly = false
-	filter.UnconfrimedOnly = true
-	filter.ConfirmedAfter = 0
+	filter = fb.And(
+		fb.Eq("id", batchUpdated.ID.String()),
+		fb.Eq("created", "0"),
+	)
 	batches, err = s.GetBatches(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(batches))
@@ -206,15 +208,24 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 func TestGetBatchesQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetBatches(context.Background(), 0, 1, &persistence.BatchFilter{ConfrimedOnly: true})
+	f := persistence.BatchFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetBatches(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetBatchesBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := persistence.BatchFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetBatches(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGettBatchesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetBatches(context.Background(), 0, 1, &persistence.BatchFilter{})
+	f := persistence.BatchFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetBatches(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

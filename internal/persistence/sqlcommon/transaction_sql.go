@@ -17,7 +17,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -37,6 +36,11 @@ var (
 		"protocol_id",
 		"confirmed",
 		"info",
+	}
+	transactionFilterTypeMap = map[string]string{
+		"type":       "ttype",
+		"trackingid": "tracking_id",
+		"protocolid": "protocol_id",
 	}
 )
 
@@ -145,33 +149,11 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.
 	return transaction, nil
 }
 
-func (s *SQLCommon) GetTransactions(ctx context.Context, skip, limit uint64, filter *persistence.TransactionFilter) (message []*fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactions(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Transaction, err error) {
 
-	query := sq.Select(transactionColumns...).From("transactions")
-
-	if filter.ConfirmedAfter > 0 {
-		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
-	} else if filter.ConfrimedOnly {
-		query = query.Where(sq.Gt{"confirmed": 0})
-	} else if filter.UnconfrimedOnly {
-		query = query.Where(sq.Eq{"confirmed": 0})
-	}
-
-	if filter.AuthorEquals != "" {
-		query = query.Where(sq.Eq{"author": filter.AuthorEquals})
-	}
-	if filter.TrackingIDEquals != "" {
-		query = query.Where(sq.Eq{"tracking_id": filter.TrackingIDEquals})
-	}
-	if filter.ProtocolIDEquals != "" {
-		query = query.Where(sq.Eq{"protocol_id": filter.ProtocolIDEquals})
-	}
-	if filter.CreatedAfter > 0 {
-		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
-	}
-	query = query.OrderBy(fmt.Sprintf("%s DESC", s.options.SequenceField))
-	if limit > 0 {
-		query = query.Offset(skip).Limit(limit)
+	query, err := filterSelect(ctx, sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterTypeMap)
+	if err != nil {
+		return nil, err
 	}
 
 	rows, err := s.query(ctx, query)

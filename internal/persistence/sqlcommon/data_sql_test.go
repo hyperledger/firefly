@@ -23,10 +23,13 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDataE2EWithDB(t *testing.T) {
+	log.SetLevel("debug")
 
 	s := &SQLCommon{}
 	ctx := context.Background()
@@ -88,6 +91,23 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
+	assert.Equal(t, string(dataJson), string(dataReadJson))
+
+	// Query back the data
+	fb := persistence.DataFilterBuilder.New(ctx)
+	filter := fb.And(
+		fb.Eq("id", dataUpdated.ID.String()),
+		fb.Eq("namespace", dataUpdated.Namespace),
+		fb.Eq("type", string(dataUpdated.Type)),
+		fb.Eq("schema.entity", dataUpdated.Schema.Entity),
+		fb.Eq("schema.version", dataUpdated.Schema.Version),
+		fb.Eq("hash", dataUpdated.Hash),
+		fb.Gt("created", 0),
+	)
+	dataRes, err := s.GetData(ctx, 0, 1, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(dataRes))
+	dataReadJson, _ = json.Marshal(dataRes[0])
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
 }
@@ -171,6 +191,31 @@ func TestGetDataByIdScanFail(t *testing.T) {
 	dataId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetDataById(context.Background(), "ns1", &dataId)
+	assert.Regexp(t, "FF10121", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetDataQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetData(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetDataBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetData(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestGetDataReadMessageFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetData(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
