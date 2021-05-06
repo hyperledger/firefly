@@ -15,17 +15,17 @@
 package i18n
 
 import (
-	"context"
+	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-// NewError creates a new error
-func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error {
-	return errors.Errorf(SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+func TestSanitizeShort(t *testing.T) {
+	assert.Equal(t, "'testing'", SanitizeLimit("'testing', testing, 123", 9))
 }
 
-// WrapError wraps an error
-func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
-	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+func TestSanitizeLong(t *testing.T) {
+	assert.Equal(t,
+		"0123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456...",
+		SanitizeLimit("0123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789", 80))
 }

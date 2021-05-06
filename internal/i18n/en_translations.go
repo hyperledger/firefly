@@ -63,4 +63,6 @@ var (
 	MsgDupDataReferenceSealFail   = ffm("FF10145", "Invalid message: duplicate data reference at index %d", 400)
 	MsgVerifyFailedInvalidHashes  = ffm("FF10146", "Invalid message: hashes do not match", 400)
 	MsgVerifyFailedNilHashes      = ffm("FF10147", "Invalid message: nil hashes", 400)
+	MsgInvalidFilterField         = ffm("FF10148", "Unknown filter '%s'", 400)
+	MsgInvalidValueForFilterField = ffm("FF10149", "Unable to parse value for filter '%s'", 400)
 )
