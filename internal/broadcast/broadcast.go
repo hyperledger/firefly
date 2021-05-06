@@ -95,6 +95,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		Type:       batch.TX.Type,
+		Namespace:  batch.Namespace,
 		ID:         batch.TX.ID,
 		Author:     batch.Author,
 		Created:    fftypes.NowMillis(),

@@ -68,10 +68,11 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schem
 	// Create a broadcast message referring to the data
 	msg = &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Type:    fftypes.MessageTypeDefinition,
-			Author:  e.nodeIdentity,
-			Topic:   fftypes.SchemaTopicDefinitionName,
-			Context: fftypes.SystemContext,
+			Namespace: s.Namespace,
+			Type:      fftypes.MessageTypeDefinition,
+			Author:    e.nodeIdentity,
+			Topic:     fftypes.SchemaTopicDefinitionName,
+			Context:   fftypes.SystemContext,
 		},
 		Data: fftypes.DataRefs{
 			{ID: data.ID, Hash: data.Hash},

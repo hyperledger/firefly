@@ -24,14 +24,14 @@ import (
 )
 
 func TestBuildMessageFilter(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
-	f, err := fb.And(
-		fb.Eq("namespace", "ns1"),
-		fb.Or(
-			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
-			fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7"),
-		),
-		fb.Gt("created", 12345)).
+	fb := MessageFilterBuilder.New(context.Background(), 0)
+	f, err := fb.And().
+		Condition(fb.Eq("namespace", "ns1")).
+		Condition(fb.Or().
+			Condition(fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8")).
+			Condition(fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7")),
+		).
+		Condition(fb.Gt("created", 12345)).
 		Skip(50).
 		Limit(25).
 		Sort("namespace").
@@ -43,7 +43,7 @@ func TestBuildMessageFilter(t *testing.T) {
 }
 
 func TestBuildMessageFilter2(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	f, err := fb.Gt("created", "0").
 		Sort("created").
 		Ascending().
@@ -54,7 +54,7 @@ func TestBuildMessageFilter2(t *testing.T) {
 }
 
 func TestBuildMessageFilter3(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	f, err := fb.And(
 		fb.Lt("created", "0"),
 		fb.Lte("created", "0"),
@@ -63,7 +63,7 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.Contains("id", "abc"),
 		fb.NotContains("id", "def"),
 		fb.IContains("id", "ghi"),
-		fb.INotContains("id", "jkl"),
+		fb.NotIContains("id", "jkl"),
 	).Finalize()
 
 	assert.NoError(t, err)
@@ -71,7 +71,7 @@ func TestBuildMessageFilter3(t *testing.T) {
 }
 
 func TestBuildMessageIntConvert(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	f, err := fb.And(
 		fb.Lt("created", int(111)),
 		fb.Lt("created", int32(222)),
@@ -85,7 +85,7 @@ func TestBuildMessageIntConvert(t *testing.T) {
 }
 
 func TestBuildMessageStringConvert(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	u := uuid.MustParse("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
 	b32 := fftypes.UUIDBytes(u)
 	f, err := fb.And(
@@ -106,19 +106,19 @@ func TestBuildMessageStringConvert(t *testing.T) {
 }
 
 func TestBuildMessageFailStringConvert(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*namespace", err.Error())
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	_, err := fb.Lt("created", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*created", err.Error())
 }
 
 func TestFilterBuilderBadField(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	_, err := fb.And(
 		fb.Eq("wrong", "ns1"),
 	).Finalize()
@@ -126,7 +126,7 @@ func TestFilterBuilderBadField(t *testing.T) {
 }
 
 func TestFilterBuilderBadValue(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	_, err := fb.And(
 		fb.Eq("created", "not an int"),
 	).Finalize()
@@ -134,7 +134,7 @@ func TestFilterBuilderBadValue(t *testing.T) {
 }
 
 func TestFilterBuilderBadNestedValue(t *testing.T) {
-	fb := MessageFilterBuilder.New(context.Background())
+	fb := MessageFilterBuilder.New(context.Background(), 0)
 	_, err := fb.And(
 		fb.And(
 			fb.Eq("created", "not an int"),

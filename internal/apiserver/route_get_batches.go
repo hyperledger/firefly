@@ -20,22 +20,22 @@ import (
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var getBatchById = &Route{
-	Name:   "getBatchById",
-	Path:   "ns/{ns}/batches/{id}",
+var getBatches = &Route{
+	Name:   "getBatches",
+	Path:   "ns/{ns}/batches",
 	Method: http.MethodGet,
 	PathParams: []PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
 	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.GetBatchById(req.Context(), pp["ns"], pp["id"])
+		output, err = e.GetBatches(req.Context(), pp["ns"], buildFilter(req, persistence.BatchFilterBuilder))
 		return output, 200, err
 	},
 }

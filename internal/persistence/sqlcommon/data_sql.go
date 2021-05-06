@@ -159,9 +159,9 @@ func (s *SQLCommon) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Data, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, filter persistence.Filter) (message []*fftypes.Data, err error) {
 
-	query, err := filterSelect(ctx, sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

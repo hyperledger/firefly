@@ -92,7 +92,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
 	// Query back the data
-	fb := persistence.SchemaFilterBuilder.New(ctx)
+	fb := persistence.SchemaFilterBuilder.New(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", schemaUpdated.ID.String()),
 		fb.Eq("namespace", schemaUpdated.Namespace),
@@ -101,7 +101,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 		fb.Eq("version", schemaUpdated.Version),
 		fb.Gt("created", "0"),
 	)
-	schemas, err := s.GetSchemas(ctx, 0, 1, filter)
+	schemas, err := s.GetSchemas(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(schemas))
 	schemaReadJson, _ = json.Marshal(schemas[0])
@@ -195,24 +195,24 @@ func TestGetSchemaByIdScanFail(t *testing.T) {
 func TestGetSchemasQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetSchemas(context.Background(), 0, 1, f)
+	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetSchemasBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetSchemas(context.Background(), 0, 1, f)
+	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetSchemasReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := persistence.SchemaFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetSchemas(context.Background(), 0, 1, f)
+	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

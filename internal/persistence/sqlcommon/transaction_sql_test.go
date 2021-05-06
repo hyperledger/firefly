@@ -58,6 +58,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	transactionUpdated := &fftypes.Transaction{
 		ID:         &transactionId,
 		Type:       fftypes.TransactionTypePin,
+		Namespace:  "ns2",
 		Author:     "0x12345",
 		Created:    fftypes.NowMillis(),
 		TrackingID: "0x22222",
@@ -78,7 +79,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 
 	// Query back the transaction
-	fb := persistence.TransactionFilterBuilder.New(ctx)
+	fb := persistence.TransactionFilterBuilder.New(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("trackingid", transactionUpdated.TrackingID),
@@ -87,7 +88,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 		fb.Gt("created", "0"),
 		fb.Gt("confirmed", "0"),
 	)
-	transactions, err := s.GetTransactions(ctx, 0, 1, filter)
+	transactions, err := s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(transactions))
 	transactionReadJson, _ = json.Marshal(transactions[0])
@@ -98,7 +99,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("confirmed", "0"),
 	)
-	transactions, err = s.GetTransactions(ctx, 0, 1, filter)
+	transactions, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(transactions))
 }
@@ -189,24 +190,24 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 func TestGetTransactionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetTransactions(context.Background(), 0, 1, f)
+	f := persistence.TransactionFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetTransactionsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetTransactions(context.Background(), 0, 1, f)
+	f := persistence.TransactionFilterBuilder.New(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGettTransactionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetTransactions(context.Background(), 0, 1, f)
+	f := persistence.TransactionFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

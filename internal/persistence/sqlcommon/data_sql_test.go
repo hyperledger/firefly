@@ -94,7 +94,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
 	// Query back the data
-	fb := persistence.DataFilterBuilder.New(ctx)
+	fb := persistence.DataFilterBuilder.New(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
 		fb.Eq("namespace", dataUpdated.Namespace),
@@ -104,7 +104,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		fb.Eq("hash", dataUpdated.Hash),
 		fb.Gt("created", 0),
 	)
-	dataRes, err := s.GetData(ctx, 0, 1, filter)
+	dataRes, err := s.GetData(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(dataRes))
 	dataReadJson, _ = json.Marshal(dataRes[0])
@@ -198,24 +198,24 @@ func TestGetDataByIdScanFail(t *testing.T) {
 func TestGetDataQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetData(context.Background(), 0, 1, f)
+	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetDataBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetData(context.Background(), 0, 1, f)
+	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetDataReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := persistence.DataFilterBuilder.New(context.Background()).Eq("id", "")
-	_, err := s.GetData(context.Background(), 0, 1, f)
+	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

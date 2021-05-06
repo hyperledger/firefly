@@ -66,6 +66,7 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 	s = &SQLCommon{
 		options: &SQLCommonOptions{
 			PlaceholderFormat: sq.Dollar,
+			SequenceField:     "seq",
 		},
 		db: mdb,
 	}
