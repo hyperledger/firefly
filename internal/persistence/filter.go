@@ -51,14 +51,18 @@ type Filter interface {
 type FilterOp string
 
 const (
-	FilterOpAnd FilterOp = "&&"
-	FilterOpOr  FilterOp = "||"
-	FilterOpEq  FilterOp = "=="
-	FilterOpNe  FilterOp = "!="
-	FilterOpGt  FilterOp = ">"
-	FilterOpLt  FilterOp = "<"
-	FilterOpGte FilterOp = ">="
-	FilterOpLte FilterOp = "<="
+	FilterOpAnd      FilterOp = "&&"
+	FilterOpOr       FilterOp = "||"
+	FilterOpEq       FilterOp = "=="
+	FilterOpNe       FilterOp = "!="
+	FilterOpGt       FilterOp = ">"
+	FilterOpLt       FilterOp = "<"
+	FilterOpGte      FilterOp = ">="
+	FilterOpLte      FilterOp = "<="
+	FilterOpCont     FilterOp = "%="
+	FilterOpNotCont  FilterOp = "%!"
+	FilterOpICont    FilterOp = "^="
+	FilterOpNotICont FilterOp = "^!"
 )
 
 // FilterFactory creates a filter builder in the given context, and contains the rules on
@@ -85,6 +89,14 @@ type FilterBuilder interface {
 	Gte(name string, value driver.Value) Filter
 	// Lte less than or equal
 	Lte(name string, value driver.Value) Filter
+	// Contains allows the string anywhere - case sensitive
+	Contains(name string, value driver.Value) Filter
+	// NotContains disallows the string anywhere - case sensitive
+	NotContains(name string, value driver.Value) Filter
+	// IContains allows the string anywhere - case sensitive
+	IContains(name string, value driver.Value) Filter
+	// INotContains disallows the string anywhere - case sensitive
+	INotContains(name string, value driver.Value) Filter
 }
 
 // FilterInfo is the structure returned by Finalize to the plugin, to serialize this filter
@@ -278,6 +290,22 @@ func (fb *filterBuilder) Gte(name string, value driver.Value) Filter {
 
 func (fb *filterBuilder) Lte(name string, value driver.Value) Filter {
 	return fb.fieldFilter(FilterOpLte, name, value)
+}
+
+func (fb *filterBuilder) Contains(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpCont, name, value)
+}
+
+func (fb *filterBuilder) NotContains(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotCont, name, value)
+}
+
+func (fb *filterBuilder) IContains(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpICont, name, value)
+}
+
+func (fb *filterBuilder) INotContains(name string, value driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotICont, name, value)
 }
 
 func (fb *filterBuilder) fieldFilter(op FilterOp, name string, value interface{}) Filter {

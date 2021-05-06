@@ -58,10 +58,14 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.Lte("created", "0"),
 		fb.Gte("created", "0"),
 		fb.Neq("created", "0"),
+		fb.Contains("id", "abc"),
+		fb.NotContains("id", "def"),
+		fb.IContains("id", "ghi"),
+		fb.INotContains("id", "jkl"),
 	).Finalize()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 )", f.String())
+	assert.Equal(t, "( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( id %= 'abc' ) && ( id %! 'def' ) && ( id ^= 'ghi' ) && ( id ^! 'jkl' )", f.String())
 }
 
 func TestFilterBuilderBadField(t *testing.T) {
