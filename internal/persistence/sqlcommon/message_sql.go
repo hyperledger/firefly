@@ -17,7 +17,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -44,6 +43,13 @@ var (
 		"tx_type",
 		"tx_id",
 		"batch_id",
+	}
+	msgFilterTypeMap = map[string]string{
+		"type":    "mtype",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
+		"group":   "group_id",
+		"batch":   "batch_id",
 	}
 )
 
@@ -346,47 +352,13 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID
 	return msg, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter *persistence.MessageFilter) (message []*fftypes.Message, err error) {
+func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, s.options.SequenceField)
-	query := sq.Select(cols...).From("messages")
-
-	if filter.ConfirmedAfter > 0 {
-		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
-	} else if filter.ConfrimedOnly {
-		query = query.Where(sq.Gt{"confirmed": 0})
-	} else if filter.UnconfrimedOnly {
-		query = query.Where(sq.Eq{"confirmed": 0})
-	}
-
-	if filter.NamespaceEquals != "" {
-		query = query.Where(sq.Eq{"namespace": filter.NamespaceEquals})
-	}
-	if filter.TypeEquals != "" {
-		query = query.Where(sq.Eq{"mtype": filter.TypeEquals})
-	}
-	if filter.AuthorEquals != "" {
-		query = query.Where(sq.Eq{"author": filter.AuthorEquals})
-	}
-	if filter.TopicEquals != "" {
-		query = query.Where(sq.Eq{"topic": filter.TopicEquals})
-	}
-	if filter.ContextEquals != "" {
-		query = query.Where(sq.Eq{"context": filter.ContextEquals})
-	}
-	if filter.GroupEquals != nil {
-		query = query.Where(sq.Eq{"group_id": filter.GroupEquals})
-	}
-	if filter.CIDEquals != nil {
-		query = query.Where(sq.Eq{"cid": filter.CIDEquals})
-	}
-	if filter.CreatedAfter > 0 {
-		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
-	}
-	query = query.OrderBy(fmt.Sprintf("%s DESC", s.options.SequenceField))
-	if limit > 0 {
-		query = query.Offset(skip).Limit(limit)
+	query, err := filterSelect(ctx, sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
+	if err != nil {
+		return nil, err
 	}
 
 	rows, err := s.query(ctx, query)

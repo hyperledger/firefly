@@ -23,12 +23,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTransaction2EWithDB(t *testing.T) {
 
+	log.SetLevel("debug")
 	s := &SQLCommon{}
 	ctx := context.Background()
 	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
@@ -76,14 +78,15 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 
 	// Query back the transaction
-	filter := &persistence.TransactionFilter{
-		IDEquals:         transactionUpdated.ID,
-		TrackingIDEquals: transactionUpdated.TrackingID,
-		ProtocolIDEquals: transactionUpdated.ProtocolID,
-		AuthorEquals:     transactionUpdated.Author,
-		CreatedAfter:     1,
-		ConfirmedAfter:   1,
-	}
+	fb := persistence.TransactionFilterBuilder.New(ctx)
+	filter := fb.And(
+		fb.Eq("id", transactionUpdated.ID.String()),
+		fb.Eq("trackingid", transactionUpdated.TrackingID),
+		fb.Eq("protocolid", transactionUpdated.ProtocolID),
+		fb.Eq("author", transactionUpdated.Author),
+		fb.Gt("created", "0"),
+		fb.Gt("confirmed", "0"),
+	)
 	transactions, err := s.GetTransactions(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(transactions))
@@ -91,9 +94,10 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 
 	// Negative test on filter
-	filter.ConfrimedOnly = false
-	filter.UnconfrimedOnly = true
-	filter.ConfirmedAfter = 0
+	filter = fb.And(
+		fb.Eq("id", transactionUpdated.ID.String()),
+		fb.Eq("confirmed", "0"),
+	)
 	transactions, err = s.GetTransactions(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(transactions))
@@ -185,15 +189,24 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 func TestGetTransactionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTransactions(context.Background(), 0, 1, &persistence.TransactionFilter{ConfrimedOnly: true})
+	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetTransactions(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTransactionsBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetTransactions(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGettTransactionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetTransactions(context.Background(), 0, 1, &persistence.TransactionFilter{})
+	f := persistence.TransactionFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetTransactions(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var (
@@ -35,6 +36,9 @@ var (
 		"hash",
 		"created",
 		"value",
+	}
+	schemaFilterTypeMap = map[string]string{
+		"type": "stype",
 	}
 )
 
@@ -141,4 +145,30 @@ func (s *SQLCommon) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID)
 	}
 
 	return schema, nil
+}
+
+func (s *SQLCommon) GetSchemas(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Schema, err error) {
+
+	query, err := filterSelect(ctx, sq.Select(schemaColumns...).From("schemas"), filter, schemaFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	schemas := []*fftypes.Schema{}
+	for rows.Next() {
+		schema, err := s.schemaResult(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		schemas = append(schemas, schema)
+	}
+
+	return schemas, err
+
 }

@@ -17,7 +17,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -40,6 +39,12 @@ var (
 		"confirmed",
 		"tx_type",
 		"tx_id",
+	}
+	batchFilterTypeMap = map[string]string{
+		"type":    "btype",
+		"payload": "payload_ref",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
 	}
 )
 
@@ -157,30 +162,11 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) 
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter *persistence.BatchFilter) (message []*fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Batch, err error) {
 
-	query := sq.Select(batchColumns...).From("batches")
-
-	if filter.ConfirmedAfter > 0 {
-		query = query.Where(sq.Gt{"confirmed": filter.ConfirmedAfter})
-	} else if filter.ConfrimedOnly {
-		query = query.Where(sq.Gt{"confirmed": 0})
-	} else if filter.UnconfrimedOnly {
-		query = query.Where(sq.Eq{"confirmed": 0})
-	}
-
-	if filter.NamespaceEquals != "" {
-		query = query.Where(sq.Eq{"namespace": filter.NamespaceEquals})
-	}
-	if filter.AuthorEquals != "" {
-		query = query.Where(sq.Eq{"author": filter.AuthorEquals})
-	}
-	if filter.CreatedAfter > 0 {
-		query = query.Where(sq.Gt{"created": filter.CreatedAfter})
-	}
-	query = query.OrderBy(fmt.Sprintf("%s DESC", s.options.SequenceField))
-	if limit > 0 {
-		query = query.Offset(skip).Limit(limit)
+	query, err := filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	if err != nil {
+		return nil, err
 	}
 
 	rows, err := s.query(ctx, query)

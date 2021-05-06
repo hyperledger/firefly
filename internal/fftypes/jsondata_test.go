@@ -60,6 +60,6 @@ func TestJSONData(t *testing.T) {
 
 	var badJson JSONData = map[string]interface{}{"not": map[bool]string{true: "json"}}
 	hash, err = badJson.Hash(context.Background(), "badStuff")
-	assert.Regexp(t, "FF10125.*badStuff", err.Error())
+	assert.Regexp(t, "FF10151.*badStuff", err.Error())
 	assert.Nil(t, hash)
 }

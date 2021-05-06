@@ -26,7 +26,7 @@ import (
 func TestSQLFilterBuilder(t *testing.T) {
 
 	fb := persistence.MessageFilterBuilder.New(context.Background())
-	f, err := fb.And(
+	f := fb.And(
 		fb.Eq("namespace", "ns1"),
 		fb.Or(
 			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
@@ -36,17 +36,17 @@ func TestSQLFilterBuilder(t *testing.T) {
 		Skip(50).
 		Limit(25).
 		Sort("namespace").
-		Descending().
-		Finalize()
-	assert.NoError(t, err)
+		Descending()
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err = filterSelect(context.Background(), sel, f)
+	sel, err := filterSelect(context.Background(), sel, f, map[string]string{
+		"namespace": "ns",
+	})
 	assert.NoError(t, err)
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (namespace = ? AND (id = ? OR id = ?) AND created > ?)", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND created > ?)", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])
@@ -56,7 +56,7 @@ func TestSQLFilterBuilder(t *testing.T) {
 func TestSQLFilterBuilderExtraOps(t *testing.T) {
 
 	fb := persistence.MessageFilterBuilder.New(context.Background())
-	f, err := fb.And(
+	f := fb.And(
 		fb.Lt("created", "0"),
 		fb.Lte("created", "0"),
 		fb.Gte("created", "0"),
@@ -65,11 +65,10 @@ func TestSQLFilterBuilderExtraOps(t *testing.T) {
 		fb.NotContains("id", "def"),
 		fb.IContains("id", "ghi"),
 		fb.INotContains("id", "jkl"),
-	).Finalize()
-	assert.NoError(t, err)
+	)
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err = filterSelect(context.Background(), sel, f)
+	sel, err := filterSelect(context.Background(), sel, f, nil)
 	assert.NoError(t, err)
 
 	sqlFilter, _, err := sel.ToSql()
@@ -77,35 +76,42 @@ func TestSQLFilterBuilderExtraOps(t *testing.T) {
 	assert.Equal(t, "SELECT * FROM mytable WHERE (created < ? AND created <= ? AND created >= ? AND created <> ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?)", sqlFilter)
 }
 
+func TestSQLFilterBuilderFinalizeFail(t *testing.T) {
+	fb := persistence.MessageFilterBuilder.New(context.Background())
+	sel := squirrel.Select("*").From("mytable")
+	_, err := filterSelect(context.Background(), sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
+	assert.Regexp(t, "FF10149.*namespace", err.Error())
+}
+
 func TestSQLFilterBuilderBadOp(t *testing.T) {
 
 	sel := squirrel.Select("*").From("mytable")
-	_, err := filterSelect(context.Background(), sel, &persistence.FilterInfo{
+	_, err := filterSelectFinalized(context.Background(), sel, &persistence.FilterInfo{
 		Op: persistence.FilterOp("wrong"),
-	})
+	}, nil)
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
 }
 
 func TestSQLFilterBuilderBadOpInOr(t *testing.T) {
 
 	sel := squirrel.Select("*").From("mytable")
-	_, err := filterSelect(context.Background(), sel, &persistence.FilterInfo{
+	_, err := filterSelectFinalized(context.Background(), sel, &persistence.FilterInfo{
 		Op: persistence.FilterOpOr,
 		Children: []*persistence.FilterInfo{
 			{Op: persistence.FilterOp("wrong")},
 		},
-	})
+	}, nil)
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
 }
 
 func TestSQLFilterBuilderBadOpInAnd(t *testing.T) {
 
 	sel := squirrel.Select("*").From("mytable")
-	_, err := filterSelect(context.Background(), sel, &persistence.FilterInfo{
+	_, err := filterSelectFinalized(context.Background(), sel, &persistence.FilterInfo{
 		Op: persistence.FilterOpAnd,
 		Children: []*persistence.FilterInfo{
 			{Op: persistence.FilterOp("wrong")},
 		},
-	})
+	}, nil)
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
 }

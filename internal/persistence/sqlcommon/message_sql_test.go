@@ -121,18 +121,18 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
 	// Query back the message
-	filter := &persistence.MessageFilter{
-		IDEquals:        msgUpdated.Header.ID,
-		NamespaceEquals: msgUpdated.Header.Namespace,
-		TypeEquals:      string(msgUpdated.Header.Type),
-		AuthorEquals:    msgUpdated.Header.Author,
-		TopicEquals:     msgUpdated.Header.Topic,
-		ContextEquals:   msgUpdated.Header.Context,
-		GroupEquals:     msgUpdated.Header.Group,
-		CIDEquals:       msgUpdated.Header.CID,
-		CreatedAfter:    1,
-		ConfirmedAfter:  1,
-	}
+	fb := persistence.MessageFilterBuilder.New(ctx)
+	filter := fb.And(
+		fb.Eq("id", msgUpdated.Header.ID.String()),
+		fb.Eq("namespace", msgUpdated.Header.Namespace),
+		fb.Eq("type", string(msgUpdated.Header.Type)),
+		fb.Eq("author", msgUpdated.Header.Author),
+		fb.Eq("topic", msgUpdated.Header.Topic),
+		fb.Eq("group", msgUpdated.Header.Group),
+		fb.Eq("cid", msgUpdated.Header.CID),
+		fb.Gt("created", "0"),
+		fb.Gt("confirmed", "0"),
+	)
 	msgs, err := s.GetMessages(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
@@ -140,9 +140,10 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
 	// Negative test on filter
-	filter.ConfrimedOnly = false
-	filter.UnconfrimedOnly = true
-	filter.ConfirmedAfter = 0
+	filter = fb.And(
+		fb.Eq("id", msgUpdated.Header.ID.String()),
+		fb.Eq("created", "0"),
+	)
 	msgs, err = s.GetMessages(ctx, 0, 1, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(msgs))
@@ -398,10 +399,18 @@ func TestGetMessageByIdLoadRefsFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetMessagesBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := persistence.MessageFilterBuilder.New(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetMessages(context.Background(), 0, 1, f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
 func TestGetMessagesQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessages(context.Background(), 0, 1, &persistence.MessageFilter{})
+	f := persistence.MessageFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetMessages(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -409,7 +418,8 @@ func TestGetMessagesQueryFail(t *testing.T) {
 func TestGetMessagesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetMessages(context.Background(), 0, 1, &persistence.MessageFilter{})
+	f := persistence.MessageFilterBuilder.New(context.Background()).Eq("id", "")
+	_, err := s.GetMessages(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -423,7 +433,8 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
 		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessages(context.Background(), 0, 1, &persistence.MessageFilter{ConfrimedOnly: true})
+	f := persistence.MessageFilterBuilder.New(context.Background()).Gt("confirmed", "0")
+	_, err := s.GetMessages(context.Background(), 0, 1, f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
