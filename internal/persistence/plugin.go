@@ -103,32 +103,32 @@ type Capabilities struct {
 }
 
 var MessageFilterBuilder = &filterDefinition{
-	"id":        &FilterableUUID{},
+	"id":        &FilterableString{},
 	"cid":       &FilterableString{},
 	"namespace": &FilterableString{},
 	"type":      &FilterableString{},
 	"author":    &FilterableString{},
 	"topic":     &FilterableString{},
 	"context":   &FilterableString{},
-	"group":     &FilterableUUID{},
+	"group":     &FilterableString{},
 	"created":   &FilterableInt64{},
 	"confirmed": &FilterableInt64{},
 }
 
 var BatchFilterBuilder = &filterDefinition{
-	"id":        &FilterableUUID{},
+	"id":        &FilterableString{},
 	"namespace": &FilterableString{},
 	"type":      &FilterableString{},
 	"author":    &FilterableString{},
 	"topic":     &FilterableString{},
 	"context":   &FilterableString{},
-	"group":     &FilterableUUID{},
+	"group":     &FilterableString{},
 	"created":   &FilterableInt64{},
 	"confirmed": &FilterableInt64{},
 }
 
 var TransactionFilterBuilder = &filterDefinition{
-	"id":         &FilterableUUID{},
+	"id":         &FilterableString{},
 	"namespace":  &FilterableString{},
 	"type":       &FilterableString{},
 	"author":     &FilterableString{},
