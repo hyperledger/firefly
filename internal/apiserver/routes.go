@@ -15,7 +15,7 @@
 package apiserver
 
 import (
-	"context"
+	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -24,9 +24,15 @@ import (
 var Routes = []*Route{
 	postDefsSchema,
 	getMsgById,
+	getMsgs,
 	getBatchById,
+	getBatches,
 	getDataById,
-	getTXById,
+	getData,
+	getTxnById,
+	getTxns,
+	getSchemaById,
+	getSchemas,
 }
 
 // Route defines each API operation on the REST API of Firefly
@@ -51,7 +57,7 @@ type Route struct {
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
-	JSONHandler func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error)
+	JSONHandler func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error)
 	// TODO: Handler for form content type, and/or esacpe valve custom handlers
 }
 

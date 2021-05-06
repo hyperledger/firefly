@@ -15,7 +15,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
@@ -35,8 +34,8 @@ var getDataById = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
-	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.GetDataById(ctx, pp["ns"], pp["id"])
+	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		output, err = e.GetDataById(req.Context(), pp["ns"], pp["id"])
 		return output, 200, err
 	},
 }

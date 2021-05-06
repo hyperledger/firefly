@@ -147,9 +147,9 @@ func (s *SQLCommon) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID)
 	return schema, nil
 }
 
-func (s *SQLCommon) GetSchemas(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Schema, err error) {
+func (s *SQLCommon) GetSchemas(ctx context.Context, filter persistence.Filter) (message []*fftypes.Schema, err error) {
 
-	query, err := filterSelect(ctx, sq.Select(schemaColumns...).From("schemas"), filter, schemaFilterTypeMap)
+	query, err := s.filterSelect(ctx, sq.Select(schemaColumns...).From("schemas"), filter, schemaFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

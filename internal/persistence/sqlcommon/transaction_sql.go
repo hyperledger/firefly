@@ -30,6 +30,7 @@ var (
 	transactionColumns = []string{
 		"id",
 		"ttype",
+		"namespace",
 		"author",
 		"created",
 		"tracking_id",
@@ -68,6 +69,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Type)).
+				Set("namespace", transaction.Namespace).
 				Set("author", transaction.Author).
 				Set("created", transaction.Created).
 				Set("tracking_id", transaction.TrackingID).
@@ -87,6 +89,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Values(
 					transaction.ID,
 					string(transaction.Type),
+					transaction.Namespace,
 					transaction.Author,
 					transaction.Created,
 					transaction.TrackingID,
@@ -111,6 +114,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	err := row.Scan(
 		&transaction.ID,
 		&transaction.Type,
+		&transaction.Namespace,
 		&transaction.Author,
 		&transaction.Created,
 		&transaction.TrackingID,
@@ -149,9 +153,9 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.
 	return transaction, nil
 }
 
-func (s *SQLCommon) GetTransactions(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactions(ctx context.Context, filter persistence.Filter) (message []*fftypes.Transaction, err error) {
 
-	query, err := filterSelect(ctx, sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterTypeMap)
+	query, err := s.filterSelect(ctx, sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

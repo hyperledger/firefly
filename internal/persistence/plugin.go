@@ -67,7 +67,7 @@ type PeristenceInterface interface {
 	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, skip, limit uint64, filter Filter) (message []*fftypes.Message, err error)
+	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
 	// Upsert a data record
 	UpsertData(ctx context.Context, data *fftypes.Data) (err error)
@@ -76,7 +76,7 @@ type PeristenceInterface interface {
 	GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error)
 
 	// Get data
-	GetData(ctx context.Context, skip, limit uint64, filter Filter) (message []*fftypes.Data, err error)
+	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
 
 	// Upsert a batch
 	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
@@ -85,7 +85,7 @@ type PeristenceInterface interface {
 	GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error)
 
 	// Get batches
-	GetBatches(ctx context.Context, skip, limit uint64, filter Filter) (message []*fftypes.Batch, err error)
+	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
 
 	// Upsert a transaction
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
@@ -94,7 +94,7 @@ type PeristenceInterface interface {
 	GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error)
 
 	// Get transactions
-	GetTransactions(ctx context.Context, skip, limit uint64, filter Filter) (message []*fftypes.Transaction, err error)
+	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
 	// Upsert a schema
 	UpsertSchema(ctx context.Context, data *fftypes.Schema) (err error)
@@ -103,7 +103,7 @@ type PeristenceInterface interface {
 	GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Schema, err error)
 
 	// Get schemas
-	GetSchemas(ctx context.Context, skip, limit uint64, filter Filter) (message []*fftypes.Schema, err error)
+	GetSchemas(ctx context.Context, filter Filter) (message []*fftypes.Schema, err error)
 }
 
 // No events currently defined for the persistence interface
@@ -125,6 +125,7 @@ var MessageFilterBuilder = &filterDefinition{
 	"group":     &FilterableString{},
 	"created":   &FilterableInt64{},
 	"confirmed": &FilterableInt64{},
+	"sequence":  &FilterableInt64{},
 }
 
 var BatchFilterBuilder = &filterDefinition{

@@ -15,7 +15,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
@@ -32,8 +31,8 @@ var postDefsSchema = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.BroadcastSchemaDefinition(ctx, input.(*fftypes.Schema))
+	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		output, err = e.BroadcastSchemaDefinition(req.Context(), input.(*fftypes.Schema))
 		return output, 202 /* Accepted - as async */, err
 	},
 }

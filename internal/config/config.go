@@ -42,6 +42,7 @@ const (
 	HttpTLSKeyFile             Key = "http.tls.keyFile"
 	NodeIdentity               Key = "node.identity"
 	APIRequestTimeout          Key = "api.requestTimeout"
+	APIDefaultFilterLimit      Key = "api.defaultFilterLimit"
 	DatabaseType               Key = "database.type"
 	Database                   Key = "database"
 	BlockchainType             Key = "blockchain.type"
@@ -66,6 +67,7 @@ func Reset() {
 	viper.SetDefault(string(HttpReadTimeout), 15000)
 	viper.SetDefault(string(HttpWriteTimeout), 15000)
 	viper.SetDefault(string(APIRequestTimeout), 12000)
+	viper.SetDefault(string(APIDefaultFilterLimit), 25)
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchTimeout), 500)
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), 120000)

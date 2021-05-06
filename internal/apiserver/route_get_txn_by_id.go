@@ -22,9 +22,9 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var getBatchById = &Route{
-	Name:   "getBatchById",
-	Path:   "ns/{ns}/batches/{id}",
+var getTxnById = &Route{
+	Name:   "getTxnById",
+	Path:   "ns/{ns}/transactions/{id}",
 	Method: http.MethodGet,
 	PathParams: []PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
@@ -33,9 +33,9 @@ var getBatchById = &Route{
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
 	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.GetBatchById(req.Context(), pp["ns"], pp["id"])
+		output, err = e.GetTransactionById(req.Context(), pp["ns"], pp["id"])
 		return output, 200, err
 	},
 }

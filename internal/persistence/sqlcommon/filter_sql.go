@@ -24,27 +24,36 @@ import (
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-func filterSelect(ctx context.Context, sel sq.SelectBuilder, filter persistence.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filter persistence.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
 		return sel, err
 	}
 	if len(fi.Sort) == 0 {
-		fi.Sort = []string{"seq"}
+		fi.Sort = []string{s.options.SequenceField}
 		fi.Descending = true
 	}
-	return filterSelectFinalized(ctx, sel, fi, typeMap)
+	sel, err = s.filterSelectFinalized(ctx, sel, fi, typeMap)
+	if err == nil {
+		if fi.Skip > 0 {
+			sel = sel.Offset(fi.Skip)
+		}
+		if fi.Limit > 0 {
+			sel = sel.Limit(fi.Limit)
+		}
+	}
+	return sel, err
 }
 
-func filterSelectFinalized(ctx context.Context, sel sq.SelectBuilder, fi *persistence.FilterInfo, tm map[string]string) (sq.SelectBuilder, error) {
-	fop, err := filterOp(ctx, fi, tm)
+func (s *SQLCommon) filterSelectFinalized(ctx context.Context, sel sq.SelectBuilder, fi *persistence.FilterInfo, tm map[string]string) (sq.SelectBuilder, error) {
+	fop, err := s.filterOp(ctx, fi, tm)
 	if err != nil {
 		return sel, err
 	}
 	return sel.Where(fop), nil
 }
 
-func escapeLike(value persistence.FilterSerialization) string {
+func (s *SQLCommon) escapeLike(value persistence.FilterSerialization) string {
 	v, _ := value.Value()
 	vs, _ := v.(string)
 	vs = strings.ReplaceAll(vs, "[", "[[]")
@@ -53,7 +62,10 @@ func escapeLike(value persistence.FilterSerialization) string {
 	return vs
 }
 
-func mapField(f string, tm map[string]string) string {
+func (s *SQLCommon) mapField(f string, tm map[string]string) string {
+	if f == "sequence" {
+		return s.options.SequenceField
+	}
 	if tm == nil {
 		return f
 	}
@@ -63,53 +75,53 @@ func mapField(f string, tm map[string]string) string {
 	return f
 }
 
-func filterOp(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterOp(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	switch op.Op {
 	case persistence.FilterOpOr:
-		return filterOr(ctx, op, tm)
+		return s.filterOr(ctx, op, tm)
 	case persistence.FilterOpAnd:
-		return filterAnd(ctx, op, tm)
+		return s.filterAnd(ctx, op, tm)
 	case persistence.FilterOpEq:
-		return sq.Eq{mapField(op.Field, tm): op.Value}, nil
+		return sq.Eq{s.mapField(op.Field, tm): op.Value}, nil
 	case persistence.FilterOpNe:
-		return sq.NotEq{mapField(op.Field, tm): op.Value}, nil
+		return sq.NotEq{s.mapField(op.Field, tm): op.Value}, nil
 	case persistence.FilterOpCont:
-		return sq.Like{mapField(op.Field, tm): fmt.Sprintf("%%%s%%", escapeLike(op.Value))}, nil
+		return sq.Like{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case persistence.FilterOpNotCont:
-		return sq.NotLike{mapField(op.Field, tm): fmt.Sprintf("%%%s%%", escapeLike(op.Value))}, nil
+		return sq.NotLike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case persistence.FilterOpICont:
-		return sq.ILike{mapField(op.Field, tm): fmt.Sprintf("%%%s%%", escapeLike(op.Value))}, nil
+		return sq.ILike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case persistence.FilterOpNotICont:
-		return sq.NotILike{mapField(op.Field, tm): fmt.Sprintf("%%%s%%", escapeLike(op.Value))}, nil
+		return sq.NotILike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case persistence.FilterOpGt:
-		return sq.Gt{mapField(op.Field, tm): op.Value}, nil
+		return sq.Gt{s.mapField(op.Field, tm): op.Value}, nil
 	case persistence.FilterOpGte:
-		return sq.GtOrEq{mapField(op.Field, tm): op.Value}, nil
+		return sq.GtOrEq{s.mapField(op.Field, tm): op.Value}, nil
 	case persistence.FilterOpLt:
-		return sq.Lt{mapField(op.Field, tm): op.Value}, nil
+		return sq.Lt{s.mapField(op.Field, tm): op.Value}, nil
 	case persistence.FilterOpLte:
-		return sq.LtOrEq{mapField(op.Field, tm): op.Value}, nil
+		return sq.LtOrEq{s.mapField(op.Field, tm): op.Value}, nil
 	default:
 		return nil, i18n.NewError(ctx, i18n.MsgUnsupportedSQLOpInFilter, op.Op)
 	}
 }
 
-func filterOr(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterOr(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	var err error
 	or := make(sq.Or, len(op.Children))
 	for i, c := range op.Children {
-		if or[i], err = filterOp(ctx, c, tm); err != nil {
+		if or[i], err = s.filterOp(ctx, c, tm); err != nil {
 			return nil, err
 		}
 	}
 	return or, nil
 }
 
-func filterAnd(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterAnd(ctx context.Context, op *persistence.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	var err error
 	and := make(sq.And, len(op.Children))
 	for i, c := range op.Children {
-		if and[i], err = filterOp(ctx, c, tm); err != nil {
+		if and[i], err = s.filterOp(ctx, c, tm); err != nil {
 			return nil, err
 		}
 	}

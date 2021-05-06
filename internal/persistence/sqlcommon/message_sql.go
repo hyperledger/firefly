@@ -352,11 +352,11 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID
 	return msg, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Message, err error) {
+func (s *SQLCommon) GetMessages(ctx context.Context, filter persistence.Filter) (message []*fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, s.options.SequenceField)
-	query, err := filterSelect(ctx, sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
+	query, err := s.filterSelect(ctx, sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

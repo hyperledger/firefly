@@ -162,9 +162,9 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) 
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, skip, limit uint64, filter persistence.Filter) (message []*fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, filter persistence.Filter) (message []*fftypes.Batch, err error) {
 
-	query, err := filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	query, err := s.filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

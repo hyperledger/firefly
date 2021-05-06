@@ -40,9 +40,15 @@ type Engine interface {
 
 	// Data Queryuery
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetTransactions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Transaction, error)
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
+	GetMessages(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Message, error)
 	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
+	GetBatches(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
+	GetData(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Data, error)
+	GetSchemaById(ctx context.Context, ns, id string) (*fftypes.Schema, error)
+	GetSchemas(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Schema, error)
 }
 
 type engine struct {

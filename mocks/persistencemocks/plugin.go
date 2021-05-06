@@ -73,13 +73,13 @@ func (_m *Plugin) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (*
 	return r0, r1
 }
 
-// GetBatches provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Batch, error) {
-	ret := _m.Called(ctx, skip, limit, filter)
+// GetBatches provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetBatches(ctx context.Context, filter persistence.Filter) ([]*fftypes.Batch, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Batch); ok {
-		r0 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Batch); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Batch)
@@ -87,8 +87,8 @@ func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, fil
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
-		r1 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,13 +96,13 @@ func (_m *Plugin) GetBatches(ctx context.Context, skip uint64, limit uint64, fil
 	return r0, r1
 }
 
-// GetData provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetData(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Data, error) {
-	ret := _m.Called(ctx, skip, limit, filter)
+// GetData provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetData(ctx context.Context, filter persistence.Filter) ([]*fftypes.Data, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Data); ok {
-		r0 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Data); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Data)
@@ -110,8 +110,8 @@ func (_m *Plugin) GetData(ctx context.Context, skip uint64, limit uint64, filter
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
-		r1 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -165,13 +165,13 @@ func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) 
 	return r0, r1
 }
 
-// GetMessages provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Message, error) {
-	ret := _m.Called(ctx, skip, limit, filter)
+// GetMessages provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetMessages(ctx context.Context, filter persistence.Filter) ([]*fftypes.Message, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Message); ok {
-		r0 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Message); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Message)
@@ -179,8 +179,8 @@ func (_m *Plugin) GetMessages(ctx context.Context, skip uint64, limit uint64, fi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
-		r1 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -211,13 +211,13 @@ func (_m *Plugin) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (
 	return r0, r1
 }
 
-// GetSchemas provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetSchemas(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Schema, error) {
-	ret := _m.Called(ctx, skip, limit, filter)
+// GetSchemas provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetSchemas(ctx context.Context, filter persistence.Filter) ([]*fftypes.Schema, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Schema
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Schema); ok {
-		r0 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Schema); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Schema)
@@ -225,8 +225,8 @@ func (_m *Plugin) GetSchemas(ctx context.Context, skip uint64, limit uint64, fil
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
-		r1 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -257,13 +257,13 @@ func (_m *Plugin) GetTransactionById(ctx context.Context, ns string, id *uuid.UU
 	return r0, r1
 }
 
-// GetTransactions provides a mock function with given fields: ctx, skip, limit, filter
-func (_m *Plugin) GetTransactions(ctx context.Context, skip uint64, limit uint64, filter persistence.Filter) ([]*fftypes.Transaction, error) {
-	ret := _m.Called(ctx, skip, limit, filter)
+// GetTransactions provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTransactions(ctx context.Context, filter persistence.Filter) ([]*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint64, persistence.Filter) []*fftypes.Transaction); ok {
-		r0 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Transaction); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Transaction)
@@ -271,8 +271,8 @@ func (_m *Plugin) GetTransactions(ctx context.Context, skip uint64, limit uint64
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uint64, uint64, persistence.Filter) error); ok {
-		r1 = rf(ctx, skip, limit, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}

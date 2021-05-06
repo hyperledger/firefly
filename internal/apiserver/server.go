@@ -179,7 +179,7 @@ func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
 			queryParams[qp.Name] = req.Form.Get(qp.Name)
 		}
 		if err == nil {
-			output, status, err = route.JSONHandler(req.Context(), e, pathParams, queryParams, input)
+			output, status, err = route.JSONHandler(e, req, pathParams, queryParams, input)
 		}
 		if output == nil && err == nil && status != 204 {
 			err = i18n.NewError(req.Context(), i18n.Msg404NoResult)

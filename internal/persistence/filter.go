@@ -39,14 +39,28 @@ type Filter interface {
 	Descending() Filter
 
 	// Skip for pagination
-	Skip(uint) Filter
+	Skip(uint64) Filter
 
 	// Limit for pagination
-	Limit(uint) Filter
+	Limit(uint64) Filter
 
 	// Finalize completes the filter, and for the plugin to validated output structure to convert
 	Finalize() (*FilterInfo, error)
+
+	// Builder returns the builder that made it
+	Builder() FilterBuilder
 }
+
+// MultiConditionFilter gives convenience methods to add conditions
+type MultiConditionFilter interface {
+	Filter
+	// Add adds filters to the condition
+	Condition(...Filter) MultiConditionFilter
+}
+
+type AndFilter interface{ MultiConditionFilter }
+
+type OrFilter interface{ MultiConditionFilter }
 
 // FilterOp enum of filter operations that must be implemented by plugins - the string value is
 // used in the core string formatting method (for logging etc.)
@@ -70,15 +84,17 @@ const (
 // FilterFactory creates a filter builder in the given context, and contains the rules on
 // which fields can be used by the builder (and how they are serialized)
 type FilterFactory interface {
-	New(ctx context.Context) FilterBuilder
+	New(ctx context.Context, defLimit uint64) FilterBuilder
 }
 
 // FilterBuilder is the syntax used to build the filter, where And() and Or() can be nested
 type FilterBuilder interface {
+	// Fields is the list of available fields
+	Fields() []string
 	// And requires all sub-filters to match
-	And(and ...Filter) Filter
+	And(and ...Filter) AndFilter
 	// Or requires any of the sub-filters to match
-	Or(and ...Filter) Filter
+	Or(and ...Filter) OrFilter
 	// Eq equal
 	Eq(name string, value driver.Value) Filter
 	// Neq not equal
@@ -98,15 +114,15 @@ type FilterBuilder interface {
 	// IContains allows the string anywhere - case sensitive
 	IContains(name string, value driver.Value) Filter
 	// INotContains disallows the string anywhere - case sensitive
-	INotContains(name string, value driver.Value) Filter
+	NotIContains(name string, value driver.Value) Filter
 }
 
 // FilterInfo is the structure returned by Finalize to the plugin, to serialize this filter
 // into the underlying persistence mechanism's filter language
 type FilterInfo struct {
 	Sort       []string
-	Skip       uint
-	Limit      uint
+	Skip       uint64
+	Limit      uint64
 	Descending bool
 	Field      string
 	Op         FilterOp
@@ -114,16 +130,14 @@ type FilterInfo struct {
 	Children   []*FilterInfo
 }
 
-func (f *FilterInfo) String() string {
-	var val strings.Builder
-
+func (f *FilterInfo) filterString() string {
 	switch f.Op {
 	case FilterOpAnd, FilterOpOr:
 		cs := make([]string, len(f.Children))
 		for i, c := range f.Children {
-			cs[i] = fmt.Sprintf("( %s )", c)
+			cs[i] = fmt.Sprintf("( %s )", c.filterString())
 		}
-		val.WriteString(strings.Join(cs, fmt.Sprintf(" %s ", f.Op)))
+		return strings.Join(cs, fmt.Sprintf(" %s ", f.Op))
 	default:
 		var s string
 		v, _ := f.Value.Value()
@@ -133,8 +147,15 @@ func (f *FilterInfo) String() string {
 		default:
 			s = fmt.Sprintf("'%s'", tv)
 		}
-		val.WriteString(fmt.Sprintf("%s %s %s", f.Field, f.Op, s))
+		return fmt.Sprintf("%s %s %s", f.Field, f.Op, s)
 	}
+}
+
+func (f *FilterInfo) String() string {
+
+	var val strings.Builder
+
+	val.WriteString(f.filterString())
 
 	if len(f.Sort) > 0 {
 		val.WriteString(fmt.Sprintf(" sort=%s", strings.Join(f.Sort, ",")))
@@ -154,38 +175,43 @@ func (f *FilterInfo) String() string {
 
 type filterDefinition map[string]Filterable
 
-func (fd *filterDefinition) New(ctx context.Context) FilterBuilder {
+func (fd *filterDefinition) New(ctx context.Context, defLimit uint64) FilterBuilder {
 	return &filterBuilder{
 		ctx:           ctx,
 		allowedFields: *fd,
+		limit:         defLimit,
 	}
+}
+
+func (fb *filterBuilder) Fields() []string {
+	keys := make([]string, len(fb.allowedFields))
+	i := 0
+	for k := range fb.allowedFields {
+		keys[i] = k
+		i++
+	}
+	return keys
 }
 
 type filterBuilder struct {
 	ctx           context.Context
 	allowedFields filterDefinition
-}
-
-func (fb *filterBuilder) And(and ...Filter) Filter {
-	return &andFilter{
-		baseFilter: baseFilter{
-			fb:       fb,
-			op:       FilterOpAnd,
-			children: and,
-		},
-	}
+	sort          []string
+	skip          uint64
+	limit         uint64
+	descending    bool
 }
 
 type baseFilter struct {
-	fb         *filterBuilder
-	children   []Filter
-	op         FilterOp
-	field      string
-	value      interface{}
-	sort       []string
-	skip       uint
-	limit      uint
-	descending bool
+	fb       *filterBuilder
+	children []Filter
+	op       FilterOp
+	field    string
+	value    interface{}
+}
+
+func (f *baseFilter) Builder() FilterBuilder {
+	return f.fb
 }
 
 func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
@@ -216,39 +242,39 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		Op:         f.op,
 		Field:      f.field,
 		Value:      value,
-		Sort:       f.sort,
-		Skip:       f.skip,
-		Limit:      f.limit,
-		Descending: f.descending,
+		Sort:       f.fb.sort,
+		Skip:       f.fb.skip,
+		Limit:      f.fb.limit,
+		Descending: f.fb.descending,
 	}, nil
 }
 
 func (f *baseFilter) Sort(fields ...string) Filter {
 	for _, field := range fields {
 		if _, ok := f.fb.allowedFields[field]; ok {
-			f.sort = append(f.sort, field)
+			f.fb.sort = append(f.fb.sort, field)
 		}
 	}
 	return f
 }
 
-func (f *baseFilter) Skip(skip uint) Filter {
-	f.skip = skip
+func (f *baseFilter) Skip(skip uint64) Filter {
+	f.fb.skip = skip
 	return f
 }
 
-func (f *baseFilter) Limit(limit uint) Filter {
-	f.limit = limit
+func (f *baseFilter) Limit(limit uint64) Filter {
+	f.fb.limit = limit
 	return f
 }
 
 func (f *baseFilter) Ascending() Filter {
-	f.descending = false
+	f.fb.descending = false
 	return f
 }
 
 func (f *baseFilter) Descending() Filter {
-	f.descending = true
+	f.fb.descending = true
 	return f
 }
 
@@ -256,7 +282,31 @@ type andFilter struct {
 	baseFilter
 }
 
-func (fb *filterBuilder) Or(or ...Filter) Filter {
+func (fb *andFilter) Condition(children ...Filter) MultiConditionFilter {
+	fb.children = append(fb.children, children...)
+	return fb
+}
+
+func (fb *filterBuilder) And(and ...Filter) AndFilter {
+	return &andFilter{
+		baseFilter: baseFilter{
+			fb:       fb,
+			op:       FilterOpAnd,
+			children: and,
+		},
+	}
+}
+
+type orFilter struct {
+	baseFilter
+}
+
+func (fb *orFilter) Condition(children ...Filter) MultiConditionFilter {
+	fb.children = append(fb.children, children...)
+	return fb
+}
+
+func (fb *filterBuilder) Or(or ...Filter) OrFilter {
 	return &orFilter{
 		baseFilter: baseFilter{
 			fb:       fb,
@@ -264,10 +314,6 @@ func (fb *filterBuilder) Or(or ...Filter) Filter {
 			children: or,
 		},
 	}
-}
-
-type orFilter struct {
-	baseFilter
 }
 
 func (fb *filterBuilder) Eq(name string, value driver.Value) Filter {
@@ -306,7 +352,7 @@ func (fb *filterBuilder) IContains(name string, value driver.Value) Filter {
 	return fb.fieldFilter(FilterOpICont, name, value)
 }
 
-func (fb *filterBuilder) INotContains(name string, value driver.Value) Filter {
+func (fb *filterBuilder) NotIContains(name string, value driver.Value) Filter {
 	return fb.fieldFilter(FilterOpNotICont, name, value)
 }
 

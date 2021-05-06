@@ -15,28 +15,27 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var getTXById = &Route{
-	Name:   "getTXById",
-	Path:   "ns/{ns}/transactions/{id}",
+var getMsgs = &Route{
+	Name:   "getMsgs",
+	Path:   "ns/{ns}/messages",
 	Method: http.MethodGet,
 	PathParams: []PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
-	JSONHandler: func(ctx context.Context, e engine.Engine, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.GetTransactionById(ctx, pp["ns"], pp["id"])
+	JSONOutputValue: func() interface{} { return []*fftypes.Message{} },
+	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		output, err = e.GetMessages(req.Context(), pp["ns"], buildFilter(req, persistence.MessageFilterBuilder))
 		return output, 200, err
 	},
 }

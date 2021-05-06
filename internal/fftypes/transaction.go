@@ -45,6 +45,7 @@ type TransactionRef struct {
 type Transaction struct {
 	Type       TransactionType `json:"type"`
 	ID         *uuid.UUID      `json:"id,omitempty"`
+	Namespace  string          `json:"namespace,omitempty"`
 	Author     string          `json:"author"`
 	Created    int64           `json:"created"`
 	TrackingID string          `json:"trackingId,omitempty"`

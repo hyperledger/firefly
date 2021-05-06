@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
@@ -52,4 +53,41 @@ func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data,
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
 	return e.persistence.GetDataById(ctx, ns, &u)
+}
+
+func (e *engine) GetSchemaById(ctx context.Context, ns, id string) (*fftypes.Schema, error) {
+	u, err := uuid.Parse(id)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+	}
+	return e.persistence.GetSchemaById(ctx, ns, &u)
+}
+
+func (e *engine) scopeNS(ns string, filter persistence.AndFilter) persistence.AndFilter {
+	return filter.Condition(filter.Builder().Eq("namespace", ns))
+}
+
+func (e *engine) GetTransactions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Transaction, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.persistence.GetTransactions(ctx, filter)
+}
+
+func (e *engine) GetMessages(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Message, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.persistence.GetMessages(ctx, filter)
+}
+
+func (e *engine) GetBatches(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Batch, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.persistence.GetBatches(ctx, filter)
+}
+
+func (e *engine) GetData(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Data, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.persistence.GetData(ctx, filter)
+}
+
+func (e *engine) GetSchemas(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Schema, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.persistence.GetSchemas(ctx, filter)
 }
