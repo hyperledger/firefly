@@ -15,17 +15,21 @@
 package i18n
 
 import (
-	"context"
+	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/microcosm-cc/bluemonday"
 )
 
-// NewError creates a new error
-func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error {
-	return errors.Errorf(SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
-}
+var sanitize = bluemonday.StrictPolicy()
 
-// WrapError wraps an error
-func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
-	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+func SanitizeLimit(s string, limit int) string {
+	if len(s) >= limit {
+		if limit > 16 {
+			s = s[0:limit-3] + "..."
+		} else {
+			s = s[0:limit]
+		}
+	}
+	s = strings.ReplaceAll(sanitize.Sanitize(s), "&#39;", "'")
+	return s
 }

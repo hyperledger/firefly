@@ -31,7 +31,6 @@ const (
 	MessageTypePrivate    MessageType = "private"
 )
 
-// MessageBase is the raw message, without any data relationships
 type MessageHeader struct {
 	ID        *uuid.UUID  `json:"id,omitempty"`
 	CID       *uuid.UUID  `json:"cid,omitempty"`

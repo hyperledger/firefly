@@ -102,6 +102,42 @@ type Events interface {
 type Capabilities struct {
 }
 
+var MessageFilterBuilder = &filterDefinition{
+	"id":        &FilterableUUID{},
+	"cid":       &FilterableString{},
+	"namespace": &FilterableString{},
+	"type":      &FilterableString{},
+	"author":    &FilterableString{},
+	"topic":     &FilterableString{},
+	"context":   &FilterableString{},
+	"group":     &FilterableUUID{},
+	"created":   &FilterableInt64{},
+	"confirmed": &FilterableInt64{},
+}
+
+var BatchFilterBuilder = &filterDefinition{
+	"id":        &FilterableUUID{},
+	"namespace": &FilterableString{},
+	"type":      &FilterableString{},
+	"author":    &FilterableString{},
+	"topic":     &FilterableString{},
+	"context":   &FilterableString{},
+	"group":     &FilterableUUID{},
+	"created":   &FilterableInt64{},
+	"confirmed": &FilterableInt64{},
+}
+
+var TransactionFilterBuilder = &filterDefinition{
+	"id":         &FilterableUUID{},
+	"namespace":  &FilterableString{},
+	"type":       &FilterableString{},
+	"author":     &FilterableString{},
+	"trackingid": &FilterableString{},
+	"protocolid": &FilterableString{},
+	"created":    &FilterableInt64{},
+	"confirmed":  &FilterableInt64{},
+}
+
 type MessageFilter struct {
 	ConfrimedOnly   bool
 	UnconfrimedOnly bool

@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package persistence
 
 import (
 	"context"
+	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-// NewError creates a new error
-func NewError(ctx context.Context, msg MessageKey, inserts ...interface{}) error {
-	return errors.Errorf(SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
-}
+func TestBuildMessageFilter(t *testing.T) {
+	fb := MessageFilterBuilder.New(context.Background())
+	f, err := fb.And(
+		fb.Eq("namespace", "ns1"),
+		fb.Or(
+			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
+			fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7"),
+		),
+		fb.Gt("created", "12345"),
+	).Finalize()
 
-// WrapError wraps an error
-func WrapError(ctx context.Context, err error, msg MessageKey, inserts ...interface{}) error {
-	return errors.Wrap(err, SanitizeLimit(ExpandWithCode(ctx, msg, inserts...), 2048))
+	assert.NoError(t, err)
+	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( created > 12345 )", f.String())
 }
