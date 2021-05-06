@@ -65,4 +65,5 @@ var (
 	MsgVerifyFailedNilHashes      = ffm("FF10147", "Invalid message: nil hashes", 400)
 	MsgInvalidFilterField         = ffm("FF10148", "Unknown filter '%s'", 400)
 	MsgInvalidValueForFilterField = ffm("FF10149", "Unable to parse value for filter '%s'", 400)
+	MsgUnsupportedSQLOpInFilter   = ffm("FF10150", "No SQL mapping implemented for filter operator '%s'", 400)
 )
