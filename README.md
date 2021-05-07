@@ -25,9 +25,12 @@ Firefly provides the development platform for multi-party systems, with blockcha
 Yes, with Firefly that's a proven possibility.
 
 Think of the Firefly API for multi-party systems like SQL is for your centralized database.
-Think of the blockchain smart contracts like database stored procedures.
+
+Think of blockchain smart contracts like database stored procedures.
+
 90% or more of the time when you're developing modern business APIs and web/mobile apps, you just use the built-in capabilities of SQL.
-Only on rare occasions do you need to drop down into programming stored procedures.
+
+Only on rare occasions do you need to drop down into programming stored procedures, and then you usually engage a specialist team, with specialist skills.
 
 ## API Query Syntax
 

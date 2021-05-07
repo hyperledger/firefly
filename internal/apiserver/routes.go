@@ -15,10 +15,8 @@
 package apiserver
 
 import (
-	"net/http"
-
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var Routes = []*Route{
@@ -48,6 +46,8 @@ type Route struct {
 	PathParams []PathParam
 	// QueryParams is a list of documented query parameters
 	QueryParams []QueryParam
+	// FilterFactory is a reference to a filter object that defines the search param on resource collection interfaces
+	FilterFactory persistence.FilterFactory
 	// Method is the HTTP method
 	Method string
 	// Description is a message key to a translatable descripiton of the operation
@@ -57,7 +57,7 @@ type Route struct {
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
-	JSONHandler func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error)
+	JSONHandler func(r APIRequest) (output interface{}, status int, err error)
 	// TODO: Handler for form content type, and/or esacpe valve custom handlers
 }
 

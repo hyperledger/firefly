@@ -33,6 +33,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -178,8 +179,20 @@ func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
 		for _, qp := range route.PathParams {
 			queryParams[qp.Name] = req.Form.Get(qp.Name)
 		}
+		var filter persistence.AndFilter
+		if route.FilterFactory != nil {
+			filter = buildFilter(req, route.FilterFactory)
+		}
 		if err == nil {
-			output, status, err = route.JSONHandler(e, req, pathParams, queryParams, input)
+			output, status, err = route.JSONHandler(APIRequest{
+				ctx:    req.Context(),
+				e:      e,
+				req:    req,
+				pp:     pathParams,
+				qp:     queryParams,
+				filter: filter,
+				input:  input,
+			})
 		}
 		if output == nil && err == nil && status != 204 {
 			err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
