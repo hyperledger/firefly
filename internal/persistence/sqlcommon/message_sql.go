@@ -70,9 +70,10 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 		return err
 	}
 
-	if msgRows.Next() {
-		msgRows.Close()
+	exists := msgRows.Next()
+	msgRows.Close()
 
+	if exists {
 		// Update the message
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("messages").
@@ -95,8 +96,6 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 			return err
 		}
 	} else {
-		msgRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).
@@ -128,6 +127,14 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 
 	if err = s.commitTx(ctx, tx); err != nil {
 		return err
+	}
+
+	if !s.capabilities.ClusterEvents {
+		if exists {
+			s.events.MessageUpdated(message.Header.ID)
+		} else {
+			s.events.MessageCreated(message.Header.ID)
+		}
 	}
 
 	return nil

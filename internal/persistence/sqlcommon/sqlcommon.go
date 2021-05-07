@@ -22,11 +22,14 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 type SQLCommon struct {
-	db      *sql.DB
-	options *SQLCommonOptions
+	db           *sql.DB
+	capabilities *persistence.Capabilities
+	events       persistence.Events
+	options      *SQLCommonOptions
 }
 
 type SQLCommonOptions struct {
@@ -36,8 +39,10 @@ type SQLCommonOptions struct {
 	SequenceField string
 }
 
-func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, options *SQLCommonOptions) error {
+func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, events persistence.Events, capabilities *persistence.Capabilities, options *SQLCommonOptions) error {
 	s.db = db
+	s.capabilities = capabilities
+	s.events = events
 	if options == nil || options.PlaceholderFormat == nil || options.SequenceField == "" {
 		log.L(ctx).Errorf("Invalid SQL options from plugin: %+v", options)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)
@@ -45,6 +50,8 @@ func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, options *SQLCo
 	s.options = options
 	return nil
 }
+
+func (e *SQLCommon) Capabilities() *persistence.Capabilities { return e.capabilities }
 
 func (s *SQLCommon) beginTx(ctx context.Context) (context.Context, *sql.Tx, error) {
 	l := log.L(ctx).WithField("dbtx", fftypes.ShortID())

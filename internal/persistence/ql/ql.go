@@ -30,25 +30,23 @@ import (
 type QL struct {
 	sqlcommon.SQLCommon
 
-	conf         *Config
-	capabilities *persistence.Capabilities
+	conf *Config
 }
-
-func (e *QL) ConfigInterface() interface{} { return &Config{} }
 
 func (e *QL) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
 	e.conf = conf.(*Config)
-	e.capabilities = &persistence.Capabilities{}
+	capabilities := &persistence.Capabilities{}
+	options := &sqlcommon.SQLCommonOptions{
+		PlaceholderFormat: squirrel.Dollar,
+		SequenceField:     "id()",
+	}
 
 	db, err := sql.Open("ql", e.conf.URL)
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, &sqlcommon.SQLCommonOptions{
-		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "id()",
-	})
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
 }
 
-func (e *QL) Capabilities() *persistence.Capabilities { return e.capabilities }
+func (e *QL) ConfigInterface() interface{} { return &Config{} }

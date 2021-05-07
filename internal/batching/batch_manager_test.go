@@ -52,7 +52,7 @@ func TestE2EDispatch(t *testing.T) {
 	}}
 	data := &fftypes.Data{ID: fftypes.NewUUID()}
 
-	id, err := bm.DispatchMessage(context.Background(), msg, data)
+	id, err := bm.(*batchManager).dispatchMessage(context.Background(), msg, data)
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
@@ -73,7 +73,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	defer bm.Close()
 
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	_, err := bm.DispatchMessage(context.Background(), msg)
+	_, err := bm.(*batchManager).dispatchMessage(context.Background(), msg)
 	assert.Regexp(t, "FF10126", err.Error())
 
 }
@@ -110,7 +110,7 @@ func TestTimeout(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	_, err := bm.DispatchMessage(ctx, msg, data)
+	_, err := bm.(*batchManager).dispatchMessage(ctx, msg, data)
 
 	assert.Regexp(t, "FF10127", err)
 

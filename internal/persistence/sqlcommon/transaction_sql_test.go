@@ -33,7 +33,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
+	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &persistence.Capabilities{}, testSQLOptions())
 
 	// Create a new transaction entry
 	transactionId := uuid.New()

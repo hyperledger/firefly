@@ -27,6 +27,10 @@ import (
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
+const (
+	readPageSize = 100
+)
+
 func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (BatchManager, error) {
 	if persistence == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
@@ -41,7 +45,7 @@ func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (Batch
 
 type BatchManager interface {
 	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
-	DispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error)
+	NotifyNewMessage(ctx context.Context, id *uuid.UUID)
 	Close()
 }
 
@@ -119,7 +123,52 @@ func (bm *batchManager) Close() {
 	bm = nil
 }
 
-func (bm *batchManager) DispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error) {
+func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, err error) {
+	// Load all the data - must all be present for us to send
+	for _, dataRef := range msg.Data {
+		if dataRef.ID == nil {
+			continue
+		}
+		d, err := bm.persistence.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
+		if err != nil {
+			return nil, err
+		}
+		if d == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgDataNotFound, dataRef.ID)
+		}
+		data = append(data, d)
+	}
+	log.L(ctx).Infof("Added broadcast message %s", msg.Header.ID)
+	return data, nil
+}
+
+func (bm *batchManager) NotifyNewMessage(ctx context.Context, id *uuid.UUID) {
+	l := log.L(ctx)
+
+	fb := persistence.MessageFilterBuilder.New(ctx, readPageSize)
+	msgs, err := bm.persistence.GetMessages(ctx, fb.Eq("id", id))
+	if err != nil {
+		l.Errorf("Failed to retrieve messages: %s", err)
+		return
+	}
+
+	for _, msg := range msgs {
+		data, err := bm.assembleMessageData(ctx, msg)
+		if err != nil {
+			l.Errorf("Failed to retrieve message data: %s", err)
+			return
+		}
+
+		_, err = bm.dispatchMessage(ctx, msg, data...)
+		if err != nil {
+			l.Errorf("Failed to dispatch message: %s", err)
+			return
+		}
+	}
+
+}
+
+func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error) {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {

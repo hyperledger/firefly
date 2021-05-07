@@ -33,7 +33,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
+	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &persistence.Capabilities{}, testSQLOptions())
 
 	// Create a new schema entry
 	schemaId := uuid.New()

@@ -52,6 +52,7 @@ type Engine interface {
 }
 
 type engine struct {
+	ctx              context.Context
 	persistence      persistence.Plugin
 	blockchain       blockchain.Plugin
 	p2pfs            p2pfs.Plugin
@@ -67,6 +68,7 @@ func NewEngine() Engine {
 }
 
 func (e *engine) Init(ctx context.Context) (err error) {
+	e.ctx = ctx
 	e.blockchainEvents = &blockchainEvents{ctx, e}
 	err = e.initPlugins(ctx)
 	if err == nil {
