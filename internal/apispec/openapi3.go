@@ -27,15 +27,20 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
+func getHost(ctx context.Context) string {
 	proto := "https"
 	if !config.GetBool(config.HttpTLSEnabled) {
 		proto = "http"
 	}
+	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.HttpAddress), config.GetString(config.HttpPort))
+}
+
+func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
+
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: fmt.Sprintf("%s://%s:%s/api/v1", proto, config.GetString(config.HttpAddress), config.GetString(config.HttpPort))},
+			{URL: fmt.Sprintf("%s/api/v1", getHost(ctx))},
 		},
 		Info: &openapi3.Info{
 			Title:       "Firefly",

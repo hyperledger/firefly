@@ -339,8 +339,8 @@ func TestNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10109", resJSON["error"])
 }
 
-func TestSwagger(t *testing.T) {
-	handler := apiWrapper(swaggerHandler)
+func TestSwaggerUI(t *testing.T) {
+	handler := apiWrapper(swaggerUIHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -348,8 +348,34 @@ func TestSwagger(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 	b, _ := ioutil.ReadAll(res.Body)
+	assert.Regexp(t, "html", string(b))
+}
+
+func TestSwaggerYAML(t *testing.T) {
+	handler := apiWrapper(swaggerHandler)
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.yaml", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
 	doc, err := openapi3.NewLoader().LoadFromData(b)
 	assert.NoError(t, err)
 	err = doc.Validate(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestSwaggerJSON(t *testing.T) {
+	me := &enginemocks.Engine{}
+	r := createMuxRouter(me)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
 }

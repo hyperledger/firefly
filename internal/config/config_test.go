@@ -38,6 +38,7 @@ func TestDefaults(t *testing.T) {
 	assert.True(t, GetBool(LogColor))
 	assert.Equal(t, uint(0), GetUint(HttpPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
+	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {

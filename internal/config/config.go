@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -40,6 +41,12 @@ const (
 	HttpTLSCAFile              Key = "http.tls.caFile"
 	HttpTLSCertFile            Key = "http.tls.certFile"
 	HttpTLSKeyFile             Key = "http.tls.keyFile"
+	CorsEnabled                Key = "cors.enabled"
+	CorsAllowedOrigins         Key = "cors.origins"
+	CorsAllowedMethods         Key = "cors.methods"
+	CorsAllowedHeaders         Key = "cors.headers"
+	CorsAllowCredentials       Key = "cors.credentials"
+	CorsMaxAge                 Key = "cors.maxAge"
 	NodeIdentity               Key = "node.identity"
 	APIRequestTimeout          Key = "api.requestTimeout"
 	APIDefaultFilterLimit      Key = "api.defaultFilterLimit"
@@ -66,6 +73,12 @@ func Reset() {
 	viper.SetDefault(string(HttpPort), 5000)
 	viper.SetDefault(string(HttpReadTimeout), 15000)
 	viper.SetDefault(string(HttpWriteTimeout), 15000)
+	viper.SetDefault(string(CorsEnabled), true)
+	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
+	viper.SetDefault(string(CorsAllowedMethods), []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete})
+	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
+	viper.SetDefault(string(CorsAllowCredentials), true)
+	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(APIRequestTimeout), 12000)
 	viper.SetDefault(string(APIDefaultFilterLimit), 25)
 	viper.SetDefault(string(BroadcastBatchSize), 200)
@@ -101,6 +114,11 @@ func ReadConfig(cfgFile string) error {
 // GetString gets a configuration string
 func GetString(key Key) string {
 	return viper.GetString(string(key))
+}
+
+// GetStringSlice gets a configuration string array
+func GetStringSlice(key Key) []string {
+	return viper.GetStringSlice(string(key))
 }
 
 // GetBool gets a configuration bool
