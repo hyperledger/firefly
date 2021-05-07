@@ -17,16 +17,17 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var getTxnById = &Route{
+var getTxnById = &apispec.Route{
 	Name:   "getTxnById",
 	Path:   "ns/{ns}/transactions/{id}",
 	Method: http.MethodGet,
-	PathParams: []PathParam{
+	PathParams: []apispec.PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
 		{Name: "id", Description: i18n.MsgTBD},
 	},
@@ -35,8 +36,9 @@ var getTxnById = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
-	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-		output, err = r.e.GetTransactionById(r.ctx, r.pp["ns"], r.pp["id"])
-		return output, 200, err
+	JSONOutputCode:  http.StatusOK,
+	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		output, err = r.E.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["id"])
+		return output, err
 	},
 }

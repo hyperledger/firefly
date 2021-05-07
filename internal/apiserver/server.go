@@ -27,7 +27,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
@@ -149,7 +151,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
+func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
@@ -184,20 +186,22 @@ func jsonHandler(e engine.Engine, route *Route) http.HandlerFunc {
 			filter = buildFilter(req, route.FilterFactory)
 		}
 		if err == nil {
-			output, status, err = route.JSONHandler(APIRequest{
-				ctx:    req.Context(),
-				e:      e,
-				req:    req,
-				pp:     pathParams,
-				qp:     queryParams,
-				filter: filter,
-				input:  input,
+			status = route.JSONOutputCode
+			output, err = route.JSONHandler(apispec.APIRequest{
+				Ctx:    req.Context(),
+				E:      e,
+				Req:    req,
+				PP:     pathParams,
+				QP:     queryParams,
+				Filter: filter,
+				Input:  input,
 			})
 		}
-		if output == nil && err == nil && status != 204 {
-			err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
-		}
 		if err == nil {
+			if output == nil && status != 204 {
+				err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
+				status = 404
+			}
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
 			if output != nil {
@@ -262,14 +266,23 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
+func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	res.Header().Add("Content-Type", "application/yaml")
+	doc := apispec.SwaggerGen(req.Context(), routes)
+	b, _ := yaml.Marshal(&doc)
+	_, _ = res.Write(b)
+	return 200, nil
+}
+
 func createMuxRouter(e engine.Engine) *mux.Router {
 	r := mux.NewRouter()
-	for _, route := range Routes {
+	for _, route := range routes {
 		if route.JSONHandler != nil {
 			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), jsonHandler(e, route)).
 				Methods(route.Method)
 		}
 	}
+	r.HandleFunc("/api", apiWrapper(swaggerHandler))
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }

@@ -17,16 +17,17 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var getBatches = &Route{
+var getBatches = &apispec.Route{
 	Name:   "getBatches",
 	Path:   "ns/{ns}/batches",
 	Method: http.MethodGet,
-	PathParams: []PathParam{
+	PathParams: []apispec.PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
@@ -34,8 +35,9 @@ var getBatches = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
-	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-		output, err = r.e.GetBatches(r.ctx, r.pp["ns"], r.filter)
-		return output, 200, err
+	JSONOutputCode:  http.StatusOK,
+	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		output, err = r.E.GetBatches(r.Ctx, r.PP["ns"], r.Filter)
+		return output, err
 	},
 }

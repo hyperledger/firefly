@@ -17,11 +17,12 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var postDefsSchema = &Route{
+var postDefsSchema = &apispec.Route{
 	Name:            "postDefsSchema",
 	Path:            "definitions/schema",
 	Method:          http.MethodPost,
@@ -31,8 +32,9 @@ var postDefsSchema = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-		output, err = r.e.BroadcastSchemaDefinition(r.ctx, r.input.(*fftypes.Schema))
-		return output, 202 /* Accepted - as async */, err
+	JSONOutputCode:  http.StatusAccepted,
+	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		output, err = r.E.BroadcastSchemaDefinition(r.Ctx, r.Input.(*fftypes.Schema))
+		return output, err
 	},
 }

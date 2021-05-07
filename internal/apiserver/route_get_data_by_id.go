@@ -17,15 +17,16 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var getDataById = &Route{
+var getDataById = &apispec.Route{
 	Name:   "getDataById",
 	Path:   "ns/{ns}/data/{id}",
 	Method: http.MethodGet,
-	PathParams: []PathParam{
+	PathParams: []apispec.PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
 		{Name: "id", Description: i18n.MsgTBD},
 	},
@@ -34,8 +35,9 @@ var getDataById = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
-	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-		output, err = r.e.GetDataById(r.ctx, r.pp["ns"], r.pp["id"])
-		return output, 200, err
+	JSONOutputCode:  http.StatusOK,
+	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		output, err = r.E.GetDataById(r.Ctx, r.PP["ns"], r.PP["id"])
+		return output, err
 	},
 }

@@ -35,7 +35,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/mocks/enginemocks"
@@ -176,15 +178,16 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 
 func TestJSONHTTPServePOST201(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			assert.Equal(t, "value1", r.input.(map[string]interface{})["input1"])
-			return map[string]interface{}{"output1": "value2"}, 201, nil
+		JSONOutputCode:  201,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+			assert.Equal(t, "value1", r.Input.(map[string]interface{})["input1"])
+			return map[string]interface{}{"output1": "value2"}, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -199,42 +202,18 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 	assert.Equal(t, "value2", resJSON["output1"])
 }
 
-func TestJSONHTTPServeCustomGETError(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
-		Name:            "testRoute",
-		Path:            "/test",
-		Method:          "GET",
-		JSONInputValue:  func() interface{} { return nil },
-		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			assert.Equal(t, nil, r.input)
-			return nil, 503, fmt.Errorf("pop")
-		},
-	})
-	s := httptest.NewServer(http.HandlerFunc(handler))
-	defer s.Close()
-
-	b, _ := json.Marshal(map[string]interface{}{"input1": "value1"})
-	res, err := http.Post(fmt.Sprintf("http://%s/test", s.Listener.Addr()), "application/json", bytes.NewReader(b))
-	assert.NoError(t, err)
-	assert.Equal(t, 503, res.StatusCode)
-	var resJSON map[string]interface{}
-	json.NewDecoder(res.Body).Decode(&resJSON)
-	assert.Equal(t, "pop", resJSON["error"])
-}
-
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
+		JSONOutputCode:  200,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
 			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
-			return v, 200, nil
+			return v, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -250,14 +229,15 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			return nil, 200, nil
+		JSONOutputCode:  200,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+			return nil, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -274,14 +254,15 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			return nil, 200, fmt.Errorf("pop")
+		JSONOutputCode:  200,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+			return nil, fmt.Errorf("pop")
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -298,14 +279,15 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 
 func TestStatusCodeHintMapping(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			return nil, 200, i18n.NewError(r.ctx, i18n.MsgResponseMarshalError)
+		JSONOutputCode:  200,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+			return nil, i18n.NewError(r.Ctx, i18n.MsgResponseMarshalError)
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -322,14 +304,15 @@ func TestStatusCodeHintMapping(t *testing.T) {
 
 func TestStatusInvalidContentType(t *testing.T) {
 	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &Route{
+	handler := jsonHandler(me, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-			return nil, 204, nil
+		JSONOutputCode:  204,
+		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+			return nil, nil
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -354,4 +337,19 @@ func TestNotFound(t *testing.T) {
 	var resJSON map[string]interface{}
 	json.NewDecoder(res.Body).Decode(&resJSON)
 	assert.Regexp(t, "FF10109", resJSON["error"])
+}
+
+func TestSwagger(t *testing.T) {
+	handler := apiWrapper(swaggerHandler)
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	doc, err := openapi3.NewLoader().LoadFromData(b)
+	assert.NoError(t, err)
+	err = doc.Validate(context.Background())
+	assert.NoError(t, err)
 }

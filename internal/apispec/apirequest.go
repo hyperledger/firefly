@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package apispec
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 )
 
 type APIRequest struct {
-	ctx    context.Context
-	e      engine.Engine
-	req    *http.Request
-	pp     map[string]string
-	qp     map[string]string
-	filter persistence.AndFilter
-	input  interface{}
+	Ctx    context.Context
+	E      engine.Engine
+	Req    *http.Request
+	QP     map[string]string
+	PP     map[string]string
+	Filter persistence.AndFilter
+	Input  interface{}
 }
