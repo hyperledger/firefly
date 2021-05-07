@@ -68,4 +68,8 @@ var (
 	MsgJSONDataParseFailed        = ffm("FF10151", "Failed to parse '%s' as JSON")
 	MsgFilterParamDesc            = ffm("FF10152", "Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^")
 	MsgSuccessResponse            = ffm("FF10153", "Success")
+	MsgFilterSortDesc             = ffm("FF10154", "Sort field. For multi-field sort use comma separate fields, or multiple query values")
+	MsgFilterDescendingDesc       = ffm("FF10155", "Descending. Descending sort order (applies to all fields in a multi-field sort)")
+	MsgFilterSkipDesc             = ffm("FF10156", "Pagination - skip. The number of records to skip")
+	MsgFilterLimitDesc            = ffm("FF10157", "Pagination - limit. The maximum number of records to return")
 )

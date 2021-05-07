@@ -77,6 +77,9 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schem
 		Data: fftypes.DataRefs{
 			{ID: data.ID, Hash: data.Hash},
 		},
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypePin,
+		},
 	}
 
 	// Broadcast the message

@@ -98,20 +98,25 @@ func addOutput(ctx context.Context, route *Route, output interface{}, op *openap
 	}
 }
 
-func addParam(ctx context.Context, op *openapi3.Operation, in, name string, description i18n.MessageKey) {
+func addParam(ctx context.Context, op *openapi3.Operation, in, name string, def string, description i18n.MessageKey, msgArgs ...interface{}) {
 	required := false
 	if in == "path" {
 		required = true
+	}
+	var defValue interface{} = nil
+	if def != "" {
+		defValue = &def
 	}
 	op.Parameters = append(op.Parameters, &openapi3.ParameterRef{
 		Value: &openapi3.Parameter{
 			In:          in,
 			Name:        name,
 			Required:    required,
-			Description: i18n.Expand(ctx, description),
+			Description: i18n.Expand(ctx, description, msgArgs...),
 			Schema: &openapi3.SchemaRef{
 				Value: &openapi3.Schema{
-					Type: "string",
+					Type:    "string",
+					Default: defValue,
 				},
 			},
 		},
@@ -134,15 +139,19 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		addOutput(ctx, route, output, op)
 	}
 	for _, p := range route.PathParams {
-		addParam(ctx, op, "path", p.Name, p.Description)
+		addParam(ctx, op, "path", p.Name, "", p.Description)
 	}
 	for _, q := range route.QueryParams {
-		addParam(ctx, op, "query", q.Name, q.Description)
+		addParam(ctx, op, "query", q.Name, "", q.Description)
 	}
 	if route.FilterFactory != nil {
 		for _, field := range route.FilterFactory.New(ctx, 0).Fields() {
-			addParam(ctx, op, "query", field, i18n.MsgFilterParamDesc)
+			addParam(ctx, op, "query", field, "", i18n.MsgFilterParamDesc)
 		}
+		addParam(ctx, op, "query", "sort", "", i18n.MsgFilterSortDesc)
+		addParam(ctx, op, "query", "descending", "", i18n.MsgFilterDescendingDesc)
+		addParam(ctx, op, "query", "skip", "", i18n.MsgFilterSkipDesc)
+		addParam(ctx, op, "query", "limit", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc)
 	}
 	switch route.Method {
 	case http.MethodGet:
