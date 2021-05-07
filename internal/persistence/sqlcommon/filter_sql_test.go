@@ -46,7 +46,7 @@ func TestSQLFilterBuilder(t *testing.T) {
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND created > ?) LIMIT 25 OFFSET 50", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND created > ?) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])
@@ -75,7 +75,7 @@ func TestSQLFilterBuilderExtraOps(t *testing.T) {
 
 	sqlFilter, _, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?)", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?) ORDER BY seq DESC", sqlFilter)
 }
 
 func TestSQLFilterBuilderFinalizeFail(t *testing.T) {

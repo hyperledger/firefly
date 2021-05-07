@@ -1,26 +1,33 @@
 # Kaleido Project Firefly
 
-# E2E Event Flow
+Firefly provides the development platform for multi-party systems, with blockchain technology at their core.
 
-## REFACTOR IN PROGRESS
+![Introducing Firefly](./architecture/intro_to_firefly_teaser.svg)
 
-In the evolution from Kaleido Asset Trail to Project Firefly, we are taking the opportunity to make significant changes:
+- REST APIs + WebSocket Event streams built for developers, by developers
+- Pre-built on-chain logic for majority fo uses cases: Business process automation, NFTs and Payments
+  - Enterprise Ethereum
+  - Corda
+  - Hyperledger Fabric
+- Privacy of data by default
+- Network governance and permissioning
+- Multi-party sequencing of events, into deterministic process flows
+- Orchestration of on-chain and off-chain logic
+- A pluggable and extensible architecture
+  - Persistence: SQL, NoSQL
+  - Blockchain: Tokens, Pre-built Sequencing contracts, Privacy models, etc.
+  - Compute: Any code language, Low-code (NodeRED), Trusted compute environments (TEEs), zero-knowledge proofs (ZKP), Multi-party Compute (MPC)
 
-- Code implementation moving from Typescript to Go
-- Renaming nouns on the API surface are based on learning from production projects
-- Enhancing the pluggability of the project
+## Building block REST APIs that do what they say on the tin
 
-## Component Architecture Overview
+> Wait? ... are you implying I can change blockchain, without changing my application???
 
-![Project Firefly Component Architecture](architecture/firefly_component_architecture.jpg)
+Yes, with Firefly that's a proven possibility.
 
-## Component E2E flow example
-
-![Project Firefly E2E flow example](architecture/firefly_flow_overview_sequencediagram.png)
-
-## Kaleido Asset Trail (KAT) background
-
-![Project Firefly](firefly_overview.png)
+Think of the Firefly API for multi-party systems like SQL is for your centralized database.
+Think of the blockchain smart contracts like database stored procedures.
+90% or more of the time when you're developing modern business APIs and web/mobile apps, you just use the built-in capabilities of SQL.
+Only on rare occasions do you need to drop down into programming stored procedures.
 
 ## API Query Syntax
 
@@ -28,7 +35,6 @@ REST collections provide filter, `skip`, `limit` and `sort` support.
 - The field in the message is used as the query parameter
 - When multiple query parameters are supplied these are combined with AND
 - When the same query parameter is supplied multiple times, these are combined with OR
-
 
 ### Example
 
