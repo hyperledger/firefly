@@ -102,7 +102,7 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 	}
 
 	srv = &http.Server{
-		Handler:      r,
+		Handler:      wrapCorsIfEnabled(ctx, r),
 		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Millisecond,
 		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Millisecond,
 		TLSConfig: &tls.Config{
@@ -266,11 +266,25 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
+func swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	res.Header().Add("Content-Type", "text/html")
+	_, _ = res.Write(apispec.SwaggerUIHTML(req.Context()))
+	return 200, nil
+}
+
 func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	res.Header().Add("Content-Type", "application/yaml")
-	doc := apispec.SwaggerGen(req.Context(), routes)
-	b, _ := yaml.Marshal(&doc)
-	_, _ = res.Write(b)
+	vars := mux.Vars(req)
+	if vars["ext"] == ".json" {
+		res.Header().Add("Content-Type", "application/json")
+		doc := apispec.SwaggerGen(req.Context(), routes)
+		b, _ := json.Marshal(&doc)
+		_, _ = res.Write(b)
+	} else {
+		res.Header().Add("Content-Type", "application/x-yaml")
+		doc := apispec.SwaggerGen(req.Context(), routes)
+		b, _ := yaml.Marshal(&doc)
+		_, _ = res.Write(b)
+	}
 	return 200, nil
 }
 
@@ -282,7 +296,8 @@ func createMuxRouter(e engine.Engine) *mux.Router {
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc("/api", apiWrapper(swaggerHandler))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
+	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }
