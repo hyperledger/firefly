@@ -28,7 +28,7 @@ import (
 
 func TestBroadcastSchemaDefinitionBadType(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Type: fftypes.SchemaType("wrong"),
 	})
 	assert.Regexp(t, "FF10132.*type", err.Error())
@@ -36,13 +36,13 @@ func TestBroadcastSchemaDefinitionBadType(t *testing.T) {
 
 func TestBroadcastSchemaBadNamespace(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{})
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "_ns1", &fftypes.Schema{})
 	assert.Regexp(t, "FF10131.*namespace", err.Error())
 }
 
 func TestBroadcastSchemaBadEntity(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 	})
 	assert.Regexp(t, "FF10131.*entity", err.Error())
@@ -50,7 +50,7 @@ func TestBroadcastSchemaBadEntity(t *testing.T) {
 
 func TestBroadcastSchemaBadVersion(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 	})
@@ -59,7 +59,7 @@ func TestBroadcastSchemaBadVersion(t *testing.T) {
 
 func TestBroadcastSchemaMissingValue(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 		Version:   "0.0.1",
@@ -69,7 +69,7 @@ func TestBroadcastSchemaMissingValue(t *testing.T) {
 
 func TestBroadcastSchemaBadValue(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 		Version:   "0.0.1",
@@ -87,7 +87,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 		Version:   "0.0.1",
@@ -109,7 +109,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 		Version:   "0.0.1",
@@ -131,7 +131,7 @@ func TestBroadcastOk(t *testing.T) {
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), &fftypes.Schema{
+	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
 		Namespace: "ns1",
 		Entity:    "ent1",
 		Version:   "0.0.1",

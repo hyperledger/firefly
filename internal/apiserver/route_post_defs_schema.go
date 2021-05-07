@@ -23,18 +23,21 @@ import (
 )
 
 var postDefsSchema = &apispec.Route{
-	Name:            "postDefsSchema",
-	Path:            "definitions/schema",
-	Method:          http.MethodPost,
-	PathParams:      nil,
+	Name:   "postDefsSchema",
+	Path:   "ns/{ns}/definitions/schema",
+	Method: http.MethodPost,
+	PathParams: []apispec.PathParam{
+		{Name: "ns", Description: i18n.MsgTBD},
+	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
+	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.BroadcastSchemaDefinition(r.Ctx, r.Input.(*fftypes.Schema))
+		output, err = r.E.BroadcastSchemaDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Schema))
 		return output, err
 	},
 }

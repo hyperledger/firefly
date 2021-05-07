@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -70,8 +71,8 @@ func getPathItem(ctx context.Context, doc *openapi3.T, path string) *openapi3.Pa
 	return pi
 }
 
-func addInput(ctx context.Context, input interface{}, op *openapi3.Operation) {
-	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(input)
+func addInput(ctx context.Context, input interface{}, mask []string, op *openapi3.Operation) {
+	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
 	op.RequestBody = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
 			Content: openapi3.Content{
@@ -132,7 +133,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	}
 	input := route.JSONInputValue()
 	if input != nil {
-		addInput(ctx, input, op)
+		addInput(ctx, input, route.JSONInputMask, op)
 	}
 	output := route.JSONOutputValue()
 	if output != nil {
@@ -163,4 +164,30 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	case http.MethodDelete:
 		pi.Delete = op
 	}
+}
+
+func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
+	fieldCount := t.NumField()
+	newFields := make([]reflect.StructField, fieldCount)
+	for i := 0; i < fieldCount; i++ {
+		field := t.FieldByIndex([]int{i})
+		if field.Type.Kind() == reflect.Struct {
+			field.Type = maskFieldsOnStruct(field.Type, mask)
+		} else {
+			for _, m := range mask {
+				if strings.EqualFold(field.Name, m) {
+					field.Tag = "`json:-`"
+				}
+			}
+		}
+		newFields[i] = field
+	}
+	return reflect.StructOf(newFields)
+}
+
+func maskFields(input interface{}, mask []string) interface{} {
+	t := reflect.TypeOf(input)
+	newStruct := maskFieldsOnStruct(t.Elem(), mask)
+	i := reflect.New(newStruct).Interface()
+	return i
 }

@@ -22,11 +22,12 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (msg *fftypes.Message, err error) {
+func (e *engine) BroadcastSchemaDefinition(ctx context.Context, ns string, s *fftypes.Schema) (msg *fftypes.Message, err error) {
 
 	// Validate the input schema data
 	s.ID = fftypes.NewUUID()
 	s.Created = fftypes.NowMillis()
+	s.Namespace = ns
 	if s.Type == "" {
 		s.Type = fftypes.SchemaTypeJSONSchema
 	}
