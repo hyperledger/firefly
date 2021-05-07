@@ -106,12 +106,30 @@ type PeristenceInterface interface {
 	GetSchemas(ctx context.Context, filter Filter) (message []*fftypes.Schema, err error)
 }
 
-// No events currently defined for the persistence interface
+// Events
+//
+// If Capabilities returns ClusterEvents=true then these should be brodcast to every instance within
+// a cluster that is connected to the database.
+//
+// If Capabilities returns ClusterEvents=false then these events can be simply coupled in-process to
+// update activities.
+//
+// The system does not rely on these events exclusively for data/transaction integrity, but if an event is
+// missed/delayed it might result in slower processing.
+// For example, the batch interface will initiate a batch as soon as an event is triggered, but it will use
+// a subsequent database query as the source of truth of the latest set/order of data, and it will periodically
+// check for new messages even if it does not receive any events.
+//
+// TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
+//
 type Events interface {
+	MessageCreated(id *uuid.UUID)
+	MessageUpdated(id *uuid.UUID)
 }
 
 // No capabilities currently defined for the persistence interface - all features are mandatory
 type Capabilities struct {
+	ClusterEvents bool
 }
 
 var MessageFilterBuilder = &filterDefinition{

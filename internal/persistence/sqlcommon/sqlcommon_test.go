@@ -24,6 +24,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/ql"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -75,13 +76,13 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 
 func TestInitSQLCommon(t *testing.T) {
 	s := &SQLCommon{}
-	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), testSQLOptions())
+	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil, &persistence.Capabilities{}, testSQLOptions())
 	assert.NoError(t, err)
 }
 
 func TestInitSQLCommonMissingOptions(t *testing.T) {
 	s := &SQLCommon{}
-	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil)
+	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil, &persistence.Capabilities{}, nil)
 	assert.Regexp(t, "FF10112", err.Error())
 }
 

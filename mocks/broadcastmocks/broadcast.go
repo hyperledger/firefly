@@ -14,20 +14,13 @@ type Broadcast struct {
 	mock.Mock
 }
 
-// BroadcastMessage provides a mock function with given fields: ctx, identity, msg, data
-func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) error {
-	_va := make([]interface{}, len(data))
-	for _i := range data {
-		_va[_i] = data[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, identity, msg)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// BroadcastMessage provides a mock function with given fields: ctx, identity, msg
+func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) error {
+	ret := _m.Called(ctx, identity, msg)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Message, ...*fftypes.Data) error); ok {
-		r0 = rf(ctx, identity, msg, data...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Message) error); ok {
+		r0 = rf(ctx, identity, msg)
 	} else {
 		r0 = ret.Error(0)
 	}

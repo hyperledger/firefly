@@ -25,13 +25,12 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 type Broadcast interface {
-	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) error
+	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) error
 	Close()
 }
 
@@ -54,11 +53,13 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 		p2pfs:       p2pfs,
 		batch:       batch,
 	}
-	batch.RegisterDispatcher(fftypes.MessageTypeBroadcast, b.dispatchBatch, batching.BatchOptions{
+	bo := batching.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchTimeout:   time.Duration(config.GetUint(config.BroadcastBatchTimeout)) * time.Millisecond,
 		DisposeTimeout: time.Duration(config.GetUint(config.BroadcastBatchAgentTimeout)) * time.Millisecond,
-	})
+	}
+	batch.RegisterDispatcher(fftypes.MessageTypeBroadcast, b.dispatchBatch, bo)
+	batch.RegisterDispatcher(fftypes.MessageTypeDefinition, b.dispatchBatch, bo)
 	return b, nil
 }
 
@@ -109,37 +110,12 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	return nil
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message, data ...*fftypes.Data) (err error) {
+func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {
 		return err
 	}
-
-	// Load all the data - must all be present for us to send
-	for _, dataRef := range msg.Data {
-		if dataRef.ID == nil {
-			continue
-		}
-		var supplied bool
-		for _, d := range data {
-			if d.ID != nil && *d.ID == *dataRef.ID {
-				supplied = true
-				break
-			}
-		}
-		if !supplied {
-			d, err := b.persistence.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
-			if err != nil {
-				return err
-			}
-			if d == nil {
-				return i18n.NewError(ctx, i18n.MsgDataNotFound, dataRef.ID)
-			}
-			data = append(data, d)
-		}
-	}
-	log.L(ctx).Infof("Added broadcast message %s", msg.Header.ID)
 
 	// Store the message - this asynchronously triggers the next step in process
 	return b.persistence.UpsertMessage(ctx, msg)

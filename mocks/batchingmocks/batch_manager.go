@@ -24,34 +24,9 @@ func (_m *BatchManager) Close() {
 	_m.Called()
 }
 
-// DispatchMessage provides a mock function with given fields: ctx, msg, data
-func (_m *BatchManager) DispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error) {
-	_va := make([]interface{}, len(data))
-	for _i := range data {
-		_va[_i] = data[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, msg)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
-
-	var r0 *uuid.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, ...*fftypes.Data) *uuid.UUID); ok {
-		r0 = rf(ctx, msg, data...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*uuid.UUID)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, ...*fftypes.Data) error); ok {
-		r1 = rf(ctx, msg, data...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+// NotifyNewMessage provides a mock function with given fields: ctx, id
+func (_m *BatchManager) NotifyNewMessage(ctx context.Context, id *uuid.UUID) {
+	_m.Called(ctx, id)
 }
 
 // RegisterDispatcher provides a mock function with given fields: batchType, handler, batchOptions

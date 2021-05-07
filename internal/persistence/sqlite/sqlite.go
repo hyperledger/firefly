@@ -21,6 +21,7 @@ import (
 
 	"database/sql"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
@@ -31,22 +32,23 @@ import (
 type SQLite struct {
 	sqlcommon.SQLCommon
 
-	conf         *Config
-	capabilities *persistence.Capabilities
+	conf *Config
 }
-
-func (e *SQLite) ConfigInterface() interface{} { return &Config{} }
 
 func (e *SQLite) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
 	e.conf = conf.(*Config)
-	e.capabilities = &persistence.Capabilities{}
+	capabilities := &persistence.Capabilities{}
+	options := &sqlcommon.SQLCommonOptions{
+		PlaceholderFormat: squirrel.Dollar,
+		SequenceField:     "seq",
+	}
 
 	db, err := sql.Open("sqlite", e.conf.URL)
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, nil)
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
 }
 
-func (e *SQLite) Capabilities() *persistence.Capabilities { return e.capabilities }
+func (e *SQLite) ConfigInterface() interface{} { return &Config{} }

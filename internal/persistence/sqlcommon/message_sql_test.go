@@ -23,15 +23,23 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestUpsertE2EWithDB(t *testing.T) {
+	log.SetLevel("debug")
 
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), testSQLOptions())
+	me := persistencemocks.Events{}
+	InitSQLCommon(ctx, s, ensureTestDB(t), &me, &persistence.Capabilities{}, testSQLOptions())
+
+	me.On("MessageCreated", mock.Anything).Return()
+	me.On("MessageUpdated", mock.Anything).Return()
 
 	// Create a new message
 	msgId := uuid.New()
@@ -68,6 +76,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 
 	// Check we get the exact same message back
 	msgRead, err := s.GetMessageById(ctx, "ns1", &msgId)
+	assert.NoError(t, err)
 	// The generated sequence will have been added
 	msg.Sequence = msgRead.Sequence
 	assert.NoError(t, err)
