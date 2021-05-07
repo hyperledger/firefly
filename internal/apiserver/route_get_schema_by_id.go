@@ -17,15 +17,16 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var getSchemaById = &Route{
+var getSchemaById = &apispec.Route{
 	Name:   "getSchemaById",
 	Path:   "ns/{ns}/schemas/{id}",
 	Method: http.MethodGet,
-	PathParams: []PathParam{
+	PathParams: []apispec.PathParam{
 		{Name: "ns", Description: i18n.MsgTBD},
 		{Name: "id", Description: i18n.MsgTBD},
 	},
@@ -34,8 +35,9 @@ var getSchemaById = &Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Schema{} },
-	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
-		output, err = r.e.GetSchemaById(r.ctx, r.pp["ns"], r.pp["id"])
-		return output, 200, err
+	JSONOutputCode:  http.StatusOK,
+	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		output, err = r.E.GetSchemaById(r.Ctx, r.PP["ns"], r.PP["id"])
+		return output, err
 	},
 }

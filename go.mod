@@ -7,6 +7,8 @@ require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
+	github.com/getkin/kin-openapi v0.61.0
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golangci/golangci-lint v1.39.0 // indirect
@@ -35,7 +37,8 @@ require (
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
 	golang.org/x/text v0.3.6
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	modernc.org/mathutil v1.2.2 // indirect
 	modernc.org/ql v1.3.1
 )

@@ -66,4 +66,6 @@ var (
 	MsgInvalidValueForFilterField = ffm("FF10149", "Unable to parse value for filter '%s'", 400)
 	MsgUnsupportedSQLOpInFilter   = ffm("FF10150", "No SQL mapping implemented for filter operator '%s'", 400)
 	MsgJSONDataParseFailed        = ffm("FF10151", "Failed to parse '%s' as JSON")
+	MsgFilterParamDesc            = ffm("FF10152", "Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^")
+	MsgSuccessResponse            = ffm("FF10153", "Success")
 )
