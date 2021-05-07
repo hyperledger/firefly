@@ -40,6 +40,8 @@ type Route struct {
 	Description i18n.MessageKey
 	// JSONInputValue is a function that returns a pointer to a structure to take JSON input
 	JSONInputValue func() interface{}
+	// JSONInputMask are fields that aren't available for users to supply on input
+	JSONInputMask []string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONOutputCode is the success response code

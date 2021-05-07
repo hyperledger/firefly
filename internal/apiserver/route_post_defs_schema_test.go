@@ -32,11 +32,11 @@ func TestPostDefinitionsSchema(t *testing.T) {
 	input := fftypes.Schema{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/definitions/schema", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/definitions/schema", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("BroadcastSchemaDefinition", mock.Anything, mock.AnythingOfType("*fftypes.Schema")).
+	e.On("BroadcastSchemaDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Schema")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -44,6 +44,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			FilterFactory:   nil,
 			Description:     i18n.MsgTBD,
 			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputMask:   []string{"id"},
 			JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 			JSONOutputCode:  http.StatusOK,
 		},

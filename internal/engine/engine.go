@@ -36,7 +36,7 @@ type Engine interface {
 	Close()
 
 	// Definitions
-	BroadcastSchemaDefinition(ctx context.Context, s *fftypes.Schema) (*fftypes.Message, error)
+	BroadcastSchemaDefinition(ctx context.Context, ns string, s *fftypes.Schema) (*fftypes.Message, error)
 
 	// Data Queryuery
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
