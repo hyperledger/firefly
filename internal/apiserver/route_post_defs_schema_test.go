@@ -32,7 +32,7 @@ func TestPostDefinitionsSchema(t *testing.T) {
 	input := fftypes.Schema{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/definitions/schema", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/schemas/broadcast", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
