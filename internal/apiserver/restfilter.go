@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
@@ -36,7 +37,9 @@ func getValues(values url.Values, key string) (results []string) {
 }
 
 func buildFilter(req *http.Request, ff persistence.FilterFactory) persistence.AndFilter {
-	fb := ff.New(req.Context(), uint64(config.GetUint(config.APIDefaultFilterLimit)))
+	ctx := req.Context()
+	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
+	fb := ff.New(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()
@@ -63,6 +66,20 @@ func buildFilter(req *http.Request, ff persistence.FilterFactory) persistence.An
 	if len(limitVals) > 0 {
 		l, _ := strconv.ParseUint(limitVals[0], 10, 64)
 		filter.Limit(l)
+	}
+	sortVals := getValues(req.Form, "sort")
+	for _, sv := range sortVals {
+		subSortVals := strings.Split(sv, ",")
+		for _, ssv := range subSortVals {
+			ssv = strings.TrimSpace(ssv)
+			if ssv != "" {
+				filter.Sort(ssv)
+			}
+		}
+	}
+	descendingVals := getValues(req.Form, "descending")
+	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.ToLower(descendingVals[0]) == "true") {
+		filter.Descending()
 	}
 	return filter
 }

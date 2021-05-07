@@ -34,6 +34,15 @@ func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filt
 		fi.Descending = true
 	}
 	sel, err = s.filterSelectFinalized(ctx, sel, fi, typeMap)
+	direction := ""
+	if fi.Descending {
+		direction = " DESC"
+	}
+	sort := make([]string, len(fi.Sort))
+	for i, field := range fi.Sort {
+		sort[i] = s.mapField(field, typeMap)
+	}
+	sel = sel.OrderBy(fmt.Sprintf("%s%s", strings.Join(sort, ","), direction))
 	if err == nil {
 		if fi.Skip > 0 {
 			sel = sel.Offset(fi.Skip)
