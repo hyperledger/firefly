@@ -28,10 +28,14 @@ import (
 )
 
 func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
+	proto := "https"
+	if !config.GetBool(config.HttpTLSEnabled) {
+		proto = "http"
+	}
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: fmt.Sprintf("%s:%s/api/v1", config.GetString(config.HttpAddress), config.GetString(config.HttpPort))},
+			{URL: fmt.Sprintf("%s://%s:%s/api/v1", proto, config.GetString(config.HttpAddress), config.GetString(config.HttpPort))},
 		},
 		Info: &openapi3.Info{
 			Title:       "Firefly",

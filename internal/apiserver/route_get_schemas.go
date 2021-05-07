@@ -24,7 +24,7 @@ import (
 )
 
 var getSchemas = &apispec.Route{
-	Name:   "getTxns",
+	Name:   "getSchemas",
 	Path:   "ns/{ns}/schemas",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
