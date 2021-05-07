@@ -15,18 +15,19 @@
 package apiserver
 
 import (
-	"net/http/httptest"
-	"testing"
+	"context"
+	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestBuildFilter(t *testing.T) {
-	req := httptest.NewRequest("GET", "/things?created=0&confirmed=!0&ID=>abc&Id=<abc&id=<=abc&id=>=abc&id=@abc&id=^abc&id=!@abc&id=!^abc&skip=10&limit=50&sort=id,sequence&descending", nil)
-	filter := buildFilter(req, persistence.MessageFilterBuilder)
-	fi, err := filter.Finalize()
-	assert.NoError(t, err)
-
-	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( id %! 'abc' ) || ( id ^! 'abc' ) || ( id <= 'abc' ) || ( id < 'abc' ) || ( id >= 'abc' ) || ( id > 'abc' ) || ( id %= 'abc' ) || ( id ^= 'abc' ) ) sort=id,sequence descending skip=10 limit=50", fi.String())
+type APIRequest struct {
+	ctx    context.Context
+	e      engine.Engine
+	req    *http.Request
+	pp     map[string]string
+	qp     map[string]string
+	filter persistence.AndFilter
+	input  interface{}
 }

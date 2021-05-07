@@ -37,7 +37,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/mocks/enginemocks"
 	"github.com/stretchr/testify/assert"
@@ -183,8 +182,8 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-			assert.Equal(t, "value1", input.(map[string]interface{})["input1"])
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
+			assert.Equal(t, "value1", r.input.(map[string]interface{})["input1"])
 			return map[string]interface{}{"output1": "value2"}, 201, nil
 		},
 	})
@@ -208,8 +207,8 @@ func TestJSONHTTPServeCustomGETError(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-			assert.Equal(t, nil, input)
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
+			assert.Equal(t, nil, r.input)
 			return nil, 503, fmt.Errorf("pop")
 		},
 	})
@@ -233,7 +232,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
 			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
 			return v, 200, nil
 		},
@@ -257,7 +256,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
 			return nil, 200, nil
 		},
 	})
@@ -281,7 +280,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
 			return nil, 200, fmt.Errorf("pop")
 		},
 	})
@@ -305,8 +304,8 @@ func TestStatusCodeHintMapping(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-			return nil, 200, i18n.NewError(req.Context(), i18n.MsgResponseMarshalError)
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
+			return nil, 200, i18n.NewError(r.ctx, i18n.MsgResponseMarshalError)
 		},
 	})
 	s := httptest.NewServer(http.HandlerFunc(handler))
@@ -329,7 +328,7 @@ func TestStatusInvalidContentType(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
+		JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
 			return nil, 204, nil
 		},
 	})

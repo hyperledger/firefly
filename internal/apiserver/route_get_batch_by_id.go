@@ -17,7 +17,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
@@ -31,11 +30,12 @@ var getBatchById = &Route{
 		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
-	JSONHandler: func(e engine.Engine, req *http.Request, pp map[string]string, qp map[string]string, input interface{}) (output interface{}, status int, err error) {
-		output, err = e.GetBatchById(req.Context(), pp["ns"], pp["id"])
+	JSONHandler: func(r APIRequest) (output interface{}, status int, err error) {
+		output, err = r.e.GetBatchById(r.ctx, r.pp["ns"], r.pp["id"])
 		return output, 200, err
 	},
 }
