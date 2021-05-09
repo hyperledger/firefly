@@ -24,6 +24,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/apiserver"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/sirupsen/logrus"
@@ -44,10 +45,17 @@ to digital transformation your business ecosystem.`,
 
 var cfgFile string
 
-var _utInitEngine = true
+var _utEngine engine.Engine
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
+}
+
+func getEngine() engine.Engine {
+	if _utEngine != nil {
+		return _utEngine
+	}
+	return engine.NewEngine()
 }
 
 // Execute is called by the main method of the package
@@ -97,7 +105,14 @@ func run() error {
 		}()
 	}
 
-	// Run the API Server
-	return apiserver.Serve(ctx, _utInitEngine)
+	e := getEngine()
+	if err = e.Init(ctx); err != nil {
+		return err
+	}
+	if err = e.Start(); err != nil {
+		return err
+	}
 
+	// Run the API Server
+	return apiserver.Serve(ctx, e)
 }

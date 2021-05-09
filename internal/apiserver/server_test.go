@@ -49,14 +49,8 @@ func TestStartStopServer(t *testing.T) {
 	config.Set(config.HttpPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
-	err := Serve(ctx, false)
+	err := Serve(ctx, &enginemocks.Engine{})
 	assert.NoError(t, err)
-}
-
-func TestEnginInitFail(t *testing.T) {
-	config.Reset()
-	err := Serve(context.Background(), true)
-	assert.Error(t, err)
 }
 
 func TestInvalidListener(t *testing.T) {

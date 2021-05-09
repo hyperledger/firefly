@@ -41,15 +41,7 @@ import (
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 // Serve is the main entry point for the API Server
-func Serve(ctx context.Context, initEngine bool) error {
-	e := engine.NewEngine()
-	if initEngine {
-		if err := e.Init(ctx); err != nil {
-			return err
-		}
-	}
-	defer e.Close()
-
+func Serve(ctx context.Context, e engine.Engine) error {
 	r := createMuxRouter(e)
 	l, err := createListener(ctx)
 	if err == nil {
