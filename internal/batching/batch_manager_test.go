@@ -66,7 +66,8 @@ func TestE2EDispatch(t *testing.T) {
 	mp.On("GetDataById", mock.Anything, "ns1", mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *dataId1
 	})).Return(data, nil)
-	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
+	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
+	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateMessage", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *msg.Header.ID
@@ -98,6 +99,7 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 	mp := &persistencemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
 	assert.NoError(t, err)
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
@@ -109,6 +111,7 @@ func TestInitFailCannotCreateOffset(t *testing.T) {
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
 	assert.NoError(t, err)
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
@@ -123,11 +126,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	}, nil)
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
-	bm.Start()
-	assert.Equal(t, int64(12345), bm.(*batchManager).offset)
-
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
 	err := bm.(*batchManager).dispatchMessage(context.Background(), msg)
 	assert.Regexp(t, "FF10126", err.Error())
-
 }
