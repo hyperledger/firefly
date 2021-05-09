@@ -107,6 +107,20 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	schemaReadJson, _ = json.Marshal(schemas[0])
 	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
+	// Update
+	v2 := "2.0.0"
+	up := persistence.SchemaQueryFactory.NewUpdate(ctx).Set("version", v2)
+	err = s.UpdateSchema(ctx, schemaUpdated.ID, up)
+	assert.NoError(t, err)
+
+	// Test find updated value
+	filter = fb.And(
+		fb.Eq("id", schemaUpdated.ID.String()),
+		fb.Eq("version", v2),
+	)
+	schemas, err = s.GetSchemas(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(schemas))
 }
 
 func TestUpsertSchemaFailBegin(t *testing.T) {
@@ -215,4 +229,30 @@ func TestGetSchemasReadMessageFail(t *testing.T) {
 	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSchemaUpdateBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	u := persistence.SchemaQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateSchema(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestSchemaUpdateBuildQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	u := persistence.SchemaQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
+	err := s.UpdateSchema(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestSchemaUpdateFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := persistence.SchemaQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateSchema(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10117", err.Error())
 }

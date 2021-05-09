@@ -340,13 +340,83 @@ func (_m *Plugin) Init(ctx context.Context, config interface{}, events persisten
 	return r0
 }
 
-// UpdateMessage provides a mock function with given fields: ctx, msgid, update
-func (_m *Plugin) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update persistence.Update) error {
-	ret := _m.Called(ctx, msgid, update)
+// UpdateBatch provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateBatch(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
-		r0 = rf(ctx, msgid, update)
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateData provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateData(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateMessage provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateMessage(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateOffset provides a mock function with given fields: ctx, t, ns, name, update
+func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string, update persistence.Update) error {
+	ret := _m.Called(ctx, t, ns, name, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string, persistence.Update) error); ok {
+		r0 = rf(ctx, t, ns, name, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateSchema provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateSchema(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateTransaction provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateTransaction(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}

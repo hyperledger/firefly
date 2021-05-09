@@ -163,3 +163,27 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter persistence.Filter) (
 	return offset, err
 
 }
+
+func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update persistence.Update) (err error) {
+
+	ctx, tx, err := s.beginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx)
+
+	query, err := s.buildUpdate(ctx, sq.Update("offsets"), update, offsetFilterTypeMap)
+	if err != nil {
+		return err
+	}
+	query = query.Where(sq.Eq{"otype": t,
+		"namespace": ns,
+		"name":      name})
+
+	_, err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx)
+}

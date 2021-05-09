@@ -178,3 +178,25 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter persistence.Filt
 	return transactions, err
 
 }
+
+func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update persistence.Update) (err error) {
+
+	ctx, tx, err := s.beginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx)
+
+	query, err := s.buildUpdate(ctx, sq.Update("transactions"), update, transactionFilterTypeMap)
+	if err != nil {
+		return err
+	}
+	query = query.Where(sq.Eq{"id": id})
+
+	_, err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx)
+}

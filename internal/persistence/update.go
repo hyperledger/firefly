@@ -27,6 +27,9 @@ type UpdateBuilder interface {
 	// Set starts creation of a set operation
 	Set(uield string, value interface{}) Update
 
+	// S starts an update that doesn't have any fields
+	S() Update
+
 	// Fields returns the available fields on the update
 	Fields() []string
 }
@@ -34,6 +37,9 @@ type UpdateBuilder interface {
 type Update interface {
 	// Set adds a set condition to the update
 	Set(uield string, value interface{}) Update
+
+	// IsEmpty
+	IsEmpty() bool
 
 	// Finalize completes the update, and for the plugin to validated output structure to convert
 	Finalize() (*UpdateInfo, error)
@@ -84,9 +90,20 @@ func (ub *updateBuilder) Set(field string, value interface{}) Update {
 	}
 }
 
+func (ub *updateBuilder) S() Update {
+	return &setUpdate{
+		ub:            ub,
+		setOperations: []*setOperation{},
+	}
+}
+
 type setUpdate struct {
 	ub            *updateBuilder
 	setOperations []*setOperation
+}
+
+func (ub *setUpdate) IsEmpty() bool {
+	return len(ub.setOperations) == 0
 }
 
 func (u *setUpdate) Set(field string, value interface{}) Update {

@@ -63,7 +63,7 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 	return b, nil
 }
 
-func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates persistence.Update) error {
 
 	// In a retry scenario we don't need to re-write the batch itself to IPFS
 	if batch.PayloadRef == nil {
@@ -82,8 +82,8 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	}
 
 	// Write it to the blockchain
-	batch.TX.ID = fftypes.NewUUID()
-	batch.TX.Type = fftypes.TransactionTypePin
+	updates.Set("tx.id", fftypes.NewUUID())
+	updates.Set("tx.type", fftypes.TransactionTypePin)
 	trackingId, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
 		BatchID:        *batch.ID,

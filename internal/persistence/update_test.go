@@ -24,10 +24,12 @@ import (
 
 func TestUpdateBuilderOK(t *testing.T) {
 	uuid := uuid.MustParse("c414cab3-9bd4-48f3-b16a-0d74a3bbb60e")
-	u := MessageQueryFactory.NewUpdate(context.Background()).
-		Set("created", 12345).
+	u := MessageQueryFactory.NewUpdate(context.Background()).S()
+	assert.True(t, u.IsEmpty())
+	u.Set("created", 12345).
 		Set("cid", &uuid).
 		Set("author", "0x1234")
+	assert.False(t, u.IsEmpty())
 	ui, err := u.Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, "created=12345, cid='c414cab3-9bd4-48f3-b16a-0d74a3bbb60e', author='0x1234'", ui.String())

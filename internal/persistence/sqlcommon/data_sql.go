@@ -184,3 +184,25 @@ func (s *SQLCommon) GetData(ctx context.Context, filter persistence.Filter) (mes
 	return data, err
 
 }
+
+func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update persistence.Update) (err error) {
+
+	ctx, tx, err := s.beginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx)
+
+	query, err := s.buildUpdate(ctx, sq.Update("data"), update, dataFilterTypeMap)
+	if err != nil {
+		return err
+	}
+	query = query.Where(sq.Eq{"id": id})
+
+	_, err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx)
+}

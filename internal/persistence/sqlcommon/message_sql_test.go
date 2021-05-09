@@ -463,7 +463,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestBatchMessageUpdateBeginFail(t *testing.T) {
+func TestMessageUpdateBeginFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := persistence.MessageQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
@@ -471,7 +471,7 @@ func TestBatchMessageUpdateBeginFail(t *testing.T) {
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
-func TestBatchMessageUpdateBuildQueryFail(t *testing.T) {
+func TestMessageUpdateBuildQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	u := persistence.MessageQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
@@ -479,7 +479,7 @@ func TestBatchMessageUpdateBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
-func TestBatchMessageUpdateFail(t *testing.T) {
+func TestMessageUpdateFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))

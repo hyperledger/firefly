@@ -64,7 +64,7 @@ type PeristenceInterface interface {
 	UpsertMessage(ctx context.Context, message *fftypes.Message) (err error)
 
 	// Update messages
-	UpdateMessage(ctx context.Context, msgid *uuid.UUID, update Update) (err error)
+	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a message by Id
 	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)
@@ -75,6 +75,9 @@ type PeristenceInterface interface {
 	// Upsert a data record
 	UpsertData(ctx context.Context, data *fftypes.Data) (err error)
 
+	// Update data
+	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
+
 	// Get a data record by Id
 	GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error)
 
@@ -83,6 +86,9 @@ type PeristenceInterface interface {
 
 	// Upsert a batch
 	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
+
+	// Update data
+	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a batch by Id
 	GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error)
@@ -93,6 +99,9 @@ type PeristenceInterface interface {
 	// Upsert a transaction
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
 
+	// Update transaction
+	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
+
 	// Get a transaction by Id
 	GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error)
 
@@ -102,6 +111,9 @@ type PeristenceInterface interface {
 	// Upsert a schema
 	UpsertSchema(ctx context.Context, data *fftypes.Schema) (err error)
 
+	// Update schema
+	UpdateSchema(ctx context.Context, id *uuid.UUID, update Update) (err error)
+
 	// Get a schema by Id
 	GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Schema, err error)
 
@@ -110,6 +122,9 @@ type PeristenceInterface interface {
 
 	// Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset) (err error)
+
+	// Update offset
+	UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update Update) (err error)
 
 	// Get an offset by Id
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (message *fftypes.Offset, err error)

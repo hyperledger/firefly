@@ -70,7 +70,7 @@ type batchManager struct {
 	closed      bool
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch) error
+type DispatchHandler func(context.Context, *fftypes.Batch, persistence.Update) error
 
 type BatchOptions struct {
 	BatchMaxSize   uint
@@ -117,6 +117,7 @@ func (bm *batchManager) restoreOffset() error {
 	} else {
 		bm.offset = offset.Current
 	}
+	log.L(bm.ctx).Infof("Batch manager restored offset %d", bm.offset)
 	return nil
 }
 
@@ -192,6 +193,8 @@ func (bm *batchManager) messageSequencer() {
 	ctx := log.WithLogger(bm.ctx, l)
 	l.Debugf("Started batch assembly message sequencer")
 
+	dispatched := make(chan *batchDispatch, readPageSize)
+
 	for !bm.closed {
 		// Read messages from the DB
 		fb := persistence.MessageQueryFactory.NewFilter(bm.ctx, readPageSize)
@@ -203,6 +206,7 @@ func (bm *batchManager) messageSequencer() {
 		batchWasFull := (len(msgs) == readPageSize)
 
 		if len(msgs) > 0 {
+			var dispatchCount int
 			for _, msg := range msgs {
 				data, err := bm.assembleMessageData(ctx, msg)
 				if err != nil {
@@ -210,10 +214,21 @@ func (bm *batchManager) messageSequencer() {
 					continue
 				}
 
-				err = bm.dispatchMessage(ctx, msg, data...)
+				err = bm.dispatchMessage(ctx, dispatched, msg, data...)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
+				}
+				dispatchCount++
+			}
+
+			for i := 0; i < dispatchCount; i++ {
+				dispatched := <-dispatched
+				l.Debugf("Dispatched message %s to batch %s", dispatched.msg.Header.ID, dispatched.batchID)
+
+				if err = bm.updateMessage(ctx, dispatched.msg, dispatched.batchID); err != nil {
+					l.Errorf("Closed while attempting to update message %s with batch %s", dispatched.msg.Header.ID, dispatched.batchID)
+					break
 				}
 			}
 
@@ -274,12 +289,13 @@ func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, ne
 			stillRetrying := infiniteRetry || (attempt <= startupOffsetRetryAttempts)
 			return !bm.closed && stillRetrying
 		}
+		l.Infof("Batch manager committed offset %d", newOffset)
 		return false
 	})
 	return err
 }
 
-func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) error {
+func (bm *batchManager) dispatchMessage(ctx context.Context, dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
@@ -289,11 +305,8 @@ func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Messag
 	work := &batchWork{
 		msg:        msg,
 		data:       data,
-		dispatched: make(chan *uuid.UUID),
+		dispatched: dispatched,
 	}
 	processor.newWork <- work
-	batchID := <-work.dispatched
-	l.Debugf("Dispatched message %s to batch %s", msg.Header.ID, batchID)
-
-	return bm.updateMessage(ctx, msg, batchID)
+	return nil
 }
