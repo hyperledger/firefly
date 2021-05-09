@@ -88,6 +88,20 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	offsetReadJson, _ = json.Marshal(offsetRes[0])
 	assert.Equal(t, string(offsetJson), string(offsetReadJson))
 
+	// Update
+	rand3, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
+	up := persistence.OffsetQueryFactory.NewUpdate(ctx).Set("current", rand3.Int64())
+	err = s.UpdateOffset(ctx, fftypes.OffsetTypeBatch, offsetUpdated.Namespace, offsetUpdated.Name, up)
+	assert.NoError(t, err)
+
+	// Test find updated value
+	filter = fb.And(
+		fb.Eq("name", offsetUpdated.Name),
+		fb.Eq("current", rand3.Int64()),
+	)
+	offsets, err := s.GetOffsets(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(offsets))
 }
 
 func TestUpsertOffsetFailBegin(t *testing.T) {
@@ -190,4 +204,30 @@ func TestGetOffsetReadMessageFail(t *testing.T) {
 	_, err := s.GetOffsets(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestOffsetUpdateBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	u := persistence.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
+	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestOffsetUpdateBuildQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	u := persistence.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
+	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	assert.Regexp(t, "FF10149.*name", err.Error())
+}
+
+func TestOffsetUpdateFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := persistence.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
+	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	assert.Regexp(t, "FF10117", err.Error())
 }

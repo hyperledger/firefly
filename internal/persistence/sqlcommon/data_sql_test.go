@@ -110,6 +110,20 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataReadJson, _ = json.Marshal(dataRes[0])
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
+	// Update
+	v2 := "2.0.0"
+	up := persistence.DataQueryFactory.NewUpdate(ctx).Set("schema.version", v2)
+	err = s.UpdateData(ctx, &dataId, up)
+	assert.NoError(t, err)
+
+	// Test find updated value
+	filter = fb.And(
+		fb.Eq("id", dataUpdated.ID.String()),
+		fb.Eq("schema.version", v2),
+	)
+	dataRes, err = s.GetData(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(dataRes))
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
@@ -218,4 +232,30 @@ func TestGetDataReadMessageFail(t *testing.T) {
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDataUpdateBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	u := persistence.DataQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestDataUpdateBuildQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	u := persistence.DataQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
+	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestDataUpdateFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := persistence.DataQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10117", err.Error())
 }

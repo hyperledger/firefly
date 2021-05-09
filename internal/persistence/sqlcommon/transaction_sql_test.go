@@ -102,6 +102,21 @@ func TestTransaction2EWithDB(t *testing.T) {
 	transactions, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(transactions))
+
+	// Update
+	newTrackingId := "0x33333"
+	up := persistence.TransactionQueryFactory.NewUpdate(ctx).Set("trackingid", newTrackingId)
+	err = s.UpdateTransaction(ctx, transactionUpdated.ID, up)
+	assert.NoError(t, err)
+
+	// Test find updated value
+	filter = fb.And(
+		fb.Eq("id", transactionUpdated.ID.String()),
+		fb.Eq("trackingid", newTrackingId),
+	)
+	transactions, err = s.GetTransactions(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(transactions))
 }
 
 func TestUpsertTransactionFailBegin(t *testing.T) {
@@ -210,4 +225,30 @@ func TestGettTransactionsReadMessageFail(t *testing.T) {
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestTransactionUpdateBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	u := persistence.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateTransaction(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestTransactionUpdateBuildQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	u := persistence.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
+	err := s.UpdateTransaction(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestTransactionUpdateFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := persistence.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateTransaction(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10117", err.Error())
 }

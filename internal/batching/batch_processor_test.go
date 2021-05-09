@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/likexian/gokit/assert"
@@ -57,12 +58,13 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
 	})
 	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
 	work := make([]*batchWork, 5)
@@ -70,7 +72,7 @@ func TestUnfilledBatch(t *testing.T) {
 		msgid := uuid.New()
 		work[i] = &batchWork{
 			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
-			dispatched: make(chan *uuid.UUID),
+			dispatched: make(chan *batchDispatch),
 		}
 	}
 
@@ -104,7 +106,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
@@ -114,6 +116,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mockUpsert.ReturnArguments = mock.Arguments{nil}
 	unblockPersistence := make(chan time.Time)
 	mockUpsert.WaitFor = unblockPersistence
+	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
 	work := make([]*batchWork, 10)
@@ -122,12 +125,12 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 		if i%2 == 0 {
 			work[i] = &batchWork{
 				msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
-				dispatched: make(chan *uuid.UUID),
+				dispatched: make(chan *batchDispatch),
 			}
 		} else {
 			work[i] = &batchWork{
 				data:       []*fftypes.Data{{ID: &msgid}},
-				dispatched: make(chan *uuid.UUID),
+				dispatched: make(chan *batchDispatch),
 			}
 		}
 	}
@@ -162,11 +165,12 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
 		return fmt.Errorf("pop")
 	})
 	bp.close()
-	bp.dispatchBatch(&fftypes.Batch{})
+	fb := persistence.BatchQueryFactory.NewUpdate(context.Background())
+	bp.dispatchBatch(context.Background(), &fftypes.Batch{}, fb.S())
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
@@ -174,7 +178,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
@@ -190,7 +194,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	msgid := uuid.New()
 	work := &batchWork{
 		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
-		dispatched: make(chan *uuid.UUID),
+		dispatched: make(chan *batchDispatch),
 	}
 
 	// Dispatch the work

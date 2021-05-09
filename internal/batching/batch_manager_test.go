@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,7 +34,7 @@ func TestE2EDispatch(t *testing.T) {
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
 	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch) error {
+	handler := func(ctx context.Context, b *fftypes.Batch, updates persistence.Update) error {
 		waitForDispatch <- b
 		return nil
 	}
@@ -69,6 +70,7 @@ func TestE2EDispatch(t *testing.T) {
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateMessage", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *msg.Header.ID
 	}), mock.Anything).Return(nil)
@@ -127,6 +129,6 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	err := bm.(*batchManager).dispatchMessage(context.Background(), msg)
+	err := bm.(*batchManager).dispatchMessage(context.Background(), nil, msg)
 	assert.Regexp(t, "FF10126", err.Error())
 }

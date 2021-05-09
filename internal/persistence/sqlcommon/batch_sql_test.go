@@ -120,6 +120,21 @@ func TestBatch2EWithDB(t *testing.T) {
 	batches, err = s.GetBatches(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(batches))
+
+	// Update
+	author2 := "0x222222"
+	up := persistence.BatchQueryFactory.NewUpdate(ctx).Set("author", author2)
+	err = s.UpdateBatch(ctx, &batchId, up)
+	assert.NoError(t, err)
+
+	// Test find updated value
+	filter = fb.And(
+		fb.Eq("id", batchUpdated.ID.String()),
+		fb.Eq("author", author2),
+	)
+	batches, err = s.GetBatches(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batches))
 }
 
 func TestUpsertBatchFailBegin(t *testing.T) {
@@ -221,11 +236,37 @@ func TestGetBatchesBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
-func TestGettBatchesReadMessageFail(t *testing.T) {
+func TestGetBatchesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := persistence.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestBatchUpdateBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	u := persistence.BatchQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestBatchUpdateBuildQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	u := persistence.BatchQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
+	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestBatchUpdateFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := persistence.BatchQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
+	assert.Regexp(t, "FF10117", err.Error())
 }

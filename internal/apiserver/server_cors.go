@@ -33,7 +33,7 @@ func wrapCorsIfEnabled(ctx context.Context, chain http.Handler) http.Handler {
 		AllowedHeaders:   config.GetStringSlice(config.CorsAllowedHeaders),
 		AllowCredentials: config.GetBool(config.CorsAllowCredentials),
 		MaxAge:           config.GetInt(config.CorsMaxAge),
-		Debug:            true,
+		Debug:            config.GetBool(config.CorsDebug),
 	}
 	log.L(ctx).Debugf("CORS origins=%v methods=%v headers=%v creds=%t maxAge=%d",
 		corsOptions.AllowedOrigins,
