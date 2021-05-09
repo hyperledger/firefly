@@ -188,6 +188,52 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter persistence.Filter) ([
 	return r0, r1
 }
 
+// GetOffset provides a mock function with given fields: ctx, t, ns, name
+func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string) (*fftypes.Offset, error) {
+	ret := _m.Called(ctx, t, ns, name)
+
+	var r0 *fftypes.Offset
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string) *fftypes.Offset); ok {
+		r0 = rf(ctx, t, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Offset)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.OffsetType, string, string) error); ok {
+		r1 = rf(ctx, t, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOffsets provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetOffsets(ctx context.Context, filter persistence.Filter) ([]*fftypes.Offset, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Offset
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Offset); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Offset)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSchemaById provides a mock function with given fields: ctx, ns, id
 func (_m *Plugin) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Schema, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -294,6 +340,20 @@ func (_m *Plugin) Init(ctx context.Context, config interface{}, events persisten
 	return r0
 }
 
+// UpdateMessage provides a mock function with given fields: ctx, msgid, update
+func (_m *Plugin) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, msgid, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, msgid, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertBatch provides a mock function with given fields: ctx, data
 func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch) error {
 	ret := _m.Called(ctx, data)
@@ -329,6 +389,20 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message) e
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
 		r0 = rf(ctx, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertOffset provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

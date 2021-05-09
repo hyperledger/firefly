@@ -16,6 +16,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
@@ -79,4 +80,14 @@ func TestInitBadIdentity(t *testing.T) {
 	err = e.Init(context.Background())
 	assert.Regexp(t, "FF10141", err.Error())
 	e.Close()
+}
+
+func TestStart(t *testing.T) {
+	mb := &batchingmocks.BatchManager{}
+	e := &engine{
+		batch: mb,
+	}
+	mb.On("Start").Return(fmt.Errorf("pop"))
+	err := e.Start()
+	assert.Regexp(t, "pop", err.Error())
 }

@@ -17,7 +17,7 @@ package engine
 import "github.com/google/uuid"
 
 func (e *engine) MessageCreated(id *uuid.UUID) {
-	e.batch.NotifyNewMessage(e.ctx, id)
+	e.batch.NewMessages() <- id
 }
 
 func (e *engine) MessageUpdated(id *uuid.UUID) {}

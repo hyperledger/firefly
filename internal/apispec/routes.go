@@ -33,7 +33,7 @@ type Route struct {
 	// QueryParams is a list of documented query parameters
 	QueryParams []QueryParam
 	// FilterFactory is a reference to a filter object that defines the search param on resource collection interfaces
-	FilterFactory persistence.FilterFactory
+	FilterFactory persistence.QueryFactory
 	// Method is the HTTP method
 	Method string
 	// Description is a message key to a translatable descripiton of the operation

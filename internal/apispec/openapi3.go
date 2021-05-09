@@ -146,7 +146,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		addParam(ctx, op, "query", q.Name, "", q.Description)
 	}
 	if route.FilterFactory != nil {
-		for _, field := range route.FilterFactory.New(ctx, 0).Fields() {
+		for _, field := range route.FilterFactory.NewFilter(ctx, 0).Fields() {
 			addParam(ctx, op, "query", field, "", i18n.MsgFilterParamDesc)
 		}
 		addParam(ctx, op, "query", "sort", "", i18n.MsgFilterSortDesc)

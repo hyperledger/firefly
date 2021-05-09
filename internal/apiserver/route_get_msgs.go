@@ -31,7 +31,7 @@ var getMsgs = &apispec.Route{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.MessageFilterBuilder,
+	FilterFactory:   persistence.MessageQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Message{} },

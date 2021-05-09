@@ -33,6 +33,7 @@ import (
 // Engine is the main interface behind the API, implementing the actions
 type Engine interface {
 	Init(ctx context.Context) error
+	Start() error
 	Close()
 
 	// Definitions
@@ -77,6 +78,10 @@ func (e *engine) Init(ctx context.Context) (err error) {
 	return err
 }
 
+func (e *engine) Start() error {
+	return e.batch.Start()
+}
+
 func (e *engine) Close() {
 	if e.batch != nil {
 		e.batch.Close()
@@ -113,7 +118,8 @@ func (e *engine) initPlugins(ctx context.Context) (err error) {
 
 func (e *engine) initComponents(ctx context.Context) (err error) {
 	if e.batch == nil {
-		if e.batch, err = batching.NewBatchManager(ctx, e.persistence); err != nil {
+		e.batch, err = batching.NewBatchManager(ctx, e.persistence)
+		if err != nil {
 			return err
 		}
 	}

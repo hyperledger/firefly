@@ -31,7 +31,7 @@ var getBatches = &apispec.Route{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.BatchFilterBuilder,
+	FilterFactory:   persistence.BatchQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },

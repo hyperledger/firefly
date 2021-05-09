@@ -16,9 +16,11 @@ package batching
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/stretchr/testify/assert"
@@ -28,15 +30,15 @@ import (
 func TestE2EDispatch(t *testing.T) {
 
 	mp := &persistencemocks.Plugin{}
-	bm, _ := NewBatchManager(context.Background(), mp)
-	defer bm.Close()
-
-	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
+	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
 	waitForDispatch := make(chan *fftypes.Batch)
 	handler := func(ctx context.Context, b *fftypes.Batch) error {
 		waitForDispatch <- b
 		return nil
 	}
+	bmi, _ := NewBatchManager(context.Background(), mp)
+	bm := bmi.(*batchManager)
 
 	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, BatchOptions{
 		BatchMaxSize:   2,
@@ -44,74 +46,88 @@ func TestE2EDispatch(t *testing.T) {
 		DisposeTimeout: 120 * time.Second,
 	})
 
-	msg := &fftypes.Message{Header: fftypes.MessageHeader{
-		Type:      fftypes.MessageTypeBroadcast,
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Author:    "0x12345",
-	}}
-	data := &fftypes.Data{ID: fftypes.NewUUID()}
+	dataId1 := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypeBroadcast,
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Author:    "0x12345",
+		},
+		Data: fftypes.DataRefs{
+			{ID: dataId1, Hash: &dataHash},
+		},
+	}
+	data := &fftypes.Data{
+		ID:   dataId1,
+		Hash: &dataHash,
+	}
+	mp.On("GetDataById", mock.Anything, "ns1", mock.MatchedBy(func(i interface{}) bool {
+		return *(i.(*uuid.UUID)) == *dataId1
+	})).Return(data, nil)
+	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
+	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpdateMessage", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
+		return *(i.(*uuid.UUID)) == *msg.Header.ID
+	}), mock.Anything).Return(nil)
 
-	id, err := bm.(*batchManager).dispatchMessage(context.Background(), msg, data)
+	err := bm.Start()
 	assert.NoError(t, err)
-	assert.NotNil(t, id)
+
+	bm.NewMessages() <- msg.Header.ID
 
 	b := <-waitForDispatch
 	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+
+	// Wait until everything closes
+	bm.Close()
+	for len(bm.dispatchers[fftypes.MessageTypeBroadcast].processors) > 0 {
+		time.Sleep(1 * time.Microsecond)
+	}
 
 }
 
-func TestInitFail(t *testing.T) {
+func TestInitFailNoPersistence(t *testing.T) {
 	_, err := NewBatchManager(context.Background(), nil)
 	assert.Error(t, err)
+}
+
+func TestInitFailCannotRestoreOffset(t *testing.T) {
+	mp := &persistencemocks.Plugin{}
+	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
+	bm, err := NewBatchManager(context.Background(), mp)
+	assert.NoError(t, err)
+	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
+	err = bm.Start()
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestInitFailCannotCreateOffset(t *testing.T) {
+	mp := &persistencemocks.Plugin{}
+	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
+	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	bm, err := NewBatchManager(context.Background(), mp)
+	assert.NoError(t, err)
+	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
+	err = bm.Start()
+	assert.Regexp(t, "pop", err.Error())
 }
 
 func TestGetInvalidBatchTypeMsg(t *testing.T) {
 
 	mp := &persistencemocks.Plugin{}
+	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
+		Current: 12345,
+	}, nil)
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
+	bm.Start()
+	assert.Equal(t, int64(12345), bm.(*batchManager).offset)
 
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	_, err := bm.(*batchManager).dispatchMessage(context.Background(), msg)
+	err := bm.(*batchManager).dispatchMessage(context.Background(), msg)
 	assert.Regexp(t, "FF10126", err.Error())
-
-}
-
-func TestTimeout(t *testing.T) {
-
-	mp := &persistencemocks.Plugin{}
-	bm, _ := NewBatchManager(context.Background(), mp)
-	defer bm.Close()
-
-	blocker := make(chan time.Time)
-	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything)
-	mup.WaitFor = blocker
-
-	handler := func(ctx context.Context, b *fftypes.Batch) error {
-		return nil
-	}
-
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, BatchOptions{
-		BatchMaxSize:   1,
-		BatchTimeout:   0,
-		DisposeTimeout: 120 * time.Second,
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
-	defer cancel()
-
-	msg := &fftypes.Message{Header: fftypes.MessageHeader{
-		Type:      fftypes.MessageTypeBroadcast,
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Author:    "0x12345",
-	}}
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
-	_, err := bm.(*batchManager).dispatchMessage(ctx, msg, data)
-
-	assert.Regexp(t, "FF10127", err)
 
 }

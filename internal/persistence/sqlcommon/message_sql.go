@@ -42,14 +42,14 @@ var (
 		"confirmed",
 		"tx_type",
 		"tx_id",
-		"batch_id",
+		"tx_batch_id",
 	}
 	msgFilterTypeMap = map[string]string{
-		"type":    "mtype",
-		"tx.type": "tx_type",
-		"tx.id":   "tx_id",
-		"group":   "group_id",
-		"batch":   "batch_id",
+		"type":       "mtype",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
+		"tx.batchid": "tx_batch_id",
+		"group":      "group_id",
 	}
 )
 
@@ -90,7 +90,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.TX.Type).
 				Set("tx_id", message.TX.ID).
-				Set("batch_id", message.TX.BatchID).
+				Set("tx_batch_id", message.TX.BatchID).
 				Where(sq.Eq{"id": message.Header.ID}),
 		); err != nil {
 			return err
@@ -389,4 +389,26 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter persistence.Filter) 
 
 	return msgs, err
 
+}
+
+func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update persistence.Update) (err error) {
+
+	ctx, tx, err := s.beginTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx)
+
+	query, err := s.buildUpdate(ctx, sq.Update("messages"), update, msgFilterTypeMap)
+	if err != nil {
+		return err
+	}
+	query = query.Where(sq.Eq{"id": msgid})
+
+	_, err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx)
 }

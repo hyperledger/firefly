@@ -12,10 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package sqlcommon
 
-const (
-	SchemaTopicDefinitionName = "ff-schema"
-	SystemNamespace           = "ff-system"
-	SystemContext             = "ff-system"
+import (
+	"context"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
+
+func (s *SQLCommon) buildUpdate(ctx context.Context, sel sq.UpdateBuilder, update persistence.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
+	ui, err := update.Finalize()
+	if err != nil {
+		return sel, err
+	}
+	for _, so := range ui.SetOperations {
+		sel = sel.Set(s.mapField(so.Field, typeMap), so.Value)
+	}
+	return sel, nil
+}

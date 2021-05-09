@@ -3,10 +3,7 @@
 package batchingmocks
 
 import (
-	context "context"
-
 	batching "github.com/kaleido-io/firefly/internal/batching"
-
 	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
@@ -24,12 +21,37 @@ func (_m *BatchManager) Close() {
 	_m.Called()
 }
 
-// NotifyNewMessage provides a mock function with given fields: ctx, id
-func (_m *BatchManager) NotifyNewMessage(ctx context.Context, id *uuid.UUID) {
-	_m.Called(ctx, id)
+// NewMessages provides a mock function with given fields:
+func (_m *BatchManager) NewMessages() chan<- *uuid.UUID {
+	ret := _m.Called()
+
+	var r0 chan<- *uuid.UUID
+	if rf, ok := ret.Get(0).(func() chan<- *uuid.UUID); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan<- *uuid.UUID)
+		}
+	}
+
+	return r0
 }
 
 // RegisterDispatcher provides a mock function with given fields: batchType, handler, batchOptions
 func (_m *BatchManager) RegisterDispatcher(batchType fftypes.MessageType, handler batching.DispatchHandler, batchOptions batching.BatchOptions) {
 	_m.Called(batchType, handler, batchOptions)
+}
+
+// Start provides a mock function with given fields:
+func (_m *BatchManager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

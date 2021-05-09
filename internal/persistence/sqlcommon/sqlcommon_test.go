@@ -78,6 +78,7 @@ func TestInitSQLCommon(t *testing.T) {
 	s := &SQLCommon{}
 	err := InitSQLCommon(context.Background(), s, ensureTestDB(t), nil, &persistence.Capabilities{}, testSQLOptions())
 	assert.NoError(t, err)
+	assert.NotNil(t, s.Capabilities())
 }
 
 func TestInitSQLCommonMissingOptions(t *testing.T) {

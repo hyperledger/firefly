@@ -25,10 +25,14 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/retry"
 )
 
 const (
-	readPageSize = 100
+	startupOffsetRetryAttempts = 5
+	readPageSize               = 100
+	messagePollTimeout         = 5 * time.Minute // note we wake up immediately on events, so this is just for cases events fail
+	msgBatchOffsetName         = "ff-msgbatch"
 )
 
 func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (BatchManager, error) {
@@ -39,13 +43,20 @@ func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (Batch
 		ctx:         ctx,
 		persistence: persistence,
 		dispatchers: make(map[fftypes.MessageType]*dispatcher),
+		newMessages: make(chan *uuid.UUID, readPageSize),
+		retry: &retry.Retry{
+			InitialDelay: writeRetryInitDelay,
+			MaximumDelay: writeRetryMaxDelay,
+			Factor:       writeRetryFactor,
+		},
 	}
 	return bm, nil
 }
 
 type BatchManager interface {
 	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
-	NotifyNewMessage(ctx context.Context, id *uuid.UUID)
+	NewMessages() chan<- *uuid.UUID
+	Start() error
 	Close()
 }
 
@@ -53,6 +64,10 @@ type batchManager struct {
 	ctx         context.Context
 	persistence persistence.Plugin
 	dispatchers map[fftypes.MessageType]*dispatcher
+	newMessages chan *uuid.UUID
+	retry       *retry.Retry
+	offset      int64
+	closed      bool
 }
 
 type DispatchHandler func(context.Context, *fftypes.Batch) error
@@ -76,6 +91,33 @@ func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handle
 		batchOptions: batchOptions,
 		processors:   make(map[string]*batchProcessor),
 	}
+}
+
+func (bm *batchManager) Start() error {
+	if err := bm.restoreOffset(); err != nil {
+		return err
+	}
+	go bm.messageSequencer()
+	return nil
+}
+
+func (bm *batchManager) NewMessages() chan<- *uuid.UUID {
+	return bm.newMessages
+}
+
+func (bm *batchManager) restoreOffset() error {
+	offset, err := bm.persistence.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
+	if err != nil {
+		return err
+	}
+	if offset == nil {
+		if err = bm.updateOffset(bm.ctx, false, 0); err != nil {
+			return err
+		}
+	} else {
+		bm.offset = offset.Current
+	}
+	return nil
 }
 
 func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
@@ -103,6 +145,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 				dispatch:           dispatcher.handler,
 				processorQuiescing: func() { bm.removeProcessor(dispatcher, key) },
 			},
+			bm.retry,
 		)
 		dispatcher.processors[key] = processor
 	}
@@ -119,6 +162,8 @@ func (bm *batchManager) Close() {
 			}
 			d.mux.Unlock()
 		}
+		bm.closed = true
+		close(bm.newMessages)
 	}
 	bm = nil
 }
@@ -142,37 +187,103 @@ func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Me
 	return data, nil
 }
 
-func (bm *batchManager) NotifyNewMessage(ctx context.Context, id *uuid.UUID) {
-	l := log.L(ctx)
+func (bm *batchManager) messageSequencer() {
+	l := log.L(bm.ctx).WithField("role", "batch-msg-sequencer")
+	ctx := log.WithLogger(bm.ctx, l)
+	l.Debugf("Started batch assembly message sequencer")
 
-	fb := persistence.MessageFilterBuilder.New(ctx, readPageSize)
-	msgs, err := bm.persistence.GetMessages(ctx, fb.Eq("id", id))
-	if err != nil {
-		l.Errorf("Failed to retrieve messages: %s", err)
-		return
-	}
-
-	for _, msg := range msgs {
-		data, err := bm.assembleMessageData(ctx, msg)
+	for !bm.closed {
+		// Read messages from the DB
+		fb := persistence.MessageQueryFactory.NewFilter(bm.ctx, readPageSize)
+		msgs, err := bm.persistence.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(readPageSize))
 		if err != nil {
-			l.Errorf("Failed to retrieve message data: %s", err)
+			l.Errorf("Failed to retrieve messages: %s", err)
 			return
 		}
+		batchWasFull := (len(msgs) == readPageSize)
 
-		_, err = bm.dispatchMessage(ctx, msg, data...)
-		if err != nil {
-			l.Errorf("Failed to dispatch message: %s", err)
-			return
+		if len(msgs) > 0 {
+			for _, msg := range msgs {
+				data, err := bm.assembleMessageData(ctx, msg)
+				if err != nil {
+					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
+					continue
+				}
+
+				err = bm.dispatchMessage(ctx, msg, data...)
+				if err != nil {
+					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
+					continue
+				}
+			}
+
+			if !bm.closed {
+				_ = bm.updateOffset(ctx, true, msgs[len(msgs)-1].Sequence)
+			}
+		}
+
+		// Wait to be woken again
+		if !bm.closed && !batchWasFull {
+			timeout := time.NewTimer(messagePollTimeout)
+			select {
+			case <-timeout.C:
+				l.Debugf("Woken after poll timeout")
+			case m := <-bm.newMessages:
+				l.Debugf("Woken for trigger for message %s", m)
+			}
+			var drained bool
+			for !drained {
+				select {
+				case m := <-bm.newMessages:
+					l.Debugf("Absorbing trigger for message %s", m)
+				default:
+					drained = true
+				}
+			}
 		}
 	}
-
 }
 
-func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) (*uuid.UUID, error) {
+func (bm *batchManager) updateMessage(ctx context.Context, msg *fftypes.Message, batchID *uuid.UUID) (err error) {
+	l := log.L(ctx)
+	bm.retry.Do(ctx, func(attempt int) (retry bool) {
+		u := persistence.MessageQueryFactory.NewUpdate(ctx).Set("tx.batchid", batchID)
+		err = bm.persistence.UpdateMessage(ctx, msg.Header.ID, u)
+		if err != nil {
+			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
+			return !bm.closed // only case we stop retrying is on close
+		}
+		return false
+	})
+	return err
+}
+
+func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, newOffset int64) (err error) {
+	l := log.L(ctx)
+	bm.retry.Do(ctx, func(attempt int) (retry bool) {
+		bm.offset = newOffset
+		offset := &fftypes.Offset{
+			Type:      fftypes.OffsetTypeBatch,
+			Namespace: fftypes.SystemNamespace,
+			Name:      msgBatchOffsetName,
+			Current:   bm.offset,
+		}
+		err = bm.persistence.UpsertOffset(bm.ctx, offset)
+		if err != nil {
+			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
+			stillRetrying := infiniteRetry || (attempt <= startupOffsetRetryAttempts)
+			return !bm.closed && stillRetrying
+		}
+		return false
+	})
+	return err
+}
+
+func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(ctx)
 	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	l.Debugf("Dispatching message %s to %s batch", msg.Header.ID, msg.Header.Type)
 	work := &batchWork{
@@ -181,14 +292,8 @@ func (bm *batchManager) dispatchMessage(ctx context.Context, msg *fftypes.Messag
 		dispatched: make(chan *uuid.UUID),
 	}
 	processor.newWork <- work
-	select {
-	case <-ctx.Done():
-		l.Debugf("Dispatch timeout for mesasge %s", msg.Header.ID)
-		// Try to avoid the processor picking this up, if it hasn't already (as we've given up waiting)
-		work.abandoned = true
-		return nil, i18n.NewError(ctx, i18n.MsgBatchDispatchTimeout)
-	case batchID := <-work.dispatched:
-		l.Debugf("Dispatched mesasge %s to batch %s", msg.Header.ID, batchID)
-		return batchID, nil
-	}
+	batchID := <-work.dispatched
+	l.Debugf("Dispatched message %s to batch %s", msg.Header.ID, batchID)
+
+	return bm.updateMessage(ctx, msg, batchID)
 }
