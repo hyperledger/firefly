@@ -82,8 +82,9 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 	}
 
 	// Write it to the blockchain
-	updates.Set("tx.id", fftypes.NewUUID())
-	updates.Set("tx.type", fftypes.TransactionTypePin)
+	txid := fftypes.NewUUID()
+	updates.Set("tx.id", txid)
+	updates.Set("tx.type", string(fftypes.TransactionTypePin))
 	trackingId, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
 		BatchID:        *batch.ID,
@@ -95,9 +96,9 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
-		Type:       batch.TX.Type,
+		ID:         txid,
+		Type:       fftypes.TransactionTypePin,
 		Namespace:  batch.Namespace,
-		ID:         batch.TX.ID,
 		Author:     batch.Author,
 		Created:    fftypes.NowMillis(),
 		TrackingID: trackingId,
