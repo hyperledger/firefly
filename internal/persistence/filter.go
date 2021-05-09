@@ -16,14 +16,11 @@ package persistence
 
 import (
 	"context"
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -81,12 +78,6 @@ const (
 	FilterOpNotICont FilterOp = "^!"
 )
 
-// FilterFactory creates a filter builder in the given context, and contains the rules on
-// which fields can be used by the builder (and how they are serialized)
-type FilterFactory interface {
-	New(ctx context.Context, defLimit uint64) FilterBuilder
-}
-
 // FilterBuilder is the syntax used to build the filter, where And() and Or() can be nested
 type FilterBuilder interface {
 	// Fields is the list of available fields
@@ -126,8 +117,18 @@ type FilterInfo struct {
 	Descending bool
 	Field      string
 	Op         FilterOp
-	Value      FilterSerialization
+	Value      FieldSerialization
 	Children   []*FilterInfo
+}
+
+func valueString(f FieldSerialization) string {
+	v, _ := f.Value()
+	switch tv := v.(type) {
+	case int64:
+		return strconv.FormatInt(tv, 10)
+	default:
+		return fmt.Sprintf("'%s'", tv)
+	}
 }
 
 func (f *FilterInfo) filterString() string {
@@ -139,15 +140,7 @@ func (f *FilterInfo) filterString() string {
 		}
 		return strings.Join(cs, fmt.Sprintf(" %s ", f.Op))
 	default:
-		var s string
-		v, _ := f.Value.Value()
-		switch tv := v.(type) {
-		case int64:
-			s = strconv.FormatInt(tv, 10)
-		default:
-			s = fmt.Sprintf("'%s'", tv)
-		}
-		return fmt.Sprintf("%s %s %s", f.Field, f.Op, s)
+		return fmt.Sprintf("%s %s %s", f.Field, f.Op, valueString(f.Value))
 	}
 }
 
@@ -173,20 +166,10 @@ func (f *FilterInfo) String() string {
 	return val.String()
 }
 
-type filterDefinition map[string]Filterable
-
-func (fd *filterDefinition) New(ctx context.Context, defLimit uint64) FilterBuilder {
-	return &filterBuilder{
-		ctx:           ctx,
-		allowedFields: *fd,
-		limit:         defLimit,
-	}
-}
-
 func (fb *filterBuilder) Fields() []string {
-	keys := make([]string, len(fb.allowedFields))
+	keys := make([]string, len(fb.queryFields))
 	i := 0
-	for k := range fb.allowedFields {
+	for k := range fb.queryFields {
 		keys[i] = k
 		i++
 	}
@@ -194,12 +177,12 @@ func (fb *filterBuilder) Fields() []string {
 }
 
 type filterBuilder struct {
-	ctx           context.Context
-	allowedFields filterDefinition
-	sort          []string
-	skip          uint64
-	limit         uint64
-	descending    bool
+	ctx         context.Context
+	queryFields queryFields
+	sort        []string
+	skip        uint64
+	limit       uint64
+	descending  bool
 }
 
 type baseFilter struct {
@@ -216,7 +199,7 @@ func (f *baseFilter) Builder() FilterBuilder {
 
 func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 	var children []*FilterInfo
-	var value FilterSerialization
+	var value FieldSerialization
 
 	switch f.op {
 	case FilterOpAnd, FilterOpOr:
@@ -228,7 +211,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		}
 	default:
 		name := strings.ToLower(f.field)
-		field, ok := f.fb.allowedFields[name]
+		field, ok := f.fb.queryFields[name]
 		if !ok {
 			return nil, i18n.NewError(f.fb.ctx, i18n.MsgInvalidFilterField, name)
 		}
@@ -251,7 +234,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 
 func (f *baseFilter) Sort(fields ...string) Filter {
 	for _, field := range fields {
-		if _, ok := f.fb.allowedFields[field]; ok {
+		if _, ok := f.fb.queryFields[field]; ok {
 			f.fb.sort = append(f.fb.sort, field)
 		}
 	}
@@ -370,82 +353,3 @@ func (fb *filterBuilder) fieldFilter(op FilterOp, name string, value interface{}
 type fieldFilter struct {
 	baseFilter
 }
-
-// We stand on the shoulders of the well adopted SQL serialization interface here to help us define what
-// string<->value looks like, even though this plugin interface is not tightly coupled to SQL.
-type FilterSerialization interface {
-	driver.Valuer
-	sql.Scanner // Implementations can assume the value is ALWAYS a string
-}
-
-type Filterable interface {
-	getSerialization() FilterSerialization
-}
-
-type FilterableString struct{}
-type stringValue struct{ s string }
-
-func (f *stringValue) Scan(src interface{}) error {
-	switch tv := src.(type) {
-	case string:
-		f.s = tv
-	case int:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case int32:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case int64:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case uint:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case uint32:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case uint64:
-		f.s = strconv.FormatInt(int64(tv), 10)
-	case *uuid.UUID:
-		if tv != nil {
-			f.s = tv.String()
-		}
-	case uuid.UUID:
-		f.s = tv.String()
-	case *fftypes.Bytes32:
-		f.s = tv.String()
-	case fftypes.Bytes32:
-		f.s = tv.String()
-	case nil:
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
-	}
-	return nil
-}
-func (f *stringValue) Value() (driver.Value, error)               { return f.s, nil }
-func (f *FilterableString) getSerialization() FilterSerialization { return &stringValue{} }
-
-type FilterableInt64 struct{}
-type int64Value struct{ i int64 }
-
-func (f *int64Value) Scan(src interface{}) (err error) {
-	switch tv := src.(type) {
-	case int:
-		f.i = int64(tv)
-	case int32:
-		f.i = int64(tv)
-	case int64:
-		f.i = int64(tv)
-	case uint:
-		f.i = int64(tv)
-	case uint32:
-		f.i = int64(tv)
-	case uint64:
-		f.i = int64(tv)
-	case string:
-		f.i, err = strconv.ParseInt(src.(string), 10, 64)
-		if err != nil {
-			return i18n.WrapError(context.Background(), err, i18n.MsgScanFailed, src, int64(0))
-		}
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
-	}
-	return nil
-}
-func (f *int64Value) Value() (driver.Value, error)               { return f.i, nil }
-func (f *FilterableInt64) getSerialization() FilterSerialization { return &int64Value{} }

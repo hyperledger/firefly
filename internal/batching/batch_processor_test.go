@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/persistencemocks"
 	"github.com/likexian/gokit/assert"
 	"github.com/stretchr/testify/mock"
@@ -42,6 +43,9 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*persistencemocks.Plugin, 
 			BatchTimeout:   10 * time.Millisecond,
 			DisposeTimeout: 20 * time.Millisecond,
 		},
+	}, &retry.Retry{
+		InitialDelay: 1 * time.Microsecond,
+		MaximumDelay: 1 * time.Microsecond,
 	})
 	return mp, bp
 }

@@ -1,0 +1,4 @@
+BEGIN;
+DROP TABLE IF EXISTS offsets;
+DROP SEQUENCE offsets_seq;
+COMMIT;

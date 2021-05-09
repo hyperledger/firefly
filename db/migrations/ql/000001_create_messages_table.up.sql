@@ -13,10 +13,10 @@ CREATE TABLE messages (
   confirmed   int64   NOT NULL,
   tx_type     string  NOT NULL,
   tx_id       string,
-  batch_id    string
+  tx_batch_id string
 );
 
 CREATE UNIQUE INDEX messages_primary ON messages(id);
 CREATE INDEX messages_search ON messages(namespace,mtype,confirmed,context,topic,group_id,author,cid,hash,created );
-CREATE INDEX messages_batch ON messages(namespace,batch_id);
+CREATE INDEX messages_batch ON messages(namespace,tx_batch_id);
 CREATE INDEX messages_tx ON messages(namespace,tx_type,tx_id);

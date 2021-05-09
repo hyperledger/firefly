@@ -62,7 +62,7 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, sel sq.SelectBuil
 	return sel.Where(fop), nil
 }
 
-func (s *SQLCommon) escapeLike(value persistence.FilterSerialization) string {
+func (s *SQLCommon) escapeLike(value persistence.FieldSerialization) string {
 	v, _ := value.Value()
 	vs, _ := v.(string)
 	vs = strings.ReplaceAll(vs, "[", "[[]")

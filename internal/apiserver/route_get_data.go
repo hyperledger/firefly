@@ -31,7 +31,7 @@ var getData = &apispec.Route{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.DataFilterBuilder,
+	FilterFactory:   persistence.DataQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },

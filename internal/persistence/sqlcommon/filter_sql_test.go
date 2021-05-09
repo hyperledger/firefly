@@ -23,9 +23,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSQLFilterBuilder(t *testing.T) {
+func TestSQLQueryFactory(t *testing.T) {
 	s, _ := getMockDB()
-	fb := persistence.MessageFilterBuilder.New(context.Background(), 0)
+	fb := persistence.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(
 		fb.Eq("namespace", "ns1"),
 		fb.Or(
@@ -53,10 +53,10 @@ func TestSQLFilterBuilder(t *testing.T) {
 	assert.Equal(t, int64(12345), args[3])
 }
 
-func TestSQLFilterBuilderExtraOps(t *testing.T) {
+func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	s, _ := getMockDB()
-	fb := persistence.MessageFilterBuilder.New(context.Background(), 0)
+	fb := persistence.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(
 		fb.Lt("created", "0"),
 		fb.Lte("created", "0"),
@@ -78,15 +78,15 @@ func TestSQLFilterBuilderExtraOps(t *testing.T) {
 	assert.Equal(t, "SELECT * FROM mytable WHERE (created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?) ORDER BY seq DESC", sqlFilter)
 }
 
-func TestSQLFilterBuilderFinalizeFail(t *testing.T) {
+func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := getMockDB()
-	fb := persistence.MessageFilterBuilder.New(context.Background(), 0)
+	fb := persistence.MessageQueryFactory.NewFilter(context.Background(), 0)
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelect(context.Background(), sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
 	assert.Regexp(t, "FF10149.*namespace", err.Error())
 }
 
-func TestSQLFilterBuilderBadOp(t *testing.T) {
+func TestSQLQueryFactoryBadOp(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")
@@ -96,7 +96,7 @@ func TestSQLFilterBuilderBadOp(t *testing.T) {
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
 }
 
-func TestSQLFilterBuilderBadOpInOr(t *testing.T) {
+func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")
@@ -109,7 +109,7 @@ func TestSQLFilterBuilderBadOpInOr(t *testing.T) {
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
 }
 
-func TestSQLFilterBuilderBadOpInAnd(t *testing.T) {
+func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")

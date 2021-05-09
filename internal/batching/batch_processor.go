@@ -58,19 +58,15 @@ type batchProcessor struct {
 	conf        *batchProcessorConf
 }
 
-func newBatchProcessor(ctx context.Context, conf *batchProcessorConf) *batchProcessor {
+func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
 	a := &batchProcessor{
 		ctx:         log.WithLogField(ctx, "author", conf.author),
 		newWork:     make(chan *batchWork),
 		persistWork: make(chan *batchWork, conf.BatchMaxSize),
 		sealBatch:   make(chan bool),
 		batchSealed: make(chan bool),
-		retry: &retry.Retry{
-			InitialDelay: writeRetryInitDelay,
-			MaximumDelay: writeRetryMaxDelay,
-			Factor:       writeRetryFactor,
-		},
-		conf: conf,
+		retry:       retry,
+		conf:        conf,
 	}
 	go a.assemblyLoop()
 	go a.persistenceLoop()
@@ -199,7 +195,7 @@ func (a *batchProcessor) persistenceLoop() {
 	defer close(a.batchSealed)
 	l := log.L(a.ctx)
 	var currentBatch *fftypes.Batch
-	for !a.closed {
+	for {
 		var seal bool
 		newWork := make([]*batchWork, 0, a.conf.BatchMaxSize)
 

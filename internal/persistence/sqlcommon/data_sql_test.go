@@ -94,7 +94,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
 	// Query back the data
-	fb := persistence.DataFilterBuilder.New(ctx, 0)
+	fb := persistence.DataQueryFactory.NewFilter(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
 		fb.Eq("namespace", dataUpdated.Namespace),
@@ -198,7 +198,7 @@ func TestGetDataByIdScanFail(t *testing.T) {
 func TestGetDataQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	f := persistence.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -206,7 +206,7 @@ func TestGetDataQueryFail(t *testing.T) {
 
 func TestGetDataBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := persistence.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -214,7 +214,7 @@ func TestGetDataBuildQueryFail(t *testing.T) {
 func TestGetDataReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := persistence.DataFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	f := persistence.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

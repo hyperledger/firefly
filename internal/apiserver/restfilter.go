@@ -36,10 +36,10 @@ func getValues(values url.Values, key string) (results []string) {
 	return results
 }
 
-func buildFilter(req *http.Request, ff persistence.FilterFactory) persistence.AndFilter {
+func buildFilter(req *http.Request, ff persistence.QueryFactory) persistence.AndFilter {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
-	fb := ff.New(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
+	fb := ff.NewFilter(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()

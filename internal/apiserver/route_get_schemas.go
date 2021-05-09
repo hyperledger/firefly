@@ -31,7 +31,7 @@ var getSchemas = &apispec.Route{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.SchemaFilterBuilder,
+	FilterFactory:   persistence.SchemaQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Schema{} },

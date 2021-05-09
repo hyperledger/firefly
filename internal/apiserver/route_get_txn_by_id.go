@@ -32,7 +32,7 @@ var getTxnById = &apispec.Route{
 		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.TransactionFilterBuilder,
+	FilterFactory:   persistence.TransactionQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },

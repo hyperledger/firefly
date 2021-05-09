@@ -235,7 +235,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 		l.Infof("--> %s %s", req.Method, req.URL.Path)
 		startTime := time.Now()
 		status, err := handler(res, req)
-		duration := float64(time.Since(startTime)) / float64(time.Millisecond)
+		durationMS := float64(time.Since(startTime)) / float64(time.Millisecond)
 		if err != nil {
 			// Routers don't need to tweak the status code when sending errors.
 			// .. either the FF12345 error they raise is mapped to a status hint
@@ -249,14 +249,14 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 			if status < 300 {
 				status = 500
 			}
-			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, duration, err)
+			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, durationMS, err)
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
 			_ = json.NewEncoder(res).Encode(&RESTError{
 				Error: err.Error(),
 			})
 		} else {
-			l.Infof("<-- %s %s [%d] (%.2fms)", req.Method, req.URL.Path, status, duration)
+			l.Infof("<-- %s %s [%d] (%.2fms)", req.Method, req.URL.Path, status, durationMS)
 		}
 	}
 }

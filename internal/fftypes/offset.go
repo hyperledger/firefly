@@ -14,8 +14,15 @@
 
 package fftypes
 
+type OffsetType string
+
 const (
-	SchemaTopicDefinitionName = "ff-schema"
-	SystemNamespace           = "ff-system"
-	SystemContext             = "ff-system"
+	OffsetTypeBatch OffsetType = "batch"
 )
+
+type Offset struct {
+	Type      OffsetType `json:"type"`
+	Namespace string     `json:"namespace"`
+	Name      string     `json:"name"`
+	Current   int64      `json:"current"`
+}

@@ -92,7 +92,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(schemaJson), string(schemaReadJson))
 
 	// Query back the data
-	fb := persistence.SchemaFilterBuilder.New(ctx, 0)
+	fb := persistence.SchemaQueryFactory.NewFilter(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", schemaUpdated.ID.String()),
 		fb.Eq("namespace", schemaUpdated.Namespace),
@@ -195,7 +195,7 @@ func TestGetSchemaByIdScanFail(t *testing.T) {
 func TestGetSchemasQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	f := persistence.SchemaQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -203,7 +203,7 @@ func TestGetSchemasQueryFail(t *testing.T) {
 
 func TestGetSchemasBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := persistence.SchemaQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -211,7 +211,7 @@ func TestGetSchemasBuildQueryFail(t *testing.T) {
 func TestGetSchemasReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := persistence.SchemaFilterBuilder.New(context.Background(), 0).Eq("id", "")
+	f := persistence.SchemaQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetSchemas(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

@@ -63,6 +63,9 @@ type PeristenceInterface interface {
 	// Upsert a message
 	UpsertMessage(ctx context.Context, message *fftypes.Message) (err error)
 
+	// Update messages
+	UpdateMessage(ctx context.Context, msgid *uuid.UUID, update Update) (err error)
+
 	// Get a message by Id
 	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)
 
@@ -104,6 +107,15 @@ type PeristenceInterface interface {
 
 	// Get schemas
 	GetSchemas(ctx context.Context, filter Filter) (message []*fftypes.Schema, err error)
+
+	// Upsert an offset
+	UpsertOffset(ctx context.Context, data *fftypes.Offset) (err error)
+
+	// Get an offset by Id
+	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (message *fftypes.Offset, err error)
+
+	// Get offsets
+	GetOffsets(ctx context.Context, filter Filter) (message []*fftypes.Offset, err error)
 }
 
 // Events
@@ -132,58 +144,68 @@ type Capabilities struct {
 	ClusterEvents bool
 }
 
-var MessageFilterBuilder = &filterDefinition{
-	"id":        &FilterableString{},
-	"cid":       &FilterableString{},
-	"namespace": &FilterableString{},
-	"type":      &FilterableString{},
-	"author":    &FilterableString{},
-	"topic":     &FilterableString{},
-	"context":   &FilterableString{},
-	"group":     &FilterableString{},
-	"created":   &FilterableInt64{},
-	"confirmed": &FilterableInt64{},
-	"sequence":  &FilterableInt64{},
+var MessageQueryFactory = &queryFields{
+	"id":         &StringField{},
+	"cid":        &StringField{},
+	"namespace":  &StringField{},
+	"type":       &StringField{},
+	"author":     &StringField{},
+	"topic":      &StringField{},
+	"context":    &StringField{},
+	"group":      &StringField{},
+	"created":    &Int64Field{},
+	"confirmed":  &Int64Field{},
+	"sequence":   &Int64Field{},
+	"tx.type":    &StringField{},
+	"tx.id":      &StringField{},
+	"tx.batchid": &StringField{},
 }
 
-var BatchFilterBuilder = &filterDefinition{
-	"id":        &FilterableString{},
-	"namespace": &FilterableString{},
-	"type":      &FilterableString{},
-	"author":    &FilterableString{},
-	"topic":     &FilterableString{},
-	"context":   &FilterableString{},
-	"group":     &FilterableString{},
-	"created":   &FilterableInt64{},
-	"confirmed": &FilterableInt64{},
+var BatchQueryFactory = &queryFields{
+	"id":        &StringField{},
+	"namespace": &StringField{},
+	"type":      &StringField{},
+	"author":    &StringField{},
+	"topic":     &StringField{},
+	"context":   &StringField{},
+	"group":     &StringField{},
+	"created":   &Int64Field{},
+	"confirmed": &Int64Field{},
 }
 
-var TransactionFilterBuilder = &filterDefinition{
-	"id":         &FilterableString{},
-	"namespace":  &FilterableString{},
-	"type":       &FilterableString{},
-	"author":     &FilterableString{},
-	"trackingid": &FilterableString{},
-	"protocolid": &FilterableString{},
-	"created":    &FilterableInt64{},
-	"confirmed":  &FilterableInt64{},
+var TransactionQueryFactory = &queryFields{
+	"id":         &StringField{},
+	"namespace":  &StringField{},
+	"type":       &StringField{},
+	"author":     &StringField{},
+	"trackingid": &StringField{},
+	"protocolid": &StringField{},
+	"created":    &Int64Field{},
+	"confirmed":  &Int64Field{},
 }
 
-var DataFilterBuilder = &filterDefinition{
-	"id":             &FilterableString{},
-	"namespace":      &FilterableString{},
-	"type":           &FilterableString{},
-	"schema.entity":  &FilterableString{},
-	"schema.version": &FilterableString{},
-	"hash":           &FilterableString{},
-	"created":        &FilterableInt64{},
+var DataQueryFactory = &queryFields{
+	"id":             &StringField{},
+	"namespace":      &StringField{},
+	"type":           &StringField{},
+	"schema.entity":  &StringField{},
+	"schema.version": &StringField{},
+	"hash":           &StringField{},
+	"created":        &Int64Field{},
 }
 
-var SchemaFilterBuilder = &filterDefinition{
-	"id":        &FilterableString{},
-	"namespace": &FilterableString{},
-	"type":      &FilterableString{},
-	"entity":    &FilterableString{},
-	"version":   &FilterableString{},
-	"created":   &FilterableInt64{},
+var SchemaQueryFactory = &queryFields{
+	"id":        &StringField{},
+	"namespace": &StringField{},
+	"type":      &StringField{},
+	"entity":    &StringField{},
+	"version":   &StringField{},
+	"created":   &Int64Field{},
+}
+
+var OffsetQueryFactory = &queryFields{
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"type":      &StringField{},
+	"current":   &Int64Field{},
 }

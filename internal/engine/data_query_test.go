@@ -47,7 +47,7 @@ func TestGetTransactions(t *testing.T) {
 	e.persistence = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactions", mock.Anything, mock.Anything).Return([]*fftypes.Transaction{}, nil)
-	fb := persistence.TransactionFilterBuilder.New(context.Background(), 0)
+	fb := persistence.TransactionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetTransactions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestGetMessages(t *testing.T) {
 	e.persistence = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	fb := persistence.MessageFilterBuilder.New(context.Background(), 0)
+	fb := persistence.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetMessages(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestGetBatches(t *testing.T) {
 	e.persistence = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.Batch{}, nil)
-	fb := persistence.BatchFilterBuilder.New(context.Background(), 0)
+	fb := persistence.BatchQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetBatches(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -131,7 +131,7 @@ func TestGetData(t *testing.T) {
 	e.persistence = mp
 	u := fftypes.NewUUID()
 	mp.On("GetData", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, nil)
-	fb := persistence.DataFilterBuilder.New(context.Background(), 0)
+	fb := persistence.DataQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -159,7 +159,7 @@ func TestGetSchemas(t *testing.T) {
 	e.persistence = mp
 	u := fftypes.NewUUID()
 	mp.On("GetSchemas", mock.Anything, mock.Anything).Return([]*fftypes.Schema{}, nil)
-	fb := persistence.SchemaFilterBuilder.New(context.Background(), 0)
+	fb := persistence.SchemaQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetSchemas(context.Background(), "ns1", f)
 	assert.NoError(t, err)
