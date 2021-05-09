@@ -47,6 +47,7 @@ const (
 	CorsAllowedHeaders         Key = "cors.headers"
 	CorsAllowCredentials       Key = "cors.credentials"
 	CorsMaxAge                 Key = "cors.maxAge"
+	CorsDebug                  Key = "cors.debug"
 	NodeIdentity               Key = "node.identity"
 	APIRequestTimeout          Key = "api.requestTimeout"
 	APIDefaultFilterLimit      Key = "api.defaultFilterLimit"
