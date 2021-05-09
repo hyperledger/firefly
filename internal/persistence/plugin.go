@@ -186,6 +186,8 @@ var BatchQueryFactory = &queryFields{
 	"group":     &StringField{},
 	"created":   &Int64Field{},
 	"confirmed": &Int64Field{},
+	"tx.type":   &StringField{},
+	"tx.id":     &StringField{},
 }
 
 var TransactionQueryFactory = &queryFields{
