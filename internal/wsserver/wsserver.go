@@ -27,7 +27,7 @@ import (
 // WebSocketChannels is provided to allow us to do a blocking send to a namespace that will complete once a client connects on it
 // We also provide a channel to listen on for closing of the connection, to allow a select to wake on a blocking send
 type WebSocketChannels interface {
-	GetChannels(topic string) (chan<- interface{}, <-chan error, <-chan struct{})
+	GetChannels(topic string) (sender chan<- interface{}, receiver <-chan error, closing <-chan struct{})
 }
 
 // WebSocketServer is the full server interface with the init call
@@ -121,7 +121,7 @@ func (s *webSocketServer) getTopic(topic string) *webSocketTopic {
 	return t
 }
 
-func (s *webSocketServer) GetChannels(topic string) (chan<- interface{}, <-chan error, <-chan struct{}) {
+func (s *webSocketServer) GetChannels(topic string) (sender chan<- interface{}, receiver <-chan error, closing <-chan struct{}) {
 	t := s.getTopic(topic)
 	return t.senderChannel, t.receiverChannel, t.closingChannel
 }

@@ -173,43 +173,41 @@ func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.
 	return batch
 }
 
-func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates persistence.Update) {
+func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates persistence.Update) error {
 	l := log.L(ctx)
 	// Call the dispatcher to do the heavy lifting
-	a.retry.Do(ctx, func(attempt int) (retry bool) {
-		err := a.conf.dispatch(a.ctx, batch, updates)
+	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+		err = a.conf.dispatch(a.ctx, batch, updates)
 		if err != nil {
 			l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
-			return !a.closed // only case we stop retrying is on close
+			return !a.closed, err
 		}
-		return false
+		return false, nil
 	})
 }
 
 func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
 	l := log.L(ctx)
-	a.retry.Do(ctx, func(attempt int) (retry bool) {
+	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
 		err = a.conf.persitence.UpsertBatch(ctx, batch)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			return !a.closed // only case we stop retrying is on close
+			return !a.closed, err
 		}
-		return false
+		return false, nil
 	})
-	return err
 }
 
 func (a *batchProcessor) persistBatchUpdates(ctx context.Context, batchID *uuid.UUID, updates persistence.Update) (err error) {
 	l := log.L(ctx)
-	a.retry.Do(ctx, func(attempt int) (retry bool) {
+	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
 		err = a.conf.persitence.UpdateBatch(ctx, batchID, updates)
 		if err != nil {
 			l.Errorf("Batch update attempt %d failed: %s", attempt, err)
-			return !a.closed // only case we stop retrying is on close
+			return !a.closed, err
 		}
-		return false
+		return false, nil
 	})
-	return err
 }
 
 func (a *batchProcessor) persistenceLoop() {
@@ -272,10 +270,16 @@ func (a *batchProcessor) persistenceLoop() {
 
 			// Synchronously dispatch the batch.
 			updates := persistence.BatchQueryFactory.NewUpdate(ctx).S()
-			a.dispatchBatch(ctx, currentBatch, updates)
+			if err := a.dispatchBatch(ctx, currentBatch, updates); err != nil {
+				l.Errorf("Persistence loop exiting (caught in dispatch): %s", err)
+				return
+			}
 
 			// Persist updates made to the batch during dispatch
-			_ = a.persistBatchUpdates(ctx, currentBatch.ID, updates)
+			if err := a.persistBatchUpdates(ctx, currentBatch.ID, updates); err != nil {
+				l.Errorf("Persistence loop exiting (caught in batch update): %s", err)
+				return
+			}
 
 			// Move onto the next batch
 			currentBatch = nil

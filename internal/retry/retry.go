@@ -17,6 +17,8 @@ package retry
 import (
 	"context"
 	"time"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 const (
@@ -33,7 +35,7 @@ type Retry struct {
 // Do invokes the function until the function returns false, or the retry pops.
 // This simple interface doesn't pass through errors or return values, on the basis
 // you'll be using a closure for that.
-func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool)) {
+func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool, err error)) error {
 	attempt := 0
 	delay := r.InitialDelay
 	factor := r.Factor
@@ -42,9 +44,16 @@ func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool)) {
 	}
 	for {
 		attempt++
-		retry := f(attempt)
+		retry, err := f(attempt)
 		if !retry {
-			return
+			return err
+		}
+
+		// Check the context isn't cancelled
+		select {
+		case <-ctx.Done():
+			return i18n.NewError(ctx, i18n.MsgContextCanceled)
+		default:
 		}
 
 		// Limit the delay based on the context deadline and maximum delay
@@ -58,9 +67,6 @@ func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool)) {
 			if timeleft < delay {
 				delay = timeleft
 			}
-		}
-		if delay < 0 {
-			return // We exceeded the deadline
 		}
 
 		// Sleep and set the delay for next time

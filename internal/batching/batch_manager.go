@@ -261,21 +261,20 @@ func (bm *batchManager) messageSequencer() {
 
 func (bm *batchManager) updateMessage(ctx context.Context, msg *fftypes.Message, batchID *uuid.UUID) (err error) {
 	l := log.L(ctx)
-	bm.retry.Do(ctx, func(attempt int) (retry bool) {
+	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
 		u := persistence.MessageQueryFactory.NewUpdate(ctx).Set("tx.batchid", batchID)
 		err = bm.persistence.UpdateMessage(ctx, msg.Header.ID, u)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			return !bm.closed // only case we stop retrying is on close
+			return !bm.closed, err
 		}
-		return false
+		return false, nil
 	})
-	return err
 }
 
 func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, newOffset int64) (err error) {
 	l := log.L(ctx)
-	bm.retry.Do(ctx, func(attempt int) (retry bool) {
+	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
 		bm.offset = newOffset
 		offset := &fftypes.Offset{
 			Type:      fftypes.OffsetTypeBatch,
@@ -287,12 +286,11 @@ func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, ne
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			stillRetrying := infiniteRetry || (attempt <= startupOffsetRetryAttempts)
-			return !bm.closed && stillRetrying
+			return !bm.closed && stillRetrying, err
 		}
 		l.Infof("Batch manager committed offset %d", newOffset)
-		return false
+		return false, nil
 	})
-	return err
 }
 
 func (bm *batchManager) dispatchMessage(ctx context.Context, dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
