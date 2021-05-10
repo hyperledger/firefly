@@ -43,16 +43,19 @@ func TestWSClientE2E(t *testing.T) {
 		acks <- true
 	}()
 
-	// Send a listen on topic1 in the connect options
-	b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
+	afterConnect := func(ctx context.Context, w *WSClient) error {
+		// Send a listen on topic1 in the connect options
+		b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
+		return w.Send(ctx, b)
+	}
 
 	wsClient, err := NewWSClient(context.Background(), &WSConfig{
 		URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
-	}, b)
+	}, afterConnect)
 	assert.NoError(t, err)
 
 	// Receive the message sent by the server
-	b = <-wsClient.Receive()
+	b := <-wsClient.Receive()
 	var msg map[string]string
 	err = json.Unmarshal(b, &msg)
 	assert.NoError(t, err)
@@ -162,7 +165,7 @@ func TestWSConnectClosed(t *testing.T) {
 	assert.Regexp(t, "FF10160", err.Error())
 }
 
-func TestWSReadLoopCapturePending(t *testing.T) {
+func TestWSReadLoopSendFailure(t *testing.T) {
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
 	svr := httptest.NewServer(wsServer.Handler())
@@ -186,12 +189,10 @@ func TestWSReadLoopCapturePending(t *testing.T) {
 	}
 
 	// Close the sender channel
-	w.sendDone <- []byte(`message pending`)
 	close(w.sendDone)
 
-	// Go direct into the receive loop
-	pendingMsg := w.readLoop()
-	assert.Equal(t, `message pending`, string(pendingMsg))
+	// Ensure the readLoop exits immediately
+	w.readLoop()
 
 }
 
@@ -220,7 +221,7 @@ func TestWSReconnect(t *testing.T) {
 	w.receiveReconnectLoop()
 }
 
-func TestWSSendFailPendingMessage(t *testing.T) {
+func TestWSSendFail(t *testing.T) {
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
 	svr := httptest.NewServer(wsServer.Handler())
@@ -233,15 +234,13 @@ func TestWSSendFailPendingMessage(t *testing.T) {
 	w := &WSClient{
 		ctx:      context.Background(),
 		receive:  make(chan []byte),
-		send:     make(chan []byte),
+		send:     make(chan []byte, 1),
 		closing:  make(chan struct{}),
 		sendDone: make(chan []byte, 1),
 		wsconn:   wsconn,
 		retry:    &retry.Retry{},
 	}
-	close(w.send) // will mean sender exits immediately
-
-	w.sendLoop([]byte(`pending message`))
-	msg := <-w.sendDone
-	assert.Equal(t, `pending message`, string(msg))
+	w.send <- []byte(`wakes sender`)
+	w.sendLoop()
+	<-w.sendDone
 }
