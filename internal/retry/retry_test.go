@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRetryEventuallyOk(t *testing.T) {
@@ -25,28 +27,33 @@ func TestRetryEventuallyOk(t *testing.T) {
 		MaximumDelay: 3 * time.Microsecond,
 		InitialDelay: 1 * time.Microsecond,
 	}
-	r.Do(context.Background(), func(i int) (retry bool) {
-		return i < 10
+	r.Do(context.Background(), func(i int) (retry bool, err error) {
+		return i < 10, nil
 	})
 }
 
 func TestRetryDeadlineTimeout(t *testing.T) {
 	r := Retry{
-		MaximumDelay: 3 * time.Microsecond,
-		InitialDelay: 0,
+		MaximumDelay: 1 * time.Second,
+		InitialDelay: 1 * time.Second,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Microsecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Millisecond)
 	defer cancel()
-	r.Do(ctx, func(i int) (retry bool) {
-		return true
+	err := r.Do(ctx, func(i int) (retry bool, err error) {
+		return true, nil
 	})
+	assert.Regexp(t, "FF10158", err.Error())
 }
 
-func TestNegativeDelayExit(t *testing.T) {
+func TestRetryContextCancellled(t *testing.T) {
 	r := Retry{
-		InitialDelay: -1,
+		MaximumDelay: 1 * time.Second,
+		InitialDelay: 1 * time.Second,
 	}
-	r.Do(context.Background(), func(i int) (retry bool) {
-		return true
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := r.Do(ctx, func(i int) (retry bool, err error) {
+		return true, nil
 	})
+	assert.Regexp(t, "FF10158", err.Error())
 }

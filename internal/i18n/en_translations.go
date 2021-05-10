@@ -72,4 +72,8 @@ var (
 	MsgFilterDescendingDesc       = ffm("FF10155", "Descending. Descending sort order (applies to all fields in a multi-field sort)")
 	MsgFilterSkipDesc             = ffm("FF10156", "Pagination - skip. The number of records to skip")
 	MsgFilterLimitDesc            = ffm("FF10157", "Pagination - limit. The maximum number of records to return")
+	MsgContextCanceled            = ffm("FF10158", "Context cancelled")
+	MsgWSSendTimedOut             = ffm("FF10159", "Websocket send timed out")
+	MsgWSClosing                  = ffm("FF10160", "Websocket closing")
+	MsgWSConnectFailed            = ffm("FF10161", "Websocket connect failed")
 )
