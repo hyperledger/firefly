@@ -10,7 +10,7 @@ for more information about the project goals an architecture.
 
 ## Navigating this repo
 
-There are **two core codebases** in this repo, that have evolved through production 
+There are **two core codebases** in this repo:
 
 ### Kaleido Asset Trail (KAT): TypeScript - Generation 1
 
