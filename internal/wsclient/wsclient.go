@@ -72,6 +72,7 @@ type WSClient struct {
 	afterConnect         WSReconnectHandler
 }
 
+// WSReconnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSReconnectHandler func(ctx context.Context, w *WSClient) error
 
 func NewWSClient(ctx context.Context, conf *WSConfig, afterConnect WSReconnectHandler) (*WSClient, error) {

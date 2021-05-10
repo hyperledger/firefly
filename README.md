@@ -1,36 +1,72 @@
 # Kaleido Project Firefly
 
-Firefly provides the development platform for multi-party systems, with blockchain technology at their core.
+FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
 
 ![Introducing Firefly](./architecture/intro_to_firefly_teaser.svg)
 
-- REST APIs + WebSocket Event streams built for developers, by developers
-- Pre-built on-chain logic for majority fo uses cases: Business process automation, NFTs and Payments
-  - Enterprise Ethereum
-  - Corda
-  - Hyperledger Fabric
-- Privacy of data by default
-- Network governance and permissioning
-- Multi-party sequencing of events, into deterministic process flows
-- Orchestration of on-chain and off-chain logic
-- A pluggable and extensible architecture
-  - Persistence: SQL, NoSQL
-  - Blockchain: Tokens, Pre-built Sequencing contracts, Privacy models, etc.
-  - Compute: Any code language, Low-code (NodeRED), Trusted compute environments (TEEs), zero-knowledge proofs (ZKP), Multi-party Compute (MPC)
+Please see the
+[Hyperledger Firefly proposal document](https://docs.google.com/document/d/1o85YSowgCm226PEzdejbD2-3VQkrIwTdMCdpfXxsuQw/edit?usp=sharing)
+for more information about the project goals an architecture.
 
-## Building block REST APIs that do what they say on the tin
+## Navigating this repo
 
-> Wait? ... are you implying I can change blockchain, without changing my application???
+There are **two core codebases** in this repo, that have evolved through production 
 
-Yes, with Firefly that's a proven possibility.
+### Kaleido Asset Trail (KAT): TypeScript - Generation 1
 
-Think of the Firefly API for multi-party systems like SQL is for your centralized database.
+Directories:
+- [kat](./kat): The core TypeScript runtime
+- [solidity_kat](./solidity_kat): Ethereum/Solidity smart contract code
+- [cordapp_kat](./cordapp_kat): The Corda smart contract (CorDapp)
 
-Think of blockchain smart contracts like database stored procedures.
+This was the original implementation of the multi-party system API by Kaleido, and is already deployed in a number production projects.
 
-90% or more of the time when you're developing modern business APIs and web/mobile apps, you just use the built-in capabilities of SQL.
+The codebase distilled years of learning from enterprise blockchain projects Kaleido had been involved in, into a set of patterns for performing blockchain-orchestrated data exchange.
 
-Only on rare occasions do you need to drop down into programming stored procedures, and then you usually engage a specialist team, with specialist skills.
+The persistence layer is a NoSQL based, and it is tightly integrated with the production grade services provided by Kaleido for streaming transactions onto the blockchain, and performing private data exchange of messages and documents.
+
+As such it depends on the following Kaleido services:
+
+- Blockchain nodes
+  - Ethereum with the Kaleido [Kaleido REST API Gateway](https://docs.kaleido.io/kaleido-services/ethconnect/)
+  - Corda with the Kaleido built-in API for streaming KAT transactions
+- [Kaleido Event Streams](https://docs.kaleido.io/kaleido-services/event-streams/)
+- [Kaleido App2App Messaging](https://docs.kaleido.io/kaleido-services/app2app/)
+- [Kaleido Document Exchange](https://docs.kaleido.io/kaleido-services/document-store/)
+
+### Firefly: Golang - Generation 2
+
+Directories:
+- [internal](./internal): The core implementation code
+- [pkg](./pkg): Any libraries intended for external project use
+- [cmd](./cmd): The command line entry point
+- [solidity_firefly](./solidity_firefly): Ethereum/Solidity smart contract code
+
+As the project evolved the acceleration it provides to enterprise projects became even clearer, and we wanted to widen the project to help provide that acceleration across all enterprise multi-party system development.
+
+The value of widening to a fully fledged Open Source community became clear.
+
+In doing this we made some fundamental engineering decisions:
+- Move to Golang
+  - High performance, fast starting, modern runtime
+  - Great developer community
+  - Many core runtime projects of similar type
+- Move to a from active/passive to active/active HA architecture for the core runtime
+  - Deferring to the core database for state high availability
+  - Exploiting leader election where required
+- Move to a fully pluggable architecture
+  - Everything from Database through Blockchain, to Compute
+  - Structured Golang plugin infrastructure to decouple the core code
+  - Remote Agent model to decouple code languages, and HA designs
+- Revisit the API resource model
+  - A new set of nouns learning from developer experience:
+ - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
+- Add flexibility, while simplifying the developer experience:
+  - Versioning for data schemas
+  - Introducing a first class `Context` construct to help link together events
+  - Allow many pieces of data to flow together, and be automatically re-assembled together
+  - Clearer separation of concerns between the Firefly DB and the Application DB
+  - Better search, filter and query support
 
 ## API Query Syntax
 
