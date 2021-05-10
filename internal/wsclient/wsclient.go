@@ -69,10 +69,12 @@ type WSClient struct {
 	send                 chan []byte
 	sendDone             chan []byte
 	closing              chan struct{}
-	sendOnConnect        [][]byte
+	afterConnect         WSReconnectHandler
 }
 
-func NewWSClient(ctx context.Context, conf *WSConfig, sendOnConnect ...[]byte) (*WSClient, error) {
+type WSReconnectHandler func(ctx context.Context, w *WSClient) error
+
+func NewWSClient(ctx context.Context, conf *WSConfig, afterConnect WSReconnectHandler) (*WSClient, error) {
 
 	w := &WSClient{
 		ctx: ctx,
@@ -90,7 +92,7 @@ func NewWSClient(ctx context.Context, conf *WSConfig, sendOnConnect ...[]byte) (
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
-		sendOnConnect:        sendOnConnect,
+		afterConnect:         afterConnect,
 	}
 	for k, v := range conf.Headers {
 		w.headers.Set(k, v)
@@ -137,16 +139,13 @@ func (w *WSClient) Send(ctx context.Context, message []byte) error {
 }
 
 func (w *WSClient) connect(initial bool) error {
+	l := log.L(w.ctx)
 	return w.retry.Do(w.ctx, func(attempt int) (retry bool, err error) {
-		l := log.L(w.ctx)
 		if w.closed {
 			return false, i18n.NewError(w.ctx, i18n.MsgWSClosing)
 		}
 		var res *http.Response
 		w.wsconn, res, err = w.wsdialer.Dial(w.url, w.headers)
-		for i := 0; err == nil && i < len(w.sendOnConnect); i++ {
-			err = w.wsconn.WriteMessage(websocket.TextMessage, w.sendOnConnect[i])
-		}
 		if err != nil {
 			var b []byte
 			var status = -1
@@ -162,7 +161,7 @@ func (w *WSClient) connect(initial bool) error {
 	})
 }
 
-func (w *WSClient) readLoop() []byte {
+func (w *WSClient) readLoop() {
 	l := log.L(w.ctx)
 	for {
 		mt, message, err := w.wsconn.ReadMessage()
@@ -170,16 +169,16 @@ func (w *WSClient) readLoop() []byte {
 		// Check there's not a pending send message we need to return
 		// before returning any error (do not block)
 		select {
-		case pendingMsg := <-w.sendDone:
+		case <-w.sendDone:
 			l.Debugf("WS %s closing reader after send error", w.url)
-			return pendingMsg
+			return
 		default:
 		}
 
 		// return any error
 		if err != nil {
 			l.Errorf("WS %s closed: %s", w.url, err)
-			return nil
+			return
 		}
 
 		// Pass the message to the consumer
@@ -188,23 +187,21 @@ func (w *WSClient) readLoop() []byte {
 	}
 }
 
-func (w *WSClient) sendLoop(message []byte) {
+func (w *WSClient) sendLoop() {
 	l := log.L(w.ctx)
 	defer close(w.sendDone)
-	for {
-		if message != nil {
-			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
-				l.Errorf("WS %s send failed: %s", w.url, err)
-				// Keep the message for when we reconnect
-				w.sendDone <- message
-				return
-			}
-		}
 
-		var ok bool
-		message, ok = <-w.send
+	for {
+		message, ok := <-w.send
 		if !ok {
 			l.Debugf("WS %s send loop exiting", w.url)
+			return
+		}
+
+		if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
+			l.Errorf("WS %s send failed: %s", w.url, err)
+			// Keep the message for when we reconnect
+			w.sendDone <- message
 			return
 		}
 
@@ -214,24 +211,30 @@ func (w *WSClient) sendLoop(message []byte) {
 func (w *WSClient) receiveReconnectLoop() {
 	l := log.L(w.ctx)
 	defer close(w.receive)
-	var pendingSend []byte
 	for !w.closed {
 		// Start the sender, letting it close without blocking sending a notifiation on the sendDone
 		w.sendDone = make(chan []byte, 1)
-		go w.sendLoop(pendingSend)
+		go w.sendLoop()
 
-		// Synchronously invoke the reader, as it's important we react immediately
-		// to any error there.
-		pendingSend = w.readLoop()
-
-		// Ensure the connection is closed after the sender exits
-		err := w.wsconn.Close()
-		if err != nil {
-			l.Warnf("WS %s close failed: %s", w.url, err)
+		// Call the reconnect processor
+		var err error
+		if w.afterConnect != nil {
+			err = w.afterConnect(w.ctx, w)
 		}
-		<-w.sendDone
-		w.sendDone = nil
-		w.wsconn = nil
+
+		if err == nil {
+			// Synchronously invoke the reader, as it's important we react immediately to any error there.
+			w.readLoop()
+
+			// Ensure the connection is closed after the sender exits
+			err = w.wsconn.Close()
+			if err != nil {
+				l.Debugf("WS %s close failed: %s", w.url, err)
+			}
+			<-w.sendDone
+			w.sendDone = nil
+			w.wsconn = nil
+		}
 
 		// Go into reconnect
 		if !w.closed {
