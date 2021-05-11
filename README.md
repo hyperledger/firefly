@@ -20,6 +20,8 @@ Directories:
 - [cmd](./cmd): The command line entry point
 - [solidity_firefly](./solidity_firefly): Ethereum/Solidity smart contract code
 
+[Full code layout here](#firefly-code-hierarchy)
+
 This latest generation is re-engineered from the ground up to improve developer experience, runtime performance, and extensibility.
 
 This means a simplified REST/WebSocket programming model for app development, and a wider range of infrastructure options for deployment.
