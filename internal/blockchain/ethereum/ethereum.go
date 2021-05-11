@@ -64,6 +64,7 @@ type subscription struct {
 	Description string `json:"description"`
 	Name        string `json:"name"`
 	StreamID    string `json:"streamId"`
+	Stream      string `json:"stream"`
 	FromBlock   string `json:"fromBlock"`
 }
 
@@ -82,7 +83,7 @@ type ethWSCommandPayload struct {
 }
 
 var requiredSubscriptions = map[string]string{
-	"AssetInstanceBatchCreated": "Asset instance batch created",
+	"BroadcastBatch": "Batch broadcast",
 }
 
 const (
@@ -177,7 +178,6 @@ func (e *Ethereum) afterConnect(ctx context.Context, w *wsclient.WSClient) error
 }
 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
-
 	for eventType, subDesc := range requiredSubscriptions {
 
 		var existingSubs []subscription
@@ -198,9 +198,10 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 				Name:        e.conf.Ethconnect.Topic,
 				Description: subDesc,
 				StreamID:    streamID,
+				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
 			}
-			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post("/subscriptions")
+			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post(fmt.Sprintf("%s/%s", e.conf.Ethconnect.InstancePath, eventType))
 			if err != nil || !res.IsSuccess() {
 				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
