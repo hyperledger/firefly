@@ -91,6 +91,16 @@ It depends on the following Kaleido services:
               │               │  - OpenAPI 3.0 (Swagger) generation
               └─────┬─────────┘    * Including Swagger. UI
                     │
+              ┌─────┴─────────┐  - WebSocket server
+              │ wsserver      │    * Provides a JSON based simple protocol
+              │               │    * Apps sent `type: "listen"` to start streaming with a `topic`
+              └─────┬─────────┘    * Apps must send `type: "ack"` for each message to confirm receipt
+                    │
+              ┌─────┴─────────┐  - Core data types
+              │ fftypes       │    * Used for API and Serialization
+              │               │    * APIs can mask fields on input via router definition
+              └─────┬─────────┘
+                    │
               ┌─────┴─────────┐  - Core runtime server. Initializes and owns instances of:
               │ engine        │    * Components: Implement features
   ┌───────┬───┤               │    * Plugins:    Pluggable infrastructure services
@@ -199,6 +209,33 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   ... more TBD
+
+  Additional utility framworks
+              ┌───────────────┐  - REST API client
+              │ ffresty       │    * Provides convenience and logging
+              │               │    * Standardizes auth, config and retry logic
+              └───────────────┘
+
+              ┌───────────────┐  - WebSocket client
+              │ wsclient      │    * Provides convenience and logging
+              │               │    * Standardizes auth, config and reconnect logic
+              └───────────────┘    * Built on Gorilla WebSockets
+
+              ┌───────────────┐  - Translation framework
+              │ i18n          │    * Every translations must be added to `en_translations.json` - with an `FF10101` key
+              │               │    * Errors are wrapped, providing out features from the `errors` package (stack etc.)
+              └───────────────┘    * General translations also supported, such as OpenAPI description
+
+              ┌───────────────┐  - Logging framework
+              │ log           │    * Logging framework (logrus) integrated with context based tagging
+              │               │    * Context is used throughout the code to pass API invocation context, and logging context
+              └───────────────┘    * Example: Every API call has an ID that can be traced, as well as a timeout
+
+              ┌───────────────┐  - Configuration
+              │ config        │    * File and Environment Variable based logging framework (vyper)
+              │               │    * Primary config keys all defined centrally
+              └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
+
 ```
 
 ## API Query Syntax
