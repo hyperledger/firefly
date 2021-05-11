@@ -20,9 +20,14 @@ import (
 	"database/sql"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	_ "github.com/lib/pq"
 )
@@ -30,23 +35,48 @@ import (
 type Postgres struct {
 	sqlcommon.SQLCommon
 
-	conf *Config
+	config *Config
 }
 
-func (e *Postgres) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
-	e.conf = conf.(*Config)
+func (e *Postgres) Init(ctx context.Context, conf config.PluginConfig, events persistence.Events) error {
+	e.config = NewConfig(conf)
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
 		SequenceField:     "seq",
 	}
 
-	db, err := sql.Open("postgres", e.conf.URL)
+	db, err := sql.Open("postgres", e.config.URL)
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
+	if e.config.AutoMigrate {
+		if err := e.ApplyDbMigrations(ctx, db); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
+		}
+	}
+
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
+}
+
+func (e *Postgres) ApplyDbMigrations(ctx context.Context, db *sql.DB) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+e.config.MigrationsDirectory,
+		"postgres", driver)
+	if err != nil {
+		return err
+	}
+	if err := m.Up(); err != nil {
+		if err.Error() != "no change" {
+			return err
+		}
+	}
+	return nil
 }
 
 func (e *Postgres) ConfigInterface() interface{} { return &Config{} }

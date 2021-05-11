@@ -19,10 +19,18 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/spf13/viper"
 )
+
+type PluginConfig interface {
+	GetString(key string) string
+	GetBool(key string) bool
+	GetInt(key string) int
+	SetDefault(key string, value interface{})
+}
 
 // Key are the known configuration keys
 type Key string
@@ -51,8 +59,8 @@ const (
 	NodeIdentity               Key = "node.identity"
 	APIRequestTimeout          Key = "api.requestTimeout"
 	APIDefaultFilterLimit      Key = "api.defaultFilterLimit"
-	DatabaseType               Key = "database.type"
 	Database                   Key = "database"
+	DatabaseType               Key = "database.type"
 	BlockchainType             Key = "blockchain.type"
 	Blockchain                 Key = "blockchain"
 	P2PFSType                  Key = "p2pfs.type"
@@ -94,6 +102,8 @@ func ReadConfig(cfgFile string) error {
 	Reset()
 
 	// Set precedence order for reading config location
+	viper.SetEnvPrefix("firefly")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 	viper.SetConfigType("yaml")
 	if cfgFile != "" {
@@ -172,4 +182,16 @@ func BoolWithDefault(val *bool, def bool) bool {
 		return def
 	}
 	return *val
+}
+
+// StringWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
+func StringWithDefault(val *string, def string) string {
+	if val == nil {
+		return def
+	}
+	return *val
+}
+
+func GetConfig() PluginConfig {
+	return viper.GetViper()
 }
