@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
+	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/stretchr/testify/assert"
@@ -43,16 +44,24 @@ func TestWSClientE2E(t *testing.T) {
 		acks <- true
 	}()
 
-	// Send a listen on topic1 in the connect options
-	b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
+	afterConnect := func(ctx context.Context, w *WSClient) error {
+		// Send a listen on topic1 in the connect options
+		b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
+		return w.Send(ctx, b)
+	}
 
-	wsClient, err := NewWSClient(context.Background(), &WSConfig{
-		URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
-	}, b)
+	wsClient, err := New(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
+		},
+		WSConfig: WSSubConfig{
+			Path: "/ws",
+		},
+	}, afterConnect)
 	assert.NoError(t, err)
 
 	// Receive the message sent by the server
-	b = <-wsClient.Receive()
+	b := <-wsClient.Receive()
 	var msg map[string]string
 	err = json.Unmarshal(b, &msg)
 	assert.NoError(t, err)
@@ -72,6 +81,38 @@ func TestWSClientE2E(t *testing.T) {
 
 }
 
+func TestWSClientBadURL(t *testing.T) {
+	_, err := New(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: ":::",
+		},
+	}, nil)
+	assert.Regexp(t, "FF10162", err.Error())
+}
+
+func TestHTTPToWSURLRemap(t *testing.T) {
+	url, err := buildWSUrl(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: "http://test:12345",
+		},
+		WSConfig: WSSubConfig{
+			Path: "/websocket",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "ws://test:12345/websocket", url)
+}
+
+func TestHTTPSToWSSURLRemap(t *testing.T) {
+	url, err := buildWSUrl(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: "https://test:12345",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "wss://test:12345", url)
+}
+
 func TestWSFailStartupHttp500(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(
 		func(rw http.ResponseWriter, r *http.Request) {
@@ -84,18 +125,22 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	defer svr.Close()
 
 	var one uint = 1
-	_, err := NewWSClient(context.Background(), &WSConfig{
-		URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
-		Headers: map[string]string{
-			"custom-header": "custom value",
+	_, err := New(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
+			Headers: map[string]string{
+				"custom-header": "custom value",
+			},
+			Auth: &ffresty.HTTPAuthConfig{
+				Username: "user",
+				Password: "pass",
+			},
+			Retry: &ffresty.HTTPRetryConfig{
+				MaxWaitTimeMS: &one,
+			},
 		},
-		Auth: &WSAuthConfig{
-			Username: "user",
-			Password: "pass",
-		},
-		WSRetryConfig: WSRetryConfig{
+		WSConfig: WSSubConfig{
 			InitialConnectAttempts: &one,
-			MaxWaitTimeMS:          &one,
 		},
 	}, nil)
 	assert.Regexp(t, "FF10161", err.Error())
@@ -111,11 +156,15 @@ func TestWSFailStartupConnect(t *testing.T) {
 	svr.Close()
 
 	var one uint = 1
-	_, err := NewWSClient(context.Background(), &WSConfig{
-		URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
-		WSRetryConfig: WSRetryConfig{
+	_, err := New(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
+			Retry: &ffresty.HTTPRetryConfig{
+				MaxWaitTimeMS: &one,
+			},
+		},
+		WSConfig: WSSubConfig{
 			InitialConnectAttempts: &one,
-			MaxWaitTimeMS:          &one,
 		},
 	}, nil)
 	assert.Regexp(t, "FF10161", err.Error())
@@ -127,8 +176,10 @@ func TestWSSendClosed(t *testing.T) {
 	svr := httptest.NewServer(wsServer.Handler())
 	defer svr.Close()
 
-	w, err := NewWSClient(context.Background(), &WSConfig{
-		URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
+	w, err := New(context.Background(), &WSExtendedHttpConfig{
+		HTTPConfig: ffresty.HTTPConfig{
+			URL: fmt.Sprintf("ws://%s", svr.Listener.Addr()),
+		},
 	}, nil)
 	assert.NoError(t, err)
 	w.Close()
@@ -162,7 +213,7 @@ func TestWSConnectClosed(t *testing.T) {
 	assert.Regexp(t, "FF10160", err.Error())
 }
 
-func TestWSReadLoopCapturePending(t *testing.T) {
+func TestWSReadLoopSendFailure(t *testing.T) {
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
 	svr := httptest.NewServer(wsServer.Handler())
@@ -186,12 +237,10 @@ func TestWSReadLoopCapturePending(t *testing.T) {
 	}
 
 	// Close the sender channel
-	w.sendDone <- []byte(`message pending`)
 	close(w.sendDone)
 
-	// Go direct into the receive loop
-	pendingMsg := w.readLoop()
-	assert.Equal(t, `message pending`, string(pendingMsg))
+	// Ensure the readLoop exits immediately
+	w.readLoop()
 
 }
 
@@ -220,7 +269,7 @@ func TestWSReconnect(t *testing.T) {
 	w.receiveReconnectLoop()
 }
 
-func TestWSSendFailPendingMessage(t *testing.T) {
+func TestWSSendFail(t *testing.T) {
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
 	svr := httptest.NewServer(wsServer.Handler())
@@ -233,15 +282,13 @@ func TestWSSendFailPendingMessage(t *testing.T) {
 	w := &WSClient{
 		ctx:      context.Background(),
 		receive:  make(chan []byte),
-		send:     make(chan []byte),
+		send:     make(chan []byte, 1),
 		closing:  make(chan struct{}),
 		sendDone: make(chan []byte, 1),
 		wsconn:   wsconn,
 		retry:    &retry.Retry{},
 	}
-	close(w.send) // will mean sender exits immediately
-
-	w.sendLoop([]byte(`pending message`))
-	msg := <-w.sendDone
-	assert.Equal(t, `pending message`, string(msg))
+	w.send <- []byte(`wakes sender`)
+	w.sendLoop()
+	<-w.sendDone
 }

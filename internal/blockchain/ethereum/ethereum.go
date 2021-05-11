@@ -17,6 +17,7 @@ package ethereum
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/wsclient"
 )
 
 type Ethereum struct {
@@ -40,6 +42,7 @@ type Ethereum struct {
 		stream *eventStream
 		subs   []*subscription
 	}
+	wsconn *wsclient.WSClient
 }
 
 type eventStream struct {
@@ -61,6 +64,7 @@ type subscription struct {
 	Description string `json:"description"`
 	Name        string `json:"name"`
 	StreamID    string `json:"streamId"`
+	Stream      string `json:"stream"`
 	FromBlock   string `json:"fromBlock"`
 }
 
@@ -73,8 +77,13 @@ type ethBroadcastBatchInput struct {
 	PayloadRef string `json:"payloadRef"`
 }
 
+type ethWSCommandPayload struct {
+	Type  string `json:"type"`
+	Topic string `json:"topic,omitempty"`
+}
+
 var requiredSubscriptions = map[string]string{
-	"AssetInstanceBatchCreated": "Asset instance batch created",
+	"BroadcastBatch": "Batch broadcast",
 }
 
 const (
@@ -86,22 +95,33 @@ var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) ConfigInterface() interface{} { return &Config{} }
 
-func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) error {
+func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (err error) {
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.conf = conf.(*Config)
 	e.events = events
+
 	if e.conf.Ethconnect.HTTPConfig.URL == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
 	if e.conf.Ethconnect.InstancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
+
 	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
+
+	wsConf := &e.conf.Ethconnect.WSExtendedHttpConfig
+	if wsConf.WSConfig.Path == "" {
+		wsConf.WSConfig.Path = "/ws"
+	}
+	if e.wsconn, err = wsclient.New(ctx, wsConf, e.afterConnect); err != nil {
+		return err
+	}
+
 	if !e.conf.Ethconnect.SkipEventstreamInit {
-		if err := e.ensureEventStreams(); err != nil {
+		if err = e.ensureEventStreams(); err != nil {
 			return err
 		}
 	}
@@ -148,8 +168,16 @@ func (e *Ethereum) ensureEventStreams() error {
 	return e.ensureSusbscriptions(e.initInfo.stream.ID)
 }
 
-func (e *Ethereum) ensureSusbscriptions(streamID string) error {
+func (e *Ethereum) afterConnect(ctx context.Context, w *wsclient.WSClient) error {
+	// Send a subscribe to our topic after each connect/reconnect
+	b, _ := json.Marshal(&ethWSCommandPayload{
+		Type:  "listen",
+		Topic: e.conf.Ethconnect.Topic,
+	})
+	return w.Send(ctx, b)
+}
 
+func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	for eventType, subDesc := range requiredSubscriptions {
 
 		var existingSubs []subscription
@@ -170,9 +198,10 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 				Name:        e.conf.Ethconnect.Topic,
 				Description: subDesc,
 				StreamID:    streamID,
+				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
 			}
-			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post("/subscriptions")
+			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post(fmt.Sprintf("%s/%s", e.conf.Ethconnect.InstancePath, eventType))
 			if err != nil || !res.IsSuccess() {
 				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
@@ -186,7 +215,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	return nil
 }
 
-func ethHexFormatB32(b fftypes.Bytes32) string {
+func ethHexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
@@ -198,11 +227,11 @@ func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (s
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
-		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(broadcast.BatchID)),
-		PayloadRef: ethHexFormatB32(broadcast.BatchPaylodRef),
+		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
+		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
 	}
 	path := fmt.Sprintf("%s/broadcastBatch", e.conf.Ethconnect.InstancePath)
 	res, err := e.client.R().

@@ -87,7 +87,7 @@ func TestBuildMessageIntConvert(t *testing.T) {
 func TestBuildMessageStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
 	u := uuid.MustParse("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
-	b32 := fftypes.UUIDBytes(u)
+	b32 := fftypes.UUIDBytes(&u)
 	f, err := fb.And(
 		fb.Lt("namespace", int(111)),
 		fb.Lt("namespace", int32(222)),
@@ -98,8 +98,8 @@ func TestBuildMessageStringConvert(t *testing.T) {
 		fb.Lt("namespace", nil),
 		fb.Lt("namespace", u),
 		fb.Lt("namespace", &u),
+		fb.Lt("namespace", *b32),
 		fb.Lt("namespace", b32),
-		fb.Lt("namespace", &b32),
 	).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, "( namespace < '111' ) && ( namespace < '222' ) && ( namespace < '333' ) && ( namespace < '444' ) && ( namespace < '555' ) && ( namespace < '666' ) && ( namespace < '' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())

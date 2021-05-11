@@ -20,6 +20,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
 var getTxns = &apispec.Route{
@@ -30,7 +31,7 @@ var getTxns = &apispec.Route{
 		{Name: "ns", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   persistence.TransactionQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Transaction{} },

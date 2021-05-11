@@ -40,7 +40,7 @@ type Plugin interface {
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *BroadcastBatch) (txTrackingID string, err error)
+	SubmitBroadcastBatch(ctx context.Context, identity string, batch *BroadcastBatch) (txTrackingID string, err error)
 }
 
 // BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -60,7 +60,7 @@ type Events interface {
 	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
 	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
-	SequencedBroadcastBatch(batch BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{})
+	SequencedBroadcastBatch(batch *BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{})
 }
 
 // BlockchainCapabilities the supported featureset of the blockchain
@@ -84,8 +84,8 @@ type BroadcastBatch struct {
 	Timestamp int64
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
-	BatchID uuid.UUID
+	BatchID *uuid.UUID
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
-	BatchPaylodRef fftypes.Bytes32
+	BatchPaylodRef *fftypes.Bytes32
 }
