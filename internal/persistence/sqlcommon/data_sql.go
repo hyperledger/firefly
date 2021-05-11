@@ -29,18 +29,18 @@ import (
 var (
 	dataColumns = []string{
 		"id",
-		"dtype",
+		"validator",
 		"namespace",
-		"schema_entity",
-		"schema_version",
+		"def_name",
+		"def_version",
 		"hash",
 		"created",
 		"value",
 	}
 	dataFilterTypeMap = map[string]string{
-		"type":           "dtype",
-		"schema.entity":  "schema_entity",
-		"schema.version": "schema_version",
+		"validator":          "validator",
+		"definition.name":    "def_name",
+		"definition.version": "def_version",
 	}
 )
 
@@ -61,9 +61,9 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 		return err
 	}
 
-	schema := data.Schema
-	if schema == nil {
-		schema = &fftypes.SchemaRef{}
+	dataDef := data.Definition
+	if dataDef == nil {
+		dataDef = &fftypes.DataDefinitionRef{}
 	}
 
 	if dataRows.Next() {
@@ -72,10 +72,10 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 		// Update the data
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("data").
-				Set("dtype", string(data.Type)).
+				Set("validator", string(data.Validator)).
 				Set("namespace", data.Namespace).
-				Set("schema_entity", schema.Entity).
-				Set("schema_version", schema.Version).
+				Set("def_name", dataDef.Name).
+				Set("def_version", dataDef.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
 				Set("value", data.Value).
@@ -91,10 +91,10 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 				Columns(dataColumns...).
 				Values(
 					data.ID,
-					string(data.Type),
+					string(data.Validator),
 					data.Namespace,
-					schema.Entity,
-					schema.Version,
+					dataDef.Name,
+					dataDef.Version,
 					data.Hash,
 					data.Created,
 					data.Value,
@@ -113,20 +113,20 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 
 func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
 	data := fftypes.Data{
-		Schema: &fftypes.SchemaRef{},
+		Definition: &fftypes.DataDefinitionRef{},
 	}
 	err := row.Scan(
 		&data.ID,
-		&data.Type,
+		&data.Validator,
 		&data.Namespace,
-		&data.Schema.Entity,
-		&data.Schema.Version,
+		&data.Definition.Name,
+		&data.Definition.Version,
 		&data.Hash,
 		&data.Created,
 		&data.Value,
 	)
-	if data.Schema.Entity == "" && data.Schema.Version == "" {
-		data.Schema = nil
+	if data.Definition.Name == "" && data.Definition.Version == "" {
+		data.Definition = nil
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")

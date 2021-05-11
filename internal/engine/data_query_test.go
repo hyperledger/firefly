@@ -137,30 +137,30 @@ func TestGetData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetSchemaById(t *testing.T) {
+func TestGetDataDefsById(t *testing.T) {
 	e := NewEngine().(*engine)
 	mp := &persistencemocks.Plugin{}
 	e.persistence = mp
 	u := fftypes.NewUUID()
-	mp.On("GetSchemaById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetSchemaById(context.Background(), "ns1", u.String())
+	mp.On("GetDataDefinitionById", mock.Anything, "ns1", u).Return(nil, nil)
+	_, err := e.GetDataDefinitionById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetSchemaByIdBadId(t *testing.T) {
+func TestGetDataDefsByIdBadId(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.GetSchemaById(context.Background(), "", "")
+	_, err := e.GetDataDefinitionById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
-func TestGetSchemas(t *testing.T) {
+func TestGetDataDefinitions(t *testing.T) {
 	e := NewEngine().(*engine)
 	mp := &persistencemocks.Plugin{}
 	e.persistence = mp
 	u := fftypes.NewUUID()
-	mp.On("GetSchemas", mock.Anything, mock.Anything).Return([]*fftypes.Schema{}, nil)
-	fb := persistence.SchemaQueryFactory.NewFilter(context.Background(), 0)
+	mp.On("GetDataDefinitions", mock.Anything, mock.Anything).Return([]*fftypes.DataDefinition{}, nil)
+	fb := persistence.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetSchemas(context.Background(), "ns1", f)
+	_, err := e.GetDataDefinitions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
