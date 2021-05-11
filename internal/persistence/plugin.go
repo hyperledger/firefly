@@ -42,7 +42,7 @@ type Plugin interface {
 // rich query is needed).
 //
 // This means that we treat business data as opaque within the stroage, only verifying it against
-// a data schema within the Firefly core runtime itself.
+// a data definition within the Firefly core runtime itself.
 // The data types, indexes and relationships are designed to be simple, and map closely to the
 // REST semantics of the Firefly API itself.
 //
@@ -108,17 +108,17 @@ type PeristenceInterface interface {
 	// Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
-	// Upsert a schema
-	UpsertSchema(ctx context.Context, data *fftypes.Schema) (err error)
+	// Upsert a data definitino
+	UpsertDataDefinition(ctx context.Context, data *fftypes.DataDefinition) (err error)
 
-	// Update schema
-	UpdateSchema(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// Update data definition
+	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
-	// Get a schema by Id
-	GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Schema, err error)
+	// Get a data definition by Id
+	GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.DataDefinition, err error)
 
-	// Get schemas
-	GetSchemas(ctx context.Context, filter Filter) (message []*fftypes.Schema, err error)
+	// Get data definitions
+	GetDataDefinitions(ctx context.Context, filter Filter) (message []*fftypes.DataDefinition, err error)
 
 	// Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset) (err error)
@@ -202,20 +202,20 @@ var TransactionQueryFactory = &queryFields{
 }
 
 var DataQueryFactory = &queryFields{
-	"id":             &StringField{},
-	"namespace":      &StringField{},
-	"type":           &StringField{},
-	"schema.entity":  &StringField{},
-	"schema.version": &StringField{},
-	"hash":           &StringField{},
-	"created":        &Int64Field{},
+	"id":                 &StringField{},
+	"namespace":          &StringField{},
+	"validator":          &StringField{},
+	"definition.name":    &StringField{},
+	"definition.version": &StringField{},
+	"hash":               &StringField{},
+	"created":            &Int64Field{},
 }
 
-var SchemaQueryFactory = &queryFields{
+var DataDefinitionQueryFactory = &queryFields{
 	"id":        &StringField{},
 	"namespace": &StringField{},
-	"type":      &StringField{},
-	"entity":    &StringField{},
+	"validator": &StringField{},
+	"name":      &StringField{},
 	"version":   &StringField{},
 	"created":   &Int64Field{},
 }

@@ -55,12 +55,12 @@ func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data,
 	return e.persistence.GetDataById(ctx, ns, &u)
 }
 
-func (e *engine) GetSchemaById(ctx context.Context, ns, id string) (*fftypes.Schema, error) {
+func (e *engine) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetSchemaById(ctx, ns, &u)
+	return e.persistence.GetDataDefinitionById(ctx, ns, &u)
 }
 
 func (e *engine) scopeNS(ns string, filter persistence.AndFilter) persistence.AndFilter {
@@ -87,7 +87,7 @@ func (e *engine) GetData(ctx context.Context, ns string, filter persistence.AndF
 	return e.persistence.GetData(ctx, filter)
 }
 
-func (e *engine) GetSchemas(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Schema, error) {
+func (e *engine) GetDataDefinitions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.DataDefinition, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetSchemas(ctx, filter)
+	return e.persistence.GetDataDefinitions(ctx, filter)
 }

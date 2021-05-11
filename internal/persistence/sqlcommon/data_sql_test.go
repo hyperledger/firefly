@@ -46,7 +46,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:        &dataId,
-		Type:      fftypes.DataTypeBLOB,
+		Validator: fftypes.ValidatorTypeBLOB,
 		Namespace: "ns1",
 		Hash:      randB32,
 		Created:   fftypes.NowMillis(),
@@ -73,10 +73,10 @@ func TestDataE2EWithDB(t *testing.T) {
 	}
 	dataUpdated := &fftypes.Data{
 		ID:        &dataId,
-		Type:      fftypes.DataTypeJSON,
+		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
-		Schema: &fftypes.SchemaRef{
-			Entity:  "customer",
+		Definition: &fftypes.DataDefinitionRef{
+			Name:    "customer",
 			Version: "0.0.1",
 		},
 		Hash:    randB32,
@@ -98,9 +98,9 @@ func TestDataE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
 		fb.Eq("namespace", dataUpdated.Namespace),
-		fb.Eq("type", string(dataUpdated.Type)),
-		fb.Eq("schema.entity", dataUpdated.Schema.Entity),
-		fb.Eq("schema.version", dataUpdated.Schema.Version),
+		fb.Eq("validator", string(dataUpdated.Validator)),
+		fb.Eq("definition.name", dataUpdated.Definition.Name),
+		fb.Eq("definition.version", dataUpdated.Definition.Version),
 		fb.Eq("hash", dataUpdated.Hash),
 		fb.Gt("created", 0),
 	)
@@ -112,14 +112,14 @@ func TestDataE2EWithDB(t *testing.T) {
 
 	// Update
 	v2 := "2.0.0"
-	up := persistence.DataQueryFactory.NewUpdate(ctx).Set("schema.version", v2)
+	up := persistence.DataQueryFactory.NewUpdate(ctx).Set("definition.version", v2)
 	err = s.UpdateData(ctx, &dataId, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
-		fb.Eq("schema.version", v2),
+		fb.Eq("definition.version", v2),
 	)
 	dataRes, err = s.GetData(ctx, filter)
 	assert.NoError(t, err)

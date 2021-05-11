@@ -37,7 +37,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Path:   "ns/{ns}/example1/{id}",
 			Method: http.MethodPost,
 			PathParams: []PathParam{
-				{Name: "ns", Description: i18n.MsgTBD},
+				{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 				{Name: "id", Description: i18n.MsgTBD},
 			},
 			QueryParams:     nil,
@@ -66,7 +66,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Method:     http.MethodPut,
 			PathParams: nil,
 			QueryParams: []QueryParam{
-				{Name: "ns", Description: i18n.MsgTBD},
+				{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 				{Name: "id", Description: i18n.MsgTBD},
 			},
 			FilterFactory:   nil,
