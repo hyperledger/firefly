@@ -96,9 +96,9 @@ It depends on the following Kaleido services:
   ┌───────┬───┤               │    * Plugins:    Pluggable infrastructure services
   │       │   │               │  - Exposes actions to router
   │       │   └───────────────┘    * Processing starts here for all API calls
-  │       |
+  │       │
   │  Components: Components do the heavy lifting within the engine
-  │       |
+  │       │
   │       │   ┌───────────────┐  - Maintains a view of the entire network
   │       ├───┤ networkmap    │    * Integrates with network permissioning (NP) plugin
   │       │   │               │    * Integrates with broadcast plugin
@@ -153,7 +153,7 @@ It depends on the following Kaleido services:
   │           └───────────────┘
   │
 Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runtime (if required)
-  |
+  │
   │           ┌───────────────┐  - Blockchain Interface (BI)
   ├───────────┤ blockchain    │    * Transaction submission - including signing key management
   │           │ (BI)          │    * Event listening
@@ -161,7 +161,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 │
   │                 ├─────────────────────┬───────────────────┐
   │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  |           │ ethereum      │   │ corda         │   │ fabric         │
+  │           │ ethereum      │   │ corda         │   │ fabric         │
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - P2P Content Addresssed Filesystem (PF)
@@ -171,7 +171,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 │
   │                 ├───────── ... extensible to any shared storage sytem, accessible to all members
   │           ┌─────┴─────────┐
-  |           │ ipfs          │
+  │           │ ipfs          │
   │           └───────────────┘
   │
   │           ┌───────────────┐  - Private Data Exchange (DX)
@@ -181,7 +181,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 │
   │                 ├─────────────────────┬────────── ... extensible to any private data exchange tech
   │           ┌─────┴─────────┐   ┌───────┴───────┐
-  |           │ httpdirect    │   │ kaleido       │
+  │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
   │           ┌───────────────┐  - Persistence (DB)
@@ -191,11 +191,11 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 │
   │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)
   │           ┌─────┴─────────┐
-  |           │ sqlcommon     │
+  │           │ sqlcommon     │
   │           └─────┬─────────┘
   │                 ├─────────────────────┬───────────────────┐
   │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  |           │ postgres      │   │ QL            │   │ SQLite         │
+  │           │ postgres      │   │ QL            │   │ SQLite         │
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   ... more TBD
