@@ -94,6 +94,9 @@ func (u *UTDBQL) Capabilities() *blockchain.Capabilities {
 }
 
 func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
+	if err := fftypes.ValidateFFNameField(ctx, identity, "identity"); err != nil {
+		return "", err
+	}
 	return identity, nil
 }
 
