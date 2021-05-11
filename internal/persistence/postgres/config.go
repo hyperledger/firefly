@@ -14,6 +14,36 @@
 
 package postgres
 
+import (
+	"github.com/kaleido-io/firefly/internal/config"
+)
+
+const (
+	prefix              = "database"
+	URL                 = "url"
+	AutoMigrate         = "autoMigrate"
+	MigrationsDirectory = "migrationsDirectory"
+)
+
+var defaults = map[string]interface{}{
+	AutoMigrate:         false,
+	MigrationsDirectory: "./db/migrations/postgres",
+}
+
 type Config struct {
-	URL string `json:"url"`
+	URL                 string
+	AutoMigrate         bool
+	MigrationsDirectory string
+}
+
+func NewConfig(config config.PluginConfig) *Config {
+	for k, v := range defaults {
+		config.SetDefault(prefix+"."+k, v)
+	}
+
+	return &Config{
+		URL:                 config.GetString(prefix + "." + URL),
+		AutoMigrate:         config.GetBool(prefix + "." + AutoMigrate),
+		MigrationsDirectory: config.GetString(prefix + "." + MigrationsDirectory),
+	}
 }

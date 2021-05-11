@@ -159,10 +159,8 @@ func (e *engine) initPersistencePlugin(ctx context.Context) (persistence.Plugin,
 	if err != nil {
 		return nil, err
 	}
-	conf := persistence.ConfigInterface()
-	err = config.UnmarshalKey(ctx, config.Database, &conf)
 	if err == nil {
-		err = persistence.Init(ctx, conf, e)
+		err = persistence.Init(ctx, config.GetConfig(), e)
 	}
 	return persistence, err
 }

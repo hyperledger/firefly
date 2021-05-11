@@ -22,28 +22,27 @@ import (
 	"database/sql"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/persistence"
 	"github.com/kaleido-io/firefly/internal/persistence/sqlcommon"
+	"github.com/spf13/viper"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type SQLite struct {
 	sqlcommon.SQLCommon
-
-	conf *Config
 }
 
-func (e *SQLite) Init(ctx context.Context, conf interface{}, events persistence.Events) error {
-	e.conf = conf.(*Config)
+func (e *SQLite) Init(ctx context.Context, config config.PluginConfig, events persistence.Events) error {
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
 		SequenceField:     "seq",
 	}
 
-	db, err := sql.Open("sqlite", e.conf.URL)
+	db, err := sql.Open("sqlite", viper.GetString("URL"))
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
