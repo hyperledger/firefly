@@ -1,11 +1,11 @@
-# Kaleido Project Firefly
+# Kaleido Project FireFly
 
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
 
-![Introducing Firefly](./architecture/intro_to_firefly_teaser.svg)
+![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
 Please see the
-[Hyperledger Firefly proposal document](https://docs.google.com/document/d/1o85YSowgCm226PEzdejbD2-3VQkrIwTdMCdpfXxsuQw/edit?usp=sharing)
+[Hyperledger FireFly proposal document](https://docs.google.com/document/d/1o85YSowgCm226PEzdejbD2-3VQkrIwTdMCdpfXxsuQw/edit?usp=sharing)
 for more information about the project goals an architecture.
 
 ## Navigating this repo
@@ -46,7 +46,7 @@ A few highlights:
   - Versioning of data schemas
   - Introducing a first class `Context` construct link related events into a single sequence
   - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
-  - Clearer separation of concerns between the Firefly DB and the Application DB
+  - Clearer separation of concerns between the FireFly DB and the Application DB
   - Better search, filter and query support
 
 ### Generation 1: Kaleido Asset Trail (KAT)
@@ -69,7 +69,7 @@ It depends on the following Kaleido services:
 - [Kaleido App2App Messaging](https://docs.kaleido.io/kaleido-services/app2app/)
 - [Kaleido Document Exchange](https://docs.kaleido.io/kaleido-services/document-store/)
 
-## Firefly code hierarchy
+## FireFly code hierarchy
 
 ```
 ┌──────────┐  ┌───────────────┐  
