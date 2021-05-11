@@ -61,20 +61,20 @@ func (_m *Plugin) Init(ctx context.Context, config interface{}, events blockchai
 	return r0
 }
 
-// SubmitBroadcastBatch provides a mock function with given fields: ctx, identity, broadcast
-func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, broadcast *blockchain.BroadcastBatch) (string, error) {
-	ret := _m.Called(ctx, identity, broadcast)
+// SubmitBroadcastBatch provides a mock function with given fields: ctx, identity, batch
+func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (string, error) {
+	ret := _m.Called(ctx, identity, batch)
 
 	var r0 string
 	if rf, ok := ret.Get(0).(func(context.Context, string, *blockchain.BroadcastBatch) string); ok {
-		r0 = rf(ctx, identity, broadcast)
+		r0 = rf(ctx, identity, batch)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *blockchain.BroadcastBatch) error); ok {
-		r1 = rf(ctx, identity, broadcast)
+		r1 = rf(ctx, identity, batch)
 	} else {
 		r1 = ret.Error(1)
 	}

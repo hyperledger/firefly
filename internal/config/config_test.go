@@ -74,7 +74,7 @@ func TestUnmarshalKey(t *testing.T) {
 	var conf map[string]interface{}
 	err = UnmarshalKey(context.Background(), Blockchain, &conf)
 	assert.NoError(t, err)
-	assert.Equal(t, "http://localhost:8000", conf["ethconnect"].(map[string]interface{})["url"])
+	assert.Equal(t, "memory://", conf["url"])
 }
 
 func TestUnmarshalKeyFail(t *testing.T) {

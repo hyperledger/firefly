@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blockchainfactory
+package utdbql
 
-import (
-	"context"
-
-	"github.com/kaleido-io/firefly/internal/blockchain"
-	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
-	"github.com/kaleido-io/firefly/internal/blockchain/utdbql"
-	"github.com/kaleido-io/firefly/internal/i18n"
-)
-
-func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
-	switch pluginType {
-	case "ethereum":
-		return &ethereum.Ethereum{}, nil
-	case "utdbql":
-		return &utdbql.UTDBQL{}, nil
-	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
-	}
+type Config struct {
+	URL string `json:"url"`
 }

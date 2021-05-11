@@ -28,10 +28,10 @@ import (
 // Bytes32 is a holder of a hash, that can be used to correlate onchain data with off-chain data.
 type Bytes32 [32]byte
 
-func NewRandB32() Bytes32 {
-	var b [32]byte
+func NewRandB32() *Bytes32 {
+	var b Bytes32
 	_, _ = rand.Read(b[0:32])
-	return b
+	return &b
 }
 
 func (b32 Bytes32) MarshalText() ([]byte, error) {
@@ -91,8 +91,8 @@ func (b32 *Bytes32) String() string {
 type HexUUID = Bytes32
 
 // UUIDBytes returns the bytes of a UUID as a compressed hex string
-func UUIDBytes(u uuid.UUID) Bytes32 {
+func UUIDBytes(u *uuid.UUID) *Bytes32 {
 	var d Bytes32
 	copy(d[:], u[:])
-	return d
+	return &d
 }

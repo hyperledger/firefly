@@ -87,8 +87,8 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 	updates.Set("tx.type", string(fftypes.TransactionTypePin))
 	trackingId, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
-		BatchID:        *batch.ID,
-		BatchPaylodRef: *batch.PayloadRef,
+		BatchID:        batch.ID,
+		BatchPaylodRef: batch.PayloadRef,
 	})
 	if err != nil {
 		return err

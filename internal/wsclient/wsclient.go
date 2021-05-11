@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -36,19 +38,16 @@ const (
 	defaultBufferSizeKB           = 1024
 )
 
-type WSConfig struct {
-	URL               string            `json:"url"`
-	Headers           map[string]string `json:"headers,omitempty"`
-	Auth              *WSAuthConfig     `json:"auth,omitempty"`
-	WriteBufferSizeKB *uint             `json:"writeBufferSizeKB"`
-	ReadBufferSizeKB  *uint             `json:"readBufferSizeKB"`
-	WSRetryConfig
+type WSExtendedHttpConfig struct {
+	ffresty.HTTPConfig
+	WSConfig WSSubConfig `json:"ws"`
 }
 
-type WSRetryConfig struct {
-	InitialConnectAttempts *uint `json:"intialConnectAttempts,omitempty"`
-	WaitTimeMS             *uint `json:"waitTimeMS,omitempty"`
-	MaxWaitTimeMS          *uint `json:"maxWaitTimeMS,omitempty"`
+type WSSubConfig struct {
+	Path                   string `json:"path,omitempty"`
+	InitialConnectAttempts *uint  `json:"intialConnectAttempts,omitempty"`
+	WriteBufferSizeKB      *uint  `json:"writeBufferSizeKB"`
+	ReadBufferSizeKB       *uint  `json:"readBufferSizeKB"`
 }
 
 type WSAuthConfig struct {
@@ -69,37 +68,48 @@ type WSClient struct {
 	send                 chan []byte
 	sendDone             chan []byte
 	closing              chan struct{}
-	afterConnect         WSReconnectHandler
+	afterConnect         WSPostConnectHandler
 }
 
-// WSReconnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
-type WSReconnectHandler func(ctx context.Context, w *WSClient) error
+// WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
+type WSPostConnectHandler func(ctx context.Context, w *WSClient) error
 
-func NewWSClient(ctx context.Context, conf *WSConfig, afterConnect WSReconnectHandler) (*WSClient, error) {
+func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostConnectHandler) (*WSClient, error) {
+
+	wsConf := &conf.WSConfig
+	retryConf := conf.HTTPConfig.Retry
+	if retryConf == nil {
+		retryConf = &ffresty.HTTPRetryConfig{}
+	}
+	wsURL, err := buildWSUrl(ctx, conf)
+	if err != nil {
+		return nil, err
+	}
 
 	w := &WSClient{
 		ctx: ctx,
-		url: conf.URL,
+		url: wsURL,
 		wsdialer: &websocket.Dialer{
-			ReadBufferSize:  int(config.UintWithDefault(conf.WriteBufferSizeKB, defaultBufferSizeKB) * 1024),
-			WriteBufferSize: int(config.UintWithDefault(conf.ReadBufferSizeKB, defaultBufferSizeKB) * 1024),
+			ReadBufferSize:  int(config.UintWithDefault(wsConf.WriteBufferSizeKB, defaultBufferSizeKB) * 1024),
+			WriteBufferSize: int(config.UintWithDefault(wsConf.ReadBufferSizeKB, defaultBufferSizeKB) * 1024),
 		},
 		retry: &retry.Retry{
-			InitialDelay: time.Duration(config.UintWithDefault(conf.WSRetryConfig.WaitTimeMS, defaultRetryWaitTimeMillis)) * time.Millisecond,
-			MaximumDelay: time.Duration(config.UintWithDefault(conf.WSRetryConfig.MaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)) * time.Millisecond,
+			InitialDelay: time.Duration(config.UintWithDefault(retryConf.WaitTimeMS, defaultRetryWaitTimeMillis)) * time.Millisecond,
+			MaximumDelay: time.Duration(config.UintWithDefault(retryConf.MaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)) * time.Millisecond,
 		},
-		initialRetryAttempts: int(config.UintWithDefault(conf.InitialConnectAttempts, defaultIntialConnectAttempts)),
+		initialRetryAttempts: int(config.UintWithDefault(wsConf.InitialConnectAttempts, defaultIntialConnectAttempts)),
 		headers:              make(http.Header),
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range conf.Headers {
+	for k, v := range conf.HTTPConfig.Headers {
 		w.headers.Set(k, v)
 	}
-	if conf.Auth != nil && conf.Auth.Username != "" && conf.Auth.Password != "" {
-		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Auth.Username, conf.Auth.Password)))))
+	authConf := conf.HTTPConfig.Auth
+	if authConf != nil && authConf.Username != "" && authConf.Password != "" {
+		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authConf.Username, authConf.Password)))))
 	}
 
 	if err := w.connect(true); err != nil {
@@ -137,6 +147,24 @@ func (w *WSClient) Send(ctx context.Context, message []byte) error {
 	case <-w.closing:
 		return i18n.NewError(ctx, i18n.MsgWSClosing)
 	}
+}
+
+func buildWSUrl(ctx context.Context, conf *WSExtendedHttpConfig) (string, error) {
+	wsConf := &conf.WSConfig
+	u, err := url.Parse(conf.HTTPConfig.URL)
+	if err != nil {
+		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, conf.HTTPConfig.URL)
+	}
+	if wsConf.Path != "" {
+		u.Path = wsConf.Path
+	}
+	if u.Scheme == "http" {
+		u.Scheme = "ws"
+	}
+	if u.Scheme == "https" {
+		u.Scheme = "wss"
+	}
+	return u.String(), nil
 }
 
 func (w *WSClient) connect(initial bool) error {
