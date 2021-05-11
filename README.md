@@ -10,22 +10,57 @@ for more information about the project goals an architecture.
 
 ## Navigating this repo
 
-There are **two core codebases** in this repo:
+There are **two core codebases** currently active in this repo:
 
-### Kaleido Asset Trail (KAT): TypeScript - Generation 1
+### Generation 2: FireFly
+
+Directories:
+- [internal](./internal): The core Golang implementation code
+- [pkg](./pkg): Interfaces intended for external project use
+- [cmd](./cmd): The command line entry point
+- [solidity_firefly](./solidity_firefly): Ethereum/Solidity smart contract code
+
+This latest generation is re-engineered from the ground up to improve developer experience, runtime performance, and extensibility.
+
+This means a simplified REST/WebSocket programming model for app development, and a wider range of infrastructure options for deployment.
+
+It also means a focus on an architecture and code structure for a vibrant open source community.
+
+A few highlights:
+
+- Golang codebase
+  - Strong coding standards, including unit test coverage, translation support, logging and more
+  - Fast starting, low memory footprint, multi-threaded runtime
+- OpenAPI 3.0 API specification (Swagger)
+  - Generated from the API router code, to avoid divergence with the implementation
+- Active/active HA architecture for the core runtime
+  - Deferring to the core database for state high availability
+  - Exploiting leader election where required
+- Fully pluggable architecture
+  - Everything from Database through to Blockchain, and Compute
+  - Golang plugin infrastructure to decouple the core code from the implementation
+  - Remote Agent model to decouple code languages, and HA designs
+- Updated API resource model
+  - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
+- Added flexibility, with simplified the developer experience:
+  - Versioning of data schemas
+  - Introducing a first class `Context` construct link related events into a single sequence
+  - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
+  - Clearer separation of concerns between the Firefly DB and the Application DB
+  - Better search, filter and query support
+
+### Generation 1: Kaleido Asset Trail (KAT)
 
 Directories:
 - [kat](./kat): The core TypeScript runtime
 - [solidity_kat](./solidity_kat): Ethereum/Solidity smart contract code
 - [cordapp_kat](./cordapp_kat): The Corda smart contract (CorDapp)
 
-This was the original implementation of the multi-party system API by Kaleido, and is already deployed in a number production projects.
+This was the original implementation of the multi-party systems API by Kaleido, and is already deployed in a number production projects.
 
-The codebase distilled years of learning from enterprise blockchain projects Kaleido had been involved in, into a set of patterns for performing blockchain-orchestrated data exchange.
+The codebase distilled years of learning, into a set of patterns for performing blockchain orchestrated data exchange.
 
-The persistence layer is a NoSQL based, and it is tightly integrated with the production grade services provided by Kaleido for streaming transactions onto the blockchain, and performing private data exchange of messages and documents.
-
-As such it depends on the following Kaleido services:
+It depends on the following Kaleido services:
 
 - Blockchain nodes
   - Ethereum with the Kaleido [Kaleido REST API Gateway](https://docs.kaleido.io/kaleido-services/ethconnect/)
@@ -34,39 +69,135 @@ As such it depends on the following Kaleido services:
 - [Kaleido App2App Messaging](https://docs.kaleido.io/kaleido-services/app2app/)
 - [Kaleido Document Exchange](https://docs.kaleido.io/kaleido-services/document-store/)
 
-### Firefly: Golang - Generation 2
+## Firefly code hierarchy
 
-Directories:
-- [internal](./internal): The core implementation code
-- [pkg](./pkg): Any libraries intended for external project use
-- [cmd](./cmd): The command line entry point
-- [solidity_firefly](./solidity_firefly): Ethereum/Solidity smart contract code
-
-As the project evolved the acceleration it provides to enterprise projects became even clearer, and we wanted to widen the project to help provide that acceleration across all enterprise multi-party system development.
-
-The value of widening to a fully fledged Open Source community became clear.
-
-In doing this we made some fundamental engineering decisions:
-- Move to Golang
-  - High performance, fast starting, modern runtime
-  - Great developer community
-  - Many core runtime projects of similar type
-- Move to a from active/passive to active/active HA architecture for the core runtime
-  - Deferring to the core database for state high availability
-  - Exploiting leader election where required
-- Move to a fully pluggable architecture
-  - Everything from Database through Blockchain, to Compute
-  - Structured Golang plugin infrastructure to decouple the core code
-  - Remote Agent model to decouple code languages, and HA designs
-- Revisit the API resource model
-  - A new set of nouns learning from developer experience:
- - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
-- Add flexibility, while simplifying the developer experience:
-  - Versioning for data schemas
-  - Introducing a first class `Context` construct to help link together events
-  - Allow many pieces of data to flow together, and be automatically re-assembled together
-  - Clearer separation of concerns between the Firefly DB and the Application DB
-  - Better search, filter and query support
+```
+┌──────────┐  ┌───────────────┐  
+│ cmd      ├──┤ firefly       │  - CLI entry point
+└──────────┘  │               │  - Creates parent context
+              │               │  - Signal handling
+              └─────┬─────────┘
+                    │
+┌──────────┐  ┌─────┴─────────┐  - HTTP listener (Gorilla mux)
+│ internal ├──┤ apiserver     │    * TLS (SSL), CORS configuration etc.
+└──────────┘  │               │    * WS upgrade on same port
+              │               │  - REST route definitions
+              └─────┬─────────┘    * Simple routing logic only, all processing deferred to engine
+                    │
+              ┌─────┴─────────┐  - REST route definition framework
+              │ apispec       │    * Standardizes Body, Path, Query, Filter semantics
+              │               │  - OpenAPI 3.0 (Swagger) generation
+              └─────┬─────────┘    * Including Swagger. UI
+                    │
+              ┌─────┴─────────┐  - Core runtime server. Initializes and owns instances of:
+              │ engine        │    * Components: Implement features
+  ┌───────┬───┤               │    * Plugins:    Pluggable infrastructure services
+  │       │   │               │  - Exposes actions to router
+  │       │   └───────────────┘    * Processing starts here for all API calls
+  │       |
+  │  Components: Components do the heavy lifting within the engine
+  │       |
+  │       │   ┌───────────────┐  - Maintains a view of the entire network
+  │       ├───┤ networkmap    │    * Integrates with network permissioning (NP) plugin
+  │       │   │               │    * Integrates with broadcast plugin
+  │       │   └───────────────┘    * Handles hierarchy of member identity, node identity and signing identity
+  │       │
+  │       │   ┌───────────────┐  - Builds batches of 100s messages for efficient pinning
+  │       ├───┤ batching      │    * Aggregates messages and data, with rolled up hashes for pinning
+  │       │   │               │    * Pluggable dispatchers
+  │       │   │               │  - Database decoupled from main-line API processing
+  │       │   └───────────────┘    * See architecture diagrams for more info on active/active sequencing
+  │       │
+  │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
+  │       ├───┤ broadcast     │    * Implements dispatcher for batch component
+  │       │   │               │    * Integrates with p2p filesystem (PF) plugin
+  │       │   └───────────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │
+  │       │   ┌───────────────┐  - Private data send to individual parties
+  │       ├───┤ sender        │    * Implements dispatcher for batch component
+  │       │   │               │    * Integrates with data exchange (DX) plugin
+  │       │   └───────────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │
+  │       │   ┌───────────────┐  - JSON data shema management and validation (architecture extensible to XML and more)
+  │       ├───┤ json          │    * JSON Schema validation logic for outbound and inbound messages
+  │       │   │               │    * Schema propagatation
+  │       │   └───────────────┘    * Integrates with broadcast plugin
+  │       │
+  │       │   ┌───────────────┐  - Binary data addressable via ID or Hash
+  │       ├───┤ blob          │    * Integrates with data exchange (DX) plugin
+  │       │   │               │    * Hashes data, and maintains mapping to payload references in blob storage
+  │       │   └───────────────┘
+  │       │
+  │       │   ┌───────────────┐  - Groups of parties, with isolated data and/or blockchains
+  │       ├───┤ groups        │    * Integrates with data exchange (DX) plugin
+  │       │   │               │    * Integrates with blockchain interface (BI) plugin
+  │       │   └───────────────┘
+  │       │
+  │       │   ┌───────────────┐  - Handles incoming external data
+  │       ├───┤ aggregator    │    * Integrates with data exchange (DX) plugin
+  │       │   │               │    * Integrates with p2p filesystem (PF) plugin
+  │       │   │               │    * Integrates with blockchain interface (BI) plugin
+  │       │   │               │  - Ensures valid events are dispatched only once all data is available
+  │       │   └───────────────┘    * Context aware, to prevent block-the-world scenarios
+  │       │
+  │       │   ┌───────────────┐  - Subscription manager
+  │       ├───┤ submanager    │    * Creation and management of subscriptions
+  │       │   │               │    * Message to Event matching logic
+  │       │   └───────────────┘
+  │       │
+  │       │   ┌───────────────┐  - Websocket
+  │       └───┤ dispatcher    │    * Integrates with data exchange (DX) plugin
+  │           │               │    * Integrates with blockchain interface (BI) plugin
+  │           └───────────────┘
+  │
+Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runtime (if required)
+  |
+  │           ┌───────────────┐  - Blockchain Interface (BI)
+  ├───────────┤ blockchain    │    * Transaction submission - including signing key management
+  │           │ (BI)          │    * Event listening
+  │           └─────┬─────────┘
+  │                 │
+  │                 ├─────────────────────┬───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
+  |           │ ethereum      │   │ corda         │   │ fabric         │
+  │           └───────────────┘   └───────────────┘   └────────────────┘
+  │
+  │           ┌───────────────┐  - P2P Content Addresssed Filesystem (PF)
+  ├───────────┤ p2pfs         │    * Payload upload
+  │           │ (PF)          │    * Payload reference management
+  │           └─────┬─────────┘
+  │                 │
+  │                 ├───────── ... extensible to any shared storage sytem, accessible to all members
+  │           ┌─────┴─────────┐
+  |           │ ipfs          │
+  │           └───────────────┘
+  │
+  │           ┌───────────────┐  - Private Data Exchange (DX)
+  ├───────────┤ data exchange │    * Blob storage
+  │           │ (DX)          │    * Private secure messaging
+  │           └─────┬─────────┘    * Secure file transfer
+  │                 │
+  │                 ├─────────────────────┬────────── ... extensible to any private data exchange tech
+  │           ┌─────┴─────────┐   ┌───────┴───────┐
+  |           │ httpdirect    │   │ kaleido       │
+  │           └───────────────┘   └───────────────┘
+  │
+  │           ┌───────────────┐  - Persistence (DB)
+  ├───────────┤ persistence   │    * Create, Read, Update, Delete (CRUD) actions
+  │           │ (DB)          │    * Filtering and update definition interace
+  │           └─────┬─────────┘    * Migrations and Indexes
+  │                 │
+  │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)
+  │           ┌─────┴─────────┐
+  |           │ sqlcommon     │
+  │           └─────┬─────────┘
+  │                 ├─────────────────────┬───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
+  |           │ postgres      │   │ QL            │   │ SQLite         │
+  │           └───────────────┘   └───────────────┘   └────────────────┘
+  │
+  ... more TBD
+```
 
 ## API Query Syntax
 
