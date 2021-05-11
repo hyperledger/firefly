@@ -169,10 +169,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ (BI)          │    * Event listening
   │           └─────┬─────────┘
   │                 │
-  │                 ├─────────────────────┬───────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ ethereum      │   │ corda         │   │ fabric         │
-  │           └───────────────┘   └───────────────┘   └────────────────┘
+  │                 ├─────────────────────┬───────────────────┬────────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐
+  │           │ ethereum      │   │ corda         │   │ fabric         │   │ utdbql [1]     │
+  │           └───────────────┘   └───────────────┘   └────────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - P2P Content Addresssed Filesystem (PF)
   ├───────────┤ p2pfs         │    * Payload upload
@@ -235,6 +235,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               │ config        │    * File and Environment Variable based logging framework (vyper)
               │               │    * Primary config keys all defined centrally
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
+
+[1] The "utdbql" blockchain plugin is a simple standalone ordering service, that uses the an in-process database
+    It does NOT provide a multi-party blockchain, and does NOT provide broadcast to all members in the network
 
 ```
 

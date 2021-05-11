@@ -59,8 +59,8 @@ func TestSeaDupDataID(t *testing.T) {
 	hash2 := NewRandB32()
 	msg := Message{
 		Data: DataRefs{
-			{ID: id1, Hash: &hash1},
-			{ID: id1, Hash: &hash2},
+			{ID: id1, Hash: hash1},
+			{ID: id1, Hash: hash2},
 		},
 	}
 	err := msg.Seal(context.Background())
@@ -73,8 +73,8 @@ func TestVerifylDupDataHash(t *testing.T) {
 	hash1 := NewRandB32()
 	msg := Message{
 		Data: DataRefs{
-			{ID: id1, Hash: &hash1},
-			{ID: id2, Hash: &hash1},
+			{ID: id1, Hash: hash1},
+			{ID: id2, Hash: hash1},
 		},
 	}
 	err := msg.Verify(context.Background())
@@ -88,13 +88,11 @@ func TestVerifyNilHashes(t *testing.T) {
 }
 
 func TestVerifyNilMisMatchedHashes(t *testing.T) {
-	r1 := NewRandB32()
-	r2 := NewRandB32()
 	msg := Message{
 		Header: MessageHeader{
-			DataHash: &r1,
+			DataHash: NewRandB32(),
 		},
-		Hash: &r2,
+		Hash: NewRandB32(),
 	}
 	err := msg.Verify(context.Background())
 	assert.Regexp(t, "FF10146", err.Error())

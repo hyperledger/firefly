@@ -48,7 +48,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		ID:        &dataId,
 		Type:      fftypes.DataTypeBLOB,
 		Namespace: "ns1",
-		Hash:      &randB32,
+		Hash:      randB32,
 		Created:   fftypes.NowMillis(),
 		Value:     val,
 	}
@@ -79,7 +79,7 @@ func TestDataE2EWithDB(t *testing.T) {
 			Entity:  "customer",
 			Version: "0.0.1",
 		},
-		Hash:    &randB32,
+		Hash:    randB32,
 		Created: fftypes.NowMillis(),
 		Value:   val2,
 	}

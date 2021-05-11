@@ -76,4 +76,5 @@ var (
 	MsgWSSendTimedOut             = ffm("FF10159", "Websocket send timed out")
 	MsgWSClosing                  = ffm("FF10160", "Websocket closing")
 	MsgWSConnectFailed            = ffm("FF10161", "Websocket connect failed")
+	MsgInvalidURL                 = ffm("FF10162", "Invalid URL: '%s'")
 )

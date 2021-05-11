@@ -29,6 +29,6 @@ func (be *blockchainEvents) TransactionUpdate(txTrackingID string, txState block
 
 }
 
-func (be *blockchainEvents) SequencedBroadcastBatch(batch blockchain.BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{}) {
+func (be *blockchainEvents) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{}) {
 
 }

@@ -48,7 +48,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 		ID:        &schemaId,
 		Type:      fftypes.SchemaTypeJSONSchema,
 		Namespace: "ns1",
-		Hash:      &randB32,
+		Hash:      randB32,
 		Created:   fftypes.NowMillis(),
 		Value:     val,
 	}
@@ -77,7 +77,7 @@ func TestSchemaE2EWithDB(t *testing.T) {
 		Namespace: "ns2",
 		Entity:    "customer",
 		Version:   "0.0.1",
-		Hash:      &randB32,
+		Hash:      randB32,
 		Created:   fftypes.NowMillis(),
 		Value:     val2,
 	}
