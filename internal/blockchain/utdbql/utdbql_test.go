@@ -45,11 +45,17 @@ func TestInitBadURL(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestVerifyIdentitySyntaxNOOP(t *testing.T) {
+func TestVerifyIdentitySyntaxOK(t *testing.T) {
 	u := &UTDBQL{}
-	id, err := u.VerifyIdentitySyntax(context.Background(), "anything")
+	id, err := u.VerifyIdentitySyntax(context.Background(), "good")
 	assert.NoError(t, err)
-	assert.Equal(t, "anything", id)
+	assert.Equal(t, "good", id)
+}
+
+func TestVerifyIdentitySyntaxFail(t *testing.T) {
+	u := &UTDBQL{}
+	_, err := u.VerifyIdentitySyntax(context.Background(), "!bad")
+	assert.Regexp(t, "FF10131", err.Error())
 }
 
 func TestVerifyBroadcastBatchTXCycle(t *testing.T) {

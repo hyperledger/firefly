@@ -77,7 +77,7 @@ func TestInitAllNewStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
@@ -145,7 +145,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "AssetInstanceBatchCreated"},
+			{ID: "sub12345", Name: "BroadcastBatch"},
 		},
 		))
 
@@ -305,7 +305,7 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
