@@ -112,11 +112,11 @@ func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain
 		GlobalSequencer: true,
 	}
 
-	wsConf := e.conf.Ethconnect.WSExtendedHttpConfig.WSConfig
-	if wsConf.Path == "" {
-		wsConf.Path = "/ws"
+	wsConf := &e.conf.Ethconnect.WSExtendedHttpConfig
+	if wsConf.WSConfig.Path == "" {
+		wsConf.WSConfig.Path = "/ws"
 	}
-	if e.wsconn, err = wsclient.New(ctx, &e.conf.Ethconnect.WSExtendedHttpConfig, e.afterConnect); err != nil {
+	if e.wsconn, err = wsclient.New(ctx, wsConf, e.afterConnect); err != nil {
 		return err
 	}
 
