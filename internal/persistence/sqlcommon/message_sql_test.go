@@ -59,16 +59,16 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topic:     "topic1",
 			Context:   "context1",
 			Group:     nil,
-			DataHash:  &randB32,
+			DataHash:  randB32,
 		},
-		Hash:      &randB32,
+		Hash:      randB32,
 		Confirmed: 0,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeNone,
 		},
 		Data: []fftypes.DataRef{
-			{ID: &dataId1, Hash: &rand1},
-			{ID: &dataId2, Hash: &rand2},
+			{ID: &dataId1, Hash: rand1},
+			{ID: &dataId2, Hash: rand2},
 		},
 	}
 	err := s.UpsertMessage(ctx, msg)
@@ -103,9 +103,9 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topic:     "topic1",
 			Context:   "context1",
 			Group:     &gid,
-			DataHash:  &randB32,
+			DataHash:  randB32,
 		},
-		Hash:      &randB32,
+		Hash:      randB32,
 		Confirmed: fftypes.NowMillis(),
 		TX: fftypes.TransactionRef{
 			Type:    fftypes.TransactionTypePin,
@@ -113,8 +113,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			BatchID: &bid,
 		},
 		Data: []fftypes.DataRef{
-			{ID: &dataId2, Hash: &rand2},
-			{ID: &dataId3, Hash: &rand3},
+			{ID: &dataId2, Hash: rand2},
+			{ID: &dataId3, Hash: rand3},
 		},
 	}
 	err = s.UpsertMessage(context.Background(), msgUpdated)
@@ -313,7 +313,7 @@ func TestUpdateMessageDataAddFail(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
-		Data:   []fftypes.DataRef{{ID: &dataId, Hash: &dataHash}},
+		Data:   []fftypes.DataRef{{ID: &dataId, Hash: dataHash}},
 	})
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -338,7 +338,7 @@ func TestUpdateMessageDataSwitchIdxFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
-		Data:   []fftypes.DataRef{{ID: &dataId2, Hash: &dataHash2}, {ID: &dataId1, Hash: &dataHash1}},
+		Data:   []fftypes.DataRef{{ID: &dataId2, Hash: dataHash2}, {ID: &dataId1, Hash: dataHash1}},
 	})
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

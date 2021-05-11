@@ -23,6 +23,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect

@@ -17,7 +17,9 @@ package ethereum
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
@@ -25,6 +27,8 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/wsclient"
+	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,8 +49,10 @@ func TestInitMissingInstance(t *testing.T) {
 	e := &Ethereum{}
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL: "http://localhost:12345",
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL: "http://localhost:12345",
+				},
 			},
 		},
 	}, &blockchainmocks.Events{})
@@ -57,17 +63,21 @@ func TestInitAllNewStreams(t *testing.T) {
 
 	e := &Ethereum{}
 
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
@@ -77,9 +87,11 @@ func TestInitAllNewStreams(t *testing.T) {
 
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+				},
 			},
 			InstancePath: "/instances/0x12345",
 		},
@@ -95,27 +107,55 @@ func TestInitAllNewStreams(t *testing.T) {
 
 }
 
+func TestWSConnectFail(t *testing.T) {
+
+	e := &Ethereum{}
+
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	svr.Close()
+
+	err := e.Init(context.Background(), &Config{
+		Ethconnect: EthconnectConfig{
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL: fmt.Sprintf("http://%s", svr.Listener.Addr()),
+				},
+			},
+			InstancePath: "/instances/0x12345",
+		},
+	}, &blockchainmocks.Events{})
+	assert.Regexp(t, "FF10161", err.Error())
+
+}
+
 func TestInitAllExistingStreams(t *testing.T) {
 
 	e := &Ethereum{}
+
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "AssetInstanceBatchCreated"},
+			{ID: "sub12345", Name: "BroadcastBatch"},
 		},
 		))
 
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+				},
 			},
 			Topic:        "topic1",
 			InstancePath: "/instances/0x12345",
@@ -134,21 +174,27 @@ func TestStreamQueryError(t *testing.T) {
 
 	e := &Ethereum{}
 
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
-				Retry: &ffresty.HTTPRetryConfig{
-					Enabled: &no,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+					Retry: &ffresty.HTTPRetryConfig{
+						Enabled: &no,
+					},
 				},
 			},
 			InstancePath: "/instances/0x12345",
@@ -165,23 +211,29 @@ func TestStreamCreateError(t *testing.T) {
 
 	e := &Ethereum{}
 
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
-				Retry: &ffresty.HTTPRetryConfig{
-					Enabled: &no,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+					Retry: &ffresty.HTTPRetryConfig{
+						Enabled: &no,
+					},
 				},
 			},
 			InstancePath: "/instances/0x12345",
@@ -198,25 +250,31 @@ func TestSubQueryError(t *testing.T) {
 
 	e := &Ethereum{}
 
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
-				Retry: &ffresty.HTTPRetryConfig{
-					Enabled: &no,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+					Retry: &ffresty.HTTPRetryConfig{
+						Enabled: &no,
+					},
 				},
 			},
 			InstancePath: "/instances/0x12345",
@@ -233,27 +291,33 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	e := &Ethereum{}
 
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
 	var no bool = false
 	err := e.Init(context.Background(), &Config{
 		Ethconnect: EthconnectConfig{
-			HTTPConfig: ffresty.HTTPConfig{
-				URL:        "http://localhost:12345",
-				HttpClient: mockedClient,
-				Retry: &ffresty.HTTPRetryConfig{
-					Enabled: &no,
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
+					HttpClient: mockedClient,
+					Retry: &ffresty.HTTPRetryConfig{
+						Enabled: &no,
+					},
 				},
 			},
 			InstancePath: "/instances/0x12345",
@@ -287,7 +351,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      fftypes.NowMillis(),
-		BatchID:        *fftypes.NewUUID(),
+		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 
@@ -318,7 +382,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
 		Timestamp:      fftypes.NowMillis(),
-		BatchID:        *fftypes.NewUUID(),
+		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
 

@@ -41,8 +41,8 @@ func TestUnmarshalBytes32(t *testing.T) {
 	assert.Nil(t, s1.ValuePtr)
 	err = json.Unmarshal(jsonWithValues, &s2)
 	assert.NoError(t, err)
-	assert.Equal(t, b, s2.Value)
-	assert.Equal(t, b, *s2.ValuePtr)
+	assert.Equal(t, *b, s2.Value)
+	assert.Equal(t, b, s2.ValuePtr)
 }
 
 func TestMarshalBytes32(t *testing.T) {
@@ -53,8 +53,8 @@ func TestMarshalBytes32(t *testing.T) {
 		ValuePtr *Bytes32 `json:"valuePtr,omitempty"`
 	}
 	structWithValues := &testStruct{
-		ValuePtr: &b,
-		Value:    b,
+		ValuePtr: b,
+		Value:    *b,
 	}
 	json1, err := json.Marshal(structWithValues)
 	assert.NoError(t, err)
@@ -78,7 +78,7 @@ func TestScanBytes32(t *testing.T) {
 
 	rand := NewRandB32()
 	b32.Scan(rand.String())
-	assert.Equal(t, *b32, rand)
+	assert.Equal(t, b32, rand)
 
 	b32 = &Bytes32{}
 
@@ -86,10 +86,10 @@ func TestScanBytes32(t *testing.T) {
 	assert.Equal(t, *b32, Bytes32{})
 
 	b32.Scan([]byte(rand.String()))
-	assert.Equal(t, *b32, rand)
+	assert.Equal(t, b32, rand)
 
 	b32.Scan(rand[:])
-	assert.Equal(t, *b32, rand)
+	assert.Equal(t, b32, rand)
 
 	err := b32.Scan(12345)
 	assert.Error(t, err)
@@ -109,6 +109,6 @@ func TestValueBytes32Nil(t *testing.T) {
 
 func TestUUIDBytes(t *testing.T) {
 	u := NewUUID()
-	b := UUIDBytes(*u)
+	b := UUIDBytes(u)
 	assert.Equal(t, b[0:16], u[0:16])
 }

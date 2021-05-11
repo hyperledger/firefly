@@ -57,12 +57,12 @@ func TestE2EDispatch(t *testing.T) {
 			Author:    "0x12345",
 		},
 		Data: fftypes.DataRefs{
-			{ID: dataId1, Hash: &dataHash},
+			{ID: dataId1, Hash: dataHash},
 		},
 	}
 	data := &fftypes.Data{
 		ID:   dataId1,
-		Hash: &dataHash,
+		Hash: dataHash,
 	}
 	mp.On("GetDataById", mock.Anything, "ns1", mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *dataId1

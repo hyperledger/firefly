@@ -41,7 +41,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		ID:     &batchId,
 		Type:   fftypes.MessageTypeBroadcast,
 		Author: "0x12345",
-		Hash:   &randB32,
+		Hash:   randB32,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
@@ -72,7 +72,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Type:      fftypes.MessageTypeBroadcast,
 		Author:    "0x12345",
 		Namespace: "ns1",
-		Hash:      &randB32,
+		Hash:      randB32,
 		Created:   fftypes.NowMillis(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -80,7 +80,7 @@ func TestBatch2EWithDB(t *testing.T) {
 				{Header: fftypes.MessageHeader{ID: &msgId2}},
 			},
 		},
-		PayloadRef: &payloadRef,
+		PayloadRef: payloadRef,
 		TX: fftypes.TransactionRef{
 			ID:   &txid,
 			Type: fftypes.TransactionTypePin,

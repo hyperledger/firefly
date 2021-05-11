@@ -6,12 +6,8 @@ http:
 node:
   identity: 0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635
 blockchain:
-  type: ethereum
-  ethconnect:
-    topic: t1
-    skipEventstreamInit: true
-    url: http://localhost:8000
-    instance: /instances/0x12345
+  type: utdbql
+  url: memory://
 database:
   type: ql
   url: memory://
