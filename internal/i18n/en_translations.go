@@ -77,4 +77,5 @@ var (
 	MsgWSClosing                  = ffm("FF10160", "Websocket closing")
 	MsgWSConnectFailed            = ffm("FF10161", "Websocket connect failed")
 	MsgInvalidURL                 = ffm("FF10162", "Invalid URL: '%s'")
+	MsgDBMigrationFailed          = ffm("FF10163", "Database migration failed")
 )

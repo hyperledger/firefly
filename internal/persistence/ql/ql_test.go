@@ -13,15 +13,3 @@
 // limitations under the License.
 
 package ql
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestConfigInterfaceCorrect(t *testing.T) {
-	e := &QL{}
-	_, ok := e.ConfigInterface().(*Config)
-	assert.True(t, ok)
-}

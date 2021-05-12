@@ -39,7 +39,7 @@ type Engine interface {
 	// Definitions
 	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
 
-	// Data Queryuery
+	// Data Query
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Transaction, error)
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
@@ -138,11 +138,7 @@ func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, e
 	if err != nil {
 		return nil, err
 	}
-	conf := blockchain.ConfigInterface()
-	err = config.UnmarshalKey(ctx, config.Blockchain, &conf)
-	if err == nil {
-		err = blockchain.Init(ctx, conf, e.blockchainEvents)
-	}
+	err = blockchain.Init(ctx, config.NewPluginConfig("blockchain"), e.blockchainEvents)
 	if err == nil {
 		suppliedIdentity := config.GetString(config.NodeIdentity)
 		e.nodeIdentity, err = blockchain.VerifyIdentitySyntax(ctx, suppliedIdentity)
@@ -159,11 +155,7 @@ func (e *engine) initPersistencePlugin(ctx context.Context) (persistence.Plugin,
 	if err != nil {
 		return nil, err
 	}
-	conf := persistence.ConfigInterface()
-	err = config.UnmarshalKey(ctx, config.Database, &conf)
-	if err == nil {
-		err = persistence.Init(ctx, conf, e)
-	}
+	err = persistence.Init(ctx, config.NewPluginConfig("database"), e)
 	return persistence, err
 }
 
@@ -173,10 +165,6 @@ func (e *engine) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, err
 	if err != nil {
 		return nil, err
 	}
-	conf := p2pfs.ConfigInterface()
-	err = config.UnmarshalKey(ctx, config.P2PFS, &conf)
-	if err == nil {
-		err = p2pfs.Init(ctx, conf, e)
-	}
+	err = p2pfs.Init(ctx, config.NewPluginConfig("p2pfs"), e)
 	return p2pfs, err
 }

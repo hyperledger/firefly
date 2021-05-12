@@ -31,25 +31,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
-const (
-	defaultRetryWaitTimeMillis    = 100
-	defaultRetryMaxWaitTimeMillis = 1000
-	defaultIntialConnectAttempts  = 5
-	defaultBufferSizeKB           = 1024
-)
-
-type WSExtendedHttpConfig struct {
-	ffresty.HTTPConfig
-	WSConfig WSSubConfig `json:"ws"`
-}
-
-type WSSubConfig struct {
-	Path                   string `json:"path,omitempty"`
-	InitialConnectAttempts *uint  `json:"intialConnectAttempts,omitempty"`
-	WriteBufferSizeKB      *uint  `json:"writeBufferSizeKB"`
-	ReadBufferSizeKB       *uint  `json:"readBufferSizeKB"`
-}
-
 type WSAuthConfig struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
@@ -68,7 +49,7 @@ type wsClient struct {
 	initialRetryAttempts int
 	wsdialer             *websocket.Dialer
 	wsconn               *websocket.Conn
-	retry                *retry.Retry
+	retry                retry.Retry
 	closed               bool
 	receive              chan []byte
 	send                 chan []byte
@@ -80,13 +61,8 @@ type wsClient struct {
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, conf config.Config, afterConnect WSPostConnectHandler) (WSClient, error) {
 
-	wsConf := &conf.WSConfig
-	retryConf := conf.HTTPConfig.Retry
-	if retryConf == nil {
-		retryConf = &ffresty.HTTPRetryConfig{}
-	}
 	wsURL, err := buildWSUrl(ctx, conf)
 	if err != nil {
 		return nil, err
@@ -96,26 +72,29 @@ func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostCon
 		ctx: ctx,
 		url: wsURL,
 		wsdialer: &websocket.Dialer{
-			ReadBufferSize:  int(config.UintWithDefault(wsConf.WriteBufferSizeKB, defaultBufferSizeKB) * 1024),
-			WriteBufferSize: int(config.UintWithDefault(wsConf.ReadBufferSizeKB, defaultBufferSizeKB) * 1024),
+			ReadBufferSize:  conf.GetInt(WSConfigKeyReadBufferSizeKB) * 1024,
+			WriteBufferSize: conf.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
-		retry: &retry.Retry{
-			InitialDelay: time.Duration(config.UintWithDefault(retryConf.WaitTimeMS, defaultRetryWaitTimeMillis)) * time.Millisecond,
-			MaximumDelay: time.Duration(config.UintWithDefault(retryConf.MaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)) * time.Millisecond,
+		retry: retry.Retry{
+			InitialDelay: time.Duration(conf.GetUint(ffresty.HTTPConfigRetryWaitTimeMS)) * time.Millisecond,
+			MaximumDelay: time.Duration(conf.GetUint(ffresty.HTTPConfigRetryMaxWaitTimeMS)) * time.Millisecond,
 		},
-		initialRetryAttempts: int(config.UintWithDefault(wsConf.InitialConnectAttempts, defaultIntialConnectAttempts)),
+		initialRetryAttempts: conf.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range conf.HTTPConfig.Headers {
-		w.headers.Set(k, v)
+	for k, v := range conf.GetStringMap(ffresty.HTTPConfigHeaders) {
+		if vs, ok := v.(string); ok {
+			w.headers.Set(k, vs)
+		}
 	}
-	authConf := conf.HTTPConfig.Auth
-	if authConf != nil && authConf.Username != "" && authConf.Password != "" {
-		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authConf.Username, authConf.Password)))))
+	authUsername := conf.GetString(ffresty.HTTPConfigAuthUsername)
+	authPassword := conf.GetString(ffresty.HTTPConfigAuthPassword)
+	if authUsername != "" && authPassword != "" {
+		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
 
 	if err := w.connect(true); err != nil {
@@ -155,14 +134,15 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
-func buildWSUrl(ctx context.Context, conf *WSExtendedHttpConfig) (string, error) {
-	wsConf := &conf.WSConfig
-	u, err := url.Parse(conf.HTTPConfig.URL)
+func buildWSUrl(ctx context.Context, conf config.Config) (string, error) {
+	urlString := conf.GetString(ffresty.HTTPConfigURL)
+	u, err := url.Parse(urlString)
 	if err != nil {
-		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, conf.HTTPConfig.URL)
+		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, urlString)
 	}
-	if wsConf.Path != "" {
-		u.Path = wsConf.Path
+	wsPath := conf.GetString(WSConfigKeyPath)
+	if wsPath != "" {
+		u.Path = wsPath
 	}
 	if u.Scheme == "http" {
 		u.Scheme = "ws"

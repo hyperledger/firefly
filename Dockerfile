@@ -1,11 +1,7 @@
-FROM node:14-buster
+FROM golang:1.16.4-alpine3.13
+WORKDIR /firefly
+ADD . .
+RUN apk add make gcc build-base
+RUN make
 
-ADD ./core /app
-
-WORKDIR /app
-
-RUN npm i \
- && npm t \
- && npm run build
-
-CMD node build/app.js
+ENTRYPOINT [ "firefly" ]

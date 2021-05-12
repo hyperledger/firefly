@@ -1,0 +1,51 @@
+// Copyright © 2021 Kaleido, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package ffresty
+
+import "github.com/kaleido-io/firefly/internal/config"
+
+const (
+	defaultRetryEnabled           = true
+	defaultRetryCount             = 5
+	defaultRetryWaitTimeMillis    = 100
+	defaultRetryMaxWaitTimeMillis = 1000
+)
+
+const (
+	HTTPConfigURL                = "url"
+	HTTPConfigHeaders            = "headers"
+	HTTPConfigAuthUsername       = "auth.username"
+	HTTPConfigAuthPassword       = "auth.password"
+	HTTPConfigRetryEnabled       = "retry.enabled"
+	HTTPConfigRetryCount         = "retry.count"
+	HTTPConfigRetryWaitTimeMS    = "retry.waitTimeMS"
+	HTTPConfigRetryMaxWaitTimeMS = "retry.maxWaitTimeMS"
+
+	// Unit test only
+	HTTPCustomClient = "customClient"
+)
+
+func AddHTTPConfig(conf config.Config) {
+	conf.AddKey(HTTPConfigURL)
+	conf.AddKey(HTTPConfigHeaders)
+	conf.AddKey(HTTPConfigAuthUsername)
+	conf.AddKey(HTTPConfigAuthPassword)
+	conf.AddKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
+	conf.AddKey(HTTPConfigRetryCount, defaultRetryCount)
+	conf.AddKey(HTTPConfigRetryWaitTimeMS, defaultRetryWaitTimeMillis)
+	conf.AddKey(HTTPConfigRetryMaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
+
+	conf.AddKey(HTTPCustomClient)
+}

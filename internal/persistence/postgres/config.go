@@ -14,6 +14,24 @@
 
 package postgres
 
-type Config struct {
-	URL string `json:"url"`
+import (
+	"github.com/kaleido-io/firefly/internal/config"
+)
+
+const (
+	defaultMigrationsDirectory = "./db/migrations/postgres"
+)
+
+const (
+	PSQLConfDatabase            = "database"
+	PSQLConfURL                 = "url"
+	PSQLConfMigrationsAuto      = "migrations.auto"
+	PSQLConfMigrationsDirectory = "migrations.directory"
+)
+
+func AddPSQLConfig(conf config.Config) {
+	conf.AddKey(PSQLConfDatabase)
+	conf.AddKey(PSQLConfURL)
+	conf.AddKey(PSQLConfMigrationsAuto)
+	conf.AddKey(PSQLConfMigrationsDirectory, defaultMigrationsDirectory)
 }

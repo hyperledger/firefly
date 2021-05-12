@@ -14,6 +14,14 @@
 
 package ql
 
-type Config struct {
-	URL string `json:"url"`
+import (
+	"github.com/kaleido-io/firefly/internal/config"
+)
+
+const (
+	QLConfURL = "url"
+)
+
+func AddQLConfig(conf config.Config) {
+	conf.AddKey(QLConfURL)
 }

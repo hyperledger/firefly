@@ -1,65 +1,15 @@
 {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "name": "Launch Package",
+      "type": "go",
       "request": "launch",
-      "name": "MR - Org A",
-      "cwd": "${workspaceFolder}/core",
-      "runtimeExecutable": "nodemon",
-      "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/multi-region/OrgA",
-        "LOG_LEVEL": "info"
-      },
-      "outputCapture": "std",
-      "resolveSourceMapLocations": [
-        "!**/node_modules/**"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "MR - Org B",
-      "cwd": "${workspaceFolder}/core",
-      "runtimeExecutable": "nodemon",
-      "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/multi-region/OrgB",
-        "LOG_LEVEL": "info"
-      },
-      "outputCapture": "std",
-      "resolveSourceMapLocations": [
-        "!**/node_modules/**"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "SR - Org A",
-      "cwd": "${workspaceFolder}/core",
-      "runtimeExecutable": "nodemon",
-      "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/single-region/OrgA",
-        "LOG_LEVEL": "info"
-      },
-      "outputCapture": "std",
-      "resolveSourceMapLocations": [
-        "!**/node_modules/**"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "SR - Org B",
-      "cwd": "${workspaceFolder}/core",
-      "runtimeExecutable": "nodemon",
-      "env": {
-        "DATA_DIRECTORY": "/Users/gabrielindik/Kaleido/Repos/asset-trail/core/data/single-region/OrgB",
-        "LOG_LEVEL": "info"
-      },
-      "outputCapture": "std",
-      "resolveSourceMapLocations": [
-        "!**/node_modules/**"
-      ]
+      "mode": "auto",
+      "program": "${workspaceRoot}/main.go"
     }
   ]
 }

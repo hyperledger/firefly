@@ -5,7 +5,10 @@ package persistencemocks
 import (
 	context "context"
 
+	config "github.com/kaleido-io/firefly/internal/config"
+
 	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 
 	persistence "github.com/kaleido-io/firefly/internal/persistence"
@@ -28,22 +31,6 @@ func (_m *Plugin) Capabilities() *persistence.Capabilities {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*persistence.Capabilities)
-		}
-	}
-
-	return r0
-}
-
-// ConfigInterface provides a mock function with given fields:
-func (_m *Plugin) ConfigInterface() interface{} {
-	ret := _m.Called()
-
-	var r0 interface{}
-	if rf, ok := ret.Get(0).(func() interface{}); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -326,13 +313,13 @@ func (_m *Plugin) GetTransactions(ctx context.Context, filter persistence.Filter
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, config, events
-func (_m *Plugin) Init(ctx context.Context, config interface{}, events persistence.Events) error {
-	ret := _m.Called(ctx, config, events)
+// Init provides a mock function with given fields: ctx, _a1, events
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Config, events persistence.Events) error {
+	ret := _m.Called(ctx, _a1, events)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, interface{}, persistence.Events) error); ok {
-		r0 = rf(ctx, config, events)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Config, persistence.Events) error); ok {
+		r0 = rf(ctx, _a1, events)
 	} else {
 		r0 = ret.Error(0)
 	}

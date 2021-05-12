@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,17 +30,18 @@ import (
 func TestRequestOK(t *testing.T) {
 
 	customClient := &http.Client{}
-	conf := &HTTPConfig{
-		URL: "http://localhost:12345",
-		Headers: map[string]string{
-			"someheader": "headervalue",
-		},
-		Auth: &HTTPAuthConfig{
-			Username: "user",
-			Password: "pass",
-		},
-		HttpClient: customClient,
-	}
+
+	conf := config.NewPluginConfig("http_unit_tests")
+	AddHTTPConfig(conf)
+	conf.Set(HTTPConfigURL, "http://localhost:12345")
+	conf.Set(HTTPConfigHeaders, map[string]interface{}{
+		"someheader": "headervalue",
+	})
+	conf.Set(HTTPConfigAuthUsername, "user")
+	conf.Set(HTTPConfigAuthPassword, "pass")
+	conf.Set(HTTPCustomClient, customClient)
+	defer config.Reset()
+
 	c := New(context.Background(), conf)
 	httpmock.ActivateNonDefault(customClient)
 	defer httpmock.DeactivateAndReset()
@@ -62,15 +64,13 @@ func TestRequestOK(t *testing.T) {
 func TestRequestRetry(t *testing.T) {
 
 	ctx := context.Background()
-	var one uint = 1
-	var yes = true
-	conf := &HTTPConfig{
-		URL: "http://localhost:12345",
-		Retry: &HTTPRetryConfig{
-			Enabled:       &yes,
-			MaxWaitTimeMS: &one,
-		},
-	}
+
+	conf := config.NewPluginConfig("http_unit_tests")
+	AddHTTPConfig(conf)
+	conf.Set(HTTPConfigURL, "http://localhost:12345")
+	conf.Set(HTTPConfigRetryWaitTimeMS, 1)
+	defer config.Reset()
+
 	c := New(ctx, conf)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
@@ -91,13 +91,13 @@ func TestRequestRetry(t *testing.T) {
 func TestLongResponse(t *testing.T) {
 
 	ctx := context.Background()
-	var no bool = false
-	conf := &HTTPConfig{
-		URL: "http://localhost:12345",
-		Retry: &HTTPRetryConfig{
-			Enabled: &no,
-		},
-	}
+
+	conf := config.NewPluginConfig("http_unit_tests")
+	AddHTTPConfig(conf)
+	conf.Set(HTTPConfigURL, "http://localhost:12345")
+	conf.Set(HTTPConfigRetryEnabled, false)
+	defer config.Reset()
+
 	c := New(ctx, conf)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
@@ -117,13 +117,13 @@ func TestLongResponse(t *testing.T) {
 func TestErrResponse(t *testing.T) {
 
 	ctx := context.Background()
-	var no bool = false
-	conf := &HTTPConfig{
-		URL: "http://localhost:12345",
-		Retry: &HTTPRetryConfig{
-			Enabled: &no,
-		},
-	}
+
+	conf := config.NewPluginConfig("http_unit_tests")
+	AddHTTPConfig(conf)
+	conf.Set(HTTPConfigURL, "http://localhost:12345")
+	conf.Set(HTTPConfigRetryEnabled, false)
+	defer config.Reset()
+
 	c := New(ctx, conf)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
