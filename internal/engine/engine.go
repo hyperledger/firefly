@@ -22,12 +22,18 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/database/databasefactory"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
 	"github.com/kaleido-io/firefly/internal/p2pfs/p2pfsfactory"
-	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/internal/persistence/persistencefactory"
+)
+
+var (
+	blockchainConfig = config.NewPluginConfig("blockchain")
+	databaseConfig   = config.NewPluginConfig("database")
+	p2pfsConfig      = config.NewPluginConfig("p2pfs")
 )
 
 // Engine is the main interface behind the API, implementing the actions
@@ -41,20 +47,20 @@ type Engine interface {
 
 	// Data Query
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetTransactions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Transaction, error)
+	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
-	GetMessages(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Message, error)
+	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
-	GetBatches(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Batch, error)
+	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
-	GetData(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Data, error)
+	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
 	GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
-	GetDataDefinitions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.DataDefinition, error)
+	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
 }
 
 type engine struct {
 	ctx              context.Context
-	persistence      persistence.Plugin
+	database         database.Plugin
 	blockchain       blockchain.Plugin
 	p2pfs            p2pfs.Plugin
 	blockchainEvents *blockchainEvents
@@ -65,6 +71,12 @@ type engine struct {
 
 func NewEngine() Engine {
 	e := &engine{}
+
+	// Initialize the config on all the factories
+	blockchainfactory.InitConfigPrefix(blockchainConfig)
+	databasefactory.InitConfigPrefix(databaseConfig)
+	p2pfsfactory.InitConfigPrefix(p2pfsConfig)
+
 	return e
 }
 
@@ -95,8 +107,8 @@ func (e *engine) Close() {
 
 func (e *engine) initPlugins(ctx context.Context) (err error) {
 
-	if e.persistence == nil {
-		if e.persistence, err = e.initPersistencePlugin(ctx); err != nil {
+	if e.database == nil {
+		if e.database, err = e.initDatabasePlugin(ctx); err != nil {
 			return err
 		}
 	}
@@ -118,14 +130,14 @@ func (e *engine) initPlugins(ctx context.Context) (err error) {
 
 func (e *engine) initComponents(ctx context.Context) (err error) {
 	if e.batch == nil {
-		e.batch, err = batching.NewBatchManager(ctx, e.persistence)
+		e.batch, err = batching.NewBatchManager(ctx, e.database)
 		if err != nil {
 			return err
 		}
 	}
 
 	if e.broadcast == nil {
-		if e.broadcast, err = broadcast.NewBroadcast(ctx, e.persistence, e.blockchain, e.p2pfs, e.batch); err != nil {
+		if e.broadcast, err = broadcast.NewBroadcast(ctx, e.database, e.blockchain, e.p2pfs, e.batch); err != nil {
 			return err
 		}
 	}
@@ -138,7 +150,7 @@ func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, e
 	if err != nil {
 		return nil, err
 	}
-	err = blockchain.Init(ctx, config.NewPluginConfig("blockchain"), e.blockchainEvents)
+	err = blockchain.Init(ctx, blockchainConfig.SubPrefix(pluginType), e.blockchainEvents)
 	if err == nil {
 		suppliedIdentity := config.GetString(config.NodeIdentity)
 		e.nodeIdentity, err = blockchain.VerifyIdentitySyntax(ctx, suppliedIdentity)
@@ -149,14 +161,14 @@ func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, e
 	return blockchain, err
 }
 
-func (e *engine) initPersistencePlugin(ctx context.Context) (persistence.Plugin, error) {
+func (e *engine) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
 	pluginType := config.GetString(config.DatabaseType)
-	persistence, err := persistencefactory.GetPlugin(ctx, pluginType)
+	database, err := databasefactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = persistence.Init(ctx, config.NewPluginConfig("database"), e)
-	return persistence, err
+	err = database.Init(ctx, databaseConfig.SubPrefix(pluginType), e)
+	return database, err
 }
 
 func (e *engine) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, error) {
@@ -165,6 +177,6 @@ func (e *engine) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, err
 	if err != nil {
 		return nil, err
 	}
-	err = p2pfs.Init(ctx, config.NewPluginConfig("p2pfs"), e)
+	err = p2pfs.Init(ctx, p2pfsConfig.SubPrefix(pluginType), e)
 	return p2pfs, err
 }

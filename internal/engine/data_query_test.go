@@ -19,16 +19,16 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetTransactionById(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactionById", mock.Anything, "ns1", u).Return(nil, nil)
 	_, err := e.GetTransactionById(context.Background(), "ns1", u.String())
@@ -43,11 +43,11 @@ func TestGetTransactionByIdBadId(t *testing.T) {
 
 func TestGetTransactions(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactions", mock.Anything, mock.Anything).Return([]*fftypes.Transaction{}, nil)
-	fb := persistence.TransactionQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.TransactionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetTransactions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -55,8 +55,8 @@ func TestGetTransactions(t *testing.T) {
 
 func TestGetMessageById(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessageById", mock.Anything, "ns1", u).Return(nil, nil)
 	_, err := e.GetMessageById(context.Background(), "ns1", u.String())
@@ -71,11 +71,11 @@ func TestGetMessageByIdBadId(t *testing.T) {
 
 func TestGetMessages(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	fb := persistence.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetMessages(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -83,8 +83,8 @@ func TestGetMessages(t *testing.T) {
 
 func TestGetBatchById(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatchById", mock.Anything, "ns1", u).Return(nil, nil)
 	_, err := e.GetBatchById(context.Background(), "ns1", u.String())
@@ -99,11 +99,11 @@ func TestGetBatchByIdBadId(t *testing.T) {
 
 func TestGetBatches(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.Batch{}, nil)
-	fb := persistence.BatchQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.BatchQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetBatches(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -111,8 +111,8 @@ func TestGetBatches(t *testing.T) {
 
 func TestGetDataById(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataById", mock.Anything, "ns1", u).Return(nil, nil)
 	_, err := e.GetDataById(context.Background(), "ns1", u.String())
@@ -127,11 +127,11 @@ func TestGetDataByIdBadId(t *testing.T) {
 
 func TestGetData(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetData", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, nil)
-	fb := persistence.DataQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.DataQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -139,8 +139,8 @@ func TestGetData(t *testing.T) {
 
 func TestGetDataDefsById(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataDefinitionById", mock.Anything, "ns1", u).Return(nil, nil)
 	_, err := e.GetDataDefinitionById(context.Background(), "ns1", u.String())
@@ -155,11 +155,11 @@ func TestGetDataDefsByIdBadId(t *testing.T) {
 
 func TestGetDataDefinitions(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataDefinitions", mock.Anything, mock.Anything).Return([]*fftypes.DataDefinition{}, nil)
-	fb := persistence.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := e.GetDataDefinitions(context.Background(), "ns1", f)
 	assert.NoError(t, err)

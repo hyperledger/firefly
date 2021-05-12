@@ -7,10 +7,13 @@ node:
   identity: 0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635
 blockchain:
   type: utdbql
-  url: memory://
+  utdbql:
+    url: memory://
 database:
   type: ql
-  url: memory://
+  ql:
+    url: memory://
 p2pfs:
   type: ipfs
-  url: http://localhost:8080
+  ipfs:
+    url: http://localhost:8080

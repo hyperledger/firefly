@@ -22,7 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -48,7 +48,7 @@ type batchProcessorConf struct {
 	BatchOptions
 	namespace          string
 	author             string
-	persitence         persistence.Plugin
+	persitence         database.Plugin
 	dispatch           DispatchHandler
 	processorQuiescing func()
 }
@@ -77,7 +77,7 @@ func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *ret
 		conf:        conf,
 	}
 	go a.assemblyLoop()
-	go a.persistenceLoop()
+	go a.databaseLoop()
 	return a
 }
 
@@ -173,7 +173,7 @@ func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.
 	return batch
 }
 
-func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates persistence.Update) error {
+func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates database.Update) error {
 	l := log.L(ctx)
 	// Call the dispatcher to do the heavy lifting
 	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
@@ -198,7 +198,7 @@ func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch)
 	})
 }
 
-func (a *batchProcessor) persistBatchUpdates(ctx context.Context, batchID *uuid.UUID, updates persistence.Update) (err error) {
+func (a *batchProcessor) persistBatchUpdates(ctx context.Context, batchID *uuid.UUID, updates database.Update) (err error) {
 	l := log.L(ctx)
 	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
 		err = a.conf.persitence.UpdateBatch(ctx, batchID, updates)
@@ -210,7 +210,7 @@ func (a *batchProcessor) persistBatchUpdates(ctx context.Context, batchID *uuid.
 	})
 }
 
-func (a *batchProcessor) persistenceLoop() {
+func (a *batchProcessor) databaseLoop() {
 	defer close(a.batchSealed)
 	l := log.L(a.ctx).WithField("role", fmt.Sprintf("persist-%s", a.name))
 	ctx := log.WithLogger(a.ctx, l)
@@ -264,12 +264,12 @@ func (a *batchProcessor) persistenceLoop() {
 			// At this point the batch is sealed, and the assember can start
 			// queing up the next batch. We only let them get one batch ahead
 			// (due to the size of the channel being the maxBatchSize) before
-			// they start blocking waiting for us to complete persistence of
+			// they start blocking waiting for us to complete database of
 			// the current batch.
 			a.batchSealed <- true
 
 			// Synchronously dispatch the batch.
-			updates := persistence.BatchQueryFactory.NewUpdate(ctx).S()
+			updates := database.BatchQueryFactory.NewUpdate(ctx).S()
 			if err := a.dispatchBatch(ctx, currentBatch, updates); err != nil {
 				l.Errorf("Persistence loop exiting (caught in dispatch): %s", err)
 				return

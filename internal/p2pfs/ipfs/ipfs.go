@@ -44,7 +44,6 @@ type ipfsUploadResponse struct {
 }
 
 func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pfs.Events) error {
-	InitConfigPrefix(prefix)
 
 	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
 	i.events = events

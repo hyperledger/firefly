@@ -19,6 +19,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/ffresty"
 )
 
-func InitConfigPrefix(prefix config.ConfigPrefix) {
+func (i *IPFS) InitConfigPrefix(prefix config.ConfigPrefix) {
 	ffresty.InitConfigPrefix(prefix)
 }

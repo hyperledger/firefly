@@ -15,8 +15,6 @@
 package config
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -79,7 +77,6 @@ type ConfigPrefix interface {
 	GetUint(key string) uint
 	GetStringSlice(key string) []string
 	GetStringMap(key string) map[string]interface{}
-	UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error
 	Get(key string) interface{}
 }
 
@@ -252,23 +249,4 @@ func Set(key RootKey, value interface{}) {
 }
 func (c *configPrefix) Set(key string, value interface{}) {
 	viper.Set(c.prefixKey(key), value)
-}
-
-// Unmarshal gets a configuration section into a struct
-func UnmarshalKey(ctx context.Context, key RootKey, rawVal interface{}) error {
-	return root.UnmarshalKey(ctx, string(key), rawVal)
-}
-func (c *configPrefix) UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error {
-	// Viper's unmarshal does not work with our json annotated config
-	// structures, so we have to go from map to JSON, then to unmarshal
-	var intermediate map[string]interface{}
-	err := viper.UnmarshalKey(c.prefixKey(key), &intermediate)
-	if err == nil {
-		b, _ := json.Marshal(intermediate)
-		err = json.Unmarshal(b, rawVal)
-	}
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed, key)
-	}
-	return nil
 }

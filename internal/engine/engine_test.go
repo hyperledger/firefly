@@ -22,11 +22,11 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/batchingmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
-	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitPersistencePluginFail(t *testing.T) {
+func TestInitDatabasePluginFail(t *testing.T) {
 	e := NewEngine().(*engine)
 	err := e.Init(context.Background())
 	assert.Regexp(t, "FF10122", err.Error())
@@ -34,7 +34,7 @@ func TestInitPersistencePluginFail(t *testing.T) {
 
 func TestInitBlockchainPluginFail(t *testing.T) {
 	e := &engine{
-		persistence: &persistencemocks.Plugin{},
+		database: &databasemocks.Plugin{},
 	}
 	err := e.Init(context.Background())
 	assert.Regexp(t, "FF10110", err.Error())
@@ -42,8 +42,8 @@ func TestInitBlockchainPluginFail(t *testing.T) {
 
 func TestInitP2PFilesystemPluginFail(t *testing.T) {
 	e := &engine{
-		persistence: &persistencemocks.Plugin{},
-		blockchain:  &blockchainmocks.Plugin{},
+		database:   &databasemocks.Plugin{},
+		blockchain: &blockchainmocks.Plugin{},
 	}
 	err := e.Init(context.Background())
 	assert.Regexp(t, "FF10134", err.Error())

@@ -15,7 +15,6 @@
 package config
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -67,23 +66,6 @@ func TestSetGetRawInterace(t *testing.T) {
 	Set(BroadcastBatchSize, &myType{name: "test"})
 	v := Get(BroadcastBatchSize)
 	assert.Equal(t, myType{name: "test"}, *(v.(*myType)))
-}
-
-func TestUnmarshalKey(t *testing.T) {
-	err := ReadConfig("../../test/config/firefly.core.yaml")
-	assert.NoError(t, err)
-	var conf map[string]interface{}
-	err = UnmarshalKey(context.Background(), Blockchain, &conf)
-	assert.NoError(t, err)
-	assert.Equal(t, "memory://", conf["url"])
-}
-
-func TestUnmarshalKeyFail(t *testing.T) {
-	err := ReadConfig("../../test/config/firefly.core.yaml")
-	assert.NoError(t, err)
-	var conf map[string]interface{}
-	err = UnmarshalKey(context.Background(), HttpPort, &conf)
-	assert.Regexp(t, "FF10101", err)
 }
 
 func TestPluginConfig(t *testing.T) {

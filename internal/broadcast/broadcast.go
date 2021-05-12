@@ -26,7 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 type Broadcast interface {
@@ -36,19 +36,19 @@ type Broadcast interface {
 
 type broadcast struct {
 	ctx         context.Context
-	persistence persistence.Plugin
+	database database.Plugin
 	blockchain  blockchain.Plugin
 	p2pfs       p2pfs.Plugin
 	batch       batching.BatchManager
 }
 
-func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (Broadcast, error) {
-	if persistence == nil || blockchain == nil || batch == nil || p2pfs == nil {
+func NewBroadcast(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (Broadcast, error) {
+	if database == nil || blockchain == nil || batch == nil || p2pfs == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	b := &broadcast{
 		ctx:         ctx,
-		persistence: persistence,
+		database: database,
 		blockchain:  blockchain,
 		p2pfs:       p2pfs,
 		batch:       batch,
@@ -63,7 +63,7 @@ func NewBroadcast(ctx context.Context, persistence persistence.Plugin, blockchai
 	return b, nil
 }
 
-func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates persistence.Update) error {
+func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates database.Update) error {
 
 	// In a retry scenario we don't need to re-write the batch itself to IPFS
 	if batch.PayloadRef == nil {
@@ -103,7 +103,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 		Created:    fftypes.NowMillis(),
 		TrackingID: trackingId,
 	}
-	err = b.persistence.UpsertTransaction(ctx, tx)
+	err = b.database.UpsertTransaction(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return b.persistence.UpsertMessage(ctx, msg)
+	return b.database.UpsertMessage(ctx, msg)
 }
 
 func (b *broadcast) Close() {}

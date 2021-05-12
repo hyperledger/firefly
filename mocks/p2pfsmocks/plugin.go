@@ -51,6 +51,11 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events p
 	return r0
 }
 
+// InitConfigPrefix provides a mock function with given fields: prefix
+func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
+	_m.Called(prefix)
+}
+
 // PublishData provides a mock function with given fields: ctx, data
 func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Bytes32, error) {
 	ret := _m.Called(ctx, data)

@@ -93,7 +93,6 @@ var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
 func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
 
-	InitConfigPrefix(prefix)
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")

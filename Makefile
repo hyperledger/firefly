@@ -15,8 +15,8 @@ lint:
 mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/blockchain   --name Plugin       --output mocks/blockchainmocks  --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir internal/blockchain   --name Events       --output mocks/blockchainmocks  --outpkg blockchainmocks
-		$(MOCKERY) --case underscore --dir internal/persistence  --name Plugin       --output mocks/persistencemocks --outpkg persistencemocks
-		$(MOCKERY) --case underscore --dir internal/persistence  --name Events       --output mocks/persistencemocks --outpkg persistencemocks
+		$(MOCKERY) --case underscore --dir internal/database     --name Plugin       --output mocks/databasemocks    --outpkg databasemocks
+		$(MOCKERY) --case underscore --dir internal/database     --name Events       --output mocks/databasemocks    --outpkg databasemocks
 		$(MOCKERY) --case underscore --dir internal/p2pfs        --name Plugin       --output mocks/p2pfsmocks       --outpkg p2pfsmocks
 		$(MOCKERY) --case underscore --dir internal/p2pfs        --name Events       --output mocks/p2pfsmocks       --outpkg p2pfsmocks
 		$(MOCKERY) --case underscore --dir internal/batching     --name BatchManager --output mocks/batchingmocks    --outpkg batchingmocks

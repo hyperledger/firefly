@@ -46,6 +46,11 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events b
 	return r0
 }
 
+// InitConfigPrefix provides a mock function with given fields: prefix
+func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
+	_m.Called(prefix)
+}
+
 // SubmitBroadcastBatch provides a mock function with given fields: ctx, identity, batch
 func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (string, error) {
 	ret := _m.Called(ctx, identity, batch)

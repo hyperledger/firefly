@@ -24,15 +24,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
-	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/likexian/gokit/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBatchProcessor(dispatch DispatchHandler) (*persistencemocks.Plugin, *batchProcessor) {
-	mp := &persistencemocks.Plugin{}
+func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
+	mp := &databasemocks.Plugin{}
 	bp := newBatchProcessor(context.Background(), &batchProcessorConf{
 		namespace:          "ns1",
 		author:             "0x12345",
@@ -58,7 +58,7 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
@@ -106,7 +106,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
@@ -165,11 +165,11 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
 		return fmt.Errorf("pop")
 	})
 	bp.close()
-	fb := persistence.BatchQueryFactory.NewUpdate(context.Background())
+	fb := database.BatchQueryFactory.NewUpdate(context.Background())
 	bp.dispatchBatch(context.Background(), &fftypes.Batch{}, fb.S())
 }
 
@@ -178,7 +178,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update persistence.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
@@ -207,7 +207,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	// Close to unblock
 	bp.close()
 
-	// Wait for the persistence loop to terminate
+	// Wait for the database loop to terminate
 	<-bp.batchSealed
 
 }

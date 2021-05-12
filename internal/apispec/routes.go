@@ -16,7 +16,7 @@ package apispec
 
 import (
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 // Route defines each API operation on the REST API of Firefly
@@ -33,7 +33,7 @@ type Route struct {
 	// QueryParams is a list of documented query parameters
 	QueryParams []QueryParam
 	// FilterFactory is a reference to a filter object that defines the search param on resource collection interfaces
-	FilterFactory persistence.QueryFactory
+	FilterFactory database.QueryFactory
 	// Method is the HTTP method
 	Method string
 	// Description is a message key to a translatable descripiton of the operation

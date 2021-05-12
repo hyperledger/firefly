@@ -24,7 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -35,13 +35,13 @@ const (
 	msgBatchOffsetName         = "ff-msgbatch"
 )
 
-func NewBatchManager(ctx context.Context, persistence persistence.Plugin) (BatchManager, error) {
-	if persistence == nil {
+func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManager, error) {
+	if database == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &batchManager{
 		ctx:         ctx,
-		persistence: persistence,
+		database: database,
 		dispatchers: make(map[fftypes.MessageType]*dispatcher),
 		newMessages: make(chan *uuid.UUID, readPageSize),
 		retry: &retry.Retry{
@@ -62,7 +62,7 @@ type BatchManager interface {
 
 type batchManager struct {
 	ctx         context.Context
-	persistence persistence.Plugin
+	database database.Plugin
 	dispatchers map[fftypes.MessageType]*dispatcher
 	newMessages chan *uuid.UUID
 	retry       *retry.Retry
@@ -70,7 +70,7 @@ type batchManager struct {
 	closed      bool
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch, persistence.Update) error
+type DispatchHandler func(context.Context, *fftypes.Batch, database.Update) error
 
 type BatchOptions struct {
 	BatchMaxSize   uint
@@ -106,7 +106,7 @@ func (bm *batchManager) NewMessages() chan<- *uuid.UUID {
 }
 
 func (bm *batchManager) restoreOffset() error {
-	offset, err := bm.persistence.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
+	offset, err := bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 				BatchOptions:       dispatcher.batchOptions,
 				namespace:          namespace,
 				author:             author,
-				persitence:         bm.persistence,
+				persitence:         bm.database,
 				dispatch:           dispatcher.handler,
 				processorQuiescing: func() { bm.removeProcessor(dispatcher, key) },
 			},
@@ -175,7 +175,7 @@ func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Me
 		if dataRef.ID == nil {
 			continue
 		}
-		d, err := bm.persistence.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
+		d, err := bm.database.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -197,8 +197,8 @@ func (bm *batchManager) messageSequencer() {
 
 	for !bm.closed {
 		// Read messages from the DB
-		fb := persistence.MessageQueryFactory.NewFilter(bm.ctx, readPageSize)
-		msgs, err := bm.persistence.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(readPageSize))
+		fb := database.MessageQueryFactory.NewFilter(bm.ctx, readPageSize)
+		msgs, err := bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(readPageSize))
 		if err != nil {
 			l.Errorf("Failed to retrieve messages: %s", err)
 			return
@@ -262,8 +262,8 @@ func (bm *batchManager) messageSequencer() {
 func (bm *batchManager) updateMessage(ctx context.Context, msg *fftypes.Message, batchID *uuid.UUID) (err error) {
 	l := log.L(ctx)
 	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		u := persistence.MessageQueryFactory.NewUpdate(ctx).Set("tx.batchid", batchID)
-		err = bm.persistence.UpdateMessage(ctx, msg.Header.ID, u)
+		u := database.MessageQueryFactory.NewUpdate(ctx).Set("tx.batchid", batchID)
+		err = bm.database.UpdateMessage(ctx, msg.Header.ID, u)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			return !bm.closed, err
@@ -282,7 +282,7 @@ func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, ne
 			Name:      msgBatchOffsetName,
 			Current:   bm.offset,
 		}
-		err = bm.persistence.UpsertOffset(bm.ctx, offset)
+		err = bm.database.UpsertOffset(bm.ctx, offset)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			stillRetrying := infiniteRetry || (attempt <= startupOffsetRetryAttempts)

@@ -32,7 +32,8 @@ var utConfPrefix = config.NewPluginConfig("ipfs_unit_tests")
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	i := &IPFS{}
+	i.InitConfigPrefix(utConfPrefix)
 }
 
 func TestInitMissingURL(t *testing.T) {

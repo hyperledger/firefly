@@ -23,7 +23,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 func getValues(values url.Values, key string) (results []string) {
@@ -36,7 +36,7 @@ func getValues(values url.Values, key string) (results []string) {
 	return results
 }
 
-func buildFilter(req *http.Request, ff persistence.QueryFactory) persistence.AndFilter {
+func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
 	fb := ff.NewFilter(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
@@ -50,7 +50,7 @@ func buildFilter(req *http.Request, ff persistence.QueryFactory) persistence.And
 			filter.Condition(getCondition(fb, field, values[0]))
 		} else if len(values) > 0 {
 			sort.Strings(values)
-			fs := make([]persistence.Filter, len(values))
+			fs := make([]database.Filter, len(values))
 			for i, value := range values {
 				fs[i] = getCondition(fb, field, value)
 			}
@@ -84,7 +84,7 @@ func buildFilter(req *http.Request, ff persistence.QueryFactory) persistence.And
 	return filter
 }
 
-func getCondition(fb persistence.FilterBuilder, field, value string) persistence.Filter {
+func getCondition(fb database.FilterBuilder, field, value string) database.Filter {
 	if strings.HasPrefix(value, ">=") {
 		return fb.Gte(field, value[2:])
 	} else if strings.HasPrefix(value, "<=") {

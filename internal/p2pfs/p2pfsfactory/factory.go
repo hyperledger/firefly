@@ -17,16 +17,26 @@ package p2pfsfactory
 import (
 	"context"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
 	"github.com/kaleido-io/firefly/internal/p2pfs/ipfs"
 )
 
+var plugins = map[string]p2pfs.Plugin{
+	"ipfs": &ipfs.IPFS{},
+}
+
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	for name, plugin := range plugins {
+		plugin.InitConfigPrefix(prefix.SubPrefix(name))
+	}
+}
+
 func GetPlugin(ctx context.Context, pluginType string) (p2pfs.Plugin, error) {
-	switch pluginType {
-	case "ipfs":
-		return &ipfs.IPFS{}, nil
-	default:
+	plugin, ok := plugins[pluginType]
+	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownP2PFilesystemPlugin, pluginType)
 	}
+	return plugin, nil
 }

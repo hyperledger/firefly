@@ -21,7 +21,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
-	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -82,8 +82,8 @@ func TestBroadcastDataDefinitionBadValue(t *testing.T) {
 
 func TestBroadcastUpsertFail(t *testing.T) {
 	e := NewEngine().(*engine)
-	mp := &persistencemocks.Plugin{}
-	e.persistence = mp
+	mp := &databasemocks.Plugin{}
+	e.database = mp
 
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -101,9 +101,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 func TestBroadcastBroadcastFail(t *testing.T) {
 	e := NewEngine().(*engine)
 	e.nodeIdentity = "0x12345"
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mb := &broadcastmocks.Broadcast{}
-	e.persistence = mp
+	e.database = mp
 	e.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
@@ -123,9 +123,9 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 func TestBroadcastOk(t *testing.T) {
 	e := NewEngine().(*engine)
 	e.nodeIdentity = "0x12345"
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mb := &broadcastmocks.Broadcast{}
-	e.persistence = mp
+	e.database = mp
 	e.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)

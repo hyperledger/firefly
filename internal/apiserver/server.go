@@ -35,7 +35,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -173,7 +173,7 @@ func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
 		for _, qp := range route.PathParams {
 			queryParams[qp.Name] = req.Form.Get(qp.Name)
 		}
-		var filter persistence.AndFilter
+		var filter database.AndFilter
 		if route.FilterFactory != nil {
 			filter = buildFilter(req, route.FilterFactory)
 		}
