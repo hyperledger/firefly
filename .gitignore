@@ -8,3 +8,4 @@ utils/kat-client/node_modules
 **/*.jar
 firefly
 coverage.txt
+**/debug.test

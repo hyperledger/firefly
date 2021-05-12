@@ -10,6 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.61.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-resty/resty/v2 v2.6.0
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golangci/golangci-lint v1.40.0 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
