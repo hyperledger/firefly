@@ -199,7 +199,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 
 		if sub == nil {
 			newSub := subscription{
-				Name:        e.topic,
+				Name:        eventType,
 				Description: subDesc,
 				StreamID:    streamID,
 				Stream:      e.initInfo.stream.ID,
