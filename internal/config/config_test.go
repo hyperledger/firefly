@@ -79,3 +79,7 @@ func TestPluginConfigArrayInit(t *testing.T) {
 	pic.AddKnownKey("config", "val1", "val2", "val3")
 	assert.Equal(t, []string{"val1", "val2", "val3"}, pic.GetStringSlice("config"))
 }
+
+func TestGetKnownKeys(t *testing.T) {
+	assert.NotEmpty(t, GetKnownKeys())
+}

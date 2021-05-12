@@ -40,7 +40,24 @@ var rootCmd = &cobra.Command{
 and let Firefly take care of the REST. The event-driven programming model gives you the
 building blocks needed for high performance, scalable multi-party systems, and the power
 to digital transformation your business ecosystem.`,
-	Run: func(cmd *cobra.Command, args []string) {},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return run()
+	},
+}
+
+var showConfigCommand = &cobra.Command{
+	Use:     "showconfig",
+	Aliases: []string{"showconf"},
+	Short:   "List out the configuration options",
+	Run: func(cmd *cobra.Command, args []string) {
+		// Initialize config of all plugins
+		getEngine()
+
+		// Print it all out
+		for _, k := range config.GetKnownKeys() {
+			fmt.Printf("%s\n", k)
+		}
+	},
 }
 
 var cfgFile string
@@ -49,6 +66,7 @@ var _utEngine engine.Engine
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
+	rootCmd.AddCommand(showConfigCommand)
 }
 
 func getEngine() engine.Engine {
@@ -60,11 +78,7 @@ func getEngine() engine.Engine {
 
 // Execute is called by the main method of the package
 func Execute() error {
-	err := rootCmd.Execute()
-	if err == nil {
-		err = run()
-	}
-	return err
+	return rootCmd.Execute()
 }
 
 func run() error {

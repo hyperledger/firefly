@@ -15,7 +15,7 @@
 package i18n
 
 var (
-	MsgConfigFailed               = ffm("FF10101", "Failed to read config: %s")
+	MsgConfigFailed               = ffm("FF10101", "Failed to read config")
 	MsgTBD                        = ffm("FF10102", "TODO: Description")
 	MsgJSONDecodeFailed           = ffm("FF10103", "Failed to decode input JSON")
 	MsgAPIServerStartFailed       = ffm("FF10104", "Unable to start listener on %s: %s")

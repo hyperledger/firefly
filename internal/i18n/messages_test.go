@@ -25,15 +25,15 @@ import (
 func TestExpand(t *testing.T) {
 	lang := language.Make("en")
 	ctx := WithLang(context.Background(), lang)
-	str := Expand(ctx, MsgConfigFailed, "myinsert")
-	assert.Equal(t, "Failed to read config: myinsert", str)
+	str := Expand(ctx, MsgWebsocketClientError, "myinsert")
+	assert.Equal(t, "Error received from WebSocket client: myinsert", str)
 }
 
 func TestExpandWithCode(t *testing.T) {
 	lang := language.Make("en")
 	ctx := WithLang(context.Background(), lang)
-	str := ExpandWithCode(ctx, MsgConfigFailed, "myinsert")
-	assert.Equal(t, "FF10101: Failed to read config: myinsert", str)
+	str := ExpandWithCode(ctx, MsgWebsocketClientError, "myinsert")
+	assert.Equal(t, "FF10108: Error received from WebSocket client: myinsert", str)
 }
 
 func TestGetStatusHint(t *testing.T) {

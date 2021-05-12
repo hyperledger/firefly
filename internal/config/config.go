@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -143,6 +144,15 @@ var root *configPrefix = &configPrefix{
 func ark(k string) RootKey {
 	root.AddKnownKey(k)
 	return RootKey(k)
+}
+
+func GetKnownKeys() []string {
+	var keys []string
+	for k := range root.keys {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
