@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -25,50 +26,62 @@ import (
 	"github.com/spf13/viper"
 )
 
-type PluginConfig interface {
+// The following keys can be access from the root configuration.
+// Plugins are resonsible for defining their own keys using the Config interface
+var (
+	Lang                       RootKey = ark("lang")
+	LogLevel                   RootKey = ark("log.level")
+	LogColor                   RootKey = ark("log.color")
+	DebugPort                  RootKey = ark("debug.port")
+	HttpAddress                RootKey = ark("http.address")
+	HttpPort                   RootKey = ark("http.port")
+	HttpReadTimeout            RootKey = ark("http.readTimeout")
+	HttpWriteTimeout           RootKey = ark("http.writeTimeout")
+	HttpTLSEnabled             RootKey = ark("http.tls.enabled")
+	HttpTLSClientAuth          RootKey = ark("http.tls.clientAuth")
+	HttpTLSCAFile              RootKey = ark("http.tls.caFile")
+	HttpTLSCertFile            RootKey = ark("http.tls.certFile")
+	HttpTLSKeyFile             RootKey = ark("http.tls.keyFile")
+	CorsEnabled                RootKey = ark("cors.enabled")
+	CorsAllowedOrigins         RootKey = ark("cors.origins")
+	CorsAllowedMethods         RootKey = ark("cors.methods")
+	CorsAllowedHeaders         RootKey = ark("cors.headers")
+	CorsAllowCredentials       RootKey = ark("cors.credentials")
+	CorsMaxAge                 RootKey = ark("cors.maxAge")
+	CorsDebug                  RootKey = ark("cors.debug")
+	NodeIdentity               RootKey = ark("node.identity")
+	APIRequestTimeout          RootKey = ark("api.requestTimeout")
+	APIDefaultFilterLimit      RootKey = ark("api.defaultFilterLimit")
+	Database                   RootKey = ark("database")
+	DatabaseType               RootKey = ark("database.type")
+	BlockchainType             RootKey = ark("blockchain.type")
+	Blockchain                 RootKey = ark("blockchain")
+	P2PFSType                  RootKey = ark("p2pfs.type")
+	P2PFS                      RootKey = ark("p2pfs")
+	BroadcastBatchSize         RootKey = ark("broadcast.batch.size")
+	BroadcastBatchTimeout      RootKey = ark("broadcast.batch.timeout")
+	BroadcastBatchAgentTimeout RootKey = ark("broadcast.batch.agentTimeout")
+)
+
+// Config interface defines typed methods to access configuration, as well as
+// allowing plugins to define their own sub-configuration structures
+type Config interface {
+	AddKey(key string, defValue ...interface{})
+	Set(key string, value interface{})
+	SubKey(suffix string) Config
+
 	GetString(key string) string
 	GetBool(key string) bool
 	GetInt(key string) int
-	SetDefault(key string, value interface{})
+	GetUint(key string) uint
+	GetStringSlice(key string) []string
+	GetStringMap(key string) map[string]interface{}
+	UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error
+	Get(key string) interface{}
 }
 
 // Key are the known configuration keys
-type Key string
-
-const (
-	Lang                       Key = "lang"
-	LogLevel                   Key = "log.level"
-	LogColor                   Key = "log.color"
-	DebugPort                  Key = "debug.port"
-	HttpAddress                Key = "http.address"
-	HttpPort                   Key = "http.port"
-	HttpReadTimeout            Key = "http.readTimeout"
-	HttpWriteTimeout           Key = "http.writeTimeout"
-	HttpTLSEnabled             Key = "http.tls.enabled"
-	HttpTLSClientAuth          Key = "http.tls.clientAuth"
-	HttpTLSCAFile              Key = "http.tls.caFile"
-	HttpTLSCertFile            Key = "http.tls.certFile"
-	HttpTLSKeyFile             Key = "http.tls.keyFile"
-	CorsEnabled                Key = "cors.enabled"
-	CorsAllowedOrigins         Key = "cors.origins"
-	CorsAllowedMethods         Key = "cors.methods"
-	CorsAllowedHeaders         Key = "cors.headers"
-	CorsAllowCredentials       Key = "cors.credentials"
-	CorsMaxAge                 Key = "cors.maxAge"
-	CorsDebug                  Key = "cors.debug"
-	NodeIdentity               Key = "node.identity"
-	APIRequestTimeout          Key = "api.requestTimeout"
-	APIDefaultFilterLimit      Key = "api.defaultFilterLimit"
-	Database                   Key = "database"
-	DatabaseType               Key = "database.type"
-	BlockchainType             Key = "blockchain.type"
-	Blockchain                 Key = "blockchain"
-	P2PFSType                  Key = "p2pfs.type"
-	P2PFS                      Key = "p2pfs"
-	BroadcastBatchSize         Key = "broadcast.batch.size"
-	BroadcastBatchTimeout      Key = "broadcast.batch.timeout"
-	BroadcastBatchAgentTimeout Key = "broadcast.batch.agentTimeout"
-)
+type RootKey string
 
 func Reset() {
 	viper.Reset()
@@ -122,42 +135,129 @@ func ReadConfig(cfgFile string) error {
 	}
 }
 
+var root Config = &configWithPrefix{
+	keys: map[string]bool{},
+}
+
+// ark adds a root key, used to define the keys that are used within the core
+func ark(k string) RootKey {
+	root.AddKey(k)
+	return RootKey(k)
+}
+
+// configWithPrefix is the main config structure passed to plugins, and used for root to wrap viper
+type configWithPrefix struct {
+	prefix string
+	keys   map[string]bool
+}
+
+// NewPluginConfig creates a new plugin configuration object, at the specified prefix
+func NewPluginConfig(prefix string) Config {
+	if !strings.HasSuffix(prefix, ".") {
+		prefix = prefix + "."
+	}
+	return &configWithPrefix{
+		prefix: prefix,
+		keys:   make(map[string]bool),
+	}
+}
+
+func (c *configWithPrefix) prefixKey(k string) string {
+	if !c.keys[k] {
+		panic(fmt.Sprintf("Undefined configuration key '%s'", k))
+	}
+	return c.prefix + k
+}
+
+func (c *configWithPrefix) SubKey(suffix string) Config {
+	return &configWithPrefix{
+		prefix: c.prefix + "." + suffix,
+		keys:   make(map[string]bool),
+	}
+}
+
+func (c *configWithPrefix) AddKey(k string, defValue ...interface{}) {
+	if len(defValue) == 1 {
+		viper.SetDefault(c.prefix+k, defValue[0])
+	} else if len(defValue) > 0 {
+		viper.SetDefault(c.prefix+k, defValue)
+	}
+	c.keys[k] = true
+}
+
 // GetString gets a configuration string
-func GetString(key Key) string {
-	return viper.GetString(string(key))
+func GetString(key RootKey) string {
+	return root.GetString(string(key))
+}
+func (c *configWithPrefix) GetString(key string) string {
+	return viper.GetString(c.prefixKey(key))
 }
 
 // GetStringSlice gets a configuration string array
-func GetStringSlice(key Key) []string {
-	return viper.GetStringSlice(string(key))
+func GetStringSlice(key RootKey) []string {
+	return root.GetStringSlice(string(key))
+}
+func (c *configWithPrefix) GetStringSlice(key string) []string {
+	return viper.GetStringSlice(c.prefixKey(key))
 }
 
 // GetBool gets a configuration bool
-func GetBool(key Key) bool {
-	return viper.GetBool(string(key))
+func GetBool(key RootKey) bool {
+	return root.GetBool(string(key))
+}
+func (c *configWithPrefix) GetBool(key string) bool {
+	return viper.GetBool(c.prefixKey(key))
 }
 
 // GetUInt gets a configuration uint
-func GetUint(key Key) uint {
-	return viper.GetUint(string(key))
+func GetUint(key RootKey) uint {
+	return root.GetUint(string(key))
+}
+func (c *configWithPrefix) GetUint(key string) uint {
+	return viper.GetUint(c.prefixKey(key))
 }
 
 // GetInt gets a configuration uint
-func GetInt(key Key) int {
-	return viper.GetInt(string(key))
+func GetInt(key RootKey) int {
+	return root.GetInt(string(key))
+}
+func (c *configWithPrefix) GetInt(key string) int {
+	return viper.GetInt(c.prefixKey(key))
+}
+
+// GetStringMap gets a configuration map
+func GetStringMap(key RootKey) map[string]interface{} {
+	return root.GetStringMap(string(key))
+}
+func (c *configWithPrefix) GetStringMap(key string) map[string]interface{} {
+	return viper.GetStringMap(c.prefixKey(key))
+}
+
+// Get gets a configuration in raw form
+func Get(key RootKey) interface{} {
+	return root.Get(string(key))
+}
+func (c *configWithPrefix) Get(key string) interface{} {
+	return viper.Get(c.prefixKey(key))
 }
 
 // Set allows runtime setting of config (used in unit tests)
-func Set(key Key, value interface{}) {
-	viper.Set(string(key), value)
+func Set(key RootKey, value interface{}) {
+	root.Set(string(key), value)
+}
+func (c *configWithPrefix) Set(key string, value interface{}) {
+	viper.Set(c.prefixKey(key), value)
 }
 
 // Unmarshal gets a configuration section into a struct
-func UnmarshalKey(ctx context.Context, key Key, rawVal interface{}) error {
+func UnmarshalKey(ctx context.Context, key RootKey, rawVal interface{}) error {
+	return root.UnmarshalKey(ctx, string(key), rawVal)
+}
+func (c *configWithPrefix) UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error {
 	// Viper's unmarshal does not work with our json annotated config
 	// structures, so we have to go from map to JSON, then to unmarshal
 	var intermediate map[string]interface{}
-	err := viper.UnmarshalKey(string(key), &intermediate)
+	err := viper.UnmarshalKey(c.prefixKey(key), &intermediate)
 	if err == nil {
 		b, _ := json.Marshal(intermediate)
 		err = json.Unmarshal(b, rawVal)
@@ -166,32 +266,4 @@ func UnmarshalKey(ctx context.Context, key Key, rawVal interface{}) error {
 		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed, key)
 	}
 	return nil
-}
-
-// UintWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
-func UintWithDefault(val *uint, def uint) uint {
-	if val == nil {
-		return def
-	}
-	return *val
-}
-
-// BoolWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
-func BoolWithDefault(val *bool, def bool) bool {
-	if val == nil {
-		return def
-	}
-	return *val
-}
-
-// StringWithDefault is a helper for addressing optional fields with a default in unmarshalled JSON structs
-func StringWithDefault(val *string, def string) string {
-	if val == nil {
-		return def
-	}
-	return *val
-}
-
-func GetConfig() PluginConfig {
-	return viper.GetViper()
 }

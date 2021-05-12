@@ -19,31 +19,19 @@ import (
 )
 
 const (
-	prefix              = "database"
-	URL                 = "url"
-	AutoMigrate         = "autoMigrate"
-	MigrationsDirectory = "migrationsDirectory"
+	defaultMigrationsDirectory = "./db/migrations/postgres"
 )
 
-var defaults = map[string]interface{}{
-	AutoMigrate:         false,
-	MigrationsDirectory: "./db/migrations/postgres",
-}
+const (
+	PSQLConfDatabase            = "database"
+	PSQLConfURL                 = "url"
+	PSQLConfMigrationsAuto      = "migrations.auto"
+	PSQLConfMigrationsDirectory = "migrations.directory"
+)
 
-type Config struct {
-	URL                 string
-	AutoMigrate         bool
-	MigrationsDirectory string
-}
-
-func NewConfig(config config.PluginConfig) *Config {
-	for k, v := range defaults {
-		config.SetDefault(prefix+"."+k, v)
-	}
-
-	return &Config{
-		URL:                 config.GetString(prefix + "." + URL),
-		AutoMigrate:         config.GetBool(prefix + "." + AutoMigrate),
-		MigrationsDirectory: config.GetString(prefix + "." + MigrationsDirectory),
-	}
+func AddPSQLConfig(conf config.Config) {
+	conf.AddKey(PSQLConfDatabase)
+	conf.AddKey(PSQLConfURL)
+	conf.AddKey(PSQLConfMigrationsAuto)
+	conf.AddKey(PSQLConfMigrationsDirectory, defaultMigrationsDirectory)
 }

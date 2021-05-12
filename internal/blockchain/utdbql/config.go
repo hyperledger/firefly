@@ -14,6 +14,13 @@
 
 package utdbql
 
-type Config struct {
-	URL string `json:"url"`
+import "github.com/kaleido-io/firefly/internal/config"
+
+const (
+	UTDBQLConfURL = "url"
+)
+
+// AddEthconnectConfig extends config already initialized with ffresty.AddHTTPConfig()
+func AddUTDBQLConf(conf config.Config) {
+	conf.AddKey(UTDBQLConfURL)
 }

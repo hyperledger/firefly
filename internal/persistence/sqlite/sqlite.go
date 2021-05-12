@@ -35,7 +35,9 @@ type SQLite struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *SQLite) Init(ctx context.Context, config config.PluginConfig, events persistence.Events) error {
+func (e *SQLite) Init(ctx context.Context, conf config.Config, events persistence.Events) error {
+	AddSQLiteConfig(conf)
+
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
@@ -49,5 +51,3 @@ func (e *SQLite) Init(ctx context.Context, config config.PluginConfig, events pe
 
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
 }
-
-func (e *SQLite) ConfigInterface() interface{} { return &Config{} }

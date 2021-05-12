@@ -51,21 +51,22 @@ func TestSpecificConfigFileFail(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSet(t *testing.T) {
-	Set("any.key", "any.value")
-	assert.Equal(t, GetString("any.key"), "any.value")
+func TestAttemptToAccessRandomKey(t *testing.T) {
+	assert.Panics(t, func() {
+		GetString("any.key")
+	})
 }
 
-func TestUintWithDefault(t *testing.T) {
-	assert.Equal(t, uint(10), UintWithDefault(nil, 10))
-	var v uint = 10
-	assert.Equal(t, uint(10), UintWithDefault(&v, 99))
+func TestSetGetMap(t *testing.T) {
+	Set(BroadcastBatchSize, map[string]interface{}{"some": "map"})
+	assert.Equal(t, map[string]interface{}{"some": "map"}, GetStringMap(BroadcastBatchSize))
 }
 
-func TestBoolWithDefault(t *testing.T) {
-	assert.True(t, BoolWithDefault(nil, true))
-	var v bool = false
-	assert.False(t, BoolWithDefault(&v, true))
+func TestSetGetRawInterace(t *testing.T) {
+	type myType struct{ name string }
+	Set(BroadcastBatchSize, &myType{name: "test"})
+	v := Get(BroadcastBatchSize)
+	assert.Equal(t, myType{name: "test"}, *(v.(*myType)))
 }
 
 func TestUnmarshalKey(t *testing.T) {
@@ -83,4 +84,16 @@ func TestUnmarshalKeyFail(t *testing.T) {
 	var conf map[string]interface{}
 	err = UnmarshalKey(context.Background(), HttpPort, &conf)
 	assert.Regexp(t, "FF10101", err)
+}
+
+func TestPluginConfig(t *testing.T) {
+	pic := NewPluginConfig("my")
+	pic.AddKey("special.config", 12345)
+	assert.Equal(t, 12345, pic.GetInt("special.config"))
+}
+
+func TestPluginConfigArrayInit(t *testing.T) {
+	pic := NewPluginConfig("my").SubKey("special")
+	pic.AddKey("config", "val1", "val2", "val3")
+	assert.Equal(t, []string{"val1", "val2", "val3"}, pic.GetStringSlice("config"))
 }

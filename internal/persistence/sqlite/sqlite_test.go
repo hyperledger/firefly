@@ -15,15 +15,3 @@
 // +build cgo
 
 package sqlite
-
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestConfigInterfaceCorrect(t *testing.T) {
-	e := &SQLite{}
-	_, ok := e.ConfigInterface().(*Config)
-	assert.True(t, ok)
-}

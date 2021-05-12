@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/p2pfsmocks"
@@ -29,20 +30,22 @@ import (
 
 func TestInitMissingURL(t *testing.T) {
 	i := &IPFS{}
-	err := i.Init(context.Background(), &Config{}, &p2pfsmocks.Events{})
-	assert.Regexp(t, "FF10138", err.Error())
-}
 
-func TestConfigInterfaceCorrect(t *testing.T) {
-	i := &IPFS{}
-	_, ok := i.ConfigInterface().(*Config)
-	assert.True(t, ok)
+	conf := config.NewPluginConfig("ipfs_unit_test")
+	defer config.Reset()
+
+	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
+	assert.Regexp(t, "FF10138", err.Error())
 }
 
 func TestInit(t *testing.T) {
 	i := &IPFS{}
-	conf := i.ConfigInterface().(*Config)
-	conf.URL = "http://localhost:2345"
+
+	conf := config.NewPluginConfig("ipfs_unit_test")
+	AddIPFSConfig(conf)
+	conf.Set(ffresty.HTTPConfigURL, "http://localhost:2345")
+	defer config.Reset()
+
 	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
@@ -79,12 +82,13 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	err := i.Init(context.Background(), &Config{
-		HTTPConfig: ffresty.HTTPConfig{
-			URL:        "http://localhost:12345",
-			HttpClient: mockedClient,
-		},
-	}, &p2pfsmocks.Events{})
+	conf := config.NewPluginConfig("ipfs_unit_test")
+	AddIPFSConfig(conf)
+	conf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	conf.Set(ffresty.HTTPCustomClient, mockedClient)
+	defer config.Reset()
+
+	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -106,12 +110,13 @@ func TestIPFSUploadFail(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	err := i.Init(context.Background(), &Config{
-		HTTPConfig: ffresty.HTTPConfig{
-			URL:        "http://localhost:12345",
-			HttpClient: mockedClient,
-		},
-	}, &p2pfsmocks.Events{})
+	conf := config.NewPluginConfig("ipfs_unit_test")
+	AddIPFSConfig(conf)
+	conf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	conf.Set(ffresty.HTTPCustomClient, mockedClient)
+	defer config.Reset()
+
+	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",

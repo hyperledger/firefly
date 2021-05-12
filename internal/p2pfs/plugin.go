@@ -18,18 +18,16 @@ import (
 	"context"
 	"io"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 )
 
 // Plugin is the interface implemented by each P2P Filesystem plugin
 type Plugin interface {
 
-	// ConfigInterface returns the structure into which to marshal the plugin config
-	ConfigInterface() interface{}
-
 	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config interface{}, events Events) error
+	Init(ctx context.Context, config config.Config, events Events) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
