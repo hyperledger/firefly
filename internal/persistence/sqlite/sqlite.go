@@ -35,8 +35,8 @@ type SQLite struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *SQLite) Init(ctx context.Context, conf config.Config, events persistence.Events) error {
-	AddSQLiteConfig(conf)
+func (e *SQLite) Init(ctx context.Context, prefix config.ConfigPrefix, events persistence.Events) error {
+	InitConfigPrefix(prefix)
 
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{

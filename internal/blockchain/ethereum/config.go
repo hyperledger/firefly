@@ -16,7 +16,6 @@ package ethereum
 
 import (
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/wsclient"
 )
 
@@ -35,17 +34,12 @@ const (
 	EthconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 )
 
-// AddEthconnectConfig extends config already initialized with ffresty.AddHTTPConfig()
-func AddEthconnectConfig(conf config.Config) config.Config {
-	ethconnectConf := conf.SubKey(EthconnectConfigKey)
-	ffresty.AddHTTPConfig(ethconnectConf)
-	wsclient.AddWSConfig(ethconnectConf)
-
-	ethconnectConf.AddKey(EthconnectConfigInstancePath)
-	ethconnectConf.AddKey(EthconnectConfigTopic)
-	ethconnectConf.AddKey(EthconnectConfigSkipEventstreamInit)
-	ethconnectConf.AddKey(EthconnectConfigBatchSize, defaultBatchSize)
-	ethconnectConf.AddKey(EthconnectConfigBatchTimeoutMS, defaultBatchTimeout)
-
-	return ethconnectConf
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
+	wsclient.InitConfigPrefix(ethconnectConf)
+	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
+	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
+	ethconnectConf.AddKnownKey(EthconnectConfigSkipEventstreamInit)
+	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
+	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeoutMS, defaultBatchTimeout)
 }

@@ -37,15 +37,15 @@ const (
 	HTTPCustomClient = "customClient"
 )
 
-func AddHTTPConfig(conf config.Config) {
-	conf.AddKey(HTTPConfigURL)
-	conf.AddKey(HTTPConfigHeaders)
-	conf.AddKey(HTTPConfigAuthUsername)
-	conf.AddKey(HTTPConfigAuthPassword)
-	conf.AddKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
-	conf.AddKey(HTTPConfigRetryCount, defaultRetryCount)
-	conf.AddKey(HTTPConfigRetryWaitTimeMS, defaultRetryWaitTimeMillis)
-	conf.AddKey(HTTPConfigRetryMaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	prefix.AddKnownKey(HTTPConfigURL)
+	prefix.AddKnownKey(HTTPConfigHeaders)
+	prefix.AddKnownKey(HTTPConfigAuthUsername)
+	prefix.AddKnownKey(HTTPConfigAuthPassword)
+	prefix.AddKnownKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
+	prefix.AddKnownKey(HTTPConfigRetryCount, defaultRetryCount)
+	prefix.AddKnownKey(HTTPConfigRetryWaitTimeMS, defaultRetryWaitTimeMillis)
+	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
 
-	conf.AddKey(HTTPCustomClient)
+	prefix.AddKnownKey(HTTPCustomClient)
 }

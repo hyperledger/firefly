@@ -313,13 +313,13 @@ func (_m *Plugin) GetTransactions(ctx context.Context, filter persistence.Filter
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, events
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Config, events persistence.Events) error {
-	ret := _m.Called(ctx, _a1, events)
+// Init provides a mock function with given fields: ctx, prefix, events
+func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events persistence.Events) error {
+	ret := _m.Called(ctx, prefix, events)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Config, persistence.Events) error); ok {
-		r0 = rf(ctx, _a1, events)
+	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, persistence.Events) error); ok {
+		r0 = rf(ctx, prefix, events)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -36,11 +36,16 @@ type retryCtx struct {
 	attempts uint
 }
 
-func New(ctx context.Context, conf config.Config) *resty.Client {
+// New creates a new Resty client, using static configuration (from the config file)
+// from a given nested prefix in the static configuration
+//
+// You can use the normal Resty builder pattern, to set per-instance configuration
+// as required.
+func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 
 	var client *resty.Client
 
-	iHttpClient := conf.Get(HTTPCustomClient)
+	iHttpClient := staticConfig.Get(HTTPCustomClient)
 	if iHttpClient != nil {
 		if httpClient, ok := iHttpClient.(*http.Client); ok {
 			client = resty.NewWithClient(httpClient)
@@ -77,27 +82,27 @@ func New(ctx context.Context, conf config.Config) *resty.Client {
 		return nil
 	})
 
-	headers := conf.GetStringMap(HTTPConfigHeaders)
+	headers := staticConfig.GetStringMap(HTTPConfigHeaders)
 	for k, v := range headers {
 		if vs, ok := v.(string); ok {
 			client.SetHeader(k, vs)
 		}
 	}
-	authUsername := conf.GetString((HTTPConfigAuthUsername))
-	authPassword := conf.GetString((HTTPConfigAuthPassword))
+	authUsername := staticConfig.GetString((HTTPConfigAuthUsername))
+	authPassword := staticConfig.GetString((HTTPConfigAuthPassword))
 	if authUsername != "" && authPassword != "" {
 		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
-	url := conf.GetString(HTTPConfigURL)
+	url := staticConfig.GetString(HTTPConfigURL)
 	if url != "" {
 		client.SetHostURL(url)
 		log.L(ctx).Debugf("Created REST client to %s", url)
 	}
 
-	if conf.GetBool(HTTPConfigRetryEnabled) {
-		retryCount := conf.GetInt(HTTPConfigRetryCount)
-		minTimeout := conf.GetUint(HTTPConfigRetryWaitTimeMS)
-		maxTimeout := conf.GetUint(HTTPConfigRetryMaxWaitTimeMS)
+	if staticConfig.GetBool(HTTPConfigRetryEnabled) {
+		retryCount := staticConfig.GetInt(HTTPConfigRetryCount)
+		minTimeout := staticConfig.GetUint(HTTPConfigRetryWaitTimeMS)
+		maxTimeout := staticConfig.GetUint(HTTPConfigRetryMaxWaitTimeMS)
 		client.
 			SetRetryCount(retryCount).
 			SetRetryWaitTime(time.Duration(minTimeout) * time.Millisecond).

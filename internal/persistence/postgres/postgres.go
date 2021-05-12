@@ -36,8 +36,8 @@ type Postgres struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *Postgres) Init(ctx context.Context, conf config.Config, events persistence.Events) error {
-	AddPSQLConfig(conf)
+func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events persistence.Events) error {
+	InitConfigPrefix(prefix)
 
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
@@ -45,13 +45,13 @@ func (e *Postgres) Init(ctx context.Context, conf config.Config, events persiste
 		SequenceField:     "seq",
 	}
 
-	db, err := sql.Open("postgres", conf.GetString(PSQLConfURL))
+	db, err := sql.Open("postgres", prefix.GetString(PSQLConfURL))
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	if conf.GetBool(PSQLConfMigrationsAuto) {
-		if err := e.applyDbMigrations(ctx, conf, db); err != nil {
+	if prefix.GetBool(PSQLConfMigrationsAuto) {
+		if err := e.applyDbMigrations(ctx, prefix, db); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
 		}
 	}
@@ -59,13 +59,13 @@ func (e *Postgres) Init(ctx context.Context, conf config.Config, events persiste
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
 }
 
-func (e *Postgres) applyDbMigrations(ctx context.Context, conf config.Config, db *sql.DB) error {
+func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.ConfigPrefix, db *sql.DB) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err
 	}
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+conf.GetString(PSQLConfMigrationsDirectory),
+		"file://"+prefix.GetString(PSQLConfMigrationsDirectory),
 		"postgres", driver)
 	if err != nil {
 		return err

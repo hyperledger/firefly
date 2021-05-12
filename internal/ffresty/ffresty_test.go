@@ -27,22 +27,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var utConfPrefix = config.NewPluginConfig("http_unit_tests")
+
+func resetConf() {
+	config.Reset()
+	InitConfigPrefix(utConfPrefix)
+}
+
 func TestRequestOK(t *testing.T) {
 
 	customClient := &http.Client{}
 
-	conf := config.NewPluginConfig("http_unit_tests")
-	AddHTTPConfig(conf)
-	conf.Set(HTTPConfigURL, "http://localhost:12345")
-	conf.Set(HTTPConfigHeaders, map[string]interface{}{
+	resetConf()
+	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigHeaders, map[string]interface{}{
 		"someheader": "headervalue",
 	})
-	conf.Set(HTTPConfigAuthUsername, "user")
-	conf.Set(HTTPConfigAuthPassword, "pass")
-	conf.Set(HTTPCustomClient, customClient)
-	defer config.Reset()
+	utConfPrefix.Set(HTTPConfigAuthUsername, "user")
+	utConfPrefix.Set(HTTPConfigAuthPassword, "pass")
+	utConfPrefix.Set(HTTPCustomClient, customClient)
 
-	c := New(context.Background(), conf)
+	c := New(context.Background(), utConfPrefix)
 	httpmock.ActivateNonDefault(customClient)
 	defer httpmock.DeactivateAndReset()
 
@@ -65,13 +70,11 @@ func TestRequestRetry(t *testing.T) {
 
 	ctx := context.Background()
 
-	conf := config.NewPluginConfig("http_unit_tests")
-	AddHTTPConfig(conf)
-	conf.Set(HTTPConfigURL, "http://localhost:12345")
-	conf.Set(HTTPConfigRetryWaitTimeMS, 1)
-	defer config.Reset()
+	resetConf()
+	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigRetryWaitTimeMS, 1)
 
-	c := New(ctx, conf)
+	c := New(ctx, utConfPrefix)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
 
@@ -92,13 +95,11 @@ func TestLongResponse(t *testing.T) {
 
 	ctx := context.Background()
 
-	conf := config.NewPluginConfig("http_unit_tests")
-	AddHTTPConfig(conf)
-	conf.Set(HTTPConfigURL, "http://localhost:12345")
-	conf.Set(HTTPConfigRetryEnabled, false)
-	defer config.Reset()
+	resetConf()
+	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigRetryEnabled, false)
 
-	c := New(ctx, conf)
+	c := New(ctx, utConfPrefix)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
 
@@ -118,13 +119,11 @@ func TestErrResponse(t *testing.T) {
 
 	ctx := context.Background()
 
-	conf := config.NewPluginConfig("http_unit_tests")
-	AddHTTPConfig(conf)
-	conf.Set(HTTPConfigURL, "http://localhost:12345")
-	conf.Set(HTTPConfigRetryEnabled, false)
-	defer config.Reset()
+	resetConf()
+	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigRetryEnabled, false)
 
-	c := New(ctx, conf)
+	c := New(ctx, utConfPrefix)
 	httpmock.ActivateNonDefault(c.GetClient())
 	defer httpmock.DeactivateAndReset()
 
