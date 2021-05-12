@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/engine"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 type APIRequest struct {
@@ -28,6 +28,6 @@ type APIRequest struct {
 	Req    *http.Request
 	QP     map[string]string
 	PP     map[string]string
-	Filter persistence.AndFilter
+	Filter database.AndFilter
 	Input  interface{}
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var getTxnById = &apispec.Route{
@@ -32,7 +32,7 @@ var getTxnById = &apispec.Route{
 		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.TransactionQueryFactory,
+	FilterFactory:   database.TransactionQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },

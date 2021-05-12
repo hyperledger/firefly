@@ -22,19 +22,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/internal/persistence"
-	"github.com/kaleido-io/firefly/mocks/persistencemocks"
+	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestE2EDispatch(t *testing.T) {
 
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
 	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch, updates persistence.Update) error {
+	handler := func(ctx context.Context, b *fftypes.Batch, updates database.Update) error {
 		waitForDispatch <- b
 		return nil
 	}
@@ -98,7 +98,7 @@ func TestInitFailNoPersistence(t *testing.T) {
 }
 
 func TestInitFailCannotRestoreOffset(t *testing.T) {
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
@@ -109,7 +109,7 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 }
 
 func TestInitFailCannotCreateOffset(t *testing.T) {
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
@@ -122,7 +122,7 @@ func TestInitFailCannotCreateOffset(t *testing.T) {
 
 func TestGetInvalidBatchTypeMsg(t *testing.T) {
 
-	mp := &persistencemocks.Plugin{}
+	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
 		Current: 12345,
 	}, nil)

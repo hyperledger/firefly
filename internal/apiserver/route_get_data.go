@@ -20,7 +20,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var getData = &apispec.Route{
@@ -31,7 +31,7 @@ var getData = &apispec.Route{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.DataQueryFactory,
+	FilterFactory:   database.DataQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },

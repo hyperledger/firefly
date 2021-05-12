@@ -62,7 +62,7 @@ func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *ffty
 	data.Hash, _ = data.Value.Hash(ctx, "value")
 
 	// Write as data to the local store
-	if err = e.persistence.UpsertData(ctx, data); err != nil {
+	if err = e.database.UpsertData(ctx, data); err != nil {
 		return nil, err
 	}
 

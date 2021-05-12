@@ -25,6 +25,9 @@ import (
 // Plugin is the interface implemented by each blockchain plugin
 type Plugin interface {
 
+	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitConfigPrefix(prefix config.ConfigPrefix)
+
 	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
 	// Returns the supported featureset of the interface
 	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error

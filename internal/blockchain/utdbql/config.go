@@ -20,6 +20,6 @@ const (
 	UTDBQLConfURL = "url"
 )
 
-func InitConfigPrefix(prefix config.ConfigPrefix) {
+func (u *UTDBQL) InitConfigPrefix(prefix config.ConfigPrefix) {
 	prefix.AddKnownKey(UTDBQLConfURL)
 }

@@ -24,7 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,7 +54,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Method:          http.MethodGet,
 			PathParams:      nil,
 			QueryParams:     nil,
-			FilterFactory:   persistence.MessageQueryFactory,
+			FilterFactory:   database.MessageQueryFactory,
 			Description:     i18n.MsgTBD,
 			JSONInputValue:  func() interface{} { return nil },
 			JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },

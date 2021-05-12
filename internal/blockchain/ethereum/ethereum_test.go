@@ -41,7 +41,8 @@ var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	e := &Ethereum{}
+	e.InitConfigPrefix(utConfPrefix)
 }
 
 func TestInitMissingURL(t *testing.T) {

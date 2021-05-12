@@ -20,16 +20,25 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
 	"github.com/kaleido-io/firefly/internal/blockchain/utdbql"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+var plugins = map[string]blockchain.Plugin{
+	"ethereum": &ethereum.Ethereum{},
+	"utdbql":   &utdbql.UTDBQL{},
+}
+
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	for name, plugin := range plugins {
+		plugin.InitConfigPrefix(prefix.SubPrefix(name))
+	}
+}
+
 func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
-	switch pluginType {
-	case "ethereum":
-		return &ethereum.Ethereum{}, nil
-	case "utdbql":
-		return &utdbql.UTDBQL{}, nil
-	default:
+	plugin, ok := plugins[pluginType]
+	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
 	}
+	return plugin, nil
 }

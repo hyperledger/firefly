@@ -56,7 +56,6 @@ type utEvent struct {
 }
 
 func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
-	InitConfigPrefix(prefix)
 
 	u.ctx = ctx
 	u.capabilities = &blockchain.Capabilities{

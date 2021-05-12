@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/persistence"
+	"github.com/kaleido-io/firefly/internal/database"
 )
 
 func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
@@ -28,7 +28,7 @@ func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetTransactionById(ctx, ns, &u)
+	return e.database.GetTransactionById(ctx, ns, &u)
 }
 
 func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
@@ -36,7 +36,7 @@ func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Me
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetMessageById(ctx, ns, &u)
+	return e.database.GetMessageById(ctx, ns, &u)
 }
 
 func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -44,7 +44,7 @@ func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batc
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetBatchById(ctx, ns, &u)
+	return e.database.GetBatchById(ctx, ns, &u)
 }
 
 func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
@@ -52,7 +52,7 @@ func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data,
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetDataById(ctx, ns, &u)
+	return e.database.GetDataById(ctx, ns, &u)
 }
 
 func (e *engine) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
@@ -60,34 +60,34 @@ func (e *engine) GetDataDefinitionById(ctx context.Context, ns, id string) (*fft
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.persistence.GetDataDefinitionById(ctx, ns, &u)
+	return e.database.GetDataDefinitionById(ctx, ns, &u)
 }
 
-func (e *engine) scopeNS(ns string, filter persistence.AndFilter) persistence.AndFilter {
+func (e *engine) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (e *engine) GetTransactions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Transaction, error) {
+func (e *engine) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetTransactions(ctx, filter)
+	return e.database.GetTransactions(ctx, filter)
 }
 
-func (e *engine) GetMessages(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Message, error) {
+func (e *engine) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetMessages(ctx, filter)
+	return e.database.GetMessages(ctx, filter)
 }
 
-func (e *engine) GetBatches(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Batch, error) {
+func (e *engine) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetBatches(ctx, filter)
+	return e.database.GetBatches(ctx, filter)
 }
 
-func (e *engine) GetData(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Data, error) {
+func (e *engine) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetData(ctx, filter)
+	return e.database.GetData(ctx, filter)
 }
 
-func (e *engine) GetDataDefinitions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.DataDefinition, error) {
+func (e *engine) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
 	filter = e.scopeNS(ns, filter)
-	return e.persistence.GetDataDefinitions(ctx, filter)
+	return e.database.GetDataDefinitions(ctx, filter)
 }
