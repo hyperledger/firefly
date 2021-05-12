@@ -32,15 +32,27 @@ func TestGetEngine(t *testing.T) {
 
 func TestExecMissingConfig(t *testing.T) {
 	_utEngine = &enginemocks.Engine{}
+	defer func() { _utEngine = nil }()
 	viper.Reset()
 	err := Execute()
 	assert.Regexp(t, "Not Found", err.Error())
+}
+
+func TestShowConfig(t *testing.T) {
+	_utEngine = &enginemocks.Engine{}
+	defer func() { _utEngine = nil }()
+	viper.Reset()
+	rootCmd.SetArgs([]string{"showconf"})
+	defer rootCmd.SetArgs([]string{})
+	err := rootCmd.Execute()
+	assert.NoError(t, err)
 }
 
 func TestExecEngineInitFail(t *testing.T) {
 	me := &enginemocks.Engine{}
 	me.On("Init", mock.Anything).Return(fmt.Errorf("splutter"))
 	_utEngine = me
+	defer func() { _utEngine = nil }()
 	os.Chdir("../test/config")
 	err := Execute()
 	assert.Regexp(t, "splutter", err.Error())
@@ -51,6 +63,7 @@ func TestExecEngineStartFail(t *testing.T) {
 	me.On("Init", mock.Anything).Return(nil)
 	me.On("Start").Return(fmt.Errorf("bang"))
 	_utEngine = me
+	defer func() { _utEngine = nil }()
 	os.Chdir("../test/config")
 	err := Execute()
 	assert.Regexp(t, "bang", err.Error())
@@ -61,6 +74,7 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	me.On("Init", mock.Anything).Return(nil)
 	me.On("Start").Return(nil)
 	_utEngine = me
+	defer func() { _utEngine = nil }()
 
 	os.Chdir("../test/config")
 	go func() {
