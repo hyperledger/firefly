@@ -32,19 +32,19 @@ type QL struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *QL) Init(ctx context.Context, config config.PluginConfig, events persistence.Events) error {
+func (e *QL) Init(ctx context.Context, conf config.Config, events persistence.Events) error {
+	AddQLConfig(conf)
+
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
 		SequenceField:     "id()",
 	}
 
-	db, err := sql.Open("ql", config.GetString("URL"))
+	db, err := sql.Open("ql", conf.GetString(QLConfURL))
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
 }
-
-func (e *QL) ConfigInterface() interface{} { return &Config{} }

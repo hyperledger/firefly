@@ -22,6 +22,7 @@ import (
 
 	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -31,7 +32,6 @@ import (
 
 type IPFS struct {
 	ctx          context.Context
-	conf         *Config
 	capabilities *p2pfs.Capabilities
 	events       p2pfs.Events
 	client       *resty.Client
@@ -43,16 +43,15 @@ type ipfsUploadResponse struct {
 	Size json.Number `json:"Size"`
 }
 
-func (i *IPFS) ConfigInterface() interface{} { return &Config{} }
+func (i *IPFS) Init(ctx context.Context, conf config.Config, events p2pfs.Events) error {
+	AddIPFSConfig(conf)
 
-func (i *IPFS) Init(ctx context.Context, conf interface{}, events p2pfs.Events) error {
 	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
-	i.conf = conf.(*Config)
 	i.events = events
-	if i.conf.HTTPConfig.URL == "" {
+	if conf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "p2pfs")
 	}
-	i.client = ffresty.New(i.ctx, &i.conf.HTTPConfig)
+	i.client = ffresty.New(i.ctx, conf)
 	i.capabilities = &p2pfs.Capabilities{}
 	return nil
 }

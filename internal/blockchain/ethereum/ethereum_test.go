@@ -25,10 +25,10 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
 	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/wsclient"
 	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/wsmocks"
@@ -36,45 +36,35 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestConfigInterfaceCorrect(t *testing.T) {
-	e := &Ethereum{}
-	_, ok := e.ConfigInterface().(*Config)
-	assert.True(t, ok)
-}
-
 func TestInitMissingURL(t *testing.T) {
 	e := &Ethereum{}
-	err := e.Init(context.Background(), &Config{}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.Regexp(t, "FF10138.*url", err.Error())
+	defer config.Reset()
 }
 
 func TestInitMissingInstance(t *testing.T) {
 	e := &Ethereum{}
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL: "http://localhost:12345",
-				},
-			},
-			Topic: "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.Regexp(t, "FF10138.*instance", err.Error())
 }
 
 func TestInitMissingTopic(t *testing.T) {
 	e := &Ethereum{}
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL: "http://localhost:12345",
-				},
-			},
-			InstancePath: "/test/0x12345",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.Regexp(t, "FF10138.*topic", err.Error())
 }
 
@@ -105,18 +95,15 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -139,17 +126,14 @@ func TestWSConnectFail(t *testing.T) {
 	svr := httptest.NewServer(wsServer.Handler())
 	svr.Close()
 
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL: fmt.Sprintf("http://%s", svr.Listener.Addr()),
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.Regexp(t, "FF10161", err.Error())
 
 }
@@ -174,18 +158,15 @@ func TestInitAllExistingStreams(t *testing.T) {
 		},
 		))
 
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-				},
-			},
-			Topic:        "topic1",
-			InstancePath: "/instances/0x12345",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -210,22 +191,16 @@ func TestStreamQueryError(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
-	var no bool = false
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-					Retry: &ffresty.HTTPRetryConfig{
-						Enabled: &no,
-					},
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -249,22 +224,16 @@ func TestStreamCreateError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
-	var no bool = false
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-					Retry: &ffresty.HTTPRetryConfig{
-						Enabled: &no,
-					},
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -290,22 +259,16 @@ func TestSubQueryError(t *testing.T) {
 	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
-	var no bool = false
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-					Retry: &ffresty.HTTPRetryConfig{
-						Enabled: &no,
-					},
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -333,22 +296,16 @@ func TestSubQueryCreateError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
 		httpmock.NewStringResponder(500, `pop`))
 
-	var no bool = false
-	err := e.Init(context.Background(), &Config{
-		Ethconnect: EthconnectConfig{
-			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
-				HTTPConfig: ffresty.HTTPConfig{
-					URL:        fmt.Sprintf("http://%s", svr.Listener.Addr()),
-					HttpClient: mockedClient,
-					Retry: &ffresty.HTTPRetryConfig{
-						Enabled: &no,
-					},
-				},
-			},
-			InstancePath: "/instances/0x12345",
-			Topic:        "topic1",
-		},
-	}, &blockchainmocks.Events{})
+	conf := config.NewPluginConfig("eth_unit_test")
+	ethconnectConf := AddEthconnectConfig(conf)
+	ethconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	ethconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	ethconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	ethconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	ethconnectConf.Set(EthconnectConfigTopic, "topic1")
+	defer config.Reset()
+
+	err := e.Init(context.Background(), conf, &blockchainmocks.Events{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -357,13 +314,10 @@ func TestSubQueryCreateError(t *testing.T) {
 
 func newTestEthereum() *Ethereum {
 	return &Ethereum{
-		ctx:    context.Background(),
-		client: resty.New().SetHostURL("http://localhost:12345"),
-		conf: &Config{
-			Ethconnect: EthconnectConfig{
-				InstancePath: "instances/0x12345",
-			},
-		},
+		ctx:          context.Background(),
+		client:       resty.New().SetHostURL("http://localhost:12345"),
+		instancePath: "/instances/0x12345",
+		topic:        "topic1",
 	}
 }
 
@@ -579,8 +533,8 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	cancel()
 	e := &Ethereum{
 		ctx:    ctxCancelled,
+		topic:  "topic1",
 		events: em,
-		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
 		wsconn: wsm,
 	}
 	r := make(<-chan []byte)
@@ -593,8 +547,8 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:    context.Background(),
+		topic:  "topic1",
 		events: em,
-		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
 		wsconn: wsm,
 	}
 	r := make(chan []byte)
@@ -608,8 +562,8 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:    context.Background(),
+		topic:  "topic1",
 		events: em,
-		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
 		wsconn: wsm,
 	}
 	r := make(chan []byte, 1)

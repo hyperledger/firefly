@@ -28,33 +28,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/log"
 )
 
-const (
-	defaultRetryEnabled           = false
-	defaultRetryCount             = 5
-	defaultRetryWaitTimeMillis    = 100
-	defaultRetryMaxWaitTimeMillis = 1000
-)
-
-type HTTPConfig struct {
-	URL        string            `json:"url"`
-	Headers    map[string]string `json:"headers,omitempty"`
-	Retry      *HTTPRetryConfig  `json:"retry,omitempty"`
-	Auth       *HTTPAuthConfig   `json:"auth,omitempty"`
-	HttpClient *http.Client      `json:"-"` // for mocking
-}
-
-type HTTPRetryConfig struct {
-	Enabled       *bool `json:"disabled,omitempty"`
-	Count         *uint `json:"count,omitempty"`
-	WaitTimeMS    *uint `json:"waitTimeMS,omitempty"`
-	MaxWaitTimeMS *uint `json:"maxWaitTimeMS,omitempty"`
-}
-
-type HTTPAuthConfig struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-}
-
 type retryCtxKey struct{}
 
 type retryCtx struct {
@@ -63,12 +36,17 @@ type retryCtx struct {
 	attempts uint
 }
 
-func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
+func New(ctx context.Context, conf config.Config) *resty.Client {
 
 	var client *resty.Client
-	if conf.HttpClient != nil {
-		client = resty.NewWithClient(conf.HttpClient)
-	} else {
+
+	iHttpClient := conf.Get(HTTPCustomClient)
+	if iHttpClient != nil {
+		if httpClient, ok := iHttpClient.(*http.Client); ok {
+			client = resty.NewWithClient(httpClient)
+		}
+	}
+	if client == nil {
 		client = resty.New()
 	}
 
@@ -99,25 +77,27 @@ func New(ctx context.Context, conf *HTTPConfig) *resty.Client {
 		return nil
 	})
 
-	if len(conf.Headers) > 0 {
-		client.SetHeaders(conf.Headers)
+	headers := conf.GetStringMap(HTTPConfigHeaders)
+	for k, v := range headers {
+		if vs, ok := v.(string); ok {
+			client.SetHeader(k, vs)
+		}
 	}
-	if conf.Auth != nil && conf.Auth.Username != "" && conf.Auth.Password != "" {
-		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", conf.Auth.Username, conf.Auth.Password)))))
+	authUsername := conf.GetString((HTTPConfigAuthUsername))
+	authPassword := conf.GetString((HTTPConfigAuthPassword))
+	if authUsername != "" && authPassword != "" {
+		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
-	if conf.URL != "" {
-		client.SetHostURL(conf.URL)
-		log.L(ctx).Debugf("Created REST client to %s", conf.URL)
+	url := conf.GetString(HTTPConfigURL)
+	if url != "" {
+		client.SetHostURL(url)
+		log.L(ctx).Debugf("Created REST client to %s", url)
 	}
 
-	retryConf := conf.Retry
-	if retryConf == nil {
-		retryConf = &HTTPRetryConfig{}
-	}
-	if config.BoolWithDefault(retryConf.Enabled, defaultRetryEnabled) {
-		retryCount := int(config.UintWithDefault(retryConf.Count, defaultRetryCount))
-		minTimeout := config.UintWithDefault(retryConf.WaitTimeMS, defaultRetryWaitTimeMillis)
-		maxTimeout := config.UintWithDefault(retryConf.MaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
+	if conf.GetBool(HTTPConfigRetryEnabled) {
+		retryCount := conf.GetInt(HTTPConfigRetryCount)
+		minTimeout := conf.GetUint(HTTPConfigRetryWaitTimeMS)
+		maxTimeout := conf.GetUint(HTTPConfigRetryMaxWaitTimeMS)
 		client.
 			SetRetryCount(retryCount).
 			SetRetryWaitTime(time.Duration(minTimeout) * time.Millisecond).

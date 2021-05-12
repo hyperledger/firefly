@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -32,7 +33,6 @@ type UTDBQL struct {
 	ctx          context.Context
 	capabilities *blockchain.Capabilities
 	events       blockchain.Events
-	conf         *Config
 	db           *sql.DB
 	eventStream  chan *utEvent
 	closed       bool
@@ -55,18 +55,17 @@ type utEvent struct {
 	data       []byte
 }
 
-func (u *UTDBQL) ConfigInterface() interface{} { return &Config{} }
+func (u *UTDBQL) Init(ctx context.Context, conf config.Config, events blockchain.Events) (err error) {
+	AddUTDBQLConf(conf)
 
-func (u *UTDBQL) Init(ctx context.Context, conf interface{}, events blockchain.Events) (err error) {
 	u.ctx = ctx
 	u.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true, // fake for unit testing
 	}
 	u.events = events
 	u.eventStream = make(chan *utEvent, eventQueueLength)
-	u.conf = conf.(*Config)
 
-	u.db, err = sql.Open("ql", u.conf.URL)
+	u.db, err = sql.Open("ql", conf.GetString(UTDBQLConfURL))
 	var tx *sql.Tx
 	if err == nil {
 		tx, err = u.db.Begin()
