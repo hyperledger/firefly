@@ -22,6 +22,7 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/batching     --name BatchManager --output mocks/batchingmocks    --outpkg batchingmocks
 		$(MOCKERY) --case underscore --dir internal/broadcast    --name Broadcast    --output mocks/broadcastmocks   --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/engine       --name Engine       --output mocks/enginemocks      --outpkg enginemocks
+		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient     --output mocks/wsmocks          --outpkg wsmocks
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 build: ${BINARY_NAME}
