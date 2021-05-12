@@ -91,9 +91,10 @@ var requiredSubscriptions = map[string]string{
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
-func (e *Ethereum) Init(ctx context.Context, conf config.Config, events blockchain.Events) (err error) {
+func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
 
-	ethconnectConf := AddEthconnectConfig(conf)
+	InitConfigPrefix(prefix)
+	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.events = events
@@ -118,7 +119,11 @@ func (e *Ethereum) Init(ctx context.Context, conf config.Config, events blockcha
 	if ethconnectConf.GetString(wsclient.WSConfigKeyPath) == "" {
 		ethconnectConf.Set(wsclient.WSConfigKeyPath, "/ws")
 	}
-	if e.wsconn, err = wsclient.New(ctx, ethconnectConf, e.afterConnect); err != nil {
+	e.wsconn, err = wsclient.New(ctx, ethconnectConf, e.afterConnect)
+	if err == nil {
+		err = e.wsconn.Connect()
+	}
+	if err != nil {
 		return err
 	}
 
@@ -135,7 +140,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) ensureEventStreams(ethconnectConf config.Config) error {
+func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error {
 
 	var existingStreams []eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")

@@ -55,8 +55,8 @@ type utEvent struct {
 	data       []byte
 }
 
-func (u *UTDBQL) Init(ctx context.Context, conf config.Config, events blockchain.Events) (err error) {
-	AddUTDBQLConf(conf)
+func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
+	InitConfigPrefix(prefix)
 
 	u.ctx = ctx
 	u.capabilities = &blockchain.Capabilities{
@@ -65,7 +65,7 @@ func (u *UTDBQL) Init(ctx context.Context, conf config.Config, events blockchain
 	u.events = events
 	u.eventStream = make(chan *utEvent, eventQueueLength)
 
-	u.db, err = sql.Open("ql", conf.GetString(UTDBQLConfURL))
+	u.db, err = sql.Open("ql", prefix.GetString(UTDBQLConfURL))
 	var tx *sql.Tx
 	if err == nil {
 		tx, err = u.db.Begin()

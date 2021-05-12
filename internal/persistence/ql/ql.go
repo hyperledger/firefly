@@ -32,8 +32,8 @@ type QL struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *QL) Init(ctx context.Context, conf config.Config, events persistence.Events) error {
-	AddQLConfig(conf)
+func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, events persistence.Events) error {
+	InitConfigPrefix(prefix)
 
 	capabilities := &persistence.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
@@ -41,7 +41,7 @@ func (e *QL) Init(ctx context.Context, conf config.Config, events persistence.Ev
 		SequenceField:     "id()",
 	}
 
-	db, err := sql.Open("ql", conf.GetString(QLConfURL))
+	db, err := sql.Open("ql", prefix.GetString(QLConfURL))
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}

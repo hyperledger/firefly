@@ -28,25 +28,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var utConfPrefix = config.NewPluginConfig("ipfs_unit_tests")
+
+func resetConf() {
+	config.Reset()
+	InitConfigPrefix(utConfPrefix)
+}
+
 func TestInitMissingURL(t *testing.T) {
 	i := &IPFS{}
+	resetConf()
 
-	conf := config.NewPluginConfig("ipfs_unit_test")
-	defer config.Reset()
-
-	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
 func TestInit(t *testing.T) {
 	i := &IPFS{}
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:2345")
 
-	conf := config.NewPluginConfig("ipfs_unit_test")
-	AddIPFSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, "http://localhost:2345")
-	defer config.Reset()
-
-	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
 }
@@ -82,13 +84,12 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	conf := config.NewPluginConfig("ipfs_unit_test")
-	AddIPFSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	conf.Set(ffresty.HTTPCustomClient, mockedClient)
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
 	defer config.Reset()
 
-	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -110,13 +111,12 @@ func TestIPFSUploadFail(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	conf := config.NewPluginConfig("ipfs_unit_test")
-	AddIPFSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	conf.Set(ffresty.HTTPCustomClient, mockedClient)
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
 	defer config.Reset()
 
-	err := i.Init(context.Background(), conf, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",

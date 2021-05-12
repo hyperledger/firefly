@@ -29,6 +29,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var utConfPrefix = config.NewPluginConfig("ws_unit_tests")
+
+func resetConf() {
+	config.Reset()
+	InitConfigPrefix(utConfPrefix)
+}
+
 func TestWSClientE2E(t *testing.T) {
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
@@ -50,13 +57,14 @@ func TestWSClientE2E(t *testing.T) {
 		return w.Send(ctx, b)
 	}
 
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	conf.Set(WSConfigKeyPath, "/ws")
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(WSConfigKeyPath, "/ws")
 
-	wsClient, err := New(context.Background(), conf, afterConnect)
+	wsClient, err := New(context.Background(), utConfPrefix, afterConnect)
+	assert.NoError(t, err)
+
+	err = wsClient.Connect()
 	assert.NoError(t, err)
 
 	// Receive the message sent by the server
@@ -81,34 +89,28 @@ func TestWSClientE2E(t *testing.T) {
 }
 
 func TestWSClientBadURL(t *testing.T) {
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, ":::")
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, ":::")
 
-	_, err := New(context.Background(), conf, nil)
+	_, err := New(context.Background(), utConfPrefix, nil)
 	assert.Regexp(t, "FF10162", err.Error())
 }
 
 func TestHTTPToWSURLRemap(t *testing.T) {
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, "http://test:12345")
-	conf.Set(WSConfigKeyPath, "/websocket")
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://test:12345")
+	utConfPrefix.Set(WSConfigKeyPath, "/websocket")
 
-	url, err := buildWSUrl(context.Background(), conf)
+	url, err := buildWSUrl(context.Background(), utConfPrefix)
 	assert.NoError(t, err)
 	assert.Equal(t, "ws://test:12345/websocket", url)
 }
 
 func TestHTTPSToWSSURLRemap(t *testing.T) {
-	config.Reset()
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, "https://test:12345")
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "https://test:12345")
 
-	url, err := buildWSUrl(context.Background(), conf)
+	url, err := buildWSUrl(context.Background(), utConfPrefix)
 	assert.NoError(t, err)
 	assert.Equal(t, "wss://test:12345", url)
 }
@@ -124,19 +126,18 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	))
 	defer svr.Close()
 
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	conf.Set(ffresty.HTTPConfigHeaders, map[string]interface{}{
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(ffresty.HTTPConfigHeaders, map[string]interface{}{
 		"custom-header": "custom value",
 	})
-	conf.Set(ffresty.HTTPConfigAuthUsername, "user")
-	conf.Set(ffresty.HTTPConfigAuthPassword, "pass")
-	conf.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
-	conf.Set(WSConfigKeyInitialConnectAttempts, 1)
+	utConfPrefix.Set(ffresty.HTTPConfigAuthUsername, "user")
+	utConfPrefix.Set(ffresty.HTTPConfigAuthPassword, "pass")
+	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
+	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
-	_, err := New(context.Background(), conf, nil)
+	w, _ := New(context.Background(), utConfPrefix, nil)
+	err := w.Connect()
 	assert.Regexp(t, "FF10161", err.Error())
 }
 
@@ -149,14 +150,13 @@ func TestWSFailStartupConnect(t *testing.T) {
 	))
 	svr.Close()
 
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	conf.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
-	conf.Set(WSConfigKeyInitialConnectAttempts, 1)
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
+	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
-	_, err := New(context.Background(), conf, nil)
+	w, _ := New(context.Background(), utConfPrefix, nil)
+	err := w.Connect()
 	assert.Regexp(t, "FF10161", err.Error())
 }
 
@@ -166,12 +166,10 @@ func TestWSSendClosed(t *testing.T) {
 	svr := httptest.NewServer(wsServer.Handler())
 	defer svr.Close()
 
-	conf := config.NewPluginConfig("ws_unit_test")
-	ffresty.AddHTTPConfig(conf)
-	AddWSConfig(conf)
-	conf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
 
-	w, err := New(context.Background(), conf, nil)
+	w, err := New(context.Background(), utConfPrefix, nil)
 	assert.NoError(t, err)
 	w.Close()
 

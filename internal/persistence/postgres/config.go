@@ -29,9 +29,9 @@ const (
 	PSQLConfMigrationsDirectory = "migrations.directory"
 )
 
-func AddPSQLConfig(conf config.Config) {
-	conf.AddKey(PSQLConfDatabase)
-	conf.AddKey(PSQLConfURL)
-	conf.AddKey(PSQLConfMigrationsAuto)
-	conf.AddKey(PSQLConfMigrationsDirectory, defaultMigrationsDirectory)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	prefix.AddKnownKey(PSQLConfDatabase)
+	prefix.AddKnownKey(PSQLConfURL)
+	prefix.AddKnownKey(PSQLConfMigrationsAuto)
+	prefix.AddKnownKey(PSQLConfMigrationsDirectory, defaultMigrationsDirectory)
 }

@@ -37,6 +37,7 @@ type WSAuthConfig struct {
 }
 
 type WSClient interface {
+	Connect() error
 	Receive() <-chan []byte
 	Send(ctx context.Context, message []byte) error
 	Close()
@@ -61,9 +62,9 @@ type wsClient struct {
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, conf config.Config, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostConnectHandler) (WSClient, error) {
 
-	wsURL, err := buildWSUrl(ctx, conf)
+	wsURL, err := buildWSUrl(ctx, prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -72,38 +73,43 @@ func New(ctx context.Context, conf config.Config, afterConnect WSPostConnectHand
 		ctx: ctx,
 		url: wsURL,
 		wsdialer: &websocket.Dialer{
-			ReadBufferSize:  conf.GetInt(WSConfigKeyReadBufferSizeKB) * 1024,
-			WriteBufferSize: conf.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
+			ReadBufferSize:  prefix.GetInt(WSConfigKeyReadBufferSizeKB) * 1024,
+			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: time.Duration(conf.GetUint(ffresty.HTTPConfigRetryWaitTimeMS)) * time.Millisecond,
-			MaximumDelay: time.Duration(conf.GetUint(ffresty.HTTPConfigRetryMaxWaitTimeMS)) * time.Millisecond,
+			InitialDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryWaitTimeMS)) * time.Millisecond,
+			MaximumDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryMaxWaitTimeMS)) * time.Millisecond,
 		},
-		initialRetryAttempts: conf.GetInt(WSConfigKeyInitialConnectAttempts),
+		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range conf.GetStringMap(ffresty.HTTPConfigHeaders) {
+	for k, v := range prefix.GetStringMap(ffresty.HTTPConfigHeaders) {
 		if vs, ok := v.(string); ok {
 			w.headers.Set(k, vs)
 		}
 	}
-	authUsername := conf.GetString(ffresty.HTTPConfigAuthUsername)
-	authPassword := conf.GetString(ffresty.HTTPConfigAuthPassword)
+	authUsername := prefix.GetString(ffresty.HTTPConfigAuthUsername)
+	authPassword := prefix.GetString(ffresty.HTTPConfigAuthPassword)
 	if authUsername != "" && authPassword != "" {
 		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
 
+	return w, nil
+}
+
+func (w *wsClient) Connect() error {
+
 	if err := w.connect(true); err != nil {
-		return nil, err
+		return err
 	}
 
 	go w.receiveReconnectLoop()
 
-	return w, nil
+	return nil
 }
 
 func (w *wsClient) Close() {
@@ -134,13 +140,13 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
-func buildWSUrl(ctx context.Context, conf config.Config) (string, error) {
-	urlString := conf.GetString(ffresty.HTTPConfigURL)
+func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error) {
+	urlString := prefix.GetString(ffresty.HTTPConfigURL)
 	u, err := url.Parse(urlString)
 	if err != nil {
 		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, urlString)
 	}
-	wsPath := conf.GetString(WSConfigKeyPath)
+	wsPath := prefix.GetString(WSConfigKeyPath)
 	if wsPath != "" {
 		u.Path = wsPath
 	}

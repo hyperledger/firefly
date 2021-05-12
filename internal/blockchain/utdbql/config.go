@@ -20,7 +20,6 @@ const (
 	UTDBQLConfURL = "url"
 )
 
-// AddEthconnectConfig extends config already initialized with ffresty.AddHTTPConfig()
-func AddUTDBQLConf(conf config.Config) {
-	conf.AddKey(UTDBQLConfURL)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	prefix.AddKnownKey(UTDBQLConfURL)
 }

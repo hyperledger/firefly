@@ -43,15 +43,15 @@ type ipfsUploadResponse struct {
 	Size json.Number `json:"Size"`
 }
 
-func (i *IPFS) Init(ctx context.Context, conf config.Config, events p2pfs.Events) error {
-	AddIPFSConfig(conf)
+func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pfs.Events) error {
+	InitConfigPrefix(prefix)
 
 	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
 	i.events = events
-	if conf.GetString(ffresty.HTTPConfigURL) == "" {
+	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "p2pfs")
 	}
-	i.client = ffresty.New(i.ctx, conf)
+	i.client = ffresty.New(i.ctx, prefix)
 	i.capabilities = &p2pfs.Capabilities{}
 	return nil
 }

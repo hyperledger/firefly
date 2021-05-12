@@ -19,6 +19,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/ffresty"
 )
 
-func AddIPFSConfig(conf config.Config) {
-	ffresty.AddHTTPConfig(conf)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	ffresty.InitConfigPrefix(prefix)
 }

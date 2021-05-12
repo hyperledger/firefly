@@ -63,12 +63,15 @@ var (
 	BroadcastBatchAgentTimeout RootKey = ark("broadcast.batch.agentTimeout")
 )
 
-// Config interface defines typed methods to access configuration, as well as
-// allowing plugins to define their own sub-configuration structures
-type Config interface {
-	AddKey(key string, defValue ...interface{})
+// Config prefix represents the global configuration, at a nested point in
+// the config heirarchy. This allows plugins to define their
+//
+// Note that all values are GLOBAL so this cannot be used for per-instance
+// customization. Rather for global initialization of plugins.
+type ConfigPrefix interface {
+	AddKnownKey(key string, defValue ...interface{})
+	SubPrefix(suffix string) ConfigPrefix
 	Set(key string, value interface{})
-	SubKey(suffix string) Config
 
 	GetString(key string) string
 	GetBool(key string) bool
@@ -135,62 +138,63 @@ func ReadConfig(cfgFile string) error {
 	}
 }
 
-var root Config = &configWithPrefix{
-	keys: map[string]bool{},
+var root *configPrefix = &configPrefix{
+	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
 func ark(k string) RootKey {
-	root.AddKey(k)
+	root.AddKnownKey(k)
 	return RootKey(k)
 }
 
-// configWithPrefix is the main config structure passed to plugins, and used for root to wrap viper
-type configWithPrefix struct {
+// configPrefix is the main config structure passed to plugins, and used for root to wrap viper
+type configPrefix struct {
 	prefix string
 	keys   map[string]bool
 }
 
 // NewPluginConfig creates a new plugin configuration object, at the specified prefix
-func NewPluginConfig(prefix string) Config {
+func NewPluginConfig(prefix string) ConfigPrefix {
 	if !strings.HasSuffix(prefix, ".") {
 		prefix = prefix + "."
 	}
-	return &configWithPrefix{
+	return &configPrefix{
 		prefix: prefix,
-		keys:   make(map[string]bool),
+		keys:   root.keys,
 	}
 }
 
-func (c *configWithPrefix) prefixKey(k string) string {
-	if !c.keys[k] {
-		panic(fmt.Sprintf("Undefined configuration key '%s'", k))
-	}
+func (c *configPrefix) prefixKey(k string) string {
 	key := c.prefix + k
+	if !c.keys[key] {
+		panic(fmt.Sprintf("Undefined configuration key '%s'", key))
+	}
 	return key
 }
 
-func (c *configWithPrefix) SubKey(suffix string) Config {
-	return &configWithPrefix{
+func (c *configPrefix) SubPrefix(suffix string) ConfigPrefix {
+	return &configPrefix{
 		prefix: c.prefix + suffix + ".",
-		keys:   make(map[string]bool),
+		keys:   root.keys,
 	}
 }
 
-func (c *configWithPrefix) AddKey(k string, defValue ...interface{}) {
+func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
+	key := c.prefix + k
 	if len(defValue) == 1 {
-		viper.SetDefault(c.prefix+k, defValue[0])
+		viper.SetDefault(key, defValue[0])
 	} else if len(defValue) > 0 {
-		viper.SetDefault(c.prefix+k, defValue)
+		viper.SetDefault(key, defValue)
 	}
-	c.keys[k] = true
+	c.keys[key] = true
 }
 
 // GetString gets a configuration string
 func GetString(key RootKey) string {
 	return root.GetString(string(key))
 }
-func (c *configWithPrefix) GetString(key string) string {
+func (c *configPrefix) GetString(key string) string {
 	return viper.GetString(c.prefixKey(key))
 }
 
@@ -198,7 +202,7 @@ func (c *configWithPrefix) GetString(key string) string {
 func GetStringSlice(key RootKey) []string {
 	return root.GetStringSlice(string(key))
 }
-func (c *configWithPrefix) GetStringSlice(key string) []string {
+func (c *configPrefix) GetStringSlice(key string) []string {
 	return viper.GetStringSlice(c.prefixKey(key))
 }
 
@@ -206,7 +210,7 @@ func (c *configWithPrefix) GetStringSlice(key string) []string {
 func GetBool(key RootKey) bool {
 	return root.GetBool(string(key))
 }
-func (c *configWithPrefix) GetBool(key string) bool {
+func (c *configPrefix) GetBool(key string) bool {
 	return viper.GetBool(c.prefixKey(key))
 }
 
@@ -214,7 +218,7 @@ func (c *configWithPrefix) GetBool(key string) bool {
 func GetUint(key RootKey) uint {
 	return root.GetUint(string(key))
 }
-func (c *configWithPrefix) GetUint(key string) uint {
+func (c *configPrefix) GetUint(key string) uint {
 	return viper.GetUint(c.prefixKey(key))
 }
 
@@ -222,7 +226,7 @@ func (c *configWithPrefix) GetUint(key string) uint {
 func GetInt(key RootKey) int {
 	return root.GetInt(string(key))
 }
-func (c *configWithPrefix) GetInt(key string) int {
+func (c *configPrefix) GetInt(key string) int {
 	return viper.GetInt(c.prefixKey(key))
 }
 
@@ -230,7 +234,7 @@ func (c *configWithPrefix) GetInt(key string) int {
 func GetStringMap(key RootKey) map[string]interface{} {
 	return root.GetStringMap(string(key))
 }
-func (c *configWithPrefix) GetStringMap(key string) map[string]interface{} {
+func (c *configPrefix) GetStringMap(key string) map[string]interface{} {
 	return viper.GetStringMap(c.prefixKey(key))
 }
 
@@ -238,7 +242,7 @@ func (c *configWithPrefix) GetStringMap(key string) map[string]interface{} {
 func Get(key RootKey) interface{} {
 	return root.Get(string(key))
 }
-func (c *configWithPrefix) Get(key string) interface{} {
+func (c *configPrefix) Get(key string) interface{} {
 	return viper.Get(c.prefixKey(key))
 }
 
@@ -246,7 +250,7 @@ func (c *configWithPrefix) Get(key string) interface{} {
 func Set(key RootKey, value interface{}) {
 	root.Set(string(key), value)
 }
-func (c *configWithPrefix) Set(key string, value interface{}) {
+func (c *configPrefix) Set(key string, value interface{}) {
 	viper.Set(c.prefixKey(key), value)
 }
 
@@ -254,7 +258,7 @@ func (c *configWithPrefix) Set(key string, value interface{}) {
 func UnmarshalKey(ctx context.Context, key RootKey, rawVal interface{}) error {
 	return root.UnmarshalKey(ctx, string(key), rawVal)
 }
-func (c *configWithPrefix) UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error {
+func (c *configPrefix) UnmarshalKey(ctx context.Context, key string, rawVal interface{}) error {
 	// Viper's unmarshal does not work with our json annotated config
 	// structures, so we have to go from map to JSON, then to unmarshal
 	var intermediate map[string]interface{}

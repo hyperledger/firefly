@@ -14,7 +14,10 @@
 
 package wsclient
 
-import "github.com/kaleido-io/firefly/internal/config"
+import (
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/ffresty"
+)
 
 const (
 	defaultIntialConnectAttempts = 5
@@ -22,16 +25,20 @@ const (
 )
 
 const (
+	WSSpecificConfPrefix = "ws"
+
 	WSConfigKeyWriteBufferSizeKB      = "ws.writeBufferSizeKB"
 	WSConfigKeyReadBufferSizeKB       = "ws.readBufferSizeKB"
 	WSConfigKeyInitialConnectAttempts = "ws.initialConnectAttempts"
 	WSConfigKeyPath                   = "ws.path"
 )
 
-// AddWSConfig extends config already initialized with ffresty.AddHTTPConfig()
-func AddWSConfig(conf config.Config) {
-	conf.AddKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
-	conf.AddKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
-	conf.AddKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
-	conf.AddKey(WSConfigKeyPath)
+// InitConfigPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
+// can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	ffresty.InitConfigPrefix(prefix)
+	prefix.AddKnownKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
+	prefix.AddKnownKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
+	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
+	prefix.AddKnownKey(WSConfigKeyPath)
 }

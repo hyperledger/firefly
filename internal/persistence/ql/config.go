@@ -22,6 +22,6 @@ const (
 	QLConfURL = "url"
 )
 
-func AddQLConfig(conf config.Config) {
-	conf.AddKey(QLConfURL)
+func InitConfigPrefix(prefix config.ConfigPrefix) {
+	prefix.AddKnownKey(QLConfURL)
 }

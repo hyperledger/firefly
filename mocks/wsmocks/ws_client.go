@@ -18,6 +18,20 @@ func (_m *WSClient) Close() {
 	_m.Called()
 }
 
+// Connect provides a mock function with given fields:
+func (_m *WSClient) Connect() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Receive provides a mock function with given fields:
 func (_m *WSClient) Receive() <-chan []byte {
 	ret := _m.Called()

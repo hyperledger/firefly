@@ -27,7 +27,7 @@ type Plugin interface {
 
 	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config config.Config, events Events) error
+	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

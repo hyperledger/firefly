@@ -88,12 +88,12 @@ func TestUnmarshalKeyFail(t *testing.T) {
 
 func TestPluginConfig(t *testing.T) {
 	pic := NewPluginConfig("my")
-	pic.AddKey("special.config", 12345)
+	pic.AddKnownKey("special.config", 12345)
 	assert.Equal(t, 12345, pic.GetInt("special.config"))
 }
 
 func TestPluginConfigArrayInit(t *testing.T) {
-	pic := NewPluginConfig("my").SubKey("special")
-	pic.AddKey("config", "val1", "val2", "val3")
+	pic := NewPluginConfig("my").SubPrefix("special")
+	pic.AddKnownKey("config", "val1", "val2", "val3")
 	assert.Equal(t, []string{"val1", "val2", "val3"}, pic.GetStringSlice("config"))
 }
