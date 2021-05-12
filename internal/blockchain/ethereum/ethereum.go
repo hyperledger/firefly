@@ -36,7 +36,8 @@ import (
 
 type Ethereum struct {
 	ctx          context.Context
-	conf         *Config
+	topic        string
+	instancePath string
 	capabilities *blockchain.Capabilities
 	events       blockchain.Events
 	client       *resty.Client
@@ -88,45 +89,41 @@ var requiredSubscriptions = map[string]string{
 	"BroadcastBatch": "Batch broadcast",
 }
 
-const (
-	defaultBatchSize    = 50
-	defaultBatchTimeout = 500
-)
-
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
-func (e *Ethereum) ConfigInterface() interface{} { return &Config{} }
+func (e *Ethereum) Init(ctx context.Context, conf config.Config, events blockchain.Events) (err error) {
 
-func (e *Ethereum) Init(ctx context.Context, conf interface{}, events blockchain.Events) (err error) {
+	ethconnectConf := AddEthconnectConfig(conf)
+
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.conf = conf.(*Config)
 	e.events = events
 
-	if e.conf.Ethconnect.HTTPConfig.URL == "" {
+	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
-	if e.conf.Ethconnect.InstancePath == "" {
+	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
+	if e.instancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
-	if e.conf.Ethconnect.Topic == "" {
+	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
+	if e.topic == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
 	}
 
-	e.client = ffresty.New(e.ctx, &e.conf.Ethconnect.HTTPConfig)
+	e.client = ffresty.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
 
-	wsConf := &e.conf.Ethconnect.WSExtendedHttpConfig
-	if wsConf.WSConfig.Path == "" {
-		wsConf.WSConfig.Path = "/ws"
+	if ethconnectConf.GetString(wsclient.WSConfigKeyPath) == "" {
+		ethconnectConf.Set(wsclient.WSConfigKeyPath, "/ws")
 	}
-	if e.wsconn, err = wsclient.New(ctx, wsConf, e.afterConnect); err != nil {
+	if e.wsconn, err = wsclient.New(ctx, ethconnectConf, e.afterConnect); err != nil {
 		return err
 	}
 
-	if !e.conf.Ethconnect.SkipEventstreamInit {
-		if err = e.ensureEventStreams(); err != nil {
+	if !ethconnectConf.GetBool(EthconnectConfigSkipEventstreamInit) {
+		if err = e.ensureEventStreams(ethconnectConf); err != nil {
 			return err
 		}
 	}
@@ -138,7 +135,7 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) ensureEventStreams() error {
+func (e *Ethereum) ensureEventStreams(ethconnectConf config.Config) error {
 
 	var existingStreams []eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
@@ -147,20 +144,20 @@ func (e *Ethereum) ensureEventStreams() error {
 	}
 
 	for _, stream := range existingStreams {
-		if stream.WebSocket.Topic == e.conf.Ethconnect.Topic {
+		if stream.WebSocket.Topic == e.topic {
 			e.initInfo.stream = &stream
 		}
 	}
 
 	if e.initInfo.stream == nil {
 		newStream := eventStream{
-			Name:           e.conf.Ethconnect.Topic,
+			Name:           e.topic,
 			ErrorHandling:  "block",
-			BatchSize:      config.UintWithDefault(e.conf.Ethconnect.BatchSize, defaultBatchSize),
-			BatchTimeoutMS: config.UintWithDefault(e.conf.Ethconnect.BatchTimeoutMS, defaultBatchTimeout),
+			BatchSize:      ethconnectConf.GetUint(EthconnectConfigBatchSize),
+			BatchTimeoutMS: ethconnectConf.GetUint(EthconnectConfigBatchTimeoutMS),
 			Type:           "websocket",
 		}
-		newStream.WebSocket.Topic = e.conf.Ethconnect.Topic
+		newStream.WebSocket.Topic = e.topic
 		res, err = e.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
 		if err != nil || !res.IsSuccess() {
 			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
@@ -179,7 +176,7 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 	// Send a subscribe to our topic after each connect/reconnect
 	b, _ := json.Marshal(&ethWSCommandPayload{
 		Type:  "listen",
-		Topic: e.conf.Ethconnect.Topic,
+		Topic: e.topic,
 	})
 	return w.Send(ctx, b)
 }
@@ -202,13 +199,17 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 
 		if sub == nil {
 			newSub := subscription{
-				Name:        e.conf.Ethconnect.Topic,
+				Name:        e.topic,
 				Description: subDesc,
 				StreamID:    streamID,
 				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
 			}
-			res, err = e.client.R().SetContext(e.ctx).SetBody(&newSub).SetResult(&newSub).Post(fmt.Sprintf("%s/%s", e.conf.Ethconnect.InstancePath, eventType))
+			res, err = e.client.R().
+				SetContext(e.ctx).
+				SetBody(&newSub).
+				SetResult(&newSub).
+				Post(fmt.Sprintf("%s/%s", e.instancePath, eventType))
 			if err != nil || !res.IsSuccess() {
 				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
@@ -332,7 +333,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) {
 func (e *Ethereum) eventLoop() {
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
-	ack, _ := json.Marshal(map[string]string{"type": "ack", "topic": e.conf.Ethconnect.Topic})
+	ack, _ := json.Marshal(map[string]string{"type": "ack", "topic": e.topic})
 	for {
 		select {
 		case <-ctx.Done():
@@ -368,7 +369,7 @@ func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, ba
 		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
 		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
 	}
-	path := fmt.Sprintf("%s/broadcastBatch", e.conf.Ethconnect.InstancePath)
+	path := fmt.Sprintf("%s/broadcastBatch", e.instancePath)
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetQueryParam("kld-from", identity).

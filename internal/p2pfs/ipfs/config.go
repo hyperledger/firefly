@@ -14,8 +14,11 @@
 
 package ipfs
 
-import "github.com/kaleido-io/firefly/internal/ffresty"
+import (
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/ffresty"
+)
 
-type Config struct {
-	ffresty.HTTPConfig
+func AddIPFSConfig(conf config.Config) {
+	ffresty.AddHTTPConfig(conf)
 }

@@ -19,21 +19,22 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestConfigInterfaceCorrect(t *testing.T) {
-	u := &UTDBQL{}
-	_, ok := u.ConfigInterface().(*Config)
-	assert.True(t, ok)
-}
-
 func TestInit(t *testing.T) {
 	u := &UTDBQL{}
-	err := u.Init(context.Background(), &Config{URL: "memory://"}, &blockchainmocks.Events{})
+
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "memory://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.NoError(t, err)
 	assert.NotNil(t, u.Capabilities())
 	u.Close()
@@ -41,7 +42,13 @@ func TestInit(t *testing.T) {
 
 func TestInitBadURL(t *testing.T) {
 	u := &UTDBQL{}
-	err := u.Init(context.Background(), &Config{URL: "badurl://"}, &blockchainmocks.Events{})
+
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "badness://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, &blockchainmocks.Events{})
 	assert.Error(t, err)
 }
 
@@ -74,7 +81,12 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 		txEv <- true
 	}
 
-	err := u.Init(context.Background(), &Config{URL: "memory://"}, me)
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "memory://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, me)
 	assert.NoError(t, err)
 	defer u.Close()
 
@@ -97,7 +109,12 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	u := &UTDBQL{}
 	me := &blockchainmocks.Events{}
 
-	err := u.Init(context.Background(), &Config{URL: "memory://"}, me)
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "memory://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, me)
 	assert.NoError(t, err)
 	u.Close()
 
@@ -114,7 +131,12 @@ func TestVerifyEventLoopCancelledContext(t *testing.T) {
 	u := &UTDBQL{}
 	me := &blockchainmocks.Events{}
 
-	err := u.Init(context.Background(), &Config{URL: "memory://"}, me)
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "memory://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, me)
 	assert.NoError(t, err)
 	defer u.Close()
 
@@ -128,7 +150,12 @@ func TestVerifyDispatchEventBadData(t *testing.T) {
 	u := &UTDBQL{}
 	me := &blockchainmocks.Events{}
 
-	err := u.Init(context.Background(), &Config{URL: "memory://"}, me)
+	conf := config.NewPluginConfig("utdbql_unit_test")
+	AddUTDBQLConf(conf)
+	conf.Set(UTDBQLConfURL, "memory://")
+	defer config.Reset()
+
+	err := u.Init(context.Background(), conf, me)
 	assert.NoError(t, err)
 	defer u.Close()
 

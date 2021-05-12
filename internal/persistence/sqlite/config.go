@@ -16,6 +16,12 @@
 
 package sqlite
 
-type Config struct {
-	URL string `json:"url"`
+import "github.com/kaleido-io/firefly/internal/config"
+
+const (
+	SQLiteConfURL = "url"
+)
+
+func AddSQLiteConfig(conf config.Config) {
+	conf.AddKey(SQLiteConfURL)
 }
