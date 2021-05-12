@@ -23,10 +23,10 @@ import (
 	"github.com/kaleido-io/firefly/internal/batching"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/p2pfs"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 type Broadcast interface {
@@ -35,11 +35,11 @@ type Broadcast interface {
 }
 
 type broadcast struct {
-	ctx         context.Context
-	database database.Plugin
-	blockchain  blockchain.Plugin
-	p2pfs       p2pfs.Plugin
-	batch       batching.BatchManager
+	ctx        context.Context
+	database   database.Plugin
+	blockchain blockchain.Plugin
+	p2pfs      p2pfs.Plugin
+	batch      batching.BatchManager
 }
 
 func NewBroadcast(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (Broadcast, error) {
@@ -47,11 +47,11 @@ func NewBroadcast(ctx context.Context, database database.Plugin, blockchain bloc
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	b := &broadcast{
-		ctx:         ctx,
-		database: database,
-		blockchain:  blockchain,
-		p2pfs:       p2pfs,
-		batch:       batch,
+		ctx:        ctx,
+		database:   database,
+		blockchain: blockchain,
+		p2pfs:      p2pfs,
+		batch:      batch,
 	}
 	bo := batching.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
@@ -85,7 +85,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 	txid := fftypes.NewUUID()
 	updates.Set("tx.id", txid)
 	updates.Set("tx.type", string(fftypes.TransactionTypePin))
-	trackingId, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	_, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
@@ -96,12 +96,11 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
-		ID:         txid,
-		Type:       fftypes.TransactionTypePin,
-		Namespace:  batch.Namespace,
-		Author:     batch.Author,
-		Created:    fftypes.NowMillis(),
-		TrackingID: trackingId,
+		ID:        txid,
+		Type:      fftypes.TransactionTypePin,
+		Namespace: batch.Namespace,
+		Author:    batch.Author,
+		Created:   fftypes.NowMillis(),
 	}
 	err = b.database.UpsertTransaction(ctx, tx)
 	if err != nil {

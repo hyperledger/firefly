@@ -63,7 +63,7 @@ func TestMarshalBytes32(t *testing.T) {
 	structWithoutValues := &testStruct{}
 	json2, err := json.Marshal(structWithoutValues)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf(`{"value":"0000000000000000000000000000000000000000000000000000000000000000"}`), string(json2))
+	assert.Equal(t, `{"value":"0000000000000000000000000000000000000000000000000000000000000000"}`, string(json2))
 }
 
 func TestScanBytes32(t *testing.T) {

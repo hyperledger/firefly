@@ -61,7 +61,13 @@ type Plugin interface {
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
 //
 type PeristenceInterface interface {
-	// Upsert a message
+
+	// RunAsGroup instructs the database plugin that all database operations performed within the context
+	// function can be grouped into a single transaction (if supported).
+	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
+	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
+
+	// Upsert a message, with all the embedded data references
 	UpsertMessage(ctx context.Context, message *fftypes.Message) (err error)
 
 	// Update messages
@@ -196,8 +202,8 @@ var TransactionQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"trackingid": &StringField{},
 	"protocolid": &StringField{},
+	"status":     &StringField{},
 	"created":    &Int64Field{},
 	"confirmed":  &Int64Field{},
 }
@@ -226,4 +232,20 @@ var OffsetQueryFactory = &queryFields{
 	"name":      &StringField{},
 	"type":      &StringField{},
 	"current":   &Int64Field{},
+}
+
+var OperationQueryFactory = &queryFields{
+	"id":        &StringField{},
+	"namespace": &StringField{},
+	"message":   &StringField{},
+	"data":      &StringField{},
+	"type":      &StringField{},
+	"direction": &StringField{},
+	"recipient": &StringField{},
+	"status":    &StringField{},
+	"error":     &StringField{},
+	"plugin":    &StringField{},
+	"backendid": &StringField{},
+	"created":   &Int64Field{},
+	"updated":   &Int64Field{},
 }

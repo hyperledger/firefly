@@ -332,6 +332,20 @@ func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
 	_m.Called(prefix)
 }
 
+// RunAsGroup provides a mock function with given fields: ctx, fn
+func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, func(context.Context) error) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateBatch provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateBatch(ctx context.Context, id *uuid.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)

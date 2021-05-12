@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var (
@@ -49,7 +49,7 @@ var (
 )
 
 func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -109,11 +109,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 		}
 	}
 
-	if err = s.commitTx(ctx, tx); err != nil {
-		return err
-	}
-
-	return nil
+	return s.commitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Batch, error) {
@@ -190,7 +186,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 
 func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
 
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -207,5 +203,5 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update datab
 		return err
 	}
 
-	return s.commitTx(ctx, tx)
+	return s.commitTx(ctx, tx, autoCommit)
 }

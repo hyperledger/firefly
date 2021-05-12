@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var (
@@ -33,20 +33,19 @@ var (
 		"namespace",
 		"author",
 		"created",
-		"tracking_id",
 		"protocol_id",
+		"status",
 		"confirmed",
 		"info",
 	}
 	transactionFilterTypeMap = map[string]string{
 		"type":       "ttype",
-		"trackingid": "tracking_id",
 		"protocolid": "protocol_id",
 	}
 )
 
 func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -72,8 +71,8 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Set("namespace", transaction.Namespace).
 				Set("author", transaction.Author).
 				Set("created", transaction.Created).
-				Set("tracking_id", transaction.TrackingID).
 				Set("protocol_id", transaction.ProtocolID).
+				Set("status", transaction.Status).
 				Set("confirmed", transaction.Confirmed).
 				Set("info", transaction.Info).
 				Where(sq.Eq{"id": transaction.ID}),
@@ -92,8 +91,8 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					transaction.Namespace,
 					transaction.Author,
 					transaction.Created,
-					transaction.TrackingID,
 					transaction.ProtocolID,
+					transaction.Status,
 					transaction.Confirmed,
 					transaction.Info,
 				),
@@ -102,11 +101,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 		}
 	}
 
-	if err = s.commitTx(ctx, tx); err != nil {
-		return err
-	}
-
-	return nil
+	return s.commitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*fftypes.Transaction, error) {
@@ -117,8 +112,8 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.Namespace,
 		&transaction.Author,
 		&transaction.Created,
-		&transaction.TrackingID,
 		&transaction.ProtocolID,
+		&transaction.Status,
 		&transaction.Confirmed,
 		&transaction.Info,
 	)
@@ -181,7 +176,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter)
 
 func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
 
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -198,5 +193,5 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update
 		return err
 	}
 
-	return s.commitTx(ctx, tx)
+	return s.commitTx(ctx, tx, autoCommit)
 }

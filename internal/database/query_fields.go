@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"reflect"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -91,7 +92,12 @@ func (f *stringField) Scan(src interface{}) error {
 		f.s = tv.String()
 	case nil:
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+		if reflect.TypeOf(tv).Kind() == reflect.String {
+			// This is helpful for status enums
+			f.s = reflect.ValueOf(tv).String()
+		} else {
+			return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+		}
 	}
 	return nil
 }

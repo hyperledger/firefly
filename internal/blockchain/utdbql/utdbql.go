@@ -163,7 +163,7 @@ func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 		}
 		u.events.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
-		u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStateConfirmed, ev.txID, "", nil)
+		u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStatusConfirmed, ev.txID, "", nil)
 	}
 
 }

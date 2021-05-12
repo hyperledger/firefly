@@ -25,7 +25,7 @@ type blockchainEvents struct {
 	e   *engine
 }
 
-func (be *blockchainEvents) TransactionUpdate(txTrackingID string, txState blockchain.TransactionState, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) {
+func (be *blockchainEvents) TransactionUpdate(txTrackingID string, txState blockchain.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) {
 
 }
 

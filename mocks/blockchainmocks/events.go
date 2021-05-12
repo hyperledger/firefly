@@ -20,6 +20,6 @@ func (_m *Events) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, auth
 }
 
 // TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
-func (_m *Events) TransactionUpdate(txTrackingID string, txState fftypes.TransactionState, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) {
+func (_m *Events) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) {
 	_m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
 }

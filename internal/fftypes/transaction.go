@@ -23,15 +23,15 @@ const (
 	TransactionTypePin  TransactionType = "pin"
 )
 
-type TransactionState string
+type TransactionStatus string
 
 const (
-	// TransactionStateSubmitted the transaction has been submitted
-	TransactionStateSubmitted TransactionState = "submitted"
-	// TransactionStateSubmitted the transaction is considered final per the rules of the blockchain technnology
-	TransactionStateConfirmed TransactionState = "confirmed"
-	// TransactionStateSubmitted the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
-	TransactionStateFailed TransactionState = "error"
+	// TransactionStatusSubmitted the transaction has been submitted
+	TransactionStatusSubmitted TransactionStatus = "submitted"
+	// TransactionStatusConfirmed the transaction is considered final per the rules of the blockchain technnology
+	TransactionStatusConfirmed TransactionStatus = "confirmed"
+	// TransactionStatusFailed the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
+	TransactionStatusFailed TransactionStatus = "error"
 )
 
 type TransactionRef struct {
@@ -42,14 +42,17 @@ type TransactionRef struct {
 	BatchID *uuid.UUID `json:"batchId,omitempty"`
 }
 
+// Transactions are (blockchain) transactions that were submitted by this
+// node, with the correlation information to look them up on the underlying
+// ledger technology
 type Transaction struct {
-	Type       TransactionType `json:"type"`
-	ID         *uuid.UUID      `json:"id,omitempty"`
-	Namespace  string          `json:"namespace,omitempty"`
-	Author     string          `json:"author"`
-	Created    int64           `json:"created"`
-	TrackingID string          `json:"trackingId,omitempty"`
-	ProtocolID string          `json:"protocolId,omitempty"`
-	Confirmed  int64           `json:"confirmed,omitempty"`
-	Info       JSONData        `json:"info,omitempty"`
+	ID         *uuid.UUID        `json:"id,omitempty"`
+	Type       TransactionType   `json:"type"`
+	Namespace  string            `json:"namespace,omitempty"`
+	Author     string            `json:"author"`
+	Created    int64             `json:"created"`
+	Status     TransactionStatus `json:"status"`
+	ProtocolID string            `json:"protocolId,omitempty"`
+	Confirmed  int64             `json:"confirmed,omitempty"`
+	Info       JSONData          `json:"info,omitempty"`
 }
