@@ -28,7 +28,7 @@ const (
 const (
 	EthconnectConfigKey = "ethconnect"
 
-	EthconnectConfigInstancePath        = "instancePath"
+	EthconnectConfigInstancePath        = "instance"
 	EthconnectConfigTopic               = "topic"
 	EthconnectConfigBatchSize           = "batchSize"
 	EthconnectConfigBatchTimeoutMS      = "batchTimeoutMS"

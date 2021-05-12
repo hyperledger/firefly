@@ -166,12 +166,13 @@ func (c *configWithPrefix) prefixKey(k string) string {
 	if !c.keys[k] {
 		panic(fmt.Sprintf("Undefined configuration key '%s'", k))
 	}
-	return c.prefix + k
+	key := c.prefix + k
+	return key
 }
 
 func (c *configWithPrefix) SubKey(suffix string) Config {
 	return &configWithPrefix{
-		prefix: c.prefix + "." + suffix,
+		prefix: c.prefix + suffix + ".",
 		keys:   make(map[string]bool),
 	}
 }

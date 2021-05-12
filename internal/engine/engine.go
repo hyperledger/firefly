@@ -155,7 +155,7 @@ func (e *engine) initPersistencePlugin(ctx context.Context) (persistence.Plugin,
 	if err != nil {
 		return nil, err
 	}
-	err = persistence.Init(ctx, config.NewPluginConfig("persistence"), e)
+	err = persistence.Init(ctx, config.NewPluginConfig("database"), e)
 	return persistence, err
 }
 
