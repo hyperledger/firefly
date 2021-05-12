@@ -55,6 +55,8 @@ type Route struct {
 type PathParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// Example is a field to fill in, in the helper UI
+	Example string
 	// Description is a message key to a translatable descripiton of the parameter
 	Description i18n.MessageKey
 }
@@ -63,6 +65,8 @@ type PathParam struct {
 type QueryParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// Example is a field to fill in, in the helper UI
+	Example string
 	// Description is a message key to a translatable descripiton of the parameter
 	Description i18n.MessageKey
 }

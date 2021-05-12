@@ -22,22 +22,22 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var postDefsSchema = &apispec.Route{
-	Name:   "postDefsSchema",
-	Path:   "ns/{ns}/schemas/broadcast",
-	Method: http.MethodPost,
+var getDataDefById = &apispec.Route{
+	Name:   "getDataDefById",
+	Path:   "ns/{ns}/definitions/data/{id}",
+	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
-		{Name: "ns", Description: i18n.MsgTBD},
+		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
+		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Schema{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Type"},
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted,
+	JSONInputValue:  func() interface{} { return nil },
+	JSONOutputValue: func() interface{} { return &fftypes.DataDefinition{} },
+	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.BroadcastSchemaDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Schema))
+		output, err = r.E.GetDataDefinitionById(r.Ctx, r.PP["ns"], r.PP["id"])
 		return output, err
 	},
 }

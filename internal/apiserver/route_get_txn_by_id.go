@@ -28,7 +28,7 @@ var getTxnById = &apispec.Route{
 	Path:   "ns/{ns}/transactions/{id}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
-		{Name: "ns", Description: i18n.MsgTBD},
+		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 		{Name: "id", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,

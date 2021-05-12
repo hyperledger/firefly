@@ -55,7 +55,13 @@ type WSAuthConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
-type WSClient struct {
+type WSClient interface {
+	Receive() <-chan []byte
+	Send(ctx context.Context, message []byte) error
+	Close()
+}
+
+type wsClient struct {
 	ctx                  context.Context
 	headers              http.Header
 	url                  string
@@ -72,9 +78,9 @@ type WSClient struct {
 }
 
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
-type WSPostConnectHandler func(ctx context.Context, w *WSClient) error
+type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostConnectHandler) (*WSClient, error) {
+func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostConnectHandler) (WSClient, error) {
 
 	wsConf := &conf.WSConfig
 	retryConf := conf.HTTPConfig.Retry
@@ -86,7 +92,7 @@ func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostCon
 		return nil, err
 	}
 
-	w := &WSClient{
+	w := &wsClient{
 		ctx: ctx,
 		url: wsURL,
 		wsdialer: &websocket.Dialer{
@@ -121,7 +127,7 @@ func New(ctx context.Context, conf *WSExtendedHttpConfig, afterConnect WSPostCon
 	return w, nil
 }
 
-func (w *WSClient) Close() {
+func (w *wsClient) Close() {
 	if !w.closed {
 		w.closed = true
 		close(w.closing)
@@ -133,11 +139,11 @@ func (w *WSClient) Close() {
 }
 
 // Receive returns
-func (w *WSClient) Receive() <-chan []byte {
+func (w *wsClient) Receive() <-chan []byte {
 	return w.receive
 }
 
-func (w *WSClient) Send(ctx context.Context, message []byte) error {
+func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	// Send
 	select {
 	case w.send <- message:
@@ -167,7 +173,7 @@ func buildWSUrl(ctx context.Context, conf *WSExtendedHttpConfig) (string, error)
 	return u.String(), nil
 }
 
-func (w *WSClient) connect(initial bool) error {
+func (w *wsClient) connect(initial bool) error {
 	l := log.L(w.ctx)
 	return w.retry.Do(w.ctx, func(attempt int) (retry bool, err error) {
 		if w.closed {
@@ -190,7 +196,7 @@ func (w *WSClient) connect(initial bool) error {
 	})
 }
 
-func (w *WSClient) readLoop() {
+func (w *wsClient) readLoop() {
 	l := log.L(w.ctx)
 	for {
 		mt, message, err := w.wsconn.ReadMessage()
@@ -216,7 +222,7 @@ func (w *WSClient) readLoop() {
 	}
 }
 
-func (w *WSClient) sendLoop() {
+func (w *wsClient) sendLoop() {
 	l := log.L(w.ctx)
 	defer close(w.sendDone)
 
@@ -237,7 +243,7 @@ func (w *WSClient) sendLoop() {
 	}
 }
 
-func (w *WSClient) receiveReconnectLoop() {
+func (w *wsClient) receiveReconnectLoop() {
 	l := log.L(w.ctx)
 	defer close(w.receive)
 	for !w.closed {

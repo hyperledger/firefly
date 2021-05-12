@@ -26,17 +26,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostDefinitionsSchema(t *testing.T) {
+func TestPostDataDefinitions(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	input := fftypes.Schema{}
+	input := fftypes.DataDefinition{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/schemas/broadcast", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/definitions/data/broadcast", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("BroadcastSchemaDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Schema")).
+	e.On("BroadcastDataDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataDefinition")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

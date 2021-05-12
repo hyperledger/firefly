@@ -23,21 +23,21 @@ import (
 	"github.com/kaleido-io/firefly/internal/persistence"
 )
 
-var getSchemas = &apispec.Route{
-	Name:   "getSchemas",
-	Path:   "ns/{ns}/schemas",
+var getDataDefs = &apispec.Route{
+	Name:   "getDataDefs",
+	Path:   "ns/{ns}/definitions/data",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
-		{Name: "ns", Description: i18n.MsgTBD},
+		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   persistence.SchemaQueryFactory,
+	FilterFactory:   persistence.DataDefinitionQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return []*fftypes.Schema{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.DataDefinition{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetSchemas(r.Ctx, r.PP["ns"], r.Filter)
+		output, err = r.E.GetDataDefinitions(r.Ctx, r.PP["ns"], r.Filter)
 		return output, err
 	},
 }

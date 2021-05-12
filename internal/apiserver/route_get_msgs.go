@@ -28,7 +28,7 @@ var getMsgs = &apispec.Route{
 	Path:   "ns/{ns}/messages",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
-		{Name: "ns", Description: i18n.MsgTBD},
+		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   persistence.MessageQueryFactory,

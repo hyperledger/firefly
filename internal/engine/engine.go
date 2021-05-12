@@ -37,7 +37,7 @@ type Engine interface {
 	Close()
 
 	// Definitions
-	BroadcastSchemaDefinition(ctx context.Context, ns string, s *fftypes.Schema) (*fftypes.Message, error)
+	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
 
 	// Data Queryuery
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
@@ -48,8 +48,8 @@ type Engine interface {
 	GetBatches(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Data, error)
-	GetSchemaById(ctx context.Context, ns, id string) (*fftypes.Schema, error)
-	GetSchemas(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.Schema, error)
+	GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
+	GetDataDefinitions(ctx context.Context, ns string, filter persistence.AndFilter) ([]*fftypes.DataDefinition, error)
 }
 
 type engine struct {

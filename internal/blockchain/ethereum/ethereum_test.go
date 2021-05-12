@@ -27,10 +27,13 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/wsclient"
 	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
+	"github.com/kaleido-io/firefly/mocks/wsmocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestConfigInterfaceCorrect(t *testing.T) {
@@ -42,7 +45,7 @@ func TestConfigInterfaceCorrect(t *testing.T) {
 func TestInitMissingURL(t *testing.T) {
 	e := &Ethereum{}
 	err := e.Init(context.Background(), &Config{}, &blockchainmocks.Events{})
-	assert.Regexp(t, "FF10138", err.Error())
+	assert.Regexp(t, "FF10138.*url", err.Error())
 }
 
 func TestInitMissingInstance(t *testing.T) {
@@ -54,13 +57,30 @@ func TestInitMissingInstance(t *testing.T) {
 					URL: "http://localhost:12345",
 				},
 			},
+			Topic: "topic1",
 		},
 	}, &blockchainmocks.Events{})
-	assert.Regexp(t, "FF10138", err.Error())
+	assert.Regexp(t, "FF10138.*instance", err.Error())
 }
 
-func TestInitAllNewStreams(t *testing.T) {
+func TestInitMissingTopic(t *testing.T) {
+	e := &Ethereum{}
+	err := e.Init(context.Background(), &Config{
+		Ethconnect: EthconnectConfig{
+			WSExtendedHttpConfig: wsclient.WSExtendedHttpConfig{
+				HTTPConfig: ffresty.HTTPConfig{
+					URL: "http://localhost:12345",
+				},
+			},
+			InstancePath: "/test/0x12345",
+		},
+	}, &blockchainmocks.Events{})
+	assert.Regexp(t, "FF10138.*topic", err.Error())
+}
 
+func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
+
+	log.SetLevel("debug")
 	e := &Ethereum{}
 
 	wsServer := wsserver.NewWebSocketServer(context.Background())
@@ -94,16 +114,20 @@ func TestInitAllNewStreams(t *testing.T) {
 				},
 			},
 			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
-
 	assert.True(t, e.Capabilities().GlobalSequencer)
-
 	assert.NoError(t, err)
+
+	sender, receiver, _ := wsServer.GetChannels("topic1")
+	sender <- []fftypes.JSONData{} // empty batch, will be ignored, but acked
+	err = <-receiver
+	assert.NoError(t, err) // should be ack, not error
 
 }
 
@@ -123,6 +147,7 @@ func TestWSConnectFail(t *testing.T) {
 				},
 			},
 			InstancePath: "/instances/0x12345",
+			Topic:        "topic1",
 		},
 	}, &blockchainmocks.Events{})
 	assert.Regexp(t, "FF10161", err.Error())
@@ -406,4 +431,190 @@ func TestVerifyEthAddress(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", addr)
 
+}
+
+func TestHandleMessageBatchBroadcastOK(t *testing.T) {
+	data := []byte(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+      "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+      "timestamp": "1620576488"
+    },
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "logIndex": "50"
+  },
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+    "data": {
+      "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+      "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
+      "timestamp": "1620576488"
+    },
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "logIndex": "51"
+  }
+]`)
+
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{
+		events: em,
+	}
+
+	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything)
+
+	e.handleMessageBatch(context.Background(), data)
+
+	b := em.Calls[0].Arguments[0].(*blockchain.BroadcastBatch)
+	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
+	assert.Equal(t, "eda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae", b.BatchPaylodRef.String())
+	assert.Equal(t, int64(1620576488), b.Timestamp)
+	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
+	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
+
+}
+
+func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`[{"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)"}]`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchBroadcastBadTimestamp(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`[{
+		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+      "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"timestamp": "!good"
+		}
+	}]`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`[{
+		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"data": {
+      "author": "!good",
+      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+      "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"timestamp": "1620576488"
+		}
+	}]`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`[{
+		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+      "batchId": "!good",
+      "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"timestamp": "1620576488"
+		}
+	}]`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`[{
+		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+      "payloadRef": "!good",
+			"timestamp": "1620576488"
+		}
+	}]`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchBadJSON(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{events: em}
+	e.handleMessageBatch(context.Background(), []byte(`!good`))
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestEventLoopContextCancelled(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	wsm := &wsmocks.WSClient{}
+	ctxCancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	e := &Ethereum{
+		ctx:    ctxCancelled,
+		events: em,
+		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
+		wsconn: wsm,
+	}
+	r := make(<-chan []byte)
+	wsm.On("Receive").Return(r)
+	e.eventLoop() // we're simply looking for it exiting
+}
+
+func TestEventLoopReceiveClosed(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	wsm := &wsmocks.WSClient{}
+	e := &Ethereum{
+		ctx:    context.Background(),
+		events: em,
+		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
+		wsconn: wsm,
+	}
+	r := make(chan []byte)
+	close(r)
+	wsm.On("Receive").Return((<-chan []byte)(r))
+	e.eventLoop() // we're simply looking for it exiting
+}
+
+func TestEventLoopSendClosed(t *testing.T) {
+	em := &blockchainmocks.Events{}
+	wsm := &wsmocks.WSClient{}
+	e := &Ethereum{
+		ctx:    context.Background(),
+		events: em,
+		conf:   &Config{Ethconnect: EthconnectConfig{Topic: "topic1"}},
+		wsconn: wsm,
+	}
+	r := make(chan []byte, 1)
+	r <- []byte(`[]`)
+	wsm.On("Receive").Return((<-chan []byte)(r))
+	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	e.eventLoop() // we're simply looking for it exiting
 }

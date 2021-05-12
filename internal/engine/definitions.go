@@ -22,22 +22,22 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastSchemaDefinition(ctx context.Context, ns string, s *fftypes.Schema) (msg *fftypes.Message, err error) {
+func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
 
-	// Validate the input schema data
+	// Validate the input data definition data
 	s.ID = fftypes.NewUUID()
 	s.Created = fftypes.NowMillis()
 	s.Namespace = ns
-	if s.Type == "" {
-		s.Type = fftypes.SchemaTypeJSONSchema
+	if s.Validator == "" {
+		s.Validator = fftypes.ValidatorTypeJSON
 	}
-	if s.Type != fftypes.SchemaTypeJSONSchema {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "type")
+	if s.Validator != fftypes.ValidatorTypeJSON {
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
 	}
 	if err = fftypes.ValidateFFNameField(ctx, s.Namespace, "namespace"); err != nil {
 		return nil, err
 	}
-	if err = fftypes.ValidateFFNameField(ctx, s.Entity, "entity"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, s.Name, "name"); err != nil {
 		return nil, err
 	}
 	if err = fftypes.ValidateFFNameField(ctx, s.Version, "version"); err != nil {
@@ -52,7 +52,7 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, ns string, s *ff
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
-		Type:      fftypes.DataTypeDefinition,
+		Validator: fftypes.ValidatorTypeDataDefinition,
 		ID:        fftypes.NewUUID(),
 		Namespace: s.Namespace,
 		Created:   fftypes.NowMillis(),
@@ -72,7 +72,7 @@ func (e *engine) BroadcastSchemaDefinition(ctx context.Context, ns string, s *ff
 			Namespace: s.Namespace,
 			Type:      fftypes.MessageTypeDefinition,
 			Author:    e.nodeIdentity,
-			Topic:     fftypes.SchemaTopicDefinitionName,
+			Topic:     fftypes.DataDefinitionaTopicName,
 			Context:   fftypes.SystemContext,
 		},
 		Data: fftypes.DataRefs{

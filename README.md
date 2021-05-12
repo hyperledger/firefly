@@ -45,7 +45,7 @@ A few highlights:
 - Updated API resource model
   - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
 - Added flexibility, with simplified the developer experience:
-  - Versioning of data schemas
+  - Versioning of data definitions
   - Introducing a first class `Context` construct link related events into a single sequence
   - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
   - Clearer separation of concerns between the FireFly DB and the Application DB

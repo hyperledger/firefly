@@ -16,19 +16,21 @@ package fftypes
 
 import "github.com/google/uuid"
 
-type SchemaType string
+type ValidatorType string
 
 const (
-	SchemaTypeJSONSchema SchemaType = "jsonschema"
+	ValidatorTypeJSON           ValidatorType = "json"
+	ValidatorTypeBLOB           ValidatorType = "blob"
+	ValidatorTypeDataDefinition ValidatorType = "datadef"
 )
 
-type Schema struct {
-	ID        *uuid.UUID `json:"id,omitempty"`
-	Type      SchemaType `json:"type"`
-	Namespace string     `json:"namespace,omitempty"`
-	Entity    string     `json:"entity,omitempty"`
-	Version   string     `json:"version,omitempty"`
-	Hash      *Bytes32   `json:"hash,omitempty"`
-	Created   int64      `json:"created,omitempty"`
-	Value     JSONData   `json:"value,omitempty"`
+type DataDefinition struct {
+	ID        *uuid.UUID    `json:"id,omitempty"`
+	Validator ValidatorType `json:"validator"`
+	Namespace string        `json:"namespace,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Version   string        `json:"version,omitempty"`
+	Hash      *Bytes32      `json:"hash,omitempty"`
+	Created   int64         `json:"created,omitempty"`
+	Value     JSONData      `json:"value,omitempty"`
 }
