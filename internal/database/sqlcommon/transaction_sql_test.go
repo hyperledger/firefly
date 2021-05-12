@@ -22,13 +22,13 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransaction2EWithDB(t *testing.T) {
+func TestTransactionE2EWithDB(t *testing.T) {
 
 	log.SetLevel("debug")
 	s := &SQLCommon{}
@@ -40,6 +40,7 @@ func TestTransaction2EWithDB(t *testing.T) {
 	transaction := &fftypes.Transaction{
 		ID:     &transactionId,
 		Type:   fftypes.TransactionTypePin,
+		Status: fftypes.TransactionStatusSubmitted,
 		Author: "0x12345",
 	}
 	err := s.UpsertTransaction(ctx, transaction)
@@ -61,8 +62,8 @@ func TestTransaction2EWithDB(t *testing.T) {
 		Namespace:  "ns2",
 		Author:     "0x12345",
 		Created:    fftypes.NowMillis(),
-		TrackingID: "0x22222",
 		ProtocolID: "0x33333",
+		Status:     fftypes.TransactionStatusFailed,
 		Info: fftypes.JSONData{
 			"some": "data",
 		},
@@ -82,7 +83,6 @@ func TestTransaction2EWithDB(t *testing.T) {
 	fb := database.TransactionQueryFactory.NewFilter(ctx, 0)
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
-		fb.Eq("trackingid", transactionUpdated.TrackingID),
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
 		fb.Eq("author", transactionUpdated.Author),
 		fb.Gt("created", "0"),
@@ -104,15 +104,15 @@ func TestTransaction2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(transactions))
 
 	// Update
-	newTrackingId := "0x33333"
-	up := database.TransactionQueryFactory.NewUpdate(ctx).Set("trackingid", newTrackingId)
+	up := database.TransactionQueryFactory.NewUpdate(ctx).
+		Set("status", fftypes.TransactionStatusConfirmed)
 	err = s.UpdateTransaction(ctx, transactionUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
-		fb.Eq("trackingid", newTrackingId),
+		fb.Eq("status", fftypes.TransactionStatusConfirmed),
 	)
 	transactions, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)

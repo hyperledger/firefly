@@ -54,7 +54,7 @@ type Events interface {
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	TransactionUpdate(txTrackingID string, txState TransactionState, protocolTxId, errorMessage string, additionalInfo map[string]interface{})
+	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{})
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -74,7 +74,7 @@ type Capabilities struct {
 
 // TransactionState is the only architecturally significant thing that Firefly tracks on blockchain transactions.
 // All other data is consider protocol specific, and hence stored as opaque data.
-type TransactionState = fftypes.TransactionState
+type TransactionStatus = fftypes.TransactionStatus
 
 // BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
 // Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members

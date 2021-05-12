@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 )
 
 func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.DataDefinition) (err error) {
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -95,11 +95,7 @@ func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.D
 		}
 	}
 
-	if err = s.commitTx(ctx, tx); err != nil {
-		return err
-	}
-
-	return nil
+	return s.commitTx(ctx, tx, autoCommit)
 }
 
 func (s *SQLCommon) dataDefResult(ctx context.Context, row *sql.Rows) (*fftypes.DataDefinition, error) {
@@ -173,7 +169,7 @@ func (s *SQLCommon) GetDataDefinitions(ctx context.Context, filter database.Filt
 
 func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
 
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -190,5 +186,5 @@ func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, upd
 		return err
 	}
 
-	return s.commitTx(ctx, tx)
+	return s.commitTx(ctx, tx, autoCommit)
 }

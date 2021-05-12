@@ -19,10 +19,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 type SQLCommon struct {
@@ -31,6 +31,8 @@ type SQLCommon struct {
 	events       database.Events
 	options      *SQLCommonOptions
 }
+
+type txContextKey struct{}
 
 type SQLCommonOptions struct {
 	// PlaceholderFormat as supported by the SQL sequence of the plugin
@@ -51,21 +53,61 @@ func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, events databas
 	return nil
 }
 
-func (e *SQLCommon) Capabilities() *database.Capabilities { return e.capabilities }
+func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }
 
-func (s *SQLCommon) beginTx(ctx context.Context) (context.Context, *sql.Tx, error) {
-	l := log.L(ctx).WithField("dbtx", fftypes.ShortID())
-	ctx = log.WithLogger(ctx, l)
-	l.Debugf("SQL-> begin")
-	tx, err := s.db.Begin()
+func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error {
+	ctx, tx, _, err := s.beginOrUseTx(ctx)
 	if err != nil {
-		return ctx, nil, i18n.WrapError(ctx, err, i18n.MsgDBBeginFailed)
+		return err
 	}
+	defer s.rollbackTx(ctx, tx)
+
+	if err = fn(ctx); err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, false /* we _are_ the auto committer */)
+}
+
+func getTXFromContext(ctx context.Context) *sql.Tx {
+	ctxKey := txContextKey{}
+	txi := ctx.Value(ctxKey)
+	if txi != nil {
+		if tx, ok := txi.(*sql.Tx); ok {
+			return tx
+		}
+	}
+	return nil
+}
+
+func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx *sql.Tx, autoCommit bool, err error) {
+
+	tx = getTXFromContext(ctx)
+	if tx != nil {
+		// There is s transaction on the context already.
+		// return existing with auto-commit flag, to prevent early commit
+		return ctx, tx, true, nil
+	}
+
+	l := log.L(ctx).WithField("dbtx", fftypes.ShortID())
+	ctx1 = log.WithLogger(ctx, l)
+	l.Debugf("SQL-> begin")
+	tx, err = s.db.Begin()
+	if err != nil {
+		return ctx1, nil, false, i18n.WrapError(ctx1, err, i18n.MsgDBBeginFailed)
+	}
+	ctx1 = context.WithValue(ctx, txContextKey{}, tx)
 	l.Debugf("SQL<- begin")
-	return ctx, tx, err
+	return ctx1, tx, false, err
 }
 
 func (s *SQLCommon) queryTx(ctx context.Context, tx *sql.Tx, q sq.SelectBuilder) (*sql.Rows, error) {
+	if tx == nil {
+		// If there is a transaction in the context, we should use it to provide consistency
+		// in the read operations (read after insert for example).
+		tx = getTXFromContext(ctx)
+	}
+
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
@@ -152,7 +194,12 @@ func (s *SQLCommon) rollbackTx(ctx context.Context, tx *sql.Tx) {
 	}
 }
 
-func (s *SQLCommon) commitTx(ctx context.Context, tx *sql.Tx) error {
+func (s *SQLCommon) commitTx(ctx context.Context, tx *sql.Tx, autoCommit bool) error {
+	if autoCommit {
+		// We're inside of a wide transaction boundary with an auto-commit
+		return nil
+	}
+
 	l := log.L(ctx)
 	l.Debugf(`SQL-> commit`)
 	err := tx.Commit()

@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var (
@@ -54,7 +54,7 @@ var (
 )
 
 func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message) (err error) {
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 		return err
 	}
 
-	if err = s.commitTx(ctx, tx); err != nil {
+	if err = s.commitTx(ctx, tx, autoCommit); err != nil {
 		return err
 	}
 
@@ -393,7 +393,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update database.Update) (err error) {
 
-	ctx, tx, err := s.beginTx(ctx)
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -410,5 +410,5 @@ func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update 
 		return err
 	}
 
-	return s.commitTx(ctx, tx)
+	return s.commitTx(ctx, tx, autoCommit)
 }

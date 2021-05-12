@@ -7,13 +7,12 @@ CREATE TABLE transactions (
   namespace   VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
   created     BIGINT          NOT NULL,
-  tracking_id VARCHAR(256),
   protocol_id VARCHAR(256),
+  status      VARCHAR(64)     NOT NULL,
   confirmed   BIGINT          NOT NULL,
   info        JSONB
 );
 
-CREATE INDEX transactions_search ON transactions(namespace,ttype,author,confirmed,created);
-CREATE INDEX transactions_tracking_id ON transactions(tracking_id);
+CREATE INDEX transactions_search ON transactions(namespace,ttype,author,status,confirmed,created);
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 COMMIT;

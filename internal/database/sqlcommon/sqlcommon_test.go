@@ -17,6 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
@@ -109,6 +110,81 @@ func TestDeleteTxBadSQL(t *testing.T) {
 	s, _ := getMockDB()
 	_, err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
 	assert.Regexp(t, "FF10113", err.Error())
+}
+
+func TestRunAsGroup(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
+	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
+	mock.ExpectQuery("SELECT.*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	mock.ExpectCommit()
+
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
+		// First insert
+		ctx, tx, ac, err := s.beginOrUseTx(ctx)
+		assert.NoError(t, err)
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		assert.NoError(t, err)
+		err = s.commitTx(ctx, tx, ac)
+		assert.NoError(t, err)
+
+		// Second insert
+		ctx, tx, ac, err = s.beginOrUseTx(ctx)
+		assert.NoError(t, err)
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		assert.NoError(t, err)
+		err = s.commitTx(ctx, tx, ac)
+		assert.NoError(t, err)
+
+		// Query, not specifying a transaction
+		_, err = s.query(ctx, sq.Select("test").From("test"))
+		assert.NoError(t, err)
+		return
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.NoError(t, err)
+}
+
+func TestRunAsGroupBeginFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
+		return
+	})
+	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestRunAsGroupFunctionFails(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnResult(driver.ResultNoRows)
+	mock.ExpectRollback()
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
+		ctx, tx, ac, err := s.beginOrUseTx(ctx)
+		assert.NoError(t, err)
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		assert.NoError(t, err)
+		err = s.commitTx(ctx, tx, ac) // won't actually commit
+		assert.NoError(t, err)
+
+		return fmt.Errorf("pop")
+	})
+	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestRunAsGroupCommitFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
+	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
+		return
+	})
+	assert.NoError(t, mock.ExpectationsWereMet())
+	assert.Regexp(t, "FF10119", err.Error())
 }
 
 func TestRollbackFail(t *testing.T) {
