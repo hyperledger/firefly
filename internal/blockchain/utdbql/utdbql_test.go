@@ -63,7 +63,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	me := &blockchainmocks.Events{}
 
 	sbbEv := make(chan bool, 1)
-	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return()
+	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
 	sbb.RunFn = func(a mock.Arguments) {
 		sbbEv <- true
 	}

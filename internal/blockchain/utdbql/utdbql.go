@@ -49,6 +49,7 @@ const (
 
 type utEvent struct {
 	txType     utDBQLEventType
+	identity   string
 	trackingID string
 	txID       string
 	data       []byte
@@ -123,12 +124,14 @@ func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity string, batc
 	txID := strconv.FormatInt(lid, 10)
 	u.eventStream <- &utEvent{
 		txType:     utDBQLEventTypeBroadcastBatch,
+		identity:   identity,
 		trackingID: trackingID,
 		txID:       txID,
 		data:       b,
 	}
 	u.eventStream <- &utEvent{
 		txType:     utDBQLEventTypeMined,
+		identity:   identity,
 		trackingID: trackingID,
 		txID:       txID,
 		data:       nil,
@@ -160,7 +163,7 @@ func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 			log.L(u.ctx).Errorf("Failed to unmarshal '%s' event '%s': %s", ev.txType, ev.txID, err)
 			return
 		}
-		u.events.SequencedBroadcastBatch(batch, ev.trackingID, nil)
+		u.events.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
 		u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStateConfirmed, ev.txID, "", nil)
 	}

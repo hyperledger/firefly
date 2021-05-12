@@ -22,31 +22,23 @@ import (
 	"github.com/google/uuid"
 )
 
-type DataType string
-
-const (
-	DataTypeDefinition DataType = "definition"
-	DataTypeJSON       DataType = "json"
-	DataTypeBLOB       DataType = "blob"
-)
-
 type DataRef struct {
 	ID   *uuid.UUID `json:"id,omitempty"`
 	Hash *Bytes32   `json:"hash,omitempty"`
 }
 
 type Data struct {
-	ID        *uuid.UUID `json:"id,omitempty"`
-	Type      DataType   `json:"type"`
-	Namespace string     `json:"namespace,omitempty"`
-	Hash      *Bytes32   `json:"hash,omitempty"`
-	Created   int64      `json:"created,omitempty"`
-	Schema    *SchemaRef `json:"schema,omitempty"`
-	Value     JSONData   `json:"value,omitempty"`
+	ID         *uuid.UUID         `json:"id,omitempty"`
+	Validator  ValidatorType      `json:"validator"`
+	Namespace  string             `json:"namespace,omitempty"`
+	Hash       *Bytes32           `json:"hash,omitempty"`
+	Created    int64              `json:"created,omitempty"`
+	Definition *DataDefinitionRef `json:"definition,omitempty"`
+	Value      JSONData           `json:"value,omitempty"`
 }
 
-type SchemaRef struct {
-	Entity  string `json:"entity,omitempty"`
+type DataDefinitionRef struct {
+	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 

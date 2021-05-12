@@ -24,15 +24,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetSchemaById(t *testing.T) {
+func TestGetDataDefs(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/schemas/abcd12345", nil)
+	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/definitions/data", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetSchemaById", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Schema{}, nil)
+	e.On("GetDataDefinitions", mock.Anything, "mynamespace", mock.Anything).
+		Return([]*fftypes.DataDefinition{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

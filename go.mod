@@ -12,6 +12,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-lintpack/lintpack v0.5.2 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6 // indirect
 	github.com/golangci/goconst v0.0.0-20180610141641-041c5f2b40f3 // indirect

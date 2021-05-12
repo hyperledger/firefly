@@ -60,7 +60,7 @@ type Events interface {
 	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
 	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
-	SequencedBroadcastBatch(batch *BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{})
+	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{})
 }
 
 // BlockchainCapabilities the supported featureset of the blockchain

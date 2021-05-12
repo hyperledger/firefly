@@ -15,7 +15,7 @@
 package fftypes
 
 const (
-	SchemaTopicDefinitionName = "ff-schema"
-	SystemNamespace           = "ff-system"
-	SystemContext             = "ff-system"
+	DataDefinitionaTopicName = "ff-datadef"
+	SystemNamespace          = "ff-system"
+	SystemContext            = "ff-system"
 )

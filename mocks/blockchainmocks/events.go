@@ -14,9 +14,9 @@ type Events struct {
 	mock.Mock
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, protocolTxId, additionalInfo
-func (_m *Events) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, protocolTxId string, additionalInfo map[string]interface{}) {
-	_m.Called(batch, protocolTxId, additionalInfo)
+// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxId, additionalInfo
+func (_m *Events) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) {
+	_m.Called(batch, author, protocolTxId, additionalInfo)
 }
 
 // TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo

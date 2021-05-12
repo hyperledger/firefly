@@ -44,7 +44,7 @@ func TestWSClientE2E(t *testing.T) {
 		acks <- true
 	}()
 
-	afterConnect := func(ctx context.Context, w *WSClient) error {
+	afterConnect := func(ctx context.Context, w WSClient) error {
 		// Send a listen on topic1 in the connect options
 		b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
 		return w.Send(ctx, b)
@@ -190,7 +190,7 @@ func TestWSSendClosed(t *testing.T) {
 
 func TestWSSendCancelledContext(t *testing.T) {
 
-	w := &WSClient{
+	w := &wsClient{
 		send:    make(chan []byte),
 		closing: make(chan struct{}),
 	}
@@ -203,7 +203,7 @@ func TestWSSendCancelledContext(t *testing.T) {
 
 func TestWSConnectClosed(t *testing.T) {
 
-	w := &WSClient{
+	w := &wsClient{
 		ctx:    context.Background(),
 		closed: true,
 		retry:  &retry.Retry{},
@@ -229,7 +229,7 @@ func TestWSReadLoopSendFailure(t *testing.T) {
 	wsconn.WriteJSON(map[string]string{"type": "listen", "topic": "topic1"})
 	assert.NoError(t, err)
 	defer wsconn.Close()
-	w := &WSClient{
+	w := &wsClient{
 		ctx:      context.Background(),
 		closed:   true,
 		sendDone: make(chan []byte, 1),
@@ -256,7 +256,7 @@ func TestWSReconnect(t *testing.T) {
 	wsconn.Close()
 	ctxCancelled, cancel := context.WithCancel(context.Background())
 	cancel()
-	w := &WSClient{
+	w := &wsClient{
 		ctx:     ctxCancelled,
 		receive: make(chan []byte),
 		send:    make(chan []byte),
@@ -279,7 +279,7 @@ func TestWSSendFail(t *testing.T) {
 	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
 	assert.NoError(t, err)
 	wsconn.Close()
-	w := &WSClient{
+	w := &wsClient{
 		ctx:      context.Background(),
 		receive:  make(chan []byte),
 		send:     make(chan []byte, 1),

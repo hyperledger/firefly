@@ -17,7 +17,7 @@ package apiserver
 import "github.com/kaleido-io/firefly/internal/apispec"
 
 var routes = []*apispec.Route{
-	postDefsSchema,
+	postDataDefs,
 	getMsgById,
 	getMsgs,
 	getBatchById,
@@ -26,6 +26,6 @@ var routes = []*apispec.Route{
 	getData,
 	getTxnById,
 	getTxns,
-	getSchemaById,
-	getSchemas,
+	getDataDefById,
+	getDataDefs,
 }

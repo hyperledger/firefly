@@ -26,52 +26,52 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastSchemaDefinitionBadType(t *testing.T) {
+func TestBroadcastDataDefinitionBadType(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
-		Type: fftypes.SchemaType("wrong"),
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+		Validator: fftypes.ValidatorType("wrong"),
 	})
-	assert.Regexp(t, "FF10132.*type", err.Error())
+	assert.Regexp(t, "FF10132.*validator", err.Error())
 }
 
-func TestBroadcastSchemaBadNamespace(t *testing.T) {
+func TestBroadcastDataDefinitionBadNamespace(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "_ns1", &fftypes.Schema{})
+	_, err := e.BroadcastDataDefinition(context.Background(), "_ns1", &fftypes.DataDefinition{})
 	assert.Regexp(t, "FF10131.*namespace", err.Error())
 }
 
-func TestBroadcastSchemaBadEntity(t *testing.T) {
+func TestBroadcastDataDefinitionBadEntity(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 	})
-	assert.Regexp(t, "FF10131.*entity", err.Error())
+	assert.Regexp(t, "FF10131.*name", err.Error())
 }
 
-func TestBroadcastSchemaBadVersion(t *testing.T) {
+func TestBroadcastDataDefinitionBadVersion(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 	})
 	assert.Regexp(t, "FF10131.*version", err.Error())
 }
 
-func TestBroadcastSchemaMissingValue(t *testing.T) {
+func TestBroadcastDataDefinitionMissingValue(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 		Version:   "0.0.1",
 	})
 	assert.Regexp(t, "FF10140.*value", err.Error())
 }
 
-func TestBroadcastSchemaBadValue(t *testing.T) {
+func TestBroadcastDataDefinitionBadValue(t *testing.T) {
 	e := NewEngine().(*engine)
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 		Version:   "0.0.1",
 		Value: fftypes.JSONData{
 			"json": map[bool]string{false: "unparsable"},
@@ -87,9 +87,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 		Version:   "0.0.1",
 		Value: fftypes.JSONData{
 			"some": "data",
@@ -109,9 +109,9 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 		Version:   "0.0.1",
 		Value: fftypes.JSONData{
 			"some": "data",
@@ -131,9 +131,9 @@ func TestBroadcastOk(t *testing.T) {
 	mp.On("UpsertData", mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := e.BroadcastSchemaDefinition(context.Background(), "ns1", &fftypes.Schema{
+	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
-		Entity:    "ent1",
+		Name:      "ent1",
 		Version:   "0.0.1",
 		Value: fftypes.JSONData{
 			"some": "data",

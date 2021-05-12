@@ -142,6 +142,52 @@ func (_m *Plugin) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (*f
 	return r0, r1
 }
 
+// GetDataDefinitionById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.DataDefinition, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.DataDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.DataDefinition); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.DataDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDataDefinitions provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetDataDefinitions(ctx context.Context, filter persistence.Filter) ([]*fftypes.DataDefinition, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.DataDefinition
+	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.DataDefinition); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.DataDefinition)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessageById provides a mock function with given fields: ctx, ns, id
 func (_m *Plugin) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -221,52 +267,6 @@ func (_m *Plugin) GetOffsets(ctx context.Context, filter persistence.Filter) ([]
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Offset)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, persistence.Filter) error); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetSchemaById provides a mock function with given fields: ctx, ns, id
-func (_m *Plugin) GetSchemaById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Schema, error) {
-	ret := _m.Called(ctx, ns, id)
-
-	var r0 *fftypes.Schema
-	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Schema); ok {
-		r0 = rf(ctx, ns, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Schema)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
-		r1 = rf(ctx, ns, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetSchemas provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetSchemas(ctx context.Context, filter persistence.Filter) ([]*fftypes.Schema, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.Schema
-	if rf, ok := ret.Get(0).(func(context.Context, persistence.Filter) []*fftypes.Schema); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Schema)
 		}
 	}
 
@@ -368,6 +368,20 @@ func (_m *Plugin) UpdateData(ctx context.Context, id *uuid.UUID, update persiste
 	return r0
 }
 
+// UpdateDataDefinition provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateMessage provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateMessage(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -389,20 +403,6 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns str
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string, persistence.Update) error); ok {
 		r0 = rf(ctx, t, ns, name, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateSchema provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateSchema(ctx context.Context, id *uuid.UUID, update persistence.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, persistence.Update) error); ok {
-		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -452,6 +452,20 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data) error {
 	return r0
 }
 
+// UpsertDataDefinition provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertDataDefinition(ctx context.Context, data *fftypes.DataDefinition) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition) error); ok {
+		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertMessage provides a mock function with given fields: ctx, message
 func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message) error {
 	ret := _m.Called(ctx, message)
@@ -472,20 +486,6 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset) error 
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset) error); ok {
-		r0 = rf(ctx, data)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertSchema provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertSchema(ctx context.Context, data *fftypes.Schema) error {
-	ret := _m.Called(ctx, data)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Schema) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
