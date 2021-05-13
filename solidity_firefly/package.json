@@ -1,5 +1,5 @@
 {
-  "name": "@photic/assettrail-contracts",
+  "name": "@kaleido-io/assettrail-contracts",
   "version": "0.0.1",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",

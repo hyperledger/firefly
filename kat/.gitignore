@@ -2,3 +2,4 @@
 coverage
 build
 test-resources/sandbox
+node_modules
