@@ -6,7 +6,7 @@ MOCKERY=mockery
 
 all: build test
 test: deps lint
-		$(VGO) test  ./... -cover -coverprofile=coverage.txt -covermode=atomic
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... -cover -coverprofile=coverage.txt -covermode=atomic
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
