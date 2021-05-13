@@ -15,14 +15,19 @@
 package engine
 
 import (
-	"github.com/kaleido-io/firefly/internal/blockchain"
+	"testing"
+
+	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/mocks/batchingmocks"
 )
 
-func (e *engine) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
-	return e.aggregator.TransactionUpdate(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
-}
-
-func (e *engine) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
-	return e.aggregator.SequencedBroadcastBatch(batch, author, protocolTxId, additionalInfo)
+func TestMessageCreated(t *testing.T) {
+	mb := &batchingmocks.BatchManager{}
+	e := &engine{
+		batch: mb,
+	}
+	c := make(chan *uuid.UUID, 1)
+	mb.On("NewMessages").Return((chan<- *uuid.UUID)(c))
+	e.batch.NewMessages() <- fftypes.NewUUID()
 }

@@ -17,6 +17,9 @@ package ipfs
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -62,6 +65,13 @@ func TestIPFSHashToBytes32(t *testing.T) {
 	res, err := i.ipfsHashToBytes32(ipfsHash)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSHA256, *res)
+}
+
+func TestBytes32ToIPFSHash(t *testing.T) {
+	var b32 fftypes.Bytes32
+	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
+	i := IPFS{ctx: context.Background()}
+	assert.Equal(t, "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL", i.bytes32ToIPFSHash(&b32))
 }
 
 func TestIPFSHashToBytes32BadData(t *testing.T) {
@@ -125,6 +135,87 @@ func TestIPFSUploadFail(t *testing.T) {
 
 	data := []byte(`hello world`)
 	_, err = i.PublishData(context.Background(), bytes.NewReader(data))
+	assert.Regexp(t, "FF10136", err.Error())
+
+}
+
+func TestIPFSDownloadSuccess(t *testing.T) {
+	i := &IPFS{}
+	var b32 fftypes.Bytes32
+	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
+	defer config.Reset()
+
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	assert.NoError(t, err)
+
+	data := []byte(`{"hello": "world"}`)
+	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
+		httpmock.NewBytesResponder(200, data))
+
+	r, err := i.RetrieveData(context.Background(), &b32)
+	assert.NoError(t, err)
+	defer r.Close()
+
+	var resJSON fftypes.JSONData
+	json.NewDecoder(r).Decode(&resJSON)
+	assert.Equal(t, "world", resJSON["hello"])
+
+}
+
+func TestIPFSDownloadFail(t *testing.T) {
+	i := &IPFS{}
+	var b32 fftypes.Bytes32
+	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
+	defer config.Reset()
+
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
+		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
+
+	_, err = i.RetrieveData(context.Background(), &b32)
+	assert.Regexp(t, "FF10136", err.Error())
+
+}
+
+func TestIPFSDownloadError(t *testing.T) {
+	i := &IPFS{}
+	var b32 fftypes.Bytes32
+	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf()
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
+	defer config.Reset()
+
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	assert.NoError(t, err)
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
+		httpmock.NewErrorResponder(fmt.Errorf("pop")))
+
+	_, err = i.RetrieveData(context.Background(), &b32)
 	assert.Regexp(t, "FF10136", err.Error())
 
 }

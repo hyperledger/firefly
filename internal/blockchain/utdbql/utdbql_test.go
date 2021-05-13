@@ -16,7 +16,9 @@ package utdbql
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
@@ -42,6 +44,7 @@ func TestInit(t *testing.T) {
 
 	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
 	assert.NoError(t, err)
+
 	assert.NotNil(t, u.Capabilities())
 	u.Close()
 }
@@ -74,13 +77,13 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	me := &blockchainmocks.Events{}
 
 	sbbEv := make(chan bool, 1)
-	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	sbb.RunFn = func(a mock.Arguments) {
 		sbbEv <- true
 	}
 
 	txEv := make(chan bool, 1)
-	tx := me.On("TransactionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return()
+	tx := me.On("TransactionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	tx.RunFn = func(a mock.Arguments) {
 		txEv <- true
 	}
@@ -91,6 +94,8 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	err := u.Init(context.Background(), utConfPrefix, me)
 	assert.NoError(t, err)
 	defer u.Close()
+
+	u.Start()
 
 	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
 		Timestamp:      fftypes.NowMillis(),
@@ -105,6 +110,40 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 		<-sbbEv
 	}
 
+}
+
+func TestCloseOnEventDispatchError(t *testing.T) {
+	u := &UTDBQL{}
+	me := &blockchainmocks.Events{}
+
+	sbbEv := make(chan bool, 1)
+	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("Pop"))
+	sbb.RunFn = func(a mock.Arguments) {
+		sbbEv <- true
+	}
+
+	me.On("TransactionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	resetConf()
+	utConfPrefix.Set(UTDBQLConfURL, "memory://")
+
+	err := u.Init(context.Background(), utConfPrefix, me)
+	assert.NoError(t, err)
+	defer u.Close()
+
+	u.Start()
+
+	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
+		Timestamp:      fftypes.NowMillis(),
+		BatchID:        fftypes.NewUUID(),
+		BatchPaylodRef: fftypes.NewRandB32(),
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, trackingID)
+
+	for !u.closed {
+		time.Sleep(1 * time.Microsecond)
+	}
 }
 
 func TestVerifyBroadcastDBError(t *testing.T) {

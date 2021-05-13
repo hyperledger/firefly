@@ -82,12 +82,27 @@ func TestInitBadIdentity(t *testing.T) {
 	e.Close()
 }
 
-func TestStart(t *testing.T) {
+func TestStartBatchFail(t *testing.T) {
+	config.Reset()
 	mb := &batchingmocks.BatchManager{}
+	mblk := &blockchainmocks.Plugin{}
 	e := &engine{
-		batch: mb,
+		batch:      mb,
+		blockchain: mblk,
 	}
 	mb.On("Start").Return(fmt.Errorf("pop"))
+	mblk.On("Start").Return(nil)
+	err := e.Start()
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestStartBlockchainFail(t *testing.T) {
+	config.Reset()
+	mblk := &blockchainmocks.Plugin{}
+	e := &engine{
+		blockchain: mblk,
+	}
+	mblk.On("Start").Return(fmt.Errorf("pop"))
 	err := e.Start()
 	assert.Regexp(t, "pop", err.Error())
 }

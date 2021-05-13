@@ -18,8 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

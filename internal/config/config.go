@@ -28,38 +28,41 @@ import (
 // The following keys can be access from the root configuration.
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
-	Lang                       RootKey = ark("lang")
-	LogLevel                   RootKey = ark("log.level")
-	LogColor                   RootKey = ark("log.color")
-	DebugPort                  RootKey = ark("debug.port")
-	HttpAddress                RootKey = ark("http.address")
-	HttpPort                   RootKey = ark("http.port")
-	HttpReadTimeout            RootKey = ark("http.readTimeout")
-	HttpWriteTimeout           RootKey = ark("http.writeTimeout")
-	HttpTLSEnabled             RootKey = ark("http.tls.enabled")
-	HttpTLSClientAuth          RootKey = ark("http.tls.clientAuth")
-	HttpTLSCAFile              RootKey = ark("http.tls.caFile")
-	HttpTLSCertFile            RootKey = ark("http.tls.certFile")
-	HttpTLSKeyFile             RootKey = ark("http.tls.keyFile")
-	CorsEnabled                RootKey = ark("cors.enabled")
-	CorsAllowedOrigins         RootKey = ark("cors.origins")
-	CorsAllowedMethods         RootKey = ark("cors.methods")
-	CorsAllowedHeaders         RootKey = ark("cors.headers")
-	CorsAllowCredentials       RootKey = ark("cors.credentials")
-	CorsMaxAge                 RootKey = ark("cors.maxAge")
-	CorsDebug                  RootKey = ark("cors.debug")
-	NodeIdentity               RootKey = ark("node.identity")
-	APIRequestTimeout          RootKey = ark("api.requestTimeout")
-	APIDefaultFilterLimit      RootKey = ark("api.defaultFilterLimit")
-	Database                   RootKey = ark("database")
-	DatabaseType               RootKey = ark("database.type")
-	BlockchainType             RootKey = ark("blockchain.type")
-	Blockchain                 RootKey = ark("blockchain")
-	P2PFSType                  RootKey = ark("p2pfs.type")
-	P2PFS                      RootKey = ark("p2pfs")
-	BroadcastBatchSize         RootKey = ark("broadcast.batch.size")
-	BroadcastBatchTimeout      RootKey = ark("broadcast.batch.timeout")
-	BroadcastBatchAgentTimeout RootKey = ark("broadcast.batch.agentTimeout")
+	Lang                              RootKey = ark("lang")
+	LogLevel                          RootKey = ark("log.level")
+	LogColor                          RootKey = ark("log.color")
+	DebugPort                         RootKey = ark("debug.port")
+	HttpAddress                       RootKey = ark("http.address")
+	HttpPort                          RootKey = ark("http.port")
+	HttpReadTimeout                   RootKey = ark("http.readTimeout")
+	HttpWriteTimeout                  RootKey = ark("http.writeTimeout")
+	HttpTLSEnabled                    RootKey = ark("http.tls.enabled")
+	HttpTLSClientAuth                 RootKey = ark("http.tls.clientAuth")
+	HttpTLSCAFile                     RootKey = ark("http.tls.caFile")
+	HttpTLSCertFile                   RootKey = ark("http.tls.certFile")
+	HttpTLSKeyFile                    RootKey = ark("http.tls.keyFile")
+	CorsEnabled                       RootKey = ark("cors.enabled")
+	CorsAllowedOrigins                RootKey = ark("cors.origins")
+	CorsAllowedMethods                RootKey = ark("cors.methods")
+	CorsAllowedHeaders                RootKey = ark("cors.headers")
+	CorsAllowCredentials              RootKey = ark("cors.credentials")
+	CorsMaxAge                        RootKey = ark("cors.maxAge")
+	CorsDebug                         RootKey = ark("cors.debug")
+	NodeIdentity                      RootKey = ark("node.identity")
+	APIRequestTimeout                 RootKey = ark("api.requestTimeout")
+	APIDefaultFilterLimit             RootKey = ark("api.defaultFilterLimit")
+	Database                          RootKey = ark("database")
+	DatabaseType                      RootKey = ark("database.type")
+	BlockchainType                    RootKey = ark("blockchain.type")
+	Blockchain                        RootKey = ark("blockchain")
+	P2PFSType                         RootKey = ark("p2pfs.type")
+	P2PFS                             RootKey = ark("p2pfs")
+	BroadcastBatchSize                RootKey = ark("broadcast.batch.size")
+	BroadcastBatchTimeout             RootKey = ark("broadcast.batch.timeout")
+	BroadcastBatchAgentTimeout        RootKey = ark("broadcast.batch.agentTimeout")
+	AggregatorDataReadRetryDelayMS    RootKey = ark("aggregator.dataread.retryDelayMS")
+	AggregatorDataReadRetryMaxDelayMS RootKey = ark("aggregator.dataread.maxDelayMS")
+	AggregatorDataReadRetryFactor     RootKey = ark("aggregator.dataread.factor")
 )
 
 // Config prefix represents the global configuration, at a nested point in
@@ -107,6 +110,9 @@ func Reset() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchTimeout), 500)
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), 120000)
+	viper.SetDefault(string(AggregatorDataReadRetryDelayMS), 250)
+	viper.SetDefault(string(AggregatorDataReadRetryMaxDelayMS), 30000)
+	viper.SetDefault(string(AggregatorDataReadRetryFactor), 2.0)
 
 	i18n.SetLang(GetString(Lang))
 }
@@ -235,6 +241,14 @@ func GetInt(key RootKey) int {
 }
 func (c *configPrefix) GetInt(key string) int {
 	return viper.GetInt(c.prefixKey(key))
+}
+
+// GetFloat gets a configuration uint
+func GetFloat64(key RootKey) float64 {
+	return root.GetFloat64(string(key))
+}
+func (c *configPrefix) GetFloat64(key string) float64 {
+	return viper.GetFloat64(c.prefixKey(key))
 }
 
 // GetStringMap gets a configuration map

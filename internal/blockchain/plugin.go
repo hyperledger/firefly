@@ -32,6 +32,9 @@ type Plugin interface {
 	// Returns the supported featureset of the interface
 	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
 
+	// Blockchain interface must not deliver any events until start is called
+	Start() error
+
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
@@ -54,14 +57,18 @@ type Events interface {
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{})
+	//
+	// Error should will only be returned in shutdown scenarios
+	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
 	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
-	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{})
+	//
+	// Error should will only be returned in shutdown scenarios
+	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error
 }
 
 // BlockchainCapabilities the supported featureset of the blockchain

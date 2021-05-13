@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -125,7 +126,15 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 func WrapRestErr(ctx context.Context, res *resty.Response, err error, key i18n.MessageKey) error {
 	var respData string
 	if res != nil {
-		respData = res.String()
+		if res.RawBody() != nil {
+			defer func() { _ = res.RawBody().Close() }()
+			if r, err := ioutil.ReadAll(res.RawBody()); err == nil {
+				respData = string(r)
+			}
+		}
+		if respData == "" {
+			respData = res.String()
+		}
 		if len(respData) > 256 {
 			respData = respData[0:256] + "..."
 		}

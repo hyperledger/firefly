@@ -51,6 +51,20 @@ func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
 	_m.Called(prefix)
 }
 
+// Start provides a mock function with given fields:
+func (_m *Plugin) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SubmitBroadcastBatch provides a mock function with given fields: ctx, identity, batch
 func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (string, error) {
 	ret := _m.Called(ctx, identity, batch)

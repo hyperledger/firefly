@@ -17,6 +17,7 @@ package ipfs
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"io"
 
@@ -72,6 +73,13 @@ func (i *IPFS) ipfsHashToBytes32(ipfshash string) (*fftypes.Bytes32, error) {
 	return &b32, nil
 }
 
+func (i *IPFS) bytes32ToIPFSHash(payloadRef *fftypes.Bytes32) string {
+	var hashBytes [34]byte
+	copy(hashBytes[0:2], []byte{0x12, 0x20})
+	copy(hashBytes[2:34], payloadRef[0:32])
+	return base58.Encode(hashBytes[:])
+}
+
 func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.client.R().
@@ -84,4 +92,20 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
 	return i.ipfsHashToBytes32(ipfsResponse.Hash)
+}
+
+func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error) {
+	ipfsHash := i.bytes32ToIPFSHash(payloadRef)
+	res, err := i.client.R().
+		SetContext(ctx).
+		SetDoNotParseResponse(true).
+		Get(fmt.Sprintf("/ipfs/%s", ipfsHash))
+	if err != nil || !res.IsSuccess() {
+		if res != nil && res.RawBody() != nil {
+			_ = res.RawBody().Close()
+		}
+		return nil, ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
+	}
+	log.L(ctx).Infof("IPFS retrieved %s", ipfsHash)
+	return res.RawBody(), nil
 }

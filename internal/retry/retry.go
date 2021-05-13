@@ -29,7 +29,7 @@ const (
 type Retry struct {
 	InitialDelay time.Duration
 	MaximumDelay time.Duration
-	Factor       float32
+	Factor       float64
 }
 
 // Do invokes the function until the function returns false, or the retry pops.
@@ -71,7 +71,7 @@ func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool, err err
 
 		// Sleep and set the delay for next time
 		time.Sleep(delay)
-		delay = time.Duration(float32(delay) * factor)
+		delay = time.Duration(float64(delay) * factor)
 
 	}
 }

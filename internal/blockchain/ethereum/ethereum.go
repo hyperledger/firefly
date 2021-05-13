@@ -119,9 +119,6 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 		ethconnectConf.Set(wsclient.WSConfigKeyPath, "/ws")
 	}
 	e.wsconn, err = wsclient.New(ctx, ethconnectConf, e.afterConnect)
-	if err == nil {
-		err = e.wsconn.Connect()
-	}
 	if err != nil {
 		return err
 	}
@@ -133,6 +130,10 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 	}
 
 	return nil
+}
+
+func (e *Ethereum) Start() error {
+	return e.wsconn.Connect()
 }
 
 func (e *Ethereum) Capabilities() *blockchain.Capabilities {
@@ -253,7 +254,7 @@ func (e *Ethereum) getMapSubMap(ctx context.Context, m map[string]interface{}, k
 	return map[string]interface{}{}, false // Ensures a non-nil return
 }
 
-func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONData) {
+func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONData) error {
 	sBlockNumber, _ := e.getMapString(ctx, msgJSON, "blockNumber")
 	sTransactionIndex, _ := e.getMapString(ctx, msgJSON, "transactionIndex")
 	sTransactionHash, _ := e.getMapString(ctx, msgJSON, "transactionHash")
@@ -271,26 +272,26 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		sPayloadRef == "" ||
 		sTimestamp == "" {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
-		return
+		return nil // move on
 	}
 
 	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad timestmp (%s): %+v", err, msgJSON)
-		return
+		return nil // move on
 	}
 
 	author, err := e.VerifyIdentitySyntax(ctx, sAuthor)
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
-		return
+		return nil // move on
 	}
 
 	var batchIDB32 fftypes.Bytes32
 	err = batchIDB32.UnmarshalText([]byte(sBatchId))
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchId (%s): %+v", err, msgJSON)
-		return
+		return nil // move on
 	}
 	var batchID uuid.UUID
 	copy(batchID[:], batchIDB32[0:16])
@@ -299,7 +300,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	err = payloadRef.UnmarshalText([]byte(sPayloadRef))
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad payloadRef (%s): %+v", err, msgJSON)
-		return
+		return nil // move on
 	}
 
 	batch := &blockchain.BroadcastBatch{
@@ -307,17 +308,19 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		BatchID:        &batchID,
 		BatchPaylodRef: &payloadRef,
 	}
-	e.events.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
+
+	// If there's an error dispatching the event, we must return the error and shutdown
+	return e.events.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
 }
 
-func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) {
+func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
 
 	l := log.L(ctx)
 	var msgsJSON []fftypes.JSONData
 	err := json.Unmarshal(message, &msgsJSON)
 	if err != nil {
 		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(message))
-		return
+		return nil // Swallow this and move on
 	}
 
 	for i, msgJSON := range msgsJSON {
@@ -328,9 +331,11 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) {
 
 		switch signature {
 		case "BroadcastBatch(address,uint256,bytes32,bytes32)":
-			e.handleBroadcastBatchEvent(ctx, msgJSON)
+			return e.handleBroadcastBatchEvent(ctx, msgJSON)
 		}
 	}
+
+	return nil // ignore messages we cannot handle
 
 }
 
@@ -348,10 +353,13 @@ func (e *Ethereum) eventLoop() {
 				l.Debugf("Event loop exiting (receive channel closed)")
 				return
 			}
-			e.handleMessageBatch(ctx, msgBytes)
+			err := e.handleMessageBatch(ctx, msgBytes)
+			if err == nil {
+				err = e.wsconn.Send(ctx, ack)
+			}
 
 			// Send the ack - only fails if shutting down
-			if err := e.wsconn.Send(ctx, ack); err != nil {
+			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)
 				return
 			}

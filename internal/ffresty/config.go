@@ -17,7 +17,7 @@ package ffresty
 import "github.com/kaleido-io/firefly/internal/config"
 
 const (
-	defaultRetryEnabled           = true
+	defaultRetryEnabled           = false
 	defaultRetryCount             = 5
 	defaultRetryWaitTimeMillis    = 100
 	defaultRetryMaxWaitTimeMillis = 1000
