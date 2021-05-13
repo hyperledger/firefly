@@ -20,6 +20,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/i18n"
+)
+
+var (
+	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
 )
 
 // Plugin is the interface implemented by each plugin
@@ -67,8 +72,9 @@ type PeristenceInterface interface {
 	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
-	// Upsert a message, with all the embedded data references
-	UpsertMessage(ctx context.Context, message *fftypes.Message) (err error)
+	// Upsert a message, with all the embedded data references.
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error)
 
 	// Update messages
 	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -80,7 +86,8 @@ type PeristenceInterface interface {
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
 	// Upsert a data record
-	UpsertData(ctx context.Context, data *fftypes.Data) (err error)
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error)
 
 	// Update data
 	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -92,7 +99,8 @@ type PeristenceInterface interface {
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
 
 	// Upsert a batch
-	UpsertBatch(ctx context.Context, data *fftypes.Batch) (err error)
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) (err error)
 
 	// Update data
 	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -104,7 +112,8 @@ type PeristenceInterface interface {
 	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
 
 	// Upsert a transaction
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction) (err error)
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
 
 	// Update transaction
 	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -167,20 +176,20 @@ type Capabilities struct {
 }
 
 var MessageQueryFactory = &queryFields{
-	"id":         &StringField{},
-	"cid":        &StringField{},
-	"namespace":  &StringField{},
-	"type":       &StringField{},
-	"author":     &StringField{},
-	"topic":      &StringField{},
-	"context":    &StringField{},
-	"group":      &StringField{},
-	"created":    &Int64Field{},
-	"confirmed":  &Int64Field{},
-	"sequence":   &Int64Field{},
-	"tx.type":    &StringField{},
-	"tx.id":      &StringField{},
-	"tx.batchid": &StringField{},
+	"id":        &StringField{},
+	"cid":       &StringField{},
+	"namespace": &StringField{},
+	"type":      &StringField{},
+	"author":    &StringField{},
+	"topic":     &StringField{},
+	"context":   &StringField{},
+	"group":     &StringField{},
+	"created":   &Int64Field{},
+	"confirmed": &Int64Field{},
+	"sequence":  &Int64Field{},
+	"tx.type":   &StringField{},
+	"tx.id":     &StringField{},
+	"batchid":   &StringField{},
 }
 
 var BatchQueryFactory = &queryFields{
@@ -204,8 +213,11 @@ var TransactionQueryFactory = &queryFields{
 	"author":     &StringField{},
 	"protocolid": &StringField{},
 	"status":     &StringField{},
+	"message":    &StringField{},
+	"batch":      &StringField{},
 	"created":    &Int64Field{},
 	"confirmed":  &Int64Field{},
+	"sequence":   &Int64Field{},
 }
 
 var DataQueryFactory = &queryFields{

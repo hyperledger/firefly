@@ -42,7 +42,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset) (e
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	offsetRows, err := s.queryTx(ctx, tx,
@@ -166,7 +166,7 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, 
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("offsets"), update, offsetFilterTypeMap)
 	if err != nil {

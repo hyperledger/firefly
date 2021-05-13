@@ -58,7 +58,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	opRows, err := s.queryTx(ctx, tx,
@@ -199,7 +199,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, opid *uuid.UUID, update
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("operations"), update, opFilterTypeMap)
 	if err != nil {

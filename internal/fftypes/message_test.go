@@ -102,6 +102,7 @@ func TestSealKnownMessage(t *testing.T) {
 	msgid := uuid.MustParse("2cd37805-5f40-4e12-962e-67868cde3049")
 	cid := uuid.MustParse("39296b6e-91b9-4a61-b279-833c85b04d94")
 	gid := uuid.MustParse("5cd8afa6-f483-42f1-b11b-5a6f6421c81d")
+	txid := uuid.MustParse("87dbc29b-16e1-4578-bf24-0d3ac3b33ef1")
 	data1 := uuid.MustParse("e3a3b714-7e49-4c73-a4ea-87a50b19961a")
 	data2 := uuid.MustParse("cc66b23f-d340-4333-82d5-b63adc1c3c07")
 	data3 := uuid.MustParse("189c8185-2b92-481a-847a-e57595ab3541")
@@ -111,9 +112,13 @@ func TestSealKnownMessage(t *testing.T) {
 	hash3.UnmarshalText([]byte("284b535da66aa0734af56c708426d756331baec3bce3079e508003bcf4738ee6"))
 	msg := Message{
 		Header: MessageHeader{
-			ID:        &msgid,
-			CID:       &cid,
-			Type:      MessageTypePrivate,
+			ID:   &msgid,
+			CID:  &cid,
+			Type: MessageTypePrivate,
+			TX: TransactionRef{
+				Type: TransactionTypePin,
+				ID:   &txid,
+			},
 			Author:    "0x12345",
 			Namespace: "ns1",
 			Topic:     "topic1",
@@ -139,10 +144,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","author":"0x12345","created":1620104103000,"namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":1620104103000,"namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `93737a132c3b1812b3fdf68b55e032f3e626ef8f717d8bb622ea31586756b251`, msgHash.String())
+	assert.Equal(t, `a04b6c417d3fe778c7a2ee290faa6f544726c13f6955247d000c4c6b7f14f075`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good

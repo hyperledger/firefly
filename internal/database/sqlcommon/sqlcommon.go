@@ -60,13 +60,13 @@ func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, false /* we _are_ the auto-committer */)
 
 	if err = fn(ctx); err != nil {
 		return err
 	}
 
-	return s.commitTx(ctx, tx, false /* we _are_ the auto committer */)
+	return s.commitTx(ctx, tx, false /* we _are_ the auto-committer */)
 }
 
 func getTXFromContext(ctx context.Context) *sql.Tx {
@@ -184,7 +184,12 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *sql.Tx, q sq.UpdateBuilder
 }
 
 // rollbackTx be safely called as a defer, as it is a cheap no-op if the transaction is complete
-func (s *SQLCommon) rollbackTx(ctx context.Context, tx *sql.Tx) {
+func (s *SQLCommon) rollbackTx(ctx context.Context, tx *sql.Tx, autoCommit bool) {
+	if autoCommit {
+		// We're inside of a wide transaction boundary with an auto-commit
+		return
+	}
+
 	err := tx.Rollback()
 	if err == nil {
 		log.L(ctx).Warnf("SQL! transaction rollback")

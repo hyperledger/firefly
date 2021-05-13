@@ -136,7 +136,7 @@ func (e *engine) initPlugins(ctx context.Context) (err error) {
 
 func (e *engine) initComponents(ctx context.Context) (err error) {
 	if e.aggregator == nil {
-		e.aggregator = aggregator.NewAggregator(ctx, e.p2pfs)
+		e.aggregator = aggregator.NewAggregator(ctx, e.p2pfs, e.database)
 	}
 
 	if e.batch == nil {

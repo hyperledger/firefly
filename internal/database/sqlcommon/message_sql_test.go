@@ -22,9 +22,9 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,7 +47,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	dataId2 := uuid.New()
 	rand1 := fftypes.NewRandB32()
 	rand2 := fftypes.NewRandB32()
-	randB32 := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        &msgId,
@@ -59,19 +58,19 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topic:     "topic1",
 			Context:   "context1",
 			Group:     nil,
-			DataHash:  randB32,
+			DataHash:  fftypes.NewRandB32(),
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeNone,
+			},
 		},
-		Hash:      randB32,
+		Hash:      fftypes.NewRandB32(),
 		Confirmed: 0,
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeNone,
-		},
 		Data: []fftypes.DataRef{
 			{ID: &dataId1, Hash: rand1},
 			{ID: &dataId2, Hash: rand2},
 		},
 	}
-	err := s.UpsertMessage(ctx, msg)
+	err := s.UpsertMessage(ctx, msg, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back
@@ -103,21 +102,26 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topic:     "topic1",
 			Context:   "context1",
 			Group:     &gid,
-			DataHash:  randB32,
+			DataHash:  fftypes.NewRandB32(),
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypePin,
+				ID:   &txid,
+			},
 		},
-		Hash:      randB32,
+		Hash:      fftypes.NewRandB32(),
 		Confirmed: fftypes.NowMillis(),
-		TX: fftypes.TransactionRef{
-			Type:    fftypes.TransactionTypePin,
-			ID:      &txid,
-			BatchID: &bid,
-		},
+		BatchID:   &bid,
 		Data: []fftypes.DataRef{
 			{ID: &dataId2, Hash: rand2},
 			{ID: &dataId3, Hash: rand3},
 		},
 	}
-	err = s.UpsertMessage(context.Background(), msgUpdated)
+
+	// Ensure hash change rejected
+	err = s.UpsertMessage(context.Background(), msgUpdated, false)
+	assert.Equal(t, database.HashMismatch, err)
+
+	err = s.UpsertMessage(context.Background(), msgUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
@@ -177,7 +181,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 func TestUpsertMessageFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -188,7 +192,7 @@ func TestUpsertMessageFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgId := uuid.New()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -200,7 +204,7 @@ func TestUpsertMessageFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	msgId := uuid.New()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -212,7 +216,7 @@ func TestUpsertMessageFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(msgId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -225,7 +229,7 @@ func TestUpsertMessageFailLoadRefs(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -238,7 +242,7 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}})
+	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgId}}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -167,7 +167,7 @@ func TestRunAsGroupFunctionFails(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
 		assert.NoError(t, err)
-		err = s.commitTx(ctx, tx, ac) // won't actually commit
+		s.rollbackTx(ctx, tx, ac) // won't actually rollback
 		assert.NoError(t, err)
 
 		return fmt.Errorf("pop")
@@ -192,7 +192,7 @@ func TestRollbackFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
-	s.rollbackTx(context.Background(), tx)
+	s.rollbackTx(context.Background(), tx, false)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

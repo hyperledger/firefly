@@ -324,19 +324,21 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 	}
 
 	for i, msgJSON := range msgsJSON {
-		l1 := l.WithField("msgidx", i)
+		l1 := l.WithField("ethmsgidx", i)
+		ctx1 := log.WithLogger(ctx, l1)
 		signature, _ := e.getMapString(ctx, msgJSON, "signature")
 		l1.Infof("Received '%s' message", signature)
-		l1.Debugf("Message: %+v", msgJSON)
+		l1.Tracef("Message: %+v", msgJSON)
 
 		switch signature {
 		case "BroadcastBatch(address,uint256,bytes32,bytes32)":
-			return e.handleBroadcastBatchEvent(ctx, msgJSON)
+			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
+				return err
+			}
 		}
 	}
 
-	return nil // ignore messages we cannot handle
-
+	return nil
 }
 
 func (e *Ethereum) eventLoop() {

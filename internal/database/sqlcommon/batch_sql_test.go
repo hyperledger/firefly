@@ -22,8 +22,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,22 +36,21 @@ func TestBatch2EWithDB(t *testing.T) {
 	// Create a new batch entry
 	batchId := uuid.New()
 	msgId1 := uuid.New()
-	randB32 := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID:     &batchId,
 		Type:   fftypes.MessageTypeBroadcast,
 		Author: "0x12345",
-		Hash:   randB32,
+		Hash:   fftypes.NewRandB32(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
 			},
-		},
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeNone,
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeNone,
+			},
 		},
 	}
-	err := s.UpsertBatch(ctx, batch)
+	err := s.UpsertBatch(ctx, batch, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same batch back
@@ -72,22 +71,27 @@ func TestBatch2EWithDB(t *testing.T) {
 		Type:      fftypes.MessageTypeBroadcast,
 		Author:    "0x12345",
 		Namespace: "ns1",
-		Hash:      randB32,
+		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.NowMillis(),
 		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID:   &txid,
+				Type: fftypes.TransactionTypePin,
+			},
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
 				{Header: fftypes.MessageHeader{ID: &msgId2}},
 			},
 		},
 		PayloadRef: payloadRef,
-		TX: fftypes.TransactionRef{
-			ID:   &txid,
-			Type: fftypes.TransactionTypePin,
-		},
-		Confirmed: fftypes.NowMillis(),
+		Confirmed:  fftypes.NowMillis(),
 	}
-	err = s.UpsertBatch(context.Background(), batchUpdated)
+
+	// Rejects hash change
+	err = s.UpsertBatch(context.Background(), batchUpdated, false)
+	assert.Equal(t, database.HashMismatch, err)
+
+	err = s.UpsertBatch(context.Background(), batchUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the batch elements
@@ -140,7 +144,7 @@ func TestBatch2EWithDB(t *testing.T) {
 func TestUpsertBatchFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{})
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -151,7 +155,7 @@ func TestUpsertBatchFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchId := uuid.New()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId})
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -163,7 +167,7 @@ func TestUpsertBatchFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchId := uuid.New()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId})
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -175,7 +179,7 @@ func TestUpsertBatchFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(batchId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId})
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -187,7 +191,7 @@ func TestUpsertBatchFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId})
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

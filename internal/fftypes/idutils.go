@@ -32,3 +32,13 @@ func NewUUID() *uuid.UUID {
 	u := uuid.New()
 	return &u
 }
+
+func SafeHashCompare(h1 *Bytes32, h2 *Bytes32) bool {
+	if h1 == nil && h2 == nil {
+		return true
+	}
+	if h1 == nil && h2 != nil || h2 == nil && h1 != nil {
+		return false
+	}
+	return *h1 == *h2
+}

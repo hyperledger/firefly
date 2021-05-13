@@ -25,21 +25,21 @@ import (
 )
 
 type Batch struct {
-	ID         *uuid.UUID     `json:"id"`
-	Namespace  string         `json:"namespace"`
-	Type       MessageType    `json:"type"`
-	Author     string         `json:"author"`
-	Hash       *Bytes32       `json:"hash"`
-	Created    int64          `json:"created"`
-	Confirmed  int64          `json:"confirmed"`
-	Payload    BatchPayload   `json:"payload"`
-	PayloadRef *Bytes32       `json:"payloadRef,omitempty"`
-	TX         TransactionRef `json:"tx"`
+	ID         *uuid.UUID   `json:"id"`
+	Namespace  string       `json:"namespace"`
+	Type       MessageType  `json:"type"`
+	Author     string       `json:"author"`
+	Hash       *Bytes32     `json:"hash"`
+	Created    int64        `json:"created"`
+	Confirmed  int64        `json:"confirmed"`
+	Payload    BatchPayload `json:"payload"`
+	PayloadRef *Bytes32     `json:"payloadRef,omitempty"`
 }
 
 type BatchPayload struct {
-	Messages []*Message `json:"messages"`
-	Data     []*Data    `json:"data"`
+	TX       TransactionRef `json:"tx"`
+	Messages []*Message     `json:"messages"`
+	Data     []*Data        `json:"data"`
 }
 
 // Value implements sql.Valuer

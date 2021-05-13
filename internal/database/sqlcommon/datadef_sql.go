@@ -45,7 +45,7 @@ func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.D
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	dataDefRows, err := s.queryTx(ctx, tx,
@@ -173,7 +173,7 @@ func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, upd
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("datadefs"), update, dataDefFilterTypeMap)
 	if err != nil {
