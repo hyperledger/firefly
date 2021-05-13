@@ -422,6 +422,38 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
 
 }
 
+func TestHandleMessageBatchBroadcastExit(t *testing.T) {
+	data := []byte(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+    "data": {
+      "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+      "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
+      "timestamp": "1620576488"
+    },
+    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "logIndex": "51"
+  }
+]`)
+
+	em := &blockchainmocks.Events{}
+	e := &Ethereum{
+		events: em,
+	}
+
+	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := e.handleMessageBatch(context.Background(), data)
+	assert.EqualError(t, err, "pop")
+
+}
+
 func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}

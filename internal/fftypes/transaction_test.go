@@ -17,23 +17,20 @@ package fftypes
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestShortIDGen(t *testing.T) {
-	assert.Regexp(t, "[a-zA-Z0-9_]{8}", ShortID())
-}
-
-func TestNewUUID(t *testing.T) {
-	assert.NotNil(t, NewUUID())
-}
-
-func TestSafeHashCompare(t *testing.T) {
-	assert.False(t, SafeHashCompare(nil, NewRandB32()))
-	assert.False(t, SafeHashCompare(NewRandB32(), nil))
-	assert.True(t, SafeHashCompare(nil, nil))
-	assert.False(t, SafeHashCompare(NewRandB32(), NewRandB32()))
-	r1 := NewRandB32()
-	var r2 Bytes32 = *r1
-	assert.True(t, SafeHashCompare(r1, &r2))
+func TestTransactionHash(t *testing.T) {
+	msgid := uuid.MustParse("2cd37805-5f40-4e12-962e-67868cde3049")
+	batchid := uuid.MustParse("39296b6e-91b9-4a61-b279-833c85b04d94")
+	tx := &Transaction{}
+	tx.Subject = TransactionSubject{
+		Author:    "0x12345",
+		Namespace: "ns1",
+		Type:      TransactionTypePin,
+		Message:   &msgid,
+		Batch:     &batchid,
+	}
+	assert.Equal(t, "32fe939dee0ef781e1cdc685f24d1482551b604116b7f3f3588ab2c7eafebbe5", tx.Subject.Hash().String())
 }

@@ -44,16 +44,16 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err error) {
+func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	dataRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
+		sq.Select("hash").
 			From("data").
 			Where(sq.Eq{"id": data.ID}),
 	)
@@ -67,6 +67,15 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data) (err err
 	}
 
 	if dataRows.Next() {
+		if !allowHashUpdate {
+			var hash *fftypes.Bytes32
+			_ = dataRows.Scan(&hash)
+			if !fftypes.SafeHashCompare(hash, data.Hash) {
+				dataRows.Close()
+				log.L(ctx).Errorf("Existing=%s New=%s", hash, data.Hash)
+				return database.HashMismatch
+			}
+		}
 		dataRows.Close()
 
 		// Update the data
@@ -187,7 +196,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update databa
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("data"), update, dataFilterTypeMap)
 	if err != nil {

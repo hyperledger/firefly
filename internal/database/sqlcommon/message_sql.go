@@ -42,27 +42,27 @@ var (
 		"confirmed",
 		"tx_type",
 		"tx_id",
-		"tx_batch_id",
+		"batch_id",
 	}
 	msgFilterTypeMap = map[string]string{
-		"type":       "mtype",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
-		"tx.batchid": "tx_batch_id",
-		"group":      "group_id",
+		"type":    "mtype",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
+		"batchid": "batch_id",
+		"group":   "group_id",
 	}
 )
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message) (err error) {
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	msgRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
+		sq.Select("hash").
 			From("messages").
 			Where(sq.Eq{"id": message.Header.ID}),
 	)
@@ -71,9 +71,18 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 	}
 
 	exists := msgRows.Next()
-	msgRows.Close()
-
 	if exists {
+		if !allowHashUpdate {
+			var hash *fftypes.Bytes32
+			_ = msgRows.Scan(&hash)
+			if !fftypes.SafeHashCompare(hash, message.Hash) {
+				msgRows.Close()
+				log.L(ctx).Errorf("Existing=%s New=%s", hash, message.Hash)
+				return database.HashMismatch
+			}
+		}
+		msgRows.Close()
+
 		// Update the message
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("messages").
@@ -88,14 +97,15 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
 				Set("confirmed", message.Confirmed).
-				Set("tx_type", message.TX.Type).
-				Set("tx_id", message.TX.ID).
-				Set("tx_batch_id", message.TX.BatchID).
+				Set("tx_type", message.Header.TX.Type).
+				Set("tx_id", message.Header.TX.ID).
+				Set("batch_id", message.BatchID).
 				Where(sq.Eq{"id": message.Header.ID}),
 		); err != nil {
 			return err
 		}
 	} else {
+		msgRows.Close()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).
@@ -112,9 +122,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message)
 					message.Header.DataHash,
 					message.Hash,
 					message.Confirmed,
-					message.TX.Type,
-					message.TX.ID,
-					message.TX.BatchID,
+					message.Header.TX.Type,
+					message.Header.TX.ID,
+					message.BatchID,
 				),
 		); err != nil {
 			return err
@@ -316,9 +326,9 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Confirmed,
-		&msg.TX.Type,
-		&msg.TX.ID,
-		&msg.TX.BatchID,
+		&msg.Header.TX.Type,
+		&msg.Header.TX.ID,
+		&msg.BatchID,
 		// Must be added to the list of columns in all selects
 		&msg.Sequence,
 	)
@@ -397,7 +407,7 @@ func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update 
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("messages"), update, msgFilterTypeMap)
 	if err != nil {

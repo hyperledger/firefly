@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -41,7 +41,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 	}
 	bm := &batchManager{
 		ctx:         ctx,
-		database: database,
+		database:    database,
 		dispatchers: make(map[fftypes.MessageType]*dispatcher),
 		newMessages: make(chan *uuid.UUID, readPageSize),
 		retry: &retry.Retry{
@@ -62,7 +62,7 @@ type BatchManager interface {
 
 type batchManager struct {
 	ctx         context.Context
-	database database.Plugin
+	database    database.Plugin
 	dispatchers map[fftypes.MessageType]*dispatcher
 	newMessages chan *uuid.UUID
 	retry       *retry.Retry
@@ -70,7 +70,7 @@ type batchManager struct {
 	closed      bool
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch, database.Update) error
+type DispatchHandler func(context.Context, *fftypes.Batch) error
 
 type BatchOptions struct {
 	BatchMaxSize   uint
@@ -262,7 +262,7 @@ func (bm *batchManager) messageSequencer() {
 func (bm *batchManager) updateMessage(ctx context.Context, msg *fftypes.Message, batchID *uuid.UUID) (err error) {
 	l := log.L(ctx)
 	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		u := database.MessageQueryFactory.NewUpdate(ctx).Set("tx.batchid", batchID)
+		u := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", batchID)
 		err = bm.database.UpdateMessage(ctx, msg.Header.ID, u)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)

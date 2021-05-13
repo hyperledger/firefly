@@ -48,16 +48,16 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	batchRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
+		sq.Select("hash").
 			From("batches").
 			Where(sq.Eq{"id": batch.ID}),
 	)
@@ -66,6 +66,15 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 	}
 
 	if batchRows.Next() {
+		if !allowHashUpdate {
+			var hash *fftypes.Bytes32
+			_ = batchRows.Scan(&hash)
+			if !fftypes.SafeHashCompare(hash, batch.Hash) {
+				batchRows.Close()
+				log.L(ctx).Errorf("Existing=%s New=%s", hash, batch.Hash)
+				return database.HashMismatch
+			}
+		}
 		batchRows.Close()
 
 		// Update the batch
@@ -79,8 +88,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 				Set("payload", batch.Payload).
 				Set("payload_ref", batch.PayloadRef).
 				Set("confirmed", batch.Confirmed).
-				Set("tx_type", batch.TX.Type).
-				Set("tx_id", batch.TX.ID).
+				Set("tx_type", batch.Payload.TX.Type).
+				Set("tx_id", batch.Payload.TX.ID).
 				Where(sq.Eq{"id": batch.ID}),
 		); err != nil {
 			return err
@@ -101,8 +110,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch) (err 
 					batch.Payload,
 					batch.PayloadRef,
 					batch.Confirmed,
-					batch.TX.Type,
-					batch.TX.ID,
+					batch.Payload.TX.Type,
+					batch.Payload.TX.ID,
 				),
 		); err != nil {
 			return err
@@ -124,8 +133,8 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Payload,
 		&batch.PayloadRef,
 		&batch.Confirmed,
-		&batch.TX.Type,
-		&batch.TX.ID,
+		&batch.Payload.TX.Type,
+		&batch.Payload.TX.ID,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "batches")
@@ -190,7 +199,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update datab
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("batches"), update, batchFilterTypeMap)
 	if err != nil {

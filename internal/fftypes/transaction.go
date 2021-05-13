@@ -14,7 +14,12 @@
 
 package fftypes
 
-import "github.com/google/uuid"
+import (
+	"crypto/sha256"
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 type TransactionType string
 
@@ -26,8 +31,8 @@ const (
 type TransactionStatus string
 
 const (
-	// TransactionStatusSubmitted the transaction has been submitted
-	TransactionStatusSubmitted TransactionStatus = "submitted"
+	// TransactionStatusPending the transaction has been submitted
+	TransactionStatusPending TransactionStatus = "pending"
 	// TransactionStatusConfirmed the transaction is considered final per the rules of the blockchain technnology
 	TransactionStatusConfirmed TransactionStatus = "confirmed"
 	// TransactionStatusFailed the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
@@ -38,21 +43,33 @@ type TransactionRef struct {
 	Type TransactionType `json:"type"`
 	// ID is a direct reference to a submitted transaction
 	ID *uuid.UUID `json:"id,omitempty"`
-	// BatchID is an indirect ref, via a batch submission
-	BatchID *uuid.UUID `json:"batchId,omitempty"`
+}
+
+type TransactionSubject struct {
+	Author    string          `json:"author"`
+	Namespace string          `json:"namespace,omitempty"`
+	Type      TransactionType `json:"type"`
+	Message   *uuid.UUID      `json:"message,omitempty"`
+	Batch     *uuid.UUID      `json:"batch,omitempty"`
+}
+
+func (t *TransactionSubject) Hash() *Bytes32 {
+	b, _ := json.Marshal(&t)
+	var b32 Bytes32 = sha256.Sum256(b)
+	return &b32
 }
 
 // Transactions are (blockchain) transactions that were submitted by this
 // node, with the correlation information to look them up on the underlying
 // ledger technology
 type Transaction struct {
-	ID         *uuid.UUID        `json:"id,omitempty"`
-	Type       TransactionType   `json:"type"`
-	Namespace  string            `json:"namespace,omitempty"`
-	Author     string            `json:"author"`
-	Created    int64             `json:"created"`
-	Status     TransactionStatus `json:"status"`
-	ProtocolID string            `json:"protocolId,omitempty"`
-	Confirmed  int64             `json:"confirmed,omitempty"`
-	Info       JSONData          `json:"info,omitempty"`
+	ID         *uuid.UUID         `json:"id,omitempty"`
+	Hash       *Bytes32           `json:"hash"`
+	Subject    TransactionSubject `json:"subject"`
+	Sequence   int64              `json:"sequence,omitempty"`
+	Created    int64              `json:"created"`
+	Status     TransactionStatus  `json:"status"`
+	ProtocolID string             `json:"protocolId,omitempty"`
+	Confirmed  int64              `json:"confirmed,omitempty"`
+	Info       JSONData           `json:"info,omitempty"`
 }

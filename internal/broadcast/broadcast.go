@@ -63,7 +63,7 @@ func NewBroadcast(ctx context.Context, database database.Plugin, blockchain bloc
 	return b, nil
 }
 
-func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates database.Update) error {
+func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
 
 	// In a retry scenario we don't need to re-write the batch itself to IPFS
 	if batch.PayloadRef == nil {
@@ -81,11 +81,26 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 		}
 	}
 
+	// Write the transation to our DB, to collect transaction submission updates
+	tx := &fftypes.Transaction{
+		ID: batch.Payload.TX.ID,
+		Subject: fftypes.TransactionSubject{
+			Type:      fftypes.TransactionTypePin,
+			Namespace: batch.Namespace,
+			Author:    batch.Author,
+			Batch:     batch.ID,
+		},
+		Created: fftypes.NowMillis(),
+		Status:  fftypes.TransactionStatusPending,
+	}
+	tx.Hash = tx.Subject.Hash()
+	err := b.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	if err != nil {
+		return err
+	}
+
 	// Write it to the blockchain
-	txid := fftypes.NewUUID()
-	updates.Set("tx.id", txid)
-	updates.Set("tx.type", string(fftypes.TransactionTypePin))
-	_, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	_, err = b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
@@ -94,18 +109,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch, upd
 		return err
 	}
 
-	// Write the transation to our DB, to collect transaction submission updates
-	tx := &fftypes.Transaction{
-		ID:        txid,
-		Type:      fftypes.TransactionTypePin,
-		Namespace: batch.Namespace,
-		Author:    batch.Author,
-		Created:   fftypes.NowMillis(),
-	}
-	err = b.database.UpsertTransaction(ctx, tx)
-	if err != nil {
-		return err
-	}
+	// TODO: Create message operations
 
 	return nil
 }
@@ -118,7 +122,7 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return b.database.UpsertMessage(ctx, msg)
+	return b.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
 }
 
 func (b *broadcast) Close() {}

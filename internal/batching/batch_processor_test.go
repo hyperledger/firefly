@@ -24,7 +24,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/likexian/gokit/assert"
@@ -58,12 +57,12 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
 	})
-	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
@@ -106,13 +105,13 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
 	})
 	bp.conf.BatchTimeout = 1 * time.Hour // Must fill the batch
-	mockUpsert := mp.On("UpsertBatch", mock.Anything, mock.Anything)
+	mockUpsert := mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything)
 	mockUpsert.ReturnArguments = mock.Arguments{nil}
 	unblockPersistence := make(chan time.Time)
 	mockUpsert.WaitFor = unblockPersistence
@@ -165,12 +164,11 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		return fmt.Errorf("pop")
 	})
 	bp.close()
-	fb := database.BatchQueryFactory.NewUpdate(context.Background())
-	bp.dispatchBatch(context.Background(), &fftypes.Batch{}, fb.S())
+	bp.dispatchBatch(context.Background(), &fftypes.Batch{})
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
@@ -178,12 +176,12 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, update database.Update) error {
+	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchTimeout = 100 * time.Second
-	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	waitForCall := make(chan bool)
 	mup.RunFn = func(a mock.Arguments) {
 		waitForCall <- true

@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -110,7 +110,6 @@ func (a *batchProcessor) assemblyLoop() {
 		select {
 		case <-timeout.C:
 			timedOut = true
-			break
 		case work, ok := <-a.newWork:
 			if ok && !work.abandoned {
 				batchSize++
@@ -118,7 +117,6 @@ func (a *batchProcessor) assemblyLoop() {
 			} else {
 				closed = true
 			}
-			break
 		}
 
 		// Don't include the sealing time in the duration
@@ -167,17 +165,22 @@ func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)
 	}
 	if seal {
+		// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
+		batch.Payload.TX = fftypes.TransactionRef{
+			Type: fftypes.TransactionTypePin,
+			ID:   fftypes.NewUUID(),
+		}
 		batch.Hash = batch.Payload.Hash()
 		l.Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
 	}
 	return batch
 }
 
-func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch, updates database.Update) error {
+func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch) {
 	l := log.L(ctx)
-	// Call the dispatcher to do the heavy lifting
-	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.dispatch(a.ctx, batch, updates)
+	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
+	_ = a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+		err = a.conf.dispatch(a.ctx, batch)
 		if err != nil {
 			l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
 			return !a.closed, err
@@ -186,24 +189,12 @@ func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch
 	})
 }
 
-func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch) (err error) {
+func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch, seal bool) (err error) {
 	l := log.L(ctx)
 	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.persitence.UpsertBatch(ctx, batch)
+		err = a.conf.persitence.UpsertBatch(ctx, batch, seal /* we set the hash as it seals */)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			return !a.closed, err
-		}
-		return false, nil
-	})
-}
-
-func (a *batchProcessor) persistBatchUpdates(ctx context.Context, batchID *uuid.UUID, updates database.Update) (err error) {
-	l := log.L(ctx)
-	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.persitence.UpdateBatch(ctx, batchID, updates)
-		if err != nil {
-			l.Errorf("Batch update attempt %d failed: %s", attempt, err)
 			return !a.closed, err
 		}
 		return false, nil
@@ -215,7 +206,7 @@ func (a *batchProcessor) databaseLoop() {
 	l := log.L(a.ctx).WithField("role", fmt.Sprintf("persist-%s", a.name))
 	ctx := log.WithLogger(a.ctx, l)
 	var currentBatch *fftypes.Batch
-	for {
+	for !a.closed {
 		var seal bool
 		newWork := make([]*batchWork, 0, a.conf.BatchMaxSize)
 
@@ -246,7 +237,7 @@ func (a *batchProcessor) databaseLoop() {
 		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
 		// Persist the batch - indefinite retry (as context is background)
-		if err := a.persistBatch(ctx, currentBatch); err != nil {
+		if err := a.persistBatch(ctx, currentBatch, seal); err != nil {
 			return
 		}
 
@@ -268,18 +259,9 @@ func (a *batchProcessor) databaseLoop() {
 			// the current batch.
 			a.batchSealed <- true
 
-			// Synchronously dispatch the batch.
-			updates := database.BatchQueryFactory.NewUpdate(ctx).S()
-			if err := a.dispatchBatch(ctx, currentBatch, updates); err != nil {
-				l.Errorf("Persistence loop exiting (caught in dispatch): %s", err)
-				return
-			}
-
-			// Persist updates made to the batch during dispatch
-			if err := a.persistBatchUpdates(ctx, currentBatch.ID, updates); err != nil {
-				l.Errorf("Persistence loop exiting (caught in batch update): %s", err)
-				return
-			}
+			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
+			// will break out of the retry in the case that we close
+			a.dispatchBatch(ctx, currentBatch)
 
 			// Move onto the next batch
 			currentBatch = nil

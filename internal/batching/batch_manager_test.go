@@ -22,7 +22,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,7 +33,7 @@ func TestE2EDispatch(t *testing.T) {
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
 	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch, updates database.Update) error {
+	handler := func(ctx context.Context, b *fftypes.Batch) error {
 		waitForDispatch <- b
 		return nil
 	}
@@ -69,7 +68,7 @@ func TestE2EDispatch(t *testing.T) {
 	})).Return(data, nil)
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	mp.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateMessage", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *msg.Header.ID
@@ -101,8 +100,8 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
-	defer bm.Close()
 	assert.NoError(t, err)
+	defer bm.Close()
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
 	assert.Regexp(t, "pop", err.Error())
@@ -113,8 +112,8 @@ func TestInitFailCannotCreateOffset(t *testing.T) {
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mp.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mp)
-	defer bm.Close()
 	assert.NoError(t, err)
+	defer bm.Close()
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
 	assert.Regexp(t, "pop", err.Error())

@@ -38,16 +38,21 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Create a new transaction entry
 	transactionId := uuid.New()
 	transaction := &fftypes.Transaction{
-		ID:     &transactionId,
-		Type:   fftypes.TransactionTypePin,
-		Status: fftypes.TransactionStatusSubmitted,
-		Author: "0x12345",
+		ID:   &transactionId,
+		Hash: fftypes.NewRandB32(),
+		Subject: fftypes.TransactionSubject{
+			Type:   fftypes.TransactionTypePin,
+			Author: "0x12345",
+		},
+		Status: fftypes.TransactionStatusPending,
 	}
-	err := s.UpsertTransaction(ctx, transaction)
+	err := s.UpsertTransaction(ctx, transaction, false)
 	assert.NoError(t, err)
 
 	// Check we get the exact same transaction back
 	transactionRead, err := s.GetTransactionById(ctx, "ns1", &transactionId)
+	// The generated sequence will have been added
+	transaction.Sequence = transactionRead.Sequence
 	assert.NoError(t, err)
 	assert.NotNil(t, transactionRead)
 	transactionJson, _ := json.Marshal(&transaction)
@@ -57,10 +62,15 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Update the transaction (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	transactionUpdated := &fftypes.Transaction{
-		ID:         &transactionId,
-		Type:       fftypes.TransactionTypePin,
-		Namespace:  "ns2",
-		Author:     "0x12345",
+		ID:   &transactionId,
+		Hash: fftypes.NewRandB32(),
+		Subject: fftypes.TransactionSubject{
+			Type:      fftypes.TransactionTypePin,
+			Namespace: "ns2",
+			Author:    "0x12345",
+			Message:   fftypes.NewUUID(),
+			Batch:     fftypes.NewUUID(),
+		},
 		Created:    fftypes.NowMillis(),
 		ProtocolID: "0x33333",
 		Status:     fftypes.TransactionStatusFailed,
@@ -69,12 +79,19 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		},
 		Confirmed: fftypes.NowMillis(),
 	}
-	err = s.UpsertTransaction(context.Background(), transactionUpdated)
+
+	// Check reject hash update
+	err = s.UpsertTransaction(context.Background(), transactionUpdated, false)
+	assert.Equal(t, database.HashMismatch, err)
+
+	err = s.UpsertTransaction(context.Background(), transactionUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the transaction elements
 	transactionRead, err = s.GetTransactionById(ctx, "ns1", &transactionId)
 	assert.NoError(t, err)
+	// The generated sequence will have been added
+	transactionUpdated.Sequence = transaction.Sequence
 	transactionJson, _ = json.Marshal(&transactionUpdated)
 	transactionReadJson, _ = json.Marshal(&transactionRead)
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
@@ -84,7 +101,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
-		fb.Eq("author", transactionUpdated.Author),
+		fb.Eq("author", transactionUpdated.Subject.Author),
 		fb.Gt("created", "0"),
 		fb.Gt("confirmed", "0"),
 	)
@@ -122,7 +139,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 func TestUpsertTransactionFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{})
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -133,7 +150,7 @@ func TestUpsertTransactionFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId})
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -145,7 +162,7 @@ func TestUpsertTransactionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId})
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -157,7 +174,7 @@ func TestUpsertTransactionFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(transactionId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId})
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -169,7 +186,7 @@ func TestUpsertTransactionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId})
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

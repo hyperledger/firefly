@@ -31,7 +31,10 @@ var (
 		"id",
 		"ttype",
 		"namespace",
+		"msg_id",
+		"batch_id",
 		"author",
+		"hash",
 		"created",
 		"protocol_id",
 		"status",
@@ -41,19 +44,21 @@ var (
 	transactionFilterTypeMap = map[string]string{
 		"type":       "ttype",
 		"protocolid": "protocol_id",
+		"message":    "msg_id",
+		"batch":      "batch_id",
 	}
 )
 
-func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
+func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	transactionRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
+		sq.Select("hash").
 			From("transactions").
 			Where(sq.Eq{"id": transaction.ID}),
 	)
@@ -62,14 +67,27 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 	}
 
 	if transactionRows.Next() {
+
+		if !allowHashUpdate {
+			var hash *fftypes.Bytes32
+			_ = transactionRows.Scan(&hash)
+			if !fftypes.SafeHashCompare(hash, transaction.Hash) {
+				transactionRows.Close()
+				log.L(ctx).Errorf("Existing=%s New=%s", hash, transaction.Hash)
+				return database.HashMismatch
+			}
+		}
 		transactionRows.Close()
 
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
-				Set("ttype", string(transaction.Type)).
-				Set("namespace", transaction.Namespace).
-				Set("author", transaction.Author).
+				Set("ttype", string(transaction.Subject.Type)).
+				Set("namespace", transaction.Subject.Namespace).
+				Set("msg_id", transaction.Subject.Message).
+				Set("batch_id", transaction.Subject.Batch).
+				Set("author", transaction.Subject.Author).
+				Set("hash", transaction.Hash).
 				Set("created", transaction.Created).
 				Set("protocol_id", transaction.ProtocolID).
 				Set("status", transaction.Status).
@@ -87,9 +105,12 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Columns(transactionColumns...).
 				Values(
 					transaction.ID,
-					string(transaction.Type),
-					transaction.Namespace,
-					transaction.Author,
+					string(transaction.Subject.Type),
+					transaction.Subject.Namespace,
+					transaction.Subject.Message,
+					transaction.Subject.Batch,
+					transaction.Subject.Author,
+					transaction.Hash,
 					transaction.Created,
 					transaction.ProtocolID,
 					transaction.Status,
@@ -108,14 +129,19 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	var transaction fftypes.Transaction
 	err := row.Scan(
 		&transaction.ID,
-		&transaction.Type,
-		&transaction.Namespace,
-		&transaction.Author,
+		&transaction.Subject.Type,
+		&transaction.Subject.Namespace,
+		&transaction.Subject.Message,
+		&transaction.Subject.Batch,
+		&transaction.Subject.Author,
+		&transaction.Hash,
 		&transaction.Created,
 		&transaction.ProtocolID,
 		&transaction.Status,
 		&transaction.Confirmed,
 		&transaction.Info,
+		// Must be added to the list of columns in all selects
+		&transaction.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "transactions")
@@ -125,8 +151,10 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 
 func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error) {
 
+	cols := append([]string{}, transactionColumns...)
+	cols = append(cols, s.options.SequenceField)
 	rows, err := s.query(ctx,
-		sq.Select(transactionColumns...).
+		sq.Select(cols...).
 			From("transactions").
 			Where(sq.Eq{"id": id}),
 	)
@@ -150,7 +178,9 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.
 
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterTypeMap)
+	cols := append([]string{}, transactionColumns...)
+	cols = append(cols, s.options.SequenceField)
+	query, err := s.filterSelect(ctx, sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +210,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update
 	if err != nil {
 		return err
 	}
-	defer s.rollbackTx(ctx, tx)
+	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	query, err := s.buildUpdate(ctx, sq.Update("transactions"), update, transactionFilterTypeMap)
 	if err != nil {
