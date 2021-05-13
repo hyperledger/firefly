@@ -1,5 +1,0 @@
-{
-  "$schema": "../../src/schemas/settings.json",
-  "clientEvents": ["asset-instance-submitted", "asset-instance-created", "payment-instance-created", "private-asset-instance-content-stored",
-    "asset-instance-property-submitted", "asset-instance-property-set"]
-}
