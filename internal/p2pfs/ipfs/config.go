@@ -19,6 +19,12 @@ import (
 	"github.com/kaleido-io/firefly/internal/ffresty"
 )
 
+const (
+	IPFSConfAPISubconf     = "api"
+	IPFSConfGatewaySubconf = "gateway"
+)
+
 func (i *IPFS) InitConfigPrefix(prefix config.ConfigPrefix) {
-	ffresty.InitConfigPrefix(prefix)
+	ffresty.InitConfigPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
+	ffresty.InitConfigPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
 }

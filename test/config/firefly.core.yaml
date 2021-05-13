@@ -16,4 +16,7 @@ database:
 p2pfs:
   type: ipfs
   ipfs:
-    url: http://localhost:8080
+    api:
+      url: http://localhost:8080
+    gateway:
+      url: http://localhost:8080

@@ -39,10 +39,20 @@ func resetConf() {
 	i.InitConfigPrefix(utConfPrefix)
 }
 
-func TestInitMissingURL(t *testing.T) {
+func TestInitMissingAPIURL(t *testing.T) {
 	i := &IPFS{}
 	resetConf()
 
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	assert.Regexp(t, "FF10138", err.Error())
+}
+
+func TestInitMissingGWURL(t *testing.T) {
+	i := &IPFS{}
+	resetConf()
+
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
@@ -50,7 +60,8 @@ func TestInitMissingURL(t *testing.T) {
 func TestInit(t *testing.T) {
 	i := &IPFS{}
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:2345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
@@ -96,9 +107,9 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	defer config.Reset()
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
@@ -123,9 +134,9 @@ func TestIPFSUploadFail(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	defer config.Reset()
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
@@ -149,9 +160,9 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	defer config.Reset()
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
@@ -180,9 +191,9 @@ func TestIPFSDownloadFail(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	defer config.Reset()
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)
@@ -205,9 +216,9 @@ func TestIPFSDownloadError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	defer config.Reset()
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
 	assert.NoError(t, err)

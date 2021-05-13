@@ -140,3 +140,7 @@ func TestErrResponse(t *testing.T) {
 	err = WrapRestErr(ctx, resp, err, i18n.MsgEthconnectRESTErr)
 	assert.Error(t, err)
 }
+
+func TestOnAfterResponseNil(t *testing.T) {
+	OnAfterResponse(nil, nil)
+}
