@@ -35,7 +35,8 @@ type IPFS struct {
 	ctx          context.Context
 	capabilities *p2pfs.Capabilities
 	events       p2pfs.Events
-	client       *resty.Client
+	apiClient    *resty.Client
+	gwClient     *resty.Client
 }
 
 type ipfsUploadResponse struct {
@@ -48,10 +49,17 @@ func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pf
 
 	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
 	i.events = events
-	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "p2pfs")
+
+	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
+	if apiPrefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, apiPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.client = ffresty.New(i.ctx, prefix)
+	i.apiClient = ffresty.New(i.ctx, apiPrefix)
+	gwPrefix := prefix.SubPrefix(IPFSConfGatewaySubconf)
+	if gwPrefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, gwPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
+	}
+	i.gwClient = ffresty.New(i.ctx, gwPrefix)
 	i.capabilities = &p2pfs.Capabilities{}
 	return nil
 }
@@ -82,7 +90,7 @@ func (i *IPFS) bytes32ToIPFSHash(payloadRef *fftypes.Bytes32) string {
 
 func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error) {
 	var ipfsResponse ipfsUploadResponse
-	res, err := i.client.R().
+	res, err := i.apiClient.R().
 		SetContext(ctx).
 		SetFileReader("document", "file.bin", data).
 		SetResult(&ipfsResponse).
@@ -96,10 +104,11 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 
 func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error) {
 	ipfsHash := i.bytes32ToIPFSHash(payloadRef)
-	res, err := i.client.R().
+	res, err := i.gwClient.R().
 		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/ipfs/%s", ipfsHash))
+	ffresty.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
 	if err != nil || !res.IsSuccess() {
 		if res != nil && res.RawBody() != nil {
 			_ = res.RawBody().Close()

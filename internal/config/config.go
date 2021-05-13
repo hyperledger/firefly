@@ -74,6 +74,7 @@ type ConfigPrefix interface {
 	AddKnownKey(key string, defValue ...interface{})
 	SubPrefix(suffix string) ConfigPrefix
 	Set(key string, value interface{})
+	Resolve(key string) string
 
 	GetString(key string) string
 	GetBool(key string) bool
@@ -273,4 +274,9 @@ func Set(key RootKey, value interface{}) {
 }
 func (c *configPrefix) Set(key string, value interface{}) {
 	viper.Set(c.prefixKey(key), value)
+}
+
+// Resolve gives the fully qualified path of a key
+func (c *configPrefix) Resolve(key string) string {
+	return c.prefixKey(key)
 }

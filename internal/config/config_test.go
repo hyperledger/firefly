@@ -82,5 +82,9 @@ func TestPluginConfigArrayInit(t *testing.T) {
 }
 
 func TestGetKnownKeys(t *testing.T) {
-	assert.NotEmpty(t, GetKnownKeys())
+	knownKeys := GetKnownKeys()
+	assert.NotEmpty(t, knownKeys)
+	for _, k := range knownKeys {
+		assert.NotEmpty(t, root.Resolve(k))
+	}
 }

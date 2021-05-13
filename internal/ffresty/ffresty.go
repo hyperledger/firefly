@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -35,6 +36,20 @@ type retryCtx struct {
 	id       string
 	start    time.Time
 	attempts uint
+}
+
+// When using SetDoNotParseResponse(true) for streming binary replies,
+// the caller should invoke ffrest.OnAfterResponse on the response manually.
+// The middleware is disabled on this path :-(
+// See: https://github.com/go-resty/resty/blob/d01e8d1bac5ba1fed0d9e03c4c47ca21e94a7e8e/client.go#L912-L948
+func OnAfterResponse(c *resty.Client, resp *resty.Response) {
+	if c == nil || resp == nil {
+		return
+	}
+	rctx := resp.Request.Context()
+	rc := rctx.Value(retryCtxKey{}).(*retryCtx)
+	elapsed := float64(time.Since(rc.start)) / float64(time.Millisecond)
+	log.L(rctx).Infof("<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, resp.StatusCode(), elapsed)
 }
 
 // New creates a new Resty client, using static configuration (from the config file)
@@ -56,6 +71,12 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 		client = resty.New()
 	}
 
+	url := strings.TrimSuffix(staticConfig.GetString(HTTPConfigURL), "/")
+	if url != "" {
+		client.SetHostURL(url)
+		log.L(ctx).Debugf("Created REST client to %s", url)
+	}
+
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
 		rctx := req.Context()
 		rc := rctx.Value(retryCtxKey{})
@@ -71,17 +92,13 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 			rctx = log.WithLogger(rctx, l)
 			req.SetContext(rctx)
 		}
-		log.L(rctx).Infof("==> %s %s", req.Method, req.URL)
+		log.L(rctx).Infof("==> %s %s%s", req.Method, url, req.URL)
 		return nil
 	})
 
-	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
-		rctx := resp.Request.Context()
-		rc := rctx.Value(retryCtxKey{}).(*retryCtx)
-		elapsed := float64(time.Since(rc.start)) / float64(time.Millisecond)
-		log.L(rctx).Infof("<== %s %s [%d] (%.2fms)", resp.Request.Method, resp.Request.URL, resp.StatusCode(), elapsed)
-		return nil
-	})
+	// Note that callers using SetNotParseResponse will need to invoke this themselves
+
+	client.OnAfterResponse(func(c *resty.Client, r *resty.Response) error { OnAfterResponse(c, r); return nil })
 
 	headers := staticConfig.GetStringMap(HTTPConfigHeaders)
 	for k, v := range headers {
@@ -93,11 +110,6 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 	authPassword := staticConfig.GetString((HTTPConfigAuthPassword))
 	if authUsername != "" && authPassword != "" {
 		client.SetHeader("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
-	}
-	url := staticConfig.GetString(HTTPConfigURL)
-	if url != "" {
-		client.SetHostURL(url)
-		log.L(ctx).Debugf("Created REST client to %s", url)
 	}
 
 	if staticConfig.GetBool(HTTPConfigRetryEnabled) {
