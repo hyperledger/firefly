@@ -45,6 +45,7 @@ func TestRequestOK(t *testing.T) {
 	})
 	utConfPrefix.Set(HTTPConfigAuthUsername, "user")
 	utConfPrefix.Set(HTTPConfigAuthPassword, "pass")
+	utConfPrefix.Set(HTTPConfigRetryEnabled, true)
 	utConfPrefix.Set(HTTPCustomClient, customClient)
 
 	c := New(context.Background(), utConfPrefix)
@@ -72,6 +73,7 @@ func TestRequestRetry(t *testing.T) {
 
 	resetConf()
 	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigRetryEnabled, true)
 	utConfPrefix.Set(HTTPConfigRetryWaitTimeMS, 1)
 
 	c := New(ctx, utConfPrefix)

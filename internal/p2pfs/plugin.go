@@ -37,6 +37,9 @@ type Plugin interface {
 
 	// PublishData publishes data to the P2P Filesystem, and returns a Bytes32 payload reference ID
 	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error)
+
+	// RetrieveData reads data back from IPFS using the payload reference format returned from PublishData
+	RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error)
 }
 
 type Events interface {

@@ -78,3 +78,26 @@ func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Byt
 
 	return r0, r1
 }
+
+// RetrieveData provides a mock function with given fields: ctx, payloadRef
+func (_m *Plugin) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, payloadRef)
+
+	var r0 io.ReadCloser
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) io.ReadCloser); ok {
+		r0 = rf(ctx, payloadRef)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.ReadCloser)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, payloadRef)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

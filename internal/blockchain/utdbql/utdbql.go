@@ -83,13 +83,16 @@ func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events bl
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	go u.eventLoop()
-
 	return nil
 }
 
 func (u *UTDBQL) Capabilities() *blockchain.Capabilities {
 	return u.capabilities
+}
+
+func (u *UTDBQL) Start() error {
+	go u.eventLoop()
+	return nil
 }
 
 func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
@@ -154,6 +157,7 @@ func (u *UTDBQL) eventLoop() {
 }
 
 func (u *UTDBQL) dispatchEvent(ev *utEvent) {
+	var err error
 	switch ev.txType {
 	case utDBQLEventTypeBroadcastBatch:
 		batch := &blockchain.BroadcastBatch{}
@@ -161,9 +165,13 @@ func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 			log.L(u.ctx).Errorf("Failed to unmarshal '%s' event '%s': %s", ev.txType, ev.txID, err)
 			return
 		}
-		u.events.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
+		err = u.events.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
-		u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStatusConfirmed, ev.txID, "", nil)
+		err = u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStatusConfirmed, ev.txID, "", nil)
+	}
+	if err != nil {
+		log.L(u.ctx).Errorf("Exiting due to error")
+		u.Close()
 	}
 
 }

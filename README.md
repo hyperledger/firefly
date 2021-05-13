@@ -214,7 +214,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               ┌───────────────┐  - REST API client
               │ ffresty       │    * Provides convenience and logging
               │               │    * Standardizes auth, config and retry logic
-              └───────────────┘
+              └───────────────┘    * Built on Resty
 
               ┌───────────────┐  - WebSocket client
               │ wsclient      │    * Provides convenience and logging
@@ -223,8 +223,8 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
 
               ┌───────────────┐  - Translation framework
               │ i18n          │    * Every translations must be added to `en_translations.json` - with an `FF10101` key
-              │               │    * Errors are wrapped, providing out features from the `errors` package (stack etc.)
-              └───────────────┘    * General translations also supported, such as OpenAPI description
+              │               │    * Errors are wrapped, providing extra features from the `errors` package (stack etc.)
+              └───────────────┘    * Description translations also supported, such as OpenAPI description
 
               ┌───────────────┐  - Logging framework
               │ log           │    * Logging framework (logrus) integrated with context based tagging
@@ -232,7 +232,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               └───────────────┘    * Example: Every API call has an ID that can be traced, as well as a timeout
 
               ┌───────────────┐  - Configuration
-              │ config        │    * File and Environment Variable based logging framework (vyper)
+              │ config        │    * File and Environment Variable based logging framework (viper)
               │               │    * Primary config keys all defined centrally
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
 

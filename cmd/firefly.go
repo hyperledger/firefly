@@ -52,10 +52,11 @@ var showConfigCommand = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
 		getEngine()
+		_ = config.ReadConfig(cfgFile)
 
 		// Print it all out
 		for _, k := range config.GetKnownKeys() {
-			fmt.Printf("%s\n", k)
+			fmt.Printf("%-64s %v\n", k, config.GetString(config.RootKey(k)))
 		}
 	},
 }

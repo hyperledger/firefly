@@ -5,6 +5,8 @@ package enginemocks
 import (
 	context "context"
 
+	blockchain "github.com/kaleido-io/firefly/internal/blockchain"
+
 	database "github.com/kaleido-io/firefly/internal/database"
 
 	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
@@ -289,6 +291,20 @@ func (_m *Engine) Init(ctx context.Context) error {
 	return r0
 }
 
+// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxId, additionalInfo
+func (_m *Engine) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(batch, author, protocolTxId, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, map[string]interface{}) error); ok {
+		r0 = rf(batch, author, protocolTxId, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Start provides a mock function with given fields:
 func (_m *Engine) Start() error {
 	ret := _m.Called()
@@ -296,6 +312,20 @@ func (_m *Engine) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
+func (_m *Engine) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, fftypes.TransactionStatus, string, string, map[string]interface{}) error); ok {
+		r0 = rf(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
