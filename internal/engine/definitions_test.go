@@ -107,7 +107,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	e.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
@@ -129,7 +129,7 @@ func TestBroadcastOk(t *testing.T) {
 	e.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mb.On("BroadcastMessage", mock.Anything, "0x12345", mock.Anything, mock.Anything).Return(nil)
+	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",

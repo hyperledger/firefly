@@ -41,10 +41,10 @@ var (
 		"tx_id",
 	}
 	batchFilterTypeMap = map[string]string{
-		"type":    "btype",
-		"payload": "payload_ref",
-		"tx.type": "tx_type",
-		"tx.id":   "tx_id",
+		"type":       "btype",
+		"payloadref": "payload_ref",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
 	}
 )
 

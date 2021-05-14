@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlcommon
+// +build !cgo
+
+package databasefactory
 
 import (
-	"context"
-
-	sq "github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/database/postgres"
+	"github.com/kaleido-io/firefly/internal/database/ql"
 )
 
-func (s *SQLCommon) buildUpdate(ctx context.Context, sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
-	ui, err := update.Finalize()
-	if err != nil {
-		return sel, err
-	}
-	for _, so := range ui.SetOperations {
-		sel = sel.Set(s.mapField(so.Field, typeMap), so.Value)
-	}
-	return sel, nil
+var plugins = []database.Plugin{
+	&postgres.Postgres{},
+	&ql.QL{},
 }

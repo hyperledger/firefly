@@ -17,32 +17,14 @@
 package databasefactory
 
 import (
-	"context"
-
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/postgres"
 	"github.com/kaleido-io/firefly/internal/database/ql"
 	"github.com/kaleido-io/firefly/internal/database/sqlite"
 )
 
-var plugins = map[string]database.Plugin{
-	"postgres": &postgres.Postgres{},
-	"ql":       &ql.QL{},
-	"sqlite":   &sqlite.SQLite{},
-}
-
-func InitConfigPrefix(prefix config.ConfigPrefix) {
-	for name, plugin := range plugins {
-		plugin.InitConfigPrefix(prefix.SubPrefix(name))
-	}
-}
-
-func GetPlugin(ctx context.Context, pluginType string) (database.Plugin, error) {
-	plugin, ok := plugins[pluginType]
-	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
-	}
-	return plugin, nil
+var plugins = []database.Plugin{
+	&postgres.Postgres{},
+	&ql.QL{},
+	&sqlite.SQLite{},
 }

@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
@@ -60,6 +60,29 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, sel sq.SelectBuil
 		return sel, err
 	}
 	return sel.Where(fop), nil
+}
+
+func (s *SQLCommon) buildUpdate(ctx context.Context, sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
+	ui, err := update.Finalize()
+	if err != nil {
+		return sel, err
+	}
+	for _, so := range ui.SetOperations {
+		sel = sel.Set(s.mapField(so.Field, typeMap), so.Value)
+	}
+	return sel, nil
+}
+
+func (s *SQLCommon) filterUpdate(ctx context.Context, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
+	fi, err := filter.Finalize()
+	var fop sq.Sqlizer
+	if err == nil {
+		fop, err = s.filterOp(ctx, fi, typeMap)
+	}
+	if err != nil {
+		return update, err
+	}
+	return update.Where(fop), nil
 }
 
 func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {

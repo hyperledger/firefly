@@ -23,9 +23,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/spf13/viper"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -33,6 +33,10 @@ import (
 
 type SQLite struct {
 	sqlcommon.SQLCommon
+}
+
+func (e *SQLite) Name() string {
+	return "sqlite"
 }
 
 func (e *SQLite) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {

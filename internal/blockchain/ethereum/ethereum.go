@@ -91,6 +91,10 @@ var requiredSubscriptions = map[string]string{
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
+func (e *Ethereum) Name() string {
+	return "ethereum"
+}
+
 func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)

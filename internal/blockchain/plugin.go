@@ -24,6 +24,7 @@ import (
 
 // Plugin is the interface implemented by each blockchain plugin
 type Plugin interface {
+	fftypes.Named
 
 	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitConfigPrefix(prefix config.ConfigPrefix)

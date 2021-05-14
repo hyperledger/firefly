@@ -45,6 +45,10 @@ type ipfsUploadResponse struct {
 	Size json.Number `json:"Size"`
 }
 
+func (i *IPFS) Name() string {
+	return "ipfs"
+}
+
 func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pfs.Events) error {
 
 	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
@@ -88,7 +92,7 @@ func (i *IPFS) bytes32ToIPFSHash(payloadRef *fftypes.Bytes32) string {
 	return base58.Encode(hashBytes[:])
 }
 
-func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error) {
+func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, backendID string, err error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.apiClient.R().
 		SetContext(ctx).
@@ -96,10 +100,11 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 		SetResult(&ipfsResponse).
 		Post("/api/v0/add")
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
+		return nil, "", ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
-	return i.ipfsHashToBytes32(ipfsResponse.Hash)
+	payloadRef, err = i.ipfsHashToBytes32(ipfsResponse.Hash)
+	return payloadRef, ipfsResponse.Hash, err
 }
 
 func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error) {

@@ -267,6 +267,52 @@ func (_m *Plugin) GetOffsets(ctx context.Context, filter database.Filter) ([]*ff
 	return r0, r1
 }
 
+// GetOperationById provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) GetOperationById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uuid.UUID) *fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uuid.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOperations provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]*fftypes.Operation, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Operation); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactionById provides a mock function with given fields: ctx, ns, id
 func (_m *Plugin) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -330,6 +376,20 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events d
 // InitConfigPrefix provides a mock function with given fields: prefix
 func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
 	_m.Called(prefix)
+}
+
+// Name provides a mock function with given fields:
+func (_m *Plugin) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
 }
 
 // RunAsGroup provides a mock function with given fields: ctx, fn
@@ -416,6 +476,20 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns str
 	return r0
 }
 
+// UpdateOperations provides a mock function with given fields: ctx, filter, update
+func (_m *Plugin) UpdateOperations(ctx context.Context, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, filter, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, filter, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateTransaction provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateTransaction(ctx context.Context, id *uuid.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -458,13 +532,13 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowHashU
 	return r0
 }
 
-// UpsertDataDefinition provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertDataDefinition(ctx context.Context, data *fftypes.DataDefinition) error {
-	ret := _m.Called(ctx, data)
+// UpsertDataDefinition provides a mock function with given fields: ctx, datadef
+func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition) error {
+	ret := _m.Called(ctx, datadef)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition) error); ok {
-		r0 = rf(ctx, data)
+		r0 = rf(ctx, datadef)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -493,6 +567,20 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset) error 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset) error); ok {
 		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertOperation provides a mock function with given fields: ctx, operation
+func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operation) error {
+	ret := _m.Called(ctx, operation)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
+		r0 = rf(ctx, operation)
 	} else {
 		r0 = ret.Error(0)
 	}

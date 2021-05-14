@@ -45,6 +45,7 @@ func TestInit(t *testing.T) {
 	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
 	assert.NoError(t, err)
 
+	assert.Equal(t, "utdbql", u.Name())
 	assert.NotNil(t, u.Capabilities())
 	u.Close()
 }

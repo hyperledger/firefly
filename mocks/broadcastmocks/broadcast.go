@@ -14,13 +14,13 @@ type Broadcast struct {
 	mock.Mock
 }
 
-// BroadcastMessage provides a mock function with given fields: ctx, identity, msg
-func (_m *Broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) error {
-	ret := _m.Called(ctx, identity, msg)
+// BroadcastMessage provides a mock function with given fields: ctx, msg
+func (_m *Broadcast) BroadcastMessage(ctx context.Context, msg *fftypes.Message) error {
+	ret := _m.Called(ctx, msg)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Message) error); ok {
-		r0 = rf(ctx, identity, msg)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
+		r0 = rf(ctx, msg)
 	} else {
 		r0 = ret.Error(0)
 	}

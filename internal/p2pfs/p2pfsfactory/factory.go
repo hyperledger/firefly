@@ -23,18 +23,26 @@ import (
 	"github.com/kaleido-io/firefly/internal/p2pfs/ipfs"
 )
 
-var plugins = map[string]p2pfs.Plugin{
-	"ipfs": &ipfs.IPFS{},
+var plugins = []p2pfs.Plugin{
+	&ipfs.IPFS{},
+}
+
+var pluginsByName = make(map[string]p2pfs.Plugin)
+
+func init() {
+	for _, p := range plugins {
+		pluginsByName[p.Name()] = p
+	}
 }
 
 func InitConfigPrefix(prefix config.ConfigPrefix) {
-	for name, plugin := range plugins {
-		plugin.InitConfigPrefix(prefix.SubPrefix(name))
+	for _, plugin := range plugins {
+		plugin.InitConfigPrefix(prefix.SubPrefix(plugin.Name()))
 	}
 }
 
 func GetPlugin(ctx context.Context, pluginType string) (p2pfs.Plugin, error) {
-	plugin, ok := plugins[pluginType]
+	plugin, ok := pluginsByName[pluginType]
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownP2PFilesystemPlugin, pluginType)
 	}

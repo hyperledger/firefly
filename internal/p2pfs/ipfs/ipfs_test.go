@@ -64,6 +64,7 @@ func TestInit(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 
 	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	assert.Equal(t, "ipfs", i.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
 }
@@ -120,8 +121,9 @@ func TestIPFSUploadSuccess(t *testing.T) {
 		}))
 
 	data := []byte(`hello world`)
-	hash, err := i.PublishData(context.Background(), bytes.NewReader(data))
+	hash, backendID, err := i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.NoError(t, err)
+	assert.Equal(t, `Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD`, backendID)
 	assert.Equal(t, `f852c7fa62f971817f54d8a80dcd63fcf7098b3cbde9ae8ec1ee449013ec5db0`, hash.String())
 
 }
@@ -145,7 +147,7 @@ func TestIPFSUploadFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
 	data := []byte(`hello world`)
-	_, err = i.PublishData(context.Background(), bytes.NewReader(data))
+	_, _, err = i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.Regexp(t, "FF10136", err.Error())
 
 }

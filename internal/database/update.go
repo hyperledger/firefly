@@ -25,7 +25,7 @@ import (
 // UpdateBuilder is the output of the builder
 type UpdateBuilder interface {
 	// Set starts creation of a set operation
-	Set(uield string, value interface{}) Update
+	Set(field string, value interface{}) Update
 
 	// S starts an update that doesn't have any fields
 	S() Update
@@ -36,7 +36,7 @@ type UpdateBuilder interface {
 
 type Update interface {
 	// Set adds a set condition to the update
-	Set(uield string, value interface{}) Update
+	Set(field string, value interface{}) Update
 
 	// IsEmpty
 	IsEmpty() bool
@@ -46,7 +46,7 @@ type Update interface {
 }
 
 // UpdateFactory creates a update builder in the given context, and contains the rules on
-// which uields can be used by the builder (and how they are serialized)
+// which fields can be used by the builder (and how they are serialized)
 type UpdateFactory interface {
 	New(ctx context.Context) UpdateBuilder
 }

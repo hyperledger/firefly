@@ -30,7 +30,7 @@ import (
 )
 
 type Broadcast interface {
-	BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) error
+	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
 	Close()
 }
 
@@ -65,22 +65,26 @@ func NewBroadcast(ctx context.Context, database database.Plugin, blockchain bloc
 
 func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
 
-	// In a retry scenario we don't need to re-write the batch itself to IPFS
-	if batch.PayloadRef == nil {
-		// Serialize the full payload, which has already been sealed for us by the BatchManager
-		payload, err := json.Marshal(batch)
-		if err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
-		}
-
-		// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash)
-		// Note the BatchManager is responsible for writing the updated batch
-		batch.PayloadRef, err = b.p2pfs.PublishData(ctx, bytes.NewReader(payload))
-		if err != nil {
-			return err
-		}
+	// Serialize the full payload, which has already been sealed for us by the BatchManager
+	payload, err := json.Marshal(batch)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
+	// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash).
+	// The payload ref will be persisted back to the batch, as well as being used in the TX
+	var p2pfsID string
+	batch.PayloadRef, p2pfsID, err = b.p2pfs.PublishData(ctx, bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
+	return b.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		return b.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, p2pfsID)
+	})
+}
+
+func (b *broadcast) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, p2pfsID string) error {
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
@@ -99,8 +103,14 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 		return err
 	}
 
-	// Write it to the blockchain
-	_, err = b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	// Update the batch to store the payloadRef
+	err = b.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef))
+	if err != nil {
+		return err
+	}
+
+	// Write the batch pin to the blockchain
+	blockchainTrackingID, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		Timestamp:      batch.Created,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
@@ -109,12 +119,40 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 		return err
 	}
 
-	// TODO: Create message operations
+	// Store the operations for each message
+	for _, msg := range batch.Payload.Messages {
+
+		// The pending blockchain transaction
+		op := fftypes.NewMessageOp(
+			b.blockchain,
+			blockchainTrackingID,
+			msg,
+			fftypes.OpTypeBlockchainBatchPin,
+			fftypes.OpDirectionOutbound,
+			fftypes.OpStatusPending,
+			"")
+		if err := b.database.UpsertOperation(ctx, op); err != nil {
+			return err
+		}
+
+		// The completed P2PFS upload
+		op = fftypes.NewMessageOp(
+			b.p2pfs,
+			p2pfsID,
+			msg,
+			fftypes.OpTypeP2PFSBatchBroadcast,
+			fftypes.OpDirectionOutbound,
+			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
+			"")
+		if err := b.database.UpsertOperation(ctx, op); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, identity string, msg *fftypes.Message) (err error) {
+func (b *broadcast) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {

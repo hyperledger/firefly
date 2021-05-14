@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
+// +build cgo
 
 package databasefactory
 
@@ -21,24 +21,25 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/database/postgres"
-	"github.com/kaleido-io/firefly/internal/database/ql"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var plugins = map[string]database.Plugin{
-	"postgres": &postgres.Postgres{},
-	"ql":       &ql.QL{},
+var pluginsByName = make(map[string]database.Plugin)
+
+func init() {
+	for _, p := range plugins {
+		pluginsByName[p.Name()] = p
+	}
 }
 
 func InitConfigPrefix(prefix config.ConfigPrefix) {
-	for name, plugin := range plugins {
-		plugin.InitConfigPrefix(prefix.SubPrefix(name))
+	for _, plugin := range plugins {
+		plugin.InitConfigPrefix(prefix.SubPrefix(plugin.Name()))
 	}
 }
 
 func GetPlugin(ctx context.Context, pluginType string) (database.Plugin, error) {
-	plugin, ok := plugins[pluginType]
+	plugin, ok := pluginsByName[pluginType]
 	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
 	}

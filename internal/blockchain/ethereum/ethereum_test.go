@@ -108,6 +108,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
 	assert.NoError(t, err)
 
+	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
