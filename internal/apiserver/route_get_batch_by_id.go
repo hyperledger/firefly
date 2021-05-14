@@ -24,11 +24,11 @@ import (
 
 var getBatchById = &apispec.Route{
 	Name:   "getBatchById",
-	Path:   "ns/{ns}/batches/{id}",
+	Path:   "namespaces/{ns}/batches/{batchid}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "batchid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -37,7 +37,7 @@ var getBatchById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetBatchById(r.Ctx, r.PP["ns"], r.PP["id"])
+		output, err = r.E.GetBatchById(r.Ctx, r.PP["ns"], r.PP["batchid"])
 		return output, err
 	},
 }

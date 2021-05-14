@@ -18,26 +18,27 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/apispec"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var getDataDefById = &apispec.Route{
-	Name:   "getDataDefById",
-	Path:   "namespaces/{ns}/definitions/data/{defid}",
+var getMsgOps = &apispec.Route{
+	Name:   "getMsgOps",
+	Path:   "namespaces/{ns}/messages/{msgid}/operations",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "defid", Description: i18n.MsgTBD},
+		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.OperationQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.DataDefinition{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetDataDefinitionById(r.Ctx, r.PP["ns"], r.PP["defid"])
+		output, err = r.E.GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"], r.Filter)
 		return output, err
 	},
 }

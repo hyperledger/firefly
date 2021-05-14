@@ -22,9 +22,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 	routes := []*Route{
 		{
 			Name:   "op1",
-			Path:   "ns/{ns}/example1/{id}",
+			Path:   "namespaces/{ns}/example1/{id}",
 			Method: http.MethodPost,
 			PathParams: []PathParam{
 				{Name: "ns", Example: "app1", Description: i18n.MsgTBD},

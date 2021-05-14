@@ -32,7 +32,7 @@ func TestPostDataDefinitions(t *testing.T) {
 	input := fftypes.DataDefinition{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/definitions/data/broadcast", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/definitions/data/broadcast", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

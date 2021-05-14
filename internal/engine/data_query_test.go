@@ -81,6 +81,17 @@ func TestGetMessages(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetMessageOperations(t *testing.T) {
+	e := NewEngine().(*engine)
+	mp := &databasemocks.Plugin{}
+	e.database = mp
+	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
+	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("direction", fftypes.OpDirectionOutbound))
+	_, err := e.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
+	assert.NoError(t, err)
+}
+
 func TestGetBatchById(t *testing.T) {
 	e := NewEngine().(*engine)
 	mp := &databasemocks.Plugin{}
