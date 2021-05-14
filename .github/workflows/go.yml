@@ -24,5 +24,6 @@ jobs:
     - name: Test
       run: go test -coverprofile=coverage.txt -covermode=atomic ./...
       
-    - name: Upload coverage
+    - name: Upload coverage      
+      if: ${{ github.ref == 'refs/heads/master' }}
       run: bash <(curl -s https://codecov.io/bash)
