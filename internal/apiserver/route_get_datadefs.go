@@ -18,14 +18,14 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/apispec"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var getDataDefs = &apispec.Route{
 	Name:   "getDataDefs",
-	Path:   "ns/{ns}/definitions/data",
+	Path:   "namespaces/{ns}/definitions/data",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},

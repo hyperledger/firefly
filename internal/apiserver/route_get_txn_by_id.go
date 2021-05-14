@@ -18,18 +18,18 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/apispec"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 var getTxnById = &apispec.Route{
 	Name:   "getTxnById",
-	Path:   "ns/{ns}/transactions/{id}",
+	Path:   "namespaces/{ns}/transactions/{txnid}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "txnid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
@@ -38,7 +38,7 @@ var getTxnById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["id"])
+		output, err = r.E.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["txnid"])
 		return output, err
 	},
 }

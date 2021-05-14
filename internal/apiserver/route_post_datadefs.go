@@ -24,7 +24,7 @@ import (
 
 var postDataDefs = &apispec.Route{
 	Name:   "postDataDefs",
-	Path:   "ns/{ns}/definitions/data/broadcast",
+	Path:   "namespaces/{ns}/definitions/data/broadcast",
 	Method: http.MethodPost,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},

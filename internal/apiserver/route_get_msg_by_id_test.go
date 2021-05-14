@@ -27,7 +27,7 @@ import (
 func TestGetMessageById(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/messages/abcd12345", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

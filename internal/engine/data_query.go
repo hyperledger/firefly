@@ -18,9 +18,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
 )
 
 func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
@@ -75,6 +75,12 @@ func (e *engine) GetTransactions(ctx context.Context, ns string, filter database
 func (e *engine) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetMessages(ctx, filter)
+}
+
+func (e *engine) GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+	filter = e.scopeNS(ns, filter)
+	filter = filter.Condition(filter.Builder().Eq("message", id))
+	return e.database.GetOperations(ctx, filter)
 }
 
 func (e *engine) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {

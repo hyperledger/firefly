@@ -24,11 +24,11 @@ import (
 
 var getDataById = &apispec.Route{
 	Name:   "getDataById",
-	Path:   "ns/{ns}/data/{id}",
+	Path:   "namespaces/{ns}/data/{dataid}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "dataid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -37,7 +37,7 @@ var getDataById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetDataById(r.Ctx, r.PP["ns"], r.PP["id"])
+		output, err = r.E.GetDataById(r.Ctx, r.PP["ns"], r.PP["dataid"])
 		return output, err
 	},
 }

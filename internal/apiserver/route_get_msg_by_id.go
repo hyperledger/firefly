@@ -24,11 +24,11 @@ import (
 
 var getMsgById = &apispec.Route{
 	Name:   "getMsgById",
-	Path:   "ns/{ns}/messages/{id}",
+	Path:   "namespaces/{ns}/messages/{msgid}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -37,7 +37,7 @@ var getMsgById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetMessageById(r.Ctx, r.PP["ns"], r.PP["id"])
+		output, err = r.E.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

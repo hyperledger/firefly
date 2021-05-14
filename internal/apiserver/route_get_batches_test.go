@@ -27,7 +27,7 @@ import (
 func TestGetBatches(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/batches", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/batches", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

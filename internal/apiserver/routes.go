@@ -20,6 +20,7 @@ var routes = []*apispec.Route{
 	postDataDefs,
 	getMsgById,
 	getMsgs,
+	getMsgOps,
 	getBatchById,
 	getBatches,
 	getDataById,

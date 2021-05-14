@@ -208,6 +208,29 @@ func (_m *Engine) GetMessageById(ctx context.Context, ns string, id string) (*ff
 	return r0, r1
 }
 
+// GetMessageOperations provides a mock function with given fields: ctx, ns, id, filter
+func (_m *Engine) GetMessageOperations(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id, filter)
+
+	var r0 []*fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, id, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessages provides a mock function with given fields: ctx, ns, filter
 func (_m *Engine) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, filter)

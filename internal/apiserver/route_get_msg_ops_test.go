@@ -24,15 +24,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataDefs(t *testing.T) {
+func TestGetMessageOperations(t *testing.T) {
 	e := &enginemocks.Engine{}
 	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/definitions/data", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/uuid1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetDataDefinitions", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.DataDefinition{}, nil)
+	e.On("GetMessageOperations", mock.Anything, "mynamespace", "uuid1", mock.Anything).
+		Return([]*fftypes.Operation{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

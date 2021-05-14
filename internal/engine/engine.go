@@ -53,6 +53,7 @@ type Engine interface {
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
+	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
