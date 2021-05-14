@@ -55,6 +55,10 @@ type utEvent struct {
 	data       []byte
 }
 
+func (u *UTDBQL) Name() string {
+	return "utdbql"
+}
+
 func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
 
 	u.ctx = ctx

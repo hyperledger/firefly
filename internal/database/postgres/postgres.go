@@ -21,9 +21,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
+	"github.com/kaleido-io/firefly/internal/i18n"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -34,6 +34,10 @@ import (
 
 type Postgres struct {
 	sqlcommon.SQLCommon
+}
+
+func (e *Postgres) Name() string {
+	return "postgres"
 }
 
 func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {

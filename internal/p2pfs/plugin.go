@@ -24,6 +24,7 @@ import (
 
 // Plugin is the interface implemented by each P2P Filesystem plugin
 type Plugin interface {
+	fftypes.Named
 
 	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitConfigPrefix(prefix config.ConfigPrefix)
@@ -36,7 +37,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// PublishData publishes data to the P2P Filesystem, and returns a Bytes32 payload reference ID
-	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, err error)
+	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, backendID string, err error)
 
 	// RetrieveData reads data back from IPFS using the payload reference format returned from PublishData
 	RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error)

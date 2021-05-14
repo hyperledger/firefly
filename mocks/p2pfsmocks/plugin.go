@@ -56,8 +56,22 @@ func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
 	_m.Called(prefix)
 }
 
+// Name provides a mock function with given fields:
+func (_m *Plugin) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // PublishData provides a mock function with given fields: ctx, data
-func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Bytes32, error) {
+func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Bytes32, string, error) {
 	ret := _m.Called(ctx, data)
 
 	var r0 *fftypes.Bytes32
@@ -69,14 +83,21 @@ func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Byt
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) error); ok {
+	var r1 string
+	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) string); ok {
 		r1 = rf(ctx, data)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(string)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, io.Reader) error); ok {
+		r2 = rf(ctx, data)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // RetrieveData provides a mock function with given fields: ctx, payloadRef

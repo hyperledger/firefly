@@ -51,6 +51,20 @@ func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
 	_m.Called(prefix)
 }
 
+// Name provides a mock function with given fields:
+func (_m *Plugin) Name() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // Start provides a mock function with given fields:
 func (_m *Plugin) Start() error {
 	ret := _m.Called()

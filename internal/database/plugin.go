@@ -66,6 +66,7 @@ type Plugin interface {
 // For NoSQL databases, the code should be straight forward to map the collections, indexes, and operations.
 //
 type PeristenceInterface interface {
+	fftypes.Named
 
 	// RunAsGroup instructs the database plugin that all database operations performed within the context
 	// function can be grouped into a single transaction (if supported).
@@ -125,16 +126,16 @@ type PeristenceInterface interface {
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
 	// Upsert a data definitino
-	UpsertDataDefinition(ctx context.Context, data *fftypes.DataDefinition) (err error)
+	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition) (err error)
 
 	// Update data definition
 	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a data definition by Id
-	GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.DataDefinition, err error)
+	GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (datadef *fftypes.DataDefinition, err error)
 
 	// Get data definitions
-	GetDataDefinitions(ctx context.Context, filter Filter) (message []*fftypes.DataDefinition, err error)
+	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
 
 	// Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset) (err error)
@@ -143,10 +144,22 @@ type PeristenceInterface interface {
 	UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update Update) (err error)
 
 	// Get an offset by Id
-	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (message *fftypes.Offset, err error)
+	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
 
 	// Get offsets
-	GetOffsets(ctx context.Context, filter Filter) (message []*fftypes.Offset, err error)
+	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
+
+	// Upsert an operation
+	UpsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
+
+	// Update matching operations
+	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
+
+	// Get an operation by Id
+	GetOperationById(ctx context.Context, ns string, id *uuid.UUID) (operation *fftypes.Operation, err error)
+
+	// Get operation
+	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
 }
 
 // Events
@@ -193,17 +206,18 @@ var MessageQueryFactory = &queryFields{
 }
 
 var BatchQueryFactory = &queryFields{
-	"id":        &StringField{},
-	"namespace": &StringField{},
-	"type":      &StringField{},
-	"author":    &StringField{},
-	"topic":     &StringField{},
-	"context":   &StringField{},
-	"group":     &StringField{},
-	"created":   &Int64Field{},
-	"confirmed": &Int64Field{},
-	"tx.type":   &StringField{},
-	"tx.id":     &StringField{},
+	"id":         &StringField{},
+	"namespace":  &StringField{},
+	"type":       &StringField{},
+	"author":     &StringField{},
+	"topic":      &StringField{},
+	"context":    &StringField{},
+	"group":      &StringField{},
+	"payloadref": &StringField{},
+	"created":    &Int64Field{},
+	"confirmed":  &Int64Field{},
+	"tx.type":    &StringField{},
+	"tx.id":      &StringField{},
 }
 
 var TransactionQueryFactory = &queryFields{

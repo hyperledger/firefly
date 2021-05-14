@@ -40,7 +40,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operation := &fftypes.Operation{
 		ID:        &operationId,
 		Namespace: "ns1",
-		Type:      fftypes.OpTypeDataBroadcast,
+		Type:      fftypes.OpTypeBlockchainBatchPin,
+		Message:   fftypes.NewUUID(),
 		Direction: fftypes.OpDirectionInbound,
 		Status:    fftypes.OpStatusPending,
 		Created:   fftypes.NowMillis(),
@@ -61,7 +62,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operationUpdated := &fftypes.Operation{
 		ID:        &operationId,
 		Namespace: "ns1",
-		Type:      fftypes.OpTypeDataSend,
+		Type:      fftypes.OpTypeBlockchainBatchPin,
 		Message:   fftypes.NewUUID(),
 		Data:      fftypes.NewUUID(),
 		Direction: fftypes.OpDirectionOutbound,
@@ -122,7 +123,9 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Set("status", fftypes.OpStatusSucceeded).
 		Set("updated", updateTime).
 		Set("error", "")
-	err = s.UpdateOperation(ctx, operationUpdated.ID, up)
+	idFilter := database.OperationQueryFactory.NewFilter(ctx, 0).
+		Eq("id", operationUpdated.ID)
+	err = s.UpdateOperations(ctx, idFilter, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -248,16 +251,27 @@ func TestGettOperationsReadMessageFail(t *testing.T) {
 func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
+	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
 func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
+	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperations(context.Background(), f, u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestOperationUpdateBuildFilterFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
@@ -266,7 +280,8 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
+	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10117", err.Error())
 }

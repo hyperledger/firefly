@@ -84,7 +84,7 @@ func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *ffty
 	}
 
 	// Broadcast the message
-	if err = e.broadcast.BroadcastMessage(ctx, e.nodeIdentity, msg); err != nil {
+	if err = e.broadcast.BroadcastMessage(ctx, msg); err != nil {
 		return nil, err
 	}
 

@@ -16,14 +16,14 @@ package fftypes
 
 import "github.com/google/uuid"
 
+// OpType describes mechanical steps in the process that have to be performed,
+// might be asynchronous, and have results in the back-end systems that might need
+// to be correlated with messages by operators.
 type OpType string
 
 const (
-	OpTypeMessagePin       OpType = "message_pin"
-	OpTypeMessageSend      OpType = "message_transfer"
-	OpTypeMessageBroadcast OpType = "message_broacast"
-	OpTypeDataSend         OpType = "data_transfer"
-	OpTypeDataBroadcast    OpType = "data_broadcast"
+	OpTypeBlockchainBatchPin  OpType = "blockchain_batch_pin"
+	OpTypeP2PFSBatchBroadcast OpType = "p2pfs_batch_broadcast"
 )
 
 type OpDirection string
@@ -40,6 +40,42 @@ const (
 	OpStatusSucceeded OpStatus = "succeeded"
 	OpStatusFailed    OpStatus = "failed"
 )
+
+type Named interface {
+	Name() string
+}
+
+func NewMessageOp(plugin Named, backendID string, msg *Message, opType OpType, opDir OpDirection, opStatus OpStatus, recipient string) *Operation {
+	return &Operation{
+		ID:        NewUUID(),
+		Plugin:    plugin.Name(),
+		BackendID: backendID,
+		Namespace: msg.Header.Namespace,
+		Message:   msg.Header.ID,
+		Data:      nil,
+		Type:      opType,
+		Direction: opDir,
+		Recipient: recipient,
+		Status:    opStatus,
+		Created:   NowMillis(),
+	}
+}
+
+func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int, opType OpType, opDir OpDirection, opStatus OpStatus, recipient string) *Operation {
+	return &Operation{
+		ID:        NewUUID(),
+		Plugin:    plugin.Name(),
+		BackendID: backendID,
+		Namespace: msg.Header.Namespace,
+		Message:   msg.Header.ID,
+		Data:      msg.Data[dataIdx].ID,
+		Type:      opType,
+		Direction: opDir,
+		Recipient: recipient,
+		Status:    opStatus,
+		Created:   NowMillis(),
+	}
+}
 
 type Operation struct {
 	ID        *uuid.UUID  `json:"id"`
