@@ -462,7 +462,7 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
 func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
-	e.handleMessageBatch(context.Background(), []byte(`[{"signature":broadcastBatchEventSignature}]`))
+	e.handleMessageBatch(context.Background(), []byte(`[{"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"}]`))
 	assert.Equal(t, 0, len(em.Calls))
 }
 
@@ -470,7 +470,7 @@ func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":broadcastBatchEventSignature,
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -489,7 +489,7 @@ func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":broadcastBatchEventSignature,
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -508,7 +508,7 @@ func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":broadcastBatchEventSignature,
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -527,7 +527,7 @@ func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":broadcastBatchEventSignature,
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
