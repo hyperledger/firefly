@@ -55,6 +55,8 @@ type Route struct {
 type PathParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// Default is the value that will be used in the case no value is supplied
+	Default string
 	// Example is a field to fill in, in the helper UI
 	Example string
 	// Description is a message key to a translatable descripiton of the parameter
@@ -65,6 +67,8 @@ type PathParam struct {
 type QueryParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// Default is the value that will be used in the case no value is supplied
+	Default string
 	// Example is a field to fill in, in the helper UI
 	Example string
 	// Description is a message key to a translatable descripiton of the parameter
