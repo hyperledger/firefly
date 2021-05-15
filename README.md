@@ -164,7 +164,7 @@ It depends on the following Kaleido services:
   │       │   │ manager       │    * Message to Event matching logic
   │       │   └──────┬────────┘
   │       │          │
-  │       │   ┌──────┴────────┐  - Websocket
+  │       │   ┌──────┴────────┐  - Manages delivery of events to connected applications
   │       │   │ event     [Ed]│    * Integrates with data exchange (DX) plugin
   │       │   │ dispatcher    │    * Integrates with blockchain interface (BI) plugin
   │       │   └───────────────┘
