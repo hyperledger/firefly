@@ -217,9 +217,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
-  │           ┌───────────────┐  - Database
-  ├───────────┤ database  [Db]│    * Create, Read, Update, Delete (CRUD) actions
-  │           │               │    * Filtering and update definition interace
+  │           ┌───────────────┐  - Database Interactions
+  ├───────────┤ database  [Di]│    * Create, Read, Update, Delete (CRUD) actions
+  │           │ interace      │    * Filtering and update definition interace
   │           └─────┬─────────┘    * Migrations and Indexes
   │                 │
   │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)
