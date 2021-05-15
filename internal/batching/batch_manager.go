@@ -16,6 +16,7 @@ package batching
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"sync"
 	"time"
@@ -248,12 +249,17 @@ func (bm *batchManager) messageSequencer() {
 				dispatchCount++
 			}
 
-			for i := 0; i < dispatchCount; i++ {
-				dispatched := <-dispatched
-				l.Debugf("Dispatched message %s to batch %s", dispatched.msg.Header.ID, dispatched.batchID)
-
-				if err = bm.updateMessage(ctx, dispatched.msg, dispatched.batchID); err != nil {
-					l.Errorf("Closed while attempting to update message %s with batch %s", dispatched.msg.Header.ID, dispatched.batchID)
+			if dispatchCount > 0 {
+				msgUpdates := make(map[uuid.UUID][]driver.Value)
+				for i := 0; i < dispatchCount; i++ {
+					dispatched := <-dispatched
+					batchID := *dispatched.batchID
+					l.Debugf("Dispatched message %s to batch %s", dispatched.msg.Header.ID, dispatched.batchID)
+					msgUpdates[batchID] = append(msgUpdates[batchID], dispatched.msg.Header.ID)
+				}
+				if err = bm.updateMessages(ctx, msgUpdates); err != nil {
+					l.Errorf("Closed while attempting to update messages: %s", err)
+					l.Infof("Unflushed message updates: %+v", msgUpdates)
 					break
 				}
 			}
@@ -290,11 +296,21 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	}
 }
 
-func (bm *batchManager) updateMessage(ctx context.Context, msg *fftypes.Message, batchID *uuid.UUID) (err error) {
+func (bm *batchManager) updateMessages(ctx context.Context, msgUpdates map[uuid.UUID][]driver.Value) (err error) {
 	l := log.L(ctx)
 	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		u := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", batchID)
-		err = bm.database.UpdateMessage(ctx, msg.Header.ID, u)
+		// Group the updates at the persistence layer
+		err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+			// Group the updates by batch ID
+			for batchID, msgs := range msgUpdates {
+				f := database.MessageQueryFactory.NewFilter(ctx, 0).In("id", msgs)
+				u := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", &batchID)
+				if err := bm.database.UpdateMessages(ctx, f, u); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			return !bm.closed, err
