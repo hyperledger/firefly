@@ -77,8 +77,11 @@ type PeristenceInterface interface {
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error)
 
-	// Update messages
+	// Update message
 	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
+
+	// Update messages
+	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
 	// Get a message by Id
 	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)

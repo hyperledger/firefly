@@ -63,6 +63,12 @@ var (
 	AggregatorDataReadRetryDelayMS    RootKey = ark("aggregator.dataread.retryDelayMS")
 	AggregatorDataReadRetryMaxDelayMS RootKey = ark("aggregator.dataread.maxDelayMS")
 	AggregatorDataReadRetryFactor     RootKey = ark("aggregator.dataread.factor")
+	BatchManagerStartupAttempts       RootKey = ark("batch.manager.startupAttempts")
+	BatchManagerReadPageSize          RootKey = ark("batch.manager.readPageSize")
+	BatchManagerReadPollTimeoutMS     RootKey = ark("batch.manager.pollTimeoutMS")
+	BatchRetryMaxDelayMS              RootKey = ark("batch.retry.maxDelayMS")
+	BatchRetryInitDelayMS             RootKey = ark("batch.retry.initDelayMS")
+	BatchRetryFactor                  RootKey = ark("batch.retry.factor")
 )
 
 // Config prefix represents the global configuration, at a nested point in
@@ -114,6 +120,12 @@ func Reset() {
 	viper.SetDefault(string(AggregatorDataReadRetryDelayMS), 250)
 	viper.SetDefault(string(AggregatorDataReadRetryMaxDelayMS), 30000)
 	viper.SetDefault(string(AggregatorDataReadRetryFactor), 2.0)
+	viper.SetDefault(string(BatchManagerStartupAttempts), 5)
+	viper.SetDefault(string(BatchManagerReadPageSize), 100)
+	viper.SetDefault(string(BatchManagerReadPollTimeoutMS), 30000)
+	viper.SetDefault(string(BatchRetryMaxDelayMS), 30000)
+	viper.SetDefault(string(BatchRetryInitDelayMS), 250)
+	viper.SetDefault(string(BatchRetryFactor), 2.0)
 
 	i18n.SetLang(GetString(Lang))
 }

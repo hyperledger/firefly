@@ -26,12 +26,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
-const (
-	writeRetryMaxDelay  = 30 * time.Second
-	writeRetryInitDelay = 250 * time.Millisecond
-	writeRetryFactor    = 2.0
-)
-
 type batchWork struct {
 	msg        *fftypes.Message
 	data       []*fftypes.Data
@@ -77,7 +71,7 @@ func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *ret
 		conf:        conf,
 	}
 	go a.assemblyLoop()
-	go a.databaseLoop()
+	go a.persistenceLoop()
 	return a
 }
 
@@ -201,7 +195,7 @@ func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch,
 	})
 }
 
-func (a *batchProcessor) databaseLoop() {
+func (a *batchProcessor) persistenceLoop() {
 	defer close(a.batchSealed)
 	l := log.L(a.ctx).WithField("role", fmt.Sprintf("persist-%s", a.name))
 	ctx := log.WithLogger(a.ctx, l)
@@ -214,19 +208,23 @@ func (a *batchProcessor) databaseLoop() {
 		select {
 		case w := <-a.persistWork:
 			newWork = append(newWork, w)
-		case _, ok := <-a.sealBatch:
+		case <-a.sealBatch:
 			seal = true
-			if !ok {
-				return // Closed by termination of assemblyLoop
-			}
 		}
 
 		// Drain everything currently in the pipe waiting for dispatch
 		// This means we batch the writing to the database, which has to happen before
-		// we can callback the work with a persisted batch ID
+		// we can callback the work with a persisted batch ID.
+		// We drain both the message queue, and the seal, because there's no point
+		// going round the loop (persisting twice) if the batch has just filled
 		var drained bool
 		for !drained {
 			select {
+			case _, ok := <-a.sealBatch:
+				seal = true
+				if !ok {
+					return // Closed by termination of assemblyLoop
+				}
 			case w := <-a.persistWork:
 				newWork = append(newWork, w)
 			default:
@@ -236,7 +234,7 @@ func (a *batchProcessor) databaseLoop() {
 		currentBatch = a.createOrAddToBatch(ctx, currentBatch, newWork, seal)
 		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
-		// Persist the batch - indefinite retry (as context is background)
+		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
 		if err := a.persistBatch(ctx, currentBatch, seal); err != nil {
 			return
 		}

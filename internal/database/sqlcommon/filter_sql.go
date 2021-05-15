@@ -115,8 +115,12 @@ func (s *SQLCommon) filterOp(ctx context.Context, op *database.FilterInfo, tm ma
 		return s.filterAnd(ctx, op, tm)
 	case database.FilterOpEq:
 		return sq.Eq{s.mapField(op.Field, tm): op.Value}, nil
+	case database.FilterOpIn:
+		return sq.Eq{s.mapField(op.Field, tm): op.Values}, nil
 	case database.FilterOpNe:
 		return sq.NotEq{s.mapField(op.Field, tm): op.Value}, nil
+	case database.FilterOpNotIn:
+		return sq.NotEq{s.mapField(op.Field, tm): op.Values}, nil
 	case database.FilterOpCont:
 		return sq.Like{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpNotCont:
