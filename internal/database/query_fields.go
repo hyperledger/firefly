@@ -96,7 +96,7 @@ func (f *stringField) Scan(src interface{}) error {
 			// This is helpful for status enums
 			f.s = reflect.ValueOf(tv).String()
 		} else {
-			return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+			return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.s)
 		}
 	}
 	return nil
@@ -127,9 +127,43 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 			return i18n.WrapError(context.Background(), err, i18n.MsgScanFailed, src, int64(0))
 		}
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, "")
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.i)
 	}
 	return nil
 }
 func (f *int64Field) Value() (driver.Value, error)         { return f.i, nil }
 func (f *Int64Field) getSerialization() FieldSerialization { return &int64Field{} }
+
+type TimeField struct{}
+type timeField struct{ t *fftypes.FFTime }
+
+func (f *timeField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case int:
+		f.t = fftypes.UnixTime(int64(tv))
+	case int64:
+		f.t = fftypes.UnixTime(tv)
+	case string:
+		f.t, err = fftypes.ParseString(tv)
+		return err
+	case fftypes.FFTime:
+		f.t = &tv
+		return nil
+	case *fftypes.FFTime:
+		f.t = tv
+		return nil
+	case nil:
+		f.t = nil
+		return nil
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.t)
+	}
+	return nil
+}
+func (f *timeField) Value() (driver.Value, error) {
+	if f.t == nil {
+		return nil, nil
+	}
+	return f.t.UnixNano(), nil
+}
+func (f *timeField) getSerialization() FieldSerialization { return &timeField{} }

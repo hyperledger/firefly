@@ -44,7 +44,8 @@ func TestTransactionE2EWithDB(t *testing.T) {
 			Type:   fftypes.TransactionTypePin,
 			Author: "0x12345",
 		},
-		Status: fftypes.TransactionStatusPending,
+		Created: fftypes.Now(),
+		Status:  fftypes.TransactionStatusPending,
 	}
 	err := s.UpsertTransaction(ctx, transaction, false)
 	assert.NoError(t, err)
@@ -71,13 +72,13 @@ func TestTransactionE2EWithDB(t *testing.T) {
 			Message:   fftypes.NewUUID(),
 			Batch:     fftypes.NewUUID(),
 		},
-		Created:    fftypes.NowMillis(),
+		Created:    fftypes.Now(),
 		ProtocolID: "0x33333",
 		Status:     fftypes.TransactionStatusFailed,
 		Info: fftypes.JSONData{
 			"some": "data",
 		},
-		Confirmed: fftypes.NowMillis(),
+		Confirmed: fftypes.Now(),
 	}
 
 	// Check reject hash update

@@ -10,7 +10,7 @@ CREATE TABLE operations (
   plugin      string         NOT NULL,
   backend_id   string         NOT NULL,
   created     int64          NOT NULL,
-  updated     int64          NOT NULL,
+  updated     int64,
   error       string         NOT NULL,
 );
 

@@ -131,6 +131,8 @@ type FilterInfo struct {
 func valueString(f FieldSerialization) string {
 	v, _ := f.Value()
 	switch tv := v.(type) {
+	case nil:
+		return "null"
 	case int64:
 		return strconv.FormatInt(tv, 10)
 	default:

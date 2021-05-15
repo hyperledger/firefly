@@ -33,7 +33,7 @@ func TestSQLQueryFactory(t *testing.T) {
 			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
 			fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7"),
 		),
-		fb.Gt("created", "12345")).
+		fb.Gt("sequence", "12345")).
 		Skip(50).
 		Limit(25).
 		Sort("namespace").
@@ -47,7 +47,7 @@ func TestSQLQueryFactory(t *testing.T) {
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND created > ?) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ?) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])

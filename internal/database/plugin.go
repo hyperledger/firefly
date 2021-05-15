@@ -200,8 +200,8 @@ var MessageQueryFactory = &queryFields{
 	"topic":     &StringField{},
 	"context":   &StringField{},
 	"group":     &StringField{},
-	"created":   &Int64Field{},
-	"confirmed": &Int64Field{},
+	"created":   &timeField{},
+	"confirmed": &timeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
 	"tx.id":     &StringField{},
@@ -217,8 +217,8 @@ var BatchQueryFactory = &queryFields{
 	"context":    &StringField{},
 	"group":      &StringField{},
 	"payloadref": &StringField{},
-	"created":    &Int64Field{},
-	"confirmed":  &Int64Field{},
+	"created":    &timeField{},
+	"confirmed":  &timeField{},
 	"tx.type":    &StringField{},
 	"tx.id":      &StringField{},
 }
@@ -232,8 +232,8 @@ var TransactionQueryFactory = &queryFields{
 	"status":     &StringField{},
 	"message":    &StringField{},
 	"batch":      &StringField{},
-	"created":    &Int64Field{},
-	"confirmed":  &Int64Field{},
+	"created":    &timeField{},
+	"confirmed":  &timeField{},
 	"sequence":   &Int64Field{},
 }
 
@@ -244,7 +244,7 @@ var DataQueryFactory = &queryFields{
 	"definition.name":    &StringField{},
 	"definition.version": &StringField{},
 	"hash":               &StringField{},
-	"created":            &Int64Field{},
+	"created":            &timeField{},
 }
 
 var DataDefinitionQueryFactory = &queryFields{
@@ -253,7 +253,7 @@ var DataDefinitionQueryFactory = &queryFields{
 	"validator": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
-	"created":   &Int64Field{},
+	"created":   &timeField{},
 }
 
 var OffsetQueryFactory = &queryFields{
@@ -275,6 +275,6 @@ var OperationQueryFactory = &queryFields{
 	"error":     &StringField{},
 	"plugin":    &StringField{},
 	"backendid": &StringField{},
-	"created":   &Int64Field{},
-	"updated":   &Int64Field{},
+	"created":   &timeField{},
+	"updated":   &timeField{},
 }

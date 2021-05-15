@@ -22,9 +22,9 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +49,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Value:     val,
 	}
 	err := s.UpsertDataDefinition(ctx, dataDef)
@@ -78,7 +78,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Name:      "customer",
 		Version:   "0.0.1",
 		Hash:      randB32,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Value:     val2,
 	}
 	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated)

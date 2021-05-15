@@ -149,7 +149,7 @@ func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.
 			Namespace: a.conf.namespace,
 			Author:    a.conf.author,
 			Payload:   fftypes.BatchPayload{},
-			Created:   fftypes.NowMillis(),
+			Created:   fftypes.Now(),
 		}
 	}
 	for _, w := range newWork {

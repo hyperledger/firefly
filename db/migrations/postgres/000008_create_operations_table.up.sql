@@ -13,7 +13,7 @@ CREATE TABLE operations (
   plugin      VARCHAR(64)     NOT NULL,
   backend_id  VARCHAR(256)    NOT NULL,
   created     BIGINT          NOT NULL,
-  updated     BIGINT          NOT NULL,
+  updated     BIGINT,
   error       VARCHAR         NOT NULL
 );
 

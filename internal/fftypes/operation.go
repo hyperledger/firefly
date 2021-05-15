@@ -57,7 +57,7 @@ func NewMessageOp(plugin Named, backendID string, msg *Message, opType OpType, o
 		Direction: opDir,
 		Recipient: recipient,
 		Status:    opStatus,
-		Created:   NowMillis(),
+		Created:   Now(),
 	}
 }
 
@@ -73,7 +73,7 @@ func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int,
 		Direction: opDir,
 		Recipient: recipient,
 		Status:    opStatus,
-		Created:   NowMillis(),
+		Created:   Now(),
 	}
 }
 
@@ -89,6 +89,6 @@ type Operation struct {
 	Error     string      `json:"error,omitempty"`
 	Plugin    string      `json:"plugin"`
 	BackendID string      `json:"backendId"`
-	Created   int64       `json:"created,omitempty"`
-	Updated   int64       `json:"updated,omitempty"`
+	Created   *FFTime     `json:"created,omitempty"`
+	Updated   *FFTime     `json:"updated,omitempty"`
 }

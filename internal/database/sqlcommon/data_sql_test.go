@@ -48,7 +48,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Validator: fftypes.ValidatorTypeBLOB,
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Value:     val,
 	}
 	err := s.UpsertData(ctx, data, true)
@@ -79,7 +79,7 @@ func TestDataE2EWithDB(t *testing.T) {
 			Version: "0.0.1",
 		},
 		Hash:    fftypes.NewRandB32(),
-		Created: fftypes.NowMillis(),
+		Created: fftypes.Now(),
 		Value:   val2,
 	}
 

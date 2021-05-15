@@ -67,9 +67,9 @@ type Transaction struct {
 	Hash       *Bytes32           `json:"hash"`
 	Subject    TransactionSubject `json:"subject"`
 	Sequence   int64              `json:"sequence,omitempty"`
-	Created    int64              `json:"created"`
+	Created    *FFTime            `json:"created"`
 	Status     TransactionStatus  `json:"status"`
 	ProtocolID string             `json:"protocolId,omitempty"`
-	Confirmed  int64              `json:"confirmed,omitempty"`
+	Confirmed  *FFTime            `json:"confirmed,omitempty"`
 	Info       JSONData           `json:"info,omitempty"`
 }

@@ -26,7 +26,7 @@ func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *ffty
 
 	// Validate the input data definition data
 	s.ID = fftypes.NewUUID()
-	s.Created = fftypes.NowMillis()
+	s.Created = fftypes.Now()
 	s.Namespace = ns
 	if s.Validator == "" {
 		s.Validator = fftypes.ValidatorTypeJSON
@@ -55,7 +55,7 @@ func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *ffty
 		Validator: fftypes.ValidatorTypeDataDefinition,
 		ID:        fftypes.NewUUID(),
 		Namespace: s.Namespace,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 	}
 	b, _ := json.Marshal(&s)
 	_ = json.Unmarshal(b, &data.Value)

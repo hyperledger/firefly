@@ -30,8 +30,8 @@ type Batch struct {
 	Type       MessageType  `json:"type"`
 	Author     string       `json:"author"`
 	Hash       *Bytes32     `json:"hash"`
-	Created    int64        `json:"created"`
-	Confirmed  int64        `json:"confirmed"`
+	Created    *FFTime      `json:"created"`
+	Confirmed  *FFTime      `json:"confirmed"`
 	Payload    BatchPayload `json:"payload"`
 	PayloadRef *Bytes32     `json:"payloadRef,omitempty"`
 }
