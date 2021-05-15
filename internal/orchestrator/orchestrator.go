@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -37,8 +37,8 @@ var (
 	p2pfsConfig      = config.NewPluginConfig("p2pfs")
 )
 
-// Engine is the main interface behind the API, implementing the actions
-type Engine interface {
+// Orchestrator is the main interface behind the API, implementing the actions
+type Orchestrator interface {
 	blockchain.Events
 
 	Init(ctx context.Context) error
@@ -62,72 +62,72 @@ type Engine interface {
 	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
 }
 
-type engine struct {
+type orchestrator struct {
 	ctx          context.Context
 	database     database.Plugin
 	blockchain   blockchain.Plugin
 	p2pfs        p2pfs.Plugin
 	aggregator   aggregator.Aggregator
 	batch        batching.BatchManager
-	broadcast    broadcast.Broadcast
+	broadcast    broadcast.BroadcastManager
 	nodeIdentity string
 }
 
-func NewEngine() Engine {
-	e := &engine{}
+func NewOrchestrator() Orchestrator {
+	o := &orchestrator{}
 
 	// Initialize the config on all the factories
 	blockchainfactory.InitConfigPrefix(blockchainConfig)
 	databasefactory.InitConfigPrefix(databaseConfig)
 	p2pfsfactory.InitConfigPrefix(p2pfsConfig)
 
-	return e
+	return o
 }
 
-func (e *engine) Init(ctx context.Context) (err error) {
-	e.ctx = ctx
-	err = e.initPlugins(ctx)
+func (o *orchestrator) Init(ctx context.Context) (err error) {
+	o.ctx = ctx
+	err = o.initPlugins(ctx)
 	if err == nil {
-		err = e.initComponents(ctx)
+		err = o.initComponents(ctx)
 	}
 	return err
 }
 
-func (e *engine) Start() error {
-	err := e.blockchain.Start()
+func (o *orchestrator) Start() error {
+	err := o.blockchain.Start()
 	if err == nil {
-		err = e.batch.Start()
+		err = o.batch.Start()
 	}
 	return err
 }
 
-func (e *engine) Close() {
-	if e.batch != nil {
-		e.batch.Close()
-		e.batch = nil
+func (o *orchestrator) Close() {
+	if o.batch != nil {
+		o.batch.Close()
+		o.batch = nil
 	}
-	if e.broadcast != nil {
-		e.broadcast.Close()
-		e.broadcast = nil
+	if o.broadcast != nil {
+		o.broadcast.Close()
+		o.broadcast = nil
 	}
 }
 
-func (e *engine) initPlugins(ctx context.Context) (err error) {
+func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
 
-	if e.database == nil {
-		if e.database, err = e.initDatabasePlugin(ctx); err != nil {
+	if o.database == nil {
+		if o.database, err = o.initDatabasePlugin(ctx); err != nil {
 			return err
 		}
 	}
 
-	if e.blockchain == nil {
-		if e.blockchain, err = e.initBlockchainPlugin(ctx); err != nil {
+	if o.blockchain == nil {
+		if o.blockchain, err = o.initBlockchainPlugin(ctx); err != nil {
 			return err
 		}
 	}
 
-	if e.p2pfs == nil {
-		if e.p2pfs, err = e.initP2PFilesystemPlugin(ctx); err != nil {
+	if o.p2pfs == nil {
+		if o.p2pfs, err = o.initP2PFilesystemPlugin(ctx); err != nil {
 			return err
 		}
 	}
@@ -135,36 +135,36 @@ func (e *engine) initPlugins(ctx context.Context) (err error) {
 	return nil
 }
 
-func (e *engine) initComponents(ctx context.Context) (err error) {
-	if e.aggregator == nil {
-		e.aggregator = aggregator.NewAggregator(ctx, e.p2pfs, e.database)
+func (o *orchestrator) initComponents(ctx context.Context) (err error) {
+	if o.aggregator == nil {
+		o.aggregator = aggregator.NewAggregator(ctx, o.p2pfs, o.database)
 	}
 
-	if e.batch == nil {
-		e.batch, err = batching.NewBatchManager(ctx, e.database)
+	if o.batch == nil {
+		o.batch, err = batching.NewBatchManager(ctx, o.database)
 		if err != nil {
 			return err
 		}
 	}
 
-	if e.broadcast == nil {
-		if e.broadcast, err = broadcast.NewBroadcast(ctx, e.database, e.blockchain, e.p2pfs, e.batch); err != nil {
+	if o.broadcast == nil {
+		if o.broadcast, err = broadcast.NewBroadcastManager(ctx, o.database, o.blockchain, o.p2pfs, o.batch); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
+func (o *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
 	pluginType := config.GetString(config.BlockchainType)
 	plugin, err := blockchainfactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), e)
+	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), o)
 	if err == nil {
 		suppliedIdentity := config.GetString(config.NodeIdentity)
-		e.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
+		o.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
 		if err != nil {
 			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIdentity)
 		}
@@ -172,22 +172,22 @@ func (e *engine) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, e
 	return plugin, err
 }
 
-func (e *engine) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
+func (o *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
 	pluginType := config.GetString(config.DatabaseType)
 	plugin, err := databasefactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), e)
+	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), o)
 	return plugin, err
 }
 
-func (e *engine) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, error) {
+func (o *orchestrator) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, error) {
 	pluginType := config.GetString(config.P2PFSType)
 	plugin, err := p2pfsfactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, p2pfsConfig.SubPrefix(pluginType), e)
+	err = plugin.Init(ctx, p2pfsConfig.SubPrefix(pluginType), o)
 	return plugin, err
 }

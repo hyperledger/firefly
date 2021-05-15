@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
+func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
 
 	// Validate the input data definition data
 	s.ID = fftypes.NewUUID()

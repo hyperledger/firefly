@@ -29,12 +29,12 @@ import (
 	"github.com/kaleido-io/firefly/internal/p2pfs"
 )
 
-type Broadcast interface {
+type BroadcastManager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
 	Close()
 }
 
-type broadcast struct {
+type broadcastManager struct {
 	ctx        context.Context
 	database   database.Plugin
 	blockchain blockchain.Plugin
@@ -42,11 +42,11 @@ type broadcast struct {
 	batch      batching.BatchManager
 }
 
-func NewBroadcast(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (Broadcast, error) {
+func NewBroadcastManager(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (BroadcastManager, error) {
 	if database == nil || blockchain == nil || batch == nil || p2pfs == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	b := &broadcast{
+	b := &broadcastManager{
 		ctx:        ctx,
 		database:   database,
 		blockchain: blockchain,
@@ -63,7 +63,7 @@ func NewBroadcast(ctx context.Context, database database.Plugin, blockchain bloc
 	return b, nil
 }
 
-func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (b *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -84,7 +84,7 @@ func (b *broadcast) dispatchBatch(ctx context.Context, batch *fftypes.Batch) err
 	})
 }
 
-func (b *broadcast) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, p2pfsID string) error {
+func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, p2pfsID string) error {
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
@@ -152,7 +152,7 @@ func (b *broadcast) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batc
 	return nil
 }
 
-func (b *broadcast) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
+func (b *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {
@@ -163,4 +163,4 @@ func (b *broadcast) BroadcastMessage(ctx context.Context, msg *fftypes.Message) 
 	return b.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
 }
 
-func (b *broadcast) Close() {}
+func (b *broadcastManager) Close() {}

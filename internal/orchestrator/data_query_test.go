@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -26,152 +26,152 @@ import (
 )
 
 func TestGetTransactionById(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactionById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetTransactionById(context.Background(), "ns1", u.String())
+	_, err := o.GetTransactionById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetTransactionByIdBadId(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.GetTransactionById(context.Background(), "", "")
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetTransactionById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
 func TestGetTransactions(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactions", mock.Anything, mock.Anything).Return([]*fftypes.Transaction{}, nil)
 	fb := database.TransactionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetTransactions(context.Background(), "ns1", f)
+	_, err := o.GetTransactions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 
 func TestGetMessageById(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessageById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetMessageById(context.Background(), "ns1", u.String())
+	_, err := o.GetMessageById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetMessageByIdBadId(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.GetMessageById(context.Background(), "", "")
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetMessageById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
 func TestGetMessages(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetMessages(context.Background(), "ns1", f)
+	_, err := o.GetMessages(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 
 func TestGetMessageOperations(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("direction", fftypes.OpDirectionOutbound))
-	_, err := e.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
+	_, err := o.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 }
 
 func TestGetBatchById(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatchById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetBatchById(context.Background(), "ns1", u.String())
+	_, err := o.GetBatchById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetBatchByIdBadId(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.GetBatchById(context.Background(), "", "")
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetBatchById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
 func TestGetBatches(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.Batch{}, nil)
 	fb := database.BatchQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetBatches(context.Background(), "ns1", f)
+	_, err := o.GetBatches(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 
 func TestGetDataById(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetDataById(context.Background(), "ns1", u.String())
+	_, err := o.GetDataById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetDataByIdBadId(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.GetDataById(context.Background(), "", "")
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetDataById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
 func TestGetData(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetData", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, nil)
 	fb := database.DataQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetData(context.Background(), "ns1", f)
+	_, err := o.GetData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 
 func TestGetDataDefsById(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataDefinitionById", mock.Anything, "ns1", u).Return(nil, nil)
-	_, err := e.GetDataDefinitionById(context.Background(), "ns1", u.String())
+	_, err := o.GetDataDefinitionById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetDataDefsByIdBadId(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.GetDataDefinitionById(context.Background(), "", "")
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetDataDefinitionById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
 func TestGetDataDefinitions(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataDefinitions", mock.Anything, mock.Anything).Return([]*fftypes.DataDefinition{}, nil)
 	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
-	_, err := e.GetDataDefinitions(context.Background(), "ns1", f)
+	_, err := o.GetDataDefinitions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }

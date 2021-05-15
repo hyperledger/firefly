@@ -37,7 +37,7 @@ var postDataDefs = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.BroadcastDataDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataDefinition))
+		output, err = r.Or.BroadcastDataDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataDefinition))
 		return output, err
 	},
 }

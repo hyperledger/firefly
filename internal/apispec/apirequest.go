@@ -18,13 +18,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/orchestrator"
 )
 
 type APIRequest struct {
 	Ctx    context.Context
-	E      engine.Engine
+	Or     orchestrator.Orchestrator
 	Req    *http.Request
 	QP     map[string]string
 	PP     map[string]string

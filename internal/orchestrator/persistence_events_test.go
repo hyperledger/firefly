@@ -12,12 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
-import "github.com/google/uuid"
+import (
+	"testing"
 
-func (e *engine) MessageCreated(id *uuid.UUID) {
-	e.batch.NewMessages() <- id
+	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/mocks/batchingmocks"
+)
+
+func TestMessageCreated(t *testing.T) {
+	mb := &batchingmocks.BatchManager{}
+	o := &orchestrator{
+		batch: mb,
+	}
+	c := make(chan *uuid.UUID, 1)
+	mb.On("NewMessages").Return((chan<- *uuid.UUID)(c))
+	o.MessageCreated(fftypes.NewUUID())
 }
 
-func (e *engine) MessageUpdated(id *uuid.UUID) {}
+func TestMessageUpdates(t *testing.T) {
+	o := &orchestrator{}
+	o.MessageUpdated(fftypes.NewUUID())
+}

@@ -24,9 +24,9 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/apiserver"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/orchestrator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -51,7 +51,7 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
-		getEngine()
+		getOrchestrator()
 		_ = config.ReadConfig(cfgFile)
 
 		// Print it all out
@@ -63,18 +63,18 @@ var showConfigCommand = &cobra.Command{
 
 var cfgFile string
 
-var _utEngine engine.Engine
+var _utOrchestrator orchestrator.Orchestrator
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
 	rootCmd.AddCommand(showConfigCommand)
 }
 
-func getEngine() engine.Engine {
-	if _utEngine != nil {
-		return _utEngine
+func getOrchestrator() orchestrator.Orchestrator {
+	if _utOrchestrator != nil {
+		return _utOrchestrator
 	}
-	return engine.NewEngine()
+	return orchestrator.NewOrchestrator()
 }
 
 // Execute is called by the main method of the package
@@ -120,14 +120,14 @@ func run() error {
 		}()
 	}
 
-	e := getEngine()
-	if err = e.Init(ctx); err != nil {
+	o := getOrchestrator()
+	if err = o.Init(ctx); err != nil {
 		return err
 	}
-	if err = e.Start(); err != nil {
+	if err = o.Start(); err != nil {
 		return err
 	}
 
 	// Run the API Server
-	return apiserver.Serve(ctx, e)
+	return apiserver.Serve(ctx, o)
 }

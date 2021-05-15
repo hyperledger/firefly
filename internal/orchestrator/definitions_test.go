@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -27,30 +27,30 @@ import (
 )
 
 func TestBroadcastDataDefinitionBadType(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Validator: fftypes.ValidatorType("wrong"),
 	})
 	assert.Regexp(t, "FF10132.*validator", err.Error())
 }
 
 func TestBroadcastDataDefinitionBadNamespace(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "_ns1", &fftypes.DataDefinition{})
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "_ns1", &fftypes.DataDefinition{})
 	assert.Regexp(t, "FF10131.*namespace", err.Error())
 }
 
 func TestBroadcastDataDefinitionBadEntity(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 	})
 	assert.Regexp(t, "FF10131.*name", err.Error())
 }
 
 func TestBroadcastDataDefinitionBadVersion(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 	})
@@ -58,8 +58,8 @@ func TestBroadcastDataDefinitionBadVersion(t *testing.T) {
 }
 
 func TestBroadcastDataDefinitionMissingValue(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -68,8 +68,8 @@ func TestBroadcastDataDefinitionMissingValue(t *testing.T) {
 }
 
 func TestBroadcastDataDefinitionBadValue(t *testing.T) {
-	e := NewEngine().(*engine)
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -81,13 +81,13 @@ func TestBroadcastDataDefinitionBadValue(t *testing.T) {
 }
 
 func TestBroadcastUpsertFail(t *testing.T) {
-	e := NewEngine().(*engine)
+	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
-	e.database = mp
+	o.database = mp
 
 	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -99,17 +99,17 @@ func TestBroadcastUpsertFail(t *testing.T) {
 }
 
 func TestBroadcastBroadcastFail(t *testing.T) {
-	e := NewEngine().(*engine)
-	e.nodeIdentity = "0x12345"
+	o := NewOrchestrator().(*orchestrator)
+	o.nodeIdentity = "0x12345"
 	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.Broadcast{}
-	e.database = mp
-	e.broadcast = mb
+	mb := &broadcastmocks.BroadcastManager{}
+	o.database = mp
+	o.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -121,17 +121,17 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 }
 
 func TestBroadcastOk(t *testing.T) {
-	e := NewEngine().(*engine)
-	e.nodeIdentity = "0x12345"
+	o := NewOrchestrator().(*orchestrator)
+	o.nodeIdentity = "0x12345"
 	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.Broadcast{}
-	e.database = mp
-	e.broadcast = mb
+	mb := &broadcastmocks.BroadcastManager{}
+	o.database = mp
+	o.broadcast = mb
 
 	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := e.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -27,44 +27,44 @@ import (
 )
 
 func TestInitDatabasePluginFail(t *testing.T) {
-	e := NewEngine().(*engine)
-	err := e.Init(context.Background())
+	o := NewOrchestrator().(*orchestrator)
+	err := o.Init(context.Background())
 	assert.Regexp(t, "FF10122", err.Error())
 }
 
 func TestInitBlockchainPluginFail(t *testing.T) {
-	e := &engine{
+	o := &orchestrator{
 		database: &databasemocks.Plugin{},
 	}
-	err := e.Init(context.Background())
+	err := o.Init(context.Background())
 	assert.Regexp(t, "FF10110", err.Error())
 }
 
 func TestInitP2PFilesystemPluginFail(t *testing.T) {
-	e := &engine{
+	o := &orchestrator{
 		database:   &databasemocks.Plugin{},
 		blockchain: &blockchainmocks.Plugin{},
 	}
-	err := e.Init(context.Background())
+	err := o.Init(context.Background())
 	assert.Regexp(t, "FF10134", err.Error())
 }
 
 func TestInitBatchComponentFail(t *testing.T) {
-	e := &engine{}
-	err := e.initComponents(context.Background())
+	o := &orchestrator{}
+	err := o.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
 
 func TestInitBroadcastComponentFail(t *testing.T) {
-	e := &engine{
+	o := &orchestrator{
 		batch: &batchingmocks.BatchManager{},
 	}
-	err := e.initComponents(context.Background())
+	err := o.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
 
 func TestInitOK(t *testing.T) {
-	e := NewEngine()
+	e := NewOrchestrator()
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
 	assert.NoError(t, err)
 	err = e.Init(context.Background())
@@ -73,7 +73,7 @@ func TestInitOK(t *testing.T) {
 }
 
 func TestInitBadIdentity(t *testing.T) {
-	e := NewEngine()
+	e := NewOrchestrator()
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
 	config.Set(config.NodeIdentity, "!!!!wrongun")
 	assert.NoError(t, err)
@@ -86,23 +86,23 @@ func TestStartBatchFail(t *testing.T) {
 	config.Reset()
 	mb := &batchingmocks.BatchManager{}
 	mblk := &blockchainmocks.Plugin{}
-	e := &engine{
+	o := &orchestrator{
 		batch:      mb,
 		blockchain: mblk,
 	}
 	mb.On("Start").Return(fmt.Errorf("pop"))
 	mblk.On("Start").Return(nil)
-	err := e.Start()
+	err := o.Start()
 	assert.Regexp(t, "pop", err.Error())
 }
 
 func TestStartBlockchainFail(t *testing.T) {
 	config.Reset()
 	mblk := &blockchainmocks.Plugin{}
-	e := &engine{
+	o := &orchestrator{
 		blockchain: mblk,
 	}
 	mblk.On("Start").Return(fmt.Errorf("pop"))
-	err := e.Start()
+	err := o.Start()
 	assert.Regexp(t, "pop", err.Error())
 }

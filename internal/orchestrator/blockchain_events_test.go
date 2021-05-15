@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"fmt"
@@ -27,20 +27,20 @@ import (
 
 func TestTransactionUpdate(t *testing.T) {
 	ma := &aggregatormocks.Aggregator{}
-	e := &engine{
+	o := &orchestrator{
 		aggregator: ma,
 	}
 	ma.On("TransactionUpdate", "node1", fftypes.TransactionStatusConfirmed, "protoid", "", mock.Anything).Return(fmt.Errorf("pop"))
-	err := e.TransactionUpdate("node1", fftypes.TransactionStatusConfirmed, "protoid", "", nil)
+	err := o.TransactionUpdate("node1", fftypes.TransactionStatusConfirmed, "protoid", "", nil)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestSequencedBroadcastBatch(t *testing.T) {
 	ma := &aggregatormocks.Aggregator{}
-	e := &engine{
+	o := &orchestrator{
 		aggregator: ma,
 	}
 	ma.On("SequencedBroadcastBatch", mock.Anything, "0x12345", "protoid", mock.Anything).Return(fmt.Errorf("pop"))
-	err := e.SequencedBroadcastBatch(&blockchain.BroadcastBatch{}, "0x12345", "protoid", nil)
+	err := o.SequencedBroadcastBatch(&blockchain.BroadcastBatch{}, "0x12345", "protoid", nil)
 	assert.EqualError(t, err, "pop")
 }

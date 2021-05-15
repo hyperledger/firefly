@@ -19,19 +19,19 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetTXById(t *testing.T) {
-	e := &enginemocks.Engine{}
-	r := createMuxRouter(e)
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/transactions/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetTransactionById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetTransactionById", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Transaction{}, nil)
 	r.ServeHTTP(res, req)
 

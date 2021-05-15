@@ -37,7 +37,7 @@ var getMsgById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		output, err = r.Or.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

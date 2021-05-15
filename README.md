@@ -82,19 +82,19 @@ It depends on the following Kaleido services:
 
 ```
 ┌──────────┐  ┌───────────────┐  
-│ cmd      ├──┤ firefly       │  - CLI entry point
+│ cmd      ├──┤ firefly   [Ff]│  - CLI entry point
 └──────────┘  │               │  - Creates parent context
               │               │  - Signal handling
               └─────┬─────────┘
                     │
 ┌──────────┐  ┌─────┴─────────┐  - HTTP listener (Gorilla mux)
-│ internal ├──┤ apiserver     │    * TLS (SSL), CORS configuration etc.
-└──────────┘  │               │    * WS upgrade on same port
+│ internal ├──┤ api       [As]│    * TLS (SSL), CORS configuration etc.
+└──────────┘  │ server        │    * WS upgrade on same port
               │               │  - REST route definitions
-              └─────┬─────────┘    * Simple routing logic only, all processing deferred to engine
+              └─────┬─────────┘    * Simple routing logic only, all processing deferred to orchestrator
                     │
               ┌─────┴─────────┐  - REST route definition framework
-              │ apispec       │    * Standardizes Body, Path, Query, Filter semantics
+              │ api spec      │    * Standardizes Body, Path, Query, Filter semantics
               │               │  - OpenAPI 3.0 (Swagger) generation
               └─────┬─────────┘    * Including Swagger. UI
                     │
@@ -109,71 +109,78 @@ It depends on the following Kaleido services:
               └─────┬─────────┘
                     │
               ┌─────┴─────────┐  - Core runtime server. Initializes and owns instances of:
-              │ engine        │    * Components: Implement features
-  ┌───────┬───┤               │    * Plugins:    Pluggable infrastructure services
+              │           [Or]│    * Components: Implement features
+  ┌───────┬───┤ orchestrator  │    * Plugins:    Pluggable infrastructure services
   │       │   │               │  - Exposes actions to router
   │       │   └───────────────┘    * Processing starts here for all API calls
   │       │
   │  Components: Components do the heavy lifting within the engine
   │       │
   │       │   ┌───────────────┐  - Maintains a view of the entire network
-  │       ├───┤ networkmap    │    * Integrates with network permissioning (NP) plugin
-  │       │   │               │    * Integrates with broadcast plugin
+  │       ├───┤ network   [Nm]│    * Integrates with network permissioning (NP) plugin
+  │       │   │ map           │    * Integrates with broadcast plugin
   │       │   └───────────────┘    * Handles hierarchy of member identity, node identity and signing identity
   │       │
   │       │   ┌───────────────┐  - Builds batches of 100s messages for efficient pinning
-  │       ├───┤ batching      │    * Aggregates messages and data, with rolled up hashes for pinning
-  │       │   │               │    * Pluggable dispatchers
+  │       ├───┤ batch     [Ba]│    * Aggregates messages and data, with rolled up hashes for pinning
+  │       │   │ manager       │    * Pluggable dispatchers
   │       │   │               │  - Database decoupled from main-line API processing
   │       │   └───────────────┘    * See architecture diagrams for more info on active/active sequencing
   │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
-  │       ├───┤ broadcast     │    * Implements dispatcher for batch component
-  │       │   │               │    * Integrates with p2p filesystem (PF) plugin
+  │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
+  │       │   │ managaer      |    * Integrates with p2p filesystem (PF) plugin
   │       │   └───────────────┘    * Integrates with blockchain interface (BI) plugin
   │       │
-  │       │   ┌───────────────┐  - Private data send to individual parties
-  │       ├───┤ sender        │    * Implements dispatcher for batch component
-  │       │   │               │    * Integrates with data exchange (DX) plugin
-  │       │   └───────────────┘    * Integrates with blockchain interface (BI) plugin
-  │       │
-  │       │   ┌───────────────┐  - JSON data shema management and validation (architecture extensible to XML and more)
-  │       ├───┤ json          │    * JSON Schema validation logic for outbound and inbound messages
-  │       │   │               │    * Schema propagatation
-  │       │   └───────────────┘    * Integrates with broadcast plugin
-  │       │
-  │       │   ┌───────────────┐  - Binary data addressable via ID or Hash
-  │       ├───┤ blob          │    * Integrates with data exchange (DX) plugin
-  │       │   │               │    * Hashes data, and maintains mapping to payload references in blob storage
+  │       │   ┌───────────────┐  - Private data management and validation
+  │       ├───┤ data      [Dm]│    * Implements dispatcher for batch component
+  │       │   │ manager       │    * Integrates with data exchange (DX) plugin
+  │       │   └──────┬────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │          │
+  │       │   ┌──────┴────────┐  - JSON data shema management and validation (architecture extensible to XML and more)
+  │       │   │ json      [Jv]│    * JSON Schema validation logic for outbound and inbound messages
+  │       │   │ validator     │    * Schema propagatation
+  │       │   └──────┬────────┘    * Integrates with broadcast plugin
+  │       │          │
+  │       │   ┌──────┴────────┐  - Binary data addressable via ID or Hash
+  │       │   │ blob      [Bm]│    * Integrates with data exchange (DX) plugin
+  │       │   │ manager       │    * Hashes data, and maintains mapping to payload references in blob storage
+  │       │   └──────┬────────┘
+  │       │          │
+  │       │   ┌──────┴────────┐  - Groups of parties, with isolated data and/or blockchains
+  │       │   │ group     [Gm]│    * Integrates with data exchange (DX) plugin
+  │       │   │ manager       │    * Integrates with blockchain interface (BI) plugin
   │       │   └───────────────┘
   │       │
-  │       │   ┌───────────────┐  - Groups of parties, with isolated data and/or blockchains
-  │       ├───┤ groups        │    * Integrates with data exchange (DX) plugin
-  │       │   │               │    * Integrates with blockchain interface (BI) plugin
-  │       │   └───────────────┘
-  │       │
-  │       │   ┌───────────────┐  - Handles incoming external data
-  │       ├───┤ aggregator    │    * Integrates with data exchange (DX) plugin
-  │       │   │               │    * Integrates with p2p filesystem (PF) plugin
+  │       │   ┌───────────────┐  - Private data management and validation
+  │       ├───┤ event     [Em]│    * Implements dispatcher for batch component
+  │       │   │ manager       │    * Integrates with data exchange (DX) plugin
+  │       │   └──────┬────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │          │
+  │       │   ┌──────┴────────┐  - Handles incoming external data
+  │       │   │           [Ag]│    * Integrates with data exchange (DX) plugin
+  │       │   │ aggregator    │    * Integrates with p2p filesystem (PF) plugin
   │       │   │               │    * Integrates with blockchain interface (BI) plugin
   │       │   │               │  - Ensures valid events are dispatched only once all data is available
-  │       │   └───────────────┘    * Context aware, to prevent block-the-world scenarios
-  │       │
-  │       │   ┌───────────────┐  - Subscription manager
-  │       ├───┤ submanager    │    * Creation and management of subscriptions
-  │       │   │               │    * Message to Event matching logic
+  │       │   └──────┬────────┘    * Context aware, to prevent block-the-world scenarios
+  │       │          │
+  │       │   ┌──────┴────────┐  - Subscription manager
+  │       │   │           [Sm]│    * Creation and management of subscriptions
+  │       │   │ subscription  │    * Creation and management of subscriptions
+  │       │   │ manager       │    * Message to Event matching logic
+  │       │   └──────┬────────┘
+  │       │          │
+  │       │   ┌──────┴────────┐  - Websocket
+  │       │   │ event     [Ed]│    * Integrates with data exchange (DX) plugin
+  │       │   │ dispatcher    │    * Integrates with blockchain interface (BI) plugin
   │       │   └───────────────┘
-  │       │
-  │       │   ┌───────────────┐  - Websocket
-  │       └───┤ dispatcher    │    * Integrates with data exchange (DX) plugin
-  │           │               │    * Integrates with blockchain interface (BI) plugin
-  │           └───────────────┘
   │
 Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runtime (if required)
   │
-  │           ┌───────────────┐  - Blockchain Interface (BI)
-  ├───────────┤ blockchain    │    * Transaction submission - including signing key management
-  │           │ (BI)          │    * Event listening
+  │           ┌───────────────┐  - Blockchain Interface
+  ├───────────┤           [Bi]│    * Transaction submission - including signing key management
+  │           │ blockchain    │    * Event listening
+  │           │ interface     │    * Standardized operations, and custom on-chain coupling
   │           └─────┬─────────┘
   │                 │
   │                 ├─────────────────────┬───────────────────┬────────────────────┐
@@ -181,9 +188,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ ethereum      │   │ corda         │   │ fabric         │   │ utdbql [1]     │
   │           └───────────────┘   └───────────────┘   └────────────────┘   └────────────────┘
   │
-  │           ┌───────────────┐  - P2P Content Addresssed Filesystem (PF)
-  ├───────────┤ p2pfs         │    * Payload upload
-  │           │ (PF)          │    * Payload reference management
+  │           ┌───────────────┐  - P2P Content Addresssed Filesystem
+  ├───────────┤ public    [Pi]│    * Payload upload / download
+  │           │ storage       │    * Payload reference management
+  │           │ interface     │
   │           └─────┬─────────┘
   │                 │
   │                 ├───────── ... extensible to any shared storage sytem, accessible to all members
@@ -191,9 +199,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ ipfs          │
   │           └───────────────┘
   │
-  │           ┌───────────────┐  - Private Data Exchange (DX)
-  ├───────────┤ data exchange │    * Blob storage
-  │           │ (DX)          │    * Private secure messaging
+  │           ┌───────────────┐  - Private Data Exchange
+  ├───────────┤ data      [Dx]│    * Blob storage
+  │           │ exchange      │    * Private secure messaging
   │           └─────┬─────────┘    * Secure file transfer
   │                 │
   │                 ├─────────────────────┬────────── ... extensible to any private data exchange tech
@@ -201,9 +209,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
-  │           ┌───────────────┐  - Database (DB)
-  ├───────────┤ database      │    * Create, Read, Update, Delete (CRUD) actions
-  │           │ (DB)          │    * Filtering and update definition interace
+  │           ┌───────────────┐  - Database
+  ├───────────┤ database  [Db]│    * Create, Read, Update, Delete (CRUD) actions
+  │           │               │    * Filtering and update definition interace
   │           └─────┬─────────┘    * Migrations and Indexes
   │                 │
   │                 ├───────── ... extensible to NoSQL (CouchDB / MongoDB etc.)

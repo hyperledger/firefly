@@ -38,7 +38,7 @@ var getTxnById = &apispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["txnid"])
+		output, err = r.Or.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["txnid"])
 		return output, err
 	},
 }
