@@ -29,5 +29,10 @@ func TestMessageCreated(t *testing.T) {
 	}
 	c := make(chan *uuid.UUID, 1)
 	mb.On("NewMessages").Return((chan<- *uuid.UUID)(c))
-	e.batch.NewMessages() <- fftypes.NewUUID()
+	e.MessageCreated(fftypes.NewUUID())
+}
+
+func TestMessageUpdates(t *testing.T) {
+	e := &engine{}
+	e.MessageUpdated(fftypes.NewUUID())
 }

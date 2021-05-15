@@ -68,6 +68,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			QueryParams: []QueryParam{
 				{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
 				{Name: "id", Description: i18n.MsgTBD},
+				{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
 			},
 			FilterFactory:   nil,
 			Description:     i18n.MsgTBD,
@@ -97,6 +98,6 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
-	fmt.Printf(string(b))
+	fmt.Print(string(b))
 
 }
