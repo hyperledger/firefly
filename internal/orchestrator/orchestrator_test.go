@@ -40,7 +40,7 @@ func TestInitBlockchainPluginFail(t *testing.T) {
 	assert.Regexp(t, "FF10110", err.Error())
 }
 
-func TestInitP2PFilesystemPluginFail(t *testing.T) {
+func TestInitPublicStoragePluginFail(t *testing.T) {
 	o := &orchestrator{
 		database:   &databasemocks.Plugin{},
 		blockchain: &blockchainmocks.Plugin{},

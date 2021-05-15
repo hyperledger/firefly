@@ -27,7 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/p2pfsmocks"
+	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func TestInitMissingAPIURL(t *testing.T) {
 	resetConf()
 
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
@@ -53,7 +53,7 @@ func TestInitMissingGWURL(t *testing.T) {
 	resetConf()
 
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
@@ -63,7 +63,7 @@ func TestInit(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.Equal(t, "ipfs", i.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
@@ -112,7 +112,7 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -140,7 +140,7 @@ func TestIPFSUploadFail(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -166,7 +166,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.NoError(t, err)
 
 	data := []byte(`{"hello": "world"}`)
@@ -197,7 +197,7 @@ func TestIPFSDownloadFail(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
@@ -222,7 +222,7 @@ func TestIPFSDownloadError(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &p2pfsmocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package p2pfs
+package publicstorage
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 )
 
-// Plugin is the interface implemented by each P2P Filesystem plugin
+// Plugin is the interface implemented by each Public Storage plugin
 type Plugin interface {
 	fftypes.Named
 
@@ -36,7 +36,7 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// PublishData publishes data to the P2P Filesystem, and returns a Bytes32 payload reference ID
+	// PublishData publishes data to the Public Storage, and returns a Bytes32 payload reference ID
 	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, backendID string, err error)
 
 	// RetrieveData reads data back from IPFS using the payload reference format returned from PublishData

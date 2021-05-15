@@ -23,7 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/p2pfs"
+	"github.com/kaleido-io/firefly/internal/publicstorage"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -33,17 +33,17 @@ type Aggregator interface {
 }
 
 type aggregator struct {
-	ctx      context.Context
-	p2pfs    p2pfs.Plugin
-	database database.Plugin
-	retry    retry.Retry
+	ctx           context.Context
+	publicstorage publicstorage.Plugin
+	database      database.Plugin
+	retry         retry.Retry
 }
 
-func NewAggregator(ctx context.Context, p2pfs p2pfs.Plugin, database database.Plugin) Aggregator {
+func NewAggregator(ctx context.Context, publicstorage publicstorage.Plugin, database database.Plugin) Aggregator {
 	return &aggregator{
-		ctx:      log.WithLogField(ctx, "role", "aggregator"),
-		p2pfs:    p2pfs,
-		database: database,
+		ctx:           log.WithLogField(ctx, "role", "aggregator"),
+		publicstorage: publicstorage,
+		database:      database,
 		retry: retry.Retry{
 			InitialDelay: time.Duration(config.GetUint(config.AggregatorDataReadRetryDelayMS)) * time.Millisecond,
 			MaximumDelay: time.Duration(config.GetUint(config.AggregatorDataReadRetryMaxDelayMS)) * time.Millisecond,

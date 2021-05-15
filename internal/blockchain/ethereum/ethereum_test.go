@@ -595,3 +595,17 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	e.eventLoop() // we're simply looking for it exiting
 }
+
+func TestGetMapStringInvalid(t *testing.T) {
+	e := &Ethereum{}
+	s, ok := e.getMapString(context.Background(), map[string]interface{}{"key": nil}, "key")
+	assert.False(t, ok)
+	assert.Equal(t, "", s)
+}
+
+func TestGetMapSubMap(t *testing.T) {
+	e := &Ethereum{}
+	sm, ok := e.getMapSubMap(context.Background(), map[string]interface{}{"key": nil}, "key")
+	assert.False(t, ok)
+	assert.Equal(t, map[string]interface{}{}, sm)
+}

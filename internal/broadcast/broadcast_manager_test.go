@@ -23,7 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/batchingmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
-	"github.com/kaleido-io/firefly/mocks/p2pfsmocks"
+	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,7 +31,7 @@ import (
 func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mdb := &databasemocks.Plugin{}
 	mblk := &blockchainmocks.Plugin{}
-	mp2p := &p2pfsmocks.Plugin{}
+	mp2p := &publicstoragemocks.Plugin{}
 	mb := &batchingmocks.BatchManager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
@@ -92,7 +92,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	b, err := newTestBroadcast(context.Background())
 	assert.NoError(t, err)
 
-	b.p2pfs.(*p2pfsmocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(nil, "", fmt.Errorf("pop"))
+	b.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(nil, "", fmt.Errorf("pop"))
 
 	err = b.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.EqualError(t, err, "pop")
@@ -105,7 +105,7 @@ func TestDispatchBatchSubmitBroadcastBatchSucceed(t *testing.T) {
 	dbMocks := b.database.(*databasemocks.Plugin)
 	dbMocks.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
-	b.p2pfs.(*p2pfsmocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	b.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
 
 	err = b.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestDispatchBatchSubmitBroadcastBatchFail(t *testing.T) {
 	dbMocks := b.database.(*databasemocks.Plugin)
 	dbMocks.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
-	b.p2pfs.(*p2pfsmocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	b.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
 
 	err = b.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
@@ -196,7 +196,7 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 	blkMocks.On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
 	blkMocks.On("Name").Return("ut_blockchain")
 
-	b.p2pfs.(*p2pfsmocks.Plugin).On("Name").Return("ut_p2pfs")
+	b.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	batch := &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
@@ -226,7 +226,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	blkMocks.On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("blockchain_id", nil)
 	blkMocks.On("Name").Return("ut_blockchain")
 
-	b.p2pfs.(*p2pfsmocks.Plugin).On("Name").Return("ut_p2pfs")
+	b.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	msgID := fftypes.NewUUID()
 	batch := &fftypes.Batch{
@@ -251,8 +251,8 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 
 	op2 := dbMocks.Calls[3].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *msgID, *op2.Message)
-	assert.Equal(t, "ut_p2pfs", op2.Plugin)
+	assert.Equal(t, "ut_publicstorage", op2.Plugin)
 	assert.Equal(t, "ipfs_id", op2.BackendID)
-	assert.Equal(t, fftypes.OpTypeP2PFSBatchBroadcast, op2.Type)
+	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op2.Type)
 	assert.Equal(t, fftypes.OpDirectionOutbound, op2.Direction)
 }
