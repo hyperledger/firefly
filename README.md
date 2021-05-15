@@ -121,12 +121,6 @@ It depends on the following Kaleido services:
   │       │   │ map           │    * Integrates with broadcast plugin
   │       │   └───────────────┘    * Handles hierarchy of member identity, node identity and signing identity
   │       │
-  │       │   ┌───────────────┐  - Builds batches of 100s messages for efficient pinning
-  │       ├───┤ batch     [Ba]│    * Aggregates messages and data, with rolled up hashes for pinning
-  │       │   │ manager       │    * Pluggable dispatchers
-  │       │   │               │  - Database decoupled from main-line API processing
-  │       │   └───────────────┘    * See architecture diagrams for more info on active/active sequencing
-  │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
   │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
   │       │   │ managaer      |    * Integrates with p2p filesystem (PF) plugin
@@ -174,6 +168,20 @@ It depends on the following Kaleido services:
   │       │   │ event     [Ed]│    * Integrates with data exchange (DX) plugin
   │       │   │ dispatcher    │    * Integrates with blockchain interface (BI) plugin
   │       │   └───────────────┘
+  │       │
+  │       │   ┌───────────────┐  - Token operations
+  │       ├───┤ asset     [Am]│    * NFT coupling with contexts
+  │       │   │ manager       │    * Transfer coupling with data describing payment reason
+  │       │   │               │  - ...
+  │       │   └───────────────┘
+  │       │
+  │       │   ┌───────────────┐  - Builds batches of 100s messages for efficient pinning
+  │       ├───┤ batch     [Ba]│    * Aggregates messages and data, with rolled up hashes for pinning
+  │       │   │ manager       │    * Pluggable dispatchers
+  │       │   │               │  - Database decoupled from main-line API processing
+  │       │   └───────────────┘    * See architecture diagrams for more info on active/active sequencing
+  │       │
+  │       ... more TBD
   │
 Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runtime (if required)
   │
