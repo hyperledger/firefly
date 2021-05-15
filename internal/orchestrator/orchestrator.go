@@ -27,14 +27,14 @@ import (
 	"github.com/kaleido-io/firefly/internal/database/databasefactory"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/p2pfs"
-	"github.com/kaleido-io/firefly/internal/p2pfs/p2pfsfactory"
+	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/internal/publicstorage/publicstoragefactory"
 )
 
 var (
-	blockchainConfig = config.NewPluginConfig("blockchain")
-	databaseConfig   = config.NewPluginConfig("database")
-	p2pfsConfig      = config.NewPluginConfig("p2pfs")
+	blockchainConfig    = config.NewPluginConfig("blockchain")
+	databaseConfig      = config.NewPluginConfig("database")
+	publicstorageConfig = config.NewPluginConfig("publicstorage")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -63,14 +63,14 @@ type Orchestrator interface {
 }
 
 type orchestrator struct {
-	ctx          context.Context
-	database     database.Plugin
-	blockchain   blockchain.Plugin
-	p2pfs        p2pfs.Plugin
-	aggregator   aggregator.Aggregator
-	batch        batching.BatchManager
-	broadcast    broadcast.BroadcastManager
-	nodeIdentity string
+	ctx           context.Context
+	database      database.Plugin
+	blockchain    blockchain.Plugin
+	publicstorage publicstorage.Plugin
+	aggregator    aggregator.Aggregator
+	batch         batching.BatchManager
+	broadcast     broadcast.BroadcastManager
+	nodeIdentity  string
 }
 
 func NewOrchestrator() Orchestrator {
@@ -79,7 +79,7 @@ func NewOrchestrator() Orchestrator {
 	// Initialize the config on all the factories
 	blockchainfactory.InitConfigPrefix(blockchainConfig)
 	databasefactory.InitConfigPrefix(databaseConfig)
-	p2pfsfactory.InitConfigPrefix(p2pfsConfig)
+	publicstoragefactory.InitConfigPrefix(publicstorageConfig)
 
 	return o
 }
@@ -126,8 +126,8 @@ func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
-	if o.p2pfs == nil {
-		if o.p2pfs, err = o.initP2PFilesystemPlugin(ctx); err != nil {
+	if o.publicstorage == nil {
+		if o.publicstorage, err = o.initPublicStoragePlugin(ctx); err != nil {
 			return err
 		}
 	}
@@ -137,7 +137,7 @@ func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (o *orchestrator) initComponents(ctx context.Context) (err error) {
 	if o.aggregator == nil {
-		o.aggregator = aggregator.NewAggregator(ctx, o.p2pfs, o.database)
+		o.aggregator = aggregator.NewAggregator(ctx, o.publicstorage, o.database)
 	}
 
 	if o.batch == nil {
@@ -148,7 +148,7 @@ func (o *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if o.broadcast == nil {
-		if o.broadcast, err = broadcast.NewBroadcastManager(ctx, o.database, o.blockchain, o.p2pfs, o.batch); err != nil {
+		if o.broadcast, err = broadcast.NewBroadcastManager(ctx, o.database, o.blockchain, o.publicstorage, o.batch); err != nil {
 			return err
 		}
 	}
@@ -182,12 +182,12 @@ func (o *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin,
 	return plugin, err
 }
 
-func (o *orchestrator) initP2PFilesystemPlugin(ctx context.Context) (p2pfs.Plugin, error) {
-	pluginType := config.GetString(config.P2PFSType)
-	plugin, err := p2pfsfactory.GetPlugin(ctx, pluginType)
+func (o *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
+	pluginType := config.GetString(config.PublicStorageType)
+	plugin, err := publicstoragefactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, p2pfsConfig.SubPrefix(pluginType), o)
+	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), o)
 	return plugin, err
 }

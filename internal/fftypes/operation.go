@@ -22,8 +22,8 @@ import "github.com/google/uuid"
 type OpType string
 
 const (
-	OpTypeBlockchainBatchPin  OpType = "blockchain_batch_pin"
-	OpTypeP2PFSBatchBroadcast OpType = "p2pfs_batch_broadcast"
+	OpTypeBlockchainBatchPin          OpType = "blockchain_batch_pin"
+	OpTypePublicStorageBatchBroadcast OpType = "publicstorage_batch_broadcast"
 )
 
 type OpDirection string

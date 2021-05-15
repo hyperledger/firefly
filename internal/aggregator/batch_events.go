@@ -30,7 +30,7 @@ import (
 // block here this blockchain event remains un-acknowledged, and no further events will arrive from this
 // particular ledger.
 //
-// We must block here long enough to get the payload from the p2pfs, persist the messages in the correct
+// We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
 func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 
@@ -39,7 +39,7 @@ func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 
 	var body io.ReadCloser
 	if err := a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
-		body, err = a.p2pfs.RetrieveData(a.ctx, batch.BatchPaylodRef)
+		body, err = a.publicstorage.RetrieveData(a.ctx, batch.BatchPaylodRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
 		return err

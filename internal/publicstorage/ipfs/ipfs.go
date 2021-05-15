@@ -28,13 +28,13 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/p2pfs"
+	"github.com/kaleido-io/firefly/internal/publicstorage"
 )
 
 type IPFS struct {
 	ctx          context.Context
-	capabilities *p2pfs.Capabilities
-	events       p2pfs.Events
+	capabilities *publicstorage.Capabilities
+	events       publicstorage.Events
 	apiClient    *resty.Client
 	gwClient     *resty.Client
 }
@@ -49,9 +49,9 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pfs.Events) error {
+func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events publicstorage.Events) error {
 
-	i.ctx = log.WithLogField(ctx, "p2pfs", "ipfs")
+	i.ctx = log.WithLogField(ctx, "publicstorage", "ipfs")
 	i.events = events
 
 	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
@@ -64,11 +64,11 @@ func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events p2pf
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, gwPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
 	i.gwClient = ffresty.New(i.ctx, gwPrefix)
-	i.capabilities = &p2pfs.Capabilities{}
+	i.capabilities = &publicstorage.Capabilities{}
 	return nil
 }
 
-func (i *IPFS) Capabilities() *p2pfs.Capabilities {
+func (i *IPFS) Capabilities() *publicstorage.Capabilities {
 	return i.capabilities
 }
 

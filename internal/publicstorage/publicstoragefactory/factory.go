@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package p2pfsfactory
+package publicstoragefactory
 
 import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/p2pfs"
-	"github.com/kaleido-io/firefly/internal/p2pfs/ipfs"
+	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/internal/publicstorage/ipfs"
 )
 
-var plugins = []p2pfs.Plugin{
+var plugins = []publicstorage.Plugin{
 	&ipfs.IPFS{},
 }
 
-var pluginsByName = make(map[string]p2pfs.Plugin)
+var pluginsByName = make(map[string]publicstorage.Plugin)
 
 func init() {
 	for _, p := range plugins {
@@ -41,10 +41,10 @@ func InitConfigPrefix(prefix config.ConfigPrefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (p2pfs.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (publicstorage.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownP2PFilesystemPlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownPublicStoragePlugin, pluginType)
 	}
 	return plugin, nil
 }

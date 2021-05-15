@@ -26,7 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/p2pfs"
+	"github.com/kaleido-io/firefly/internal/publicstorage"
 )
 
 type BroadcastManager interface {
@@ -35,23 +35,23 @@ type BroadcastManager interface {
 }
 
 type broadcastManager struct {
-	ctx        context.Context
-	database   database.Plugin
-	blockchain blockchain.Plugin
-	p2pfs      p2pfs.Plugin
-	batch      batching.BatchManager
+	ctx           context.Context
+	database      database.Plugin
+	blockchain    blockchain.Plugin
+	publicstorage publicstorage.Plugin
+	batch         batching.BatchManager
 }
 
-func NewBroadcastManager(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, p2pfs p2pfs.Plugin, batch batching.BatchManager) (BroadcastManager, error) {
-	if database == nil || blockchain == nil || batch == nil || p2pfs == nil {
+func NewBroadcastManager(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, publicstorage publicstorage.Plugin, batch batching.BatchManager) (BroadcastManager, error) {
+	if database == nil || blockchain == nil || batch == nil || publicstorage == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	b := &broadcastManager{
-		ctx:        ctx,
-		database:   database,
-		blockchain: blockchain,
-		p2pfs:      p2pfs,
-		batch:      batch,
+		ctx:           ctx,
+		database:      database,
+		blockchain:    blockchain,
+		publicstorage: publicstorage,
+		batch:         batch,
 	}
 	bo := batching.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
@@ -73,18 +73,18 @@ func (b *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Bat
 
 	// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash).
 	// The payload ref will be persisted back to the batch, as well as being used in the TX
-	var p2pfsID string
-	batch.PayloadRef, p2pfsID, err = b.p2pfs.PublishData(ctx, bytes.NewReader(payload))
+	var publicstorageID string
+	batch.PayloadRef, publicstorageID, err = b.publicstorage.PublishData(ctx, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
 
 	return b.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return b.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, p2pfsID)
+		return b.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, publicstorageID)
 	})
 }
 
-func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, p2pfsID string) error {
+func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
@@ -135,12 +135,12 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 			return err
 		}
 
-		// The completed P2PFS upload
+		// The completed PublicStorage upload
 		op = fftypes.NewMessageOp(
-			b.p2pfs,
-			p2pfsID,
+			b.publicstorage,
+			publicstorageID,
 			msg,
-			fftypes.OpTypeP2PFSBatchBroadcast,
+			fftypes.OpTypePublicStorageBatchBroadcast,
 			fftypes.OpDirectionOutbound,
 			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 			"")
