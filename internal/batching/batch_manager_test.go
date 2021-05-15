@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
@@ -71,8 +72,17 @@ func TestE2EDispatch(t *testing.T) {
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mp.On("UpdateMessage", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
-		return *(i.(*uuid.UUID)) == *msg.Header.ID
+	rag := mp.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		ctx := a.Get(0).(context.Context)
+		fn := a.Get(1).(func(context.Context) error)
+		fn(ctx)
+	}
+	mp.On("UpdateMessages", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
+		return true
 	}), mock.Anything).Return(nil)
 
 	err := bm.Start()
@@ -210,7 +220,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	assert.Equal(t, 2, len(mp.Calls))
 }
 
-func TestMessageSequencerUpdateMessageClosed(t *testing.T) {
+func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
 	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
@@ -234,10 +244,16 @@ func TestMessageSequencerUpdateMessageClosed(t *testing.T) {
 	}
 	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(&fftypes.Data{ID: dataId}, nil)
 	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mp.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mp.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
+	rag := mp.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	rag.RunFn = func(a mock.Arguments) {
+		ctx := a.Get(0).(context.Context)
+		fn := a.Get(1).(func(context.Context) error)
+		assert.Regexp(t, "fizzle", fn(ctx).Error())
+	}
 
 	bm.(*batchManager).messageSequencer()
-	assert.Equal(t, 4, len(mp.Calls))
+	mp.AssertExpectations(t)
 }
 
 func TestWaitForPollTimeout(t *testing.T) {
