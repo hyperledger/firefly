@@ -19,19 +19,19 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetData(t *testing.T) {
-	e := &enginemocks.Engine{}
-	r := createMuxRouter(e)
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/data", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetData", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetData", mock.Anything, "mynamespace", mock.Anything).
 		Return([]*fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 

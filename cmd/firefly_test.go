@@ -20,27 +20,27 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetEngine(t *testing.T) {
-	assert.NotNil(t, getEngine())
+	assert.NotNil(t, getOrchestrator())
 }
 
 func TestExecMissingConfig(t *testing.T) {
-	_utEngine = &enginemocks.Engine{}
-	defer func() { _utEngine = nil }()
+	_utOrchestrator = &orchestratormocks.Orchestrator{}
+	defer func() { _utOrchestrator = nil }()
 	viper.Reset()
 	err := Execute()
 	assert.Regexp(t, "Not Found", err.Error())
 }
 
 func TestShowConfig(t *testing.T) {
-	_utEngine = &enginemocks.Engine{}
-	defer func() { _utEngine = nil }()
+	_utOrchestrator = &orchestratormocks.Orchestrator{}
+	defer func() { _utOrchestrator = nil }()
 	viper.Reset()
 	rootCmd.SetArgs([]string{"showconf"})
 	defer rootCmd.SetArgs([]string{})
@@ -49,32 +49,32 @@ func TestShowConfig(t *testing.T) {
 }
 
 func TestExecEngineInitFail(t *testing.T) {
-	me := &enginemocks.Engine{}
-	me.On("Init", mock.Anything).Return(fmt.Errorf("splutter"))
-	_utEngine = me
-	defer func() { _utEngine = nil }()
+	o := &orchestratormocks.Orchestrator{}
+	o.On("Init", mock.Anything).Return(fmt.Errorf("splutter"))
+	_utOrchestrator = o
+	defer func() { _utOrchestrator = nil }()
 	os.Chdir("../test/config")
 	err := Execute()
 	assert.Regexp(t, "splutter", err.Error())
 }
 
 func TestExecEngineStartFail(t *testing.T) {
-	me := &enginemocks.Engine{}
-	me.On("Init", mock.Anything).Return(nil)
-	me.On("Start").Return(fmt.Errorf("bang"))
-	_utEngine = me
-	defer func() { _utEngine = nil }()
+	o := &orchestratormocks.Orchestrator{}
+	o.On("Init", mock.Anything).Return(nil)
+	o.On("Start").Return(fmt.Errorf("bang"))
+	_utOrchestrator = o
+	defer func() { _utOrchestrator = nil }()
 	os.Chdir("../test/config")
 	err := Execute()
 	assert.Regexp(t, "bang", err.Error())
 }
 
 func TestExecOkExitSIGINT(t *testing.T) {
-	me := &enginemocks.Engine{}
-	me.On("Init", mock.Anything).Return(nil)
-	me.On("Start").Return(nil)
-	_utEngine = me
-	defer func() { _utEngine = nil }()
+	o := &orchestratormocks.Orchestrator{}
+	o.On("Init", mock.Anything).Return(nil)
+	o.On("Start").Return(nil)
+	_utOrchestrator = o
+	defer func() { _utOrchestrator = nil }()
 
 	os.Chdir("../test/config")
 	go func() {

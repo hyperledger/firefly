@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
+func (e *orchestrator) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
@@ -31,7 +31,7 @@ func (e *engine) GetTransactionById(ctx context.Context, ns, id string) (*fftype
 	return e.database.GetTransactionById(ctx, ns, &u)
 }
 
-func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
+func (e *orchestrator) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
@@ -39,7 +39,7 @@ func (e *engine) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Me
 	return e.database.GetMessageById(ctx, ns, &u)
 }
 
-func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
+func (e *orchestrator) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
@@ -47,7 +47,7 @@ func (e *engine) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batc
 	return e.database.GetBatchById(ctx, ns, &u)
 }
 
-func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
+func (e *orchestrator) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
@@ -55,7 +55,7 @@ func (e *engine) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data,
 	return e.database.GetDataById(ctx, ns, &u)
 }
 
-func (e *engine) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
+func (e *orchestrator) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
@@ -63,37 +63,37 @@ func (e *engine) GetDataDefinitionById(ctx context.Context, ns, id string) (*fft
 	return e.database.GetDataDefinitionById(ctx, ns, &u)
 }
 
-func (e *engine) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+func (e *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (e *engine) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error) {
+func (e *orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetTransactions(ctx, filter)
 }
 
-func (e *engine) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
+func (e *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetMessages(ctx, filter)
 }
 
-func (e *engine) GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+func (e *orchestrator) GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
 	filter = e.scopeNS(ns, filter)
 	filter = filter.Condition(filter.Builder().Eq("message", id))
 	return e.database.GetOperations(ctx, filter)
 }
 
-func (e *engine) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
+func (e *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetBatches(ctx, filter)
 }
 
-func (e *engine) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error) {
+func (e *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetData(ctx, filter)
 }
 
-func (e *engine) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
+func (e *orchestrator) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetDataDefinitions(ctx, filter)
 }

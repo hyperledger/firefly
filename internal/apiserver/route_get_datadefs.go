@@ -37,7 +37,7 @@ var getDataDefs = &apispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.DataDefinition{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetDataDefinitions(r.Ctx, r.PP["ns"], r.Filter)
+		output, err = r.Or.GetDataDefinitions(r.Ctx, r.PP["ns"], r.Filter)
 		return output, err
 	},
 }

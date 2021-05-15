@@ -28,19 +28,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBroadcast(ctx context.Context) (*broadcast, error) {
+func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mdb := &databasemocks.Plugin{}
 	mblk := &blockchainmocks.Plugin{}
 	mp2p := &p2pfsmocks.Plugin{}
 	mb := &batchingmocks.BatchManager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
-	b, err := NewBroadcast(ctx, mdb, mblk, mp2p, mb)
-	return b.(*broadcast), err
+	b, err := NewBroadcastManager(ctx, mdb, mblk, mp2p, mb)
+	return b.(*broadcastManager), err
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcast(context.Background(), nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err.Error())
 }
 

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package engine
+package orchestrator
 
 import (
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 )
 
-func (e *engine) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
+func (e *orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
 	return e.aggregator.TransactionUpdate(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
 }
 
-func (e *engine) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+func (e *orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 	return e.aggregator.SequencedBroadcastBatch(batch, author, protocolTxId, additionalInfo)
 }

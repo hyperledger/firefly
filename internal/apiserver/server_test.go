@@ -40,7 +40,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +49,7 @@ func TestStartStopServer(t *testing.T) {
 	config.Set(config.HttpPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
-	err := Serve(ctx, &enginemocks.Engine{})
+	err := Serve(ctx, &orchestratormocks.Orchestrator{})
 	assert.NoError(t, err)
 }
 
@@ -171,8 +171,8 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -197,8 +197,8 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -222,8 +222,8 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 }
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -247,8 +247,8 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 }
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -272,8 +272,8 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 }
 
 func TestStatusCodeHintMapping(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -297,8 +297,8 @@ func TestStatusCodeHintMapping(t *testing.T) {
 }
 
 func TestStatusInvalidContentType(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &apispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -361,8 +361,8 @@ func TestSwaggerYAML(t *testing.T) {
 }
 
 func TestSwaggerJSON(t *testing.T) {
-	me := &enginemocks.Engine{}
-	r := createMuxRouter(me)
+	mo := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(mo)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
