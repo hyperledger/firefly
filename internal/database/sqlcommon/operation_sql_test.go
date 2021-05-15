@@ -44,7 +44,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Message:   fftypes.NewUUID(),
 		Direction: fftypes.OpDirectionInbound,
 		Status:    fftypes.OpStatusPending,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 	}
 	err := s.UpsertOperation(ctx, operation)
 	assert.NoError(t, err)
@@ -71,8 +71,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Plugin:    "ethereum",
 		BackendID: fftypes.NewRandB32().String(),
 		Error:     "pop",
-		Created:   fftypes.NowMillis(),
-		Updated:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
+		Updated:   fftypes.Now(),
 	}
 	err = s.UpsertOperation(context.Background(), operationUpdated)
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(operations))
 
 	// Update
-	updateTime := fftypes.NowMillis()
+	updateTime := fftypes.Now()
 	up := database.OperationQueryFactory.NewUpdate(ctx).
 		Set("status", fftypes.OpStatusSucceeded).
 		Set("updated", updateTime).

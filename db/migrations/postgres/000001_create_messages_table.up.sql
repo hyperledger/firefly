@@ -13,7 +13,7 @@ CREATE TABLE messages (
   group_id    CHAR(36),
   datahash    CHAR(64)        NOT NULL,
   hash        CHAR(64)        NOT NULL,
-  confirmed   BIGINT          NOT NULL,
+  confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
   tx_id       CHAR(36),
   batch_id    CHAR(36)

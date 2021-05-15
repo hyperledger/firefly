@@ -24,5 +24,5 @@ type Offset struct {
 	Type      OffsetType `json:"type"`
 	Namespace string     `json:"namespace"`
 	Name      string     `json:"name"`
-	Current   int64      `json:"current"`
+	Current   int64      `json:"current,omitempty"`
 }

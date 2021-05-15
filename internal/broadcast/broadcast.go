@@ -94,7 +94,7 @@ func (b *broadcast) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batc
 			Author:    batch.Author,
 			Batch:     batch.ID,
 		},
-		Created: fftypes.NowMillis(),
+		Created: fftypes.Now(),
 		Status:  fftypes.TransactionStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
@@ -111,7 +111,7 @@ func (b *broadcast) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batc
 
 	// Write the batch pin to the blockchain
 	blockchainTrackingID, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
-		Timestamp:      batch.Created,
+		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
 	})

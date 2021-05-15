@@ -10,7 +10,7 @@ CREATE TABLE batches (
   created     BIGINT          NOT NULL,
   payload     JSONB           NOT NULL,
   payload_ref CHAR(64),
-  confirmed   BIGINT          NOT NULL,
+  confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
   tx_id       CHAR(36)
 );

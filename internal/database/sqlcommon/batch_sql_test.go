@@ -37,10 +37,11 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchId := uuid.New()
 	msgId1 := uuid.New()
 	batch := &fftypes.Batch{
-		ID:     &batchId,
-		Type:   fftypes.MessageTypeBroadcast,
-		Author: "0x12345",
-		Hash:   fftypes.NewRandB32(),
+		ID:      &batchId,
+		Type:    fftypes.MessageTypeBroadcast,
+		Author:  "0x12345",
+		Hash:    fftypes.NewRandB32(),
+		Created: fftypes.Now(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
@@ -72,7 +73,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Author:    "0x12345",
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   &txid,
@@ -84,7 +85,7 @@ func TestBatch2EWithDB(t *testing.T) {
 			},
 		},
 		PayloadRef: payloadRef,
-		Confirmed:  fftypes.NowMillis(),
+		Confirmed:  fftypes.Now(),
 	}
 
 	// Rejects hash change

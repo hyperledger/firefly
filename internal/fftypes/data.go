@@ -32,7 +32,7 @@ type Data struct {
 	Validator  ValidatorType      `json:"validator"`
 	Namespace  string             `json:"namespace,omitempty"`
 	Hash       *Bytes32           `json:"hash,omitempty"`
-	Created    int64              `json:"created,omitempty"`
+	Created    *FFTime            `json:"created,omitempty"`
 	Definition *DataDefinitionRef `json:"definition,omitempty"`
 	Value      JSONData           `json:"value,omitempty"`
 }

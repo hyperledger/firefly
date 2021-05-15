@@ -9,6 +9,7 @@ contract Firefly {
     event BroadcastBatch (
         address author,
         uint timestamp,
+        bytes32 txnId,
         bytes32 batchId,
         bytes32 payloadRef
     );
@@ -19,8 +20,8 @@ contract Firefly {
         payment = ERC20(paymentContract);
     }
 
-    function broadcastBatch(bytes32 batchId, bytes32 payloadRef) public {
-        emit BroadcastBatch(msg.sender, now, batchId, payloadRef);
+    function broadcastBatch(bytes32 txnId, bytes32 batchId, bytes32 payloadRef) public {
+        emit BroadcastBatch(msg.sender, now, txnId, batchId, payloadRef);
     }
 
 }

@@ -7,7 +7,7 @@ CREATE TABLE batches (
   created     int64    NOT NULL,
   payload     blob     NOT NULL,
   payload_ref string,
-  confirmed   int64    NOT NULL,
+  confirmed   int64,
   tx_type     string   NOT NULL,
   tx_id       string,
 );

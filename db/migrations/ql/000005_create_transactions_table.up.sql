@@ -9,7 +9,7 @@ CREATE TABLE transactions (
   created     int64    NOT NULL,
   protocol_id string,
   status      string   NOT NULL,
-  confirmed   int64    NOT NULL,
+  confirmed   int64,
   info        blob
 );
 

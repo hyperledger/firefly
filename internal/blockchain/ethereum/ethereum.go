@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -32,6 +31,10 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/wsclient"
+)
+
+const (
+	broadcastBatchEventSignature = "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"
 )
 
 type Ethereum struct {
@@ -76,8 +79,9 @@ type asyncTXSubmission struct {
 }
 
 type ethBroadcastBatchInput struct {
-	BatchID    string `json:"batchId"`
-	PayloadRef string `json:"payloadRef"`
+	TransactionID string `json:"txnId"`
+	BatchID       string `json:"batchId"`
+	PayloadRef    string `json:"payloadRef"`
 }
 
 type ethWSCommandPayload struct {
@@ -264,24 +268,18 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	sTransactionHash, _ := e.getMapString(ctx, msgJSON, "transactionHash")
 	dataJSON, _ := e.getMapSubMap(ctx, msgJSON, "data")
 	sAuthor, _ := e.getMapString(ctx, dataJSON, "author")
+	sTxnId, _ := e.getMapString(ctx, dataJSON, "txnId")
 	sBatchId, _ := e.getMapString(ctx, dataJSON, "batchId")
 	sPayloadRef, _ := e.getMapString(ctx, dataJSON, "payloadRef")
-	sTimestamp, _ := e.getMapString(ctx, dataJSON, "timestamp")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		sAuthor == "" ||
+		sTxnId == "" ||
 		sBatchId == "" ||
-		sPayloadRef == "" ||
-		sTimestamp == "" {
+		sPayloadRef == "" {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
-		return nil // move on
-	}
-
-	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
-	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad timestmp (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 
@@ -290,6 +288,15 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
+
+	var txnIDB32 fftypes.Bytes32
+	err = txnIDB32.UnmarshalText([]byte(sTxnId))
+	if err != nil {
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnId (%s): %+v", err, msgJSON)
+		return nil // move on
+	}
+	var txnID uuid.UUID
+	copy(txnID[:], txnIDB32[0:16])
 
 	var batchIDB32 fftypes.Bytes32
 	err = batchIDB32.UnmarshalText([]byte(sBatchId))
@@ -308,7 +315,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      timestamp,
+		TransactionID:  &txnID,
 		BatchID:        &batchID,
 		BatchPaylodRef: &payloadRef,
 	}
@@ -335,7 +342,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 		l1.Tracef("Message: %+v", msgJSON)
 
 		switch signature {
-		case "BroadcastBatch(address,uint256,bytes32,bytes32)":
+		case broadcastBatchEventSignature:
 			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
@@ -384,8 +391,9 @@ func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (s
 func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
-		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
-		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
+		TransactionID: ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)),
+		BatchID:       ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
+		PayloadRef:    ethHexFormatB32(batch.BatchPaylodRef),
 	}
 	path := fmt.Sprintf("%s/broadcastBatch", e.instancePath)
 	res, err := e.client.R().

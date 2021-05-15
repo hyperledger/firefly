@@ -38,7 +38,7 @@ type MessageHeader struct {
 	Type      MessageType    `json:"type"`
 	TX        TransactionRef `json:"tx,omitempty"`
 	Author    string         `json:"author,omitempty"`
-	Created   int64          `json:"created,omitempty"`
+	Created   *FFTime        `json:"created,omitempty"`
 	Namespace string         `json:"namespace,omitempty"`
 	Topic     string         `json:"topic,omitempty"`
 	Context   string         `json:"context,omitempty"`
@@ -51,7 +51,7 @@ type Message struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *uuid.UUID    `json:"batchId,omitempty"`
 	Sequence  int64         `json:"sequence,omitempty"`
-	Confirmed int64         `json:"confirmed,omitempty"`
+	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 }
 
@@ -65,10 +65,10 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
-	if m.Header.Created == 0 {
-		m.Header.Created = NowMillis()
+	if m.Header.Created == nil {
+		m.Header.Created = Now()
 	}
-	m.Confirmed = 0
+	m.Confirmed = nil
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}

@@ -99,7 +99,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	u.Start()
 
 	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})
@@ -135,7 +135,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 	u.Start()
 
 	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})
@@ -159,7 +159,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	u.Close()
 
 	_, err = u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})

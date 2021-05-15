@@ -71,7 +71,7 @@ func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
 func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 	l := log.L(ctx)
-	now := fftypes.NowMillis()
+	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
 		l.Errorf("Invalid batch '%s'. Missing ID (%v) or payload ID (%v)", batch.ID, batch.ID, batch.Payload.TX.ID)
@@ -191,7 +191,7 @@ func (a *aggregator) persistBatchData(ctx context.Context /* db TX context*/, ba
 	return nil
 }
 
-func (a *aggregator) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, now int64, i int, msg *fftypes.Message) error {
+func (a *aggregator) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, now *fftypes.FFTime, i int, msg *fftypes.Message) error {
 	l := log.L(ctx)
 	l.Tracef("Batch %s message %d: %+v", batch.ID, i, msg)
 
