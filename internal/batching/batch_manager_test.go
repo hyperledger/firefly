@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
@@ -96,6 +97,22 @@ func TestInitFailNoPersistence(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestInitRestoreExistingOffset(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
+		Type:      fftypes.OffsetTypeBatch,
+		Namespace: fftypes.SystemNamespace,
+		Name:      msgBatchOffsetName,
+		Current:   12345,
+	}, nil)
+	bm, err := NewBatchManager(context.Background(), mp)
+	assert.NoError(t, err)
+	defer bm.Close()
+	err = bm.Start()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(12345), bm.(*batchManager).offset)
+}
+
 func TestInitFailCannotRestoreOffset(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	mp.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
@@ -130,4 +147,147 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
 	err := bm.(*batchManager).dispatchMessage(context.Background(), nil, msg)
 	assert.Regexp(t, "FF10126", err.Error())
+}
+
+func TestMessageSequencerCancelledContext(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	mp.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	bm, _ := NewBatchManager(context.Background(), mp)
+	defer bm.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	bm.(*batchManager).ctx = ctx
+	bm.(*batchManager).messageSequencer()
+	assert.Equal(t, 1, len(mp.Calls))
+}
+
+func TestMessageSequencerMissingMessageData(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+
+	dataId := fftypes.NewUUID()
+	gmMock := mp.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:        fftypes.NewUUID(),
+				Namespace: "ns1",
+			},
+			Data: []fftypes.DataRef{
+				{ID: dataId},
+			}},
+	}, nil)
+	gmMock.RunFn = func(a mock.Arguments) {
+		bm.Close() // so we only go round once
+	}
+	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(nil, nil)
+
+	bm.(*batchManager).messageSequencer()
+	assert.Equal(t, 2, len(mp.Calls))
+}
+
+func TestMessageSequencerDispatchFail(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+
+	dataId := fftypes.NewUUID()
+	gmMock := mp.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.MessageTypePrivate,
+				Namespace: "ns1",
+			},
+			Data: []fftypes.DataRef{
+				{ID: dataId},
+			}},
+	}, nil)
+	gmMock.RunFn = func(a mock.Arguments) {
+		bm.Close() // so we only go round once
+	}
+	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(&fftypes.Data{ID: dataId}, nil)
+
+	bm.(*batchManager).messageSequencer()
+	assert.Equal(t, 2, len(mp.Calls))
+}
+
+func TestMessageSequencerUpdateMessageClosed(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+		return nil
+	}, BatchOptions{BatchMaxSize: 1, DisposeTimeout: 0})
+
+	dataId := fftypes.NewUUID()
+	gmMock := mp.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.MessageTypeBroadcast,
+				Namespace: "ns1",
+			},
+			Data: []fftypes.DataRef{
+				{ID: dataId},
+			}},
+	}, nil)
+	gmMock.RunFn = func(a mock.Arguments) {
+		bm.Close() // so we only go round once
+	}
+	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(&fftypes.Data{ID: dataId}, nil)
+	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	bm.(*batchManager).messageSequencer()
+	assert.Equal(t, 4, len(mp.Calls))
+}
+
+func TestWaitForPollTimeout(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+	bm.(*batchManager).messagePollTimeout = 1 * time.Microsecond
+	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
+}
+
+func TestWaitConsumesAllShoulderTaps(t *testing.T) {
+	config.Reset()
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+	for i := 0; i < int(bm.(*batchManager).readPageSize); i++ {
+		bm.NewMessages() <- fftypes.NewUUID()
+	}
+	bm.(*batchManager).messagePollTimeout = 1 * time.Second
+	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
+	select {
+	case <-bm.(*batchManager).newMessages:
+		assert.Fail(t, "should have been drained")
+	default:
+	}
+}
+
+func TestAssembleMessageDataNilData(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+	bm.Close()
+	_, err := bm.(*batchManager).assembleMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Data: fftypes.DataRefs{{ID: nil}},
+	})
+	assert.NoError(t, err)
+}
+
+func TestAssembleMessageDataClosed(t *testing.T) {
+	mp := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mp)
+	mp.On("GetDataById", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	bm.Close()
+	_, err := bm.(*batchManager).assembleMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	})
+	assert.EqualError(t, err, "pop")
 }

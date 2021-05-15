@@ -402,6 +402,10 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 }
 
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update database.Update) (err error) {
+	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx, 0).Eq("id", msgid), update)
+}
+
+func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -413,7 +417,11 @@ func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update 
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": msgid})
+
+	query, err = s.filterUpdate(ctx, query, filter, opFilterTypeMap)
+	if err != nil {
+		return err
+	}
 
 	_, err = s.updateTx(ctx, tx, query)
 	if err != nil {

@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"database/sql/driver"
 	"testing"
 
 	"github.com/google/uuid"
@@ -64,10 +65,28 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.NotContains("id", "def"),
 		fb.IContains("id", "ghi"),
 		fb.NotIContains("id", "jkl"),
+		fb.In("id", []driver.Value{"a", "b", "c"}),
+		fb.NotIn("id", []driver.Value{"a", "b", "c"}),
 	).Finalize()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( id %= 'abc' ) && ( id %! 'def' ) && ( id ^= 'ghi' ) && ( id ^! 'jkl' )", f.String())
+	assert.Equal(t, "( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( id %= 'abc' ) && ( id %! 'def' ) && ( id ^= 'ghi' ) && ( id ^! 'jkl' ) && ( id IN ['a','b','c'] ) && ( id NI ['a','b','c'] )", f.String())
+}
+
+func TestBuildMessageBadInFilterField(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	_, err := fb.And(
+		fb.In("!wrong", []driver.Value{"a", "b", "c"}),
+	).Finalize()
+	assert.Regexp(t, "FF10148", err.Error())
+}
+
+func TestBuildMessageBadInFilterValue(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	_, err := fb.And(
+		fb.In("created", []driver.Value{"!integer"}),
+	).Finalize()
+	assert.Regexp(t, "FF10149", err.Error())
 }
 
 func TestBuildMessageIntConvert(t *testing.T) {

@@ -462,6 +462,20 @@ func (_m *Plugin) UpdateMessage(ctx context.Context, id *uuid.UUID, update datab
 	return r0
 }
 
+// UpdateMessages provides a mock function with given fields: ctx, filter, update
+func (_m *Plugin) UpdateMessages(ctx context.Context, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, filter, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, filter, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateOffset provides a mock function with given fields: ctx, t, ns, name, update
 func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string, update database.Update) error {
 	ret := _m.Called(ctx, t, ns, name, update)

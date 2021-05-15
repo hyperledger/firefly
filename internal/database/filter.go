@@ -68,6 +68,8 @@ const (
 	FilterOpOr       FilterOp = "||"
 	FilterOpEq       FilterOp = "=="
 	FilterOpNe       FilterOp = "!="
+	FilterOpIn       FilterOp = "IN"
+	FilterOpNotIn    FilterOp = "NI"
 	FilterOpGt       FilterOp = ">"
 	FilterOpLt       FilterOp = "<"
 	FilterOpGte      FilterOp = ">="
@@ -90,6 +92,10 @@ type FilterBuilder interface {
 	Eq(name string, value driver.Value) Filter
 	// Neq not equal
 	Neq(name string, value driver.Value) Filter
+	// In one of an array of values
+	In(name string, value []driver.Value) Filter
+	// NotIn not one of an array of values
+	NotIn(name string, value []driver.Value) Filter
 	// Lt less than
 	Lt(name string, value driver.Value) Filter
 	// Gt greater than
@@ -117,6 +123,7 @@ type FilterInfo struct {
 	Descending bool
 	Field      string
 	Op         FilterOp
+	Values     []FieldSerialization
 	Value      FieldSerialization
 	Children   []*FilterInfo
 }
@@ -139,6 +146,12 @@ func (f *FilterInfo) filterString() string {
 			cs[i] = fmt.Sprintf("( %s )", c.filterString())
 		}
 		return strings.Join(cs, fmt.Sprintf(" %s ", f.Op))
+	case FilterOpIn, FilterOpNotIn:
+		strValues := make([]string, len(f.Values))
+		for i, v := range f.Values {
+			strValues[i] = valueString(v)
+		}
+		return fmt.Sprintf("%s %s [%s]", f.Field, f.Op, strings.Join(strValues, ","))
 	default:
 		return fmt.Sprintf("%s %s %s", f.Field, f.Op, valueString(f.Value))
 	}
@@ -200,6 +213,7 @@ func (f *baseFilter) Builder() FilterBuilder {
 func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 	var children []*FilterInfo
 	var value FieldSerialization
+	var values []FieldSerialization
 
 	switch f.op {
 	case FilterOpAnd, FilterOpOr:
@@ -207,6 +221,20 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		for i, c := range f.children {
 			if children[i], err = c.Finalize(); err != nil {
 				return nil, err
+			}
+		}
+	case FilterOpIn, FilterOpNotIn:
+		fValues := f.value.([]driver.Value)
+		values = make([]FieldSerialization, len(fValues))
+		name := strings.ToLower(f.field)
+		field, ok := f.fb.queryFields[name]
+		if !ok {
+			return nil, i18n.NewError(f.fb.ctx, i18n.MsgInvalidFilterField, name)
+		}
+		for i, fv := range fValues {
+			values[i] = field.getSerialization()
+			if err = values[i].Scan(fv); err != nil {
+				return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
 			}
 		}
 	default:
@@ -224,6 +252,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		Children:   children,
 		Op:         f.op,
 		Field:      f.field,
+		Values:     values,
 		Value:      value,
 		Sort:       f.fb.sort,
 		Skip:       f.fb.skip,
@@ -305,6 +334,14 @@ func (fb *filterBuilder) Eq(name string, value driver.Value) Filter {
 
 func (fb *filterBuilder) Neq(name string, value driver.Value) Filter {
 	return fb.fieldFilter(FilterOpNe, name, value)
+}
+
+func (fb *filterBuilder) In(name string, values []driver.Value) Filter {
+	return fb.fieldFilter(FilterOpIn, name, values)
+}
+
+func (fb *filterBuilder) NotIn(name string, values []driver.Value) Filter {
+	return fb.fieldFilter(FilterOpNotIn, name, values)
 }
 
 func (fb *filterBuilder) Lt(name string, value driver.Value) Filter {

@@ -483,6 +483,15 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
+func TestMessagesUpdateBuildFilterFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectBegin()
+	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
+	err := s.UpdateMessages(context.Background(), f, u)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
 func TestMessageUpdateFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()

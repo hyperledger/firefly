@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -29,25 +30,26 @@ import (
 )
 
 const (
-	startupOffsetRetryAttempts = 5
-	readPageSize               = 100
-	messagePollTimeout         = 5 * time.Minute // note we wake up immediately on events, so this is just for cases events fail
-	msgBatchOffsetName         = "ff-msgbatch"
+	msgBatchOffsetName = "ff-msgbatch"
 )
 
 func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManager, error) {
 	if database == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
+	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
 	bm := &batchManager{
-		ctx:         ctx,
-		database:    database,
-		dispatchers: make(map[fftypes.MessageType]*dispatcher),
-		newMessages: make(chan *uuid.UUID, readPageSize),
+		ctx:                        ctx,
+		database:                   database,
+		readPageSize:               uint64(readPageSize),
+		messagePollTimeout:         time.Duration(config.GetUint(config.BatchManagerReadPollTimeoutMS)) * time.Millisecond,
+		startupOffsetRetryAttempts: config.GetInt(config.BatchManagerStartupAttempts),
+		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
+		newMessages:                make(chan *uuid.UUID, readPageSize),
 		retry: &retry.Retry{
-			InitialDelay: writeRetryInitDelay,
-			MaximumDelay: writeRetryMaxDelay,
-			Factor:       writeRetryFactor,
+			InitialDelay: time.Duration(config.GetUint(config.BatchRetryInitDelayMS)) * time.Millisecond,
+			MaximumDelay: time.Duration(config.GetUint(config.BatchRetryMaxDelayMS)) * time.Millisecond,
+			Factor:       config.GetFloat64(config.BatchRetryFactor),
 		},
 	}
 	return bm, nil
@@ -61,13 +63,16 @@ type BatchManager interface {
 }
 
 type batchManager struct {
-	ctx         context.Context
-	database    database.Plugin
-	dispatchers map[fftypes.MessageType]*dispatcher
-	newMessages chan *uuid.UUID
-	retry       *retry.Retry
-	offset      int64
-	closed      bool
+	ctx                        context.Context
+	database                   database.Plugin
+	dispatchers                map[fftypes.MessageType]*dispatcher
+	newMessages                chan *uuid.UUID
+	retry                      *retry.Retry
+	offset                     int64
+	closed                     bool
+	readPageSize               uint64
+	messagePollTimeout         time.Duration
+	startupOffsetRetryAttempts int
 }
 
 type DispatchHandler func(context.Context, *fftypes.Batch) error
@@ -155,7 +160,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 }
 
 func (bm *batchManager) Close() {
-	if bm != nil {
+	if bm != nil && !bm.closed {
 		for _, d := range bm.dispatchers {
 			d.mux.Lock()
 			for _, p := range d.processors {
@@ -175,7 +180,15 @@ func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Me
 		if dataRef.ID == nil {
 			continue
 		}
-		d, err := bm.database.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
+		var d *fftypes.Data
+		err = bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+			d, err = bm.database.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
+			if err != nil {
+				// continual retry for persistence error (distinct from not-found)
+				return !bm.closed, err
+			}
+			return false, nil
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -188,22 +201,35 @@ func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Me
 	return data, nil
 }
 
+func (bm *batchManager) readPage(ctx context.Context) ([]*fftypes.Message, error) {
+	var msgs []*fftypes.Message
+	err := bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+		fb := database.MessageQueryFactory.NewFilter(bm.ctx, bm.readPageSize)
+		msgs, err = bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(bm.readPageSize))
+		if err != nil {
+			log.L(ctx).Errorf("Failed to retrieve messages: %s", err)
+			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
+		}
+		return false, nil
+	})
+	return msgs, err
+}
+
 func (bm *batchManager) messageSequencer() {
 	l := log.L(bm.ctx).WithField("role", "batch-msg-sequencer")
 	ctx := log.WithLogger(bm.ctx, l)
 	l.Debugf("Started batch assembly message sequencer")
 
-	dispatched := make(chan *batchDispatch, readPageSize)
+	dispatched := make(chan *batchDispatch, bm.readPageSize)
 
 	for !bm.closed {
-		// Read messages from the DB
-		fb := database.MessageQueryFactory.NewFilter(bm.ctx, readPageSize)
-		msgs, err := bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(readPageSize))
+		// Read messages from the DB - in an error condition we retry until success, or a closed context
+		msgs, err := bm.readPage(ctx)
 		if err != nil {
-			l.Errorf("Failed to retrieve messages: %s", err)
+			l.Debugf("Exiting: %s", err) // errors logged in readPage
 			return
 		}
-		batchWasFull := (len(msgs) == readPageSize)
+		batchWasFull := (uint64(len(msgs)) == bm.readPageSize)
 
 		if len(msgs) > 0 {
 			var dispatchCount int
@@ -239,22 +265,27 @@ func (bm *batchManager) messageSequencer() {
 
 		// Wait to be woken again
 		if !bm.closed && !batchWasFull {
-			timeout := time.NewTimer(messagePollTimeout)
-			select {
-			case <-timeout.C:
-				l.Debugf("Woken after poll timeout")
-			case m := <-bm.newMessages:
-				l.Debugf("Woken for trigger for message %s", m)
-			}
-			var drained bool
-			for !drained {
-				select {
-				case m := <-bm.newMessages:
-					l.Debugf("Absorbing trigger for message %s", m)
-				default:
-					drained = true
-				}
-			}
+			bm.waitForShoulderTapOrPollTimeout()
+		}
+	}
+}
+
+func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
+	l := log.L(bm.ctx)
+	timeout := time.NewTimer(bm.messagePollTimeout)
+	select {
+	case <-timeout.C:
+		l.Debugf("Woken after poll timeout")
+	case m := <-bm.newMessages:
+		l.Debugf("Woken for trigger for message %s", m)
+	}
+	var drained bool
+	for !drained {
+		select {
+		case m := <-bm.newMessages:
+			l.Debugf("Absorbing trigger for message %s", m)
+		default:
+			drained = true
 		}
 	}
 }
@@ -285,7 +316,7 @@ func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, ne
 		err = bm.database.UpsertOffset(bm.ctx, offset)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			stillRetrying := infiniteRetry || (attempt <= startupOffsetRetryAttempts)
+			stillRetrying := infiniteRetry || (attempt <= bm.startupOffsetRetryAttempts)
 			return !bm.closed && stillRetrying, err
 		}
 		l.Infof("Batch manager committed offset %d", newOffset)

@@ -16,6 +16,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"testing"
 
 	"github.com/Masterminds/squirrel"
@@ -58,6 +59,8 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 	s, _ := getMockDB()
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(
+		fb.In("created", []driver.Value{1, 2, 3}),
+		fb.NotIn("id", []driver.Value{"a", "b", "c"}),
 		fb.Lt("created", "0"),
 		fb.Lte("created", "0"),
 		fb.Gte("created", "0"),
@@ -75,7 +78,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	sqlFilter, _, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?) ORDER BY seq DESC", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (created IN (?,?,?) AND id NOT IN (?,?,?) AND created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?) ORDER BY seq DESC", sqlFilter)
 }
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
