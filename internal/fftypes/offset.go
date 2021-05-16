@@ -17,7 +17,8 @@ package fftypes
 type OffsetType string
 
 const (
-	OffsetTypeBatch OffsetType = "batch"
+	OffsetTypeBatch        OffsetType = "batch"
+	OffsetTypeSubscription OffsetType = "subscription"
 )
 
 type Offset struct {

@@ -9,7 +9,17 @@ FireFly is a multiparty system for enterprise data flows, powered by blockchain.
 Please see the
 [Hyperledger FireFly proposal document](https://docs.google.com/document/d/1o85YSowgCm226PEzdejbD2-3VQkrIwTdMCdpfXxsuQw/edit?usp=sharing)
 for more information about the project goals an architecture.
-Also #4 for a set of architecture issues discussing key architecture topics.
+
+## Architecture
+
+Architecture discussions are currently facilitated by the following Git issues, but as the community evolved (within
+the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
+
+- [Node Component Architecture - Periodic Table of Elements](https://github.com/kaleido-io/firefly/issues/6)
+- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/kaleido-io/firefly/issues/10)
+- [Simplest Transaction Flow - Ping Pong](https://github.com/kaleido-io/firefly/issues/5)
+- [Plugin Architecture](https://github.com/kaleido-io/firefly/issues/7)
+- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/kaleido-io/firefly/issues/11)
 
 ## Getting Started
 

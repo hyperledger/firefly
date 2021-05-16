@@ -39,11 +39,12 @@ type SubscriptionOptions struct {
 }
 
 type Subscription struct {
-	ID        *uuid.UUID           `json:"id"`
-	Namespace string               `json:"namespace"`
-	Name      string               `json:"name"`
-	Events    EventTypes           `json:"events"`
-	Filter    *SubscriptionFilter  `json:"filter,omitempty"`
-	Options   *SubscriptionOptions `json:"options"`
-	Created   *FFTime              `json:"created"`
+	ID         *uuid.UUID           `json:"id"`
+	Namespace  string               `json:"namespace"`
+	Name       string               `json:"name"`
+	Dispatcher string               `json:"dispatcher"`
+	Events     EventTypes           `json:"events"`
+	Filter     *SubscriptionFilter  `json:"filter,omitempty"`
+	Options    *SubscriptionOptions `json:"options"`
+	Created    *FFTime              `json:"created"`
 }
