@@ -22,10 +22,6 @@ type SubscriptionFilter struct {
 	Topic   string `json:"topic,omitempty"`
 	Context string `json:"context,omitempty"`
 	Group   string `json:"group,omitempty"`
-
-	// topicRegex   *regexp.Regexp
-	// contextRegex *regexp.Regexp
-	// groupRegex   *regexp.Regexp
 }
 
 type SubOptsFirstEvent string
@@ -38,7 +34,7 @@ const (
 type SubscriptionOptions struct {
 	FirstEvent   SubOptsFirstEvent `json:"firstEvent"`
 	BatchEnabled bool              `json:"batchEnabled"`
-	BatchTimeout string            `json:"batchTimeout"` // a duration string, or millisec number
+	BatchTimeout *FFDuration       `json:"batchTimeout"`
 	BatchSize    uint              `json:"batchSize"`
 }
 
@@ -46,7 +42,7 @@ type Subscription struct {
 	ID        *uuid.UUID           `json:"id"`
 	Namespace string               `json:"namespace"`
 	Name      string               `json:"name"`
-	Events    []EventType          `json:"events"`
+	Events    EventTypes           `json:"events"`
 	Filter    *SubscriptionFilter  `json:"filter,omitempty"`
 	Options   *SubscriptionOptions `json:"options"`
 	Created   *FFTime              `json:"created"`

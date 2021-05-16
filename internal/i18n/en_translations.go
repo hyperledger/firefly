@@ -82,4 +82,6 @@ var (
 	MsgTimeParseFail              = ffm("FF10165", "Cannot parse time as RFC3339, Unix, or UnixNano: '%s'", 400)
 	MsgDefaultNamespaceNotFound   = ffm("FF10166", "namespaces.default '%s' must be included in the namespaces.predefined configuration")
 	MsgDurationParseFail          = ffm("FF10167", "Unable to parse '%s' as duration string, or millisecond number", 400)
+	MsgEventTypesParseFail        = ffm("FF10168", "Unable to parse list of event types", 400)
+	MsgUnknownEventType           = ffm("FF10169", "Unknown event type '%s'", 400)
 )
