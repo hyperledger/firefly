@@ -114,19 +114,19 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 
 	if staticConfig.GetBool(HTTPConfigRetryEnabled) {
 		retryCount := staticConfig.GetInt(HTTPConfigRetryCount)
-		minTimeout := staticConfig.GetUint(HTTPConfigRetryWaitTimeMS)
-		maxTimeout := staticConfig.GetUint(HTTPConfigRetryMaxWaitTimeMS)
+		minTimeout := staticConfig.GetDuration(HTTPConfigRetryWaitTime)
+		maxTimeout := staticConfig.GetDuration(HTTPConfigRetryMaxWaitTime)
 		client.
 			SetRetryCount(retryCount).
-			SetRetryWaitTime(time.Duration(minTimeout) * time.Millisecond).
-			SetRetryMaxWaitTime(time.Duration(maxTimeout) * time.Millisecond).
+			SetRetryWaitTime(minTimeout).
+			SetRetryMaxWaitTime(maxTimeout).
 			AddRetryCondition(func(r *resty.Response, err error) bool {
 				if r == nil || r.IsSuccess() {
 					return false
 				}
 				rctx := r.Request.Context()
 				rc := rctx.Value(retryCtxKey{}).(*retryCtx)
-				log.L(rctx).Infof("retry %d/%d (min=%dms/max=%dms) status=%d", rc.attempts, retryCount, minTimeout, maxTimeout, r.StatusCode())
+				log.L(rctx).Infof("retry %d/%d (min=%dms/max=%dms) status=%d", rc.attempts, retryCount, minTimeout.Milliseconds(), maxTimeout.Milliseconds(), r.StatusCode())
 				rc.attempts++
 				return true
 			})

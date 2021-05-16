@@ -74,7 +74,7 @@ func TestRequestRetry(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.Set(HTTPConfigRetryEnabled, true)
-	utConfPrefix.Set(HTTPConfigRetryWaitTimeMS, 1)
+	utConfPrefix.Set(HTTPConfigRetryWaitTime, 1)
 
 	c := New(ctx, utConfPrefix)
 	httpmock.ActivateNonDefault(c.GetClient())

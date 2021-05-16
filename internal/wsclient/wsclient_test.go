@@ -133,7 +133,7 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	})
 	utConfPrefix.Set(ffresty.HTTPConfigAuthUsername, "user")
 	utConfPrefix.Set(ffresty.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
+	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTime, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -152,7 +152,7 @@ func TestWSFailStartupConnect(t *testing.T) {
 
 	resetConf()
 	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTimeMS, 1)
+	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTime, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)

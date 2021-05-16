@@ -21,6 +21,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -32,47 +33,47 @@ import (
 // The following keys can be access from the root configuration.
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
-	AggregatorDataReadRetryDelayMS    RootKey = ark("aggregator.dataread.retryDelayMS")
-	AggregatorDataReadRetryFactor     RootKey = ark("aggregator.dataread.factor")
-	AggregatorDataReadRetryMaxDelayMS RootKey = ark("aggregator.dataread.maxDelayMS")
-	APIDefaultFilterLimit             RootKey = ark("api.defaultFilterLimit")
-	APIRequestTimeout                 RootKey = ark("api.requestTimeout")
-	BatchManagerReadPageSize          RootKey = ark("batch.manager.readPageSize")
-	BatchManagerReadPollTimeoutMS     RootKey = ark("batch.manager.pollTimeoutMS")
-	BatchManagerStartupAttempts       RootKey = ark("batch.manager.startupAttempts")
-	BatchRetryFactor                  RootKey = ark("batch.retry.factor")
-	BatchRetryInitDelayMS             RootKey = ark("batch.retry.initDelayMS")
-	BatchRetryMaxDelayMS              RootKey = ark("batch.retry.maxDelayMS")
-	BlockchainType                    RootKey = ark("blockchain.type")
-	BroadcastBatchAgentTimeout        RootKey = ark("broadcast.batch.agentTimeout")
-	BroadcastBatchSize                RootKey = ark("broadcast.batch.size")
-	BroadcastBatchTimeout             RootKey = ark("broadcast.batch.timeout")
-	CorsAllowCredentials              RootKey = ark("cors.credentials")
-	CorsAllowedHeaders                RootKey = ark("cors.headers")
-	CorsAllowedMethods                RootKey = ark("cors.methods")
-	CorsAllowedOrigins                RootKey = ark("cors.origins")
-	CorsDebug                         RootKey = ark("cors.debug")
-	CorsEnabled                       RootKey = ark("cors.enabled")
-	CorsMaxAge                        RootKey = ark("cors.maxAge")
-	DatabaseType                      RootKey = ark("database.type")
-	DebugPort                         RootKey = ark("debug.port")
-	HttpAddress                       RootKey = ark("http.address")
-	HttpPort                          RootKey = ark("http.port")
-	HttpReadTimeout                   RootKey = ark("http.readTimeout")
-	HttpTLSCAFile                     RootKey = ark("http.tls.caFile")
-	HttpTLSCertFile                   RootKey = ark("http.tls.certFile")
-	HttpTLSClientAuth                 RootKey = ark("http.tls.clientAuth")
-	HttpTLSEnabled                    RootKey = ark("http.tls.enabled")
-	HttpTLSKeyFile                    RootKey = ark("http.tls.keyFile")
-	HttpWriteTimeout                  RootKey = ark("http.writeTimeout")
-	Lang                              RootKey = ark("lang")
-	LogColor                          RootKey = ark("log.color")
-	LogLevel                          RootKey = ark("log.level")
-	LogTimeFormat                     RootKey = ark("log.timeFormat")
-	NamespacesDefault                 RootKey = ark("namespaces.default")
-	NamespacesPredefined              RootKey = ark("namespaces.predefined")
-	NodeIdentity                      RootKey = ark("node.identity")
-	PublicStorageType                 RootKey = ark("publicstorage.type")
+	AggregatorDataReadRetryDelay    RootKey = ark("aggregator.dataread.retryDelay")
+	AggregatorDataReadRetryFactor   RootKey = ark("aggregator.dataread.factor")
+	AggregatorDataReadRetryMaxDelay RootKey = ark("aggregator.dataread.maxDelay")
+	APIDefaultFilterLimit           RootKey = ark("api.defaultFilterLimit")
+	APIRequestTimeout               RootKey = ark("api.requestTimeout")
+	BatchManagerReadPageSize        RootKey = ark("batch.manager.readPageSize")
+	BatchManagerReadPollTimeout     RootKey = ark("batch.manager.pollTimeout")
+	BatchManagerStartupAttempts     RootKey = ark("batch.manager.startupAttempts")
+	BatchRetryFactor                RootKey = ark("batch.retry.factor")
+	BatchRetryInitDelay             RootKey = ark("batch.retry.initDelay")
+	BatchRetryMaxDelay              RootKey = ark("batch.retry.maxDelay")
+	BlockchainType                  RootKey = ark("blockchain.type")
+	BroadcastBatchAgentTimeout      RootKey = ark("broadcast.batch.agentTimeout")
+	BroadcastBatchSize              RootKey = ark("broadcast.batch.size")
+	BroadcastBatchTimeout           RootKey = ark("broadcast.batch.timeout")
+	CorsAllowCredentials            RootKey = ark("cors.credentials")
+	CorsAllowedHeaders              RootKey = ark("cors.headers")
+	CorsAllowedMethods              RootKey = ark("cors.methods")
+	CorsAllowedOrigins              RootKey = ark("cors.origins")
+	CorsDebug                       RootKey = ark("cors.debug")
+	CorsEnabled                     RootKey = ark("cors.enabled")
+	CorsMaxAge                      RootKey = ark("cors.maxAge")
+	DatabaseType                    RootKey = ark("database.type")
+	DebugPort                       RootKey = ark("debug.port")
+	HttpAddress                     RootKey = ark("http.address")
+	HttpPort                        RootKey = ark("http.port")
+	HttpReadTimeout                 RootKey = ark("http.readTimeout")
+	HttpTLSCAFile                   RootKey = ark("http.tls.caFile")
+	HttpTLSCertFile                 RootKey = ark("http.tls.certFile")
+	HttpTLSClientAuth               RootKey = ark("http.tls.clientAuth")
+	HttpTLSEnabled                  RootKey = ark("http.tls.enabled")
+	HttpTLSKeyFile                  RootKey = ark("http.tls.keyFile")
+	HttpWriteTimeout                RootKey = ark("http.writeTimeout")
+	Lang                            RootKey = ark("lang")
+	LogColor                        RootKey = ark("log.color")
+	LogLevel                        RootKey = ark("log.level")
+	LogTimeFormat                   RootKey = ark("log.timeFormat")
+	NamespacesDefault               RootKey = ark("namespaces.default")
+	NamespacesPredefined            RootKey = ark("namespaces.predefined")
+	NodeIdentity                    RootKey = ark("node.identity")
+	PublicStorageType               RootKey = ark("publicstorage.type")
 )
 
 // Config prefix represents the global configuration, at a nested point in
@@ -90,6 +91,7 @@ type ConfigPrefix interface {
 	GetBool(key string) bool
 	GetInt(key string) int
 	GetUint(key string) uint
+	GetDuration(key string) time.Duration
 	GetStringSlice(key string) []string
 	GetObject(key string) fftypes.JSONObject
 	GetObjectArray(key string) fftypes.JSONObjectArray
@@ -110,27 +112,27 @@ func Reset() {
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(HttpAddress), "127.0.0.1")
 	viper.SetDefault(string(HttpPort), 5000)
-	viper.SetDefault(string(HttpReadTimeout), 15000)
-	viper.SetDefault(string(HttpWriteTimeout), 15000)
+	viper.SetDefault(string(HttpReadTimeout), "15s")
+	viper.SetDefault(string(HttpWriteTimeout), "15s")
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
 	viper.SetDefault(string(CorsAllowedMethods), []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete})
 	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
 	viper.SetDefault(string(CorsAllowCredentials), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
-	viper.SetDefault(string(APIRequestTimeout), 12000)
+	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(APIDefaultFilterLimit), 25)
 	viper.SetDefault(string(BroadcastBatchSize), 200)
-	viper.SetDefault(string(BroadcastBatchTimeout), 500)
-	viper.SetDefault(string(BroadcastBatchAgentTimeout), 120000)
-	viper.SetDefault(string(AggregatorDataReadRetryDelayMS), 250)
-	viper.SetDefault(string(AggregatorDataReadRetryMaxDelayMS), 30000)
+	viper.SetDefault(string(BroadcastBatchTimeout), "500ms")
+	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
+	viper.SetDefault(string(AggregatorDataReadRetryDelay), "250ms")
+	viper.SetDefault(string(AggregatorDataReadRetryMaxDelay), "30s")
 	viper.SetDefault(string(AggregatorDataReadRetryFactor), 2.0)
 	viper.SetDefault(string(BatchManagerStartupAttempts), 5)
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
-	viper.SetDefault(string(BatchManagerReadPollTimeoutMS), 30000)
-	viper.SetDefault(string(BatchRetryMaxDelayMS), 30000)
-	viper.SetDefault(string(BatchRetryInitDelayMS), 250)
+	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
+	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
+	viper.SetDefault(string(BatchRetryInitDelay), "250ms")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
@@ -246,6 +248,15 @@ func GetBool(key RootKey) bool {
 }
 func (c *configPrefix) GetBool(key string) bool {
 	return viper.GetBool(c.prefixKey(key))
+}
+
+// GetDuration gets a configuration time duration with consistent semantics
+func GetDuration(key RootKey) time.Duration {
+	return root.GetDuration(string(key))
+}
+func (c *configPrefix) GetDuration(key string) time.Duration {
+	v, _ := fftypes.ParseDurationString(viper.GetString(c.prefixKey(key)))
+	return v
 }
 
 // GetUInt gets a configuration uint

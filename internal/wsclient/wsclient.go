@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
@@ -77,8 +76,8 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryWaitTimeMS)) * time.Millisecond,
-			MaximumDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryMaxWaitTimeMS)) * time.Millisecond,
+			InitialDelay: prefix.GetDuration(ffresty.HTTPConfigRetryWaitTime),
+			MaximumDelay: prefix.GetDuration(ffresty.HTTPConfigRetryMaxWaitTime),
 		},
 		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),

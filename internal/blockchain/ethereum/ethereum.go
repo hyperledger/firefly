@@ -167,7 +167,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 			Name:           e.topic,
 			ErrorHandling:  "block",
 			BatchSize:      ethconnectConf.GetUint(EthconnectConfigBatchSize),
-			BatchTimeoutMS: ethconnectConf.GetUint(EthconnectConfigBatchTimeoutMS),
+			BatchTimeoutMS: uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()),
 			Type:           "websocket",
 		}
 		newStream.WebSocket.Topic = e.topic

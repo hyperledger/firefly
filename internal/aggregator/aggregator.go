@@ -16,7 +16,6 @@ package aggregator
 
 import (
 	"context"
-	"time"
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
@@ -45,9 +44,9 @@ func NewAggregator(ctx context.Context, publicstorage publicstorage.Plugin, data
 		publicstorage: publicstorage,
 		database:      database,
 		retry: retry.Retry{
-			InitialDelay: time.Duration(config.GetUint(config.AggregatorDataReadRetryDelayMS)) * time.Millisecond,
-			MaximumDelay: time.Duration(config.GetUint(config.AggregatorDataReadRetryMaxDelayMS)) * time.Millisecond,
-			Factor:       config.GetFloat64(config.AggregatorDataReadRetryMaxDelayMS),
+			InitialDelay: config.GetDuration(config.AggregatorDataReadRetryDelay),
+			MaximumDelay: config.GetDuration(config.AggregatorDataReadRetryMaxDelay),
+			Factor:       config.GetFloat64(config.AggregatorDataReadRetryFactor),
 		},
 	}
 }

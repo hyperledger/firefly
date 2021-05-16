@@ -159,3 +159,85 @@ func TestFFTimeParseValue(t *testing.T) {
 	assert.Regexp(t, "FF10125", err.Error())
 
 }
+
+func TestFFDurationJSONSerialization(t *testing.T) {
+	var utDurationTest struct {
+		D1 *FFDuration `json:"d1"`
+		D2 *FFDuration `json:"d2,omitempty"`
+		D3 FFDuration  `json:"d3"`
+		D4 FFDuration  `json:"d4"`
+		D5 FFDuration  `json:"d5"`
+		D6 FFDuration  `json:"d6"`
+		D7 FFDuration  `json:"d7"`
+	}
+	jsonToParse := []byte(`
+	{
+		"d1": null,
+		"d3": 12345,
+		"d4": "12345",
+		"d5": "0",
+		"d6": "1h15s",
+		"d7": "-24h"
+	}
+	`)
+	err := json.Unmarshal(jsonToParse, &utDurationTest)
+	assert.NoError(t, err)
+	assert.Nil(t, utDurationTest.D1)
+	assert.Nil(t, utDurationTest.D2)
+	assert.Equal(t, FFDuration(12345)*FFDuration(time.Millisecond), utDurationTest.D3)
+	assert.Equal(t, FFDuration(12345)*FFDuration(time.Millisecond), utDurationTest.D4)
+	assert.Equal(t, FFDuration(0), utDurationTest.D5)
+	assert.Equal(t, FFDuration(1)*FFDuration(time.Hour)+FFDuration(15)*FFDuration(time.Second), utDurationTest.D6)
+	assert.Equal(t, FFDuration(-24)*FFDuration(time.Hour), utDurationTest.D7)
+
+	b, err := json.Marshal(&utDurationTest)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"d1":null,"d3":"12.345s","d4":"12.345s","d5":"0s","d6":"1h0m15s","d7":"-24h0m0s"}`, string(b))
+
+	jsonToParse = []byte(`{"d1": false}`)
+	err = json.Unmarshal(jsonToParse, &utDurationTest)
+	assert.Error(t, err)
+
+	jsonToParse = []byte(`{"d1": "1 year"}`)
+	err = json.Unmarshal(jsonToParse, &utDurationTest)
+	assert.Error(t, err)
+}
+
+func TestFFDurationParseValue(t *testing.T) {
+
+	var fd FFDuration
+
+	err := fd.Scan("1h")
+	assert.NoError(t, err)
+	assert.Equal(t, "1h0m0s", fd.String())
+
+	err = fd.Scan(nil)
+	assert.NoError(t, err)
+	assert.Equal(t, FFDuration(0), fd)
+
+	err = fd.Scan(12345)
+	assert.NoError(t, err)
+	assert.Equal(t, FFDuration(12345)*FFDuration(time.Millisecond), fd)
+
+	err = fd.Scan(int64(12345))
+	assert.NoError(t, err)
+	assert.Equal(t, FFDuration(12345)*FFDuration(time.Millisecond), fd)
+
+	err = fd.Scan(false)
+	assert.Regexp(t, "FF10125", err.Error())
+
+	err = fd.Scan("1 year")
+	assert.Regexp(t, "FF10167", err.Error())
+
+	var pfd *FFDuration
+	v, err := pfd.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "", v)
+
+	pfd = &fd
+	*pfd = FFDuration(12345) * FFDuration(time.Millisecond)
+	v, err = pfd.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "12.345s", v)
+
+}

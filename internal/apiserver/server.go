@@ -96,8 +96,8 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	srv = &http.Server{
 		Handler:      wrapCorsIfEnabled(ctx, r),
-		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Millisecond,
-		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Millisecond,
+		WriteTimeout: config.GetDuration(config.HttpWriteTimeout),
+		ReadTimeout:  config.GetDuration(config.HttpReadTimeout),
 		TLSConfig: &tls.Config{
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
@@ -211,7 +211,7 @@ func jsonHandler(o orchestrator.Orchestrator, route *apispec.Route) http.Handler
 }
 
 func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
-	apiTimeout := config.GetUint(config.APIRequestTimeout) // Query once at startup when wrapping
+	apiTimeout := config.GetDuration(config.APIRequestTimeout) // Query once at startup when wrapping
 	return func(res http.ResponseWriter, req *http.Request) {
 
 		// Configure a server-side timeout on each request, to try and avoid cases where the API requester
@@ -220,7 +220,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
 		// This is dependent on the context being passed down through to all blocking operations down the stack
 		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		ctx, cancel := context.WithTimeout(req.Context(), time.Duration(apiTimeout)*time.Millisecond)
+		ctx, cancel := context.WithTimeout(req.Context(), apiTimeout)
 		req = req.WithContext(ctx)
 		defer cancel()
 

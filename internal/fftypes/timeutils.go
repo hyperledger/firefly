@@ -30,6 +30,13 @@ import (
 // It can be parsed from RFC3339, or unix timestamps (second, millisecond or nanosecond resolution)
 type FFTime time.Time
 
+// FFDuration is serialized to JSON in the string format of time.Duration
+// It can be unmarshalled from a number, or a string.
+// - If it is a string in time.Duration format, that will be used
+// - If it is a string that can be parsed as an int64, that will be used in Milliseconds
+// - If it is a number, that will be used in Milliseconds
+type FFDuration time.Duration
+
 func Now() *FFTime {
 	t := FFTime(time.Now().UTC())
 	return &t
@@ -132,4 +139,83 @@ func (ft *FFTime) String() string {
 		return ""
 	}
 	return time.Time(*ft).UTC().Format(time.RFC3339Nano)
+}
+
+// ParseDurationString is a standard handling of any duration string, in config or API options
+func ParseDurationString(durationString string) (time.Duration, error) {
+	duration, err := time.ParseDuration(durationString)
+	if err != nil {
+		intVal, err := strconv.ParseInt(durationString, 10, 64)
+		if err != nil {
+			return 0, i18n.NewError(context.Background(), i18n.MsgDurationParseFail, durationString)
+		}
+		// Default is milliseconds for all durations
+		duration = time.Duration(intVal) * time.Millisecond
+	}
+	return duration, nil
+}
+
+func (fd *FFDuration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Duration(*fd).String())
+}
+
+func (fd *FFDuration) UnmarshalJSON(b []byte) error {
+	var stringVal string
+	err := json.Unmarshal(b, &stringVal)
+	if err != nil {
+		var intVal int64
+		err = json.Unmarshal(b, &intVal)
+		if err != nil {
+			return err
+		}
+		*fd = FFDuration(intVal) * FFDuration(time.Millisecond)
+		return nil
+	}
+	duration, err := ParseDurationString(stringVal)
+	if err != nil {
+		return err
+	}
+	*fd = FFDuration(duration)
+	return nil
+}
+
+// Scan implements sql.Scanner
+func (fd *FFDuration) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		*fd = 0
+		return nil
+
+	case string:
+		duration, err := ParseDurationString(src)
+		if err != nil {
+			return err
+		}
+		*fd = FFDuration(duration)
+		return nil
+
+	case int:
+		*fd = FFDuration(time.Duration(src) * time.Millisecond)
+		return nil
+
+	case int64:
+		*fd = FFDuration(time.Duration(src) * time.Millisecond)
+		return nil
+
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, fd)
+	}
+
+}
+
+// Value implements sql.Valuer
+func (fd *FFDuration) Value() (driver.Value, error) {
+	return fd.String(), nil
+}
+
+func (fd *FFDuration) String() string {
+	if fd == nil {
+		return ""
+	}
+	return time.Duration(*fd).String()
 }

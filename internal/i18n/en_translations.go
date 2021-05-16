@@ -79,6 +79,7 @@ var (
 	MsgInvalidURL                 = ffm("FF10162", "Invalid URL: '%s'")
 	MsgDBMigrationFailed          = ffm("FF10163", "Database migration failed")
 	MsgHashMismatch               = ffm("FF10164", "Hash mismatch")
-	MsgTimeParseFail              = ffm("FF10165", "Cannot parse time as RFC3339, Unix, or UnixNano: '%s'")
+	MsgTimeParseFail              = ffm("FF10165", "Cannot parse time as RFC3339, Unix, or UnixNano: '%s'", 400)
 	MsgDefaultNamespaceNotFound   = ffm("FF10166", "namespaces.default '%s' must be included in the namespaces.predefined configuration")
+	MsgDurationParseFail          = ffm("FF10167", "Unable to parse '%s' as duration string, or millisecond number", 400)
 )
