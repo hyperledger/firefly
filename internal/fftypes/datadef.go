@@ -32,5 +32,5 @@ type DataDefinition struct {
 	Version   string        `json:"version,omitempty"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
-	Value     JSONData      `json:"value,omitempty"`
+	Value     JSONObject    `json:"value,omitempty"`
 }

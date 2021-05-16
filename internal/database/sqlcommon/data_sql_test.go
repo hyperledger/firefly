@@ -37,7 +37,7 @@ func TestDataE2EWithDB(t *testing.T) {
 
 	// Create a new data entry
 	dataId := uuid.New()
-	val := fftypes.JSONData{
+	val := fftypes.JSONObject{
 		"some": "data",
 		"with": map[string]interface{}{
 			"nesting": 12345,
@@ -64,7 +64,7 @@ func TestDataE2EWithDB(t *testing.T) {
 
 	// Update the data (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	val2 := fftypes.JSONData{
+	val2 := fftypes.JSONObject{
 		"another": "set",
 		"of": map[string]interface{}{
 			"data": 12345,

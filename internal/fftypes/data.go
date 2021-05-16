@@ -34,7 +34,7 @@ type Data struct {
 	Hash       *Bytes32           `json:"hash,omitempty"`
 	Created    *FFTime            `json:"created,omitempty"`
 	Definition *DataDefinitionRef `json:"definition,omitempty"`
-	Value      JSONData           `json:"value,omitempty"`
+	Value      JSONObject         `json:"value,omitempty"`
 }
 
 type DataDefinitionRef struct {

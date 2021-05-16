@@ -177,7 +177,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	defer r.Close()
 
-	var resJSON fftypes.JSONData
+	var resJSON fftypes.JSONObject
 	json.NewDecoder(r).Decode(&resJSON)
 	assert.Equal(t, "world", resJSON["hello"])
 

@@ -23,22 +23,21 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-var getBatchById = &apispec.Route{
-	Name:   "getBatchById",
-	Path:   "namespaces/{ns}/batches/{batchid}",
+var getNamespace = &apispec.Route{
+	Name:   "getNamespace",
+	Path:   "namespaces/{ns}",
 	Method: http.MethodGet,
 	PathParams: []apispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "batchid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetBatchById(r.Ctx, r.PP["ns"], r.PP["batchid"])
+		output, err = r.Or.GetNamespace(r.Ctx, r.PP["ns"])
 		return output, err
 	},
 }

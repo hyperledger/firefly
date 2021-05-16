@@ -145,10 +145,18 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		addOutput(ctx, route, output, op)
 	}
 	for _, p := range route.PathParams {
-		addParam(ctx, op, "path", p.Name, p.Default, p.Example, p.Description)
+		example := p.Example
+		if p.ExampleFromConf != "" {
+			example = config.GetString(p.ExampleFromConf)
+		}
+		addParam(ctx, op, "path", p.Name, p.Default, example, p.Description)
 	}
 	for _, q := range route.QueryParams {
-		addParam(ctx, op, "query", q.Name, q.Default, q.Example, q.Description)
+		example := q.Example
+		if q.ExampleFromConf != "" {
+			example = config.GetString(q.ExampleFromConf)
+		}
+		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description)
 	}
 	if route.FilterFactory != nil {
 		for _, field := range route.FilterFactory.NewFilter(ctx, 0).Fields() {

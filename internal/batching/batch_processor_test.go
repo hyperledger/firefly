@@ -168,7 +168,7 @@ func TestCloseToUnblockDispatch(t *testing.T) {
 		return fmt.Errorf("pop")
 	})
 	bp.close()
-	bp.dispatchBatch(context.Background(), &fftypes.Batch{})
+	bp.dispatchBatch(&fftypes.Batch{})
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {

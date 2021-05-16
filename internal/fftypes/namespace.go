@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package fftypes
 
-import "github.com/kaleido-io/firefly/internal/apispec"
+import "github.com/google/uuid"
 
-var routes = []*apispec.Route{
-	postDataDefs,
-	getNamespaces,
-	getNamespace,
-	getMsgById,
-	getMsgs,
-	getMsgOps,
-	getBatchById,
-	getBatches,
-	getDataById,
-	getData,
-	getTxnById,
-	getTxns,
-	getDataDefById,
-	getDataDefs,
+type NamespaceType string
+
+const (
+	NamespaceTypeStaticLocal     NamespaceType = "local"
+	NamespaceTypeStaticBroadcast NamespaceType = "broadcast"
+)
+
+type Namespace struct {
+	ID          *uuid.UUID    `json:"id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Type        NamespaceType `json:"type"`
+	Created     *FFTime       `json:"created"`
+	Confirmed   *FFTime       `json:"confirmed"`
 }

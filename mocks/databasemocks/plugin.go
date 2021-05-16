@@ -221,6 +221,52 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*f
 	return r0, r1
 }
 
+// GetNamespace provides a mock function with given fields: ctx, name
+func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*fftypes.Namespace, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 *fftypes.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Namespace); ok {
+		r0 = rf(ctx, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNamespaces provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]*fftypes.Namespace, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Namespace); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOffset provides a mock function with given fields: ctx, t, ns, name
 func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string) (*fftypes.Offset, error) {
 	ret := _m.Called(ctx, t, ns, name)
@@ -476,6 +522,20 @@ func (_m *Plugin) UpdateMessages(ctx context.Context, filter database.Filter, up
 	return r0
 }
 
+// UpdateNamespace provides a mock function with given fields: ctx, name, update
+func (_m *Plugin) UpdateNamespace(ctx context.Context, name string, update database.Update) error {
+	ret := _m.Called(ctx, name, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Update) error); ok {
+		r0 = rf(ctx, name, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateOffset provides a mock function with given fields: ctx, t, ns, name, update
 func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string, update database.Update) error {
 	ret := _m.Called(ctx, t, ns, name, update)
@@ -567,6 +627,20 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, a
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool) error); ok {
 		r0 = rf(ctx, message, allowHashUpdate)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertNamespace provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}

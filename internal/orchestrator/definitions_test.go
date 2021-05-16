@@ -73,7 +73,7 @@ func TestBroadcastDataDefinitionBadValue(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONData{
+		Value: fftypes.JSONObject{
 			"json": map[bool]string{false: "unparsable"},
 		},
 	})
@@ -91,7 +91,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONData{
+		Value: fftypes.JSONObject{
 			"some": "data",
 		},
 	})
@@ -113,7 +113,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONData{
+		Value: fftypes.JSONObject{
 			"some": "data",
 		},
 	})
@@ -135,7 +135,7 @@ func TestBroadcastOk(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONData{
+		Value: fftypes.JSONObject{
 			"some": "data",
 		},
 	})

@@ -23,6 +23,10 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+func (e *orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error) {
+	return e.database.GetNamespace(ctx, ns)
+}
+
 func (e *orchestrator) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
 	u, err := uuid.Parse(id)
 	if err != nil {
@@ -61,6 +65,10 @@ func (e *orchestrator) GetDataDefinitionById(ctx context.Context, ns, id string)
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
 	return e.database.GetDataDefinitionById(ctx, ns, &u)
+}
+
+func (e *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {
+	return e.database.GetNamespaces(ctx, filter)
 }
 
 func (e *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
