@@ -254,6 +254,52 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 	return r0, r1
 }
 
+// GetNamespace provides a mock function with given fields: ctx, ns
+func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error) {
+	ret := _m.Called(ctx, ns)
+
+	var r0 *fftypes.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Namespace); ok {
+		r0 = rf(ctx, ns)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ns)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNamespaces provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.Namespace); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactionById provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetTransactionById(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, ns, id)

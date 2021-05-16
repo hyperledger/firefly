@@ -15,60 +15,64 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 // The following keys can be access from the root configuration.
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
-	Lang                              RootKey = ark("lang")
-	LogLevel                          RootKey = ark("log.level")
-	LogColor                          RootKey = ark("log.color")
+	AggregatorDataReadRetryDelayMS    RootKey = ark("aggregator.dataread.retryDelayMS")
+	AggregatorDataReadRetryFactor     RootKey = ark("aggregator.dataread.factor")
+	AggregatorDataReadRetryMaxDelayMS RootKey = ark("aggregator.dataread.maxDelayMS")
+	APIDefaultFilterLimit             RootKey = ark("api.defaultFilterLimit")
+	APIRequestTimeout                 RootKey = ark("api.requestTimeout")
+	BatchManagerReadPageSize          RootKey = ark("batch.manager.readPageSize")
+	BatchManagerReadPollTimeoutMS     RootKey = ark("batch.manager.pollTimeoutMS")
+	BatchManagerStartupAttempts       RootKey = ark("batch.manager.startupAttempts")
+	BatchRetryFactor                  RootKey = ark("batch.retry.factor")
+	BatchRetryInitDelayMS             RootKey = ark("batch.retry.initDelayMS")
+	BatchRetryMaxDelayMS              RootKey = ark("batch.retry.maxDelayMS")
+	BlockchainType                    RootKey = ark("blockchain.type")
+	BroadcastBatchAgentTimeout        RootKey = ark("broadcast.batch.agentTimeout")
+	BroadcastBatchSize                RootKey = ark("broadcast.batch.size")
+	BroadcastBatchTimeout             RootKey = ark("broadcast.batch.timeout")
+	CorsAllowCredentials              RootKey = ark("cors.credentials")
+	CorsAllowedHeaders                RootKey = ark("cors.headers")
+	CorsAllowedMethods                RootKey = ark("cors.methods")
+	CorsAllowedOrigins                RootKey = ark("cors.origins")
+	CorsDebug                         RootKey = ark("cors.debug")
+	CorsEnabled                       RootKey = ark("cors.enabled")
+	CorsMaxAge                        RootKey = ark("cors.maxAge")
+	DatabaseType                      RootKey = ark("database.type")
 	DebugPort                         RootKey = ark("debug.port")
 	HttpAddress                       RootKey = ark("http.address")
 	HttpPort                          RootKey = ark("http.port")
 	HttpReadTimeout                   RootKey = ark("http.readTimeout")
-	HttpWriteTimeout                  RootKey = ark("http.writeTimeout")
-	HttpTLSEnabled                    RootKey = ark("http.tls.enabled")
-	HttpTLSClientAuth                 RootKey = ark("http.tls.clientAuth")
 	HttpTLSCAFile                     RootKey = ark("http.tls.caFile")
 	HttpTLSCertFile                   RootKey = ark("http.tls.certFile")
+	HttpTLSClientAuth                 RootKey = ark("http.tls.clientAuth")
+	HttpTLSEnabled                    RootKey = ark("http.tls.enabled")
 	HttpTLSKeyFile                    RootKey = ark("http.tls.keyFile")
-	CorsEnabled                       RootKey = ark("cors.enabled")
-	CorsAllowedOrigins                RootKey = ark("cors.origins")
-	CorsAllowedMethods                RootKey = ark("cors.methods")
-	CorsAllowedHeaders                RootKey = ark("cors.headers")
-	CorsAllowCredentials              RootKey = ark("cors.credentials")
-	CorsMaxAge                        RootKey = ark("cors.maxAge")
-	CorsDebug                         RootKey = ark("cors.debug")
+	HttpWriteTimeout                  RootKey = ark("http.writeTimeout")
+	Lang                              RootKey = ark("lang")
+	LogColor                          RootKey = ark("log.color")
+	LogLevel                          RootKey = ark("log.level")
+	LogTimeFormat                     RootKey = ark("log.timeFormat")
+	NamespacesDefault                 RootKey = ark("namespaces.default")
+	NamespacesPredefined              RootKey = ark("namespaces.predefined")
 	NodeIdentity                      RootKey = ark("node.identity")
-	APIRequestTimeout                 RootKey = ark("api.requestTimeout")
-	APIDefaultFilterLimit             RootKey = ark("api.defaultFilterLimit")
-	Database                          RootKey = ark("database")
-	DatabaseType                      RootKey = ark("database.type")
-	BlockchainType                    RootKey = ark("blockchain.type")
-	Blockchain                        RootKey = ark("blockchain")
 	PublicStorageType                 RootKey = ark("publicstorage.type")
-	PublicStorage                     RootKey = ark("publicstorage")
-	BroadcastBatchSize                RootKey = ark("broadcast.batch.size")
-	BroadcastBatchTimeout             RootKey = ark("broadcast.batch.timeout")
-	BroadcastBatchAgentTimeout        RootKey = ark("broadcast.batch.agentTimeout")
-	AggregatorDataReadRetryDelayMS    RootKey = ark("aggregator.dataread.retryDelayMS")
-	AggregatorDataReadRetryMaxDelayMS RootKey = ark("aggregator.dataread.maxDelayMS")
-	AggregatorDataReadRetryFactor     RootKey = ark("aggregator.dataread.factor")
-	BatchManagerStartupAttempts       RootKey = ark("batch.manager.startupAttempts")
-	BatchManagerReadPageSize          RootKey = ark("batch.manager.readPageSize")
-	BatchManagerReadPollTimeoutMS     RootKey = ark("batch.manager.pollTimeoutMS")
-	BatchRetryMaxDelayMS              RootKey = ark("batch.retry.maxDelayMS")
-	BatchRetryInitDelayMS             RootKey = ark("batch.retry.initDelayMS")
-	BatchRetryFactor                  RootKey = ark("batch.retry.factor")
 )
 
 // Config prefix represents the global configuration, at a nested point in
@@ -87,7 +91,8 @@ type ConfigPrefix interface {
 	GetInt(key string) int
 	GetUint(key string) uint
 	GetStringSlice(key string) []string
-	GetStringMap(key string) map[string]interface{}
+	GetObject(key string) fftypes.JSONObject
+	GetObjectArray(key string) fftypes.JSONObjectArray
 	Get(key string) interface{}
 }
 
@@ -101,6 +106,7 @@ func Reset() {
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogColor), true)
+	viper.SetDefault(string(LogTimeFormat), "2006-01-02T15:04:05.000Z07:00")
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(HttpAddress), "127.0.0.1")
 	viper.SetDefault(string(HttpPort), 5000)
@@ -126,6 +132,8 @@ func Reset() {
 	viper.SetDefault(string(BatchRetryMaxDelayMS), 30000)
 	viper.SetDefault(string(BatchRetryInitDelayMS), 250)
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
+	viper.SetDefault(string(NamespacesDefault), "default")
+	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 
 	i18n.SetLang(GetString(Lang))
 }
@@ -264,12 +272,21 @@ func (c *configPrefix) GetFloat64(key string) float64 {
 	return viper.GetFloat64(c.prefixKey(key))
 }
 
-// GetStringMap gets a configuration map
-func GetStringMap(key RootKey) map[string]interface{} {
-	return root.GetStringMap(string(key))
+// GetObject gets a configuration map
+func GetObject(key RootKey) fftypes.JSONObject {
+	return root.GetObject(string(key))
 }
-func (c *configPrefix) GetStringMap(key string) map[string]interface{} {
-	return viper.GetStringMap(c.prefixKey(key))
+func (c *configPrefix) GetObject(key string) fftypes.JSONObject {
+	return fftypes.JSONObject(viper.GetStringMap(c.prefixKey(key)))
+}
+
+// GetObjectArray gets an array of configuration maps
+func GetObjectArray(key RootKey) fftypes.JSONObjectArray {
+	return root.GetObjectArray(string(key))
+}
+func (c *configPrefix) GetObjectArray(key string) fftypes.JSONObjectArray {
+	v, _ := fftypes.ToJSONObjectArray(viper.Get(c.prefixKey(key)))
+	return v
 }
 
 // Get gets a configuration in raw form
@@ -291,4 +308,14 @@ func (c *configPrefix) Set(key string, value interface{}) {
 // Resolve gives the fully qualified path of a key
 func (c *configPrefix) Resolve(key string) string {
 	return c.prefixKey(key)
+}
+
+// SetupLogging initializes logging
+func SetupLogging(ctx context.Context) {
+	log.SetFormatting(log.Formatting{
+		DisableColors:   !GetBool(LogColor),
+		TimestampFormat: GetString(LogTimeFormat),
+	})
+	log.SetLevel(GetString(LogLevel))
+	log.L(ctx).Debugf("Log level: %s", logrus.GetLevel())
 }

@@ -20,10 +20,12 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchingmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestInitDatabasePluginFail(t *testing.T) {
@@ -64,22 +66,26 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 }
 
 func TestInitOK(t *testing.T) {
-	e := NewOrchestrator()
+	o := NewOrchestrator().(*orchestrator)
+	dbm := &databasemocks.Plugin{}
+	o.database = dbm
+	dbm.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	dbm.On("UpsertNamespace", mock.Anything, mock.Anything).Return(nil)
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
 	assert.NoError(t, err)
-	err = e.Init(context.Background())
+	err = o.Init(context.Background())
 	assert.NoError(t, err)
-	e.Close()
+	o.Close()
 }
 
 func TestInitBadIdentity(t *testing.T) {
-	e := NewOrchestrator()
+	o := NewOrchestrator()
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
 	config.Set(config.NodeIdentity, "!!!!wrongun")
 	assert.NoError(t, err)
-	err = e.Init(context.Background())
+	err = o.Init(context.Background())
 	assert.Regexp(t, "FF10131", err.Error())
-	e.Close()
+	o.Close()
 }
 
 func TestStartBatchFail(t *testing.T) {
@@ -105,4 +111,61 @@ func TestStartBlockchainFail(t *testing.T) {
 	mblk.On("Start").Return(fmt.Errorf("pop"))
 	err := o.Start()
 	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestInitNamespacesBadName(t *testing.T) {
+	config.Reset()
+	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
+		{"name": "!Badness"},
+	})
+	o := &orchestrator{}
+	err := o.initNamespaces(context.Background())
+	assert.Regexp(t, "FF10131", err.Error())
+}
+
+func TestInitNamespacesGetFail(t *testing.T) {
+	config.Reset()
+	mdb := &databasemocks.Plugin{}
+	o := &orchestrator{
+		database: mdb,
+	}
+	mdb.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	err := o.initNamespaces(context.Background())
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestInitNamespacesUpsertFail(t *testing.T) {
+	config.Reset()
+	mdb := &databasemocks.Plugin{}
+	o := &orchestrator{
+		database: mdb,
+	}
+	mdb.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	mdb.On("UpsertNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := o.initNamespaces(context.Background())
+	assert.Regexp(t, "pop", err.Error())
+}
+
+func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
+	config.Reset()
+	mdb := &databasemocks.Plugin{}
+	o := &orchestrator{
+		database: mdb,
+	}
+	mdb.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{
+		Type: fftypes.NamespaceTypeStaticBroadcast, // any broadcasted NS will not be updated
+	}, nil)
+	err := o.initNamespaces(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestInitNamespacesDefaultMissing(t *testing.T) {
+	config.Reset()
+	mdb := &databasemocks.Plugin{}
+	o := &orchestrator{
+		database: mdb,
+	}
+	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{})
+	err := o.initNamespaces(context.Background())
+	assert.Regexp(t, "FF10166", err.Error())
 }

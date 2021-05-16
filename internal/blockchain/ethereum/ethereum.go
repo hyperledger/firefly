@@ -240,37 +240,15 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) getMapString(ctx context.Context, m map[string]interface{}, key string) (string, bool) {
-	vInterace, ok := m[key]
-	if ok && vInterace != nil {
-		if vString, ok := vInterace.(string); ok {
-			return vString, true
-		}
-	}
-	log.L(ctx).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
-	return "", false
-}
-
-func (e *Ethereum) getMapSubMap(ctx context.Context, m map[string]interface{}, key string) (map[string]interface{}, bool) {
-	vInterace, ok := m[key]
-	if ok && vInterace != nil {
-		if vMap, ok := vInterace.(map[string]interface{}); ok {
-			return vMap, true
-		}
-	}
-	log.L(ctx).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
-	return map[string]interface{}{}, false // Ensures a non-nil return
-}
-
-func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONData) error {
-	sBlockNumber, _ := e.getMapString(ctx, msgJSON, "blockNumber")
-	sTransactionIndex, _ := e.getMapString(ctx, msgJSON, "transactionIndex")
-	sTransactionHash, _ := e.getMapString(ctx, msgJSON, "transactionHash")
-	dataJSON, _ := e.getMapSubMap(ctx, msgJSON, "data")
-	sAuthor, _ := e.getMapString(ctx, dataJSON, "author")
-	sTxnId, _ := e.getMapString(ctx, dataJSON, "txnId")
-	sBatchId, _ := e.getMapString(ctx, dataJSON, "batchId")
-	sPayloadRef, _ := e.getMapString(ctx, dataJSON, "payloadRef")
+func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) error {
+	sBlockNumber := msgJSON.GetString(ctx, "blockNumber")
+	sTransactionIndex := msgJSON.GetString(ctx, "transactionIndex")
+	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
+	dataJSON := msgJSON.GetObject(ctx, "data")
+	sAuthor := dataJSON.GetString(ctx, "author")
+	sTxnId := dataJSON.GetString(ctx, "txnId")
+	sBatchId := dataJSON.GetString(ctx, "batchId")
+	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -327,7 +305,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
 
 	l := log.L(ctx)
-	var msgsJSON []fftypes.JSONData
+	var msgsJSON []fftypes.JSONObject
 	err := json.Unmarshal(message, &msgsJSON)
 	if err != nil {
 		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(message))
@@ -337,7 +315,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 	for i, msgJSON := range msgsJSON {
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
-		signature, _ := e.getMapString(ctx, msgJSON, "signature")
+		signature := msgJSON.GetString(ctx, "signature")
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 

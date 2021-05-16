@@ -16,6 +16,7 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/aggregator"
 	"github.com/kaleido-io/firefly/internal/batching"
@@ -26,6 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/databasefactory"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/publicstorage"
 	"github.com/kaleido-io/firefly/internal/publicstorage/publicstoragefactory"
@@ -49,6 +51,8 @@ type Orchestrator interface {
 	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
 
 	// Data Query
+	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
+	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
 	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
@@ -89,6 +93,9 @@ func (o *orchestrator) Init(ctx context.Context) (err error) {
 	err = o.initPlugins(ctx)
 	if err == nil {
 		err = o.initComponents(ctx)
+	}
+	if err == nil {
+		err = o.initNamespaces(ctx)
 	}
 	return err
 }
@@ -190,4 +197,47 @@ func (o *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstora
 	}
 	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), o)
 	return plugin, err
+}
+
+func (o *orchestrator) initNamespaces(ctx context.Context) error {
+	defaultNS := config.GetString(config.NamespacesDefault)
+	predefined := config.GetObjectArray(config.NamespacesPredefined)
+	foundDefault := false
+	for i, nsObject := range predefined {
+		name := nsObject.GetString(ctx, "name")
+		description := nsObject.GetString(ctx, "description")
+		err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
+		if err != nil {
+			return err
+		}
+		foundDefault = foundDefault || name == defaultNS
+
+		ns, err := o.database.GetNamespace(ctx, name)
+		if err != nil {
+			return err
+		}
+		var updated bool
+		if ns == nil {
+			updated = true
+			ns = &fftypes.Namespace{
+				ID:          fftypes.NewUUID(),
+				Name:        name,
+				Description: description,
+				Created:     fftypes.Now(),
+			}
+		} else {
+			// Only update if the description has changed, and the one in our DB is locally defined
+			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeStaticLocal
+			ns.Description = description
+		}
+		if updated {
+			if err := o.database.UpsertNamespace(ctx, ns); err != nil {
+				return err
+			}
+		}
+	}
+	if !foundDefault {
+		return i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
+	}
+	return nil
 }

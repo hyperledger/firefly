@@ -40,7 +40,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 	}
 	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
 	bm := &batchManager{
-		ctx:                        ctx,
+		ctx:                        log.WithLogField(ctx, "role", "batchmgr"),
 		database:                   database,
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         time.Duration(config.GetUint(config.BatchManagerReadPollTimeoutMS)) * time.Millisecond,
@@ -117,7 +117,7 @@ func (bm *batchManager) restoreOffset() error {
 		return err
 	}
 	if offset == nil {
-		if err = bm.updateOffset(bm.ctx, false, 0); err != nil {
+		if err = bm.updateOffset(false, 0); err != nil {
 			return err
 		}
 	} else {
@@ -175,15 +175,15 @@ func (bm *batchManager) Close() {
 	bm = nil
 }
 
-func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Message) (data []*fftypes.Data, err error) {
+func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
 	// Load all the data - must all be present for us to send
 	for _, dataRef := range msg.Data {
 		if dataRef.ID == nil {
 			continue
 		}
 		var d *fftypes.Data
-		err = bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-			d, err = bm.database.GetDataById(ctx, msg.Header.Namespace, dataRef.ID)
+		err = bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
+			d, err = bm.database.GetDataById(bm.ctx, msg.Header.Namespace, dataRef.ID)
 			if err != nil {
 				// continual retry for persistence error (distinct from not-found)
 				return !bm.closed, err
@@ -194,21 +194,21 @@ func (bm *batchManager) assembleMessageData(ctx context.Context, msg *fftypes.Me
 			return nil, err
 		}
 		if d == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgDataNotFound, dataRef.ID)
+			return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, dataRef.ID)
 		}
 		data = append(data, d)
 	}
-	log.L(ctx).Infof("Added broadcast message %s", msg.Header.ID)
+	log.L(bm.ctx).Infof("Added broadcast message %s", msg.Header.ID)
 	return data, nil
 }
 
-func (bm *batchManager) readPage(ctx context.Context) ([]*fftypes.Message, error) {
+func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 	var msgs []*fftypes.Message
-	err := bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+	err := bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(bm.ctx, bm.readPageSize)
 		msgs, err = bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
-			log.L(ctx).Errorf("Failed to retrieve messages: %s", err)
+			log.L(bm.ctx).Errorf("Failed to retrieve messages: %s", err)
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
 		}
 		return false, nil
@@ -217,15 +217,14 @@ func (bm *batchManager) readPage(ctx context.Context) ([]*fftypes.Message, error
 }
 
 func (bm *batchManager) messageSequencer() {
-	l := log.L(bm.ctx).WithField("role", "batch-msg-sequencer")
-	ctx := log.WithLogger(bm.ctx, l)
+	l := log.L(bm.ctx)
 	l.Debugf("Started batch assembly message sequencer")
 
 	dispatched := make(chan *batchDispatch, bm.readPageSize)
 
 	for !bm.closed {
 		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		msgs, err := bm.readPage(ctx)
+		msgs, err := bm.readPage()
 		if err != nil {
 			l.Debugf("Exiting: %s", err) // errors logged in readPage
 			return
@@ -235,13 +234,13 @@ func (bm *batchManager) messageSequencer() {
 		if len(msgs) > 0 {
 			var dispatchCount int
 			for _, msg := range msgs {
-				data, err := bm.assembleMessageData(ctx, msg)
+				data, err := bm.assembleMessageData(msg)
 				if err != nil {
 					l.Errorf("Failed to retrieve message data for %s: %s", msg.Header.ID, err)
 					continue
 				}
 
-				err = bm.dispatchMessage(ctx, dispatched, msg, data...)
+				err = bm.dispatchMessage(dispatched, msg, data...)
 				if err != nil {
 					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
 					continue
@@ -257,7 +256,7 @@ func (bm *batchManager) messageSequencer() {
 					l.Debugf("Dispatched message %s to batch %s", dispatched.msg.Header.ID, dispatched.batchID)
 					msgUpdates[batchID] = append(msgUpdates[batchID], dispatched.msg.Header.ID)
 				}
-				if err = bm.updateMessages(ctx, msgUpdates); err != nil {
+				if err = bm.updateMessages(msgUpdates); err != nil {
 					l.Errorf("Closed while attempting to update messages: %s", err)
 					l.Infof("Unflushed message updates: %+v", msgUpdates)
 					break
@@ -265,7 +264,7 @@ func (bm *batchManager) messageSequencer() {
 			}
 
 			if !bm.closed {
-				_ = bm.updateOffset(ctx, true, msgs[len(msgs)-1].Sequence)
+				_ = bm.updateOffset(true, msgs[len(msgs)-1].Sequence)
 			}
 		}
 
@@ -296,11 +295,11 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	}
 }
 
-func (bm *batchManager) updateMessages(ctx context.Context, msgUpdates map[uuid.UUID][]driver.Value) (err error) {
-	l := log.L(ctx)
-	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+func (bm *batchManager) updateMessages(msgUpdates map[uuid.UUID][]driver.Value) (err error) {
+	l := log.L(bm.ctx)
+	return bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
 		// Group the updates at the persistence layer
-		err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		err = bm.database.RunAsGroup(bm.ctx, func(ctx context.Context) error {
 			// Group the updates by batch ID
 			for batchID, msgs := range msgUpdates {
 				f := database.MessageQueryFactory.NewFilter(ctx, 0).In("id", msgs)
@@ -319,9 +318,9 @@ func (bm *batchManager) updateMessages(ctx context.Context, msgUpdates map[uuid.
 	})
 }
 
-func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, newOffset int64) (err error) {
-	l := log.L(ctx)
-	return bm.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err error) {
+	l := log.L(bm.ctx)
+	return bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
 		bm.offset = newOffset
 		offset := &fftypes.Offset{
 			Type:      fftypes.OffsetTypeBatch,
@@ -340,8 +339,8 @@ func (bm *batchManager) updateOffset(ctx context.Context, infiniteRetry bool, ne
 	})
 }
 
-func (bm *batchManager) dispatchMessage(ctx context.Context, dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
-	l := log.L(ctx)
+func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
+	l := log.L(bm.ctx)
 	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
 		return err

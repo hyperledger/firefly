@@ -71,5 +71,5 @@ type Transaction struct {
 	Status     TransactionStatus  `json:"status"`
 	ProtocolID string             `json:"protocolId,omitempty"`
 	Confirmed  *FFTime            `json:"confirmed,omitempty"`
-	Info       JSONData           `json:"info,omitempty"`
+	Info       JSONObject         `json:"info,omitempty"`
 }

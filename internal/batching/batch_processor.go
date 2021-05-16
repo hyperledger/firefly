@@ -61,7 +61,7 @@ type batchProcessor struct {
 
 func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
 	a := &batchProcessor{
-		ctx:         log.WithLogField(ctx, "author", conf.author),
+		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s", conf.namespace, conf.author)),
 		name:        fmt.Sprintf("%s:%s", conf.namespace, conf.author),
 		newWork:     make(chan *batchWork),
 		persistWork: make(chan *batchWork, conf.BatchMaxSize),
@@ -139,8 +139,8 @@ func (a *batchProcessor) assemblyLoop() {
 	}
 }
 
-func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
-	l := log.L(ctx)
+func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
+	l := log.L(a.ctx)
 	if batch == nil {
 		batchID := uuid.New()
 		l.Debugf("New batch %s", batchID)
@@ -170,10 +170,10 @@ func (a *batchProcessor) createOrAddToBatch(ctx context.Context, batch *fftypes.
 	return batch
 }
 
-func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch) {
-	l := log.L(ctx)
+func (a *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
+	l := log.L(a.ctx)
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	_ = a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
+	_ = a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
 		err = a.conf.dispatch(a.ctx, batch)
 		if err != nil {
 			l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
@@ -183,10 +183,10 @@ func (a *batchProcessor) dispatchBatch(ctx context.Context, batch *fftypes.Batch
 	})
 }
 
-func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch, seal bool) (err error) {
-	l := log.L(ctx)
-	return a.retry.Do(ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.persitence.UpsertBatch(ctx, batch, seal /* we set the hash as it seals */)
+func (a *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
+	l := log.L(a.ctx)
+	return a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
+		err = a.conf.persitence.UpsertBatch(a.ctx, batch, seal /* we set the hash as it seals */)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			return !a.closed, err
@@ -197,8 +197,7 @@ func (a *batchProcessor) persistBatch(ctx context.Context, batch *fftypes.Batch,
 
 func (a *batchProcessor) persistenceLoop() {
 	defer close(a.batchSealed)
-	l := log.L(a.ctx).WithField("role", fmt.Sprintf("persist-%s", a.name))
-	ctx := log.WithLogger(a.ctx, l)
+	l := log.L(a.ctx)
 	var currentBatch *fftypes.Batch
 	for !a.closed {
 		var seal bool
@@ -231,11 +230,11 @@ func (a *batchProcessor) persistenceLoop() {
 				drained = true
 			}
 		}
-		currentBatch = a.createOrAddToBatch(ctx, currentBatch, newWork, seal)
+		currentBatch = a.createOrAddToBatch(currentBatch, newWork, seal)
 		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		if err := a.persistBatch(ctx, currentBatch, seal); err != nil {
+		if err := a.persistBatch(currentBatch, seal); err != nil {
 			return
 		}
 
@@ -259,7 +258,7 @@ func (a *batchProcessor) persistenceLoop() {
 
 			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
 			// will break out of the retry in the case that we close
-			a.dispatchBatch(ctx, currentBatch)
+			a.dispatchBatch(currentBatch)
 
 			// Move onto the next batch
 			currentBatch = nil

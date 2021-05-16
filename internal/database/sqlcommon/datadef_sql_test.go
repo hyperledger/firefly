@@ -38,7 +38,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	// Create a new data definition entry
 	dataDefId := uuid.New()
 	randB32 := fftypes.NewRandB32()
-	val := fftypes.JSONData{
+	val := fftypes.JSONObject{
 		"some": "dataDef",
 		"with": map[string]interface{}{
 			"nesting": 12345,
@@ -65,7 +65,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 
 	// Update the data definition (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	val2 := fftypes.JSONData{
+	val2 := fftypes.JSONObject{
 		"another": "set",
 		"of": map[string]interface{}{
 			"dataDef": 12345,

@@ -25,6 +25,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestGetNamespace(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	mp.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	_, err := o.GetNamespace(context.Background(), "ns1")
+	assert.NoError(t, err)
+}
+
 func TestGetTransactionById(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
@@ -39,6 +48,17 @@ func TestGetTransactionByIdBadId(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	_, err := o.GetTransactionById(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
+}
+
+func TestGetNamespaces(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	mp.On("GetNamespaces", mock.Anything, mock.Anything).Return([]*fftypes.Namespace{}, nil)
+	fb := database.NamespaceQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("name", "ns1"))
+	_, err := o.GetNamespaces(context.Background(), f)
+	assert.NoError(t, err)
 }
 
 func TestGetTransactions(t *testing.T) {

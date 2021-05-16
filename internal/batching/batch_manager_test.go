@@ -155,7 +155,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mp)
 	defer bm.Close()
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
-	err := bm.(*batchManager).dispatchMessage(context.Background(), nil, msg)
+	err := bm.(*batchManager).dispatchMessage(nil, msg)
 	assert.Regexp(t, "FF10126", err.Error())
 }
 
@@ -283,7 +283,7 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
 	bm.Close()
-	_, err := bm.(*batchManager).assembleMessageData(context.Background(), &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
@@ -297,7 +297,7 @@ func TestAssembleMessageDataClosed(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mp)
 	mp.On("GetDataById", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	bm.Close()
-	_, err := bm.(*batchManager).assembleMessageData(context.Background(), &fftypes.Message{
+	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},

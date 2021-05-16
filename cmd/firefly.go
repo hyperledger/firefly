@@ -56,7 +56,7 @@ var showConfigCommand = &cobra.Command{
 
 		// Print it all out
 		for _, k := range config.GetKnownKeys() {
-			fmt.Printf("%-64s %v\n", k, config.GetString(config.RootKey(k)))
+			fmt.Printf("%-64s %v\n", k, config.Get(config.RootKey(k)))
 		}
 	},
 }
@@ -90,7 +90,7 @@ func run() error {
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	ctx = log.WithLogger(ctx, logrus.WithField("pid", os.Getpid()))
-	log.SetupLogging(ctx)
+	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Project Firefly")
 	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
 

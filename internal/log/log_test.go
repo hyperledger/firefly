@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/likexian/gokit/assert"
 	"github.com/sirupsen/logrus"
 )
@@ -34,31 +33,26 @@ func TestLogContextLimited(t *testing.T) {
 }
 
 func TestSettingErrorLevel(t *testing.T) {
-	config.Set(config.LogLevel, "eRrOr")
-	SetupLogging(context.Background())
+	SetLevel("eRrOr")
 	assert.Equal(t, logrus.ErrorLevel, logrus.GetLevel())
 }
 
 func TestSettingDebugLevel(t *testing.T) {
-	config.Set(config.LogLevel, "DEBUG")
-	SetupLogging(context.Background())
+	SetLevel("DEBUG")
 	assert.Equal(t, logrus.DebugLevel, logrus.GetLevel())
 }
 
 func TestSettingTraceLevel(t *testing.T) {
-	config.Set(config.LogLevel, "trace")
-	SetupLogging(context.Background())
+	SetLevel("trace")
 	assert.Equal(t, logrus.TraceLevel, logrus.GetLevel())
 }
 
 func TestSettingInfoLevel(t *testing.T) {
-	config.Set(config.LogLevel, "info")
-	SetupLogging(context.Background())
+	SetLevel("info")
 	assert.Equal(t, logrus.InfoLevel, logrus.GetLevel())
 }
 
 func TestSettingDefaultLevel(t *testing.T) {
-	config.Set(config.LogLevel, "something else")
-	SetupLogging(context.Background())
+	SetLevel("something else")
 	assert.Equal(t, logrus.InfoLevel, logrus.GetLevel())
 }

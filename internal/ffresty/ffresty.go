@@ -100,7 +100,7 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 
 	client.OnAfterResponse(func(c *resty.Client, r *resty.Response) error { OnAfterResponse(c, r); return nil })
 
-	headers := staticConfig.GetStringMap(HTTPConfigHeaders)
+	headers := staticConfig.GetObject(HTTPConfigHeaders)
 	for k, v := range headers {
 		if vs, ok := v.(string); ok {
 			client.SetHeader(k, vs)

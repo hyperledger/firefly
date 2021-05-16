@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -190,13 +191,14 @@ func jsonHandler(o orchestrator.Orchestrator, route *apispec.Route) http.Handler
 			})
 		}
 		if err == nil {
-			if output == nil && status != 204 {
+			isNil := output == nil || reflect.ValueOf(output).IsNil()
+			if isNil && status != 204 {
 				err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
 				status = 404
 			}
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
-			if output != nil {
+			if !isNil {
 				err = json.NewEncoder(res).Encode(output)
 				if err != nil {
 					err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)

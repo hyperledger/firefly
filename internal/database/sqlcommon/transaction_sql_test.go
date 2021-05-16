@@ -75,7 +75,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Created:    fftypes.Now(),
 		ProtocolID: "0x33333",
 		Status:     fftypes.TransactionStatusFailed,
-		Info: fftypes.JSONData{
+		Info: fftypes.JSONObject{
 			"some": "data",
 		},
 		Confirmed: fftypes.Now(),

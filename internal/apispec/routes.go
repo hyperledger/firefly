@@ -15,8 +15,9 @@
 package apispec
 
 import (
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 // Route defines each API operation on the REST API of Firefly
@@ -59,6 +60,8 @@ type PathParam struct {
 	Default string
 	// Example is a field to fill in, in the helper UI
 	Example string
+	// ExampleFromConf is a field to fill in, in the helper UI, from the runtime configuration
+	ExampleFromConf config.RootKey
 	// Description is a message key to a translatable descripiton of the parameter
 	Description i18n.MessageKey
 }
@@ -71,6 +74,8 @@ type QueryParam struct {
 	Default string
 	// Example is a field to fill in, in the helper UI
 	Example string
+	// ExampleFromConf is a field to fill in, in the helper UI, from the runtime configuration
+	ExampleFromConf config.RootKey
 	// Description is a message key to a translatable descripiton of the parameter
 	Description i18n.MessageKey
 }

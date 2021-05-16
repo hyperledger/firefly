@@ -73,6 +73,18 @@ type PeristenceInterface interface {
 	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
+	// Upsert a namespace
+	UpsertNamespace(ctx context.Context, data *fftypes.Namespace) (err error)
+
+	// Update namespace
+	UpdateNamespace(ctx context.Context, name string, update Update) (err error)
+
+	// Get an namespace by name
+	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
+
+	// Get namespaces
+	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
+
 	// Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error)
@@ -189,6 +201,15 @@ type Events interface {
 // No capabilities currently defined for the database interface - all features are mandatory
 type Capabilities struct {
 	ClusterEvents bool
+}
+
+var NamespaceQueryFactory = &queryFields{
+	"id":          &StringField{},
+	"type":        &StringField{},
+	"name":        &StringField{},
+	"description": &StringField{},
+	"created":     &timeField{},
+	"confirmed":   &timeField{},
 }
 
 var MessageQueryFactory = &queryFields{

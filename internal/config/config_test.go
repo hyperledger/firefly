@@ -18,6 +18,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,6 +40,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, float64(2.0), GetFloat64(AggregatorDataReadRetryFactor))
 	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
+	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
@@ -59,7 +61,7 @@ func TestAttemptToAccessRandomKey(t *testing.T) {
 
 func TestSetGetMap(t *testing.T) {
 	Set(BroadcastBatchSize, map[string]interface{}{"some": "map"})
-	assert.Equal(t, map[string]interface{}{"some": "map"}, GetStringMap(BroadcastBatchSize))
+	assert.Equal(t, fftypes.JSONObject{"some": "map"}, GetObject(BroadcastBatchSize))
 }
 
 func TestSetGetRawInterace(t *testing.T) {

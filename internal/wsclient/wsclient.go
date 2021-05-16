@@ -87,7 +87,7 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range prefix.GetStringMap(ffresty.HTTPConfigHeaders) {
+	for k, v := range prefix.GetObject(ffresty.HTTPConfigHeaders) {
 		if vs, ok := v.(string); ok {
 			w.headers.Set(k, vs)
 		}
