@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -89,4 +90,8 @@ func TestGetKnownKeys(t *testing.T) {
 	for _, k := range knownKeys {
 		assert.NotEmpty(t, root.Resolve(k))
 	}
+}
+
+func TestSetupLogging(t *testing.T) {
+	SetupLogging(context.Background())
 }
