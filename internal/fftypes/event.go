@@ -33,9 +33,10 @@ const (
 )
 
 type Event struct {
-	Type         EventType  `json:"type"`
-	Subscription *uuid.UUID `json:"subscription"`
-	Message      *Message   `json:"message,omitempty"`
+	Type      EventType   `json:"type"`
+	Sequence  int64       `json:"sequence"`
+	Reference *uuid.UUID  `json:"reference"`
+	Data      interface{} `json:"data"` // Not persisted
 }
 
 func (et *EventTypes) UnmarshalJSON(b []byte) error {
