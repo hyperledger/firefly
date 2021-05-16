@@ -36,7 +36,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 
 	// Create a new namespace entry
 	namespace := &fftypes.Namespace{
-		ID:      fftypes.NewUUID(),
+		ID:      nil, // generated for us
 		Type:    fftypes.NamespaceTypeStaticLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
@@ -52,10 +52,17 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaceReadJson, _ := json.Marshal(&namespaceRead)
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 
+	// Rejects attempt to update ID
+	err = s.UpsertNamespace(context.Background(), &fftypes.Namespace{
+		ID:   fftypes.NewUUID(),
+		Name: "namespace1",
+	})
+	assert.Equal(t, database.IDMismatch, err)
+
 	// Update the namespace (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &fftypes.Namespace{
-		ID:          fftypes.NewUUID(), // with namespaces we query them always by name, the id is secondary
+		ID:          nil, // as long as we don't specify one we're fine
 		Type:        fftypes.NamespaceTypeStaticBroadcast,
 		Name:        "namespace1",
 		Description: "description1",

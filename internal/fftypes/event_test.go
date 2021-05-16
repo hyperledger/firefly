@@ -78,6 +78,10 @@ func TestEventDatabaseDeserialization(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, EventTypes{EventTypeMessageConfirmed}, eventTypes)
 
+	err = eventTypes.Scan([]byte(EventTypeMessageConfirmed))
+	assert.NoError(t, err)
+	assert.Equal(t, EventTypes{EventTypeMessageConfirmed}, eventTypes)
+
 	err = eventTypes.Scan(false)
 	assert.Regexp(t, "FF10125", err)
 

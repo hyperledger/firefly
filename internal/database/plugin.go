@@ -25,6 +25,7 @@ import (
 
 var (
 	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
+	IDMismatch   = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
 )
 
 // Plugin is the interface implemented by each plugin
@@ -74,6 +75,7 @@ type PeristenceInterface interface {
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
 	// Upsert a namespace
+	// Throws IDMismatch error if updating and ids don't match
 	UpsertNamespace(ctx context.Context, data *fftypes.Namespace) (err error)
 
 	// Update namespace
@@ -175,6 +177,19 @@ type PeristenceInterface interface {
 
 	// Get operation
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
+
+	// Upsert a subscription
+	UpsertSubscription(ctx context.Context, data *fftypes.Subscription) (err error)
+
+	// Update subscription
+	// Throws IDMismatch error if updating and ids don't match
+	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
+
+	// Get an subscription by name
+	GetSubscription(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
+
+	// Get subscriptions
+	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
 }
 
 // Events
@@ -298,4 +313,17 @@ var OperationQueryFactory = &queryFields{
 	"backendid": &StringField{},
 	"created":   &timeField{},
 	"updated":   &timeField{},
+}
+
+var SubscriptionQueryFactory = &queryFields{
+	"id":             &StringField{},
+	"namespace":      &StringField{},
+	"name":           &StringField{},
+	"dispatcher":     &StringField{},
+	"events":         &StringField{},
+	"filter.topic":   &StringField{},
+	"filter.context": &StringField{},
+	"filter.group":   &StringField{},
+	"options":        &StringField{},
+	"created":        &timeField{},
 }

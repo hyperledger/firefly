@@ -33,6 +33,7 @@ const (
 )
 
 type Event struct {
+	ID        *uuid.UUID  `json:"id"`
 	Type      EventType   `json:"type"`
 	Sequence  int64       `json:"sequence"`
 	Reference *uuid.UUID  `json:"reference"`
@@ -72,6 +73,13 @@ func stringArrayToEventTypes(stringArray []string) (EventTypes, error) {
 // Scan implements sql.Scanner
 func (et *EventTypes) Scan(src interface{}) (err error) {
 	switch src := src.(type) {
+	case []byte:
+		var stringArray []string
+		if len(src) > 0 {
+			stringArray = strings.Split(string(src), ",")
+		}
+		*et, err = stringArrayToEventTypes(stringArray)
+		return err
 	case string:
 		var stringArray []string
 		if len(src) > 0 {
@@ -86,9 +94,9 @@ func (et *EventTypes) Scan(src interface{}) (err error) {
 }
 
 // Value implements sql.Valuer
-func (et *EventTypes) Value() (driver.Value, error) {
-	stringArray := make([]string, len(*et))
-	for i, eventType := range *et {
+func (et EventTypes) Value() (driver.Value, error) {
+	stringArray := make([]string, len(et))
+	for i, eventType := range et {
 		stringArray[i] = string(eventType)
 	}
 	return strings.Join(stringArray, ","), nil

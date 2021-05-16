@@ -74,12 +74,12 @@ func TestFFTimeJSONUnmarshalFail(t *testing.T) {
 
 func TestFFTimeDatabaseSerialization(t *testing.T) {
 	now := Now()
+	zero := ZeroTime()
 
-	var ft *FFTime
+	var ft *FFTime = &zero
 	v, err := ft.Value()
 	assert.NoError(t, err)
-	assert.Nil(t, v)
-	assert.Equal(t, int64(0), ft.UnixNano())
+	assert.Equal(t, int64(0), v)
 
 	ft = now
 	v, err = ft.Value()
@@ -98,9 +98,9 @@ func TestFFTimeDatabaseSerialization(t *testing.T) {
 
 }
 
-func TestStringNillOrZero(t *testing.T) {
+func TestStringZero(t *testing.T) {
 	var ft *FFTime
-	assert.Equal(t, "", ft.String())
+	assert.Equal(t, int64(0), ft.UnixNano())
 	zero := ZeroTime()
 	ft = &zero
 	assert.Equal(t, "", ft.String()) // empty string rather than epoch 1970 time

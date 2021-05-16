@@ -359,6 +359,52 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
+// GetSubscription provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetSubscription(ctx context.Context, ns string, name string) (*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, ns, name)
+
+	var r0 *fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Subscription); ok {
+		r0 = rf(ctx, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSubscriptions provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Subscription); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactionById provides a mock function with given fields: ctx, ns, id
 func (_m *Plugin) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -564,6 +610,20 @@ func (_m *Plugin) UpdateOperations(ctx context.Context, filter database.Filter, 
 	return r0
 }
 
+// UpdateSubscription provides a mock function with given fields: ctx, ns, name, update
+func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string, update database.Update) error {
+	ret := _m.Called(ctx, ns, name, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.Update) error); ok {
+		r0 = rf(ctx, ns, name, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateTransaction provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateTransaction(ctx context.Context, id *uuid.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -669,6 +729,20 @@ func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operat
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
 		r0 = rf(ctx, operation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertSubscription provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscription) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}
