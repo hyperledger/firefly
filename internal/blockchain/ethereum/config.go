@@ -30,7 +30,7 @@ const (
 	EthconnectConfigInstancePath        = "instance"
 	EthconnectConfigTopic               = "topic"
 	EthconnectConfigBatchSize           = "batchSize"
-	EthconnectConfigBatchTimeoutMS      = "batchTimeoutMS"
+	EthconnectConfigBatchTimeout        = "batchTimeout"
 	EthconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 )
 
@@ -41,5 +41,5 @@ func (e *Ethereum) InitConfigPrefix(prefix config.ConfigPrefix) {
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigSkipEventstreamInit)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
-	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeoutMS, defaultBatchTimeout)
+	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 }

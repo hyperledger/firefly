@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/kaleido-io/firefly/internal/batching"
 	"github.com/kaleido-io/firefly/internal/blockchain"
@@ -55,8 +54,8 @@ func NewBroadcastManager(ctx context.Context, database database.Plugin, blockcha
 	}
 	bo := batching.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
-		BatchTimeout:   time.Duration(config.GetUint(config.BroadcastBatchTimeout)) * time.Millisecond,
-		DisposeTimeout: time.Duration(config.GetUint(config.BroadcastBatchAgentTimeout)) * time.Millisecond,
+		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
+		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
 	batch.RegisterDispatcher(fftypes.MessageTypeBroadcast, b.dispatchBatch, bo)
 	batch.RegisterDispatcher(fftypes.MessageTypeDefinition, b.dispatchBatch, bo)

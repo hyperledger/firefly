@@ -43,13 +43,13 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		ctx:                        log.WithLogField(ctx, "role", "batchmgr"),
 		database:                   database,
 		readPageSize:               uint64(readPageSize),
-		messagePollTimeout:         time.Duration(config.GetUint(config.BatchManagerReadPollTimeoutMS)) * time.Millisecond,
+		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.BatchManagerStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		newMessages:                make(chan *uuid.UUID, readPageSize),
 		retry: &retry.Retry{
-			InitialDelay: time.Duration(config.GetUint(config.BatchRetryInitDelayMS)) * time.Millisecond,
-			MaximumDelay: time.Duration(config.GetUint(config.BatchRetryMaxDelayMS)) * time.Millisecond,
+			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
+			MaximumDelay: config.GetDuration(config.BatchRetryMaxDelay),
 			Factor:       config.GetFloat64(config.BatchRetryFactor),
 		},
 	}

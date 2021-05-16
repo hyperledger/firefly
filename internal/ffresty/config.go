@@ -24,14 +24,14 @@ const (
 )
 
 const (
-	HTTPConfigURL                = "url"
-	HTTPConfigHeaders            = "headers"
-	HTTPConfigAuthUsername       = "auth.username"
-	HTTPConfigAuthPassword       = "auth.password"
-	HTTPConfigRetryEnabled       = "retry.enabled"
-	HTTPConfigRetryCount         = "retry.count"
-	HTTPConfigRetryWaitTimeMS    = "retry.waitTimeMS"
-	HTTPConfigRetryMaxWaitTimeMS = "retry.maxWaitTimeMS"
+	HTTPConfigURL              = "url"
+	HTTPConfigHeaders          = "headers"
+	HTTPConfigAuthUsername     = "auth.username"
+	HTTPConfigAuthPassword     = "auth.password"
+	HTTPConfigRetryEnabled     = "retry.enabled"
+	HTTPConfigRetryCount       = "retry.count"
+	HTTPConfigRetryWaitTime    = "retry.waitTime"
+	HTTPConfigRetryMaxWaitTime = "retry.maxWaitTime"
 
 	// Unit test only
 	HTTPCustomClient = "customClient"
@@ -44,8 +44,8 @@ func InitConfigPrefix(prefix config.ConfigPrefix) {
 	prefix.AddKnownKey(HTTPConfigAuthPassword)
 	prefix.AddKnownKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
 	prefix.AddKnownKey(HTTPConfigRetryCount, defaultRetryCount)
-	prefix.AddKnownKey(HTTPConfigRetryWaitTimeMS, defaultRetryWaitTimeMillis)
-	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTimeMS, defaultRetryMaxWaitTimeMillis)
+	prefix.AddKnownKey(HTTPConfigRetryWaitTime, defaultRetryWaitTimeMillis)
+	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTime, defaultRetryMaxWaitTimeMillis)
 
 	prefix.AddKnownKey(HTTPCustomClient)
 }
