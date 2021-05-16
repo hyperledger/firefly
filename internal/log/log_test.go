@@ -56,3 +56,9 @@ func TestSettingDefaultLevel(t *testing.T) {
 	SetLevel("something else")
 	assert.Equal(t, logrus.InfoLevel, logrus.GetLevel())
 }
+
+func TestSetFormatting(t *testing.T) {
+	SetFormatting(Formatting{
+		DisableColors: true,
+	})
+}
