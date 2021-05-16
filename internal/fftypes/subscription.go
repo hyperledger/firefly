@@ -15,7 +15,12 @@
 package fftypes
 
 import (
+	"context"
+	"database/sql/driver"
+	"encoding/json"
+
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type SubscriptionFilter struct {
@@ -32,19 +37,38 @@ const (
 )
 
 type SubscriptionOptions struct {
-	FirstEvent   SubOptsFirstEvent `json:"firstEvent"`
-	BatchEnabled bool              `json:"batchEnabled"`
-	BatchTimeout *FFDuration       `json:"batchTimeout"`
-	BatchSize    uint              `json:"batchSize"`
+	FirstEvent   *SubOptsFirstEvent `json:"firstEvent,omitempty"`
+	BatchEnabled *bool              `json:"batchEnabled,omitempty"`
+	BatchTimeout *FFDuration        `json:"batchTimeout,omitempty"`
+	BatchSize    *uint64            `json:"batchSize,omitempty"`
 }
 
 type Subscription struct {
-	ID         *uuid.UUID           `json:"id"`
-	Namespace  string               `json:"namespace"`
-	Name       string               `json:"name"`
-	Dispatcher string               `json:"dispatcher"`
-	Events     EventTypes           `json:"events"`
-	Filter     *SubscriptionFilter  `json:"filter,omitempty"`
-	Options    *SubscriptionOptions `json:"options"`
-	Created    *FFTime              `json:"created"`
+	ID         *uuid.UUID          `json:"id"`
+	Namespace  string              `json:"namespace"`
+	Name       string              `json:"name"`
+	Dispatcher string              `json:"dispatcher"`
+	Events     EventTypes          `json:"events"`
+	Filter     SubscriptionFilter  `json:"filter"`
+	Options    SubscriptionOptions `json:"options"`
+	Created    *FFTime             `json:"created"`
+}
+
+// Scan implements sql.Scanner
+func (so *SubscriptionOptions) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		return json.Unmarshal(src, &so)
+	case string:
+		return json.Unmarshal([]byte(src), &so)
+
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, so)
+	}
+
+}
+
+// Value implements sql.Valuer
+func (so SubscriptionOptions) Value() (driver.Value, error) {
+	return json.Marshal(&so)
 }

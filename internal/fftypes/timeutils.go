@@ -127,22 +127,22 @@ func (ft *FFTime) Scan(src interface{}) error {
 }
 
 // Value implements sql.Valuer
-func (ft *FFTime) Value() (driver.Value, error) {
-	if ft == nil || time.Time(*ft).IsZero() {
-		return nil, nil
+func (ft FFTime) Value() (driver.Value, error) {
+	if time.Time(ft).IsZero() {
+		return int64(0), nil
 	}
 	return ft.UnixNano(), nil
 }
 
-func (ft *FFTime) String() string {
-	if ft == nil || time.Time(*ft).IsZero() {
+func (ft FFTime) String() string {
+	if time.Time(ft).IsZero() {
 		return ""
 	}
-	return time.Time(*ft).UTC().Format(time.RFC3339Nano)
+	return time.Time(ft).UTC().Format(time.RFC3339Nano)
 }
 
 // ParseDurationString is a standard handling of any duration string, in config or API options
-func ParseDurationString(durationString string) (time.Duration, error) {
+func ParseDurationString(durationString string) (FFDuration, error) {
 	duration, err := time.ParseDuration(durationString)
 	if err != nil {
 		intVal, err := strconv.ParseInt(durationString, 10, 64)
@@ -152,7 +152,7 @@ func ParseDurationString(durationString string) (time.Duration, error) {
 		// Default is milliseconds for all durations
 		duration = time.Duration(intVal) * time.Millisecond
 	}
-	return duration, nil
+	return FFDuration(duration), nil
 }
 
 func (fd *FFDuration) MarshalJSON() ([]byte, error) {
@@ -175,7 +175,7 @@ func (fd *FFDuration) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*fd = FFDuration(duration)
+	*fd = duration
 	return nil
 }
 
@@ -191,7 +191,7 @@ func (fd *FFDuration) Scan(src interface{}) error {
 		if err != nil {
 			return err
 		}
-		*fd = FFDuration(duration)
+		*fd = duration
 		return nil
 
 	case int:

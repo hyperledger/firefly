@@ -19,6 +19,7 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -57,12 +58,22 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 	}
 
 	if namespaceRows.Next() {
+
+		var id uuid.UUID
+		_ = namespaceRows.Scan(&id)
+		if namespace.ID != nil {
+			if *namespace.ID != id {
+				namespaceRows.Close()
+				return database.IDMismatch
+			}
+		}
+		namespace.ID = &id // Update on returned object
 		namespaceRows.Close()
 
 		// Update the namespace
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
-				Set("id", namespace.ID).
+				// Note we do not update ID
 				Set("ntype", string(namespace.Type)).
 				Set("name", namespace.Name).
 				Set("description", namespace.Description).
@@ -74,6 +85,10 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 		}
 	} else {
 		namespaceRows.Close()
+
+		if namespace.ID == nil {
+			namespace.ID = fftypes.NewUUID()
+		}
 
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("namespaces").

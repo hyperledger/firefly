@@ -256,7 +256,7 @@ func GetDuration(key RootKey) time.Duration {
 }
 func (c *configPrefix) GetDuration(key string) time.Duration {
 	v, _ := fftypes.ParseDurationString(viper.GetString(c.prefixKey(key)))
-	return v
+	return time.Duration(v)
 }
 
 // GetUInt gets a configuration uint

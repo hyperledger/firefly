@@ -84,4 +84,5 @@ var (
 	MsgDurationParseFail          = ffm("FF10167", "Unable to parse '%s' as duration string, or millisecond number", 400)
 	MsgEventTypesParseFail        = ffm("FF10168", "Unable to parse list of event types", 400)
 	MsgUnknownEventType           = ffm("FF10169", "Unknown event type '%s'", 400)
+	MsgIDMismatch                 = ffm("FF10170", "ID mismatch")
 )
