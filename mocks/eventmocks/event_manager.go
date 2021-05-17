@@ -47,6 +47,20 @@ func (_m *EventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 	return r0
 }
 
+// Start provides a mock function with given fields:
+func (_m *EventManager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
 func (_m *EventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) error {
 	ret := _m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)

@@ -31,8 +31,11 @@ func newAggregator(ctx context.Context) *aggregator {
 		ctx:       log.WithLogField(ctx, "role", "aggregator"),
 		newEvents: make(chan *uuid.UUID),
 	}
-	go ag.eventLoop()
 	return ag
+}
+
+func (ag *aggregator) start() {
+	go ag.eventLoop()
 }
 
 func (ag *aggregator) eventLoop() {

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kaleido-io/firefly/internal/batching"
+	"github.com/kaleido-io/firefly/internal/batch"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
@@ -77,69 +77,72 @@ type orchestrator struct {
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	events        events.EventManager
-	batch         batching.BatchManager
+	batch         batch.BatchManager
 	broadcast     broadcast.BroadcastManager
 	nodeIdentity  string
 }
 
 func NewOrchestrator() Orchestrator {
-	o := &orchestrator{}
+	or := &orchestrator{}
 
 	// Initialize the config on all the factories
 	blockchainfactory.InitConfigPrefix(blockchainConfig)
 	databasefactory.InitConfigPrefix(databaseConfig)
 	publicstoragefactory.InitConfigPrefix(publicstorageConfig)
 
-	return o
+	return or
 }
 
-func (o *orchestrator) Init(ctx context.Context) (err error) {
-	o.ctx = ctx
-	err = o.initPlugins(ctx)
+func (or *orchestrator) Init(ctx context.Context) (err error) {
+	or.ctx = ctx
+	err = or.initPlugins(ctx)
 	if err == nil {
-		err = o.initComponents(ctx)
+		err = or.initComponents(ctx)
 	}
 	if err == nil {
-		err = o.initNamespaces(ctx)
+		err = or.initNamespaces(ctx)
 	}
 	return err
 }
 
-func (o *orchestrator) Start() error {
-	err := o.blockchain.Start()
+func (or *orchestrator) Start() error {
+	err := or.blockchain.Start()
 	if err == nil {
-		err = o.batch.Start()
+		err = or.batch.Start()
+	}
+	if err == nil {
+		err = or.events.Start()
 	}
 	return err
 }
 
-func (o *orchestrator) Close() {
-	if o.batch != nil {
-		o.batch.Close()
-		o.batch = nil
+func (or *orchestrator) Close() {
+	if or.batch != nil {
+		or.batch.Close()
+		or.batch = nil
 	}
-	if o.broadcast != nil {
-		o.broadcast.Close()
-		o.broadcast = nil
+	if or.broadcast != nil {
+		or.broadcast.Close()
+		or.broadcast = nil
 	}
 }
 
-func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
+func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
-	if o.database == nil {
-		if o.database, err = o.initDatabasePlugin(ctx); err != nil {
+	if or.database == nil {
+		if or.database, err = or.initDatabasePlugin(ctx); err != nil {
 			return err
 		}
 	}
 
-	if o.blockchain == nil {
-		if o.blockchain, err = o.initBlockchainPlugin(ctx); err != nil {
+	if or.blockchain == nil {
+		if or.blockchain, err = or.initBlockchainPlugin(ctx); err != nil {
 			return err
 		}
 	}
 
-	if o.publicstorage == nil {
-		if o.publicstorage, err = o.initPublicStoragePlugin(ctx); err != nil {
+	if or.publicstorage == nil {
+		if or.publicstorage, err = or.initPublicStoragePlugin(ctx); err != nil {
 			return err
 		}
 	}
@@ -147,36 +150,36 @@ func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
 	return nil
 }
 
-func (o *orchestrator) initComponents(ctx context.Context) (err error) {
-	if o.events == nil {
-		o.events = events.NewEventManager(ctx, o.publicstorage, o.database)
+func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	if or.events == nil {
+		or.events = events.NewEventManager(ctx, or.publicstorage, or.database)
 	}
 
-	if o.batch == nil {
-		o.batch, err = batching.NewBatchManager(ctx, o.database)
+	if or.batch == nil {
+		or.batch, err = batch.NewBatchManager(ctx, or.database)
 		if err != nil {
 			return err
 		}
 	}
 
-	if o.broadcast == nil {
-		if o.broadcast, err = broadcast.NewBroadcastManager(ctx, o.database, o.blockchain, o.publicstorage, o.batch); err != nil {
+	if or.broadcast == nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
+func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
 	pluginType := config.GetString(config.BlockchainType)
 	plugin, err := blockchainfactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), o)
+	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), or)
 	if err == nil {
 		suppliedIdentity := config.GetString(config.NodeIdentity)
-		o.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
+		or.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
 		if err != nil {
 			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIdentity)
 		}
@@ -184,27 +187,27 @@ func (o *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plu
 	return plugin, err
 }
 
-func (o *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
+func (or *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
 	pluginType := config.GetString(config.DatabaseType)
 	plugin, err := databasefactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), o)
+	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), or)
 	return plugin, err
 }
 
-func (o *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
+func (or *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
 	pluginType := config.GetString(config.PublicStorageType)
 	plugin, err := publicstoragefactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
-	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), o)
+	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), or)
 	return plugin, err
 }
 
-func (o *orchestrator) initNamespaces(ctx context.Context) error {
+func (or *orchestrator) initNamespaces(ctx context.Context) error {
 	defaultNS := config.GetString(config.NamespacesDefault)
 	predefined := config.GetObjectArray(config.NamespacesPredefined)
 	foundDefault := false
@@ -217,7 +220,7 @@ func (o *orchestrator) initNamespaces(ctx context.Context) error {
 		}
 		foundDefault = foundDefault || name == defaultNS
 
-		ns, err := o.database.GetNamespace(ctx, name)
+		ns, err := or.database.GetNamespace(ctx, name)
 		if err != nil {
 			return err
 		}
@@ -236,7 +239,7 @@ func (o *orchestrator) initNamespaces(ctx context.Context) error {
 			ns.Description = description
 		}
 		if updated {
-			if err := o.database.UpsertNamespace(ctx, ns); err != nil {
+			if err := or.database.UpsertNamespace(ctx, ns); err != nil {
 				return err
 			}
 		}

@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kaleido-io/firefly/internal/batching"
+	"github.com/kaleido-io/firefly/internal/batch"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
@@ -38,31 +38,31 @@ type broadcastManager struct {
 	database      database.Plugin
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
-	batch         batching.BatchManager
+	batch         batch.BatchManager
 }
 
-func NewBroadcastManager(ctx context.Context, database database.Plugin, blockchain blockchain.Plugin, publicstorage publicstorage.Plugin, batch batching.BatchManager) (BroadcastManager, error) {
-	if database == nil || blockchain == nil || batch == nil || publicstorage == nil {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.BatchManager) (BroadcastManager, error) {
+	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	b := &broadcastManager{
+	bm := &broadcastManager{
 		ctx:           ctx,
-		database:      database,
-		blockchain:    blockchain,
-		publicstorage: publicstorage,
-		batch:         batch,
+		database:      di,
+		blockchain:    bi,
+		publicstorage: pi,
+		batch:         ba,
 	}
-	bo := batching.BatchOptions{
+	bo := batch.BatchOptions{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
-	batch.RegisterDispatcher(fftypes.MessageTypeBroadcast, b.dispatchBatch, bo)
-	batch.RegisterDispatcher(fftypes.MessageTypeDefinition, b.dispatchBatch, bo)
-	return b, nil
+	ba.RegisterDispatcher(fftypes.MessageTypeBroadcast, bm.dispatchBatch, bo)
+	ba.RegisterDispatcher(fftypes.MessageTypeDefinition, bm.dispatchBatch, bo)
+	return bm, nil
 }
 
-func (b *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -73,17 +73,17 @@ func (b *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Bat
 	// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash).
 	// The payload ref will be persisted back to the batch, as well as being used in the TX
 	var publicstorageID string
-	batch.PayloadRef, publicstorageID, err = b.publicstorage.PublishData(ctx, bytes.NewReader(payload))
+	batch.PayloadRef, publicstorageID, err = bm.publicstorage.PublishData(ctx, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
 
-	return b.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return b.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, publicstorageID)
+	return bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		return bm.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, publicstorageID)
 	})
 }
 
-func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
 	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
@@ -97,19 +97,19 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 		Status:  fftypes.TransactionStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err := b.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	err := bm.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
 
 	// Update the batch to store the payloadRef
-	err = b.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef))
+	err = bm.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef))
 	if err != nil {
 		return err
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := b.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
@@ -123,25 +123,25 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 
 		// The pending blockchain transaction
 		op := fftypes.NewMessageOp(
-			b.blockchain,
+			bm.blockchain,
 			blockchainTrackingID,
 			msg,
 			fftypes.OpTypeBlockchainBatchPin,
 			fftypes.OpStatusPending,
 			"")
-		if err := b.database.UpsertOperation(ctx, op); err != nil {
+		if err := bm.database.UpsertOperation(ctx, op); err != nil {
 			return err
 		}
 
 		// The completed PublicStorage upload
 		op = fftypes.NewMessageOp(
-			b.publicstorage,
+			bm.publicstorage,
 			publicstorageID,
 			msg,
 			fftypes.OpTypePublicStorageBatchBroadcast,
 			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 			"")
-		if err := b.database.UpsertOperation(ctx, op); err != nil {
+		if err := bm.database.UpsertOperation(ctx, op); err != nil {
 			return err
 		}
 	}
@@ -149,7 +149,7 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 	return nil
 }
 
-func (b *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {
@@ -157,7 +157,7 @@ func (b *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Me
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return b.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
+	return bm.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
 }
 
-func (b *broadcastManager) Close() {}
+func (bm *broadcastManager) Close() {}

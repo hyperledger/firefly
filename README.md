@@ -185,12 +185,17 @@ It depends on the following Kaleido services:
   │       │   │               │  - ...
   │       │   └───────────────┘
   │       │
-  │       │   ┌───────────────┐  - Builds batches of 100s messages for efficient pinning
-  │       ├───┤ batch     [Ba]│    * Aggregates messages and data, with rolled up hashes for pinning
-  │       │   │ manager       │    * Pluggable dispatchers
-  │       │   │               │  - Database decoupled from main-line API processing
-  │       │   └───────────────┘    * See architecture diagrams for more info on active/active sequencing
-  │       │
+  │       │   ┌───────────────┐  - Aggregates messages and data, with rolled up hashes for pinning
+  │       ├───┤ batch     [Ba]│    * Pluggable dispatchers
+  │       │   │ manager       │  - Database decoupled from main-line API processing
+  │       │   │               │    * See architecture diagrams for more info on active/active sequencing
+  │       │   └──────┬────────┘  - Manages creation of batch processor instances
+  │       │          │
+  │       │   ┌──────┴────────┐  - Short lived agent spun up to assemble batches on demand
+  │       ├───┤ batch     [Bp]│    * Coupled to an author+type of messages
+  │       │   │ processor     │  - Builds batches of 100s messages for efficient pinning
+  │       │   │               │    * Aggregates messages and data, with rolled up hashes for pinning
+  │       │   └───────────────┘  - Shuts down automatically after a configurable inactivity period
   │       ... more TBD
   │
 Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runtime (if required)

@@ -1,18 +1,18 @@
 // Copyright © 2021 Kaleido, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
+// you may not use this file except in comdiliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package batching
+package batch
 
 import (
 	"context"
@@ -31,11 +31,11 @@ import (
 )
 
 func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
-	mp := &databasemocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
 	bp := newBatchProcessor(context.Background(), &batchProcessorConf{
 		namespace:          "ns1",
 		author:             "0x12345",
-		persitence:         mp,
+		persitence:         mdi,
 		dispatch:           dispatch,
 		processorQuiescing: func() {},
 		BatchOptions: BatchOptions{
@@ -47,7 +47,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		InitialDelay: 1 * time.Microsecond,
 		MaximumDelay: 1 * time.Microsecond,
 	})
-	return mp, bp
+	return mdi, bp
 }
 
 func TestUnfilledBatch(t *testing.T) {
@@ -57,13 +57,13 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
 	})
-	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
 	work := make([]*batchWork, 5)
@@ -105,17 +105,17 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
 	})
 	bp.conf.BatchTimeout = 1 * time.Hour // Must fill the batch
-	mockUpsert := mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything)
+	mockUpsert := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything)
 	mockUpsert.ReturnArguments = mock.Arguments{nil}
 	unblockPersistence := make(chan time.Time)
 	mockUpsert.WaitFor = unblockPersistence
-	mp.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
 	work := make([]*batchWork, 10)
@@ -152,7 +152,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mockUpsert.WaitFor = nil
 	unblockPersistence <- time.Now() // First call to write the first entry in the batch
 
-	// Wait for completion
+	// Wait for comdiletion
 	wg.Wait()
 
 	// Check we got all the messages in a single batch
@@ -176,12 +176,12 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	mp, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchTimeout = 100 * time.Second
-	mup := mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mup := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	waitForCall := make(chan bool)
 	mup.RunFn = func(a mock.Arguments) {
 		waitForCall <- true
