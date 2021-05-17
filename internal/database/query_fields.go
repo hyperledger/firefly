@@ -166,4 +166,4 @@ func (f *timeField) Value() (driver.Value, error) {
 	}
 	return f.t.UnixNano(), nil
 }
-func (f *timeField) getSerialization() FieldSerialization { return &timeField{} }
+func (f *TimeField) getSerialization() FieldSerialization { return &timeField{} }
