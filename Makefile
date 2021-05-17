@@ -19,7 +19,7 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/database          --name Events           --output mocks/databasemocks      --outpkg databasemocks
 		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Plugin           --output mocks/publicstoragemocks --outpkg publicstoragemocks
 		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Events           --output mocks/publicstoragemocks --outpkg publicstoragemocks
-		$(MOCKERY) --case underscore --dir internal/aggregator        --name Aggregator       --output mocks/aggregatormocks    --outpkg aggregatormocks
+		$(MOCKERY) --case underscore --dir internal/events            --name EventManager     --output mocks/eventmocks         --outpkg eventmocks
 		$(MOCKERY) --case underscore --dir internal/batching          --name BatchManager     --output mocks/batchingmocks      --outpkg batchingmocks
 		$(MOCKERY) --case underscore --dir internal/broadcast         --name BroadcastManager --output mocks/broadcastmocks     --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/orchestrator      --name Orchestrator     --output mocks/orchestratormocks  --outpkg orchestratormocks

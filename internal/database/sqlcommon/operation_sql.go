@@ -33,7 +33,6 @@ var (
 		"msg_id",
 		"data_id",
 		"optype",
-		"opdir",
 		"opstatus",
 		"recipient",
 		"plugin",
@@ -46,7 +45,6 @@ var (
 		"message":   "msg_id",
 		"data":      "data_id",
 		"type":      "optype",
-		"direction": "opdir",
 		"status":    "opstatus",
 		"backendid": "backend_id",
 	}
@@ -81,7 +79,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("msg_id", operation.Message).
 				Set("data_id", operation.Data).
 				Set("optype", operation.Type).
-				Set("opdir", operation.Direction).
 				Set("opstatus", operation.Status).
 				Set("recipient", operation.Recipient).
 				Set("plugin", operation.Plugin).
@@ -103,7 +100,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Message,
 					operation.Data,
 					string(operation.Type),
-					string(operation.Direction),
 					string(operation.Status),
 					operation.Recipient,
 					operation.Plugin,
@@ -128,7 +124,6 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Message,
 		&op.Data,
 		&op.Type,
-		&op.Direction,
 		&op.Status,
 		&op.Recipient,
 		&op.Plugin,

@@ -26,13 +26,6 @@ const (
 	OpTypePublicStorageBatchBroadcast OpType = "publicstorage_batch_broadcast"
 )
 
-type OpDirection string
-
-const (
-	OpDirectionInbound  OpDirection = "inbound"
-	OpDirectionOutbound OpDirection = "outbound"
-)
-
 type OpStatus string
 
 const (
@@ -45,7 +38,7 @@ type Named interface {
 	Name() string
 }
 
-func NewMessageOp(plugin Named, backendID string, msg *Message, opType OpType, opDir OpDirection, opStatus OpStatus, recipient string) *Operation {
+func NewMessageOp(plugin Named, backendID string, msg *Message, opType OpType, opStatus OpStatus, recipient string) *Operation {
 	return &Operation{
 		ID:        NewUUID(),
 		Plugin:    plugin.Name(),
@@ -54,14 +47,13 @@ func NewMessageOp(plugin Named, backendID string, msg *Message, opType OpType, o
 		Message:   msg.Header.ID,
 		Data:      nil,
 		Type:      opType,
-		Direction: opDir,
 		Recipient: recipient,
 		Status:    opStatus,
 		Created:   Now(),
 	}
 }
 
-func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int, opType OpType, opDir OpDirection, opStatus OpStatus, recipient string) *Operation {
+func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int, opType OpType, opStatus OpStatus, recipient string) *Operation {
 	return &Operation{
 		ID:        NewUUID(),
 		Plugin:    plugin.Name(),
@@ -70,7 +62,6 @@ func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int,
 		Message:   msg.Header.ID,
 		Data:      msg.Data[dataIdx].ID,
 		Type:      opType,
-		Direction: opDir,
 		Recipient: recipient,
 		Status:    opStatus,
 		Created:   Now(),
@@ -78,17 +69,16 @@ func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int,
 }
 
 type Operation struct {
-	ID        *uuid.UUID  `json:"id"`
-	Namespace string      `json:"namespace,omitempty"`
-	Message   *uuid.UUID  `json:"message"`
-	Data      *uuid.UUID  `json:"data,omitempty"`
-	Type      OpType      `json:"type"`
-	Direction OpDirection `json:"direction"`
-	Recipient string      `json:"recipient,omitempty"`
-	Status    OpStatus    `json:"status"`
-	Error     string      `json:"error,omitempty"`
-	Plugin    string      `json:"plugin"`
-	BackendID string      `json:"backendId"`
-	Created   *FFTime     `json:"created,omitempty"`
-	Updated   *FFTime     `json:"updated,omitempty"`
+	ID        *uuid.UUID `json:"id"`
+	Namespace string     `json:"namespace,omitempty"`
+	Message   *uuid.UUID `json:"message"`
+	Data      *uuid.UUID `json:"data,omitempty"`
+	Type      OpType     `json:"type"`
+	Recipient string     `json:"recipient,omitempty"`
+	Status    OpStatus   `json:"status"`
+	Error     string     `json:"error,omitempty"`
+	Plugin    string     `json:"plugin"`
+	BackendID string     `json:"backendId"`
+	Created   *FFTime    `json:"created,omitempty"`
+	Updated   *FFTime    `json:"updated,omitempty"`
 }

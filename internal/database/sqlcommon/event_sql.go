@@ -81,6 +81,11 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 		); err != nil {
 			return err
 		}
+
+		s.postCommitEvent(ctx, tx, func() {
+			s.events.EventCreated(event.ID)
+		})
+
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

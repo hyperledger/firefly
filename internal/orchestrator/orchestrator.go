@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kaleido-io/firefly/internal/aggregator"
 	"github.com/kaleido-io/firefly/internal/batching"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
@@ -26,6 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/databasefactory"
+	"github.com/kaleido-io/firefly/internal/events"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -71,7 +71,7 @@ type orchestrator struct {
 	database      database.Plugin
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
-	aggregator    aggregator.Aggregator
+	events        events.EventManager
 	batch         batching.BatchManager
 	broadcast     broadcast.BroadcastManager
 	nodeIdentity  string
@@ -143,8 +143,8 @@ func (o *orchestrator) initPlugins(ctx context.Context) (err error) {
 }
 
 func (o *orchestrator) initComponents(ctx context.Context) (err error) {
-	if o.aggregator == nil {
-		o.aggregator = aggregator.NewAggregator(ctx, o.publicstorage, o.database)
+	if o.events == nil {
+		o.events = events.NewEventManager(ctx, o.publicstorage, o.database)
 	}
 
 	if o.batch == nil {

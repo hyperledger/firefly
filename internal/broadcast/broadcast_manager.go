@@ -127,7 +127,6 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 			blockchainTrackingID,
 			msg,
 			fftypes.OpTypeBlockchainBatchPin,
-			fftypes.OpDirectionOutbound,
 			fftypes.OpStatusPending,
 			"")
 		if err := b.database.UpsertOperation(ctx, op); err != nil {
@@ -140,7 +139,6 @@ func (b *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftyp
 			publicstorageID,
 			msg,
 			fftypes.OpTypePublicStorageBatchBroadcast,
-			fftypes.OpDirectionOutbound,
 			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 			"")
 		if err := b.database.UpsertOperation(ctx, op); err != nil {

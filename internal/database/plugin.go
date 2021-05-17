@@ -225,7 +225,7 @@ type PeristenceInterface interface {
 //
 type Events interface {
 	MessageCreated(id *uuid.UUID)
-	MessageUpdated(id *uuid.UUID)
+	EventCreated(id *uuid.UUID)
 }
 
 // No capabilities currently defined for the database interface - all features are mandatory
@@ -320,7 +320,6 @@ var OperationQueryFactory = &queryFields{
 	"message":   &StringField{},
 	"data":      &StringField{},
 	"type":      &StringField{},
-	"direction": &StringField{},
 	"recipient": &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},

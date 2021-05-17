@@ -31,7 +31,7 @@ func TestNewPendingMessageOp(t *testing.T) {
 			Namespace: "ns1",
 		},
 	}
-	op := NewMessageOp(&fakePlugin{}, "testBackend", msg, OpTypePublicStorageBatchBroadcast, OpDirectionOutbound, OpStatusPending, "recipient")
+	op := NewMessageOp(&fakePlugin{}, "testBackend", msg, OpTypePublicStorageBatchBroadcast, OpStatusPending, "recipient")
 	assert.Equal(t, Operation{
 		ID:        op.ID,
 		Plugin:    "fake",
@@ -40,7 +40,6 @@ func TestNewPendingMessageOp(t *testing.T) {
 		Message:   msg.Header.ID,
 		Data:      nil,
 		Type:      OpTypePublicStorageBatchBroadcast,
-		Direction: OpDirectionOutbound,
 		Recipient: "recipient",
 		Status:    OpStatusPending,
 		Created:   op.Created,
@@ -57,7 +56,7 @@ func TestMessageDataOp(t *testing.T) {
 			{ID: NewUUID(), Hash: NewRandB32()},
 		},
 	}
-	op := NewMessageDataOp(&fakePlugin{}, "testBackend", msg, 0, OpTypePublicStorageBatchBroadcast, OpDirectionOutbound, OpStatusSucceeded, "recipient")
+	op := NewMessageDataOp(&fakePlugin{}, "testBackend", msg, 0, OpTypePublicStorageBatchBroadcast, OpStatusSucceeded, "recipient")
 	assert.Equal(t, Operation{
 		ID:        op.ID,
 		Plugin:    "fake",
@@ -66,7 +65,6 @@ func TestMessageDataOp(t *testing.T) {
 		Message:   msg.Header.ID,
 		Data:      msg.Data[0].ID,
 		Type:      OpTypePublicStorageBatchBroadcast,
-		Direction: OpDirectionOutbound,
 		Recipient: "recipient",
 		Status:    OpStatusSucceeded,
 		Created:   op.Created,

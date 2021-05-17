@@ -42,7 +42,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Type:      fftypes.OpTypeBlockchainBatchPin,
 		Message:   fftypes.NewUUID(),
-		Direction: fftypes.OpDirectionInbound,
 		Status:    fftypes.OpStatusPending,
 		Created:   fftypes.Now(),
 	}
@@ -65,7 +64,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Type:      fftypes.OpTypeBlockchainBatchPin,
 		Message:   fftypes.NewUUID(),
 		Data:      fftypes.NewUUID(),
-		Direction: fftypes.OpDirectionOutbound,
 		Status:    fftypes.OpStatusFailed,
 		Recipient: "sally",
 		Plugin:    "ethereum",
@@ -92,7 +90,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Eq("message", operationUpdated.Message),
 		fb.Eq("data", operationUpdated.Data),
 		fb.Eq("type", operationUpdated.Type),
-		fb.Eq("direction", operationUpdated.Direction),
 		fb.Eq("recipient", operationUpdated.Recipient),
 		fb.Eq("status", operationUpdated.Status),
 		fb.Eq("error", operationUpdated.Error),

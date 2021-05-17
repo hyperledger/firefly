@@ -41,6 +41,11 @@ type SQLCommonOptions struct {
 	SequenceField string
 }
 
+type txWrapper struct {
+	sqlTX      *sql.Tx
+	postCommit []func()
+}
+
 func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, events database.Events, capabilities *database.Capabilities, options *SQLCommonOptions) error {
 	s.db = db
 	s.capabilities = capabilities
@@ -69,18 +74,18 @@ func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context)
 	return s.commitTx(ctx, tx, false /* we _are_ the auto-committer */)
 }
 
-func getTXFromContext(ctx context.Context) *sql.Tx {
+func getTXFromContext(ctx context.Context) *txWrapper {
 	ctxKey := txContextKey{}
 	txi := ctx.Value(ctxKey)
 	if txi != nil {
-		if tx, ok := txi.(*sql.Tx); ok {
+		if tx, ok := txi.(*txWrapper); ok {
 			return tx
 		}
 	}
 	return nil
 }
 
-func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx *sql.Tx, autoCommit bool, err error) {
+func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx *txWrapper, autoCommit bool, err error) {
 
 	tx = getTXFromContext(ctx)
 	if tx != nil {
@@ -92,16 +97,19 @@ func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx 
 	l := log.L(ctx).WithField("dbtx", fftypes.ShortID())
 	ctx1 = log.WithLogger(ctx, l)
 	l.Debugf("SQL-> begin")
-	tx, err = s.db.Begin()
+	sqlTX, err := s.db.Begin()
 	if err != nil {
 		return ctx1, nil, false, i18n.WrapError(ctx1, err, i18n.MsgDBBeginFailed)
+	}
+	tx = &txWrapper{
+		sqlTX: sqlTX,
 	}
 	ctx1 = context.WithValue(ctx, txContextKey{}, tx)
 	l.Debugf("SQL<- begin")
 	return ctx1, tx, false, err
 }
 
-func (s *SQLCommon) queryTx(ctx context.Context, tx *sql.Tx, q sq.SelectBuilder) (*sql.Rows, error) {
+func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuilder) (*sql.Rows, error) {
 	if tx == nil {
 		// If there is a transaction in the context, we should use it to provide consistency
 		// in the read operations (read after insert for example).
@@ -117,7 +125,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *sql.Tx, q sq.SelectBuilder)
 	l.Tracef(`SQL-> query args: %+v`, args)
 	var rows *sql.Rows
 	if tx != nil {
-		rows, err = tx.QueryContext(ctx, sqlQuery, args...)
+		rows, err = tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
 	} else {
 		rows, err = s.db.QueryContext(ctx, sqlQuery, args...)
 	}
@@ -133,7 +141,7 @@ func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, e
 	return s.queryTx(ctx, nil, q)
 }
 
-func (s *SQLCommon) insertTx(ctx context.Context, tx *sql.Tx, q sq.InsertBuilder) (sql.Result, error) {
+func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder) (sql.Result, error) {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
@@ -141,7 +149,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *sql.Tx, q sq.InsertBuilder
 	}
 	l.Debugf(`SQL-> insert: %s`, sqlQuery)
 	l.Tracef(`SQL-> insert args: %+v`, args)
-	res, err := tx.ExecContext(ctx, sqlQuery, args...)
+	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
@@ -151,7 +159,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *sql.Tx, q sq.InsertBuilder
 	return res, nil
 }
 
-func (s *SQLCommon) deleteTx(ctx context.Context, tx *sql.Tx, q sq.DeleteBuilder) (sql.Result, error) {
+func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) (sql.Result, error) {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
@@ -159,7 +167,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *sql.Tx, q sq.DeleteBuilder
 	}
 	l.Debugf(`SQL-> delete: %s`, sqlQuery)
 	l.Tracef(`SQL-> delete args: %+v`, args)
-	res, err := tx.ExecContext(ctx, sqlQuery, args...)
+	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBDeleteFailed)
@@ -169,7 +177,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *sql.Tx, q sq.DeleteBuilder
 	return res, nil
 }
 
-func (s *SQLCommon) updateTx(ctx context.Context, tx *sql.Tx, q sq.UpdateBuilder) (sql.Result, error) {
+func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) (sql.Result, error) {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
@@ -177,7 +185,7 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *sql.Tx, q sq.UpdateBuilder
 	}
 	l.Debugf(`SQL-> update: %s`, sqlQuery)
 	l.Tracef(`SQL-> update args: %+v`, args)
-	res, err := tx.ExecContext(ctx, sqlQuery, args...)
+	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL update failed: %s sql=[ %s ]`, err, sqlQuery)
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
@@ -187,14 +195,18 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *sql.Tx, q sq.UpdateBuilder
 	return res, nil
 }
 
+func (s *SQLCommon) postCommitEvent(ctx context.Context, tx *txWrapper, fn func()) {
+	tx.postCommit = append(tx.postCommit, fn)
+}
+
 // rollbackTx be safely called as a defer, as it is a cheap no-op if the transaction is complete
-func (s *SQLCommon) rollbackTx(ctx context.Context, tx *sql.Tx, autoCommit bool) {
+func (s *SQLCommon) rollbackTx(ctx context.Context, tx *txWrapper, autoCommit bool) {
 	if autoCommit {
 		// We're inside of a wide transaction boundary with an auto-commit
 		return
 	}
 
-	err := tx.Rollback()
+	err := tx.sqlTX.Rollback()
 	if err == nil {
 		log.L(ctx).Warnf("SQL! transaction rollback")
 	}
@@ -203,7 +215,7 @@ func (s *SQLCommon) rollbackTx(ctx context.Context, tx *sql.Tx, autoCommit bool)
 	}
 }
 
-func (s *SQLCommon) commitTx(ctx context.Context, tx *sql.Tx, autoCommit bool) error {
+func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool) error {
 	if autoCommit {
 		// We're inside of a wide transaction boundary with an auto-commit
 		return nil
@@ -211,11 +223,19 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *sql.Tx, autoCommit bool) e
 
 	l := log.L(ctx)
 	l.Debugf(`SQL-> commit`)
-	err := tx.Commit()
+	err := tx.sqlTX.Commit()
 	if err != nil {
 		l.Errorf(`SQL commit failed: %s`, err)
 		return i18n.WrapError(ctx, err, i18n.MsgDBCommitFailed)
 	}
 	l.Debugf(`SQL<- commit`)
+
+	// Emit any post commit events (these aren't currently allowed to cause errors)
+	for i, pce := range tx.postCommit {
+		l.Debugf(`-> post commit event %d`, i)
+		pce()
+		l.Debugf(`<- post commit event %d`, i)
+	}
+
 	return nil
 }
