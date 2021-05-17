@@ -275,6 +275,30 @@ func TestWSSendFail(t *testing.T) {
 		wsconn:   wsconn,
 	}
 	w.send <- []byte(`wakes sender`)
-	w.sendLoop()
+	w.sendLoop(make(chan struct{}))
+	<-w.sendDone
+}
+
+func TestWSSendInstructClose(t *testing.T) {
+
+	wsServer := wsserver.NewWebSocketServer(context.Background())
+	svr := httptest.NewServer(wsServer.Handler())
+	defer svr.Close()
+	defer wsServer.Close()
+
+	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
+	assert.NoError(t, err)
+	wsconn.Close()
+	w := &wsClient{
+		ctx:      context.Background(),
+		receive:  make(chan []byte),
+		send:     make(chan []byte, 1),
+		closing:  make(chan struct{}),
+		sendDone: make(chan []byte, 1),
+		wsconn:   wsconn,
+	}
+	receiverClosed := make(chan struct{})
+	close(receiverClosed)
+	w.sendLoop(receiverClosed)
 	<-w.sendDone
 }

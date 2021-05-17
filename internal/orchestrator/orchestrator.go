@@ -58,12 +58,17 @@ type Orchestrator interface {
 	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
+	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
 	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
 	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
 	GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
 	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
+	GetOperationById(ctx context.Context, ns, id string) (*fftypes.Operation, error)
+	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error)
+	GetEventById(ctx context.Context, ns, id string) (*fftypes.Event, error)
+	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error)
 }
 
 type orchestrator struct {

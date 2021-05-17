@@ -30,6 +30,7 @@ var (
 	eventColumns = []string{
 		"id",
 		"etype",
+		"namespace",
 		"ref",
 	}
 	eventFilterTypeMap = map[string]string{
@@ -62,6 +63,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("events").
 				Set("etype", string(event.Type)).
+				Set("namespace", string(event.Namespace)).
 				Set("ref", event.Reference).
 				Where(sq.Eq{"id": event.ID}),
 		); err != nil {
@@ -76,6 +78,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 				Values(
 					event.ID,
 					string(event.Type),
+					event.Namespace,
 					event.Reference,
 				),
 		); err != nil {
@@ -96,6 +99,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 	err := row.Scan(
 		&event.ID,
 		&event.Type,
+		&event.Namespace,
 		&event.Reference,
 		// Must be added to the list of columns in all selects
 		&event.Sequence,

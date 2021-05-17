@@ -44,6 +44,7 @@ func TestEventE2EWithDB(t *testing.T) {
 	eventId := uuid.New()
 	event := &fftypes.Event{
 		ID:        &eventId,
+		Namespace: "ns1",
 		Type:      fftypes.EventTypeMessageConfirmed,
 		Reference: fftypes.NewUUID(),
 	}
@@ -64,6 +65,7 @@ func TestEventE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	eventUpdated := &fftypes.Event{
 		ID:        &eventId,
+		Namespace: "ns1",
 		Type:      fftypes.EventTypeMessageConfirmed,
 		Reference: fftypes.NewUUID(),
 	}

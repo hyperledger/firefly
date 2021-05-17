@@ -16,6 +16,7 @@ package orchestrator
 
 import (
 	"context"
+	"database/sql/driver"
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/database"
@@ -23,48 +24,77 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+func (e *orchestrator) verifyNamespace(ctx context.Context, ns string) error {
+	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
+}
+
+func (e *orchestrator) verifyIdAndNamespace(ctx context.Context, ns, id string) (*uuid.UUID, error) {
+	u, err := uuid.Parse(id)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+	}
+	err = e.verifyNamespace(ctx, ns)
+	return &u, err
+}
+
 func (e *orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error) {
 	return e.database.GetNamespace(ctx, ns)
 }
 
 func (e *orchestrator) GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
-	u, err := uuid.Parse(id)
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
-	return e.database.GetTransactionById(ctx, &u)
+	return e.database.GetTransactionById(ctx, u)
 }
 
 func (e *orchestrator) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
-	u, err := uuid.Parse(id)
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
-	return e.database.GetMessageById(ctx, &u)
+	return e.database.GetMessageById(ctx, u)
 }
 
 func (e *orchestrator) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
-	u, err := uuid.Parse(id)
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
-	return e.database.GetBatchById(ctx, &u)
+	return e.database.GetBatchById(ctx, u)
 }
 
 func (e *orchestrator) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
-	u, err := uuid.Parse(id)
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
-	return e.database.GetDataById(ctx, &u)
+	return e.database.GetDataById(ctx, u)
 }
 
 func (e *orchestrator) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
-	u, err := uuid.Parse(id)
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
-	return e.database.GetDataDefinitionById(ctx, &u)
+	return e.database.GetDataDefinitionById(ctx, u)
+}
+
+func (e *orchestrator) GetOperationById(ctx context.Context, ns, id string) (*fftypes.Operation, error) {
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return e.database.GetOperationById(ctx, u)
+}
+
+func (e *orchestrator) GetEventById(ctx context.Context, ns, id string) (*fftypes.Event, error) {
+	u, err := e.verifyIdAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return e.database.GetEventById(ctx, u)
 }
 
 func (e *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {
@@ -91,6 +121,23 @@ func (e *orchestrator) GetMessageOperations(ctx context.Context, ns, id string, 
 	return e.database.GetOperations(ctx, filter)
 }
 
+func (e *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
+	msg, err := e.GetMessageById(ctx, ns, id)
+	if err != nil || msg == nil {
+		return nil, err
+	}
+	// Events can refer to the message, or any data in the message
+	// So scope the event down to those referred UUIDs, in addition to any and conditions passed in
+	referencedIds := make([]driver.Value, len(msg.Data)+1)
+	referencedIds[0] = msg.Header.ID
+	for i, dataRef := range msg.Data {
+		referencedIds[i+1] = dataRef.ID
+	}
+	filter = filter.Condition(filter.Builder().In("reference", referencedIds))
+	// Execute the filter
+	return e.database.GetEvents(ctx, filter)
+}
+
 func (e *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetBatches(ctx, filter)
@@ -104,4 +151,14 @@ func (e *orchestrator) GetData(ctx context.Context, ns string, filter database.A
 func (e *orchestrator) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetDataDefinitions(ctx, filter)
+}
+
+func (e *orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.database.GetOperations(ctx, filter)
+}
+
+func (e *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error) {
+	filter = e.scopeNS(ns, filter)
+	return e.database.GetEvents(ctx, filter)
 }

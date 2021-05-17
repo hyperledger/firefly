@@ -345,6 +345,7 @@ var SubscriptionQueryFactory = &queryFields{
 var EventQueryFactory = &queryFields{
 	"id":        &StringField{},
 	"type":      &StringField{},
+	"namespace": &StringField{},
 	"reference": &StringField{},
 	"sequence":  &Int64Field{},
 }

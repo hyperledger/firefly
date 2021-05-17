@@ -29,6 +29,8 @@ import (
 	"github.com/kaleido-io/firefly/internal/orchestrator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	_ "net/http/pprof"
 )
 
 var sigs = make(chan os.Signal, 1)

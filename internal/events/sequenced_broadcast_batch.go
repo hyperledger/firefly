@@ -34,6 +34,10 @@ import (
 // sequence, and also persist all the data.
 func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 
+	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxId, author)
+	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxId, author) }()
+
+	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
 	var batchID uuid.UUID
 	copy(batchID[:], batch.BatchID[0:16])
 
@@ -188,6 +192,18 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 		return err // a peristence failure here is considered retryable (so returned)
 	}
 
+	// Persist a data arrival event
+	event := &fftypes.Event{
+		ID:        fftypes.NewUUID(),
+		Type:      fftypes.EventTypeDataArrived,
+		Namespace: data.Namespace,
+		Reference: data.ID,
+	}
+	if err = em.database.UpsertEvent(ctx, event); err != nil {
+		l.Errorf("Failed to insert %s event for data %d in batch '%s': %s", event.Type, i, batch.ID, err)
+		return err // a peristence failure here is considered retryable (so returned)
+	}
+
 	return nil
 }
 
@@ -217,6 +233,18 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 			return nil // This is not retryable. skip this data entry
 		}
 		l.Errorf("Failed to insert message entry %d in batch '%s': %s", i, batch.ID, err)
+		return err // a peristence failure here is considered retryable (so returned)
+	}
+
+	// Persist a message broadcast event
+	event := &fftypes.Event{
+		ID:        fftypes.NewUUID(),
+		Type:      fftypes.EventTypeMessageBroadcast,
+		Namespace: msg.Header.Namespace,
+		Reference: msg.Header.ID,
+	}
+	if err = em.database.UpsertEvent(ctx, event); err != nil {
+		l.Errorf("Failed to insert %s event for message %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
 	}
 
