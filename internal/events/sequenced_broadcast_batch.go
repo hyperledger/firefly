@@ -56,6 +56,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxId)
 		return nil // log and swallow unprocessable data
 	}
+	body.Close()
 
 	// At this point the batch is parsed, so any errors in processing need to be considered as:
 	// 1) Retryable - any transient error returned by processBatch is retried indefinitely
@@ -110,7 +111,11 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Get any existing record for the batch transaction record
-	tx, _ := em.database.GetTransactionById(ctx, batch.Payload.TX.ID)
+	tx, err := em.database.GetTransactionById(ctx, batch.Payload.TX.ID)
+	if err != nil {
+		l.Errorf("Failed to query transaction '%s': %s", batch.Payload.TX.ID, err)
+		return err // a peristence failure here is considered retryable (so returned)
+	}
 	if tx == nil {
 		// We're the first to write the transaction record on this node
 		tx = &fftypes.Transaction{

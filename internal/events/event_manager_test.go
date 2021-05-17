@@ -24,6 +24,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func newTestEventManager() (em *eventManager, cancel func()) {
+	ctx, cancel := context.WithCancel(context.Background())
+	mpi := &publicstoragemocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
+	em = NewEventManager(ctx, mpi, mdi).(*eventManager)
+	return
+}
+
 func TestStartStop(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mpi := &publicstoragemocks.Plugin{}
