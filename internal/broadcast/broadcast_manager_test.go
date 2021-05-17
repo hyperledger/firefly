@@ -54,7 +54,8 @@ func TestBroadcastMessageGood(t *testing.T) {
 	err = bm.BroadcastMessage(context.Background(), msg)
 	assert.NoError(t, err)
 
-	bm.Close()
+	bm.Start()
+	bm.WaitStop()
 }
 
 func TestBroadcastMessageBad(t *testing.T) {

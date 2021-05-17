@@ -19,18 +19,15 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/databasemocks"
-	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStartStop(t *testing.T) {
+func TestShutdownOnCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	mpi := &publicstoragemocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	em := NewEventManager(ctx, mpi, mdi)
-	assert.NoError(t, em.Start())
-	em.NewEvents() <- fftypes.NewUUID()
+	ag := newAggregator(ctx)
+	err := ag.start()
+	assert.NoError(t, err)
+	ag.newEvents <- fftypes.NewUUID()
 	cancel()
-	em.WaitStop()
+	<-ag.closed
 }

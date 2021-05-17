@@ -24,22 +24,30 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestE2EDispatch(t *testing.T) {
+	log.SetLevel("debug")
 
 	mdi := &databasemocks.Plugin{}
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
+	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
 	handler := func(ctx context.Context, b *fftypes.Batch) error {
+		_, ok := <-readyForDispatch
+		if !ok {
+			return nil
+		}
 		waitForDispatch <- b
 		return nil
 	}
-	bmi, _ := NewBatchManager(context.Background(), mdi)
+	ctx, cancel := context.WithCancel(context.Background())
+	bmi, _ := NewBatchManager(ctx, mdi)
 	bm := bmi.(*batchManager)
 
 	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, BatchOptions{
@@ -90,15 +98,15 @@ func TestE2EDispatch(t *testing.T) {
 
 	bm.NewMessages() <- msg.Header.ID
 
+	readyForDispatch <- true
 	b := <-waitForDispatch
 	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
 	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
 
 	// Wait until everything closes
-	bm.Close()
-	for len(bm.dispatchers[fftypes.MessageTypeBroadcast].processors) > 0 {
-		time.Sleep(1 * time.Microsecond)
-	}
+	close(readyForDispatch)
+	cancel()
+	bm.WaitStop()
 
 }
 

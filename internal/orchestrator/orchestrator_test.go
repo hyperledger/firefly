@@ -23,6 +23,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
+	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/stretchr/testify/assert"
@@ -76,7 +77,6 @@ func TestInitOK(t *testing.T) {
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.NoError(t, err)
-	or.Close()
 }
 
 func TestInitBadIdentity(t *testing.T) {
@@ -86,7 +86,7 @@ func TestInitBadIdentity(t *testing.T) {
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.Regexp(t, "FF10131", err.Error())
-	or.Close()
+	or.WaitStop()
 }
 
 func TestStartBatchFail(t *testing.T) {
@@ -103,21 +103,29 @@ func TestStartBatchFail(t *testing.T) {
 	assert.Regexp(t, "pop", err.Error())
 }
 
-func TestStartOk(t *testing.T) {
+func TestStartStopOk(t *testing.T) {
 	config.Reset()
 	mbi := &blockchainmocks.Plugin{}
 	mba := &batchmocks.BatchManager{}
 	mem := &eventmocks.EventManager{}
+	mbm := &broadcastmocks.BroadcastManager{}
 	or := &orchestrator{
 		blockchain: mbi,
 		batch:      mba,
 		events:     mem,
+		broadcast:  mbm,
 	}
 	mbi.On("Start").Return(nil)
 	mba.On("Start").Return(nil)
 	mem.On("Start").Return(nil)
+	mbm.On("Start").Return(nil)
+	mbi.On("WaitStop").Return(nil)
+	mba.On("WaitStop").Return(nil)
+	mem.On("WaitStop").Return(nil)
+	mbm.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
+	or.WaitStop()
 }
 
 func TestInitNamespacesBadName(t *testing.T) {

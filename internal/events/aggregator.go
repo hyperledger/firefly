@@ -24,21 +24,25 @@ import (
 type aggregator struct {
 	ctx       context.Context
 	newEvents chan *uuid.UUID
+	closed    chan struct{}
 }
 
 func newAggregator(ctx context.Context) *aggregator {
 	ag := &aggregator{
 		ctx:       log.WithLogField(ctx, "role", "aggregator"),
 		newEvents: make(chan *uuid.UUID),
+		closed:    make(chan struct{}),
 	}
 	return ag
 }
 
-func (ag *aggregator) start() {
+func (ag *aggregator) start() error {
 	go ag.eventLoop()
+	return nil
 }
 
 func (ag *aggregator) eventLoop() {
+	defer close(ag.closed)
 	l := log.L(ag.ctx)
 	for {
 		select {

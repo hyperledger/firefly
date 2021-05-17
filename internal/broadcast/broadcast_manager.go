@@ -30,7 +30,8 @@ import (
 
 type BroadcastManager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
-	Close()
+	Start() error
+	WaitStop()
 }
 
 type broadcastManager struct {
@@ -160,4 +161,10 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.M
 	return bm.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
 }
 
-func (bm *broadcastManager) Close() {}
+func (bm *broadcastManager) Start() error {
+	return nil
+}
+
+func (bm *broadcastManager) WaitStop() {
+	// No go routines
+}

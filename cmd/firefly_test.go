@@ -73,6 +73,7 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	o.On("Init", mock.Anything).Return(nil)
 	o.On("Start").Return(nil)
+	o.On("WaitStop").Return()
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
 

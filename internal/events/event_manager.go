@@ -31,6 +31,7 @@ type EventManager interface {
 
 	NewEvents() chan<- *uuid.UUID
 	Start() error
+	WaitStop()
 }
 
 type eventManager struct {
@@ -56,10 +57,13 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 }
 
 func (em *eventManager) Start() error {
-	em.aggregator.start()
-	return nil
+	return em.aggregator.start()
 }
 
 func (em *eventManager) NewEvents() chan<- *uuid.UUID {
 	return em.aggregator.newEvents
+}
+
+func (em *eventManager) WaitStop() {
+	<-em.aggregator.closed
 }
