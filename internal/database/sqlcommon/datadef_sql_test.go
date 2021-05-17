@@ -56,7 +56,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data definition back
-	dataDefRead, err := s.GetDataDefinitionById(ctx, "ns1", &dataDefId)
+	dataDefRead, err := s.GetDataDefinitionById(ctx, &dataDefId)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataDefRead)
 	dataDefJson, _ := json.Marshal(&dataDef)
@@ -85,7 +85,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the dataDef elements
-	dataDefRead, err = s.GetDataDefinitionById(ctx, "ns1", &dataDefId)
+	dataDefRead, err = s.GetDataDefinitionById(ctx, &dataDefId)
 	assert.NoError(t, err)
 	dataDefJson, _ = json.Marshal(&dataDefUpdated)
 	dataDefReadJson, _ = json.Marshal(&dataDefRead)
@@ -182,7 +182,7 @@ func TestGetDataDefinitionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -191,17 +191,25 @@ func TestGetDataDefinitionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	msg, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetDataDefinitionByNameNotFound(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	msg, err := s.GetDataDefinitionByName(context.Background(), "ns1", "name1")
+	assert.NoError(t, err)
+	assert.Nil(t, msg)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
 func TestGetDataDefinitionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

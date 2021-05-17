@@ -17,6 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -116,12 +117,12 @@ func (s *SQLCommon) dataDefResult(ctx context.Context, row *sql.Rows) (*fftypes.
 	return &dataDef, nil
 }
 
-func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.DataDefinition, err error) {
+func (s *SQLCommon) getDataDefinitionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.DataDefinition, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataDefColumns...).
 			From("datadefs").
-			Where(sq.Eq{"id": id}),
+			Where(eq),
 	)
 	if err != nil {
 		return nil, err
@@ -129,7 +130,7 @@ func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uu
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("DataDefinition '%s' not found", id)
+		log.L(ctx).Debugf("DataDefinition '%s' not found", textName)
 		return nil, nil
 	}
 
@@ -139,6 +140,14 @@ func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uu
 	}
 
 	return dataDef, nil
+}
+
+func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (message *fftypes.DataDefinition, err error) {
+	return s.getDataDefinitionEq(ctx, sq.Eq{"id": id}, id.String())
+}
+
+func (s *SQLCommon) GetDataDefinitionByName(ctx context.Context, ns, name string) (message *fftypes.DataDefinition, err error) {
+	return s.getDataDefinitionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
 }
 
 func (s *SQLCommon) GetDataDefinitions(ctx context.Context, filter database.Filter) (message []*fftypes.DataDefinition, err error) {

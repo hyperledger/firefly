@@ -74,7 +74,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back
-	msgRead, err := s.GetMessageById(ctx, "ns1", &msgId)
+	msgRead, err := s.GetMessageById(ctx, &msgId)
 	assert.NoError(t, err)
 	// The generated sequence will have been added
 	msg.Sequence = msgRead.Sequence
@@ -125,7 +125,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
-	msgRead, err = s.GetMessageById(ctx, "ns1", &msgId)
+	msgRead, err = s.GetMessageById(ctx, &msgId)
 	// The generated sequence will have been added
 	msgUpdated.Sequence = msgRead.Sequence
 	assert.NoError(t, err)
@@ -389,7 +389,7 @@ func TestGetMessageByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessageById(context.Background(), "ns1", &msgId)
+	_, err := s.GetMessageById(context.Background(), &msgId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -398,7 +398,7 @@ func TestGetMessageByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetMessageById(context.Background(), "ns1", &msgId)
+	msg, err := s.GetMessageById(context.Background(), &msgId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -408,7 +408,7 @@ func TestGetMessageByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	msgId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetMessageById(context.Background(), "ns1", &msgId)
+	_, err := s.GetMessageById(context.Background(), &msgId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -422,7 +422,7 @@ func TestGetMessageByIdLoadRefsFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
 		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessageById(context.Background(), "ns1", &msgId)
+	_, err := s.GetMessageById(context.Background(), &msgId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -106,7 +106,7 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 	}
 
 	// Get any existing record for the batch transaction record
-	tx, _ := a.database.GetTransactionById(ctx, batch.Namespace, batch.Payload.TX.ID)
+	tx, _ := a.database.GetTransactionById(ctx, batch.Payload.TX.ID)
 	if tx == nil {
 		// We're the first to write the transaction record on this node
 		tx = &fftypes.Transaction{

@@ -98,7 +98,7 @@ type PeristenceInterface interface {
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
 	// Get a message by Id
-	GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error)
+	GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
@@ -111,7 +111,7 @@ type PeristenceInterface interface {
 	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a data record by Id
-	GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error)
+	GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error)
 
 	// Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
@@ -124,7 +124,7 @@ type PeristenceInterface interface {
 	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a batch by Id
-	GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error)
+	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
 
 	// Get batches
 	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
@@ -137,7 +137,7 @@ type PeristenceInterface interface {
 	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a transaction by Id
-	GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error)
+	GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error)
 
 	// Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
@@ -149,7 +149,10 @@ type PeristenceInterface interface {
 	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get a data definition by Id
-	GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (datadef *fftypes.DataDefinition, err error)
+	GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (datadef *fftypes.DataDefinition, err error)
+
+	// Get a data definition by name
+	GetDataDefinitionByName(ctx context.Context, ns, name string) (datadef *fftypes.DataDefinition, err error)
 
 	// Get data definitions
 	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
@@ -173,7 +176,7 @@ type PeristenceInterface interface {
 	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
 
 	// Get an operation by Id
-	GetOperationById(ctx context.Context, ns string, id *uuid.UUID) (operation *fftypes.Operation, err error)
+	GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error)
 
 	// Get operation
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)

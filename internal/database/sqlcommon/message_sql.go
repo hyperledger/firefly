@@ -338,7 +338,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Message, err error) {
+func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, s.options.SequenceField)
@@ -393,8 +393,10 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 		msgs = append(msgs, msg)
 	}
 
-	if err = s.loadDataRefs(ctx, msgs); err != nil {
-		return nil, err
+	if len(msgs) > 0 {
+		if err = s.loadDataRefs(ctx, msgs); err != nil {
+			return nil, err
+		}
 	}
 
 	return msgs, err
