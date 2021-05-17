@@ -7,7 +7,6 @@ CREATE TABLE operations (
   msg_id      CHAR(36)        NOT NULL,
   data_id     CHAR(36),
   optype      VARCHAR(64)     NOT NULL,
-  opdir       VARCHAR(64)     NOT NULL,
   opstatus    VARCHAR(64)     NOT NULL,
   recipient   VARCHAR(1024),
   plugin      VARCHAR(64)     NOT NULL,
@@ -17,7 +16,7 @@ CREATE TABLE operations (
   error       VARCHAR         NOT NULL
 );
 
-CREATE INDEX operations_search ON operations(namespace,msg_id,optype,opdir,opstatus,error);
+CREATE INDEX operations_search ON operations(namespace,msg_id,optype,opstatus,error);
 CREATE INDEX operations_backend ON operations(backend_id);
 
 COMMIT;

@@ -107,7 +107,7 @@ func TestGetMessageOperations(t *testing.T) {
 	o.database = mp
 	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
-	f := fb.And(fb.Eq("direction", fftypes.OpDirectionOutbound))
+	f := fb.And(fb.Eq("type", fftypes.OpTypeBlockchainBatchPin))
 	_, err := o.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 }

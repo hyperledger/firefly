@@ -12,14 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package orchestrator
-
-import "github.com/google/uuid"
-
-func (e *orchestrator) MessageCreated(id *uuid.UUID) {
-	e.batch.NewMessages() <- id
-}
-
-func (e *orchestrator) EventCreated(id *uuid.UUID) {
-	e.events.NewEvents() <- id
-}
+package events

@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package orchestrator
+package events
 
-import "github.com/google/uuid"
+import "github.com/kaleido-io/firefly/internal/fftypes"
 
-func (e *orchestrator) MessageCreated(id *uuid.UUID) {
-	e.batch.NewMessages() <- id
-}
-
-func (e *orchestrator) EventCreated(id *uuid.UUID) {
-	e.events.NewEvents() <- id
+func (em *eventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
+	return nil
 }

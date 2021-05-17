@@ -20,27 +20,27 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/aggregatormocks"
+	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestTransactionUpdate(t *testing.T) {
-	ma := &aggregatormocks.Aggregator{}
+	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		aggregator: ma,
+		events: mem,
 	}
-	ma.On("TransactionUpdate", "node1", fftypes.TransactionStatusConfirmed, "protoid", "", mock.Anything).Return(fmt.Errorf("pop"))
+	mem.On("TransactionUpdate", "node1", fftypes.TransactionStatusConfirmed, "protoid", "", mock.Anything).Return(fmt.Errorf("pop"))
 	err := o.TransactionUpdate("node1", fftypes.TransactionStatusConfirmed, "protoid", "", nil)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestSequencedBroadcastBatch(t *testing.T) {
-	ma := &aggregatormocks.Aggregator{}
+	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		aggregator: ma,
+		events: mem,
 	}
-	ma.On("SequencedBroadcastBatch", mock.Anything, "0x12345", "protoid", mock.Anything).Return(fmt.Errorf("pop"))
+	mem.On("SequencedBroadcastBatch", mock.Anything, "0x12345", "protoid", mock.Anything).Return(fmt.Errorf("pop"))
 	err := o.SequencedBroadcastBatch(&blockchain.BroadcastBatch{}, "0x12345", "protoid", nil)
 	assert.EqualError(t, err, "pop")
 }

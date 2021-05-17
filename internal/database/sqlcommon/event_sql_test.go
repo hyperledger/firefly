@@ -25,7 +25,9 @@ import (
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestEventE2EWithDB(t *testing.T) {
@@ -33,7 +35,10 @@ func TestEventE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 	s := &SQLCommon{}
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
+	me := databasemocks.Events{}
+	InitSQLCommon(ctx, s, ensureTestDB(t), &me, &database.Capabilities{}, testSQLOptions())
+
+	me.On("EventCreated", mock.Anything).Return()
 
 	// Create a new event entry
 	eventId := uuid.New()

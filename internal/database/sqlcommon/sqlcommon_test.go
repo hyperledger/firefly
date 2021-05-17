@@ -192,7 +192,7 @@ func TestRollbackFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
-	s.rollbackTx(context.Background(), tx, false)
+	s.rollbackTx(context.Background(), &txWrapper{sqlTX: tx}, false)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

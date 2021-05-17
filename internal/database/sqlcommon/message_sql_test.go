@@ -39,7 +39,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	InitSQLCommon(ctx, s, ensureTestDB(t), &me, &database.Capabilities{}, testSQLOptions())
 
 	me.On("MessageCreated", mock.Anything).Return()
-	me.On("MessageUpdated", mock.Anything).Return()
 
 	// Create a new message
 	msgId := uuid.New()
@@ -253,7 +252,7 @@ func TestGetMessageDataRefsScanFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}).AddRow("not the uuid you are looking for"))
-	_, err := s.getMessageDataRefs(context.Background(), tx, &msgId)
+	_, err := s.getMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &msgId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -266,7 +265,7 @@ func TestUpdateMessageDataRefsNilID(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash", "data_idx"}).AddRow(dataId.String(), dataHash.String(), 0))
-	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
+	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
 		Data:   []fftypes.DataRef{{ID: nil}},
 	})
@@ -282,7 +281,7 @@ func TestUpdateMessageDataRefsNilHash(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash", "dataIdx"}).AddRow(dataId.String(), dataHash.String(), 0))
-	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
+	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
 		Data:   []fftypes.DataRef{{ID: fftypes.NewUUID()}},
 	})
@@ -299,7 +298,7 @@ func TestUpdateMessageDataDeleteFail(t *testing.T) {
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash", "dataIdx"}).AddRow(dataId.String(), dataHash.String(), 0))
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
+	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
 	})
 	assert.Regexp(t, "FF10118", err.Error())
@@ -315,7 +314,7 @@ func TestUpdateMessageDataAddFail(t *testing.T) {
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash", "data_idx"}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
+	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
 		Data:   []fftypes.DataRef{{ID: &dataId, Hash: dataHash}},
 	})
@@ -340,7 +339,7 @@ func TestUpdateMessageDataSwitchIdxFail(t *testing.T) {
 		))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateMessageDataRefs(context.Background(), tx, &fftypes.Message{
+	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: &msgId},
 		Data:   []fftypes.DataRef{{ID: &dataId2, Hash: dataHash2}, {ID: &dataId1, Hash: dataHash1}},
 	})

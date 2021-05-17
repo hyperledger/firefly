@@ -4,7 +4,6 @@ CREATE TABLE operations (
   msg_id      string         NOT NULL,
   data_id     string,
   optype      string         NOT NULL,
-  opdir       string         NOT NULL,
   opstatus    string         NOT NULL,
   recipient   string,
   plugin      string         NOT NULL,
@@ -15,5 +14,5 @@ CREATE TABLE operations (
 );
 
 CREATE UNIQUE INDEX operations_primary ON operations(id);
-CREATE INDEX operations_search ON operations(namespace,msg_id,optype,opdir,opstatus,error);
+CREATE INDEX operations_search ON operations(namespace,msg_id,optype,opstatus,error);
 CREATE INDEX operations_backend ON operations(backend_id);

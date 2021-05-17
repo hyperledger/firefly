@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchingmocks"
+	"github.com/kaleido-io/firefly/mocks/eventmocks"
 )
 
 func TestMessageCreated(t *testing.T) {
@@ -32,7 +33,12 @@ func TestMessageCreated(t *testing.T) {
 	o.MessageCreated(fftypes.NewUUID())
 }
 
-func TestMessageUpdates(t *testing.T) {
-	o := &orchestrator{}
-	o.MessageUpdated(fftypes.NewUUID())
+func TestEventCreated(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		events: mem,
+	}
+	c := make(chan *uuid.UUID, 1)
+	mem.On("NewEvents").Return((chan<- *uuid.UUID)(c))
+	o.EventCreated(fftypes.NewUUID())
 }

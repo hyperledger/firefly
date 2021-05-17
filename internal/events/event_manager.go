@@ -12,35 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aggregator
+package events
 
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/publicstorage"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
-type Aggregator interface {
+type EventManager interface {
 	blockchain.Events
-	// TODO: Add dataexchange events
+
+	NewEvents() chan<- *uuid.UUID
 }
 
-type aggregator struct {
+type eventManager struct {
 	ctx           context.Context
 	publicstorage publicstorage.Plugin
 	database      database.Plugin
+	newEvents     chan *uuid.UUID
 	retry         retry.Retry
 }
 
-func NewAggregator(ctx context.Context, publicstorage publicstorage.Plugin, database database.Plugin) Aggregator {
-	return &aggregator{
-		ctx:           log.WithLogField(ctx, "role", "aggregator"),
+func NewEventManager(ctx context.Context, publicstorage publicstorage.Plugin, database database.Plugin) EventManager {
+	return &eventManager{
+		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: publicstorage,
 		database:      database,
 		retry: retry.Retry{
@@ -48,9 +50,10 @@ func NewAggregator(ctx context.Context, publicstorage publicstorage.Plugin, data
 			MaximumDelay: config.GetDuration(config.AggregatorDataReadRetryMaxDelay),
 			Factor:       config.GetFloat64(config.AggregatorDataReadRetryFactor),
 		},
+		newEvents: make(chan *uuid.UUID),
 	}
 }
 
-func (a *aggregator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
-	return nil
+func (em *eventManager) NewEvents() chan<- *uuid.UUID {
+	return em.newEvents
 }

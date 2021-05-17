@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aggregator
+package events
 
 import (
 	"context"
@@ -32,14 +32,14 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 
 	var batchID uuid.UUID
 	copy(batchID[:], batch.BatchID[0:16])
 
 	var body io.ReadCloser
-	if err := a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
-		body, err = a.publicstorage.RetrieveData(a.ctx, batch.BatchPaylodRef)
+	if err := em.retry.Do(em.ctx, func(attempt int) (retry bool, err error) {
+		body, err = em.publicstorage.RetrieveData(em.ctx, batch.BatchPaylodRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
 		return err
@@ -49,7 +49,7 @@ func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 	var batchData *fftypes.Batch
 	err := json.NewDecoder(body).Decode(&batchData)
 	if err != nil {
-		log.L(a.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxId)
+		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxId)
 		return nil // log and swallow unprocessable data
 	}
 
@@ -57,11 +57,11 @@ func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 	// 1) Retryable - any transient error returned by processBatch is retried indefinitely
 	// 2) Swallowable - the data is invalid, and we have to move onto subsequent messages
 	// 3) Server shutting down - the context is cancelled (handled by retry)
-	return a.retry.Do(a.ctx, func(attempt int) (bool, error) {
+	return em.retry.Do(em.ctx, func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
-		err := a.database.RunAsGroup(a.ctx, func(ctx context.Context) error {
-			return a.persistBatch(ctx, batchData, author, protocolTxId, additionalInfo)
+		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			return em.persistBatch(ctx, batchData, author, protocolTxId, additionalInfo)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
@@ -69,7 +69,7 @@ func (a *aggregator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
@@ -95,7 +95,7 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err := a.database.UpsertBatch(ctx, batch, false)
+	err := em.database.UpsertBatch(ctx, batch, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
@@ -106,7 +106,7 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 	}
 
 	// Get any existing record for the batch transaction record
-	tx, _ := a.database.GetTransactionById(ctx, batch.Payload.TX.ID)
+	tx, _ := em.database.GetTransactionById(ctx, batch.Payload.TX.ID)
 	if tx == nil {
 		// We're the first to write the transaction record on this node
 		tx = &fftypes.Transaction{
@@ -135,7 +135,7 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 	tx.Status = fftypes.TransactionStatusConfirmed
 
 	// Upsert the transaction, ensuring the hash does not change
-	err = a.database.UpsertTransaction(ctx, tx, false)
+	err = em.database.UpsertTransaction(ctx, tx, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batch.ID, tx.Hash)
@@ -147,14 +147,14 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 
 	// Insert the data entries
 	for i, data := range batch.Payload.Data {
-		if err = a.persistBatchData(ctx, batch, i, data); err != nil {
+		if err = em.persistBatchData(ctx, batch, i, data); err != nil {
 			return err
 		}
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
-		if err = a.persistBatchMessage(ctx, batch, now, i, msg); err != nil {
+		if err = em.persistBatchMessage(ctx, batch, now, i, msg); err != nil {
 			return err
 		}
 	}
@@ -163,7 +163,7 @@ func (a *aggregator) persistBatch(ctx context.Context /* db TX context*/, batch 
 
 }
 
-func (a *aggregator) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data) error {
+func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data) error {
 	l := log.L(ctx)
 	l.Tracef("Batch %s data %d: %+v", batch.ID, i, data)
 
@@ -179,7 +179,7 @@ func (a *aggregator) persistBatchData(ctx context.Context /* db TX context*/, ba
 	}
 
 	// Insert the data, ensuring the hash doesn't change
-	if err = a.database.UpsertData(ctx, data, false); err != nil {
+	if err = em.database.UpsertData(ctx, data, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid data entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, data.ID, data.Hash)
 			return nil // This is not retryable. skip this data entry
@@ -191,7 +191,7 @@ func (a *aggregator) persistBatchData(ctx context.Context /* db TX context*/, ba
 	return nil
 }
 
-func (a *aggregator) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, now *fftypes.FFTime, i int, msg *fftypes.Message) error {
+func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, now *fftypes.FFTime, i int, msg *fftypes.Message) error {
 	l := log.L(ctx)
 	l.Tracef("Batch %s message %d: %+v", batch.ID, i, msg)
 
@@ -211,7 +211,7 @@ func (a *aggregator) persistBatchMessage(ctx context.Context /* db TX context*/,
 	msg.BatchID = batch.ID
 
 	// Insert the message, ensuring the hash doesn't change
-	if err = a.database.UpsertMessage(ctx, msg, false); err != nil {
+	if err = em.database.UpsertMessage(ctx, msg, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid message entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
 			return nil // This is not retryable. skip this data entry

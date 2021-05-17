@@ -20,9 +20,9 @@ import (
 )
 
 func (e *orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
-	return e.aggregator.TransactionUpdate(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+	return e.events.TransactionUpdate(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
 }
 
 func (e *orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
-	return e.aggregator.SequencedBroadcastBatch(batch, author, protocolTxId, additionalInfo)
+	return e.events.SequencedBroadcastBatch(batch, author, protocolTxId, additionalInfo)
 }

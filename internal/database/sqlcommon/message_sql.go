@@ -129,6 +129,11 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 		); err != nil {
 			return err
 		}
+
+		s.postCommitEvent(ctx, tx, func() {
+			s.events.MessageCreated(message.Header.ID)
+		})
+
 	}
 
 	if err = s.updateMessageDataRefs(ctx, tx, message); err != nil {
@@ -139,18 +144,10 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 		return err
 	}
 
-	if !s.capabilities.ClusterEvents {
-		if exists {
-			s.events.MessageUpdated(message.Header.ID)
-		} else {
-			s.events.MessageCreated(message.Header.ID)
-		}
-	}
-
 	return nil
 }
 
-func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *uuid.UUID) (fftypes.DataRefs, error) {
+func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *txWrapper, msgId *uuid.UUID) (fftypes.DataRefs, error) {
 	existingRefs, err := s.queryTx(ctx, tx,
 		sq.Select(
 			"data_id",
@@ -182,7 +179,7 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *sql.Tx, msgId *u
 	return dataIDs, nil
 }
 
-func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *sql.Tx, message *fftypes.Message) error {
+func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message) error {
 
 	dataIDs, err := s.getMessageDataRefs(ctx, tx, message.Header.ID)
 	if err != nil {

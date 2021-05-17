@@ -247,12 +247,10 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	assert.Equal(t, "ut_blockchain", op1.Plugin)
 	assert.Equal(t, "blockchain_id", op1.BackendID)
 	assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op1.Type)
-	assert.Equal(t, fftypes.OpDirectionOutbound, op1.Direction)
 
 	op2 := dbMocks.Calls[3].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *msgID, *op2.Message)
 	assert.Equal(t, "ut_publicstorage", op2.Plugin)
 	assert.Equal(t, "ipfs_id", op2.BackendID)
 	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op2.Type)
-	assert.Equal(t, fftypes.OpDirectionOutbound, op2.Direction)
 }
