@@ -36,8 +36,8 @@ type eventManager struct {
 	ctx           context.Context
 	publicstorage publicstorage.Plugin
 	database      database.Plugin
-	newEvents     chan *uuid.UUID
 	retry         retry.Retry
+	aggregator    *aggregator
 }
 
 func NewEventManager(ctx context.Context, publicstorage publicstorage.Plugin, database database.Plugin) EventManager {
@@ -50,10 +50,10 @@ func NewEventManager(ctx context.Context, publicstorage publicstorage.Plugin, da
 			MaximumDelay: config.GetDuration(config.AggregatorDataReadRetryMaxDelay),
 			Factor:       config.GetFloat64(config.AggregatorDataReadRetryFactor),
 		},
-		newEvents: make(chan *uuid.UUID),
+		aggregator: newAggregator(ctx),
 	}
 }
 
 func (em *eventManager) NewEvents() chan<- *uuid.UUID {
-	return em.newEvents
+	return em.aggregator.newEvents
 }

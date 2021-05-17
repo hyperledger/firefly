@@ -185,6 +185,52 @@ func (_m *Orchestrator) GetDataDefinitions(ctx context.Context, ns string, filte
 	return r0, r1
 }
 
+// GetEventById provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetEventById(ctx context.Context, ns string, id string) (*fftypes.Event, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Event
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Event); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Event)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetEvents provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.Event
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Event); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Event)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessageById provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetMessageById(ctx context.Context, ns string, id string) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -201,6 +247,29 @@ func (_m *Orchestrator) GetMessageById(ctx context.Context, ns string, id string
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMessageEvents provides a mock function with given fields: ctx, ns, id, filter
+func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
+	ret := _m.Called(ctx, ns, id, filter)
+
+	var r0 []*fftypes.Event
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Event); ok {
+		r0 = rf(ctx, ns, id, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Event)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, id, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -293,6 +362,52 @@ func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFi
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
 		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOperationById provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetOperationById(ctx context.Context, ns string, id string) (*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOperations provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Operation); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, filter)
 	} else {
 		r1 = ret.Error(1)
 	}

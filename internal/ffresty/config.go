@@ -17,10 +17,10 @@ package ffresty
 import "github.com/kaleido-io/firefly/internal/config"
 
 const (
-	defaultRetryEnabled           = false
-	defaultRetryCount             = 5
-	defaultRetryWaitTimeMillis    = 100
-	defaultRetryMaxWaitTimeMillis = 1000
+	defaultRetryEnabled     = false
+	defaultRetryCount       = 5
+	defaultRetryWaitTime    = "250ms"
+	defaultRetryMaxWaitTime = "30s"
 )
 
 const (
@@ -44,8 +44,8 @@ func InitConfigPrefix(prefix config.ConfigPrefix) {
 	prefix.AddKnownKey(HTTPConfigAuthPassword)
 	prefix.AddKnownKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
 	prefix.AddKnownKey(HTTPConfigRetryCount, defaultRetryCount)
-	prefix.AddKnownKey(HTTPConfigRetryWaitTime, defaultRetryWaitTimeMillis)
-	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTime, defaultRetryMaxWaitTimeMillis)
+	prefix.AddKnownKey(HTTPConfigRetryWaitTime, defaultRetryWaitTime)
+	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTime, defaultRetryMaxWaitTime)
 
 	prefix.AddKnownKey(HTTPCustomClient)
 }

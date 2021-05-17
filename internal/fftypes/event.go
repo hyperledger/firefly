@@ -29,12 +29,15 @@ type EventType string
 type EventTypes []EventType
 
 const (
+	EventTypeDataArrived      EventType = "data_arrived"
+	EventTypeMessageBroadcast EventType = "message_broadcast"
 	EventTypeMessageConfirmed EventType = "message_confirmed"
 )
 
 type Event struct {
 	ID        *uuid.UUID  `json:"id"`
 	Type      EventType   `json:"type"`
+	Namespace string      `json:"namespace"`
 	Reference *uuid.UUID  `json:"reference"`
 	Sequence  int64       `json:"sequence"`
 	Data      interface{} `json:"data"` // Not persisted

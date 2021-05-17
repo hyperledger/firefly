@@ -13,3 +13,37 @@
 // limitations under the License.
 
 package events
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/log"
+)
+
+type aggregator struct {
+	ctx       context.Context
+	newEvents chan *uuid.UUID
+}
+
+func newAggregator(ctx context.Context) *aggregator {
+	ag := &aggregator{
+		ctx:       log.WithLogField(ctx, "role", "aggregator"),
+		newEvents: make(chan *uuid.UUID),
+	}
+	go ag.eventLoop()
+	return ag
+}
+
+func (ag *aggregator) eventLoop() {
+	l := log.L(ag.ctx)
+	for {
+		select {
+		case ev := <-ag.newEvents:
+			l.Infof("New event: %s", ev)
+		case <-ag.ctx.Done():
+			l.Debugf("Aggregator existing (context canceled)")
+			return
+		}
+	}
+}

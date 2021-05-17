@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 const (
@@ -45,7 +46,10 @@ func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool, err err
 	for {
 		attempt++
 		retry, err := f(attempt)
-		if !retry {
+		if err != nil {
+			log.L(ctx).Errorf("Attempt %d: %s", attempt, err)
+		}
+		if !retry || err == nil {
 			return err
 		}
 

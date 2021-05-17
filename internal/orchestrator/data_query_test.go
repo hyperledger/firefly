@@ -16,6 +16,7 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/database"
@@ -106,10 +107,50 @@ func TestGetMessageOperations(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.OperationQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("type", fftypes.OpTypeBlockchainBatchPin))
 	_, err := o.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
+}
+
+func TestGetMessageEventsOk(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+			{ID: fftypes.NewUUID()},
+		},
+	}
+	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, nil)
+	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrived))
+	_, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
+	assert.NoError(t, err)
+	calculatedFilter, err := mp.Calls[1].Arguments[1].(database.Filter).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf(
+		`( type == 'data_arrived' ) && ( reference IN ['%s','%s','%s'] )`,
+		msg.Header.ID, msg.Data[0].ID, msg.Data[1].ID,
+	), calculatedFilter.String())
+	assert.NoError(t, err)
+}
+
+func TestGetMessageEventsBadMsgID(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrived))
+	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(nil, nil)
+	ev, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
+	assert.NoError(t, err)
+	assert.Nil(t, ev)
 }
 
 func TestGetBatchById(t *testing.T) {
@@ -184,6 +225,38 @@ func TestGetDataDefsByIdBadId(t *testing.T) {
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
+func TestGetOperationById(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	u := fftypes.NewUUID()
+	mp.On("GetOperationById", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetOperationById(context.Background(), "ns1", u.String())
+	assert.NoError(t, err)
+}
+
+func TestGetOperationIdBadId(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetOperationById(context.Background(), "", "")
+	assert.Regexp(t, "FF10142", err.Error())
+}
+
+func TestGetEventById(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	u := fftypes.NewUUID()
+	mp.On("GetEventById", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetEventById(context.Background(), "ns1", u.String())
+	assert.NoError(t, err)
+}
+
+func TestGetEventIdBadId(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	_, err := o.GetEventById(context.Background(), "", "")
+	assert.Regexp(t, "FF10142", err.Error())
+}
+
 func TestGetDataDefinitions(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
@@ -193,5 +266,29 @@ func TestGetDataDefinitions(t *testing.T) {
 	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetDataDefinitions(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetOperations(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	u := fftypes.NewUUID()
+	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
+	fb := database.OperationQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("id", u))
+	_, err := o.GetOperations(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetEvents(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	u := fftypes.NewUUID()
+	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("id", u))
+	_, err := o.GetEvents(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
