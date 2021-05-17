@@ -183,7 +183,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 		}
 		var d *fftypes.Data
 		err = bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
-			d, err = bm.database.GetDataById(bm.ctx, msg.Header.Namespace, dataRef.ID)
+			d, err = bm.database.GetDataById(bm.ctx, dataRef.ID)
 			if err != nil {
 				// continual retry for persistence error (distinct from not-found)
 				return !bm.closed, err

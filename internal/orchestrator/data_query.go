@@ -32,7 +32,7 @@ func (e *orchestrator) GetTransactionById(ctx context.Context, ns, id string) (*
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.database.GetTransactionById(ctx, ns, &u)
+	return e.database.GetTransactionById(ctx, &u)
 }
 
 func (e *orchestrator) GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error) {
@@ -40,7 +40,7 @@ func (e *orchestrator) GetMessageById(ctx context.Context, ns, id string) (*ffty
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.database.GetMessageById(ctx, ns, &u)
+	return e.database.GetMessageById(ctx, &u)
 }
 
 func (e *orchestrator) GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -48,7 +48,7 @@ func (e *orchestrator) GetBatchById(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.database.GetBatchById(ctx, ns, &u)
+	return e.database.GetBatchById(ctx, &u)
 }
 
 func (e *orchestrator) GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error) {
@@ -56,7 +56,7 @@ func (e *orchestrator) GetDataById(ctx context.Context, ns, id string) (*fftypes
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.database.GetDataById(ctx, ns, &u)
+	return e.database.GetDataById(ctx, &u)
 }
 
 func (e *orchestrator) GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
@@ -64,7 +64,7 @@ func (e *orchestrator) GetDataDefinitionById(ctx context.Context, ns, id string)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	return e.database.GetDataDefinitionById(ctx, ns, &u)
+	return e.database.GetDataDefinitionById(ctx, &u)
 }
 
 func (e *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {

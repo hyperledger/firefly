@@ -143,7 +143,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	return &op, nil
 }
 
-func (s *SQLCommon) GetOperationById(ctx context.Context, ns string, id *uuid.UUID) (operation *fftypes.Operation, err error) {
+func (s *SQLCommon) GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(opColumns...).

@@ -50,7 +50,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same operation back
-	operationRead, err := s.GetOperationById(ctx, "ns1", &operationId)
+	operationRead, err := s.GetOperationById(ctx, &operationId)
 	assert.NoError(t, err)
 	assert.NotNil(t, operationRead)
 	operationJson, _ := json.Marshal(&operation)
@@ -78,7 +78,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the operation elements
-	operationRead, err = s.GetOperationById(ctx, "ns1", &operationId)
+	operationRead, err = s.GetOperationById(ctx, &operationId)
 	assert.NoError(t, err)
 	operationJson, _ = json.Marshal(&operationUpdated)
 	operationReadJson, _ = json.Marshal(&operationRead)
@@ -199,7 +199,7 @@ func TestGetOperationByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	operationId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOperationById(context.Background(), "ns1", &operationId)
+	_, err := s.GetOperationById(context.Background(), &operationId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -208,7 +208,7 @@ func TestGetOperationByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	operationId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetOperationById(context.Background(), "ns1", &operationId)
+	msg, err := s.GetOperationById(context.Background(), &operationId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -218,7 +218,7 @@ func TestGetOperationByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	operationId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetOperationById(context.Background(), "ns1", &operationId)
+	_, err := s.GetOperationById(context.Background(), &operationId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

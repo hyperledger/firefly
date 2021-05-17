@@ -65,7 +65,7 @@ func TestE2EDispatch(t *testing.T) {
 		ID:   dataId1,
 		Hash: dataHash,
 	}
-	mp.On("GetDataById", mock.Anything, "ns1", mock.MatchedBy(func(i interface{}) bool {
+	mp.On("GetDataById", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
 		return *(i.(*uuid.UUID)) == *dataId1
 	})).Return(data, nil)
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
@@ -189,7 +189,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(nil, nil)
+	mp.On("GetDataById", mock.Anything, dataId).Return(nil, nil)
 
 	bm.(*batchManager).messageSequencer()
 	assert.Equal(t, 2, len(mp.Calls))
@@ -214,7 +214,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(&fftypes.Data{ID: dataId}, nil)
+	mp.On("GetDataById", mock.Anything, dataId).Return(&fftypes.Data{ID: dataId}, nil)
 
 	bm.(*batchManager).messageSequencer()
 	assert.Equal(t, 2, len(mp.Calls))
@@ -242,7 +242,7 @@ func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mp.On("GetDataById", mock.Anything, "ns1", dataId).Return(&fftypes.Data{ID: dataId}, nil)
+	mp.On("GetDataById", mock.Anything, dataId).Return(&fftypes.Data{ID: dataId}, nil)
 	mp.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mp.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mp.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -295,7 +295,7 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 func TestAssembleMessageDataClosed(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mp)
-	mp.On("GetDataById", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mp.On("GetDataById", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	bm.Close()
 	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{

@@ -55,7 +55,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back
-	dataRead, err := s.GetDataById(ctx, "ns1", &dataId)
+	dataRead, err := s.GetDataById(ctx, &dataId)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataRead)
 	dataJson, _ := json.Marshal(&data)
@@ -91,7 +91,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
-	dataRead, err = s.GetDataById(ctx, "ns1", &dataId)
+	dataRead, err = s.GetDataById(ctx, &dataId)
 	assert.NoError(t, err)
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
@@ -189,7 +189,7 @@ func TestGetDataByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataById(context.Background(), "ns1", &dataId)
+	_, err := s.GetDataById(context.Background(), &dataId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -198,7 +198,7 @@ func TestGetDataByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	dataId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataById(context.Background(), "ns1", &dataId)
+	msg, err := s.GetDataById(context.Background(), &dataId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -208,7 +208,7 @@ func TestGetDataByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataById(context.Background(), "ns1", &dataId)
+	_, err := s.GetDataById(context.Background(), &dataId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

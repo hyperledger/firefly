@@ -39,7 +39,7 @@ func TestGetTransactionById(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetTransactionById", mock.Anything, "ns1", u).Return(nil, nil)
+	mp.On("GetTransactionById", mock.Anything, u).Return(nil, nil)
 	_, err := o.GetTransactionById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
@@ -78,7 +78,7 @@ func TestGetMessageById(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetMessageById", mock.Anything, "ns1", u).Return(nil, nil)
+	mp.On("GetMessageById", mock.Anything, u).Return(nil, nil)
 	_, err := o.GetMessageById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
@@ -117,7 +117,7 @@ func TestGetBatchById(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetBatchById", mock.Anything, "ns1", u).Return(nil, nil)
+	mp.On("GetBatchById", mock.Anything, u).Return(nil, nil)
 	_, err := o.GetBatchById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
@@ -145,7 +145,7 @@ func TestGetDataById(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetDataById", mock.Anything, "ns1", u).Return(nil, nil)
+	mp.On("GetDataById", mock.Anything, u).Return(nil, nil)
 	_, err := o.GetDataById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
@@ -173,7 +173,7 @@ func TestGetDataDefsById(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetDataDefinitionById", mock.Anything, "ns1", u).Return(nil, nil)
+	mp.On("GetDataDefinitionById", mock.Anything, u).Return(nil, nil)
 	_, err := o.GetDataDefinitionById(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }

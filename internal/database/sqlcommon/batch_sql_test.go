@@ -55,7 +55,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same batch back
-	batchRead, err := s.GetBatchById(ctx, "ns1", &batchId)
+	batchRead, err := s.GetBatchById(ctx, &batchId)
 	assert.NoError(t, err)
 	assert.NotNil(t, batchRead)
 	batchJson, _ := json.Marshal(&batch)
@@ -96,7 +96,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the batch elements
-	batchRead, err = s.GetBatchById(ctx, "ns1", &batchId)
+	batchRead, err = s.GetBatchById(ctx, &batchId)
 	assert.NoError(t, err)
 	batchJson, _ = json.Marshal(&batchUpdated)
 	batchReadJson, _ = json.Marshal(&batchRead)
@@ -201,7 +201,7 @@ func TestGetBatchByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	_, err := s.GetBatchById(context.Background(), &batchId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -210,7 +210,7 @@ func TestGetBatchByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	msg, err := s.GetBatchById(context.Background(), &batchId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -220,7 +220,7 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	_, err := s.GetBatchById(context.Background(), &batchId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
