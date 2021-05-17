@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package batching
+package batch
 
 import (
 	"context"
@@ -60,7 +60,7 @@ type batchProcessor struct {
 }
 
 func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
-	a := &batchProcessor{
+	bp := &batchProcessor{
 		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s", conf.namespace, conf.author)),
 		name:        fmt.Sprintf("%s:%s", conf.namespace, conf.author),
 		newWork:     make(chan *batchWork),
@@ -70,9 +70,9 @@ func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *ret
 		retry:       retry,
 		conf:        conf,
 	}
-	go a.assemblyLoop()
-	go a.persistenceLoop()
-	return a
+	go bp.assemblyLoop()
+	go bp.persistenceLoop()
+	return bp
 }
 
 // The assemblyLoop accepts work into the pipe as quickly as possible.
@@ -80,10 +80,10 @@ func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *ret
 // calling back each piece of work once persisted into a batch
 // (doesn't wait until that batch is sealed/dispatched).
 // The assemblyLoop seals batches when they are full, or timeout.
-func (a *batchProcessor) assemblyLoop() {
-	defer a.close()
-	defer close(a.sealBatch) // close persitenceLoop when we exit
-	l := log.L(a.ctx)
+func (bp *batchProcessor) assemblyLoop() {
+	defer bp.close()
+	defer close(bp.sealBatch) // close persitenceLoop when we exit
+	l := log.L(bp.ctx)
 	var batchSize uint = 0
 	var lastBatchSealed = time.Now()
 	var quiescing bool
@@ -91,11 +91,11 @@ func (a *batchProcessor) assemblyLoop() {
 		// We timeout waiting at the point we think we're ready for disposal,
 		// unless we've started a batch in which case we wait for what's left
 		// of the batch timeout
-		timeToWait := a.conf.DisposeTimeout
+		timeToWait := bp.conf.DisposeTimeout
 		if quiescing {
 			timeToWait = 100 * time.Millisecond
 		} else if batchSize > 0 {
-			timeToWait = a.conf.BatchTimeout - time.Since(lastBatchSealed)
+			timeToWait = bp.conf.BatchTimeout - time.Since(lastBatchSealed)
 		}
 		timeout := time.NewTimer(timeToWait)
 
@@ -104,17 +104,17 @@ func (a *batchProcessor) assemblyLoop() {
 		select {
 		case <-timeout.C:
 			timedOut = true
-		case work, ok := <-a.newWork:
+		case work, ok := <-bp.newWork:
 			if ok && !work.abandoned {
 				batchSize++
-				a.persistWork <- work
+				bp.persistWork <- work
 			} else {
 				closed = true
 			}
 		}
 
 		// Don't include the sealing time in the duration
-		batchFull := batchSize >= a.conf.BatchMaxSize
+		batchFull := batchSize >= bp.conf.BatchMaxSize
 		l.Debugf("Assembly batch loop: Size=%d Full=%t", batchSize, batchFull)
 
 		batchDuration := time.Since(lastBatchSealed)
@@ -123,14 +123,14 @@ func (a *batchProcessor) assemblyLoop() {
 			return
 		}
 
-		if closed || batchDuration > a.conf.DisposeTimeout {
-			a.conf.processorQuiescing()
+		if closed || batchDuration > bp.conf.DisposeTimeout {
+			bp.conf.processorQuiescing()
 			quiescing = true
 		}
 
 		if (quiescing || timedOut || batchFull) && batchSize > 0 {
-			a.sealBatch <- true
-			<-a.batchSealed
+			bp.sealBatch <- true
+			<-bp.batchSealed
 			l.Debugf("Assembly batch sealed")
 			lastBatchSealed = time.Now()
 			batchSize = 0
@@ -139,15 +139,15 @@ func (a *batchProcessor) assemblyLoop() {
 	}
 }
 
-func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
-	l := log.L(a.ctx)
+func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
+	l := log.L(bp.ctx)
 	if batch == nil {
 		batchID := uuid.New()
 		l.Debugf("New batch %s", batchID)
 		batch = &fftypes.Batch{
 			ID:        &batchID,
-			Namespace: a.conf.namespace,
-			Author:    a.conf.author,
+			Namespace: bp.conf.namespace,
+			Author:    bp.conf.author,
 			Payload:   fftypes.BatchPayload{},
 			Created:   fftypes.Now(),
 		}
@@ -170,44 +170,44 @@ func (a *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*bat
 	return batch
 }
 
-func (a *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
-	l := log.L(a.ctx)
+func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
+	l := log.L(bp.ctx)
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	_ = a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.dispatch(a.ctx, batch)
+	_ = bp.retry.Do(bp.ctx, func(attempt int) (retry bool, err error) {
+		err = bp.conf.dispatch(bp.ctx, batch)
 		if err != nil {
 			l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
-			return !a.closed, err
+			return !bp.closed, err
 		}
 		return false, nil
 	})
 }
 
-func (a *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
-	l := log.L(a.ctx)
-	return a.retry.Do(a.ctx, func(attempt int) (retry bool, err error) {
-		err = a.conf.persitence.UpsertBatch(a.ctx, batch, seal /* we set the hash as it seals */)
+func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
+	l := log.L(bp.ctx)
+	return bp.retry.Do(bp.ctx, func(attempt int) (retry bool, err error) {
+		err = bp.conf.persitence.UpsertBatch(bp.ctx, batch, seal /* we set the hash as it seals */)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
-			return !a.closed, err
+			return !bp.closed, err
 		}
 		return false, nil
 	})
 }
 
-func (a *batchProcessor) persistenceLoop() {
-	defer close(a.batchSealed)
-	l := log.L(a.ctx)
+func (bp *batchProcessor) persistenceLoop() {
+	defer close(bp.batchSealed)
+	l := log.L(bp.ctx)
 	var currentBatch *fftypes.Batch
-	for !a.closed {
+	for !bp.closed {
 		var seal bool
-		newWork := make([]*batchWork, 0, a.conf.BatchMaxSize)
+		newWork := make([]*batchWork, 0, bp.conf.BatchMaxSize)
 
 		// Block waiting for work, or a batch sealing request
 		select {
-		case w := <-a.persistWork:
+		case w := <-bp.persistWork:
 			newWork = append(newWork, w)
-		case <-a.sealBatch:
+		case <-bp.sealBatch:
 			seal = true
 		}
 
@@ -219,22 +219,22 @@ func (a *batchProcessor) persistenceLoop() {
 		var drained bool
 		for !drained {
 			select {
-			case _, ok := <-a.sealBatch:
+			case _, ok := <-bp.sealBatch:
 				seal = true
 				if !ok {
 					return // Closed by termination of assemblyLoop
 				}
-			case w := <-a.persistWork:
+			case w := <-bp.persistWork:
 				newWork = append(newWork, w)
 			default:
 				drained = true
 			}
 		}
-		currentBatch = a.createOrAddToBatch(currentBatch, newWork, seal)
+		currentBatch = bp.createOrAddToBatch(currentBatch, newWork, seal)
 		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		if err := a.persistBatch(currentBatch, seal); err != nil {
+		if err := bp.persistBatch(currentBatch, seal); err != nil {
 			return
 		}
 
@@ -254,11 +254,11 @@ func (a *batchProcessor) persistenceLoop() {
 			// (due to the size of the channel being the maxBatchSize) before
 			// they start blocking waiting for us to complete database of
 			// the current batch.
-			a.batchSealed <- true
+			bp.batchSealed <- true
 
 			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
 			// will break out of the retry in the case that we close
-			a.dispatchBatch(currentBatch)
+			bp.dispatchBatch(currentBatch)
 
 			// Move onto the next batch
 			currentBatch = nil
@@ -267,9 +267,9 @@ func (a *batchProcessor) persistenceLoop() {
 	}
 }
 
-func (a *batchProcessor) close() {
-	if !a.closed {
-		close(a.newWork)
-		a.closed = true
+func (bp *batchProcessor) close() {
+	if !bp.closed {
+		close(bp.newWork)
+		bp.closed = true
 	}
 }

@@ -19,12 +19,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/batchingmocks"
+	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 )
 
 func TestMessageCreated(t *testing.T) {
-	mb := &batchingmocks.BatchManager{}
+	mb := &batchmocks.BatchManager{}
 	o := &orchestrator{
 		batch: mb,
 	}

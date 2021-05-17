@@ -30,6 +30,7 @@ type EventManager interface {
 	blockchain.Events
 
 	NewEvents() chan<- *uuid.UUID
+	Start() error
 }
 
 type eventManager struct {
@@ -40,11 +41,11 @@ type eventManager struct {
 	aggregator    *aggregator
 }
 
-func NewEventManager(ctx context.Context, publicstorage publicstorage.Plugin, database database.Plugin) EventManager {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin) EventManager {
 	return &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
-		publicstorage: publicstorage,
-		database:      database,
+		publicstorage: pi,
+		database:      di,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.AggregatorDataReadRetryDelay),
 			MaximumDelay: config.GetDuration(config.AggregatorDataReadRetryMaxDelay),
@@ -52,6 +53,11 @@ func NewEventManager(ctx context.Context, publicstorage publicstorage.Plugin, da
 		},
 		aggregator: newAggregator(ctx),
 	}
+}
+
+func (em *eventManager) Start() error {
+	em.aggregator.start()
+	return nil
 }
 
 func (em *eventManager) NewEvents() chan<- *uuid.UUID {
