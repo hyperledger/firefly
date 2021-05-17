@@ -35,8 +35,8 @@ const (
 type Event struct {
 	ID        *uuid.UUID  `json:"id"`
 	Type      EventType   `json:"type"`
-	Sequence  int64       `json:"sequence"`
 	Reference *uuid.UUID  `json:"reference"`
+	Sequence  int64       `json:"sequence"`
 	Data      interface{} `json:"data"` // Not persisted
 }
 

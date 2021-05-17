@@ -193,6 +193,18 @@ type PeristenceInterface interface {
 
 	// Get subscriptions
 	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
+
+	// Upsert an event
+	UpsertEvent(ctx context.Context, data *fftypes.Event) (err error)
+
+	// Update event
+	UpdateEvent(ctx context.Context, id *uuid.UUID, update Update) (err error)
+
+	// Get a event by Id
+	GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error)
+
+	// Get events
+	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
 }
 
 // Events
@@ -226,8 +238,8 @@ var NamespaceQueryFactory = &queryFields{
 	"type":        &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
-	"created":     &timeField{},
-	"confirmed":   &timeField{},
+	"created":     &TimeField{},
+	"confirmed":   &TimeField{},
 }
 
 var MessageQueryFactory = &queryFields{
@@ -239,8 +251,8 @@ var MessageQueryFactory = &queryFields{
 	"topic":     &StringField{},
 	"context":   &StringField{},
 	"group":     &StringField{},
-	"created":   &timeField{},
-	"confirmed": &timeField{},
+	"created":   &TimeField{},
+	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
 	"tx.id":     &StringField{},
@@ -256,8 +268,8 @@ var BatchQueryFactory = &queryFields{
 	"context":    &StringField{},
 	"group":      &StringField{},
 	"payloadref": &StringField{},
-	"created":    &timeField{},
-	"confirmed":  &timeField{},
+	"created":    &TimeField{},
+	"confirmed":  &TimeField{},
 	"tx.type":    &StringField{},
 	"tx.id":      &StringField{},
 }
@@ -271,8 +283,8 @@ var TransactionQueryFactory = &queryFields{
 	"status":     &StringField{},
 	"message":    &StringField{},
 	"batch":      &StringField{},
-	"created":    &timeField{},
-	"confirmed":  &timeField{},
+	"created":    &TimeField{},
+	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
 }
 
@@ -283,7 +295,7 @@ var DataQueryFactory = &queryFields{
 	"definition.name":    &StringField{},
 	"definition.version": &StringField{},
 	"hash":               &StringField{},
-	"created":            &timeField{},
+	"created":            &TimeField{},
 }
 
 var DataDefinitionQueryFactory = &queryFields{
@@ -292,7 +304,7 @@ var DataDefinitionQueryFactory = &queryFields{
 	"validator": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
-	"created":   &timeField{},
+	"created":   &TimeField{},
 }
 
 var OffsetQueryFactory = &queryFields{
@@ -314,8 +326,8 @@ var OperationQueryFactory = &queryFields{
 	"error":     &StringField{},
 	"plugin":    &StringField{},
 	"backendid": &StringField{},
-	"created":   &timeField{},
-	"updated":   &timeField{},
+	"created":   &TimeField{},
+	"updated":   &TimeField{},
 }
 
 var SubscriptionQueryFactory = &queryFields{
@@ -328,5 +340,12 @@ var SubscriptionQueryFactory = &queryFields{
 	"filter.context": &StringField{},
 	"filter.group":   &StringField{},
 	"options":        &StringField{},
-	"created":        &timeField{},
+	"created":        &TimeField{},
+}
+
+var EventQueryFactory = &queryFields{
+	"id":        &StringField{},
+	"type":      &StringField{},
+	"reference": &StringField{},
+	"sequence":  &Int64Field{},
 }

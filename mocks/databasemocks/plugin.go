@@ -198,6 +198,52 @@ func (_m *Plugin) GetDataDefinitions(ctx context.Context, filter database.Filter
 	return r0, r1
 }
 
+// GetEventById provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetEventById(ctx context.Context, id *uuid.UUID) (*fftypes.Event, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Event
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID) *fftypes.Event); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Event)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetEvents provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fftypes.Event, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Event
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Event); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Event)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessageById provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetMessageById(ctx context.Context, id *uuid.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, id)
@@ -563,6 +609,20 @@ func (_m *Plugin) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, updat
 	return r0
 }
 
+// UpdateEvent provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateEvent(ctx context.Context, id *uuid.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateMessage provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateMessage(ctx context.Context, id *uuid.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -696,6 +756,20 @@ func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.Dat
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition) error); ok {
 		r0 = rf(ctx, datadef)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertEvent provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}
