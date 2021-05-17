@@ -273,3 +273,8 @@ func (bp *batchProcessor) close() {
 		bp.closed = true
 	}
 }
+
+func (bp *batchProcessor) waitClosed() {
+	<-bp.sealBatch
+	<-bp.batchSealed
+}

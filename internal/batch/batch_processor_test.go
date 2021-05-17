@@ -95,6 +95,7 @@ func TestUnfilledBatch(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Messages), 5)
 
 	bp.close()
+	bp.waitClosed()
 
 }
 
@@ -160,6 +161,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	assert.Equal(t, len(dispatched[0].Payload.Data), 5)
 
 	bp.close()
+	bp.waitClosed()
 
 }
 
@@ -204,8 +206,6 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
 	// Close to unblock
 	bp.close()
-
-	// Wait for the database loop to terminate
-	<-bp.batchSealed
+	bp.waitClosed()
 
 }

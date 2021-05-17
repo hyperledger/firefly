@@ -28,7 +28,21 @@ func (_m *BroadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.M
 	return r0
 }
 
-// Close provides a mock function with given fields:
-func (_m *BroadcastManager) Close() {
+// Start provides a mock function with given fields:
+func (_m *BroadcastManager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WaitStop provides a mock function with given fields:
+func (_m *BroadcastManager) WaitStop() {
 	_m.Called()
 }

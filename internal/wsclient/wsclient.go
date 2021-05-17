@@ -213,11 +213,7 @@ func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 
 	for {
 		select {
-		case message, ok := <-w.send:
-			if !ok {
-				l.Debugf("WS %s send loop exiting", w.url)
-				return
-			}
+		case message := <-w.send:
 			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
 				l.Errorf("WS %s send failed: %s", w.url, err)
 				// Keep the message for when we reconnect

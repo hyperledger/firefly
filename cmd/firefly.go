@@ -97,6 +97,7 @@ func run() error {
 	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
 
 	// Setup signal handling to cancel the context, which shuts down the API Server
+	o := getOrchestrator()
 	done := make(chan struct{})
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -104,6 +105,7 @@ func run() error {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
 			cancelCtx()
+			o.WaitStop()
 		case <-done:
 		}
 	}()
@@ -122,7 +124,6 @@ func run() error {
 		}()
 	}
 
-	o := getOrchestrator()
 	if err = o.Init(ctx); err != nil {
 		return err
 	}

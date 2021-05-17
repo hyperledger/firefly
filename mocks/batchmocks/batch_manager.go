@@ -55,3 +55,8 @@ func (_m *BatchManager) Start() error {
 
 	return r0
 }
+
+// WaitStop provides a mock function with given fields:
+func (_m *BatchManager) WaitStop() {
+	_m.Called()
+}

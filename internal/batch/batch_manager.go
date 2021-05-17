@@ -47,6 +47,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		startupOffsetRetryAttempts: config.GetInt(config.BatchManagerStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		newMessages:                make(chan *uuid.UUID, readPageSize),
+		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.BatchRetryMaxDelay),
@@ -61,6 +62,7 @@ type BatchManager interface {
 	NewMessages() chan<- *uuid.UUID
 	Start() error
 	Close()
+	WaitStop()
 }
 
 type batchManager struct {
@@ -68,6 +70,7 @@ type batchManager struct {
 	database                   database.Plugin
 	dispatchers                map[fftypes.MessageType]*dispatcher
 	newMessages                chan *uuid.UUID
+	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
 	offset                     int64
 	closed                     bool
@@ -219,6 +222,7 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 func (bm *batchManager) messageSequencer() {
 	l := log.L(bm.ctx)
 	l.Debugf("Started batch assembly message sequencer")
+	defer close(bm.sequencerClosed)
 
 	dispatched := make(chan *batchDispatch, bm.readPageSize)
 
@@ -229,9 +233,10 @@ func (bm *batchManager) messageSequencer() {
 			l.Debugf("Exiting: %s", err) // errors logged in readPage
 			return
 		}
-		batchWasFull := (uint64(len(msgs)) == bm.readPageSize)
+		batchWasFull := false
 
 		if len(msgs) > 0 {
+			batchWasFull = (uint64(len(msgs)) == bm.readPageSize)
 			var dispatchCount int
 			for _, msg := range msgs {
 				data, err := bm.assembleMessageData(msg)
@@ -283,6 +288,10 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 		l.Debugf("Woken after poll timeout")
 	case m := <-bm.newMessages:
 		l.Debugf("Woken for trigger for message %s", m)
+	case <-bm.ctx.Done():
+		l.Debugf("Exiting due to canceled context")
+		bm.Close()
+		return
 	}
 	var drained bool
 	for !drained {
@@ -353,4 +362,19 @@ func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fft
 	}
 	processor.newWork <- work
 	return nil
+}
+
+func (bm *batchManager) WaitStop() {
+	<-bm.sequencerClosed
+	var processors []*batchProcessor
+	for _, d := range bm.dispatchers {
+		d.mux.Lock()
+		for _, p := range d.processors {
+			processors = append(processors, p)
+		}
+		d.mux.Unlock()
+	}
+	for _, p := range processors {
+		p.waitClosed()
+	}
 }

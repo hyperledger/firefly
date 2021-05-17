@@ -74,3 +74,8 @@ func (_m *EventManager) TransactionUpdate(txTrackingID string, txState fftypes.T
 
 	return r0
 }
+
+// WaitStop provides a mock function with given fields:
+func (_m *EventManager) WaitStop() {
+	_m.Called()
+}

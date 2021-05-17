@@ -45,7 +45,7 @@ type Orchestrator interface {
 
 	Init(ctx context.Context) error
 	Start() error
-	Close()
+	WaitStop() // The close itself is performed by canceling the context
 
 	// Definitions
 	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
@@ -73,6 +73,7 @@ type Orchestrator interface {
 
 type orchestrator struct {
 	ctx           context.Context
+	started       bool
 	database      database.Plugin
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
@@ -113,16 +114,23 @@ func (or *orchestrator) Start() error {
 	if err == nil {
 		err = or.events.Start()
 	}
+	if err == nil {
+		err = or.broadcast.Start()
+	}
+	or.started = true
 	return err
 }
 
-func (or *orchestrator) Close() {
+func (or *orchestrator) WaitStop() {
+	if !or.started {
+		return
+	}
 	if or.batch != nil {
-		or.batch.Close()
+		or.batch.WaitStop()
 		or.batch = nil
 	}
 	if or.broadcast != nil {
-		or.broadcast.Close()
+		or.broadcast.WaitStop()
 		or.broadcast = nil
 	}
 }

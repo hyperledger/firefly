@@ -42,11 +42,6 @@ func (_m *Orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, 
 	return r0, r1
 }
 
-// Close provides a mock function with given fields:
-func (_m *Orchestrator) Close() {
-	_m.Called()
-}
-
 // GetBatchById provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetBatchById(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -515,4 +510,9 @@ func (_m *Orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.T
 	}
 
 	return r0
+}
+
+// WaitStop provides a mock function with given fields:
+func (_m *Orchestrator) WaitStop() {
+	_m.Called()
 }
