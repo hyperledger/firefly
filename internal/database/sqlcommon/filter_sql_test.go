@@ -40,7 +40,7 @@ func TestSQLQueryFactory(t *testing.T) {
 		Descending()
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err := s.filterSelect(context.Background(), sel, f, map[string]string{
+	sel, err := s.filterSelect(context.Background(), "", sel, f, map[string]string{
 		"namespace": "ns",
 	})
 	assert.NoError(t, err)
@@ -73,7 +73,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 	)
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err := s.filterSelect(context.Background(), sel, f, nil)
+	sel, err := s.filterSelect(context.Background(), "", sel, f, nil)
 	assert.NoError(t, err)
 
 	sqlFilter, _, err := sel.ToSql()
@@ -85,7 +85,7 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := getMockDB()
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelect(context.Background(), sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
+	_, err := s.filterSelect(context.Background(), "", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
 	assert.Regexp(t, "FF10149.*namespace", err.Error())
 }
 

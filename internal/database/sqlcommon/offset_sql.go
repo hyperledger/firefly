@@ -136,7 +136,7 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, ns, nam
 
 func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

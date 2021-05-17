@@ -169,7 +169,7 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *f
 
 func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

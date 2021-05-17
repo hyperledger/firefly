@@ -152,7 +152,7 @@ func (s *SQLCommon) GetDataDefinitionByName(ctx context.Context, ns, name string
 
 func (s *SQLCommon) GetDataDefinitions(ctx context.Context, filter database.Filter) (message []*fftypes.DataDefinition, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(dataDefColumns...).From("datadefs"), filter, dataDefFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataDefColumns...).From("datadefs"), filter, dataDefFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

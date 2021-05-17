@@ -179,7 +179,7 @@ func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string)
 
 func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(subscriptionColumns...).From("subscriptions"), filter, subscriptionFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From("subscriptions"), filter, subscriptionFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

@@ -16,6 +16,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
@@ -45,7 +46,13 @@ func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "seq",
+		SequenceField: func(t string) string {
+			if t == "" {
+				return "seq"
+			} else {
+				return fmt.Sprintf("%s.seq", t)
+			}
+		},
 	}
 
 	db, err := sql.Open("postgres", prefix.GetString(PSQLConfURL))

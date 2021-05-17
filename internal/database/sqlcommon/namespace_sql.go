@@ -152,7 +152,7 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 
 func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

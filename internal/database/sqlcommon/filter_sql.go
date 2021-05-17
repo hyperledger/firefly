@@ -24,13 +24,13 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, seqTable string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
 		return sel, err
 	}
 	if len(fi.Sort) == 0 {
-		fi.Sort = []string{s.options.SequenceField}
+		fi.Sort = []string{s.options.SequenceField(seqTable)}
 		fi.Descending = true
 	}
 	sel, err = s.filterSelectFinalized(ctx, sel, fi, typeMap)
@@ -96,7 +96,7 @@ func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
 
 func (s *SQLCommon) mapField(f string, tm map[string]string) string {
 	if f == "sequence" {
-		return s.options.SequenceField
+		return s.options.SequenceField("")
 	}
 	if tm == nil {
 		return f

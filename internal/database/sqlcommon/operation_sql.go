@@ -165,7 +165,7 @@ func (s *SQLCommon) GetOperationById(ctx context.Context, id *uuid.UUID) (operat
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
