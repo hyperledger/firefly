@@ -55,6 +55,12 @@ type Message struct {
 	Data      DataRefs      `json:"data"`
 }
 
+type MessageRef struct {
+	ID       *uuid.UUID `json:"id,omitempty"`
+	Sequence int64      `json:"sequence,omitempty"`
+	Hash     *Bytes32   `json:"hash,omitempty"`
+}
+
 func (h *MessageHeader) Hash() *Bytes32 {
 	b, _ := json.Marshal(&h)
 	var b32 Bytes32 = sha256.Sum256(b)

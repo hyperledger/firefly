@@ -98,7 +98,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
 	// Query back the data
-	fb := database.DataQueryFactory.NewFilter(ctx, 0)
+	fb := database.DataQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
 		fb.Eq("namespace", dataUpdated.Namespace),
@@ -128,6 +128,20 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataRes, err = s.GetData(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(dataRes))
+
+	// Check if we refer correctly to this data, we have it reported as available to a message
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: dataUpdated.Namespace,
+		},
+		Data: fftypes.DataRefs{
+			{ID: dataUpdated.ID, Hash: dataUpdated.Hash},
+		},
+	}
+	dataAvailable, err := s.CheckDataAvailable(ctx, msg)
+	assert.NoError(t, err)
+	assert.True(t, dataAvailable)
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
@@ -216,7 +230,7 @@ func TestGetDataByIdScanFail(t *testing.T) {
 func TestGetDataQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -224,7 +238,7 @@ func TestGetDataQueryFail(t *testing.T) {
 
 func TestGetDataBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -232,7 +246,7 @@ func TestGetDataBuildQueryFail(t *testing.T) {
 func TestGetDataReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.DataQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

@@ -26,14 +26,16 @@ import (
 
 func TestSQLQueryFactory(t *testing.T) {
 	s, _ := getMockDB()
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
 		fb.Eq("namespace", "ns1"),
 		fb.Or(
 			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
 			fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7"),
 		),
-		fb.Gt("sequence", "12345")).
+		fb.Gt("sequence", "12345"),
+		fb.Eq("confirmed", nil),
+	).
 		Skip(50).
 		Limit(25).
 		Sort("namespace").
@@ -47,7 +49,7 @@ func TestSQLQueryFactory(t *testing.T) {
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ?) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ? AND confirmed IS NULL) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])
@@ -57,7 +59,7 @@ func TestSQLQueryFactory(t *testing.T) {
 func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	s, _ := getMockDB()
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
 		fb.In("created", []driver.Value{1, 2, 3}),
 		fb.NotIn("id", []driver.Value{"a", "b", "c"}),
@@ -83,7 +85,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := getMockDB()
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
 	assert.Regexp(t, "FF10149.*namespace", err.Error())

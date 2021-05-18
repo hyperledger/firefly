@@ -29,17 +29,26 @@ import (
 // QueryFactory creates a filter builder in the given context, and contains the rules on
 // which fields can be used by the builder (and how they are serialized)
 type QueryFactory interface {
-	NewFilter(ctx context.Context, defLimit uint64) FilterBuilder
+	NewFilter(ctx context.Context) FilterBuilder
+	NewFilterLimit(ctx context.Context, defLimit uint64) FilterBuilder
 	NewUpdate(ctx context.Context) UpdateBuilder
 }
 
 type queryFields map[string]Field
 
-func (qf *queryFields) NewFilter(ctx context.Context, defLimit uint64) FilterBuilder {
+func (qf *queryFields) NewFilterLimit(ctx context.Context, defLimit uint64) FilterBuilder {
 	return &filterBuilder{
 		ctx:         ctx,
 		queryFields: *qf,
 		limit:       defLimit,
+	}
+}
+
+func (qf *queryFields) NewFilter(ctx context.Context) FilterBuilder {
+	return &filterBuilder{
+		ctx:         ctx,
+		queryFields: *qf,
+		limit:       0,
 	}
 }
 

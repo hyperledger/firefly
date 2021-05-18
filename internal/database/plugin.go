@@ -103,8 +103,14 @@ type PeristenceInterface interface {
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
+	// Lighter weight query to just get the reference info of messages
+	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
+
 	// List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter Filter) (message []*fftypes.Message, err error)
+
+	// Check to see if all the data for this message is available
+	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
 
 	// Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
@@ -351,4 +357,5 @@ var EventQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"reference": &StringField{},
 	"sequence":  &Int64Field{},
+	"created":   &TimeField{},
 }

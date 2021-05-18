@@ -96,7 +96,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return nil // This is not retryable. skip this batch
 	}
 
-	// Set confirmed on the batch
+	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
@@ -198,12 +198,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 	}
 
 	// Persist a data arrival event
-	event := &fftypes.Event{
-		ID:        fftypes.NewUUID(),
-		Type:      fftypes.EventTypeDataArrivedBroadcast,
-		Namespace: data.Namespace,
-		Reference: data.ID,
-	}
+	event := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, data.Namespace, data.ID)
 	if err = em.database.UpsertEvent(ctx, event); err != nil {
 		l.Errorf("Failed to insert %s event for data %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
@@ -227,11 +222,8 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 		return nil // skip message entry
 	}
 
-	// Set the confirmed timestamp on the message
-	msg.Confirmed = now
-	msg.BatchID = batch.ID
-
-	// Insert the message, ensuring the hash doesn't change
+	// Insert the message, ensuring the hash doesn't change.
+	// We do not mark it as confirmed at this point, that's the job of the aggregator.
 	if err = em.database.UpsertMessage(ctx, msg, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid message entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
@@ -242,12 +234,7 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 	}
 
 	// Persist a message broadcast event
-	event := &fftypes.Event{
-		ID:        fftypes.NewUUID(),
-		Type:      fftypes.EventTypeMessageSequencedBroadcast,
-		Namespace: msg.Header.Namespace,
-		Reference: msg.Header.ID,
-	}
+	event := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, msg.Header.Namespace, msg.Header.ID)
 	if err = em.database.UpsertEvent(ctx, event); err != nil {
 		l.Errorf("Failed to insert %s event for message %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)

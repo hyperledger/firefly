@@ -32,6 +32,7 @@ var (
 		"etype",
 		"namespace",
 		"ref",
+		"created",
 	}
 	eventFilterTypeMap = map[string]string{
 		"type":      "etype",
@@ -65,6 +66,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 				Set("etype", string(event.Type)).
 				Set("namespace", string(event.Namespace)).
 				Set("ref", event.Reference).
+				Set("created", event.Created).
 				Where(sq.Eq{"id": event.ID}),
 		); err != nil {
 			return err
@@ -80,6 +82,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 					string(event.Type),
 					event.Namespace,
 					event.Reference,
+					event.Created,
 				),
 		); err != nil {
 			return err
@@ -101,6 +104,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 		&event.Type,
 		&event.Namespace,
 		&event.Reference,
+		&event.Created,
 		// Must be added to the list of columns in all selects
 		&event.Sequence,
 	)

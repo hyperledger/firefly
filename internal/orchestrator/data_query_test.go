@@ -56,7 +56,7 @@ func TestGetNamespaces(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	mp.On("GetNamespaces", mock.Anything, mock.Anything).Return([]*fftypes.Namespace{}, nil)
-	fb := database.NamespaceQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.NamespaceQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("name", "ns1"))
 	_, err := o.GetNamespaces(context.Background(), f)
 	assert.NoError(t, err)
@@ -68,7 +68,7 @@ func TestGetTransactions(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetTransactions", mock.Anything, mock.Anything).Return([]*fftypes.Transaction{}, nil)
-	fb := database.TransactionQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.TransactionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetTransactions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestGetMessages(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetMessages(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestGetMessagesForData(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetMessagesForData", mock.Anything, u, mock.Anything).Return([]*fftypes.Message{}, nil)
-	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetMessagesForData(context.Background(), "ns1", u.String(), f)
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestGetMessagesForDataBadId(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).And()
+	f := database.MessageQueryFactory.NewFilter(context.Background()).And()
 	_, err := o.GetMessagesForData(context.Background(), "!wrong", "!bad", f)
 	assert.Regexp(t, "FF10142", err.Error())
 }
@@ -128,7 +128,7 @@ func TestGetMessageOperations(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
-	fb := database.OperationQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.OperationQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", fftypes.OpTypeBlockchainBatchPin))
 	_, err := o.GetMessageOperations(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
@@ -149,7 +149,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 	}
 	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, nil)
 	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
 	_, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
@@ -166,7 +166,7 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
-	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
 	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
@@ -196,7 +196,7 @@ func TestGetBatches(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.Batch{}, nil)
-	fb := database.BatchQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.BatchQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetBatches(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -224,7 +224,7 @@ func TestGetData(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetData", mock.Anything, mock.Anything).Return([]*fftypes.Data{}, nil)
-	fb := database.DataQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.DataQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -284,7 +284,7 @@ func TestGetDataDefinitions(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetDataDefinitions", mock.Anything, mock.Anything).Return([]*fftypes.DataDefinition{}, nil)
-	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetDataDefinitions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -296,7 +296,7 @@ func TestGetOperations(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
-	fb := database.OperationQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.OperationQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetOperations(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -308,7 +308,7 @@ func TestGetEvents(t *testing.T) {
 	o.database = mp
 	u := fftypes.NewUUID()
 	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
+	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, err := o.GetEvents(context.Background(), "ns1", f)
 	assert.NoError(t, err)

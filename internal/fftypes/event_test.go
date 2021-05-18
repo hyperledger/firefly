@@ -104,3 +104,13 @@ func TestEventDatabaseSerialization(t *testing.T) {
 	assert.Equal(t, "", v)
 
 }
+
+func TestNewEvent(t *testing.T) {
+
+	u := NewUUID()
+	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
+	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
+	assert.Equal(t, "ns1", e.Namespace)
+	assert.Equal(t, *u, *e.Reference)
+
+}

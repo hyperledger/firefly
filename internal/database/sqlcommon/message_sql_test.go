@@ -133,7 +133,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
 	// Query back the message
-	fb := database.MessageQueryFactory.NewFilter(ctx, 0)
+	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", msgUpdated.Header.ID.String()),
 		fb.Eq("namespace", msgUpdated.Header.Namespace),
@@ -150,6 +150,19 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
+
+	// Check just getting hte refs
+	msgRefs, err := s.GetMessageRefs(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(msgs))
+	assert.Equal(t, msgUpdated.Header.ID, msgRefs[0].ID)
+	assert.Equal(t, msgUpdated.Hash, msgRefs[0].Hash)
+	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)
+
+	// The data will not be available though, confirm we report as such
+	dataAvailable, err := s.CheckDataAvailable(ctx, msgUpdated)
+	assert.NoError(t, err)
+	assert.False(t, dataAvailable)
 
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, err = s.GetMessagesForData(ctx, &dataId3, filter)
@@ -435,7 +448,7 @@ func TestGetMessageByIdLoadRefsFail(t *testing.T) {
 
 func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -443,7 +456,7 @@ func TestGetMessagesBuildQueryFail(t *testing.T) {
 func TestGetMessagesQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -451,7 +464,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 
 func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := getMockDB()
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("!wrong", "")
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
 	assert.Regexp(t, "FF10148", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -460,7 +473,7 @@ func TestGetMessagesForDataBadQuery(t *testing.T) {
 func TestGetMessagesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -475,9 +488,34 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
 		AddRow(msgId.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Gt("confirmed", "0")
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageRefsBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetMessageRefs(context.Background(), f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestGetMessageRefsQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageRefs(context.Background(), f)
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessageRefsReadMessageFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetMessageRefs(context.Background(), f)
+	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -500,7 +538,7 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 func TestMessagesUpdateBuildFilterFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
-	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
 	err := s.UpdateMessages(context.Background(), f, u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
@@ -514,4 +552,72 @@ func TestMessageUpdateFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("group", fftypes.NewUUID())
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
+}
+
+func TestCheckDataAvailableFalseBadMessage(t *testing.T) {
+	s, _ := getMockDB()
+	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{})
+	assert.False(t, ok)
+	assert.NoError(t, err) // function just returns false and logs if the data cannot be checked for input error
+}
+
+func TestCheckDataAvailableFalseBadMessageRefs(t *testing.T) {
+	s, _ := getMockDB()
+	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: nil},
+		},
+	})
+	assert.False(t, ok)
+	assert.NoError(t, err) // function just returns false and logs if the data cannot be checked for input error
+}
+
+func TestCheckDataAvailableTrueNoData(t *testing.T) {
+	s, _ := getMockDB()
+	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
+	})
+	assert.True(t, ok)
+	assert.NoError(t, err)
+}
+
+func TestCheckDataAvailableDatabaseError(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	})
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.False(t, ok)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestCheckDataAvailableScanError(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	})
+	assert.Regexp(t, "FF10121", err.Error())
+	assert.False(t, ok)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

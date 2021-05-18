@@ -32,6 +32,7 @@ const (
 	EventTypeDataArrivedBroadcast      EventType = "data_arrived_broadcast"
 	EventTypeMessageSequencedBroadcast EventType = "message_sequenced_broadcast"
 	EventTypeMessageConfirmed          EventType = "message_confirmed"
+	EventTypeMessagesUnblocked         EventType = "messages_unblocked"
 )
 
 type Event struct {
@@ -40,7 +41,18 @@ type Event struct {
 	Namespace string      `json:"namespace"`
 	Reference *uuid.UUID  `json:"reference"`
 	Sequence  int64       `json:"sequence"`
+	Created   *FFTime     `json:"created"`
 	Data      interface{} `json:"data"` // Not persisted
+}
+
+func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
+	return &Event{
+		ID:        NewUUID(),
+		Type:      t,
+		Namespace: ns,
+		Reference: ref,
+		Created:   Now(),
+	}
 }
 
 func (et *EventTypes) UnmarshalJSON(b []byte) error {

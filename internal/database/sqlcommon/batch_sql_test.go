@@ -103,7 +103,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	assert.Equal(t, string(batchJson), string(batchReadJson))
 
 	// Query back the batch
-	fb := database.BatchQueryFactory.NewFilter(ctx, 0)
+	fb := database.BatchQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", batchUpdated.ID.String()),
 		fb.Eq("namespace", batchUpdated.Namespace),
@@ -228,7 +228,7 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 func TestGetBatchesQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -236,7 +236,7 @@ func TestGetBatchesQueryFail(t *testing.T) {
 
 func TestGetBatchesBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -244,7 +244,7 @@ func TestGetBatchesBuildQueryFail(t *testing.T) {
 func TestGetBatchesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

@@ -25,7 +25,7 @@ import (
 )
 
 func TestBuildMessageFilter(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And().
 		Condition(fb.Eq("namespace", "ns1")).
 		Condition(fb.Or().
@@ -33,6 +33,7 @@ func TestBuildMessageFilter(t *testing.T) {
 			Condition(fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7")),
 		).
 		Condition(fb.Gt("sequence", 12345)).
+		Condition(fb.Eq("confirmed", nil)).
 		Skip(50).
 		Limit(25).
 		Sort("namespace").
@@ -40,11 +41,11 @@ func TestBuildMessageFilter(t *testing.T) {
 		Finalize()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) sort=namespace descending skip=50 limit=25", f.String())
+	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=namespace descending skip=50 limit=25", f.String())
 }
 
 func TestBuildMessageFilter2(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.Gt("sequence", "0").
 		Sort("sequence").
 		Ascending().
@@ -55,7 +56,7 @@ func TestBuildMessageFilter2(t *testing.T) {
 }
 
 func TestBuildMessageFilter3(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
 		fb.Lt("sequence", "0"),
 		fb.Lte("sequence", "0"),
@@ -74,7 +75,7 @@ func TestBuildMessageFilter3(t *testing.T) {
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
 		fb.In("!wrong", []driver.Value{"a", "b", "c"}),
 	).Finalize()
@@ -82,7 +83,7 @@ func TestBuildMessageBadInFilterField(t *testing.T) {
 }
 
 func TestBuildMessageBadInFilterValue(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
 		fb.In("sequence", []driver.Value{"!integer"}),
 	).Finalize()
@@ -90,7 +91,7 @@ func TestBuildMessageBadInFilterValue(t *testing.T) {
 }
 
 func TestBuildMessageIntConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
 		fb.Lt("sequence", int(111)),
 		fb.Lt("sequence", int32(222)),
@@ -104,7 +105,7 @@ func TestBuildMessageIntConvert(t *testing.T) {
 }
 
 func TestBuildMessageTimeConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
 		fb.Gt("created", int64(1621112824)),
 		fb.Gt("created", 0),
@@ -118,7 +119,7 @@ func TestBuildMessageTimeConvert(t *testing.T) {
 }
 
 func TestBuildMessageStringConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	u := uuid.MustParse("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
 	b32 := fftypes.UUIDBytes(&u)
 	f, err := fb.And(
@@ -139,25 +140,25 @@ func TestBuildMessageStringConvert(t *testing.T) {
 }
 
 func TestBuildMessageFailStringConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*namespace", err.Error())
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("sequence", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*sequence", err.Error())
 }
 
 func TestBuildMessageFailTimeConvert(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("created", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*created", err.Error())
 }
 
 func TestQueryFactoryBadField(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
 		fb.Eq("wrong", "ns1"),
 	).Finalize()
@@ -165,7 +166,7 @@ func TestQueryFactoryBadField(t *testing.T) {
 }
 
 func TestQueryFactoryBadValue(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
 		fb.Eq("sequence", "not an int"),
 	).Finalize()
@@ -173,7 +174,7 @@ func TestQueryFactoryBadValue(t *testing.T) {
 }
 
 func TestQueryFactoryBadNestedValue(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.And(
 		fb.And(
 			fb.Eq("sequence", "not an int"),
@@ -183,11 +184,11 @@ func TestQueryFactoryBadNestedValue(t *testing.T) {
 }
 
 func TestQueryFactoryGetFields(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0)
+	fb := MessageQueryFactory.NewFilter(context.Background())
 	assert.NotNil(t, fb.Fields())
 }
 
 func TestQueryFactoryGetBuilder(t *testing.T) {
-	fb := MessageQueryFactory.NewFilter(context.Background(), 0).Gt("sequence", 0)
+	fb := MessageQueryFactory.NewFilter(context.Background()).Gt("sequence", 0)
 	assert.NotNil(t, fb.Builder())
 }

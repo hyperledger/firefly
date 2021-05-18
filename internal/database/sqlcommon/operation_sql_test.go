@@ -83,7 +83,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(operationJson), string(operationReadJson))
 
 	// Query back the operation
-	fb := database.OperationQueryFactory.NewFilter(ctx, 0)
+	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", operationUpdated.ID.String()),
 		fb.Eq("namespace", operationUpdated.Namespace),
@@ -120,7 +120,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Set("status", fftypes.OpStatusSucceeded).
 		Set("updated", updateTime).
 		Set("error", "")
-	idFilter := database.OperationQueryFactory.NewFilter(ctx, 0).
+	idFilter := database.OperationQueryFactory.NewFilter(ctx).
 		Eq("id", operationUpdated.ID)
 	err = s.UpdateOperations(ctx, idFilter, up)
 	assert.NoError(t, err)
@@ -223,7 +223,7 @@ func TestGetOperationByIdScanFail(t *testing.T) {
 func TestGetOperationsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetOperations(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -231,7 +231,7 @@ func TestGetOperationsQueryFail(t *testing.T) {
 
 func TestGetOperationsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetOperations(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -239,7 +239,7 @@ func TestGetOperationsBuildQueryFail(t *testing.T) {
 func TestGettOperationsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetOperations(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -248,7 +248,7 @@ func TestGettOperationsReadMessageFail(t *testing.T) {
 func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -257,7 +257,7 @@ func TestOperationUpdateBeginFail(t *testing.T) {
 func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
@@ -266,7 +266,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 func TestOperationUpdateBuildFilterFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
@@ -277,7 +277,7 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	f := database.OperationQueryFactory.NewFilter(context.Background(), 0).Eq("id", fftypes.NewUUID())
+	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10117", err.Error())

@@ -37,6 +37,27 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
+// CheckDataAvailable provides a mock function with given fields: ctx, msg
+func (_m *Plugin) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error) {
+	ret := _m.Called(ctx, msg)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) bool); ok {
+		r0 = rf(ctx, msg)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message) error); ok {
+		r1 = rf(ctx, msg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBatchById provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetBatchById(ctx context.Context, id *uuid.UUID) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, id)
@@ -260,6 +281,29 @@ func (_m *Plugin) GetMessageById(ctx context.Context, id *uuid.UUID) (*fftypes.M
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMessageRefs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.MessageRef
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.MessageRef); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.MessageRef)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
