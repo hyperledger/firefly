@@ -37,7 +37,7 @@ func TestDefaults(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
-	assert.True(t, GetBool(LogColor))
+	assert.True(t, GetBool(CorsAllowCredentials))
 	assert.Equal(t, uint(0), GetUint(HttpPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))

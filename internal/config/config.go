@@ -70,7 +70,9 @@ var (
 	HttpTLSKeyFile                 RootKey = ark("http.tls.keyFile")
 	HttpWriteTimeout               RootKey = ark("http.writeTimeout")
 	Lang                           RootKey = ark("lang")
-	LogColor                       RootKey = ark("log.color")
+	LogUTC                         RootKey = ark("log.utc")
+	LogNoColor                     RootKey = ark("log.noColor")
+	LogForceColor                  RootKey = ark("log.forceColor")
 	LogLevel                       RootKey = ark("log.level")
 	LogTimeFormat                  RootKey = ark("log.timeFormat")
 	NamespacesDefault              RootKey = ark("namespaces.default")
@@ -140,8 +142,8 @@ func Reset() {
 	viper.SetDefault(string(HttpReadTimeout), "15s")
 	viper.SetDefault(string(HttpWriteTimeout), "15s")
 	viper.SetDefault(string(Lang), "en")
-	viper.SetDefault(string(LogColor), true)
 	viper.SetDefault(string(LogLevel), "info")
+	viper.SetDefault(string(LogUTC), false)
 	viper.SetDefault(string(LogTimeFormat), "2006-01-02T15:04:05.000Z07:00")
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
@@ -333,8 +335,10 @@ func (c *configPrefix) Resolve(key string) string {
 // SetupLogging initializes logging
 func SetupLogging(ctx context.Context) {
 	log.SetFormatting(log.Formatting{
-		DisableColors:   !GetBool(LogColor),
+		DisableColor:    GetBool(LogNoColor),
+		ForceColor:      GetBool(LogForceColor),
 		TimestampFormat: GetString(LogTimeFormat),
+		UTC:             GetBool(LogUTC),
 	})
 	log.SetLevel(GetString(LogLevel))
 	log.L(ctx).Debugf("Log level: %s", logrus.GetLevel())
