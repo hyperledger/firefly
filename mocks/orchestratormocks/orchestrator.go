@@ -5,11 +5,11 @@ package orchestratormocks
 import (
 	context "context"
 
-	blockchain "github.com/kaleido-io/firefly/internal/blockchain"
+	blockchain "github.com/kaleido-io/firefly/pkg/blockchain"
 
-	database "github.com/kaleido-io/firefly/internal/database"
+	database "github.com/kaleido-io/firefly/pkg/database"
 
-	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
+	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

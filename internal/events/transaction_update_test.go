@@ -17,7 +17,7 @@ package events
 import (
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func TestTransactionUpdate(t *testing.T) {

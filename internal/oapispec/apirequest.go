@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/orchestrator"
 )
 

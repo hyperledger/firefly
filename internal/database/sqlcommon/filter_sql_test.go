@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
 

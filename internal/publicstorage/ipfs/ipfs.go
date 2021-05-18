@@ -24,10 +24,10 @@ import (
 	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 	"github.com/kaleido-io/firefly/internal/restclient"
 )
 

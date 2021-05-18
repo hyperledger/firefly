@@ -17,7 +17,7 @@
 package databasefactory
 
 import (
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/postgres"
 	"github.com/kaleido-io/firefly/internal/database/ql"
 	"github.com/kaleido-io/firefly/internal/database/sqlite"

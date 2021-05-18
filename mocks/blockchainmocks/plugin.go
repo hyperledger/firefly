@@ -3,8 +3,8 @@
 package blockchainmocks
 
 import (
-	blockchain "github.com/kaleido-io/firefly/internal/blockchain"
 	config "github.com/kaleido-io/firefly/internal/config"
+	blockchain "github.com/kaleido-io/firefly/pkg/blockchain"
 
 	context "context"
 

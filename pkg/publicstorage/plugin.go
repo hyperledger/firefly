@@ -19,7 +19,7 @@ import (
 	"io"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 // Plugin is the interface implemented by each Public Storage plugin

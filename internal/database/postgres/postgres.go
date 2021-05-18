@@ -22,7 +22,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
 	"github.com/kaleido-io/firefly/internal/i18n"
 

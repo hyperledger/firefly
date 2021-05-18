@@ -14,7 +14,7 @@
 
 package events
 
-import "github.com/kaleido-io/firefly/internal/fftypes"
+import "github.com/kaleido-io/firefly/pkg/fftypes"
 
 func (em *eventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
 	return nil

@@ -25,7 +25,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/ql"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"

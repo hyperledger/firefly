@@ -20,10 +20,10 @@ import (
 	"io"
 
 	"github.com/gofrs/uuid"
-	"github.com/kaleido-io/firefly/internal/blockchain"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 // SequencedBroadcastBatch is called in-line with a particular ledger's stream of events, so while we
