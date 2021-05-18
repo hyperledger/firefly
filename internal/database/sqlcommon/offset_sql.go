@@ -37,28 +37,32 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset) (err error) {
+func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	offsetRows, err := s.queryTx(ctx, tx,
-		sq.Select("otype", "namespace", "name").
-			From("offsets").
-			Where(
-				sq.Eq{"otype": offset.Type,
-					"namespace": offset.Namespace,
-					"name":      offset.Name}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		offsetRows, err := s.queryTx(ctx, tx,
+			sq.Select("otype", "namespace", "name").
+				From("offsets").
+				Where(
+					sq.Eq{"otype": offset.Type,
+						"namespace": offset.Namespace,
+						"name":      offset.Name}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = offsetRows.Next()
+		offsetRows.Close()
 	}
 
-	if offsetRows.Next() {
-		offsetRows.Close()
+	if existing {
 
 		// Update the offset
 		if _, err = s.updateTx(ctx, tx,
@@ -74,8 +78,6 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset) (e
 			return err
 		}
 	} else {
-		offsetRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("offsets").
 				Columns(offsetColumns...).

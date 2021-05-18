@@ -35,7 +35,7 @@ func TestE2EDispatch(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
 	handler := func(ctx context.Context, b *fftypes.Batch) error {
@@ -78,8 +78,8 @@ func TestE2EDispatch(t *testing.T) {
 	})).Return(data, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
@@ -145,7 +145,7 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 func TestInitFailCannotCreateOffset(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mdi)
 	assert.NoError(t, err)
 	defer bm.Close()
@@ -251,7 +251,7 @@ func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
 		bm.Close() // so we only go round once
 	}
 	mdi.On("GetDataById", mock.Anything, dataId).Return(&fftypes.Data{ID: dataId}, nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	rag.RunFn = func(a mock.Arguments) {

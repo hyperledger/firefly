@@ -42,7 +42,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		Events:    fftypes.EventTypes{},
 		Created:   fftypes.Now(),
 	}
-	err := s.UpsertSubscription(ctx, subscription)
+	err := s.UpsertSubscription(ctx, subscription, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same subscription back
@@ -80,12 +80,12 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	}
 
 	// Rejects attempt to update ID
-	err = s.UpsertSubscription(context.Background(), subscriptionUpdated)
+	err = s.UpsertSubscription(context.Background(), subscriptionUpdated, true)
 	assert.Equal(t, database.IDMismatch, err)
 
 	// Blank out the ID and retry
 	subscriptionUpdated.ID = nil
-	err = s.UpsertSubscription(context.Background(), subscriptionUpdated)
+	err = s.UpsertSubscription(context.Background(), subscriptionUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the subscription elements
@@ -126,7 +126,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 func TestUpsertSubscriptionFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{})
+	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -136,7 +136,7 @@ func TestUpsertSubscriptionFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"})
+	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -147,7 +147,7 @@ func TestUpsertSubscriptionFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"})
+	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -159,7 +159,7 @@ func TestUpsertSubscriptionFailUpdate(t *testing.T) {
 		AddRow("name1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"})
+	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -170,7 +170,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"})
+	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{Name: "name1"}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

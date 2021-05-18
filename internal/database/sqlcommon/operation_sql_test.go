@@ -45,7 +45,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Status:    fftypes.OpStatusPending,
 		Created:   fftypes.Now(),
 	}
-	err := s.UpsertOperation(ctx, operation)
+	err := s.UpsertOperation(ctx, operation, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same operation back
@@ -72,7 +72,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Updated:   fftypes.Now(),
 	}
-	err = s.UpsertOperation(context.Background(), operationUpdated)
+	err = s.UpsertOperation(context.Background(), operationUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the operation elements
@@ -140,7 +140,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 func TestUpsertOperationFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{})
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -151,7 +151,7 @@ func TestUpsertOperationFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	operationId := uuid.New()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId})
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -163,7 +163,7 @@ func TestUpsertOperationFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	operationId := uuid.New()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId})
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -175,7 +175,7 @@ func TestUpsertOperationFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(operationId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId})
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -187,7 +187,7 @@ func TestUpsertOperationFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId})
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: &operationId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

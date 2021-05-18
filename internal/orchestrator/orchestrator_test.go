@@ -72,7 +72,7 @@ func TestInitOK(t *testing.T) {
 	dbm := &databasemocks.Plugin{}
 	or.database = dbm
 	dbm.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	dbm.On("UpsertNamespace", mock.Anything, mock.Anything).Return(nil)
+	dbm.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
@@ -156,7 +156,7 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 		database: mdb,
 	}
 	mdb.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	mdb.On("UpsertNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdb.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
 	assert.Regexp(t, "pop", err.Error())
 }

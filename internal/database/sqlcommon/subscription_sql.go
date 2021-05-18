@@ -46,39 +46,44 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftypes.Subscription) (err error) {
+func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftypes.Subscription, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	subscriptionRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("subscriptions").
-			Where(sq.Eq{
-				"namespace": subscription.Namespace,
-				"name":      subscription.Name,
-			}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		subscriptionRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("subscriptions").
+				Where(sq.Eq{
+					"namespace": subscription.Namespace,
+					"name":      subscription.Name,
+				}),
+		)
+		if err != nil {
+			return err
+		}
+
+		existing = subscriptionRows.Next()
+		if existing {
+			var id uuid.UUID
+			_ = subscriptionRows.Scan(&id)
+			if subscription.ID != nil {
+				if *subscription.ID != id {
+					subscriptionRows.Close()
+					return database.IDMismatch
+				}
+			}
+			subscription.ID = &id // Update on returned object
+		}
+		subscriptionRows.Close()
 	}
 
-	if subscriptionRows.Next() {
-
-		var id uuid.UUID
-		_ = subscriptionRows.Scan(&id)
-		if subscription.ID != nil {
-			if *subscription.ID != id {
-				subscriptionRows.Close()
-				return database.IDMismatch
-			}
-		}
-		subscription.ID = &id // Update on returned object
-		subscriptionRows.Close()
-
+	if existing {
 		// Update the subscription
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("subscriptions").
@@ -100,8 +105,6 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 			return err
 		}
 	} else {
-		subscriptionRows.Close()
-
 		if subscription.ID == nil {
 			subscription.ID = fftypes.NewUUID()
 		}

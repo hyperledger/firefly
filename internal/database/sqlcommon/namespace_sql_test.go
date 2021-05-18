@@ -41,7 +41,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		Name:    "namespace1",
 		Created: fftypes.Now(),
 	}
-	err := s.UpsertNamespace(ctx, namespace)
+	err := s.UpsertNamespace(ctx, namespace, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same namespace back
@@ -56,7 +56,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	err = s.UpsertNamespace(context.Background(), &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
 		Name: "namespace1",
-	})
+	}, true)
 	assert.Equal(t, database.IDMismatch, err)
 
 	// Update the namespace (this is testing what's possible at the database layer,
@@ -69,7 +69,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		Created:     fftypes.Now(),
 		Confirmed:   fftypes.Now(),
 	}
-	err = s.UpsertNamespace(context.Background(), namespaceUpdated)
+	err = s.UpsertNamespace(context.Background(), namespaceUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the namespace elements
@@ -110,7 +110,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 func TestUpsertNamespaceFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{})
+	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -120,7 +120,7 @@ func TestUpsertNamespaceFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"})
+	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -131,7 +131,7 @@ func TestUpsertNamespaceFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"})
+	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -143,7 +143,7 @@ func TestUpsertNamespaceFailUpdate(t *testing.T) {
 		AddRow("name1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"})
+	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -154,7 +154,7 @@ func TestUpsertNamespaceFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"})
+	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

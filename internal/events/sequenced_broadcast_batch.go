@@ -100,7 +100,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err := em.database.UpsertBatch(ctx, batch, false)
+	err := em.database.UpsertBatch(ctx, batch, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
@@ -144,7 +144,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	tx.Status = fftypes.TransactionStatusConfirmed
 
 	// Upsert the transaction, ensuring the hash does not change
-	err = em.database.UpsertTransaction(ctx, tx, false)
+	err = em.database.UpsertTransaction(ctx, tx, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batch.ID, tx.Hash)
@@ -188,7 +188,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 	}
 
 	// Insert the data, ensuring the hash doesn't change
-	if err = em.database.UpsertData(ctx, data, false); err != nil {
+	if err = em.database.UpsertData(ctx, data, true, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid data entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, data.ID, data.Hash)
 			return nil // This is not retryable. skip this data entry
@@ -199,7 +199,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 
 	// Persist a data arrival event
 	event := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, data.Namespace, data.ID)
-	if err = em.database.UpsertEvent(ctx, event); err != nil {
+	if err = em.database.UpsertEvent(ctx, event, false); err != nil {
 		l.Errorf("Failed to insert %s event for data %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
 	}
@@ -224,7 +224,7 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 
 	// Insert the message, ensuring the hash doesn't change.
 	// We do not mark it as confirmed at this point, that's the job of the aggregator.
-	if err = em.database.UpsertMessage(ctx, msg, false); err != nil {
+	if err = em.database.UpsertMessage(ctx, msg, true, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid message entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
 			return nil // This is not retryable. skip this data entry
@@ -235,7 +235,7 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 
 	// Persist a message broadcast event
 	event := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, msg.Header.Namespace, msg.Header.ID)
-	if err = em.database.UpsertEvent(ctx, event); err != nil {
+	if err = em.database.UpsertEvent(ctx, event, false); err != nil {
 		l.Errorf("Failed to insert %s event for message %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
 	}

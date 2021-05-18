@@ -354,7 +354,7 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 			Name:      msgBatchOffsetName,
 			Current:   bm.offset,
 		}
-		err = bm.database.UpsertOffset(bm.ctx, offset)
+		err = bm.database.UpsertOffset(bm.ctx, offset, true)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			stillRetrying := infiniteRetry || (attempt <= bm.startupOffsetRetryAttempts)

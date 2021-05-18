@@ -49,7 +49,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		Reference: fftypes.NewUUID(),
 		Created:   fftypes.Now(),
 	}
-	err := s.UpsertEvent(ctx, event)
+	err := s.UpsertEvent(ctx, event, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same event back
@@ -71,7 +71,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		Reference: fftypes.NewUUID(),
 		Created:   fftypes.Now(),
 	}
-	err = s.UpsertEvent(context.Background(), eventUpdated)
+	err = s.UpsertEvent(context.Background(), eventUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the event elements
@@ -124,7 +124,7 @@ func TestEventE2EWithDB(t *testing.T) {
 func TestUpsertEventFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{})
+	err := s.UpsertEvent(context.Background(), &fftypes.Event{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -135,7 +135,7 @@ func TestUpsertEventFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventId := uuid.New()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId})
+	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -147,7 +147,7 @@ func TestUpsertEventFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventId := uuid.New()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId})
+	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -159,7 +159,7 @@ func TestUpsertEventFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(eventId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId})
+	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -171,7 +171,7 @@ func TestUpsertEventFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId})
+	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: &eventId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

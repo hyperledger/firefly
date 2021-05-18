@@ -44,30 +44,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	dataRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("data").
-			Where(sq.Eq{"id": data.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		dataRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("data").
+				Where(sq.Eq{"id": data.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	dataDef := data.Definition
-	if dataDef == nil {
-		dataDef = &fftypes.DataDefinitionRef{}
-	}
-
-	if dataRows.Next() {
-		if !allowHashUpdate {
+		existing = dataRows.Next()
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = dataRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, data.Hash) {
@@ -77,7 +74,14 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHas
 			}
 		}
 		dataRows.Close()
+	}
 
+	dataDef := data.Definition
+	if dataDef == nil {
+		dataDef = &fftypes.DataDefinitionRef{}
+	}
+
+	if existing {
 		// Update the data
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("data").
@@ -93,8 +97,6 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHas
 			return err
 		}
 	} else {
-		dataRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("data").
 				Columns(dataColumns...).

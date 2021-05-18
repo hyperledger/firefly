@@ -248,7 +248,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 			ns.Description = description
 		}
 		if updated {
-			if err := or.database.UpsertNamespace(ctx, ns); err != nil {
+			if err := or.database.UpsertNamespace(ctx, ns, true); err != nil {
 				return err
 			}
 		}

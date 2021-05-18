@@ -152,7 +152,7 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(database.HashMismatch)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -175,7 +175,7 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.EqualError(t, err, "pop")
@@ -197,7 +197,7 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
@@ -220,7 +220,7 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		ID: fftypes.NewUUID(), // wrong
 	}, nil)
@@ -246,9 +246,9 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.EqualError(t, err, "pop")
@@ -271,7 +271,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypePin,
@@ -280,7 +280,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 			Batch:     batch.ID,
 		},
 	}, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(database.HashMismatch)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -306,7 +306,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypePin,
@@ -315,7 +315,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 			Batch:     batch.ID,
 		},
 	}, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -343,7 +343,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypePin,
@@ -352,8 +352,8 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 			Batch:     batch.ID,
 		},
 	}, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.EqualError(t, err, "pop")
@@ -381,7 +381,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionById", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypePin,
@@ -390,8 +390,8 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 			Batch:     batch.ID,
 		},
 	}, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.EqualError(t, err, "pop")
@@ -423,7 +423,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false).Return(database.HashMismatch)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
 	err := em.persistBatchData(context.Background(), batch, 0, data)
 	assert.NoError(t, err)
@@ -443,7 +443,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatchData(context.Background(), batch, 0, data)
 	assert.EqualError(t, err, "pop")
@@ -462,8 +462,8 @@ func TestPersistBatchDataUpsertEventError(t *testing.T) {
 	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatchData(context.Background(), batch, 0, data)
 	assert.EqualError(t, err, "pop")
@@ -482,8 +482,8 @@ func TestPersistBatchDataOk(t *testing.T) {
 	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 
 	err := em.persistBatchData(context.Background(), batch, 0, data)
 	assert.NoError(t, err)
@@ -521,7 +521,7 @@ func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
 	assert.NoError(t, msg.Verify(context.Background()))
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false).Return(database.HashMismatch)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
 	err := em.persistBatchMessage(context.Background(), batch, fftypes.Now(), 0, msg)
 	assert.NoError(t, err)
@@ -544,7 +544,7 @@ func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
 	assert.NoError(t, msg.Verify(context.Background()))
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatchMessage(context.Background(), batch, fftypes.Now(), 0, msg)
 	assert.EqualError(t, err, "pop")
@@ -566,8 +566,8 @@ func TestPersistBatchMessageUpsertEventFail(t *testing.T) {
 	assert.NoError(t, msg.Verify(context.Background()))
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	err := em.persistBatchMessage(context.Background(), batch, fftypes.Now(), 0, msg)
 	assert.EqualError(t, err, "pop")
@@ -589,8 +589,8 @@ func TestPersistBatchMessageOK(t *testing.T) {
 	assert.NoError(t, msg.Verify(context.Background()))
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 
 	err := em.persistBatchMessage(context.Background(), batch, fftypes.Now(), 0, msg)
 	assert.NoError(t, err)

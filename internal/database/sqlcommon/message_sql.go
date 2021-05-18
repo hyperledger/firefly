@@ -54,26 +54,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	msgRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("messages").
-			Where(sq.Eq{"id": message.Header.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		msgRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("messages").
+				Where(sq.Eq{"id": message.Header.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	exists := msgRows.Next()
-	if exists {
-		if !allowHashUpdate {
+		existing = msgRows.Next()
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = msgRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, message.Hash) {
@@ -83,6 +84,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 			}
 		}
 		msgRows.Close()
+	}
+
+	if existing {
 
 		// Update the message
 		if _, err = s.updateTx(ctx, tx,
@@ -106,7 +110,6 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 			return err
 		}
 	} else {
-		msgRows.Close()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).

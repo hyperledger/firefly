@@ -50,7 +50,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Operation) (err error) {
+func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -58,18 +58,21 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	opRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("operations").
-			Where(sq.Eq{"id": operation.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		opRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("operations").
+				Where(sq.Eq{"id": operation.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	existing := opRows.Next()
-	opRows.Close()
+		existing = opRows.Next()
+		opRows.Close()
+	}
 
 	if existing {
 		// Update the operation

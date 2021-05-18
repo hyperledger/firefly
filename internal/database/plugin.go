@@ -76,7 +76,7 @@ type PeristenceInterface interface {
 
 	// Upsert a namespace
 	// Throws IDMismatch error if updating and ids don't match
-	UpsertNamespace(ctx context.Context, data *fftypes.Namespace) (err error)
+	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
 
 	// Update namespace
 	UpdateNamespace(ctx context.Context, name string, update Update) (err error)
@@ -89,7 +89,7 @@ type PeristenceInterface interface {
 
 	// Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) (err error)
+	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update message
 	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -114,7 +114,7 @@ type PeristenceInterface interface {
 
 	// Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error)
+	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update data
 	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -127,7 +127,7 @@ type PeristenceInterface interface {
 
 	// Upsert a batch
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) (err error)
+	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update data
 	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -140,7 +140,7 @@ type PeristenceInterface interface {
 
 	// Upsert a transaction
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update transaction
 	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -152,7 +152,7 @@ type PeristenceInterface interface {
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
 	// Upsert a data definitino
-	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition) (err error)
+	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) (err error)
 
 	// Update data definition
 	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
@@ -167,7 +167,7 @@ type PeristenceInterface interface {
 	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
 
 	// Upsert an offset
-	UpsertOffset(ctx context.Context, data *fftypes.Offset) (err error)
+	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
 	// Update offset
 	UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update Update) (err error)
@@ -179,7 +179,7 @@ type PeristenceInterface interface {
 	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
 
 	// Upsert an operation
-	UpsertOperation(ctx context.Context, operation *fftypes.Operation) (err error)
+	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
 	// Update matching operations
 	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
@@ -191,7 +191,7 @@ type PeristenceInterface interface {
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
 
 	// Upsert a subscription
-	UpsertSubscription(ctx context.Context, data *fftypes.Subscription) (err error)
+	UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) (err error)
 
 	// Update subscription
 	// Throws IDMismatch error if updating and ids don't match
@@ -204,7 +204,7 @@ type PeristenceInterface interface {
 	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
 
 	// Upsert an event
-	UpsertEvent(ctx context.Context, data *fftypes.Event) (err error)
+	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
 
 	// Update event
 	UpdateEvent(ctx context.Context, id *uuid.UUID, update Update) (err error)

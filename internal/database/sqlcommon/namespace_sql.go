@@ -40,36 +40,41 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Namespace) (err error) {
+func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Namespace, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	namespaceRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("namespaces").
-			Where(sq.Eq{"name": namespace.Name}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		namespaceRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("namespaces").
+				Where(sq.Eq{"name": namespace.Name}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = namespaceRows.Next()
+
+		if existing {
+			var id uuid.UUID
+			_ = namespaceRows.Scan(&id)
+			if namespace.ID != nil {
+				if *namespace.ID != id {
+					namespaceRows.Close()
+					return database.IDMismatch
+				}
+			}
+			namespace.ID = &id // Update on returned object
+		}
+		namespaceRows.Close()
 	}
 
-	if namespaceRows.Next() {
-
-		var id uuid.UUID
-		_ = namespaceRows.Scan(&id)
-		if namespace.ID != nil {
-			if *namespace.ID != id {
-				namespaceRows.Close()
-				return database.IDMismatch
-			}
-		}
-		namespace.ID = &id // Update on returned object
-		namespaceRows.Close()
-
+	if existing {
 		// Update the namespace
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
@@ -84,8 +89,6 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 			return err
 		}
 	} else {
-		namespaceRows.Close()
-
 		if namespace.ID == nil {
 			namespace.ID = fftypes.NewUUID()
 		}
