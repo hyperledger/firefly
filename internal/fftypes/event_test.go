@@ -47,8 +47,8 @@ func TestEventJSONSerialization(t *testing.T) {
 
 	err = json.Unmarshal([]byte(`
 	{
-		"eventTypes": ["message_confirmed"],
-		"eventTypesOmit": "message_confirmed"
+		"eventTypes": ["MessageConfirmed"],
+		"eventTypesOmit": "MessageConfirmed"
 	}
 	`), &utStruct)
 	assert.NoError(t, err)

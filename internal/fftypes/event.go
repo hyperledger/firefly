@@ -29,20 +29,34 @@ type EventType string
 type EventTypes []EventType
 
 const (
-	EventTypeDataArrivedBroadcast      EventType = "data_arrived_broadcast"
-	EventTypeMessageSequencedBroadcast EventType = "message_sequenced_broadcast"
-	EventTypeMessageConfirmed          EventType = "message_confirmed"
-	EventTypeMessagesUnblocked         EventType = "messages_unblocked"
+	EventTypeDataArrivedBroadcast      EventType = "DataArrivedBroadcast"
+	EventTypeMessageSequencedBroadcast EventType = "DessageSequencedBroadcast"
+	EventTypeMessageConfirmed          EventType = "MessageConfirmed"
+	EventTypeMessagesUnblocked         EventType = "MessagesUnblocked"
 )
 
 type Event struct {
-	ID        *uuid.UUID  `json:"id"`
-	Type      EventType   `json:"type"`
-	Namespace string      `json:"namespace"`
-	Reference *uuid.UUID  `json:"reference"`
-	Sequence  int64       `json:"sequence"`
-	Created   *FFTime     `json:"created"`
-	Data      interface{} `json:"data"` // Not persisted
+	ID        *uuid.UUID `json:"id"`
+	Type      EventType  `json:"type"`
+	Namespace string     `json:"namespace"`
+	Reference *uuid.UUID `json:"reference"`
+	Sequence  int64      `json:"sequence"`
+	Created   *FFTime    `json:"created"`
+}
+
+type MessageWithEvent struct {
+	Message
+	Event Event `json:"event"`
+}
+
+type DataWithEvent struct {
+	Data
+	Event Event `json:"event"`
+}
+
+type DataRefWithEvent struct {
+	DataRef
+	Event Event `json:"event"`
 }
 
 func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
@@ -76,7 +90,7 @@ func stringArrayToEventTypes(stringArray []string) (EventTypes, error) {
 	eventTypes := make(EventTypes, len(stringArray))
 	for i, eventString := range stringArray {
 		switch strings.ToLower(eventString) {
-		case string(EventTypeMessageConfirmed):
+		case strings.ToLower(string(EventTypeMessageConfirmed)):
 			eventTypes[i] = EventTypeMessageConfirmed
 		default:
 			return nil, i18n.NewError(context.Background(), i18n.MsgUnknownEventType, eventString)
