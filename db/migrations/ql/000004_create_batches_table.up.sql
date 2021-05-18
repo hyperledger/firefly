@@ -13,5 +13,5 @@ CREATE TABLE batches (
 );
 
 CREATE UNIQUE INDEX batches_primary ON batches(id);
-CREATE INDEX batches_search ON batches(namespace,btype,author,confirmed,created);
+CREATE INDEX batches_created ON batches(namespace,created);
 CREATE INDEX batches_fortx ON batches(namespace,tx_id);
