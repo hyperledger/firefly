@@ -165,7 +165,7 @@ func (s *SQLCommon) GetOperationById(ctx context.Context, id *uuid.UUID) (operat
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -196,12 +196,12 @@ func (s *SQLCommon) UpdateOperations(ctx context.Context, filter database.Filter
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("operations"), update, opFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("operations"), update, opFilterTypeMap)
 	if err != nil {
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, query, filter, opFilterTypeMap)
+	query, err = s.filterUpdate(ctx, "", query, filter, opFilterTypeMap)
 	if err != nil {
 		return err
 	}

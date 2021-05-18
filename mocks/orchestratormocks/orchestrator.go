@@ -318,6 +318,29 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 	return r0, r1
 }
 
+// GetMessagesForData provides a mock function with given fields: ctx, ns, dataId, filter
+func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataId string, filter database.AndFilter) ([]*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, dataId, filter)
+
+	var r0 []*fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Message); ok {
+		r0 = rf(ctx, ns, dataId, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, dataId, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNamespace provides a mock function with given fields: ctx, ns
 func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error) {
 	ret := _m.Called(ctx, ns)

@@ -152,7 +152,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField)
+	cols = append(cols, s.options.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("transactions").
@@ -179,8 +179,8 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (mess
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField)
-	query, err := s.filterSelect(ctx, sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
+	cols = append(cols, s.options.SequenceField(""))
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("transactions"), update, transactionFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("transactions"), update, transactionFilterTypeMap)
 	if err != nil {
 		return err
 	}

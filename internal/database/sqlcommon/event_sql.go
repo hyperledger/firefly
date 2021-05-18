@@ -113,7 +113,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 func (s *SQLCommon) GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.options.SequenceField)
+	cols = append(cols, s.options.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("events").
@@ -140,8 +140,8 @@ func (s *SQLCommon) GetEventById(ctx context.Context, id *uuid.UUID) (message *f
 func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.options.SequenceField)
-	query, err := s.filterSelect(ctx, sq.Select(cols...).From("events"), filter, eventFilterTypeMap)
+	cols = append(cols, s.options.SequenceField(""))
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *uuid.UUID, update datab
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("events"), update, eventFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("events"), update, eventFilterTypeMap)
 	if err != nil {
 		return err
 	}

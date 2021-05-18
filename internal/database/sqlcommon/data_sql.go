@@ -166,7 +166,7 @@ func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *ff
 
 func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update databa
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("data"), update, dataFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("data"), update, dataFilterTypeMap)
 	if err != nil {
 		return err
 	}

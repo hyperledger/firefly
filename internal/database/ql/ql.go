@@ -16,6 +16,7 @@ package ql
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
@@ -41,7 +42,9 @@ func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, events databa
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "id()",
+		SequenceField: func(tableName string) string {
+			return fmt.Sprintf("id(%s)", tableName)
+		},
 	}
 
 	db, err := sql.Open("ql", prefix.GetString(QLConfURL))

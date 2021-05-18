@@ -48,11 +48,11 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		publicstorage: pi,
 		database:      di,
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.AggregatorDataReadRetryDelay),
-			MaximumDelay: config.GetDuration(config.AggregatorDataReadRetryMaxDelay),
-			Factor:       config.GetFloat64(config.AggregatorDataReadRetryFactor),
+			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
+			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
+			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		aggregator: newAggregator(ctx),
+		aggregator: newAggregator(ctx, di),
 	}
 }
 

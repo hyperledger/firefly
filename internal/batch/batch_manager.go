@@ -185,7 +185,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 			continue
 		}
 		var d *fftypes.Data
-		err = bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
+		err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble %s data", dataRef.ID), func(attempt int) (retry bool, err error) {
 			d, err = bm.database.GetDataById(bm.ctx, dataRef.ID)
 			if err != nil {
 				// continual retry for persistence error (distinct from not-found)
@@ -207,11 +207,10 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 
 func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 	var msgs []*fftypes.Message
-	err := bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
+	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(bm.ctx, bm.readPageSize)
 		msgs, err = bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
-			log.L(bm.ctx).Errorf("Failed to retrieve messages: %s", err)
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
 		}
 		return false, nil
@@ -289,7 +288,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	case m := <-bm.newMessages:
 		l.Debugf("Woken for trigger for message %s", m)
 	case <-bm.ctx.Done():
-		l.Debugf("Exiting due to canceled context")
+		l.Debugf("Exiting due to cancelled context")
 		bm.Close()
 		return
 	}
@@ -306,7 +305,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 
 func (bm *batchManager) updateMessages(msgUpdates map[uuid.UUID][]driver.Value) (err error) {
 	l := log.L(bm.ctx)
-	return bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
+	return bm.retry.Do(bm.ctx, "update messages", func(attempt int) (retry bool, err error) {
 		// Group the updates at the persistence layer
 		err = bm.database.RunAsGroup(bm.ctx, func(ctx context.Context) error {
 			// Group the updates by batch ID
@@ -329,7 +328,7 @@ func (bm *batchManager) updateMessages(msgUpdates map[uuid.UUID][]driver.Value) 
 
 func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err error) {
 	l := log.L(bm.ctx)
-	return bm.retry.Do(bm.ctx, func(attempt int) (retry bool, err error) {
+	return bm.retry.Do(bm.ctx, "update offset", func(attempt int) (retry bool, err error) {
 		bm.offset = newOffset
 		offset := &fftypes.Offset{
 			Type:      fftypes.OffsetTypeBatch,

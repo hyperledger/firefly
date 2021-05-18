@@ -41,7 +41,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, uint(0), GetUint(HttpPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
-	assert.Equal(t, float64(2.0), GetFloat64(AggregatorDataReadRetryFactor))
+	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))
 	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
 	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
 }

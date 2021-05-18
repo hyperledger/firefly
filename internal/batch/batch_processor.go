@@ -171,12 +171,10 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 }
 
 func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
-	l := log.L(bp.ctx)
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
-	_ = bp.retry.Do(bp.ctx, func(attempt int) (retry bool, err error) {
+	_ = bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
 		err = bp.conf.dispatch(bp.ctx, batch)
 		if err != nil {
-			l.Errorf("Batch dispatch attempt %d failed: %s", attempt, err)
 			return !bp.closed, err
 		}
 		return false, nil
@@ -184,11 +182,9 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 }
 
 func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
-	l := log.L(bp.ctx)
-	return bp.retry.Do(bp.ctx, func(attempt int) (retry bool, err error) {
+	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		err = bp.conf.persitence.UpsertBatch(bp.ctx, batch, seal /* we set the hash as it seals */)
 		if err != nil {
-			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			return !bp.closed, err
 		}
 		return false, nil
