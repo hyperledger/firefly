@@ -45,11 +45,7 @@ func (qf *queryFields) NewFilterLimit(ctx context.Context, defLimit uint64) Filt
 }
 
 func (qf *queryFields) NewFilter(ctx context.Context) FilterBuilder {
-	return &filterBuilder{
-		ctx:         ctx,
-		queryFields: *qf,
-		limit:       0,
-	}
+	return qf.NewFilterLimit(ctx, 0)
 }
 
 func (qf *queryFields) NewUpdate(ctx context.Context) UpdateBuilder {
