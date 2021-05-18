@@ -271,20 +271,17 @@ func TestWaitForPollTimeout(t *testing.T) {
 	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
 }
 
-func TestWaitConsumesAllShoulderTaps(t *testing.T) {
+func TestWaitConsumesMessagesAndDoesNotBlock(t *testing.T) {
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mdi)
+	go bm.(*batchManager).newEventNotifications()
 	for i := 0; i < int(bm.(*batchManager).readPageSize); i++ {
 		bm.NewMessages() <- fftypes.NewUUID()
 	}
-	bm.(*batchManager).messagePollTimeout = 1 * time.Second
-	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
-	select {
-	case <-bm.(*batchManager).newMessages:
-		assert.Fail(t, "should have been drained")
-	default:
-	}
+	// And should generate a shoulder tap
+	<-bm.(*batchManager).shoulderTap
+	bm.Close()
 }
 
 func TestAssembleMessageDataNilData(t *testing.T) {

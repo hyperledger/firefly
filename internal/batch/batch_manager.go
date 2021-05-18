@@ -46,6 +46,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.BatchManagerStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
+		shoulderTap:                make(chan bool, 1),
 		newMessages:                make(chan *uuid.UUID, readPageSize),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
@@ -69,6 +70,7 @@ type batchManager struct {
 	ctx                        context.Context
 	database                   database.Plugin
 	dispatchers                map[fftypes.MessageType]*dispatcher
+	shoulderTap                chan bool
 	newMessages                chan *uuid.UUID
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
@@ -106,6 +108,7 @@ func (bm *batchManager) Start() error {
 	if err := bm.restoreOffset(); err != nil {
 		return err
 	}
+	go bm.newEventNotifications()
 	go bm.messageSequencer()
 	return nil
 }
@@ -208,7 +211,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 	var msgs []*fftypes.Message
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
-		fb := database.MessageQueryFactory.NewFilter(bm.ctx, bm.readPageSize)
+		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
 		msgs, err = bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
@@ -279,27 +282,42 @@ func (bm *batchManager) messageSequencer() {
 	}
 }
 
+// newEventNotifications just consumes new messags, logs them, then ensures there's a shoulderTap
+// in the channel - without blocking. This is important as we must not block the notifier
+func (bm *batchManager) newEventNotifications() {
+	l := log.L(bm.ctx).WithField("role", "batch-newmessages")
+	for {
+		select {
+		case m, ok := <-bm.newMessages:
+			if !ok {
+				l.Debugf("Exiting due to close")
+				return
+			}
+			l.Debugf("Absorbing trigger for message %s", m)
+		case <-bm.ctx.Done():
+			l.Debugf("Exiting due to cancelled context")
+			return
+		}
+		// Do not block sending to the shoulderTap - as it can only contain one
+		select {
+		case bm.shoulderTap <- true:
+		default:
+		}
+	}
+}
+
 func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	l := log.L(bm.ctx)
 	timeout := time.NewTimer(bm.messagePollTimeout)
 	select {
 	case <-timeout.C:
 		l.Debugf("Woken after poll timeout")
-	case m := <-bm.newMessages:
-		l.Debugf("Woken for trigger for message %s", m)
+	case <-bm.shoulderTap:
+		l.Debugf("Woken for trigger for messages")
 	case <-bm.ctx.Done():
 		l.Debugf("Exiting due to cancelled context")
 		bm.Close()
 		return
-	}
-	var drained bool
-	for !drained {
-		select {
-		case m := <-bm.newMessages:
-			l.Debugf("Absorbing trigger for message %s", m)
-		default:
-			drained = true
-		}
 	}
 }
 
@@ -310,7 +328,7 @@ func (bm *batchManager) updateMessages(msgUpdates map[uuid.UUID][]driver.Value) 
 		err = bm.database.RunAsGroup(bm.ctx, func(ctx context.Context) error {
 			// Group the updates by batch ID
 			for batchID, msgs := range msgUpdates {
-				f := database.MessageQueryFactory.NewFilter(ctx, 0).In("id", msgs)
+				f := database.MessageQueryFactory.NewFilter(ctx).In("id", msgs)
 				u := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", &batchID)
 				if err := bm.database.UpdateMessages(ctx, f, u); err != nil {
 					return err

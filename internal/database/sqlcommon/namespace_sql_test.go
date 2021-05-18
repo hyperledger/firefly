@@ -80,7 +80,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 
 	// Query back the namespace
-	fb := database.NamespaceQueryFactory.NewFilter(ctx, 0)
+	fb := database.NamespaceQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("type", string(namespaceUpdated.Type)),
 		fb.Eq("name", namespaceUpdated.Name),
@@ -187,7 +187,7 @@ func TestGetNamespaceByIdScanFail(t *testing.T) {
 func TestGetNamespaceQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.NamespaceQueryFactory.NewFilter(context.Background(), 0).Eq("type", "")
+	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -195,7 +195,7 @@ func TestGetNamespaceQueryFail(t *testing.T) {
 
 func TestGetNamespaceBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.NamespaceQueryFactory.NewFilter(context.Background(), 0).Eq("type", map[bool]bool{true: false})
+	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err.Error())
 }
@@ -203,7 +203,7 @@ func TestGetNamespaceBuildQueryFail(t *testing.T) {
 func TestGetNamespaceReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
-	f := database.NamespaceQueryFactory.NewFilter(context.Background(), 0).Eq("type", "")
+	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

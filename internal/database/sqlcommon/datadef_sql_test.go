@@ -92,7 +92,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(dataDefJson), string(dataDefReadJson))
 
 	// Query back the data
-	fb := database.DataDefinitionQueryFactory.NewFilter(ctx, 0)
+	fb := database.DataDefinitionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", dataDefUpdated.ID.String()),
 		fb.Eq("namespace", dataDefUpdated.Namespace),
@@ -217,7 +217,7 @@ func TestGetDataDefinitionByIdScanFail(t *testing.T) {
 func TestGetDataDefinitionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -225,7 +225,7 @@ func TestGetDataDefinitionsQueryFail(t *testing.T) {
 
 func TestGetDataDefinitionsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -233,7 +233,7 @@ func TestGetDataDefinitionsBuildQueryFail(t *testing.T) {
 func TestGetDataDefinitionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

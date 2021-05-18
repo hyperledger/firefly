@@ -365,6 +365,7 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message 
 		return nil, err
 	}
 
+	rows.Close()
 	if err = s.loadDataRefs(ctx, []*fftypes.Message{msg}); err != nil {
 		return nil, err
 	}
@@ -388,6 +389,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 		msgs = append(msgs, msg)
 	}
 
+	rows.Close()
 	if len(msgs) > 0 {
 		if err = s.loadDataRefs(ctx, msgs); err != nil {
 			return nil, err
@@ -423,8 +425,80 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataId *uuid.UUID, f
 	return s.getMessagesQuery(ctx, query)
 }
 
+func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, error) {
+	query, err := s.filterSelect(ctx, "", sq.Select("id", s.options.SequenceField(""), "hash").From("messages"), filter, msgFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	msgRefs := []*fftypes.MessageRef{}
+	for rows.Next() {
+		var msgRef fftypes.MessageRef
+		if err = rows.Scan(&msgRef.ID, &msgRef.Sequence, &msgRef.Hash); err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages")
+		}
+		msgRefs = append(msgRefs, &msgRef)
+	}
+	return msgRefs, nil
+}
+
+func (s SQLCommon) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error) {
+
+	if msg.Header.Namespace == "" || msg.Header.ID == nil {
+		log.L(ctx).Warnf("Invalid message %v", msg.Header.ID)
+		return false, nil
+	}
+	hashByID := make(map[uuid.UUID]fftypes.Bytes32)
+	ids := make([]*uuid.UUID, len(msg.Data))
+	for i, dr := range msg.Data {
+		if dr.ID == nil || dr.Hash == nil {
+			log.L(ctx).Warnf("Invalid data reference %v/%v in message %s", dr.ID, dr.Hash, msg.Header.ID)
+			return false, nil
+		}
+		ids[i] = dr.ID
+		hashByID[*dr.ID] = *dr.Hash
+	}
+	if len(ids) == 0 {
+		log.L(ctx).Tracef("Message %s has no data", msg.Header.ID)
+		return true, nil
+	}
+
+	rows, err := s.query(ctx,
+		sq.Select("id", "hash").
+			From("data").
+			Where(sq.Eq{"id": ids, "namespace": msg.Header.Namespace}),
+	)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var dataID uuid.UUID
+		var dataHash fftypes.Bytes32
+		err := rows.Scan(&dataID, &dataHash)
+		if err != nil {
+			return false, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+		}
+		expectedHash, ok := hashByID[dataID]
+		if ok {
+			ok = expectedHash == dataHash
+		}
+		if ok {
+			delete(hashByID, dataID)
+		}
+	}
+	log.L(ctx).Tracef("Remaining data count for %s: %d (%v)", msg.Header.ID, len(hashByID), hashByID)
+	return len(hashByID) == 0, nil
+}
+
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update database.Update) (err error) {
-	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx, 0).Eq("id", msgid), update)
+	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx).Eq("id", msgid), update)
 }
 
 func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, update database.Update) (err error) {

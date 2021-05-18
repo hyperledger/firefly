@@ -98,7 +98,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 
 	// Query back the transaction
-	fb := database.TransactionQueryFactory.NewFilter(ctx, 0)
+	fb := database.TransactionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
@@ -223,7 +223,7 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 func TestGetTransactionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -231,7 +231,7 @@ func TestGetTransactionsQueryFail(t *testing.T) {
 
 func TestGetTransactionsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -239,7 +239,7 @@ func TestGetTransactionsBuildQueryFail(t *testing.T) {
 func TestGettTransactionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

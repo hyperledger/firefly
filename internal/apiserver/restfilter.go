@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 func getValues(values url.Values, key string) (results []string) {
@@ -39,7 +39,7 @@ func getValues(values url.Values, key string) (results []string) {
 func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
-	fb := ff.NewFilter(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
+	fb := ff.NewFilterLimit(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()

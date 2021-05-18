@@ -75,7 +75,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(offsetJson), string(offsetReadJson))
 
 	// Query back the offset
-	fb := database.OffsetQueryFactory.NewFilter(ctx, 0)
+	fb := database.OffsetQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("type", string(offsetUpdated.Type)),
 		fb.Eq("namespace", offsetUpdated.Namespace),
@@ -184,7 +184,7 @@ func TestGetOffsetByIdScanFail(t *testing.T) {
 func TestGetOffsetQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.OffsetQueryFactory.NewFilter(context.Background(), 0).Eq("type", "")
+	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetOffsets(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -192,7 +192,7 @@ func TestGetOffsetQueryFail(t *testing.T) {
 
 func TestGetOffsetBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.OffsetQueryFactory.NewFilter(context.Background(), 0).Eq("type", map[bool]bool{true: false})
+	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, err := s.GetOffsets(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err.Error())
 }
@@ -200,7 +200,7 @@ func TestGetOffsetBuildQueryFail(t *testing.T) {
 func TestGetOffsetReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype"}).AddRow("only one"))
-	f := database.OffsetQueryFactory.NewFilter(context.Background(), 0).Eq("type", "")
+	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetOffsets(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
