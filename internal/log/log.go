@@ -68,17 +68,33 @@ func SetLevel(level string) {
 	}
 }
 
-type Formatting = struct {
-	DisableColors   bool
+type Formatting struct {
+	DisableColor    bool
+	ForceColor      bool
 	TimestampFormat string
+	UTC             bool
+}
+
+type utcFormat struct {
+	f logrus.Formatter
+}
+
+func (utc *utcFormat) Format(e *logrus.Entry) ([]byte, error) {
+	e.Time = e.Time.UTC()
+	return utc.f.Format(e)
 }
 
 func SetFormatting(format Formatting) {
-	logrus.SetFormatter(&prefixed.TextFormatter{
-		DisableColors:   format.DisableColors,
+	var formatter logrus.Formatter = &prefixed.TextFormatter{
+		DisableColors:   format.DisableColor,
+		ForceColors:     format.ForceColor,
 		TimestampFormat: format.TimestampFormat,
 		DisableSorting:  false,
 		ForceFormatting: true,
 		FullTimestamp:   true,
-	})
+	}
+	if format.UTC {
+		formatter = &utcFormat{f: formatter}
+	}
+	logrus.SetFormatter(formatter)
 }

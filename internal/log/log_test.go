@@ -59,6 +59,6 @@ func TestSettingDefaultLevel(t *testing.T) {
 
 func TestSetFormatting(t *testing.T) {
 	SetFormatting(Formatting{
-		DisableColors: true,
+		DisableColor: true,
 	})
 }
