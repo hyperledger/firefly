@@ -17,17 +17,17 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var getOpById = &apispec.Route{
+var getOpById = &oapispec.Route{
 	Name:   "getOpById",
 	Path:   "namespaces/{ns}/operations/{opid}",
 	Method: http.MethodGet,
-	PathParams: []apispec.PathParam{
+	PathParams: []oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "opid", Description: i18n.MsgTBD},
 	},
@@ -37,7 +37,7 @@ var getOpById = &apispec.Route{
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetOperationById(r.Ctx, r.PP["ns"], r.PP["opid"])
 		return output, err
 	},

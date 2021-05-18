@@ -14,9 +14,9 @@
 
 package apiserver
 
-import "github.com/kaleido-io/firefly/internal/apispec"
+import "github.com/kaleido-io/firefly/internal/oapispec"
 
-var routes = []*apispec.Route{
+var routes = []*oapispec.Route{
 	getBatchById,
 	getBatches,
 	getData,

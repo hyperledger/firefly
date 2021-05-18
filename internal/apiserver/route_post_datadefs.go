@@ -17,17 +17,17 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var postDataDefs = &apispec.Route{
+var postDataDefs = &oapispec.Route{
 	Name:   "postDataDefs",
 	Path:   "namespaces/{ns}/definitions/data/broadcast",
 	Method: http.MethodPost,
-	PathParams: []apispec.PathParam{
+	PathParams: []oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
@@ -37,7 +37,7 @@ var postDataDefs = &apispec.Route{
 	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Validator"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.BroadcastDataDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataDefinition))
 		return output, err
 	},

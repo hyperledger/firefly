@@ -24,9 +24,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -76,8 +76,8 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: prefix.GetDuration(ffresty.HTTPConfigRetryWaitTime),
-			MaximumDelay: prefix.GetDuration(ffresty.HTTPConfigRetryMaxWaitTime),
+			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryWaitTime),
+			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxWaitTime),
 		},
 		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
@@ -86,13 +86,13 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range prefix.GetObject(ffresty.HTTPConfigHeaders) {
+	for k, v := range prefix.GetObject(restclient.HTTPConfigHeaders) {
 		if vs, ok := v.(string); ok {
 			w.headers.Set(k, vs)
 		}
 	}
-	authUsername := prefix.GetString(ffresty.HTTPConfigAuthUsername)
-	authPassword := prefix.GetString(ffresty.HTTPConfigAuthPassword)
+	authUsername := prefix.GetString(restclient.HTTPConfigAuthUsername)
+	authPassword := prefix.GetString(restclient.HTTPConfigAuthPassword)
 	if authUsername != "" && authPassword != "" {
 		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
@@ -140,7 +140,7 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 }
 
 func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error) {
-	urlString := prefix.GetString(ffresty.HTTPConfigURL)
+	urlString := prefix.GetString(restclient.HTTPConfigURL)
 	u, err := url.Parse(urlString)
 	if err != nil {
 		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, urlString)

@@ -17,17 +17,17 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var getNamespace = &apispec.Route{
+var getNamespace = &oapispec.Route{
 	Name:   "getNamespace",
 	Path:   "namespaces/{ns}",
 	Method: http.MethodGet,
-	PathParams: []apispec.PathParam{
+	PathParams: []oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
@@ -36,7 +36,7 @@ var getNamespace = &apispec.Route{
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
 	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetNamespace(r.Ctx, r.PP["ns"])
 		return output, err
 	},
