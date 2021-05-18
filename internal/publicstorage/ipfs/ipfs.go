@@ -24,11 +24,11 @@ import (
 	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/internal/restclient"
 )
 
 type IPFS struct {
@@ -55,15 +55,15 @@ func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events publ
 	i.events = events
 
 	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
-	if apiPrefix.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, apiPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
+	if apiPrefix.GetString(restclient.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, apiPrefix.Resolve(restclient.HTTPConfigURL), "ipfs")
 	}
-	i.apiClient = ffresty.New(i.ctx, apiPrefix)
+	i.apiClient = restclient.New(i.ctx, apiPrefix)
 	gwPrefix := prefix.SubPrefix(IPFSConfGatewaySubconf)
-	if gwPrefix.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, gwPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
+	if gwPrefix.GetString(restclient.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, gwPrefix.Resolve(restclient.HTTPConfigURL), "ipfs")
 	}
-	i.gwClient = ffresty.New(i.ctx, gwPrefix)
+	i.gwClient = restclient.New(i.ctx, gwPrefix)
 	i.capabilities = &publicstorage.Capabilities{}
 	return nil
 }
@@ -100,7 +100,7 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 		SetResult(&ipfsResponse).
 		Post("/api/v0/add")
 	if err != nil || !res.IsSuccess() {
-		return nil, "", ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
+		return nil, "", restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
 	payloadRef, err = i.ipfsHashToBytes32(ipfsResponse.Hash)
@@ -113,12 +113,12 @@ func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (d
 		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/ipfs/%s", ipfsHash))
-	ffresty.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
+	restclient.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
 	if err != nil || !res.IsSuccess() {
 		if res != nil && res.RawBody() != nil {
 			_ = res.RawBody().Close()
 		}
-		return nil, ffresty.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
+		return nil, restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS retrieved %s", ipfsHash)
 	return res.RawBody(), nil

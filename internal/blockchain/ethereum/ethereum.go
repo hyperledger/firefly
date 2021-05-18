@@ -26,10 +26,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/wsclient"
 )
 
@@ -106,7 +106,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.events = events
 
-	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
@@ -118,7 +118,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
 	}
 
-	e.client = ffresty.New(e.ctx, ethconnectConf)
+	e.client = restclient.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -153,7 +153,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 	var existingStreams []eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 
 	for _, stream := range existingStreams {
@@ -173,7 +173,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 		newStream.WebSocket.Topic = e.topic
 		res, err = e.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
 		if err != nil || !res.IsSuccess() {
-			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
 		e.initInfo.stream = &newStream
 	}
@@ -200,7 +200,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 		var existingSubs []subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
 		if err != nil || !res.IsSuccess() {
-			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
 
 		var sub *subscription
@@ -224,7 +224,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 				SetResult(&newSub).
 				Post(fmt.Sprintf("%s/%s", e.instancePath, eventType))
 			if err != nil || !res.IsSuccess() {
-				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+				return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
 			sub = &newSub
 		}
@@ -382,7 +382,7 @@ func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, ba
 		SetResult(tx).
 		Post(path)
 	if err != nil || !res.IsSuccess() {
-		return "", ffresty.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return tx.ID, nil
 }

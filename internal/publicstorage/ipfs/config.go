@@ -16,7 +16,7 @@ package ipfs
 
 import (
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/restclient"
 )
 
 const (
@@ -25,6 +25,6 @@ const (
 )
 
 func (i *IPFS) InitConfigPrefix(prefix config.ConfigPrefix) {
-	ffresty.InitConfigPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
-	ffresty.InitConfigPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
+	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
+	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
 }

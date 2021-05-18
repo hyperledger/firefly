@@ -17,18 +17,18 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var getDataDefs = &apispec.Route{
+var getDataDefs = &oapispec.Route{
 	Name:   "getDataDefs",
 	Path:   "namespaces/{ns}/definitions/data",
 	Method: http.MethodGet,
-	PathParams: []apispec.PathParam{
+	PathParams: []oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
@@ -37,7 +37,7 @@ var getDataDefs = &apispec.Route{
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return []*fftypes.DataDefinition{} },
 	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetDataDefinitions(r.Ctx, r.PP["ns"], r.Filter)
 		return output, err
 	},

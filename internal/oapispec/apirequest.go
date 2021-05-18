@@ -12,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apispec
+package oapispec
 
 import (
 	"context"
-	"testing"
+	"net/http"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/orchestrator"
 )
 
-func TestOpenAPI3SwaggerUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerUIHTML(context.Background()))
+type APIRequest struct {
+	Ctx    context.Context
+	Or     orchestrator.Orchestrator
+	Req    *http.Request
+	QP     map[string]string
+	PP     map[string]string
+	Filter database.AndFilter
+	Input  interface{}
 }

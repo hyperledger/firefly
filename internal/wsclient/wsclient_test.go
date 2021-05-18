@@ -24,7 +24,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +58,7 @@ func TestWSClientE2E(t *testing.T) {
 	}
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
 	utConfPrefix.Set(WSConfigKeyPath, "/ws")
 
 	wsClient, err := New(context.Background(), utConfPrefix, afterConnect)
@@ -90,7 +90,7 @@ func TestWSClientE2E(t *testing.T) {
 
 func TestWSClientBadURL(t *testing.T) {
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, ":::")
+	utConfPrefix.Set(restclient.HTTPConfigURL, ":::")
 
 	_, err := New(context.Background(), utConfPrefix, nil)
 	assert.Regexp(t, "FF10162", err.Error())
@@ -98,7 +98,7 @@ func TestWSClientBadURL(t *testing.T) {
 
 func TestHTTPToWSURLRemap(t *testing.T) {
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://test:12345")
+	utConfPrefix.Set(restclient.HTTPConfigURL, "http://test:12345")
 	utConfPrefix.Set(WSConfigKeyPath, "/websocket")
 
 	url, err := buildWSUrl(context.Background(), utConfPrefix)
@@ -108,7 +108,7 @@ func TestHTTPToWSURLRemap(t *testing.T) {
 
 func TestHTTPSToWSSURLRemap(t *testing.T) {
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "https://test:12345")
+	utConfPrefix.Set(restclient.HTTPConfigURL, "https://test:12345")
 
 	url, err := buildWSUrl(context.Background(), utConfPrefix)
 	assert.NoError(t, err)
@@ -127,13 +127,13 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	defer svr.Close()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(ffresty.HTTPConfigHeaders, map[string]interface{}{
+	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(restclient.HTTPConfigHeaders, map[string]interface{}{
 		"custom-header": "custom value",
 	})
-	utConfPrefix.Set(ffresty.HTTPConfigAuthUsername, "user")
-	utConfPrefix.Set(ffresty.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigAuthUsername, "user")
+	utConfPrefix.Set(restclient.HTTPConfigAuthPassword, "pass")
+	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -151,8 +151,8 @@ func TestWSFailStartupConnect(t *testing.T) {
 	svr.Close()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(ffresty.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -167,7 +167,7 @@ func TestWSSendClosed(t *testing.T) {
 	defer svr.Close()
 
 	resetConf()
-	utConfPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
 
 	w, err := New(context.Background(), utConfPrefix, nil)
 	assert.NoError(t, err)

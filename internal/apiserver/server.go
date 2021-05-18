@@ -30,12 +30,12 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 	"github.com/kaleido-io/firefly/internal/orchestrator"
 )
 
@@ -144,7 +144,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(o orchestrator.Orchestrator, route *apispec.Route) http.HandlerFunc {
+func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
@@ -180,7 +180,7 @@ func jsonHandler(o orchestrator.Orchestrator, route *apispec.Route) http.Handler
 		}
 		if err == nil {
 			status = route.JSONOutputCode
-			output, err = route.JSONHandler(apispec.APIRequest{
+			output, err = route.JSONHandler(oapispec.APIRequest{
 				Ctx:    req.Context(),
 				Or:     o,
 				Req:    req,
@@ -262,7 +262,7 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 
 func swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "text/html")
-	_, _ = res.Write(apispec.SwaggerUIHTML(req.Context()))
+	_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context()))
 	return 200, nil
 }
 
@@ -270,12 +270,12 @@ func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err
 	vars := mux.Vars(req)
 	if vars["ext"] == ".json" {
 		res.Header().Add("Content-Type", "application/json")
-		doc := apispec.SwaggerGen(req.Context(), routes)
+		doc := oapispec.SwaggerGen(req.Context(), routes)
 		b, _ := json.Marshal(&doc)
 		_, _ = res.Write(b)
 	} else {
 		res.Header().Add("Content-Type", "application/x-yaml")
-		doc := apispec.SwaggerGen(req.Context(), routes)
+		doc := oapispec.SwaggerGen(req.Context(), routes)
 		b, _ := yaml.Marshal(&doc)
 		_, _ = res.Write(b)
 	}

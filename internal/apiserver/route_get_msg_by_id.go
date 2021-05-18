@@ -17,17 +17,17 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var getMsgById = &apispec.Route{
+var getMsgById = &oapispec.Route{
 	Name:   "getMsgById",
 	Path:   "namespaces/{ns}/messages/{msgid}",
 	Method: http.MethodGet,
-	PathParams: []apispec.PathParam{
+	PathParams: []oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "msgid", Description: i18n.MsgTBD},
 	},
@@ -37,7 +37,7 @@ var getMsgById = &apispec.Route{
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
