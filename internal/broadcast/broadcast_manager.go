@@ -98,7 +98,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		Status:  fftypes.TransactionStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err := bm.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	err := bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 			fftypes.OpTypeBlockchainBatchPin,
 			fftypes.OpStatusPending,
 			"")
-		if err := bm.database.UpsertOperation(ctx, op); err != nil {
+		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
 			return err
 		}
 
@@ -142,7 +142,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 			fftypes.OpTypePublicStorageBatchBroadcast,
 			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 			"")
-		if err := bm.database.UpsertOperation(ctx, op); err != nil {
+		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
 			return err
 		}
 	}
@@ -158,7 +158,7 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.M
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return bm.database.UpsertMessage(ctx, msg, false /* should be new, or idempotent replay */)
+	return bm.database.UpsertMessage(ctx, msg, true, false /* should be new, or idempotent replay */)
 }
 
 func (bm *broadcastManager) Start() error {

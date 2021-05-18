@@ -51,7 +51,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     val,
 	}
-	err := s.UpsertData(ctx, data, true)
+	err := s.UpsertData(ctx, data, true, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back
@@ -84,10 +84,10 @@ func TestDataE2EWithDB(t *testing.T) {
 	}
 
 	// Check disallows hash update
-	err = s.UpsertData(context.Background(), dataUpdated, false)
+	err = s.UpsertData(context.Background(), dataUpdated, true, false)
 	assert.Equal(t, database.HashMismatch, err)
 
-	err = s.UpsertData(context.Background(), dataUpdated, true)
+	err = s.UpsertData(context.Background(), dataUpdated, true, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
@@ -147,7 +147,7 @@ func TestDataE2EWithDB(t *testing.T) {
 func TestUpsertDataFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{}, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -158,7 +158,7 @@ func TestUpsertDataFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataId := uuid.New()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -170,7 +170,7 @@ func TestUpsertDataFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataId := uuid.New()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -182,7 +182,7 @@ func TestUpsertDataFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -194,7 +194,7 @@ func TestUpsertDataFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: &dataId}, true, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

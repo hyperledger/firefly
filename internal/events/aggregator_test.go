@@ -49,7 +49,7 @@ func TestRestoreOffsetNew(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ag := newAggregator(context.Background(), mdi)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil)
 	err := ag.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ag.offset)
@@ -70,7 +70,7 @@ func TestRestoreOffsetFailWrite(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ag := newAggregator(context.Background(), mdi)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	err := ag.restoreOffset()
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -131,7 +131,7 @@ func TestProcessEventsFailToReadMessage(t *testing.T) {
 func TestProcessEventsNoopIncrement(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ag := newAggregator(context.Background(), mdi)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil, nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
 	ev2 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
@@ -258,7 +258,7 @@ func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	err := ag.checkMessageComplete(context.Background(), msg)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -275,7 +275,7 @@ func TestCheckMessageCompleteGetUnblockedFail(t *testing.T) {
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := ag.checkMessageComplete(context.Background(), msg)
 	assert.EqualError(t, err, "pop")
@@ -293,11 +293,11 @@ func TestCheckMessageCompleteInsertUnblockEventFail(t *testing.T) {
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil).Once()
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
 		{ID: fftypes.NewUUID(), Sequence: 111},
 	}, nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	err := ag.checkMessageComplete(context.Background(), msg)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -314,11 +314,11 @@ func TestCheckMessageCompleteInsertUnblockOK(t *testing.T) {
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil).Once()
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
 		{ID: fftypes.NewUUID(), Sequence: 111},
 	}, nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 	err := ag.checkMessageComplete(context.Background(), msg)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
@@ -335,5 +335,12 @@ func TestWaitForShoulderTapOrPollTimeout(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ag := newAggregator(context.Background(), mdi)
 	ag.eventPollTimeout = 1 * time.Microsecond
+	assert.True(t, ag.waitForShoulderTapOrPollTimeout())
+}
+
+func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ag := newAggregator(context.Background(), mdi)
+	ag.shoulderTap <- true
 	assert.True(t, ag.waitForShoulderTapOrPollTimeout())
 }

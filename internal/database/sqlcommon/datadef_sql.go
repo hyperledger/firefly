@@ -41,25 +41,29 @@ var (
 	dataDefFilterTypeMap = map[string]string{}
 )
 
-func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.DataDefinition) (err error) {
+func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.DataDefinition, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	dataDefRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("datadefs").
-			Where(sq.Eq{"id": dataDef.ID}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		dataDefRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("datadefs").
+				Where(sq.Eq{"id": dataDef.ID}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = dataDefRows.Next()
+		dataDefRows.Close()
 	}
 
-	if dataDefRows.Next() {
-		dataDefRows.Close()
+	if existing {
 
 		// Update the dataDef
 		if _, err = s.updateTx(ctx, tx,
@@ -76,8 +80,6 @@ func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.D
 			return err
 		}
 	} else {
-		dataDefRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("datadefs").
 				Columns(dataDefColumns...).

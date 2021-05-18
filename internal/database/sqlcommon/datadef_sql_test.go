@@ -52,7 +52,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     val,
 	}
-	err := s.UpsertDataDefinition(ctx, dataDef)
+	err := s.UpsertDataDefinition(ctx, dataDef, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data definition back
@@ -81,7 +81,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     val2,
 	}
-	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated)
+	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the dataDef elements
@@ -126,7 +126,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 func TestUpsertDataDefinitionFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -137,7 +137,7 @@ func TestUpsertDataDefinitionFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -149,7 +149,7 @@ func TestUpsertDataDefinitionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -161,7 +161,7 @@ func TestUpsertDataDefinitionFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataDefId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -173,7 +173,7 @@ func TestUpsertDataDefinitionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

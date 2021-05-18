@@ -183,7 +183,7 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 
 func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
 	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
-		err = bp.conf.persitence.UpsertBatch(bp.ctx, batch, seal /* we set the hash as it seals */)
+		err = bp.conf.persitence.UpsertBatch(bp.ctx, batch, true, seal /* we set the hash as it seals */)
 		if err != nil {
 			return !bp.closed, err
 		}

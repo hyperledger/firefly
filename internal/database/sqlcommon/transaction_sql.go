@@ -49,26 +49,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	transactionRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("transactions").
-			Where(sq.Eq{"id": transaction.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		transactionRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("transactions").
+				Where(sq.Eq{"id": transaction.ID}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = transactionRows.Next()
 
-	if transactionRows.Next() {
-
-		if !allowHashUpdate {
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = transactionRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, transaction.Hash) {
@@ -78,6 +79,9 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			}
 		}
 		transactionRows.Close()
+	}
+
+	if existing {
 
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
@@ -98,7 +102,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			return err
 		}
 	} else {
-		transactionRows.Close()
 
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("transactions").

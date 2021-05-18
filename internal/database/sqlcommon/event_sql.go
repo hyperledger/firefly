@@ -40,26 +40,29 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err error) {
+func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the event to detemine if the UUID already exists
-	eventRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("events").
-			Where(sq.Eq{"id": event.ID}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the event to detemine if the UUID already exists
+		eventRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("events").
+				Where(sq.Eq{"id": event.ID}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = eventRows.Next()
+		eventRows.Close()
 	}
 
-	if eventRows.Next() {
-		eventRows.Close()
-
+	if existing {
 		// Update the event
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("events").
@@ -72,8 +75,6 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event) (err 
 			return err
 		}
 	} else {
-		eventRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("events").
 				Columns(eventColumns...).

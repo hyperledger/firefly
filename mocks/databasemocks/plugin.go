@@ -788,13 +788,13 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, id *uuid.UUID, update d
 	return r0
 }
 
-// UpsertBatch provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertBatch provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting bool, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -802,13 +802,13 @@ func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHas
 	return r0
 }
 
-// UpsertData provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertData provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
+func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting bool, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, bool, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -816,13 +816,13 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowHashU
 	return r0
 }
 
-// UpsertDataDefinition provides a mock function with given fields: ctx, datadef
-func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition) error {
-	ret := _m.Called(ctx, datadef)
+// UpsertDataDefinition provides a mock function with given fields: ctx, datadef, allowExisting
+func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) error {
+	ret := _m.Called(ctx, datadef, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition) error); ok {
-		r0 = rf(ctx, datadef)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition, bool) error); ok {
+		r0 = rf(ctx, datadef, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -830,13 +830,13 @@ func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.Dat
 	return r0
 }
 
-// UpsertEvent provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event) error {
-	ret := _m.Called(ctx, data)
+// UpsertEvent provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
-		r0 = rf(ctx, data)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -844,13 +844,13 @@ func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event) error {
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, allowHashUpdate
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, message, allowHashUpdate)
+// UpsertMessage provides a mock function with given fields: ctx, message, allowExisting, allowHashUpdate
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting bool, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, message, allowExisting, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool) error); ok {
-		r0 = rf(ctx, message, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, bool, bool) error); ok {
+		r0 = rf(ctx, message, allowExisting, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -858,13 +858,13 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, a
 	return r0
 }
 
-// UpsertNamespace provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace) error {
-	ret := _m.Called(ctx, data)
+// UpsertNamespace provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) error); ok {
-		r0 = rf(ctx, data)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -872,13 +872,13 @@ func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace) 
 	return r0
 }
 
-// UpsertOffset provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset) error {
-	ret := _m.Called(ctx, data)
+// UpsertOffset provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset) error); ok {
-		r0 = rf(ctx, data)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -886,13 +886,13 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset) error 
 	return r0
 }
 
-// UpsertOperation provides a mock function with given fields: ctx, operation
-func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operation) error {
-	ret := _m.Called(ctx, operation)
+// UpsertOperation provides a mock function with given fields: ctx, operation, allowExisting
+func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) error {
+	ret := _m.Called(ctx, operation, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
-		r0 = rf(ctx, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, bool) error); ok {
+		r0 = rf(ctx, operation, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -900,13 +900,13 @@ func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operat
 	return r0
 }
 
-// UpsertSubscription provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscription) error {
-	ret := _m.Called(ctx, data)
+// UpsertSubscription provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription) error); ok {
-		r0 = rf(ctx, data)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -914,13 +914,13 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 	return r0
 }
 
-// UpsertTransaction provides a mock function with given fields: ctx, data, allowHashUpdate
-func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowHashUpdate)
+// UpsertTransaction provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
+func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting bool, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, bool) error); ok {
-		r0 = rf(ctx, data, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, bool, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -49,7 +49,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	assert.NoError(t, err)
 
 	msg := &fftypes.Message{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, true, false).Return(nil)
 
 	err = bm.BroadcastMessage(context.Background(), msg)
 	assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestDispatchBatchSubmitBroadcastBatchFail(t *testing.T) {
 	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
 
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	fn := dbMocks.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
 	assert.Regexp(t, "pop", err.Error())
@@ -135,7 +135,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
@@ -148,7 +148,7 @@ func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
@@ -161,9 +161,9 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	blkMocks := bm.blockchain.(*blockchainmocks.Plugin)
 	blkMocks.On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
@@ -188,10 +188,10 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything).Once().Return(nil)
-	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything).Once().Return(fmt.Errorf("pop"))
+	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
+	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(fmt.Errorf("pop"))
 
 	blkMocks := bm.blockchain.(*blockchainmocks.Plugin)
 	blkMocks.On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
@@ -218,10 +218,10 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
-	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything).Once().Return(nil)
-	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything).Once().Return(nil)
+	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
+	dbMocks.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
 
 	blkMocks := bm.blockchain.(*blockchainmocks.Plugin)
 	blkMocks.On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("blockchain_id", nil)

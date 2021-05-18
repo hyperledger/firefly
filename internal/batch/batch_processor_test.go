@@ -62,7 +62,7 @@ func TestUnfilledBatch(t *testing.T) {
 		wg.Done()
 		return nil
 	})
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
@@ -112,7 +112,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 		return nil
 	})
 	bp.conf.BatchTimeout = 1 * time.Hour // Must fill the batch
-	mockUpsert := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything)
+	mockUpsert := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	mockUpsert.ReturnArguments = mock.Arguments{nil}
 	unblockPersistence := make(chan time.Time)
 	mockUpsert.WaitFor = unblockPersistence
@@ -183,7 +183,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchTimeout = 100 * time.Second
-	mup := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mup := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	waitForCall := make(chan bool)
 	mup.RunFn = func(a mock.Arguments) {
 		waitForCall <- true

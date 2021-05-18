@@ -99,7 +99,7 @@ func (ag *aggregator) updateOffset(ctx context.Context, newOffset int64) error {
 		Name:      aggregatorOffsetName,
 		Current:   ag.offset,
 	}
-	if err := ag.database.UpsertOffset(ctx, offset); err != nil {
+	if err := ag.database.UpsertOffset(ctx, offset, true); err != nil {
 		return err
 	}
 	l.Infof("Event aggregator committed offset %d", newOffset)
@@ -249,7 +249,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 		// Emit the confirmed event
 		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, msg.Header.Namespace, msg.Header.ID)
-		if err = ag.database.UpsertEvent(ctx, event); err != nil {
+		if err = ag.database.UpsertEvent(ctx, event, false); err != nil {
 			return err
 		}
 
@@ -269,7 +269,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 		if len(unblockable) > 0 {
 			log.L(ctx).Infof("Message %s (seq=%d) unblocks message %s (seq=%d)", msg.Header.ID, msg.Sequence, unblockable[0].ID, unblockable[0].Sequence)
 			event := fftypes.NewEvent(fftypes.EventTypeMessagesUnblocked, msg.Header.Namespace, unblockable[0].ID)
-			if err = ag.database.UpsertEvent(ctx, event); err != nil {
+			if err = ag.database.UpsertEvent(ctx, event, false); err != nil {
 				return err
 			}
 		}

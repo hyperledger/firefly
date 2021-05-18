@@ -62,7 +62,7 @@ func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s
 	data.Hash, _ = data.Value.Hash(ctx, "value")
 
 	// Write as data to the local store
-	if err = e.database.UpsertData(ctx, data, false /* we just generated the ID, so it is new */); err != nil {
+	if err = e.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
 		return nil, err
 	}
 

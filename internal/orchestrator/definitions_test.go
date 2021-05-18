@@ -85,7 +85,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
@@ -106,7 +106,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	o.database = mp
 	o.broadcast = mb
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
@@ -128,7 +128,7 @@ func TestBroadcastOk(t *testing.T) {
 	o.database = mp
 	o.broadcast = mb
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
