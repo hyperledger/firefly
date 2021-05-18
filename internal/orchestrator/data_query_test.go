@@ -156,7 +156,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 	calculatedFilter, err := mp.Calls[1].Arguments[1].(database.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
-		`( type == 'data_arrived_broadcast' ) && ( reference IN ['%s','%s','%s'] )`,
+		`( type == 'DataArrivedBroadcast' ) && ( reference IN ['%s','%s','%s'] )`,
 		msg.Header.ID, msg.Data[0].ID, msg.Data[1].ID,
 	), calculatedFilter.String())
 	assert.NoError(t, err)

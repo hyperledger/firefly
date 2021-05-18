@@ -41,8 +41,8 @@ type UTDBQL struct {
 type utDBQLEventType string
 
 const (
-	utDBQLEventTypeBroadcastBatch utDBQLEventType = "broadcast_batch"
-	utDBQLEventTypeMined          utDBQLEventType = "tx_mined"
+	utDBQLEventTypeBroadcastBatch utDBQLEventType = "BroadcastBatch"
+	utDBQLEventTypeMined          utDBQLEventType = "TransactionMined"
 
 	eventQueueLength = 50
 )

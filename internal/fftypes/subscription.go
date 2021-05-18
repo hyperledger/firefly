@@ -41,6 +41,7 @@ type SubscriptionOptions struct {
 	BatchEnabled *bool              `json:"batchEnabled,omitempty"`
 	BatchTimeout *FFDuration        `json:"batchTimeout,omitempty"`
 	BatchSize    *uint64            `json:"batchSize,omitempty"`
+	ExpandData   *bool              `json:"expandData,omitempty"`
 }
 
 type Subscription struct {

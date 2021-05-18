@@ -61,9 +61,9 @@ func (em *eventManager) Start() error {
 }
 
 func (em *eventManager) NewEvents() chan<- *uuid.UUID {
-	return em.aggregator.newEvents
+	return em.aggregator.eventPoller.newEvents
 }
 
 func (em *eventManager) WaitStop() {
-	<-em.aggregator.closed
+	<-em.aggregator.eventPoller.closed
 }
