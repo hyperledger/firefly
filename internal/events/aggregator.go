@@ -153,22 +153,26 @@ func (ag *aggregator) eventLoop() {
 func (ag *aggregator) processEventRetryAndGroup(events []*fftypes.Event) error {
 	return ag.retry.Do(ag.ctx, "process events", func(attempt int) (retry bool, err error) {
 		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
-			var highestSequence int64
-			for _, event := range events {
-				if err := ag.processEvent(ctx, event); err != nil {
-					return err
-				}
-				if event.Sequence > highestSequence {
-					highestSequence = event.Sequence
-				}
-			}
-			if highestSequence > 0 {
-				return ag.updateOffset(ctx, highestSequence)
-			}
-			return nil
+			return ag.processEvents(ctx, events)
 		})
 		return err != nil, err // always retry (retry will end on cancelled context)
 	})
+}
+
+func (ag *aggregator) processEvents(ctx context.Context, events []*fftypes.Event) error {
+	var highestSequence int64
+	for _, event := range events {
+		if err := ag.processEvent(ctx, event); err != nil {
+			return err
+		}
+		if event.Sequence > highestSequence {
+			highestSequence = event.Sequence
+		}
+	}
+	if highestSequence > 0 {
+		return ag.updateOffset(ctx, highestSequence)
+	}
+	return nil
 }
 
 func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) error {
