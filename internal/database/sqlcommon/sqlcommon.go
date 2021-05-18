@@ -38,7 +38,7 @@ type SQLCommonOptions struct {
 	// PlaceholderFormat as supported by the SQL sequence of the plugin
 	PlaceholderFormat sq.PlaceholderFormat
 	// SequenceField must be auto added by the database to each table, via appropriate DDL in the migrations
-	SequenceField string
+	SequenceField func(tableName string) string
 }
 
 type txWrapper struct {
@@ -50,7 +50,7 @@ func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, events databas
 	s.db = db
 	s.capabilities = capabilities
 	s.events = events
-	if options == nil || options.PlaceholderFormat == nil || options.SequenceField == "" {
+	if options == nil || options.PlaceholderFormat == nil || options.SequenceField == nil {
 		log.L(ctx).Errorf("Invalid SQL options from plugin: %+v", options)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)
 	}

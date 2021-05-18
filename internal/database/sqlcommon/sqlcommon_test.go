@@ -59,7 +59,7 @@ func ensureTestDB(t *testing.T) *sql.DB {
 func testSQLOptions() *SQLCommonOptions {
 	return &SQLCommonOptions{
 		PlaceholderFormat: sq.Dollar,
-		SequenceField:     "id()",
+		SequenceField:     func(t string) string { return fmt.Sprintf("id(%s)", t) },
 	}
 }
 
@@ -68,7 +68,13 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 	s = &SQLCommon{
 		options: &SQLCommonOptions{
 			PlaceholderFormat: sq.Dollar,
-			SequenceField:     "seq",
+			SequenceField: func(t string) string {
+				if t == "" {
+					return "seq"
+				} else {
+					return fmt.Sprintf("%s.seq", t)
+				}
+			},
 		},
 		db: mdb,
 	}

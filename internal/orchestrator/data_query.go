@@ -148,6 +148,15 @@ func (e *orchestrator) GetData(ctx context.Context, ns string, filter database.A
 	return e.database.GetData(ctx, filter)
 }
 
+func (e *orchestrator) GetMessagesForData(ctx context.Context, ns, dataId string, filter database.AndFilter) ([]*fftypes.Message, error) {
+	filter = e.scopeNS(ns, filter)
+	u, err := e.verifyIdAndNamespace(ctx, ns, dataId)
+	if err != nil {
+		return nil, err
+	}
+	return e.database.GetMessagesForData(ctx, u, filter)
+}
+
 func (e *orchestrator) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
 	filter = e.scopeNS(ns, filter)
 	return e.database.GetDataDefinitions(ctx, filter)

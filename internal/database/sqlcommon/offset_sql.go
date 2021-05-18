@@ -136,7 +136,7 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, ns, nam
 
 func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("offsets"), update, offsetFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("offsets"), update, offsetFilterTypeMap)
 	if err != nil {
 		return err
 	}

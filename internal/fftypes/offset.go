@@ -18,6 +18,7 @@ type OffsetType string
 
 const (
 	OffsetTypeBatch        OffsetType = "batch"
+	OffsetTypeAggregator   OffsetType = "aggregator"
 	OffsetTypeSubscription OffsetType = "subscription"
 )
 

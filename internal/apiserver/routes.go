@@ -23,6 +23,7 @@ var routes = []*apispec.Route{
 	getDataById,
 	getDataDefById,
 	getDataDefs,
+	getDataMsgs,
 	getEventById,
 	getEvents,
 	getMsgById,

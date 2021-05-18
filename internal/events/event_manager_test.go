@@ -22,6 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func newTestEventManager() (em *eventManager, cancel func()) {
@@ -33,9 +34,17 @@ func newTestEventManager() (em *eventManager, cancel func()) {
 }
 
 func TestStartStop(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
+		Type:      fftypes.OffsetTypeAggregator,
+		Namespace: fftypes.SystemNamespace,
+		Name:      aggregatorOffsetName,
+		Current:   12345,
+	}, nil)
+	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	mpi := &publicstoragemocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
 	em := NewEventManager(ctx, mpi, mdi)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- fftypes.NewUUID()

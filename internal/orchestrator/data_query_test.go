@@ -102,6 +102,27 @@ func TestGetMessages(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetMessagesForData(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	u := fftypes.NewUUID()
+	mp.On("GetMessagesForData", mock.Anything, u, mock.Anything).Return([]*fftypes.Message{}, nil)
+	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
+	f := fb.And(fb.Eq("id", u))
+	_, err := o.GetMessagesForData(context.Background(), "ns1", u.String(), f)
+	assert.NoError(t, err)
+}
+
+func TestGetMessagesForDataBadId(t *testing.T) {
+	o := NewOrchestrator().(*orchestrator)
+	mp := &databasemocks.Plugin{}
+	o.database = mp
+	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).And()
+	_, err := o.GetMessagesForData(context.Background(), "!wrong", "!bad", f)
+	assert.Regexp(t, "FF10142", err.Error())
+}
+
 func TestGetMessageOperations(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
@@ -129,13 +150,13 @@ func TestGetMessageEventsOk(t *testing.T) {
 	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, nil)
 	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
-	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrived))
+	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
 	_, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 	calculatedFilter, err := mp.Calls[1].Arguments[1].(database.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
-		`( type == 'data_arrived' ) && ( reference IN ['%s','%s','%s'] )`,
+		`( type == 'data_arrived_broadcast' ) && ( reference IN ['%s','%s','%s'] )`,
 		msg.Header.ID, msg.Data[0].ID, msg.Data[1].ID,
 	), calculatedFilter.String())
 	assert.NoError(t, err)
@@ -146,7 +167,7 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	fb := database.EventQueryFactory.NewFilter(context.Background(), 0)
-	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrived))
+	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
 	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)

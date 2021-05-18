@@ -18,6 +18,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
@@ -44,7 +45,13 @@ func (e *SQLite) Init(ctx context.Context, prefix config.ConfigPrefix, events da
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "seq",
+		SequenceField: func(tableName string) string {
+			if tableName == "" {
+				return "seq"
+			} else {
+				return fmt.Sprintf("%s.seq", tableName)
+			}
+		},
 	}
 
 	db, err := sql.Open("sqlite", viper.GetString("URL"))

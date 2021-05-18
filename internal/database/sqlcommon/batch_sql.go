@@ -169,7 +169,7 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *f
 
 func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update datab
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("batches"), update, batchFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("batches"), update, batchFilterTypeMap)
 	if err != nil {
 		return err
 	}

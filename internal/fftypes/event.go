@@ -29,9 +29,9 @@ type EventType string
 type EventTypes []EventType
 
 const (
-	EventTypeDataArrived      EventType = "data_arrived"
-	EventTypeMessageBroadcast EventType = "message_broadcast"
-	EventTypeMessageConfirmed EventType = "message_confirmed"
+	EventTypeDataArrivedBroadcast      EventType = "data_arrived_broadcast"
+	EventTypeMessageSequencedBroadcast EventType = "message_sequenced_broadcast"
+	EventTypeMessageConfirmed          EventType = "message_confirmed"
 )
 
 type Event struct {

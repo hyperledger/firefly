@@ -42,7 +42,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 	copy(batchID[:], batch.BatchID[0:16])
 
 	var body io.ReadCloser
-	if err := em.retry.Do(em.ctx, func(attempt int) (retry bool, err error) {
+	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
 		body, err = em.publicstorage.RetrieveData(em.ctx, batch.BatchPaylodRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
@@ -62,7 +62,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 	// 1) Retryable - any transient error returned by processBatch is retried indefinitely
 	// 2) Swallowable - the data is invalid, and we have to move onto subsequent messages
 	// 3) Server shutting down - the context is cancelled (handled by retry)
-	return em.retry.Do(em.ctx, func(attempt int) (bool, error) {
+	return em.retry.Do(em.ctx, "persist batch", func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
@@ -200,7 +200,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 	// Persist a data arrival event
 	event := &fftypes.Event{
 		ID:        fftypes.NewUUID(),
-		Type:      fftypes.EventTypeDataArrived,
+		Type:      fftypes.EventTypeDataArrivedBroadcast,
 		Namespace: data.Namespace,
 		Reference: data.ID,
 	}
@@ -244,7 +244,7 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 	// Persist a message broadcast event
 	event := &fftypes.Event{
 		ID:        fftypes.NewUUID(),
-		Type:      fftypes.EventTypeMessageBroadcast,
+		Type:      fftypes.EventTypeMessageSequencedBroadcast,
 		Namespace: msg.Header.Namespace,
 		Reference: msg.Header.ID,
 	}

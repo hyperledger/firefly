@@ -160,7 +160,7 @@ func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error)
 
 func (w *wsClient) connect(initial bool) error {
 	l := log.L(w.ctx)
-	return w.retry.Do(w.ctx, func(attempt int) (retry bool, err error) {
+	return w.retry.DoCustomLog(w.ctx, func(attempt int) (retry bool, err error) {
 		if w.closed {
 			return false, i18n.NewError(w.ctx, i18n.MsgWSClosing)
 		}

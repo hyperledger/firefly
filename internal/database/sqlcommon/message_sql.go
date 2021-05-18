@@ -17,6 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -256,6 +257,11 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 
 }
 
+// Why not a LEFT JOIN you ask? ... well we need to be able to reliably perform a LIMIT on
+// the number of messages, and it seems there isn't a clean and cross-database
+// way for a single-query option. So a two-query option ended up being simplest.
+// See commit e304161a30b8044a42b5bac3fcfca7e7bd8f8ab7 for the abandoned changeset
+// that implemented LEFT JOIN
 func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) error {
 
 	msgIds := make([]string, len(msgs))
@@ -338,7 +344,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
-	cols = append(cols, s.options.SequenceField)
+	cols = append(cols, s.options.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("messages").
@@ -366,15 +372,7 @@ func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message 
 	return msg, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, err error) {
-
-	cols := append([]string{}, msgColumns...)
-	cols = append(cols, s.options.SequenceField)
-	query, err := s.filterSelect(ctx, sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder) (message []*fftypes.Message, err error) {
 	rows, err := s.query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -397,7 +395,32 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	}
 
 	return msgs, err
+}
 
+func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, err error) {
+	cols := append([]string{}, msgColumns...)
+	cols = append(cols, s.options.SequenceField(""))
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+	return s.getMessagesQuery(ctx, query)
+}
+
+func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter database.Filter) (message []*fftypes.Message, err error) {
+	cols := make([]string, len(msgColumns)+1)
+	for i, col := range msgColumns {
+		cols[i] = fmt.Sprintf("m.%s", col)
+	}
+	cols[len(msgColumns)] = s.options.SequenceField("m")
+	query, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterTypeMap,
+		sq.Eq{"md.data_id": dataId})
+	if err != nil {
+		return nil, err
+	}
+
+	query = query.LeftJoin("messages AS m ON m.id = md.message_id")
+	return s.getMessagesQuery(ctx, query)
 }
 
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update database.Update) (err error) {
@@ -412,12 +435,12 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("messages"), update, msgFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("messages"), update, msgFilterTypeMap)
 	if err != nil {
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, query, filter, opFilterTypeMap)
+	query, err = s.filterUpdate(ctx, "", query, filter, opFilterTypeMap)
 	if err != nil {
 		return err
 	}

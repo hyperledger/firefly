@@ -151,6 +151,13 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
+	// Check we can get it with a filter on only mesasges with a particular data ref
+	msgs, err = s.GetMessagesForData(ctx, &dataId3, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(msgs))
+	msgReadJson, _ = json.Marshal(msgs[0])
+	assert.Equal(t, string(msgJson), string(msgReadJson))
+
 	// Negative test on filter
 	filter = fb.And(
 		fb.Eq("id", msgUpdated.Header.ID.String()),
@@ -439,6 +446,14 @@ func TestGetMessagesQueryFail(t *testing.T) {
 	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetMessagesForDataBadQuery(t *testing.T) {
+	s, mock := getMockDB()
+	f := database.MessageQueryFactory.NewFilter(context.Background(), 0).Eq("!wrong", "")
+	_, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
+	assert.Regexp(t, "FF10148", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

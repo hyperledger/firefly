@@ -103,6 +103,9 @@ type PeristenceInterface interface {
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
+	// List messages where there is a data reference to the specified ID
+	GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter Filter) (message []*fftypes.Message, err error)
+
 	// Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error)

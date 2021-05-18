@@ -40,7 +40,7 @@ func TestSQLQueryFactory(t *testing.T) {
 		Descending()
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err := s.filterSelect(context.Background(), sel, f, map[string]string{
+	sel, err := s.filterSelect(context.Background(), "", sel, f, map[string]string{
 		"namespace": "ns",
 	})
 	assert.NoError(t, err)
@@ -72,20 +72,20 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 		fb.NotIContains("id", "jkl"),
 	)
 
-	sel := squirrel.Select("*").From("mytable")
-	sel, err := s.filterSelect(context.Background(), sel, f, nil)
+	sel := squirrel.Select("*").From("mytable AS mt")
+	sel, err := s.filterSelect(context.Background(), "mt", sel, f, nil)
 	assert.NoError(t, err)
 
 	sqlFilter, _, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (created IN (?,?,?) AND id NOT IN (?,?,?) AND created < ? AND created <= ? AND created >= ? AND created <> ? AND seq > ? AND id LIKE ? AND id NOT LIKE ? AND id ILIKE ? AND id NOT ILIKE ?) ORDER BY seq DESC", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.id NOT IN (?,?,?) AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.id LIKE ? AND mt.id NOT LIKE ? AND mt.id ILIKE ? AND mt.id NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
 }
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := getMockDB()
 	fb := database.MessageQueryFactory.NewFilter(context.Background(), 0)
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelect(context.Background(), sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
+	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
 	assert.Regexp(t, "FF10149.*namespace", err.Error())
 }
 
@@ -93,7 +93,7 @@ func TestSQLQueryFactoryBadOp(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOp("wrong"),
 	}, nil)
 	assert.Regexp(t, "FF10150.*wrong", err.Error())
@@ -103,7 +103,7 @@ func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOpOr,
 		Children: []*database.FilterInfo{
 			{Op: database.FilterOp("wrong")},
@@ -116,7 +116,7 @@ func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
 
 	s, _ := getMockDB()
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOpAnd,
 		Children: []*database.FilterInfo{
 			{Op: database.FilterOp("wrong")},
