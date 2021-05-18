@@ -15,6 +15,5 @@ CREATE TABLE subscriptions (
 );
 
 CREATE UNIQUE INDEX subscriptions_name ON subscriptions(namespace,name);
-CREATE INDEX subscriptions_search ON subscriptions(namespace,name,events,filter_topic,filter_context,filter_group,created);
 
 COMMIT;

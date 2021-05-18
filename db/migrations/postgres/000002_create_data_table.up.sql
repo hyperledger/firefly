@@ -11,5 +11,6 @@ CREATE TABLE data (
   created        BIGINT          NOT NULL,
   value          JSONB           NOT NULL
 );
-CREATE INDEX data_search ON data(namespace,validator,def_name,def_version,hash,created);
+CREATE INDEX data_hash ON data(namespace,hash);
+CREATE INDEX data_created ON data(namespace,created);
 COMMIT;

@@ -19,7 +19,6 @@ CREATE TABLE messages (
   batch_id    CHAR(36)
 );
 
-CREATE INDEX messages_search ON messages(namespace,mtype,confirmed,context,topic,group_id,author,cid,hash,created);
-CREATE INDEX messages_batch ON messages(namespace,batch_id);
-CREATE INDEX messages_tx ON messages(namespace,tx_type,tx_id);
+CREATE INDEX messages_created ON messages(created);
+CREATE INDEX messages_filter ON messages(namespace,context,topic);
 COMMIT;

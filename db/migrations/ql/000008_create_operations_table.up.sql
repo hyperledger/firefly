@@ -14,5 +14,4 @@ CREATE TABLE operations (
 );
 
 CREATE UNIQUE INDEX operations_primary ON operations(id);
-CREATE INDEX operations_search ON operations(namespace,msg_id,optype,opstatus,error);
-CREATE INDEX operations_backend ON operations(backend_id);
+CREATE INDEX operations_created ON operations(created);

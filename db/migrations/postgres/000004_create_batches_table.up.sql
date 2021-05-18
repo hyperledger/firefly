@@ -15,6 +15,6 @@ CREATE TABLE batches (
   tx_id       CHAR(36)
 );
 
-CREATE INDEX batches_search ON batches(namespace,btype,author,confirmed,created);
+CREATE INDEX batches_created ON batches(namespace,created);
 CREATE INDEX batches_fortx ON batches(namespace,tx_id);
 COMMIT;

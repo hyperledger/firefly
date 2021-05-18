@@ -14,6 +14,6 @@ CREATE TABLE transactions (
 );
 
 CREATE UNIQUE INDEX transactions_primary ON transactions(id);
-CREATE INDEX transactions_search ON transactions(namespace,ttype,author,status,confirmed,created);
+CREATE INDEX transactions_created ON transactions(created);
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 
