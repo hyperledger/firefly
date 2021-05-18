@@ -25,7 +25,7 @@ import (
 
 	"github.com/jarcoal/httpmock"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/stretchr/testify/assert"

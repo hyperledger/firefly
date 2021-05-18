@@ -20,12 +20,12 @@ import (
 	"encoding/json"
 
 	"github.com/kaleido-io/firefly/internal/batch"
-	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type BroadcastManager interface {

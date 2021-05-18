@@ -22,7 +22,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 

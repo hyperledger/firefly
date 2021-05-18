@@ -19,7 +19,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 	"github.com/kaleido-io/firefly/internal/publicstorage/ipfs"
 )
 

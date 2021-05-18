@@ -19,18 +19,18 @@ import (
 	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/batch"
-	"github.com/kaleido-io/firefly/internal/blockchain"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/database/databasefactory"
 	"github.com/kaleido-io/firefly/internal/events"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/publicstorage"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 	"github.com/kaleido-io/firefly/internal/publicstorage/publicstoragefactory"
+	"github.com/kaleido-io/firefly/pkg/database"
 )
 
 var (

@@ -17,11 +17,11 @@ package blockchainfactory
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
 	"github.com/kaleido-io/firefly/internal/blockchain/utdbql"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 )
 
 var plugins = []blockchain.Plugin{

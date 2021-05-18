@@ -3,9 +3,9 @@
 package eventmocks
 
 import (
-	blockchain "github.com/kaleido-io/firefly/internal/blockchain"
+	blockchain "github.com/kaleido-io/firefly/pkg/blockchain"
 
-	fftypes "github.com/kaleido-io/firefly/internal/fftypes"
+	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 

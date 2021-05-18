@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
 )
 
 func getValues(values url.Values, key string) (results []string) {
