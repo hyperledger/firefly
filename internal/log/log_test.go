@@ -60,5 +60,7 @@ func TestSettingDefaultLevel(t *testing.T) {
 func TestSetFormatting(t *testing.T) {
 	SetFormatting(Formatting{
 		DisableColor: true,
+		UTC:          true,
 	})
+	L(context.Background()).Infof("time in UTC")
 }
