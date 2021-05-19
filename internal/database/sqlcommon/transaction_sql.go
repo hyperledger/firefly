@@ -20,8 +20,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -49,26 +49,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	transactionRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("transactions").
-			Where(sq.Eq{"id": transaction.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		transactionRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("transactions").
+				Where(sq.Eq{"id": transaction.ID}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = transactionRows.Next()
 
-	if transactionRows.Next() {
-
-		if !allowHashUpdate {
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = transactionRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, transaction.Hash) {
@@ -78,6 +79,9 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			}
 		}
 		transactionRows.Close()
+	}
+
+	if existing {
 
 		// Update the transaction
 		if _, err = s.updateTx(ctx, tx,
@@ -98,7 +102,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			return err
 		}
 	} else {
-		transactionRows.Close()
 
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("transactions").
@@ -149,10 +152,10 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	return &transaction, nil
 }
 
-func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField)
+	cols = append(cols, s.options.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("transactions").
@@ -179,8 +182,8 @@ func (s *SQLCommon) GetTransactionById(ctx context.Context, ns string, id *uuid.
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField)
-	query, err := s.filterSelect(ctx, sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
+	cols = append(cols, s.options.SequenceField(""))
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +215,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("transactions"), update, transactionFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("transactions"), update, transactionFilterTypeMap)
 	if err != nil {
 		return err
 	}

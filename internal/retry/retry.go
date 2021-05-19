@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 const (
@@ -32,10 +33,15 @@ type Retry struct {
 	Factor       float64
 }
 
+// DoCustomLog disables the automatic attempt logging, so the caller should do logging for each attempt
+func (r *Retry) DoCustomLog(ctx context.Context, f func(attempt int) (retry bool, err error)) error {
+	return r.Do(ctx, "", f)
+}
+
 // Do invokes the function until the function returns false, or the retry pops.
 // This simple interface doesn't pass through errors or return values, on the basis
 // you'll be using a closure for that.
-func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool, err error)) error {
+func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt int) (retry bool, err error)) error {
 	attempt := 0
 	delay := r.InitialDelay
 	factor := r.Factor
@@ -45,7 +51,10 @@ func (r *Retry) Do(ctx context.Context, f func(attempt int) (retry bool, err err
 	for {
 		attempt++
 		retry, err := f(attempt)
-		if !retry {
+		if err != nil && logDescription != "" {
+			log.L(ctx).Errorf("%s attempt %d: %s", logDescription, attempt, err)
+		}
+		if !retry || err == nil {
 			return err
 		}
 

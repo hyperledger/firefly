@@ -16,14 +16,15 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
+	"github.com/kaleido-io/firefly/internal/i18n"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -36,12 +37,22 @@ type Postgres struct {
 	sqlcommon.SQLCommon
 }
 
+func (e *Postgres) Name() string {
+	return "postgres"
+}
+
 func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "seq",
+		SequenceField: func(tableName string) string {
+			if tableName == "" {
+				return "seq"
+			} else {
+				return fmt.Sprintf("%s.seq", tableName)
+			}
+		},
 	}
 
 	db, err := sql.Open("postgres", prefix.GetString(PSQLConfURL))

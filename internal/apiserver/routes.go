@@ -14,18 +14,27 @@
 
 package apiserver
 
-import "github.com/kaleido-io/firefly/internal/apispec"
+import "github.com/kaleido-io/firefly/internal/oapispec"
 
-var routes = []*apispec.Route{
-	postDataDefs,
-	getMsgById,
-	getMsgs,
+var routes = []*oapispec.Route{
 	getBatchById,
 	getBatches,
-	getDataById,
 	getData,
-	getTxnById,
-	getTxns,
+	getDataById,
 	getDataDefById,
 	getDataDefs,
+	getDataMsgs,
+	getEventById,
+	getEvents,
+	getMsgById,
+	getMsgEvents,
+	getMsgOps,
+	getMsgs,
+	getNamespace,
+	getNamespaces,
+	getOpById,
+	getOps,
+	getTxnById,
+	getTxns,
+	postDataDefs,
 }

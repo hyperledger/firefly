@@ -20,23 +20,23 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostDataDefinitions(t *testing.T) {
-	e := &enginemocks.Engine{}
-	r := createMuxRouter(e)
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
 	input := fftypes.DataDefinition{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/ns/ns1/definitions/data/broadcast", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/definitions/data/broadcast", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("BroadcastDataDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataDefinition")).
+	o.On("BroadcastDataDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataDefinition")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

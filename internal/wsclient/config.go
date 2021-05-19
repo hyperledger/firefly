@@ -16,7 +16,7 @@ package wsclient
 
 import (
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
+	"github.com/kaleido-io/firefly/internal/restclient"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 // InitConfigPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
 func InitConfigPrefix(prefix config.ConfigPrefix) {
-	ffresty.InitConfigPrefix(prefix)
+	restclient.InitConfigPrefix(prefix)
 	prefix.AddKnownKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)

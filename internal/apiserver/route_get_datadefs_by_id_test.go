@@ -18,20 +18,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetDataDefById(t *testing.T) {
-	e := &enginemocks.Engine{}
-	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/definitions/data/abcd12345", nil)
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/definitions/data/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetDataDefinitionById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetDataDefinitionById", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.DataDefinition{}, nil)
 	r.ServeHTTP(res, req)
 

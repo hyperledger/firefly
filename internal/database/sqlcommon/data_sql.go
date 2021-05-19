@@ -20,8 +20,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -44,30 +44,27 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	dataRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("data").
-			Where(sq.Eq{"id": data.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		dataRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("data").
+				Where(sq.Eq{"id": data.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	dataDef := data.Definition
-	if dataDef == nil {
-		dataDef = &fftypes.DataDefinitionRef{}
-	}
-
-	if dataRows.Next() {
-		if !allowHashUpdate {
+		existing = dataRows.Next()
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = dataRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, data.Hash) {
@@ -77,7 +74,14 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHas
 			}
 		}
 		dataRows.Close()
+	}
 
+	dataDef := data.Definition
+	if dataDef == nil {
+		dataDef = &fftypes.DataDefinitionRef{}
+	}
+
+	if existing {
 		// Update the data
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("data").
@@ -93,8 +97,6 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowHas
 			return err
 		}
 	} else {
-		dataRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("data").
 				Columns(dataColumns...).
@@ -139,7 +141,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataColumns...).
@@ -166,7 +168,7 @@ func (s *SQLCommon) GetDataById(ctx context.Context, ns string, id *uuid.UUID) (
 
 func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +200,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update databa
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("data"), update, dataFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("data"), update, dataFilterTypeMap)
 	if err != nil {
 		return err
 	}

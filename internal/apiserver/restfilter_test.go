@@ -18,7 +18,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
 

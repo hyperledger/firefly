@@ -24,14 +24,14 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/jarcoal/httpmock"
-	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/wsmocks"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -55,7 +55,7 @@ func TestInitMissingURL(t *testing.T) {
 func TestInitMissingInstance(t *testing.T) {
 	e := &Ethereum{}
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
@@ -65,7 +65,7 @@ func TestInitMissingInstance(t *testing.T) {
 func TestInitMissingTopic(t *testing.T) {
 	e := &Ethereum{}
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
@@ -100,14 +100,15 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		})
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
 	assert.NoError(t, err)
 
+	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
@@ -117,7 +118,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	sender, receiver, _ := wsServer.GetChannels("topic1")
-	sender <- []fftypes.JSONData{} // empty batch, will be ignored, but acked
+	sender <- []fftypes.JSONObject{} // empty batch, will be ignored, but acked
 	err = <-receiver
 	assert.NoError(t, err) // should be ack, not error
 
@@ -128,7 +129,7 @@ func TestWSInitFail(t *testing.T) {
 	e := &Ethereum{}
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "!!!://")
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
@@ -167,8 +168,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 		}))
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -194,9 +195,9 @@ func TestStreamQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -221,9 +222,9 @@ func TestStreamCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -250,9 +251,9 @@ func TestSubQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -281,9 +282,9 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -311,7 +312,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
@@ -322,6 +323,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, addr, req.FormValue("kld-from"))
 			assert.Equal(t, "false", req.FormValue("kld-sync"))
+			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)), body["txnId"])
 			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)), body["batchId"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
@@ -342,7 +344,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	}
@@ -379,12 +381,13 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
     "data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
       "timestamp": "1620576488"
     },
     "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "50"
   },
   {
@@ -394,12 +397,13 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+			"txnId": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
       "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
     "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
 ]`)
@@ -414,9 +418,9 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
 	e.handleMessageBatch(context.Background(), data)
 
 	b := em.Calls[0].Arguments[0].(*blockchain.BroadcastBatch)
+	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
 	assert.Equal(t, "eda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae", b.BatchPaylodRef.String())
-	assert.Equal(t, int64(1620576488), b.Timestamp)
 	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
 	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
 
@@ -432,12 +436,13 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
     "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32)",
+    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
 ]`)
@@ -457,23 +462,24 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
 func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
-	e.handleMessageBatch(context.Background(), []byte(`[{"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)"}]`))
+	e.handleMessageBatch(context.Background(), []byte(`[{"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"}]`))
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadTimestamp(t *testing.T) {
+func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"txnId": "!good",
       "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"timestamp": "!good"
+			"timestamp": "!1620576488"
 		}
 	}]`))
 	assert.Equal(t, 0, len(em.Calls))
@@ -483,12 +489,13 @@ func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "!good",
+			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
 			"timestamp": "1620576488"
@@ -501,12 +508,13 @@ func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "batchId": "!good",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
 			"timestamp": "1620576488"
@@ -519,13 +527,14 @@ func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
 	em := &blockchainmocks.Events{}
 	e := &Ethereum{events: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
-		"signature":"BroadcastBatch(address,uint256,bytes32,bytes32)",
+		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
       "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "payloadRef": "!good",
 			"timestamp": "1620576488"
 		}

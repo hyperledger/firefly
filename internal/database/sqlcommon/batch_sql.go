@@ -20,8 +20,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -41,32 +41,34 @@ var (
 		"tx_id",
 	}
 	batchFilterTypeMap = map[string]string{
-		"type":    "btype",
-		"payload": "payload_ref",
-		"tx.type": "tx_type",
-		"tx.id":   "tx_id",
+		"type":       "btype",
+		"payloadref": "payload_ref",
+		"tx.type":    "tx_type",
+		"tx.id":      "tx_id",
 	}
 )
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	batchRows, err := s.queryTx(ctx, tx,
-		sq.Select("hash").
-			From("batches").
-			Where(sq.Eq{"id": batch.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		batchRows, err := s.queryTx(ctx, tx,
+			sq.Select("hash").
+				From("batches").
+				Where(sq.Eq{"id": batch.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	if batchRows.Next() {
-		if !allowHashUpdate {
+		existing = batchRows.Next()
+		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
 			_ = batchRows.Scan(&hash)
 			if !fftypes.SafeHashCompare(hash, batch.Hash) {
@@ -76,6 +78,9 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 			}
 		}
 		batchRows.Close()
+	}
+
+	if existing {
 
 		// Update the batch
 		if _, err = s.updateTx(ctx, tx,
@@ -95,7 +100,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 			return err
 		}
 	} else {
-		batchRows.Close()
 
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("batches").
@@ -142,7 +146,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(batchColumns...).
@@ -169,7 +173,7 @@ func (s *SQLCommon) GetBatchById(ctx context.Context, ns string, id *uuid.UUID) 
 
 func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +205,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update datab
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("batches"), update, batchFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("batches"), update, batchFilterTypeMap)
 	if err != nil {
 		return err
 	}

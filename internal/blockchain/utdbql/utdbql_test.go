@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -45,6 +45,7 @@ func TestInit(t *testing.T) {
 	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
 	assert.NoError(t, err)
 
+	assert.Equal(t, "utdbql", u.Name())
 	assert.NotNil(t, u.Capabilities())
 	u.Close()
 }
@@ -98,7 +99,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	u.Start()
 
 	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})
@@ -134,7 +135,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 	u.Start()
 
 	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})
@@ -158,7 +159,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	u.Close()
 
 	_, err = u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
-		Timestamp:      fftypes.NowMillis(),
+		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 	})

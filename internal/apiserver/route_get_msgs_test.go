@@ -18,20 +18,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/fftypes"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetMessages(t *testing.T) {
-	e := &enginemocks.Engine{}
-	r := createMuxRouter(e)
-	req := httptest.NewRequest("GET", "/api/v1/ns/mynamespace/messages", nil)
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	e.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
 		Return([]*fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

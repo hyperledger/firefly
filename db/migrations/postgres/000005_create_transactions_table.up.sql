@@ -12,10 +12,10 @@ CREATE TABLE transactions (
   created     BIGINT          NOT NULL,
   protocol_id VARCHAR(256),
   status      VARCHAR(64)     NOT NULL,
-  confirmed   BIGINT          NOT NULL,
+  confirmed   BIGINT,
   info        JSONB
 );
 
-CREATE INDEX transactions_search ON transactions(namespace,ttype,author,status,confirmed,created);
+CREATE INDEX transactions_created ON transactions(created);
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 COMMIT;

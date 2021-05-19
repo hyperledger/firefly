@@ -22,8 +22,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,13 +44,14 @@ func TestTransactionE2EWithDB(t *testing.T) {
 			Type:   fftypes.TransactionTypePin,
 			Author: "0x12345",
 		},
-		Status: fftypes.TransactionStatusPending,
+		Created: fftypes.Now(),
+		Status:  fftypes.TransactionStatusPending,
 	}
-	err := s.UpsertTransaction(ctx, transaction, false)
+	err := s.UpsertTransaction(ctx, transaction, true, false)
 	assert.NoError(t, err)
 
 	// Check we get the exact same transaction back
-	transactionRead, err := s.GetTransactionById(ctx, "ns1", &transactionId)
+	transactionRead, err := s.GetTransactionById(ctx, &transactionId)
 	// The generated sequence will have been added
 	transaction.Sequence = transactionRead.Sequence
 	assert.NoError(t, err)
@@ -71,24 +72,24 @@ func TestTransactionE2EWithDB(t *testing.T) {
 			Message:   fftypes.NewUUID(),
 			Batch:     fftypes.NewUUID(),
 		},
-		Created:    fftypes.NowMillis(),
+		Created:    fftypes.Now(),
 		ProtocolID: "0x33333",
 		Status:     fftypes.TransactionStatusFailed,
-		Info: fftypes.JSONData{
+		Info: fftypes.JSONObject{
 			"some": "data",
 		},
-		Confirmed: fftypes.NowMillis(),
+		Confirmed: fftypes.Now(),
 	}
 
 	// Check reject hash update
-	err = s.UpsertTransaction(context.Background(), transactionUpdated, false)
+	err = s.UpsertTransaction(context.Background(), transactionUpdated, true, false)
 	assert.Equal(t, database.HashMismatch, err)
 
-	err = s.UpsertTransaction(context.Background(), transactionUpdated, true)
+	err = s.UpsertTransaction(context.Background(), transactionUpdated, true, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the transaction elements
-	transactionRead, err = s.GetTransactionById(ctx, "ns1", &transactionId)
+	transactionRead, err = s.GetTransactionById(ctx, &transactionId)
 	assert.NoError(t, err)
 	// The generated sequence will have been added
 	transactionUpdated.Sequence = transaction.Sequence
@@ -97,7 +98,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 
 	// Query back the transaction
-	fb := database.TransactionQueryFactory.NewFilter(ctx, 0)
+	fb := database.TransactionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
@@ -139,7 +140,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 func TestUpsertTransactionFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{}, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -150,7 +151,7 @@ func TestUpsertTransactionFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -162,7 +163,7 @@ func TestUpsertTransactionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -174,7 +175,7 @@ func TestUpsertTransactionFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(transactionId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -186,7 +187,7 @@ func TestUpsertTransactionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -195,7 +196,7 @@ func TestGetTransactionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
+	_, err := s.GetTransactionById(context.Background(), &transactionId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -204,7 +205,7 @@ func TestGetTransactionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
+	msg, err := s.GetTransactionById(context.Background(), &transactionId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -214,7 +215,7 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	transactionId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetTransactionById(context.Background(), "ns1", &transactionId)
+	_, err := s.GetTransactionById(context.Background(), &transactionId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -222,7 +223,7 @@ func TestGetTransactionByIdScanFail(t *testing.T) {
 func TestGetTransactionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -230,7 +231,7 @@ func TestGetTransactionsQueryFail(t *testing.T) {
 
 func TestGetTransactionsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -238,7 +239,7 @@ func TestGetTransactionsBuildQueryFail(t *testing.T) {
 func TestGettTransactionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.TransactionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetTransactions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

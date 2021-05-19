@@ -37,10 +37,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/mocks/enginemocks"
+	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +49,7 @@ func TestStartStopServer(t *testing.T) {
 	config.Set(config.HttpPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
-	err := Serve(ctx, &enginemocks.Engine{})
+	err := Serve(ctx, &orchestratormocks.Orchestrator{})
 	assert.NoError(t, err)
 }
 
@@ -171,15 +171,15 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  201,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			assert.Equal(t, "value1", r.Input.(map[string]interface{})["input1"])
 			return map[string]interface{}{"output1": "value2"}, nil
 		},
@@ -197,15 +197,15 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
 			return v, nil
 		},
@@ -222,15 +222,15 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 }
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, nil
 		},
 	})
@@ -247,15 +247,15 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 }
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, fmt.Errorf("pop")
 		},
 	})
@@ -272,15 +272,15 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 }
 
 func TestStatusCodeHintMapping(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgResponseMarshalError)
 		},
 	})
@@ -297,15 +297,15 @@ func TestStatusCodeHintMapping(t *testing.T) {
 }
 
 func TestStatusInvalidContentType(t *testing.T) {
-	me := &enginemocks.Engine{}
-	handler := jsonHandler(me, &apispec.Route{
+	mo := &orchestratormocks.Orchestrator{}
+	handler := jsonHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  204,
-		JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, nil
 		},
 	})
@@ -361,8 +361,8 @@ func TestSwaggerYAML(t *testing.T) {
 }
 
 func TestSwaggerJSON(t *testing.T) {
-	me := &enginemocks.Engine{}
-	r := createMuxRouter(me)
+	mo := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(mo)
 	s := httptest.NewServer(r)
 	defer s.Close()
 

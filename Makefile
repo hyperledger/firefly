@@ -13,17 +13,17 @@ coverage: test coverage.html
 lint:
 		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
 mocks: ${GOFILES}
-		$(MOCKERY) --case underscore --dir internal/blockchain   --name Plugin       --output mocks/blockchainmocks  --outpkg blockchainmocks
-		$(MOCKERY) --case underscore --dir internal/blockchain   --name Events       --output mocks/blockchainmocks  --outpkg blockchainmocks
-		$(MOCKERY) --case underscore --dir internal/database     --name Plugin       --output mocks/databasemocks    --outpkg databasemocks
-		$(MOCKERY) --case underscore --dir internal/database     --name Events       --output mocks/databasemocks    --outpkg databasemocks
-		$(MOCKERY) --case underscore --dir internal/p2pfs        --name Plugin       --output mocks/p2pfsmocks       --outpkg p2pfsmocks
-		$(MOCKERY) --case underscore --dir internal/p2pfs        --name Events       --output mocks/p2pfsmocks       --outpkg p2pfsmocks
-		$(MOCKERY) --case underscore --dir internal/aggregator   --name Aggregator   --output mocks/aggregatormocks  --outpkg aggregatormocks
-		$(MOCKERY) --case underscore --dir internal/batching     --name BatchManager --output mocks/batchingmocks    --outpkg batchingmocks
-		$(MOCKERY) --case underscore --dir internal/broadcast    --name Broadcast    --output mocks/broadcastmocks   --outpkg broadcastmocks
-		$(MOCKERY) --case underscore --dir internal/engine       --name Engine       --output mocks/enginemocks      --outpkg enginemocks
-		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient     --output mocks/wsmocks          --outpkg wsmocks
+		$(MOCKERY) --case underscore --dir internal/blockchain        --name Plugin           --output mocks/blockchainmocks    --outpkg blockchainmocks
+		$(MOCKERY) --case underscore --dir internal/blockchain        --name Events           --output mocks/blockchainmocks    --outpkg blockchainmocks
+		$(MOCKERY) --case underscore --dir internal/database          --name Plugin           --output mocks/databasemocks      --outpkg databasemocks
+		$(MOCKERY) --case underscore --dir internal/database          --name Events           --output mocks/databasemocks      --outpkg databasemocks
+		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Plugin           --output mocks/publicstoragemocks --outpkg publicstoragemocks
+		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Events           --output mocks/publicstoragemocks --outpkg publicstoragemocks
+		$(MOCKERY) --case underscore --dir internal/events            --name EventManager     --output mocks/eventmocks         --outpkg eventmocks
+		$(MOCKERY) --case underscore --dir internal/batch             --name BatchManager     --output mocks/batchmocks         --outpkg batchmocks
+		$(MOCKERY) --case underscore --dir internal/broadcast         --name BroadcastManager --output mocks/broadcastmocks     --outpkg broadcastmocks
+		$(MOCKERY) --case underscore --dir internal/orchestrator      --name Orchestrator     --output mocks/orchestratormocks  --outpkg orchestratormocks
+		$(MOCKERY) --case underscore --dir internal/wsclient          --name WSClient         --output mocks/wsmocks            --outpkg wsmocks
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 build: ${BINARY_NAME}
