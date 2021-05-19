@@ -202,6 +202,15 @@ func TestStartReceiveDurable(t *testing.T) {
 			Name:      "sub1",
 		},
 	})
+	// Put a second in flight
+	ws.DeliveryRequest(connID, fftypes.EventDelivery{
+		Event: fftypes.Event{ID: fftypes.NewUUID()},
+		Subscription: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub2",
+		},
+	})
 
 	b := <-wsc.Receive()
 	var res fftypes.EventDelivery
@@ -221,6 +230,12 @@ func TestStartReceiveDurable(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitAcked
+
+	// Check we left the right one behind
+	conn := ws.connections[connID]
+	assert.Equal(t, 1, len(conn.inflight))
+	assert.Equal(t, "sub2", conn.inflight[0].Subscription.Name)
+
 	cbs.AssertExpectations(t)
 }
 
@@ -276,6 +291,41 @@ func TestAutoStartBadOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Regexp(t, "FF10178", res.Error)
 	cbs.AssertExpectations(t)
+}
+
+func TestHandleAckWithAutoAck(t *testing.T) {
+	eventUUID := fftypes.NewUUID()
+	wsc := &websocketConnection{
+		ctx:          context.Background(),
+		startedCount: 1,
+		sendMessages: make(chan interface{}, 1),
+		inflight: []*fftypes.EventDeliveryResponse{
+			{ID: eventUUID},
+		},
+		autoAck: true,
+	}
+	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
+		ID: eventUUID,
+	})
+	assert.Regexp(t, "FF10180", err.Error())
+}
+
+func TestHandleStartFlippingAutoAck(t *testing.T) {
+	eventUUID := fftypes.NewUUID()
+	wsc := &websocketConnection{
+		ctx:          context.Background(),
+		startedCount: 1,
+		sendMessages: make(chan interface{}, 1),
+		inflight: []*fftypes.EventDeliveryResponse{
+			{ID: eventUUID},
+		},
+		autoAck: true,
+	}
+	no := false
+	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
+		AutoAck: &no,
+	})
+	assert.Regexp(t, "FF10179", err.Error())
 }
 
 func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
@@ -376,13 +426,45 @@ func TestUpgradeFail(t *testing.T) {
 	assert.Equal(t, 400, res.StatusCode)
 
 }
+func TestConnectionDispatchAfterClose(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	wsc := &websocketConnection{
+		ctx: ctx,
+	}
+	err := wsc.dispatch(&fftypes.EventDelivery{})
+	assert.Regexp(t, "FF10160", err.Error())
+}
 
-func TestDeliveryRequestAfterClosd(t *testing.T) {
-	cbs := &eventsmocks.Callbacks{}
-	ws, _, cancel := newTestWebsockets(t, cbs)
-	defer cancel()
-
-	err := ws.DeliveryRequest("closed already", fftypes.EventDelivery{})
+func TestWebsocketDispatchAfterClose(t *testing.T) {
+	ws := &WebSockets{
+		ctx:         context.Background(),
+		connections: make(map[string]*websocketConnection),
+	}
+	err := ws.DeliveryRequest("gone", fftypes.EventDelivery{})
 	assert.Regexp(t, "FF10173", err.Error())
+}
 
+func TestDispatchAutoAck(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	cbs.On("DeliveryResponse", mock.Anything, mock.Anything).Return(nil)
+	wsc := &websocketConnection{
+		ctx:    context.Background(),
+		connID: fftypes.NewUUID().String(),
+		ws: &WebSockets{
+			ctx:         context.Background(),
+			callbacks:   cbs,
+			connections: make(map[string]*websocketConnection),
+		},
+		startedCount: 1,
+		sendMessages: make(chan interface{}, 1),
+		autoAck:      true,
+	}
+	wsc.ws.connections[wsc.connID] = wsc
+	err := wsc.ws.DeliveryRequest(wsc.connID, fftypes.EventDelivery{
+		Event:        fftypes.Event{ID: fftypes.NewUUID()},
+		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+	})
+	assert.NoError(t, err)
+	cbs.AssertExpectations(t)
 }
