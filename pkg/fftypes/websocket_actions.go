@@ -36,6 +36,7 @@ type WSClientActionBase struct {
 type WSClientActionStartPayload struct {
 	WSClientActionBase
 
+	AutoAck   *bool               `json:"autoack"`
 	Namespace string              `json:"namespace"`
 	Name      string              `json:"name"`
 	Ephemeral bool                `json:"ephemeral"`

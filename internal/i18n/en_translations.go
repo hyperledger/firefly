@@ -93,4 +93,6 @@ var (
 	MsgWSClientSentInvalidData     = ffm("FF10176", "Invalid data")
 	MsgWSClientUnknownAction       = ffm("FF10177", "Unknown action '%s'")
 	MsgWSInvalidStartAction        = ffm("FF10178", "A start action must set ephemeral=true, or specify both a name and namespace")
+	MsgWSAutoAckChanged            = ffm("FF10179", "The autoack option must be set consistently on all start requests")
+	MsgWSAutoAckEnabled            = ffm("FF10180", "The autoack option is enabled on this connection")
 )

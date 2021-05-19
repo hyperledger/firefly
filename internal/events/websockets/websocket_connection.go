@@ -35,6 +35,7 @@ type websocketConnection struct {
 	connID       string
 	sendMessages chan interface{}
 	senderDone   chan struct{}
+	autoAck      bool
 	startedCount int
 	inflight     []*fftypes.EventDeliveryResponse
 	mux          sync.Mutex
@@ -51,7 +52,7 @@ func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn)
 		wsConn:       wsConn,
 		cancelCtx:    cancelCtx,
 		connID:       connID,
-		sendMessages: make(chan interface{}, 1),
+		sendMessages: make(chan interface{}),
 		senderDone:   make(chan struct{}),
 	}
 	go wc.sendLoop()
@@ -65,8 +66,11 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	ephemeral, hasEphemeral := req.URL.Query()["ephemeral"]
 	isEphemeral := hasEphemeral && (len(ephemeral) == 0 || ephemeral[0] != "false")
 	_, hasName := query["name"]
+	autoAck, hasAutoack := req.URL.Query()["autoack"]
+	isAutoack := hasAutoack && (len(autoAck) == 0 || autoAck[0] != "false")
 	if hasEphemeral || hasName {
-		err := wc.ws.start(wc.connID, &fftypes.WSClientActionStartPayload{
+		err := wc.handleStart(&fftypes.WSClientActionStartPayload{
+			AutoAck:   &isAutoack,
 			Ephemeral: isEphemeral,
 			Namespace: query.Get("namespace"),
 			Name:      query.Get("name"),
@@ -158,13 +162,29 @@ func (wc *websocketConnection) receiveLoop() {
 }
 
 func (wc *websocketConnection) dispatch(event *fftypes.EventDelivery) error {
-	wc.mux.Lock()
-	wc.inflight = append(wc.inflight, &fftypes.EventDeliveryResponse{
+	inflight := &fftypes.EventDeliveryResponse{
 		ID:           event.ID,
 		Subscription: event.Subscription,
-	})
+	}
+
+	var autoAck bool
+	wc.mux.Lock()
+	autoAck = wc.autoAck
+	if !autoAck {
+		wc.inflight = append(wc.inflight, inflight)
+	}
 	wc.mux.Unlock()
-	return wc.send(event)
+
+	err := wc.send(event)
+	if err != nil {
+		return err
+	}
+
+	if autoAck {
+		return wc.ws.ack(wc.connID, inflight)
+	}
+
+	return nil
 }
 
 func (wc *websocketConnection) protocolError(err error) {
@@ -188,6 +208,15 @@ func (wc *websocketConnection) send(msg interface{}) error {
 }
 
 func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPayload) (err error) {
+	wc.mux.Lock()
+	if start.AutoAck != nil {
+		if *start.AutoAck != wc.autoAck && wc.startedCount > 0 {
+			return i18n.NewError(wc.ctx, i18n.MsgWSAutoAckChanged)
+		}
+		wc.autoAck = *start.AutoAck
+	}
+	wc.mux.Unlock()
+
 	err = wc.ws.start(wc.connID, start)
 	if err != nil {
 		return err
@@ -198,32 +227,44 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 	return nil
 }
 
-func (wc *websocketConnection) handleAck(ack *fftypes.WSClientActionAckPayload) error {
+func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (*fftypes.EventDeliveryResponse, error) {
 	l := log.L(wc.ctx)
 	var inflight *fftypes.EventDeliveryResponse
-	var subMismatch bool
 	wc.mux.Lock()
+	defer wc.mux.Unlock()
+
+	if wc.autoAck {
+		return nil, i18n.NewError(wc.ctx, i18n.MsgWSAutoAckEnabled)
+	}
+
 	if ack.ID != nil {
+		newInflight := make([]*fftypes.EventDeliveryResponse, 0, len(wc.inflight))
 		for _, candidate := range wc.inflight {
+			var match bool
 			if *candidate.ID == *ack.ID {
 				if ack.Subscription != nil {
 					// A subscription has been explicitly specified, so it must match
 					if (ack.Subscription.ID != nil && *ack.Subscription.ID == *candidate.Subscription.ID) ||
 						(ack.Subscription.Name == candidate.Subscription.Name && ack.Subscription.Namespace == candidate.Subscription.Namespace) {
-						inflight = candidate
-						break
+						match = true
 					}
 				} else {
 					// If there's more than one started subscription, that's a problem
 					if wc.startedCount != 1 {
 						l.Errorf("No subscription specified on ack, and there is not exactly one started subscription")
-						subMismatch = true
-						break
+						return nil, i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
 					}
-					inflight = candidate
+					match = true
 				}
 			}
+			// Remove from the inflight list
+			if match {
+				inflight = candidate
+			} else {
+				newInflight = append(newInflight, candidate)
+			}
 		}
+		wc.inflight = newInflight
 	} else {
 		// Just ack the front of the queue
 		if len(wc.inflight) == 0 {
@@ -233,16 +274,20 @@ func (wc *websocketConnection) handleAck(ack *fftypes.WSClientActionAckPayload) 
 			wc.inflight = wc.inflight[1:]
 		}
 	}
-	wc.mux.Unlock()
+	if inflight == nil {
+		return nil, i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
+	}
+	return inflight, nil
+}
 
-	// Check we found a match, now we've dropped the lock
-	if inflight == nil || subMismatch {
-		err := i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
-		wc.protocolError(err)
+func (wc *websocketConnection) handleAck(ack *fftypes.WSClientActionAckPayload) error {
+	// Perform a locked set of check
+	inflight, err := wc.checkAck(ack)
+	if err != nil {
 		return err
 	}
 
-	// Deliver the ack to the core
+	// Deliver the ack to the core, now we're unlocked
 	return wc.ws.ack(wc.connID, inflight)
 }
 
