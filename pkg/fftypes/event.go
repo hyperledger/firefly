@@ -15,18 +15,10 @@
 package fftypes
 
 import (
-	"context"
-	"database/sql/driver"
-	"encoding/json"
-	"strings"
-
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type EventType string
-
-type EventTypes []EventType
 
 const (
 	EventTypeDataArrivedBroadcast      EventType = "DataArrivedBroadcast"
@@ -44,19 +36,18 @@ type Event struct {
 	Created   *FFTime    `json:"created"`
 }
 
-type MessageWithEvent struct {
-	Message
-	Event Event `json:"event"`
+type EventDelivery struct {
+	Event
+	Subscription SubscriptionRef `json:"subscription"`
+	Message      *Message        `json:"message,omitempty"`
+	Data         *DataRef        `json:"data,omitempty"`
 }
 
-type DataWithEvent struct {
-	Data
-	Event Event `json:"event"`
-}
-
-type DataRefWithEvent struct {
-	DataRef
-	Event Event `json:"event"`
+type EventDeliveryResponse struct {
+	ID           *uuid.UUID      `json:"id"`
+	Rejected     bool            `json:"rejected,omitempty"`
+	Info         string          `json:"info,omitempty"`
+	Subscription SubscriptionRef `json:"subscription"`
 }
 
 func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
@@ -67,71 +58,4 @@ func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
 		Reference: ref,
 		Created:   Now(),
 	}
-}
-
-func (et *EventTypes) UnmarshalJSON(b []byte) error {
-	stringArray := []string{}
-	err := json.Unmarshal(b, &stringArray)
-	if err != nil {
-		var strValue string
-		err = json.Unmarshal(b, &strValue)
-		if err != nil {
-			return i18n.WrapError(context.Background(), err, i18n.MsgEventTypesParseFail)
-		}
-		if len(strValue) > 0 {
-			stringArray = strings.Split(strValue, ",")
-		}
-	}
-	*et, err = stringArrayToEventTypes(stringArray)
-	return err
-}
-
-func stringArrayToEventTypes(stringArray []string) (EventTypes, error) {
-	eventTypes := make(EventTypes, len(stringArray))
-	for i, eventString := range stringArray {
-		switch strings.ToLower(eventString) {
-		case strings.ToLower(string(EventTypeMessageConfirmed)):
-			eventTypes[i] = EventTypeMessageConfirmed
-		default:
-			return nil, i18n.NewError(context.Background(), i18n.MsgUnknownEventType, eventString)
-		}
-	}
-	return eventTypes, nil
-}
-
-// Scan implements sql.Scanner
-func (et *EventTypes) Scan(src interface{}) (err error) {
-	switch src := src.(type) {
-	case []byte:
-		var stringArray []string
-		if len(src) > 0 {
-			stringArray = strings.Split(string(src), ",")
-		}
-		*et, err = stringArrayToEventTypes(stringArray)
-		return err
-	case string:
-		var stringArray []string
-		if len(src) > 0 {
-			stringArray = strings.Split(src, ",")
-		}
-		*et, err = stringArrayToEventTypes(stringArray)
-		return err
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, et)
-	}
-
-}
-
-// Value implements sql.Valuer
-func (et EventTypes) Value() (driver.Value, error) {
-	stringArray := make([]string, len(et))
-	for i, eventType := range et {
-		stringArray[i] = string(eventType)
-	}
-	return strings.Join(stringArray, ","), nil
-}
-
-func (et *EventTypes) String() string {
-	s, _ := et.Value()
-	return s.(string)
 }

@@ -22,9 +22,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/database"
 
 	_ "modernc.org/ql/driver"
 )
@@ -37,7 +37,7 @@ func (e *QL) Name() string {
 	return "ql"
 }
 
-func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
+func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
@@ -52,5 +52,5 @@ func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, events databa
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
 }

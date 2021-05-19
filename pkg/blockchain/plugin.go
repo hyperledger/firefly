@@ -29,9 +29,9 @@ type Plugin interface {
 	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitConfigPrefix(prefix config.ConfigPrefix)
 
-	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
+	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
+	Init(ctx context.Context, prefix config.ConfigPrefix, callbacks Callbacks) error
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -53,7 +53,7 @@ type Plugin interface {
 // Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
-type Events interface {
+type Callbacks interface {
 	// TransactionUpdate notifies firefly of an update to a transaction. Only success/failure and errorMessage (for errors) are modeled.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.

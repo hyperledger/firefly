@@ -587,13 +587,13 @@ func (_m *Plugin) GetTransactions(ctx context.Context, filter database.Filter) (
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, events
-func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
-	ret := _m.Called(ctx, prefix, events)
+// Init provides a mock function with given fields: ctx, prefix, callbacks
+func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
+	ret := _m.Called(ctx, prefix, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, database.Events) error); ok {
-		r0 = rf(ctx, prefix, events)
+	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, database.Callbacks) error); ok {
+		r0 = rf(ctx, prefix, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}

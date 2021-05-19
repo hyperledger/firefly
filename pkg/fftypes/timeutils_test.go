@@ -241,3 +241,9 @@ func TestFFDurationParseValue(t *testing.T) {
 	assert.Equal(t, "12.345s", v)
 
 }
+
+func TestDurationParsing(t *testing.T) {
+	assert.Zero(t, ParseToDuration("!a duration"))
+	assert.Zero(t, ParseToDuration(""))
+	assert.Equal(t, "15ms", ParseToDuration("15ms").String())
+}

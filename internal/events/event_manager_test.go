@@ -18,23 +18,30 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/eventtransportmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestEventManager() (em *eventManager, cancel func()) {
+func newTestEventManager(t *testing.T) (*eventManager, func()) {
+	config.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
-	mpi := &publicstoragemocks.Plugin{}
 	mdi := &databasemocks.Plugin{}
-	em = NewEventManager(ctx, mpi, mdi).(*eventManager)
-	return
+	mpi := &publicstoragemocks.Plugin{}
+	met := &eventtransportmocks.Plugin{}
+	met.On("Name").Return("ut").Maybe()
+	em, err := NewEventManager(ctx, mpi, mdi)
+	assert.NoError(t, err)
+	return em.(*eventManager), cancel
 }
 
 func TestStartStop(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
+	em, cancel := newTestEventManager(t)
+	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
 		Type:      fftypes.OffsetTypeAggregator,
 		Namespace: fftypes.SystemNamespace,
@@ -42,10 +49,6 @@ func TestStartStop(t *testing.T) {
 		Current:   12345,
 	}, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	mpi := &publicstoragemocks.Plugin{}
-	em := NewEventManager(ctx, mpi, mdi)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- fftypes.NewUUID()
 	cancel()

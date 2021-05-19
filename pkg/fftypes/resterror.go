@@ -12,19 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build cgo
+package fftypes
 
-package databasefactory
-
-import (
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/internal/database/postgres"
-	"github.com/kaleido-io/firefly/internal/database/ql"
-	"github.com/kaleido-io/firefly/internal/database/sqlite"
-)
-
-var plugins = []database.Plugin{
-	&postgres.Postgres{},
-	&ql.QL{},
-	&sqlite.SQLite{},
+type RESTError struct {
+	Error string `json:"error"`
 }

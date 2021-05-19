@@ -19,8 +19,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -35,9 +35,9 @@ type Plugin interface {
 	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitConfigPrefix(prefix config.ConfigPrefix)
 
-	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
+	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
+	Init(ctx context.Context, prefix config.ConfigPrefix, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -232,7 +232,7 @@ type PeristenceInterface interface {
 //
 // TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
 //
-type Events interface {
+type Callbacks interface {
 	MessageCreated(id *uuid.UUID)
 	EventCreated(id *uuid.UUID)
 }
@@ -342,7 +342,7 @@ var SubscriptionQueryFactory = &queryFields{
 	"id":             &StringField{},
 	"namespace":      &StringField{},
 	"name":           &StringField{},
-	"dispatcher":     &StringField{},
+	"transport":      &StringField{},
 	"events":         &StringField{},
 	"filter.topic":   &StringField{},
 	"filter.context": &StringField{},

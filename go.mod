@@ -40,6 +40,7 @@ require (
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/common v0.10.0
 	github.com/rs/cors v1.7.0
 	github.com/securego/gosec v0.0.0-20191002120514-e680875ea14d // indirect
 	github.com/shirou/gopsutil v0.0.0-20190901111213-e4ec7b275ada // indirect

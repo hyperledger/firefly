@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package publicstoragefactory
+package eifactory
 
 import (
 	"context"
 
+	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
+	"github.com/kaleido-io/firefly/internal/blockchain/utdbql"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
-	"github.com/kaleido-io/firefly/internal/publicstorage/ipfs"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 )
 
-var plugins = []publicstorage.Plugin{
-	&ipfs.IPFS{},
+var plugins = []blockchain.Plugin{
+	&ethereum.Ethereum{},
+	&utdbql.UTDBQL{},
 }
 
-var pluginsByName = make(map[string]publicstorage.Plugin)
+var pluginsByName = make(map[string]blockchain.Plugin)
 
 func init() {
 	for _, p := range plugins {
@@ -41,10 +43,10 @@ func InitConfigPrefix(prefix config.ConfigPrefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (publicstorage.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownPublicStoragePlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
 	}
 	return plugin, nil
 }

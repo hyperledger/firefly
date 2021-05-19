@@ -24,6 +24,7 @@ import (
 )
 
 type SubscriptionFilter struct {
+	Events  string `json:"events,omitempty"`
 	Topic   string `json:"topic,omitempty"`
 	Context string `json:"context,omitempty"`
 	Group   string `json:"group,omitempty"`
@@ -45,14 +46,20 @@ type SubscriptionOptions struct {
 }
 
 type Subscription struct {
-	ID         *uuid.UUID          `json:"id"`
-	Namespace  string              `json:"namespace"`
-	Name       string              `json:"name"`
-	Dispatcher string              `json:"dispatcher"`
-	Events     EventTypes          `json:"events"`
-	Filter     SubscriptionFilter  `json:"filter"`
-	Options    SubscriptionOptions `json:"options"`
-	Created    *FFTime             `json:"created"`
+	ID        *uuid.UUID          `json:"id"`
+	Namespace string              `json:"namespace"`
+	Name      string              `json:"name"`
+	Transport string              `json:"transport"`
+	Filter    SubscriptionFilter  `json:"filter"`
+	Options   SubscriptionOptions `json:"options"`
+	Ephemeral bool                `json:"ephemeral,omitempty"`
+	Created   *FFTime             `json:"created"`
+}
+
+type SubscriptionRef struct {
+	ID        *uuid.UUID `json:"id"`
+	Namespace string     `json:"namespace"`
+	Name      string     `json:"name"`
 }
 
 // Scan implements sql.Scanner

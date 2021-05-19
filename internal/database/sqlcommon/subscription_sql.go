@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -31,8 +31,8 @@ var (
 		"id",
 		"namespace",
 		"name",
-		"dispatcher",
-		"events",
+		"transport",
+		"filter_events",
 		"filter_topic",
 		"filter_context",
 		"filter_group",
@@ -40,6 +40,7 @@ var (
 		"created",
 	}
 	subscriptionFilterTypeMap = map[string]string{
+		"filter.events":  "filter_events",
 		"filter.topic":   "filter_topic",
 		"filter.context": "filter_context",
 		"filter.group":   "filter_group",
@@ -90,8 +91,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 				// Note we do not update ID
 				Set("namespace", string(subscription.Namespace)).
 				Set("name", subscription.Name).
-				Set("dispatcher", subscription.Dispatcher).
-				Set("events", subscription.Events).
+				Set("transport", subscription.Transport).
+				Set("filter_events", subscription.Filter.Events).
 				Set("filter_topic", subscription.Filter.Topic).
 				Set("filter_context", subscription.Filter.Context).
 				Set("filter_group", subscription.Filter.Group).
@@ -116,8 +117,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.ID,
 					subscription.Namespace,
 					subscription.Name,
-					subscription.Dispatcher,
-					subscription.Events,
+					subscription.Transport,
+					subscription.Filter.Events,
 					subscription.Filter.Topic,
 					subscription.Filter.Context,
 					subscription.Filter.Group,
@@ -138,8 +139,8 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.ID,
 		&subscription.Namespace,
 		&subscription.Name,
-		&subscription.Dispatcher,
-		&subscription.Events,
+		&subscription.Transport,
+		&subscription.Filter.Events,
 		&subscription.Filter.Topic,
 		&subscription.Filter.Context,
 		&subscription.Filter.Group,

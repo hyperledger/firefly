@@ -42,7 +42,7 @@ type Ethereum struct {
 	topic        string
 	instancePath string
 	capabilities *blockchain.Capabilities
-	events       blockchain.Events
+	callbacks    blockchain.Callbacks
 	client       *resty.Client
 	initInfo     struct {
 		stream *eventStream
@@ -99,12 +99,12 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
+func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.events = events
+	e.callbacks = callbacks
 
 	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
@@ -299,7 +299,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.events.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
+	return e.callbacks.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {

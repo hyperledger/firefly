@@ -42,7 +42,7 @@ func TestInit(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
 
-	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "utdbql", u.Name())
@@ -56,7 +56,7 @@ func TestInitBadURL(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "!badness://")
 
-	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Error(t, err)
 }
 
@@ -75,7 +75,7 @@ func TestVerifyIdentitySyntaxFail(t *testing.T) {
 
 func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
 	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -115,7 +115,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 
 func TestCloseOnEventDispatchError(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
 	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("Pop"))
@@ -149,7 +149,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 
 func TestVerifyBroadcastDBError(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
@@ -169,7 +169,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 
 func TestVerifyEventLoopCancelledContext(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
@@ -186,7 +186,7 @@ func TestVerifyEventLoopCancelledContext(t *testing.T) {
 
 func TestVerifyDispatchEventBadData(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")

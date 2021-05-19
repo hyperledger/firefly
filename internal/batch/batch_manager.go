@@ -23,11 +23,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 const (
@@ -44,7 +44,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		database:                   database,
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.BatchManagerStartupAttempts),
+		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		shoulderTap:                make(chan bool, 1),
 		newMessages:                make(chan *uuid.UUID, readPageSize),

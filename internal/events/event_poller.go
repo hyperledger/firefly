@@ -17,13 +17,14 @@ package events
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type eventPoller struct {
@@ -39,6 +40,7 @@ type eventPoller struct {
 type eventHandler func(ctx context.Context, event *fftypes.Event) (bool, error)
 
 type eventPollerConf struct {
+	firstEvent                 fftypes.SubOptsFirstEvent
 	eventBatchSize             int
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
@@ -48,11 +50,12 @@ type eventPollerConf struct {
 	offsetType                 fftypes.OffsetType
 	offsetNamespace            string
 	offsetName                 string
+	ephemeral                  bool
 }
 
 func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerConf) *eventPoller {
 	ep := &eventPoller{
-		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("events:%s:%s", conf.offsetName, conf.offsetNamespace)),
+		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
 		database:    di,
 		shoulderTap: make(chan bool, 1),
 		newEvents:   make(chan *uuid.UUID),
@@ -62,12 +65,45 @@ func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerCon
 	return ep
 }
 
+func (ep *eventPoller) initFirstOffset(ctx context.Context) (firstOffset int64, err error) {
+	var useNewest bool
+	switch ep.conf.firstEvent {
+	case "", fftypes.SubOptsFirstEventNewest:
+		useNewest = true
+	case fftypes.SubOptsFirstEventOldest:
+		useNewest = false
+	default:
+		specificSequence, err := strconv.ParseInt(string(ep.conf.firstEvent), 10, 64)
+		if err == nil {
+			firstOffset = specificSequence
+			useNewest = false
+		}
+	}
+	if useNewest {
+		f := database.EventQueryFactory.NewFilter(ctx).And().Sort("sequence").Descending().Limit(1)
+		newestEvents, err := ep.database.GetEvents(ctx, f)
+		if err != nil {
+			return 0, err
+		}
+		if len(newestEvents) > 0 {
+			firstOffset = newestEvents[0].Sequence
+		}
+	}
+	if err == nil {
+		err = ep.updateOffset(ep.ctx, firstOffset)
+	}
+	return
+}
+
 func (ep *eventPoller) restoreOffset() error {
 	return ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
-		offset, err := ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetNamespace, ep.conf.offsetName)
+		var offset *fftypes.Offset
+		if !ep.conf.ephemeral {
+			offset, err = ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetNamespace, ep.conf.offsetName)
+		}
 		if err == nil {
 			if offset == nil {
-				err = ep.updateOffset(ep.ctx, 0)
+				ep.offset, err = ep.initFirstOffset(ep.ctx)
 			} else {
 				ep.offset = offset.Current
 			}
@@ -91,17 +127,19 @@ func (ep *eventPoller) start() error {
 
 func (ep *eventPoller) updateOffset(ctx context.Context, newOffset int64) error {
 	l := log.L(ctx)
-	ep.offset = newOffset
-	offset := &fftypes.Offset{
-		Type:      ep.conf.offsetType,
-		Namespace: ep.conf.offsetNamespace,
-		Name:      ep.conf.offsetName,
-		Current:   ep.offset,
+	// No persistence for ephemeral (non-durable) subscriptions
+	if !ep.conf.ephemeral {
+		offset := &fftypes.Offset{
+			Type:      ep.conf.offsetType,
+			Namespace: ep.conf.offsetNamespace,
+			Name:      ep.conf.offsetName,
+			Current:   ep.offset,
+		}
+		if err := ep.database.UpsertOffset(ctx, offset, true); err != nil {
+			return err
+		}
 	}
-	if err := ep.database.UpsertOffset(ctx, offset, true); err != nil {
-		return err
-	}
-	l.Infof("Event offset committed %d", newOffset)
+	l.Debugf("Event offset committed %d", newOffset)
 	ep.offset = newOffset
 	return nil
 }
@@ -210,16 +248,23 @@ func (ep *eventPoller) newEventNotifications() {
 
 func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool {
 	l := log.L(ep.ctx)
-	longTimeout := ep.conf.eventPollTimeout
+	longTimeoutDuration := ep.conf.eventPollTimeout
 	// We avoid a tight spin with the eventBatchingTimeout to allow messages to arrive
 	if lastEventCount < ep.conf.eventBatchSize {
-		time.Sleep(ep.conf.eventBatchTimeout)
-		longTimeout = longTimeout - ep.conf.eventBatchTimeout
+		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
+		select {
+		case <-shortTimeout.C:
+			l.Debugf("Woken after poll timeout")
+		case <-ep.ctx.Done():
+			l.Debugf("Exiting due to cancelled context")
+			return false
+		}
+		longTimeoutDuration = longTimeoutDuration - ep.conf.eventBatchTimeout
 	}
 
-	timeout := time.NewTimer(longTimeout)
+	longTimeout := time.NewTimer(longTimeoutDuration)
 	select {
-	case <-timeout.C:
+	case <-longTimeout.C:
 		l.Debugf("Woken after poll timeout")
 	case <-ep.shoulderTap:
 		l.Debug("Woken for trigger on event")
