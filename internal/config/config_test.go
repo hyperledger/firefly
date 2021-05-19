@@ -15,9 +15,12 @@
 package config
 
 import (
+	"context"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,11 +37,13 @@ func TestDefaults(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
-	assert.True(t, GetBool(LogColor))
+	assert.True(t, GetBool(CorsAllowCredentials))
 	assert.Equal(t, uint(0), GetUint(HttpPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
-	assert.Equal(t, float64(2.0), GetFloat64(AggregatorDataReadRetryFactor))
+	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
+	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))
 	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
+	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
@@ -58,15 +63,29 @@ func TestAttemptToAccessRandomKey(t *testing.T) {
 }
 
 func TestSetGetMap(t *testing.T) {
+	defer Reset()
 	Set(BroadcastBatchSize, map[string]interface{}{"some": "map"})
-	assert.Equal(t, map[string]interface{}{"some": "map"}, GetStringMap(BroadcastBatchSize))
+	assert.Equal(t, fftypes.JSONObject{"some": "map"}, GetObject(BroadcastBatchSize))
 }
 
 func TestSetGetRawInterace(t *testing.T) {
+	defer Reset()
 	type myType struct{ name string }
 	Set(BroadcastBatchSize, &myType{name: "test"})
 	v := Get(BroadcastBatchSize)
 	assert.Equal(t, myType{name: "test"}, *(v.(*myType)))
+}
+
+func TestGetBadDurationMillisDefault(t *testing.T) {
+	defer Reset()
+	Set(BroadcastBatchTimeout, "12345")
+	assert.Equal(t, time.Duration(12345)*time.Millisecond, GetDuration(BroadcastBatchTimeout))
+}
+
+func TestGetBadDurationZero(t *testing.T) {
+	defer Reset()
+	Set(BroadcastBatchTimeout, "!a number or duration")
+	assert.Equal(t, time.Duration(0), GetDuration(BroadcastBatchTimeout))
 }
 
 func TestPluginConfig(t *testing.T) {
@@ -87,4 +106,8 @@ func TestGetKnownKeys(t *testing.T) {
 	for _, k := range knownKeys {
 		assert.NotEmpty(t, root.Resolve(k))
 	}
+}
+
+func TestSetupLogging(t *testing.T) {
+	SetupLogging(context.Background())
 }

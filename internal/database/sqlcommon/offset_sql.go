@@ -19,8 +19,8 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -37,28 +37,32 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset) (err error) {
+func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	offsetRows, err := s.queryTx(ctx, tx,
-		sq.Select("otype", "namespace", "name").
-			From("offsets").
-			Where(
-				sq.Eq{"otype": offset.Type,
-					"namespace": offset.Namespace,
-					"name":      offset.Name}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		offsetRows, err := s.queryTx(ctx, tx,
+			sq.Select("otype", "namespace", "name").
+				From("offsets").
+				Where(
+					sq.Eq{"otype": offset.Type,
+						"namespace": offset.Namespace,
+						"name":      offset.Name}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = offsetRows.Next()
+		offsetRows.Close()
 	}
 
-	if offsetRows.Next() {
-		offsetRows.Close()
+	if existing {
 
 		// Update the offset
 		if _, err = s.updateTx(ctx, tx,
@@ -74,8 +78,6 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset) (e
 			return err
 		}
 	} else {
-		offsetRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("offsets").
 				Columns(offsetColumns...).
@@ -136,7 +138,7 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, ns, nam
 
 func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(offsetColumns...).From("offsets"), filter, offsetFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +170,7 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("offsets"), update, offsetFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("offsets"), update, offsetFilterTypeMap)
 	if err != nil {
 		return err
 	}

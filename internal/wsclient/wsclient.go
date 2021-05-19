@@ -21,13 +21,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/retry"
 )
 
@@ -77,8 +76,8 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryWaitTimeMS)) * time.Millisecond,
-			MaximumDelay: time.Duration(prefix.GetUint(ffresty.HTTPConfigRetryMaxWaitTimeMS)) * time.Millisecond,
+			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryWaitTime),
+			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxWaitTime),
 		},
 		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
@@ -87,13 +86,13 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range prefix.GetStringMap(ffresty.HTTPConfigHeaders) {
+	for k, v := range prefix.GetObject(restclient.HTTPConfigHeaders) {
 		if vs, ok := v.(string); ok {
 			w.headers.Set(k, vs)
 		}
 	}
-	authUsername := prefix.GetString(ffresty.HTTPConfigAuthUsername)
-	authPassword := prefix.GetString(ffresty.HTTPConfigAuthPassword)
+	authUsername := prefix.GetString(restclient.HTTPConfigAuthUsername)
+	authPassword := prefix.GetString(restclient.HTTPConfigAuthPassword)
 	if authUsername != "" && authPassword != "" {
 		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
@@ -141,7 +140,7 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 }
 
 func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error) {
-	urlString := prefix.GetString(ffresty.HTTPConfigURL)
+	urlString := prefix.GetString(restclient.HTTPConfigURL)
 	u, err := url.Parse(urlString)
 	if err != nil {
 		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, urlString)
@@ -161,7 +160,7 @@ func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error)
 
 func (w *wsClient) connect(initial bool) error {
 	l := log.L(w.ctx)
-	return w.retry.Do(w.ctx, func(attempt int) (retry bool, err error) {
+	return w.retry.DoCustomLog(w.ctx, func(attempt int) (retry bool, err error) {
 		if w.closed {
 			return false, i18n.NewError(w.ctx, i18n.MsgWSClosing)
 		}
@@ -208,24 +207,23 @@ func (w *wsClient) readLoop() {
 	}
 }
 
-func (w *wsClient) sendLoop() {
+func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 	l := log.L(w.ctx)
 	defer close(w.sendDone)
 
 	for {
-		message, ok := <-w.send
-		if !ok {
+		select {
+		case message := <-w.send:
+			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
+				l.Errorf("WS %s send failed: %s", w.url, err)
+				// Keep the message for when we reconnect
+				w.sendDone <- message
+				return
+			}
+		case <-receiverDone:
 			l.Debugf("WS %s send loop exiting", w.url)
 			return
 		}
-
-		if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
-			l.Errorf("WS %s send failed: %s", w.url, err)
-			// Keep the message for when we reconnect
-			w.sendDone <- message
-			return
-		}
-
 	}
 }
 
@@ -235,7 +233,8 @@ func (w *wsClient) receiveReconnectLoop() {
 	for !w.closed {
 		// Start the sender, letting it close without blocking sending a notifiation on the sendDone
 		w.sendDone = make(chan []byte, 1)
-		go w.sendLoop()
+		receiverDone := make(chan struct{})
+		go w.sendLoop(receiverDone)
 
 		// Call the reconnect processor
 		var err error
@@ -246,8 +245,9 @@ func (w *wsClient) receiveReconnectLoop() {
 		if err == nil {
 			// Synchronously invoke the reader, as it's important we react immediately to any error there.
 			w.readLoop()
+			close(receiverDone)
 
-			// Ensure the connection is closed after the sender exits
+			// Ensure the connection is closed after the receiver exits
 			err = w.wsconn.Close()
 			if err != nil {
 				l.Debugf("WS %s close failed: %s", w.url, err)

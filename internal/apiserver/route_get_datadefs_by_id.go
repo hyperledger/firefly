@@ -17,18 +17,19 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/apispec"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/oapispec"
 )
 
-var getDataDefById = &apispec.Route{
+var getDataDefById = &oapispec.Route{
 	Name:   "getDataDefById",
-	Path:   "ns/{ns}/definitions/data/{id}",
+	Path:   "namespaces/{ns}/definitions/data/{defid}",
 	Method: http.MethodGet,
-	PathParams: []apispec.PathParam{
-		{Name: "ns", Example: "app1", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+	PathParams: []oapispec.PathParam{
+		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "defid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -36,8 +37,8 @@ var getDataDefById = &apispec.Route{
 	JSONInputValue:  func() interface{} { return nil },
 	JSONOutputValue: func() interface{} { return &fftypes.DataDefinition{} },
 	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r apispec.APIRequest) (output interface{}, err error) {
-		output, err = r.E.GetDataDefinitionById(r.Ctx, r.PP["ns"], r.PP["id"])
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+		output, err = r.Or.GetDataDefinitionById(r.Ctx, r.PP["ns"], r.PP["defid"])
 		return output, err
 	},
 }

@@ -25,7 +25,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/ql"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -59,7 +59,7 @@ func ensureTestDB(t *testing.T) *sql.DB {
 func testSQLOptions() *SQLCommonOptions {
 	return &SQLCommonOptions{
 		PlaceholderFormat: sq.Dollar,
-		SequenceField:     "id()",
+		SequenceField:     func(t string) string { return fmt.Sprintf("id(%s)", t) },
 	}
 }
 
@@ -68,7 +68,13 @@ func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 	s = &SQLCommon{
 		options: &SQLCommonOptions{
 			PlaceholderFormat: sq.Dollar,
-			SequenceField:     "seq",
+			SequenceField: func(t string) string {
+				if t == "" {
+					return "seq"
+				} else {
+					return fmt.Sprintf("%s.seq", t)
+				}
+			},
 		},
 		db: mdb,
 	}
@@ -192,7 +198,7 @@ func TestRollbackFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
-	s.rollbackTx(context.Background(), tx, false)
+	s.rollbackTx(context.Background(), &txWrapper{sqlTX: tx}, false)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

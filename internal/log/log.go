@@ -18,7 +18,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
@@ -69,15 +68,33 @@ func SetLevel(level string) {
 	}
 }
 
-// SetupLogging initializes logging
-func SetupLogging(ctx context.Context) {
-	logrus.SetFormatter(&prefixed.TextFormatter{
-		DisableColors:   !config.GetBool(config.LogColor),
-		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
-		DisableSorting:  true,
+type Formatting struct {
+	DisableColor    bool
+	ForceColor      bool
+	TimestampFormat string
+	UTC             bool
+}
+
+type utcFormat struct {
+	f logrus.Formatter
+}
+
+func (utc *utcFormat) Format(e *logrus.Entry) ([]byte, error) {
+	e.Time = e.Time.UTC()
+	return utc.f.Format(e)
+}
+
+func SetFormatting(format Formatting) {
+	var formatter logrus.Formatter = &prefixed.TextFormatter{
+		DisableColors:   format.DisableColor,
+		ForceColors:     format.ForceColor,
+		TimestampFormat: format.TimestampFormat,
+		DisableSorting:  false,
 		ForceFormatting: true,
 		FullTimestamp:   true,
-	})
-	SetLevel(config.GetString(config.LogLevel))
-	L(ctx).Debugf("Log level: %s", logrus.GetLevel())
+	}
+	if format.UTC {
+		formatter = &utcFormat{f: formatter}
+	}
+	logrus.SetFormatter(formatter)
 }

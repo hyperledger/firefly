@@ -22,9 +22,9 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +38,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	// Create a new data definition entry
 	dataDefId := uuid.New()
 	randB32 := fftypes.NewRandB32()
-	val := fftypes.JSONData{
+	val := fftypes.JSONObject{
 		"some": "dataDef",
 		"with": map[string]interface{}{
 			"nesting": 12345,
@@ -49,14 +49,14 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Value:     val,
 	}
-	err := s.UpsertDataDefinition(ctx, dataDef)
+	err := s.UpsertDataDefinition(ctx, dataDef, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data definition back
-	dataDefRead, err := s.GetDataDefinitionById(ctx, "ns1", &dataDefId)
+	dataDefRead, err := s.GetDataDefinitionById(ctx, &dataDefId)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataDefRead)
 	dataDefJson, _ := json.Marshal(&dataDef)
@@ -65,7 +65,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 
 	// Update the data definition (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	val2 := fftypes.JSONData{
+	val2 := fftypes.JSONObject{
 		"another": "set",
 		"of": map[string]interface{}{
 			"dataDef": 12345,
@@ -78,21 +78,21 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Name:      "customer",
 		Version:   "0.0.1",
 		Hash:      randB32,
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Value:     val2,
 	}
-	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated)
+	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the dataDef elements
-	dataDefRead, err = s.GetDataDefinitionById(ctx, "ns1", &dataDefId)
+	dataDefRead, err = s.GetDataDefinitionById(ctx, &dataDefId)
 	assert.NoError(t, err)
 	dataDefJson, _ = json.Marshal(&dataDefUpdated)
 	dataDefReadJson, _ = json.Marshal(&dataDefRead)
 	assert.Equal(t, string(dataDefJson), string(dataDefReadJson))
 
 	// Query back the data
-	fb := database.DataDefinitionQueryFactory.NewFilter(ctx, 0)
+	fb := database.DataDefinitionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", dataDefUpdated.ID.String()),
 		fb.Eq("namespace", dataDefUpdated.Namespace),
@@ -126,7 +126,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 func TestUpsertDataDefinitionFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -137,7 +137,7 @@ func TestUpsertDataDefinitionFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -149,7 +149,7 @@ func TestUpsertDataDefinitionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -161,7 +161,7 @@ func TestUpsertDataDefinitionFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataDefId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -173,7 +173,7 @@ func TestUpsertDataDefinitionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId})
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -182,7 +182,7 @@ func TestGetDataDefinitionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -191,17 +191,25 @@ func TestGetDataDefinitionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	msg, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestGetDataDefinitionByNameNotFound(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	msg, err := s.GetDataDefinitionByName(context.Background(), "ns1", "name1")
+	assert.NoError(t, err)
+	assert.Nil(t, msg)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
 func TestGetDataDefinitionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	dataDefId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataDefinitionById(context.Background(), "ns1", &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -209,7 +217,7 @@ func TestGetDataDefinitionByIdScanFail(t *testing.T) {
 func TestGetDataDefinitionsQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -217,7 +225,7 @@ func TestGetDataDefinitionsQueryFail(t *testing.T) {
 
 func TestGetDataDefinitionsBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -225,7 +233,7 @@ func TestGetDataDefinitionsBuildQueryFail(t *testing.T) {
 func TestGetDataDefinitionsReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataDefinitions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

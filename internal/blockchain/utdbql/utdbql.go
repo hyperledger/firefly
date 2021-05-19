@@ -20,11 +20,11 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 
 	_ "modernc.org/ql/driver"
 )
@@ -41,8 +41,8 @@ type UTDBQL struct {
 type utDBQLEventType string
 
 const (
-	utDBQLEventTypeBroadcastBatch utDBQLEventType = "broadcast_batch"
-	utDBQLEventTypeMined          utDBQLEventType = "tx_mined"
+	utDBQLEventTypeBroadcastBatch utDBQLEventType = "BroadcastBatch"
+	utDBQLEventTypeMined          utDBQLEventType = "TransactionMined"
 
 	eventQueueLength = 50
 )
@@ -53,6 +53,10 @@ type utEvent struct {
 	trackingID string
 	txID       string
 	data       []byte
+}
+
+func (u *UTDBQL) Name() string {
+	return "utdbql"
 }
 
 func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {

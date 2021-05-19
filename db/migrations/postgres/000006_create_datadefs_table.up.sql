@@ -13,6 +13,5 @@ CREATE TABLE datadefs (
 );
 
 CREATE UNIQUE INDEX datadefs_unique ON datadefs(namespace,name,version);
-CREATE INDEX datadefs_search ON datadefs(namespace,name,version,created);
-CREATE INDEX datadefs_hash ON datadefs(namespace,hash);
+CREATE INDEX datadefs_created ON datadefs(created);
 COMMIT;

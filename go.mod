@@ -8,6 +8,7 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
 	github.com/bombsimon/wsl/v2 v2.0.0 // indirect
+	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/getkin/kin-openapi v0.61.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-lintpack/lintpack v0.5.2 // indirect

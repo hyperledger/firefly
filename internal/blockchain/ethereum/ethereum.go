@@ -20,18 +20,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/ffresty"
-	"github.com/kaleido-io/firefly/internal/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/internal/wsclient"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+)
+
+const (
+	broadcastBatchEventSignature = "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"
 )
 
 type Ethereum struct {
@@ -76,8 +79,9 @@ type asyncTXSubmission struct {
 }
 
 type ethBroadcastBatchInput struct {
-	BatchID    string `json:"batchId"`
-	PayloadRef string `json:"payloadRef"`
+	TransactionID string `json:"txnId"`
+	BatchID       string `json:"batchId"`
+	PayloadRef    string `json:"payloadRef"`
 }
 
 type ethWSCommandPayload struct {
@@ -91,6 +95,10 @@ var requiredSubscriptions = map[string]string{
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
 
+func (e *Ethereum) Name() string {
+	return "ethereum"
+}
+
 func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
@@ -98,7 +106,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.events = events
 
-	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
@@ -110,7 +118,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
 	}
 
-	e.client = ffresty.New(e.ctx, ethconnectConf)
+	e.client = restclient.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -145,7 +153,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 	var existingStreams []eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 
 	for _, stream := range existingStreams {
@@ -159,13 +167,13 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 			Name:           e.topic,
 			ErrorHandling:  "block",
 			BatchSize:      ethconnectConf.GetUint(EthconnectConfigBatchSize),
-			BatchTimeoutMS: ethconnectConf.GetUint(EthconnectConfigBatchTimeoutMS),
+			BatchTimeoutMS: uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds()),
 			Type:           "websocket",
 		}
 		newStream.WebSocket.Topic = e.topic
 		res, err = e.client.R().SetBody(&newStream).SetResult(&newStream).Post("/eventstreams")
 		if err != nil || !res.IsSuccess() {
-			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
 		e.initInfo.stream = &newStream
 	}
@@ -192,7 +200,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 		var existingSubs []subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
 		if err != nil || !res.IsSuccess() {
-			return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 		}
 
 		var sub *subscription
@@ -216,7 +224,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 				SetResult(&newSub).
 				Post(fmt.Sprintf("%s/%s", e.instancePath, eventType))
 			if err != nil || !res.IsSuccess() {
-				return ffresty.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
+				return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
 			sub = &newSub
 		}
@@ -232,52 +240,24 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) getMapString(ctx context.Context, m map[string]interface{}, key string) (string, bool) {
-	vInterace, ok := m[key]
-	if ok && vInterace != nil {
-		if vString, ok := vInterace.(string); ok {
-			return vString, true
-		}
-	}
-	log.L(ctx).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
-	return "", false
-}
-
-func (e *Ethereum) getMapSubMap(ctx context.Context, m map[string]interface{}, key string) (map[string]interface{}, bool) {
-	vInterace, ok := m[key]
-	if ok && vInterace != nil {
-		if vMap, ok := vInterace.(map[string]interface{}); ok {
-			return vMap, true
-		}
-	}
-	log.L(ctx).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
-	return map[string]interface{}{}, false // Ensures a non-nil return
-}
-
-func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONData) error {
-	sBlockNumber, _ := e.getMapString(ctx, msgJSON, "blockNumber")
-	sTransactionIndex, _ := e.getMapString(ctx, msgJSON, "transactionIndex")
-	sTransactionHash, _ := e.getMapString(ctx, msgJSON, "transactionHash")
-	dataJSON, _ := e.getMapSubMap(ctx, msgJSON, "data")
-	sAuthor, _ := e.getMapString(ctx, dataJSON, "author")
-	sBatchId, _ := e.getMapString(ctx, dataJSON, "batchId")
-	sPayloadRef, _ := e.getMapString(ctx, dataJSON, "payloadRef")
-	sTimestamp, _ := e.getMapString(ctx, dataJSON, "timestamp")
+func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) error {
+	sBlockNumber := msgJSON.GetString(ctx, "blockNumber")
+	sTransactionIndex := msgJSON.GetString(ctx, "transactionIndex")
+	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
+	dataJSON := msgJSON.GetObject(ctx, "data")
+	sAuthor := dataJSON.GetString(ctx, "author")
+	sTxnId := dataJSON.GetString(ctx, "txnId")
+	sBatchId := dataJSON.GetString(ctx, "batchId")
+	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		sAuthor == "" ||
+		sTxnId == "" ||
 		sBatchId == "" ||
-		sPayloadRef == "" ||
-		sTimestamp == "" {
+		sPayloadRef == "" {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
-		return nil // move on
-	}
-
-	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
-	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad timestmp (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 
@@ -286,6 +266,15 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
+
+	var txnIDB32 fftypes.Bytes32
+	err = txnIDB32.UnmarshalText([]byte(sTxnId))
+	if err != nil {
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnId (%s): %+v", err, msgJSON)
+		return nil // move on
+	}
+	var txnID uuid.UUID
+	copy(txnID[:], txnIDB32[0:16])
 
 	var batchIDB32 fftypes.Bytes32
 	err = batchIDB32.UnmarshalText([]byte(sBatchId))
@@ -304,7 +293,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	batch := &blockchain.BroadcastBatch{
-		Timestamp:      timestamp,
+		TransactionID:  &txnID,
 		BatchID:        &batchID,
 		BatchPaylodRef: &payloadRef,
 	}
@@ -316,7 +305,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
 
 	l := log.L(ctx)
-	var msgsJSON []fftypes.JSONData
+	var msgsJSON []fftypes.JSONObject
 	err := json.Unmarshal(message, &msgsJSON)
 	if err != nil {
 		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(message))
@@ -326,12 +315,12 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 	for i, msgJSON := range msgsJSON {
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
-		signature, _ := e.getMapString(ctx, msgJSON, "signature")
+		signature := msgJSON.GetString(ctx, "signature")
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
 		switch signature {
-		case "BroadcastBatch(address,uint256,bytes32,bytes32)":
+		case broadcastBatchEventSignature:
 			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
@@ -380,8 +369,9 @@ func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (s
 func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
-		BatchID:    ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
-		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
+		TransactionID: ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)),
+		BatchID:       ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
+		PayloadRef:    ethHexFormatB32(batch.BatchPaylodRef),
 	}
 	path := fmt.Sprintf("%s/broadcastBatch", e.instancePath)
 	res, err := e.client.R().
@@ -392,7 +382,7 @@ func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, ba
 		SetResult(tx).
 		Post(path)
 	if err != nil || !res.IsSuccess() {
-		return "", ffresty.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
 	return tx.ID, nil
 }

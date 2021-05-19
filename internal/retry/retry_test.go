@@ -16,6 +16,7 @@ package retry
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -27,8 +28,8 @@ func TestRetryEventuallyOk(t *testing.T) {
 		MaximumDelay: 3 * time.Microsecond,
 		InitialDelay: 1 * time.Microsecond,
 	}
-	r.Do(context.Background(), func(i int) (retry bool, err error) {
-		return i < 10, nil
+	r.Do(context.Background(), "unit test", func(i int) (retry bool, err error) {
+		return i < 10, fmt.Errorf("pop")
 	})
 }
 
@@ -39,8 +40,8 @@ func TestRetryDeadlineTimeout(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Millisecond)
 	defer cancel()
-	err := r.Do(ctx, func(i int) (retry bool, err error) {
-		return true, nil
+	err := r.DoCustomLog(ctx, func(i int) (retry bool, err error) {
+		return true, fmt.Errorf("pop")
 	})
 	assert.Regexp(t, "FF10158", err.Error())
 }
@@ -52,8 +53,8 @@ func TestRetryContextCancellled(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	err := r.Do(ctx, func(i int) (retry bool, err error) {
-		return true, nil
+	err := r.Do(ctx, "unit test", func(i int) (retry bool, err error) {
+		return true, fmt.Errorf("pop")
 	})
 	assert.Regexp(t, "FF10158", err.Error())
 }

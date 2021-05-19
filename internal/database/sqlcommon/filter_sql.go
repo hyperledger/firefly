@@ -21,26 +21,26 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 )
 
-func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
 		return sel, err
 	}
 	if len(fi.Sort) == 0 {
-		fi.Sort = []string{s.options.SequenceField}
+		fi.Sort = []string{"sequence"}
 		fi.Descending = true
 	}
-	sel, err = s.filterSelectFinalized(ctx, sel, fi, typeMap)
+	sel, err = s.filterSelectFinalized(ctx, tableName, sel, fi, typeMap, preconditions...)
 	direction := ""
 	if fi.Descending {
 		direction = " DESC"
 	}
 	sort := make([]string, len(fi.Sort))
 	for i, field := range fi.Sort {
-		sort[i] = s.mapField(field, typeMap)
+		sort[i] = s.mapField(tableName, field, typeMap)
 	}
 	sel = sel.OrderBy(fmt.Sprintf("%s%s", strings.Join(sort, ","), direction))
 	if err == nil {
@@ -54,12 +54,43 @@ func (s *SQLCommon) filterSelect(ctx context.Context, sel sq.SelectBuilder, filt
 	return sel, err
 }
 
-func (s *SQLCommon) filterSelectFinalized(ctx context.Context, sel sq.SelectBuilder, fi *database.FilterInfo, tm map[string]string) (sq.SelectBuilder, error) {
-	fop, err := s.filterOp(ctx, fi, tm)
+func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string, sel sq.SelectBuilder, fi *database.FilterInfo, tm map[string]string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
+	fop, err := s.filterOp(ctx, tableName, fi, tm)
 	if err != nil {
 		return sel, err
 	}
+	if len(preconditions) > 0 {
+		and := make(sq.And, len(preconditions)+1)
+		for i, p := range preconditions {
+			and[i] = p
+		}
+		and[len(preconditions)] = fop
+		fop = and
+	}
 	return sel.Where(fop), nil
+}
+
+func (s *SQLCommon) buildUpdate(ctx context.Context, tableName string, sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
+	ui, err := update.Finalize()
+	if err != nil {
+		return sel, err
+	}
+	for _, so := range ui.SetOperations {
+		sel = sel.Set(s.mapField(tableName, so.Field, typeMap), so.Value)
+	}
+	return sel, nil
+}
+
+func (s *SQLCommon) filterUpdate(ctx context.Context, tableName string, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
+	fi, err := filter.Finalize()
+	var fop sq.Sqlizer
+	if err == nil {
+		fop, err = s.filterOp(ctx, tableName, fi, typeMap)
+	}
+	if err != nil {
+		return update, err
+	}
+	return update.Where(fop), nil
 }
 
 func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
@@ -71,66 +102,73 @@ func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
 	return vs
 }
 
-func (s *SQLCommon) mapField(f string, tm map[string]string) string {
-	if f == "sequence" {
-		return s.options.SequenceField
+func (s *SQLCommon) mapField(tableName, fieldName string, tm map[string]string) string {
+	if fieldName == "sequence" {
+		return s.options.SequenceField(tableName)
 	}
-	if tm == nil {
-		return f
+	var field = fieldName
+	if tm != nil {
+		if mf, ok := tm[fieldName]; ok {
+			field = mf
+		}
 	}
-	if mf, ok := tm[f]; ok {
-		return mf
+	if tableName != "" {
+		field = fmt.Sprintf("%s.%s", tableName, field)
 	}
-	return f
+	return field
 }
 
-func (s *SQLCommon) filterOp(ctx context.Context, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterOp(ctx context.Context, tableName string, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	switch op.Op {
 	case database.FilterOpOr:
-		return s.filterOr(ctx, op, tm)
+		return s.filterOr(ctx, tableName, op, tm)
 	case database.FilterOpAnd:
-		return s.filterAnd(ctx, op, tm)
+		return s.filterAnd(ctx, tableName, op, tm)
 	case database.FilterOpEq:
-		return sq.Eq{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.Eq{s.mapField(tableName, op.Field, tm): op.Value}, nil
+	case database.FilterOpIn:
+		return sq.Eq{s.mapField(tableName, op.Field, tm): op.Values}, nil
 	case database.FilterOpNe:
-		return sq.NotEq{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.NotEq{s.mapField(tableName, op.Field, tm): op.Value}, nil
+	case database.FilterOpNotIn:
+		return sq.NotEq{s.mapField(tableName, op.Field, tm): op.Values}, nil
 	case database.FilterOpCont:
-		return sq.Like{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
+		return sq.Like{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpNotCont:
-		return sq.NotLike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
+		return sq.NotLike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpICont:
-		return sq.ILike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
+		return sq.ILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpNotICont:
-		return sq.NotILike{s.mapField(op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
+		return sq.NotILike{s.mapField(tableName, op.Field, tm): fmt.Sprintf("%%%s%%", s.escapeLike(op.Value))}, nil
 	case database.FilterOpGt:
-		return sq.Gt{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.Gt{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	case database.FilterOpGte:
-		return sq.GtOrEq{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.GtOrEq{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	case database.FilterOpLt:
-		return sq.Lt{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.Lt{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	case database.FilterOpLte:
-		return sq.LtOrEq{s.mapField(op.Field, tm): op.Value}, nil
+		return sq.LtOrEq{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	default:
 		return nil, i18n.NewError(ctx, i18n.MsgUnsupportedSQLOpInFilter, op.Op)
 	}
 }
 
-func (s *SQLCommon) filterOr(ctx context.Context, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterOr(ctx context.Context, tableName string, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	var err error
 	or := make(sq.Or, len(op.Children))
 	for i, c := range op.Children {
-		if or[i], err = s.filterOp(ctx, c, tm); err != nil {
+		if or[i], err = s.filterOp(ctx, tableName, c, tm); err != nil {
 			return nil, err
 		}
 	}
 	return or, nil
 }
 
-func (s *SQLCommon) filterAnd(ctx context.Context, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
+func (s *SQLCommon) filterAnd(ctx context.Context, tableName string, op *database.FilterInfo, tm map[string]string) (sq.Sqlizer, error) {
 	var err error
 	and := make(sq.And, len(op.Children))
 	for i, c := range op.Children {
-		if and[i], err = s.filterOp(ctx, c, tm); err != nil {
+		if and[i], err = s.filterOp(ctx, tableName, c, tm); err != nil {
 			return nil, err
 		}
 	}

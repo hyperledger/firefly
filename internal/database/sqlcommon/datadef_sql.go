@@ -17,11 +17,12 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -40,25 +41,29 @@ var (
 	dataDefFilterTypeMap = map[string]string{}
 )
 
-func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.DataDefinition) (err error) {
+func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.DataDefinition, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	dataDefRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("datadefs").
-			Where(sq.Eq{"id": dataDef.ID}),
-	)
-	if err != nil {
-		return err
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		dataDefRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("datadefs").
+				Where(sq.Eq{"id": dataDef.ID}),
+		)
+		if err != nil {
+			return err
+		}
+		existing = dataDefRows.Next()
+		dataDefRows.Close()
 	}
 
-	if dataDefRows.Next() {
-		dataDefRows.Close()
+	if existing {
 
 		// Update the dataDef
 		if _, err = s.updateTx(ctx, tx,
@@ -75,8 +80,6 @@ func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.D
 			return err
 		}
 	} else {
-		dataDefRows.Close()
-
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("datadefs").
 				Columns(dataDefColumns...).
@@ -116,12 +119,12 @@ func (s *SQLCommon) dataDefResult(ctx context.Context, row *sql.Rows) (*fftypes.
 	return &dataDef, nil
 }
 
-func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uuid.UUID) (message *fftypes.DataDefinition, err error) {
+func (s *SQLCommon) getDataDefinitionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.DataDefinition, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataDefColumns...).
 			From("datadefs").
-			Where(sq.Eq{"id": id}),
+			Where(eq),
 	)
 	if err != nil {
 		return nil, err
@@ -129,7 +132,7 @@ func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uu
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("DataDefinition '%s' not found", id)
+		log.L(ctx).Debugf("DataDefinition '%s' not found", textName)
 		return nil, nil
 	}
 
@@ -141,9 +144,17 @@ func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, ns string, id *uu
 	return dataDef, nil
 }
 
+func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (message *fftypes.DataDefinition, err error) {
+	return s.getDataDefinitionEq(ctx, sq.Eq{"id": id}, id.String())
+}
+
+func (s *SQLCommon) GetDataDefinitionByName(ctx context.Context, ns, name string) (message *fftypes.DataDefinition, err error) {
+	return s.getDataDefinitionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
+}
+
 func (s *SQLCommon) GetDataDefinitions(ctx context.Context, filter database.Filter) (message []*fftypes.DataDefinition, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(dataDefColumns...).From("datadefs"), filter, dataDefFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataDefColumns...).From("datadefs"), filter, dataDefFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +186,7 @@ func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, upd
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("datadefs"), update, dataDefFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("datadefs"), update, dataDefFilterTypeMap)
 	if err != nil {
 		return err
 	}

@@ -23,26 +23,27 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apispec"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/engine"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/internal/orchestrator"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 // Serve is the main entry point for the API Server
-func Serve(ctx context.Context, e engine.Engine) error {
-	r := createMuxRouter(e)
+func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
+	r := createMuxRouter(o)
 	l, err := createListener(ctx)
 	if err == nil {
 		var s *http.Server
@@ -95,8 +96,8 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	srv = &http.Server{
 		Handler:      wrapCorsIfEnabled(ctx, r),
-		WriteTimeout: time.Duration(config.GetUint(config.HttpWriteTimeout)) * time.Millisecond,
-		ReadTimeout:  time.Duration(config.GetUint(config.HttpReadTimeout)) * time.Millisecond,
+		WriteTimeout: config.GetDuration(config.HttpWriteTimeout),
+		ReadTimeout:  config.GetDuration(config.HttpReadTimeout),
 		TLSConfig: &tls.Config{
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
@@ -143,7 +144,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
+func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	route.JSONInputValue()
 	route.JSONOutputValue()
@@ -179,9 +180,9 @@ func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
 		}
 		if err == nil {
 			status = route.JSONOutputCode
-			output, err = route.JSONHandler(apispec.APIRequest{
+			output, err = route.JSONHandler(oapispec.APIRequest{
 				Ctx:    req.Context(),
-				E:      e,
+				Or:     o,
 				Req:    req,
 				PP:     pathParams,
 				QP:     queryParams,
@@ -190,13 +191,14 @@ func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
 			})
 		}
 		if err == nil {
-			if output == nil && status != 204 {
+			isNil := output == nil || reflect.ValueOf(output).IsNil()
+			if isNil && status != 204 {
 				err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
 				status = 404
 			}
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
-			if output != nil {
+			if !isNil {
 				err = json.NewEncoder(res).Encode(output)
 				if err != nil {
 					err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
@@ -209,7 +211,7 @@ func jsonHandler(e engine.Engine, route *apispec.Route) http.HandlerFunc {
 }
 
 func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
-	apiTimeout := config.GetUint(config.APIRequestTimeout) // Query once at startup when wrapping
+	apiTimeout := config.GetDuration(config.APIRequestTimeout) // Query once at startup when wrapping
 	return func(res http.ResponseWriter, req *http.Request) {
 
 		// Configure a server-side timeout on each request, to try and avoid cases where the API requester
@@ -218,7 +220,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
 		// This is dependent on the context being passed down through to all blocking operations down the stack
 		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		ctx, cancel := context.WithTimeout(req.Context(), time.Duration(apiTimeout)*time.Millisecond)
+		ctx, cancel := context.WithTimeout(req.Context(), apiTimeout)
 		req = req.WithContext(ctx)
 		defer cancel()
 
@@ -260,7 +262,7 @@ func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, er
 
 func swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "text/html")
-	_, _ = res.Write(apispec.SwaggerUIHTML(req.Context()))
+	_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context()))
 	return 200, nil
 }
 
@@ -268,23 +270,23 @@ func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err
 	vars := mux.Vars(req)
 	if vars["ext"] == ".json" {
 		res.Header().Add("Content-Type", "application/json")
-		doc := apispec.SwaggerGen(req.Context(), routes)
+		doc := oapispec.SwaggerGen(req.Context(), routes)
 		b, _ := json.Marshal(&doc)
 		_, _ = res.Write(b)
 	} else {
 		res.Header().Add("Content-Type", "application/x-yaml")
-		doc := apispec.SwaggerGen(req.Context(), routes)
+		doc := oapispec.SwaggerGen(req.Context(), routes)
 		b, _ := yaml.Marshal(&doc)
 		_, _ = res.Write(b)
 	}
 	return 200, nil
 }
 
-func createMuxRouter(e engine.Engine) *mux.Router {
+func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), jsonHandler(e, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), jsonHandler(o, route)).
 				Methods(route.Method)
 		}
 	}

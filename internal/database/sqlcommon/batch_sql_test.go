@@ -22,8 +22,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,10 +37,11 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchId := uuid.New()
 	msgId1 := uuid.New()
 	batch := &fftypes.Batch{
-		ID:     &batchId,
-		Type:   fftypes.MessageTypeBroadcast,
-		Author: "0x12345",
-		Hash:   fftypes.NewRandB32(),
+		ID:      &batchId,
+		Type:    fftypes.MessageTypeBroadcast,
+		Author:  "0x12345",
+		Hash:    fftypes.NewRandB32(),
+		Created: fftypes.Now(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: &msgId1}},
@@ -50,11 +51,11 @@ func TestBatch2EWithDB(t *testing.T) {
 			},
 		},
 	}
-	err := s.UpsertBatch(ctx, batch, true)
+	err := s.UpsertBatch(ctx, batch, true, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same batch back
-	batchRead, err := s.GetBatchById(ctx, "ns1", &batchId)
+	batchRead, err := s.GetBatchById(ctx, &batchId)
 	assert.NoError(t, err)
 	assert.NotNil(t, batchRead)
 	batchJson, _ := json.Marshal(&batch)
@@ -72,7 +73,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Author:    "0x12345",
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
-		Created:   fftypes.NowMillis(),
+		Created:   fftypes.Now(),
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   &txid,
@@ -84,25 +85,25 @@ func TestBatch2EWithDB(t *testing.T) {
 			},
 		},
 		PayloadRef: payloadRef,
-		Confirmed:  fftypes.NowMillis(),
+		Confirmed:  fftypes.Now(),
 	}
 
 	// Rejects hash change
-	err = s.UpsertBatch(context.Background(), batchUpdated, false)
+	err = s.UpsertBatch(context.Background(), batchUpdated, true, false)
 	assert.Equal(t, database.HashMismatch, err)
 
-	err = s.UpsertBatch(context.Background(), batchUpdated, true)
+	err = s.UpsertBatch(context.Background(), batchUpdated, true, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the batch elements
-	batchRead, err = s.GetBatchById(ctx, "ns1", &batchId)
+	batchRead, err = s.GetBatchById(ctx, &batchId)
 	assert.NoError(t, err)
 	batchJson, _ = json.Marshal(&batchUpdated)
 	batchReadJson, _ = json.Marshal(&batchRead)
 	assert.Equal(t, string(batchJson), string(batchReadJson))
 
 	// Query back the batch
-	fb := database.BatchQueryFactory.NewFilter(ctx, 0)
+	fb := database.BatchQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", batchUpdated.ID.String()),
 		fb.Eq("namespace", batchUpdated.Namespace),
@@ -144,7 +145,7 @@ func TestBatch2EWithDB(t *testing.T) {
 func TestUpsertBatchFailBegin(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{}, true)
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -155,7 +156,7 @@ func TestUpsertBatchFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchId := uuid.New()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -167,7 +168,7 @@ func TestUpsertBatchFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	batchId := uuid.New()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -179,7 +180,7 @@ func TestUpsertBatchFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(batchId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -191,7 +192,7 @@ func TestUpsertBatchFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true)
+	err := s.UpsertBatch(context.Background(), &fftypes.Batch{ID: &batchId}, true, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -200,7 +201,7 @@ func TestGetBatchByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	_, err := s.GetBatchById(context.Background(), &batchId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -209,7 +210,7 @@ func TestGetBatchByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	msg, err := s.GetBatchById(context.Background(), &batchId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -219,7 +220,7 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	batchId := uuid.New()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetBatchById(context.Background(), "ns1", &batchId)
+	_, err := s.GetBatchById(context.Background(), &batchId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -227,7 +228,7 @@ func TestGetBatchByIdScanFail(t *testing.T) {
 func TestGetBatchesQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -235,7 +236,7 @@ func TestGetBatchesQueryFail(t *testing.T) {
 
 func TestGetBatchesBuildQueryFail(t *testing.T) {
 	s, _ := getMockDB()
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", map[bool]bool{true: false})
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
@@ -243,7 +244,7 @@ func TestGetBatchesBuildQueryFail(t *testing.T) {
 func TestGetBatchesReadMessageFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.BatchQueryFactory.NewFilter(context.Background(), 0).Eq("id", "")
+	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())

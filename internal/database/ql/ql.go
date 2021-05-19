@@ -16,14 +16,15 @@ package ql
 
 import (
 	"context"
+	"fmt"
 
 	"database/sql"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/database"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
+	"github.com/kaleido-io/firefly/internal/i18n"
 
 	_ "modernc.org/ql/driver"
 )
@@ -32,12 +33,18 @@ type QL struct {
 	sqlcommon.SQLCommon
 }
 
+func (e *QL) Name() string {
+	return "ql"
+}
+
 func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
 		PlaceholderFormat: squirrel.Dollar,
-		SequenceField:     "id()",
+		SequenceField: func(tableName string) string {
+			return fmt.Sprintf("id(%s)", tableName)
+		},
 	}
 
 	db, err := sql.Open("ql", prefix.GetString(QLConfURL))

@@ -20,8 +20,8 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/database"
-	"github.com/kaleido-io/firefly/internal/fftypes"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 )
@@ -33,7 +33,6 @@ var (
 		"msg_id",
 		"data_id",
 		"optype",
-		"opdir",
 		"opstatus",
 		"recipient",
 		"plugin",
@@ -46,13 +45,12 @@ var (
 		"message":   "msg_id",
 		"data":      "data_id",
 		"type":      "optype",
-		"direction": "opdir",
 		"status":    "opstatus",
 		"backendid": "backend_id",
 	}
 )
 
-func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Operation) (err error) {
+func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -60,18 +58,21 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	// Do a select within the transaction to detemine if the UUID already exists
-	opRows, err := s.queryTx(ctx, tx,
-		sq.Select("id").
-			From("operations").
-			Where(sq.Eq{"id": operation.ID}),
-	)
-	if err != nil {
-		return err
-	}
+	existing := false
+	if allowExisting {
+		// Do a select within the transaction to detemine if the UUID already exists
+		opRows, err := s.queryTx(ctx, tx,
+			sq.Select("id").
+				From("operations").
+				Where(sq.Eq{"id": operation.ID}),
+		)
+		if err != nil {
+			return err
+		}
 
-	existing := opRows.Next()
-	opRows.Close()
+		existing = opRows.Next()
+		opRows.Close()
+	}
 
 	if existing {
 		// Update the operation
@@ -81,7 +82,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("msg_id", operation.Message).
 				Set("data_id", operation.Data).
 				Set("optype", operation.Type).
-				Set("opdir", operation.Direction).
 				Set("opstatus", operation.Status).
 				Set("recipient", operation.Recipient).
 				Set("plugin", operation.Plugin).
@@ -103,7 +103,6 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Message,
 					operation.Data,
 					string(operation.Type),
-					string(operation.Direction),
 					string(operation.Status),
 					operation.Recipient,
 					operation.Plugin,
@@ -128,7 +127,6 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Message,
 		&op.Data,
 		&op.Type,
-		&op.Direction,
 		&op.Status,
 		&op.Recipient,
 		&op.Plugin,
@@ -143,7 +141,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	return &op, nil
 }
 
-func (s *SQLCommon) GetOperationById(ctx context.Context, ns string, id *uuid.UUID) (operation *fftypes.Operation, err error) {
+func (s *SQLCommon) GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(opColumns...).
@@ -170,7 +168,7 @@ func (s *SQLCommon) GetOperationById(ctx context.Context, ns string, id *uuid.UU
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
 
-	query, err := s.filterSelect(ctx, sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +191,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	return ops, err
 }
 
-func (s *SQLCommon) UpdateOperation(ctx context.Context, opid *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperations(ctx context.Context, filter database.Filter, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -201,11 +199,15 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, opid *uuid.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, sq.Update("operations"), update, opFilterTypeMap)
+	query, err := s.buildUpdate(ctx, "", sq.Update("operations"), update, opFilterTypeMap)
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": opid})
+
+	query, err = s.filterUpdate(ctx, "", query, filter, opFilterTypeMap)
+	if err != nil {
+		return err
+	}
 
 	_, err = s.updateTx(ctx, tx, query)
 	if err != nil {

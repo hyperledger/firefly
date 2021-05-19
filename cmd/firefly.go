@@ -24,11 +24,13 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/apiserver"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/engine"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/orchestrator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	_ "net/http/pprof"
 )
 
 var sigs = make(chan os.Signal, 1)
@@ -51,30 +53,30 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
-		getEngine()
+		getOrchestrator()
 		_ = config.ReadConfig(cfgFile)
 
 		// Print it all out
 		for _, k := range config.GetKnownKeys() {
-			fmt.Printf("%-64s %v\n", k, config.GetString(config.RootKey(k)))
+			fmt.Printf("%-64s %v\n", k, config.Get(config.RootKey(k)))
 		}
 	},
 }
 
 var cfgFile string
 
-var _utEngine engine.Engine
+var _utOrchestrator orchestrator.Orchestrator
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
 	rootCmd.AddCommand(showConfigCommand)
 }
 
-func getEngine() engine.Engine {
-	if _utEngine != nil {
-		return _utEngine
+func getOrchestrator() orchestrator.Orchestrator {
+	if _utOrchestrator != nil {
+		return _utOrchestrator
 	}
-	return engine.NewEngine()
+	return orchestrator.NewOrchestrator()
 }
 
 // Execute is called by the main method of the package
@@ -90,11 +92,12 @@ func run() error {
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	ctx = log.WithLogger(ctx, logrus.WithField("pid", os.Getpid()))
-	log.SetupLogging(ctx)
+	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Project Firefly")
 	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
 
 	// Setup signal handling to cancel the context, which shuts down the API Server
+	o := getOrchestrator()
 	done := make(chan struct{})
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -102,6 +105,7 @@ func run() error {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
 			cancelCtx()
+			o.WaitStop()
 		case <-done:
 		}
 	}()
@@ -120,14 +124,13 @@ func run() error {
 		}()
 	}
 
-	e := getEngine()
-	if err = e.Init(ctx); err != nil {
+	if err = o.Init(ctx); err != nil {
 		return err
 	}
-	if err = e.Start(); err != nil {
+	if err = o.Start(); err != nil {
 		return err
 	}
 
 	// Run the API Server
-	return apiserver.Serve(ctx, e)
+	return apiserver.Serve(ctx, o)
 }

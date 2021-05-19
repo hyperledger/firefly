@@ -137,7 +137,7 @@ export const handleCreateStructuredAssetInstanceRequest = async (author: string,
   // If there are public IPFS shared parts of this instance, we can batch it together with all other
   // assets we are publishing for performance. Reducing both the data we write to the blockchain, and
   // most importantly the number of IPFS transactions.
-  // Curently we do batching only for ethereum
+  // Curently we do batch only for ethereum
   if ((assetDefinition.descriptionSchema || !isContentPrivate) && config.protocol === 'ethereum') {
     dbAssetInstance.batchID = await assetInstancesPinning.pin(assetInstance);
     await database.upsertAssetInstance(dbAssetInstance);

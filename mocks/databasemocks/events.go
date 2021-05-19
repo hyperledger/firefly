@@ -12,12 +12,12 @@ type Events struct {
 	mock.Mock
 }
 
-// MessageCreated provides a mock function with given fields: id
-func (_m *Events) MessageCreated(id *uuid.UUID) {
+// EventCreated provides a mock function with given fields: id
+func (_m *Events) EventCreated(id *uuid.UUID) {
 	_m.Called(id)
 }
 
-// MessageUpdated provides a mock function with given fields: id
-func (_m *Events) MessageUpdated(id *uuid.UUID) {
+// MessageCreated provides a mock function with given fields: id
+func (_m *Events) MessageCreated(id *uuid.UUID) {
 	_m.Called(id)
 }
