@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -90,7 +90,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 		}
 
 		s.postCommitEvent(ctx, tx, func() {
-			s.events.EventCreated(event.ID)
+			s.callbacks.EventCreated(event.ID)
 		})
 
 	}

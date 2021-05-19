@@ -19,16 +19,16 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type SQLCommon struct {
 	db           *sql.DB
 	capabilities *database.Capabilities
-	events       database.Events
+	callbacks    database.Callbacks
 	options      *SQLCommonOptions
 }
 
@@ -46,10 +46,10 @@ type txWrapper struct {
 	postCommit []func()
 }
 
-func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, events database.Events, capabilities *database.Capabilities, options *SQLCommonOptions) error {
+func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, callbacks database.Callbacks, capabilities *database.Capabilities, options *SQLCommonOptions) error {
 	s.db = db
 	s.capabilities = capabilities
-	s.events = events
+	s.callbacks = callbacks
 	if options == nil || options.PlaceholderFormat == nil || options.SequenceField == nil {
 		log.L(ctx).Errorf("Invalid SQL options from plugin: %+v", options)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)

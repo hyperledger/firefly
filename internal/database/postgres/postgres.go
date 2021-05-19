@@ -22,9 +22,9 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/database"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -41,7 +41,7 @@ func (e *Postgres) Name() string {
 	return "postgres"
 }
 
-func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
+func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
@@ -66,7 +66,7 @@ func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events 
 		}
 	}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
+	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
 }
 
 func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.ConfigPrefix, db *sql.DB) error {

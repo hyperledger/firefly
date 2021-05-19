@@ -31,12 +31,12 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/oapispec"
 	"github.com/kaleido-io/firefly/internal/orchestrator"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
@@ -246,7 +246,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, durationMS, err)
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
-			_ = json.NewEncoder(res).Encode(&RESTError{
+			_ = json.NewEncoder(res).Encode(&fftypes.RESTError{
 				Error: err.Error(),
 			})
 		} else {

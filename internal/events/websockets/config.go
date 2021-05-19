@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !cgo
+package websockets
 
-package databasefactory
+import "github.com/kaleido-io/firefly/internal/config"
 
-import (
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/internal/database/postgres"
-	"github.com/kaleido-io/firefly/internal/database/ql"
+const (
+	bufferSizeDefault = 1024
 )
 
-var plugins = []database.Plugin{
-	&postgres.Postgres{},
-	&ql.QL{},
+const (
+	ReadBufferSizeKB  = "readBufferSizeKB"
+	WriteBufferSizeKB = "writeBufferSizeKB"
+)
+
+func (ws *WebSockets) InitConfigPrefix(prefix config.ConfigPrefix) {
+	prefix.AddKnownKey(ReadBufferSizeKB, bufferSizeDefault)
+	prefix.AddKnownKey(WriteBufferSizeKB, bufferSizeDefault)
+
 }

@@ -19,6 +19,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/events/etfactory"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
@@ -27,7 +29,7 @@ import (
 )
 
 type EventManager interface {
-	blockchain.Events
+	blockchain.Callbacks
 
 	NewEvents() chan<- *uuid.UUID
 	Start() error
@@ -38,15 +40,20 @@ type eventManager struct {
 	ctx           context.Context
 	publicstorage publicstorage.Plugin
 	database      database.Plugin
+	subManagers   map[string]*subscriptionManager
 	retry         retry.Retry
 	aggregator    *aggregator
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin) EventManager {
-	return &eventManager{
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin) (EventManager, error) {
+	if pi == nil || di == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
+	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
 		database:      di,
+		subManagers:   make(map[string]*subscriptionManager),
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
@@ -54,6 +61,20 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		},
 		aggregator: newAggregator(ctx, di),
 	}
+
+	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
+	for _, transport := range enabledTransports {
+		et, err := etfactory.GetPlugin(ctx, transport)
+		if err != nil {
+			return nil, err
+		}
+		em.subManagers[transport], err = newSubscriptionManager(ctx, di, et)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return em, nil
 }
 
 func (em *eventManager) Start() error {

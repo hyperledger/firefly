@@ -32,7 +32,7 @@ import (
 )
 
 func TestSequencedBroadcastBatchOk(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	batch := &blockchain.BroadcastBatch{
@@ -76,7 +76,7 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 }
 
 func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 
 	batch := &blockchain.BroadcastBatch{
 		TransactionID:  fftypes.NewUUID(),
@@ -94,7 +94,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 }
 
 func TestSequencedBroadcastBatchBadData(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	batch := &blockchain.BroadcastBatch{
@@ -112,14 +112,14 @@ func TestSequencedBroadcastBatchBadData(t *testing.T) {
 }
 
 func TestPersistBatchMissingID(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	err := em.persistBatch(context.Background(), &fftypes.Batch{}, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 }
 
 func TestPersistBatchBadAuthor(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -137,7 +137,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 }
 
 func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -160,7 +160,7 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 }
 
 func TestPersistBatchUpsertBatchFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -182,7 +182,7 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 }
 
 func TestPersistBatchGetTransactionFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -205,7 +205,7 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 }
 
 func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -231,7 +231,7 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 }
 
 func TestPersistBatcNewTXUpsertFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
@@ -255,7 +255,7 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 }
 
 func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:        fftypes.NewUUID(),
@@ -288,7 +288,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 }
 
 func TestPersistBatchSwallowBadData(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:        fftypes.NewUUID(),
@@ -323,7 +323,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 }
 
 func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:        fftypes.NewUUID(),
@@ -360,7 +360,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 }
 
 func TestPersistBatchGoodDataMessageFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID:        fftypes.NewUUID(),
@@ -398,7 +398,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 }
 
 func TestPersistBatchDataBadHash(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -411,7 +411,7 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 }
 
 func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -431,7 +431,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 }
 
 func TestPersistBatchDataUpsertDataError(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -450,7 +450,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 }
 
 func TestPersistBatchDataUpsertEventError(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -470,7 +470,7 @@ func TestPersistBatchDataUpsertEventError(t *testing.T) {
 }
 
 func TestPersistBatchDataOk(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -491,7 +491,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 }
 
 func TestPersistBatchMessageBadHash(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -506,7 +506,7 @@ func TestPersistBatchMessageBadHash(t *testing.T) {
 }
 
 func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -529,7 +529,7 @@ func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
 }
 
 func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -551,7 +551,7 @@ func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
 }
 
 func TestPersistBatchMessageUpsertEventFail(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
@@ -574,7 +574,7 @@ func TestPersistBatchMessageUpsertEventFail(t *testing.T) {
 }
 
 func TestPersistBatchMessageOK(t *testing.T) {
-	em, cancel := newTestEventManager()
+	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),

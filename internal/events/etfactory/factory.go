@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build cgo
-
-package databasefactory
+package etfactory
 
 import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/internal/events/websockets"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/events"
 )
 
-var pluginsByName = make(map[string]database.Plugin)
+var plugins = []events.Plugin{
+	&websockets.WebSockets{},
+}
+
+var pluginsByName = make(map[string]events.Plugin)
 
 func init() {
 	for _, p := range plugins {
@@ -38,10 +41,10 @@ func InitConfigPrefix(prefix config.ConfigPrefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (database.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (events.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownEventTransportPlugin, pluginType)
 	}
 	return plugin, nil
 }

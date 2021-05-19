@@ -38,6 +38,8 @@ type WSAuthConfig struct {
 type WSClient interface {
 	Connect() error
 	Receive() <-chan []byte
+	URL() string
+	SetURL(url string)
 	Send(ctx context.Context, message []byte) error
 	Close()
 }
@@ -127,6 +129,14 @@ func (w *wsClient) Receive() <-chan []byte {
 	return w.receive
 }
 
+func (w *wsClient) URL() string {
+	return w.url
+}
+
+func (w *wsClient) SetURL(url string) {
+	w.url = url
+}
+
 func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	// Send
 	select {
@@ -214,10 +224,9 @@ func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 	for {
 		select {
 		case message := <-w.send:
+			l.Tracef("WS sending: %s", message)
 			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
 				l.Errorf("WS %s send failed: %s", w.url, err)
-				// Keep the message for when we reconnect
-				w.sendDone <- message
 				return
 			}
 		case <-receiverDone:

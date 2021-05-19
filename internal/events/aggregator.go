@@ -19,10 +19,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 const (
@@ -44,7 +44,7 @@ func newAggregator(ctx context.Context, di database.Plugin) *aggregator {
 		eventBatchSize:             config.GetInt(config.EventAggregatorBatchSize),
 		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.EventAggregatorStartupAttempts),
+		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
@@ -64,7 +64,7 @@ func (ag *aggregator) start() error {
 
 func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (bool, error) {
 	l := log.L(ctx)
-	l.Debugf("Aggregating event %.10d/%s type:%s ref:%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+	l.Debugf("Aggregating event %.10d/%s [%s]: %s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 	l.Tracef("Event data: %+v", event.Type)
 	switch event.Type {
 	case fftypes.EventTypeDataArrivedBroadcast:
@@ -81,7 +81,7 @@ func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (b
 		// Other events do not need aggregation.
 		// Note this MUST include all events that are generated via aggregation, or we would infinite loop
 	}
-	l.Debugf("No action for %.10d/%s: %s", event.Sequence, event.ID, event.Type)
+	l.Debugf("No action for event %.10d/%s [%s]: %s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 	return false, nil
 }
 

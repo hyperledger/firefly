@@ -37,13 +37,13 @@ func (_m *Plugin) Capabilities() *publicstorage.Capabilities {
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, prefix, events
-func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, events publicstorage.Events) error {
-	ret := _m.Called(ctx, prefix, events)
+// Init provides a mock function with given fields: ctx, prefix, callbacks
+func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks publicstorage.Callbacks) error {
+	ret := _m.Called(ctx, prefix, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, publicstorage.Events) error); ok {
-		r0 = rf(ctx, prefix, events)
+	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, publicstorage.Callbacks) error); ok {
+		r0 = rf(ctx, prefix, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}

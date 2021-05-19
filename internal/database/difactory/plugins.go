@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+// +build !cgo
+
+package difactory
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/kaleido-io/firefly/internal/database/postgres"
+	"github.com/kaleido-io/firefly/internal/database/ql"
+	"github.com/kaleido-io/firefly/pkg/database"
 )
 
-func TestNewEvent(t *testing.T) {
-
-	u := NewUUID()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
-	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
-	assert.Equal(t, "ns1", e.Namespace)
-	assert.Equal(t, *u, *e.Reference)
-
+var plugins = []database.Plugin{
+	&postgres.Postgres{},
+	&ql.QL{},
 }

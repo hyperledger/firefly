@@ -19,18 +19,18 @@ import (
 	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/batch"
-	"github.com/kaleido-io/firefly/pkg/blockchain"
-	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
+	"github.com/kaleido-io/firefly/internal/blockchain/bifactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database/databasefactory"
+	"github.com/kaleido-io/firefly/internal/database/difactory"
 	"github.com/kaleido-io/firefly/internal/events"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
-	"github.com/kaleido-io/firefly/internal/publicstorage/publicstoragefactory"
+	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	blockchain.Events
+	blockchain.Callbacks
 
 	Init(ctx context.Context) error
 	Start() error
@@ -88,9 +88,9 @@ func NewOrchestrator() Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
-	blockchainfactory.InitConfigPrefix(blockchainConfig)
-	databasefactory.InitConfigPrefix(databaseConfig)
-	publicstoragefactory.InitConfigPrefix(publicstorageConfig)
+	bifactory.InitConfigPrefix(blockchainConfig)
+	difactory.InitConfigPrefix(databaseConfig)
+	psfactory.InitConfigPrefix(publicstorageConfig)
 
 	return or
 }
@@ -161,7 +161,10 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.events == nil {
-		or.events = events.NewEventManager(ctx, or.publicstorage, or.database)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database)
+		if err != nil {
+			return err
+		}
 	}
 
 	if or.batch == nil {
@@ -181,7 +184,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
 	pluginType := config.GetString(config.BlockchainType)
-	plugin, err := blockchainfactory.GetPlugin(ctx, pluginType)
+	plugin, err := bifactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +201,7 @@ func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Pl
 
 func (or *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
 	pluginType := config.GetString(config.DatabaseType)
-	plugin, err := databasefactory.GetPlugin(ctx, pluginType)
+	plugin, err := difactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +211,7 @@ func (or *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin
 
 func (or *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
 	pluginType := config.GetString(config.PublicStorageType)
-	plugin, err := publicstoragefactory.GetPlugin(ctx, pluginType)
+	plugin, err := psfactory.GetPlugin(ctx, pluginType)
 	if err != nil {
 		return nil, err
 	}

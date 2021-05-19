@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 // FFTime is serialized to JSON on the API in RFC3339 nanosecond UTC time
@@ -139,6 +140,18 @@ func (ft FFTime) String() string {
 		return ""
 	}
 	return time.Time(ft).UTC().Format(time.RFC3339Nano)
+}
+
+// ParseToDuration is a standard handling of any duration string, in config or API options
+func ParseToDuration(durationString string) time.Duration {
+	if durationString == "" {
+		return time.Duration(0)
+	}
+	ffd, err := ParseDurationString(durationString)
+	if err != nil {
+		log.L(context.Background()).Warn(err.Error())
+	}
+	return time.Duration(ffd)
 }
 
 // ParseDurationString is a standard handling of any duration string, in config or API options

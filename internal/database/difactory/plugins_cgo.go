@@ -12,8 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+// +build cgo
 
-type RESTError struct {
-	Error string `json:"error"`
+package difactory
+
+import (
+	"github.com/kaleido-io/firefly/internal/database/postgres"
+	"github.com/kaleido-io/firefly/internal/database/ql"
+	"github.com/kaleido-io/firefly/internal/database/sqlite"
+	"github.com/kaleido-io/firefly/pkg/database"
+)
+
+var plugins = []database.Plugin{
+	&postgres.Postgres{},
+	&ql.QL{},
+	&sqlite.SQLite{},
 }

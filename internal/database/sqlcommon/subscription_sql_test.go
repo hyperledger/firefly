@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +39,6 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		ID:        nil, // generated for us
 		Namespace: "ns1",
 		Name:      "subscription1",
-		Events:    fftypes.EventTypes{},
 		Created:   fftypes.Now(),
 	}
 	err := s.UpsertSubscription(ctx, subscription, true)
@@ -60,12 +59,12 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	dur500ms, _ := fftypes.ParseDurationString("500ms")
 	fifty := uint64(50)
 	subscriptionUpdated := &fftypes.Subscription{
-		ID:         fftypes.NewUUID(), // will fail with us trying to update this
-		Namespace:  "ns1",
-		Name:       "subscription1",
-		Dispatcher: "websockets",
-		Events:     fftypes.EventTypes{fftypes.EventTypeMessageConfirmed},
+		ID:        fftypes.NewUUID(), // will fail with us trying to update this
+		Namespace: "ns1",
+		Name:      "subscription1",
+		Transport: "websockets",
 		Filter: fftypes.SubscriptionFilter{
+			Events:  "DataArrivedBroadcast",
 			Topic:   "topic.*",
 			Context: "context.*",
 			Group:   "group.*",

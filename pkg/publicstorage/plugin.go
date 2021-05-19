@@ -29,9 +29,9 @@ type Plugin interface {
 	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitConfigPrefix(prefix config.ConfigPrefix)
 
-	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
+	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
+	Init(ctx context.Context, prefix config.ConfigPrefix, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -43,7 +43,7 @@ type Plugin interface {
 	RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error)
 }
 
-type Events interface {
+type Callbacks interface {
 }
 
 type Capabilities struct {

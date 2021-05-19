@@ -64,6 +64,7 @@ func TestWSClientE2E(t *testing.T) {
 	wsClient, err := New(context.Background(), utConfPrefix, afterConnect)
 	assert.NoError(t, err)
 
+	wsClient.SetURL(wsClient.URL() + "/test") // Confirm you can configure this
 	err = wsClient.Connect()
 	assert.NoError(t, err)
 
