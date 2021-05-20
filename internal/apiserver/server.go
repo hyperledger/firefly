@@ -31,13 +31,15 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/oapispec"
 	"github.com/kaleido-io/firefly/internal/orchestrator"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
+
+const uiUrlPrefix = "/ui"
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
@@ -292,6 +294,13 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	}
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
 	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
+
+	uiPath := config.GetString(config.UIPath)
+	if uiPath != "" {
+		uiHandler := UIHandler{staticPath: uiPath, indexPath: "index.html", urlPrefix: uiUrlPrefix}
+		r.PathPrefix(uiUrlPrefix).Handler(uiHandler)
+	}
+
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }
