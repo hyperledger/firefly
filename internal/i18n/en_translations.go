@@ -97,4 +97,6 @@ var (
 	MsgWSAutoAckEnabled            = ffm("FF10180", "The autoack option is enabled on this connection")
 	MsgConnSubscriptionNotStarted  = ffm("FF10181", "Subscription %v is not started on connection")
 	MsgDispatcherClosing           = ffm("FF10182", "Event dispatcher closing")
+	MsgMaxFilterSkip               = ffm("FF10183", "You have reached the maximum pagination limit for this query (%d)")
+	MsgMaxFilterLimit              = ffm("FF10184", "Your query exceeds the maximum filter limit (%d)")
 )

@@ -34,6 +34,8 @@ import (
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
 	APIDefaultFilterLimit         RootKey = ark("api.defaultFilterLimit")
+	APIMaxFilterLimit             RootKey = ark("api.maxFilterLimit")
+	APIMaxFilterSkip              RootKey = ark("api.maxFilterLimit")
 	APIRequestTimeout             RootKey = ark("api.requestTimeout")
 	BatchManagerReadPageSize      RootKey = ark("batch.manager.readPageSize")
 	BatchManagerReadPollTimeout   RootKey = ark("batch.manager.pollTimeout")
@@ -120,6 +122,9 @@ func Reset() {
 
 	// Set defaults
 	viper.SetDefault(string(APIDefaultFilterLimit), 25)
+	viper.SetDefault(string(APIRequestTimeout), "120s")
+	viper.SetDefault(string(APIMaxFilterLimit), 250)
+	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
