@@ -23,9 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -70,6 +70,7 @@ var (
 	HttpTLSEnabled                 RootKey = ark("http.tls.enabled")
 	HttpTLSKeyFile                 RootKey = ark("http.tls.keyFile")
 	HttpWriteTimeout               RootKey = ark("http.writeTimeout")
+	UIPath                         RootKey = ark("ui.path")
 	Lang                           RootKey = ark("lang")
 	LogUTC                         RootKey = ark("log.utc")
 	LogNoColor                     RootKey = ark("log.noColor")
