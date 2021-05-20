@@ -219,6 +219,29 @@ func (_m *Plugin) GetDataDefinitions(ctx context.Context, filter database.Filter
 	return r0, r1
 }
 
+// GetDataRefs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (fftypes.DataRefs, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 fftypes.DataRefs
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataRefs); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.DataRefs)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetEventById provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetEventById(ctx context.Context, id *uuid.UUID) (*fftypes.Event, error) {
 	ret := _m.Called(ctx, id)

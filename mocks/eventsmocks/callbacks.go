@@ -33,13 +33,13 @@ func (_m *Callbacks) DeliveryResponse(connID string, inflight fftypes.EventDeliv
 	return r0
 }
 
-// EphemeralSubscription provides a mock function with given fields: connID, filter, options
-func (_m *Callbacks) EphemeralSubscription(connID string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
-	ret := _m.Called(connID, filter, options)
+// EphemeralSubscription provides a mock function with given fields: connID, namespace, filter, options
+func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
+	ret := _m.Called(connID, namespace, filter, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.SubscriptionFilter, fftypes.SubscriptionOptions) error); ok {
-		r0 = rf(connID, filter, options)
+	if rf, ok := ret.Get(0).(func(string, string, fftypes.SubscriptionFilter, fftypes.SubscriptionOptions) error); ok {
+		r0 = rf(connID, namespace, filter, options)
 	} else {
 		r0 = ret.Error(0)
 	}

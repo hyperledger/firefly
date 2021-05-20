@@ -53,7 +53,7 @@ type Callbacks interface {
 	RegisterConnection(connID string, matcher SubscriptionMatcher)
 
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
-	EphemeralSubscription(connID string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error
+	EphemeralSubscription(connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error
 
 	// ConnnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
 	// Note the plugin must not crash if it receives PublishEvent calls on the connID after the ConnectionClosed event is fired

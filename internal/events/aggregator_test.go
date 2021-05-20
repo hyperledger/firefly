@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,7 +38,7 @@ func TestShutdownOnCancel(t *testing.T) {
 	ag := newAggregator(ctx, mdi)
 	err := ag.start()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(12345), ag.eventPoller.offset)
+	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.newEvents <- fftypes.NewUUID()
 	cancel()
 	<-ag.eventPoller.closed
@@ -57,7 +57,7 @@ func TestProcessEventCheckSequencedReadFail(t *testing.T) {
 	ev1.Sequence = 111
 	_, err := ag.processEvent(context.Background(), ev1)
 	assert.EqualError(t, err, "pop")
-	assert.Equal(t, int64(0), ag.eventPoller.offset)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -69,7 +69,7 @@ func TestProcessEventIgnoredTypeConfirmed(t *testing.T) {
 	repoll, err := ag.processEvent(context.Background(), ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ag.eventPoller.offset)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -88,7 +88,7 @@ func TestProcessEventCheckCompleteDataNotAvailable(t *testing.T) {
 	repoll, err := ag.processEvent(context.Background(), ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ag.eventPoller.offset)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -101,7 +101,7 @@ func TestProcessEventDataArrivedNoMsgs(t *testing.T) {
 	repoll, err := ag.processEvent(context.Background(), ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ag.eventPoller.offset)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 

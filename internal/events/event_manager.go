@@ -77,8 +77,14 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	return em, nil
 }
 
-func (em *eventManager) Start() error {
-	return em.aggregator.start()
+func (em *eventManager) Start() (err error) {
+	for _, sm := range em.subManagers {
+		err = sm.start()
+	}
+	if err == nil {
+		err = em.aggregator.start()
+	}
+	return err
 }
 
 func (em *eventManager) NewEvents() chan<- *uuid.UUID {
@@ -86,5 +92,8 @@ func (em *eventManager) NewEvents() chan<- *uuid.UUID {
 }
 
 func (em *eventManager) WaitStop() {
+	for _, sm := range em.subManagers {
+		sm.close()
+	}
 	<-em.aggregator.eventPoller.closed
 }

@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -189,6 +189,36 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 	}
 
 	return data, err
+
+}
+
+func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, err error) {
+
+	query, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	refs := fftypes.DataRefs{}
+	for rows.Next() {
+		ref := fftypes.DataRef{}
+		err := rows.Scan(
+			&ref.ID,
+			&ref.Hash,
+		)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+		}
+		refs = append(refs, ref)
+	}
+
+	return refs, err
 
 }
 

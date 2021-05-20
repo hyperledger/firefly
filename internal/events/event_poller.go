@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,44 +29,47 @@ import (
 )
 
 type eventPoller struct {
-	ctx         context.Context
-	database    database.Plugin
-	shoulderTap chan bool
-	newEvents   chan *uuid.UUID
-	closed      chan struct{}
-	offset      int64
-	conf        eventPollerConf
+	ctx            context.Context
+	database       database.Plugin
+	shoulderTaps   chan bool
+	newEvents      chan *uuid.UUID
+	closed         chan struct{}
+	pollingOffset  int64
+	comittedOffset int64
+	mux            sync.Mutex
+	conf           eventPollerConf
 }
 
-type eventHandler func(ctx context.Context, event *fftypes.Event) (bool, error)
+type newEventsHandler func(events []*fftypes.Event) (bool, error)
 
 type eventPollerConf struct {
-	firstEvent                 fftypes.SubOptsFirstEvent
+	ephemeral                  bool
 	eventBatchSize             int
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
-	startupOffsetRetryAttempts int
-	retry                      retry.Retry
-	processEvent               eventHandler
-	offsetType                 fftypes.OffsetType
-	offsetNamespace            string
+	firstEvent                 fftypes.SubOptsFirstEvent
+	limitNamespace             string
+	newEventsHandler           newEventsHandler
 	offsetName                 string
-	ephemeral                  bool
+	offsetNamespace            string
+	offsetType                 fftypes.OffsetType
+	retry                      retry.Retry
+	startupOffsetRetryAttempts int
 }
 
 func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerConf) *eventPoller {
 	ep := &eventPoller{
-		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
-		database:    di,
-		shoulderTap: make(chan bool, 1),
-		newEvents:   make(chan *uuid.UUID),
-		closed:      make(chan struct{}),
-		conf:        conf,
+		ctx:          log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
+		database:     di,
+		shoulderTaps: make(chan bool, 1),
+		newEvents:    make(chan *uuid.UUID),
+		closed:       make(chan struct{}),
+		conf:         conf,
 	}
 	return ep
 }
 
-func (ep *eventPoller) initFirstOffset(ctx context.Context) (firstOffset int64, err error) {
+func (ep *eventPoller) calcFirstOffset(ctx context.Context) (firstOffset int64, err error) {
 	var useNewest bool
 	switch ep.conf.firstEvent {
 	case "", fftypes.SubOptsFirstEventNewest:
@@ -89,9 +93,6 @@ func (ep *eventPoller) initFirstOffset(ctx context.Context) (firstOffset int64, 
 			firstOffset = newestEvents[0].Sequence
 		}
 	}
-	if err == nil {
-		err = ep.updateOffset(ep.ctx, firstOffset)
-	}
 	return
 }
 
@@ -103,15 +104,18 @@ func (ep *eventPoller) restoreOffset() error {
 		}
 		if err == nil {
 			if offset == nil {
-				ep.offset, err = ep.initFirstOffset(ep.ctx)
+				ep.pollingOffset, err = ep.calcFirstOffset(ep.ctx)
 			} else {
-				ep.offset = offset.Current
+				ep.pollingOffset = offset.Current
 			}
+		}
+		if err == nil {
+			err = ep.commitOffset(ep.ctx)
 		}
 		if err != nil {
 			return (attempt <= ep.conf.startupOffsetRetryAttempts), err
 		}
-		log.L(ep.ctx).Infof("Event offset restored %d", ep.offset)
+		log.L(ep.ctx).Infof("Event offset restored %d", ep.pollingOffset)
 		return false, nil
 	})
 }
@@ -125,7 +129,16 @@ func (ep *eventPoller) start() error {
 	return nil
 }
 
-func (ep *eventPoller) updateOffset(ctx context.Context, newOffset int64) error {
+func (ep *eventPoller) rewindPollingOffset(offset int64) {
+	log.L(ep.ctx).Infof("Event polling rewind to: %d", offset)
+	ep.mux.Lock()
+	defer ep.mux.Unlock()
+	if offset < ep.pollingOffset {
+		ep.pollingOffset = offset
+	}
+}
+
+func (ep *eventPoller) commitOffset(ctx context.Context) error {
 	l := log.L(ctx)
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
@@ -133,22 +146,29 @@ func (ep *eventPoller) updateOffset(ctx context.Context, newOffset int64) error 
 			Type:      ep.conf.offsetType,
 			Namespace: ep.conf.offsetNamespace,
 			Name:      ep.conf.offsetName,
-			Current:   ep.offset,
+			Current:   ep.pollingOffset,
 		}
 		if err := ep.database.UpsertOffset(ctx, offset, true); err != nil {
 			return err
 		}
 	}
-	l.Debugf("Event offset committed %d", newOffset)
-	ep.offset = newOffset
+	ep.comittedOffset = ep.pollingOffset
+	l.Debugf("Event polling offset committed %d", ep.comittedOffset)
 	return nil
 }
 
 func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
 	var msgs []*fftypes.Event
+	ep.mux.Lock()
+	pollingOffset := ep.pollingOffset // ensure we pickup a rewound value
+	ep.mux.Unlock()
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
-		msgs, err = ep.database.GetEvents(ep.ctx, fb.Gt("sequence", ep.offset).Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
+		filter := fb.Gte("sequence", pollingOffset)
+		if ep.conf.limitNamespace != "" {
+			filter = fb.And(filter, fb.Eq("namespace", ep.conf.limitNamespace))
+		}
+		msgs, err = ep.database.GetEvents(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}
@@ -173,10 +193,13 @@ func (ep *eventPoller) eventLoop() {
 		eventCount := len(events)
 		repoll := false
 		if eventCount > 0 {
+			// Update our polling offset for the next time round
+			ep.pollingOffset = events[len(events)-1].Sequence
+
 			// We process all the events in the page in a single database run group, and
 			// keep retrying on all retryable errors, indefinitely ().
 			var err error
-			repoll, err = ep.processEventRetryAndGroup(events)
+			repoll, err = ep.dispatchEventsRetry(events)
 			if err != nil {
 				l.Debugf("Exiting: %s", err)
 				return
@@ -192,33 +215,12 @@ func (ep *eventPoller) eventLoop() {
 	}
 }
 
-func (ep *eventPoller) processEventRetryAndGroup(events []*fftypes.Event) (repoll bool, err error) {
+func (ep *eventPoller) dispatchEventsRetry(events []*fftypes.Event) (repoll bool, err error) {
 	err = ep.conf.retry.Do(ep.ctx, "process events", func(attempt int) (retry bool, err error) {
-		err = ep.database.RunAsGroup(ep.ctx, func(ctx context.Context) (err error) {
-			repoll, err = ep.processEvents(ctx, events)
-			return err
-		})
+		repoll, err = ep.conf.newEventsHandler(events)
 		return err != nil, err // always retry (retry will end on cancelled context)
 	})
 	return repoll, err
-}
-
-func (ep *eventPoller) processEvents(ctx context.Context, events []*fftypes.Event) (repoll bool, err error) {
-	var highestSequence int64
-	for _, event := range events {
-		repoll, err = ep.conf.processEvent(ctx, event)
-		if err != nil {
-			return false, err
-		}
-		if event.Sequence > highestSequence {
-			highestSequence = event.Sequence
-		}
-	}
-	if highestSequence > 0 {
-		err = ep.updateOffset(ctx, highestSequence)
-		return repoll, err
-	}
-	return repoll, nil
 }
 
 // newEventNotifications just consumes new events, logs them, then ensures there's a shoulderTap
@@ -238,11 +240,15 @@ func (ep *eventPoller) newEventNotifications() {
 			l.Debugf("Exiting due to cancelled context")
 			return
 		}
-		// Do not block sending to the shoulderTap - as it can only contain one
-		select {
-		case ep.shoulderTap <- true:
-		default:
-		}
+		ep.shoulderTap()
+	}
+}
+
+func (ep *eventPoller) shoulderTap() {
+	// Do not block sending to the shoulderTap - as it can only contain one
+	select {
+	case ep.shoulderTaps <- true:
+	default:
 	}
 }
 
@@ -266,7 +272,7 @@ func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool 
 	select {
 	case <-longTimeout.C:
 		l.Debugf("Woken after poll timeout")
-	case <-ep.shoulderTap:
+	case <-ep.shoulderTaps:
 		l.Debug("Woken for trigger on event")
 	case <-ep.ctx.Done():
 		l.Debugf("Exiting due to cancelled context")
