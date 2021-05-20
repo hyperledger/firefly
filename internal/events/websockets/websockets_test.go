@@ -127,7 +127,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	var connID string
 	sub := cbs.On("EphemeralSubscription",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).Return(nil)
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
@@ -142,7 +142,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 		close(waitAcked)
 	}
 
-	err := wsc.Send(context.Background(), []byte(`{"type":"start","ephemeral":true}`))
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns1","ephemeral":true}`))
 	assert.NoError(t, err)
 
 	<-waitSubscribed
@@ -244,7 +244,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	sub := cbs.On("EphemeralSubscription",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
-		mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).Return(nil)
 	ack := cbs.On("DeliveryResponse",
 		mock.MatchedBy(func(s string) bool { return s == connID }),
 		mock.Anything).Return(nil)
@@ -259,7 +259,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 		close(waitAcked)
 	}
 
-	ws, wsc, cancel := newTestWebsockets(t, cbs, "ephemeral")
+	ws, wsc, cancel := newTestWebsockets(t, cbs, "ephemeral", "namespace=ns1")
 	defer cancel()
 
 	<-waitSubscribed
@@ -400,9 +400,9 @@ func TestSendLoopBadData(t *testing.T) {
 			subscribedConn <- s
 			return true
 		}),
-		mock.Anything, mock.Anything).Return(nil)
+		"ns1", mock.Anything, mock.Anything).Return(nil)
 
-	err := wsc.Send(context.Background(), []byte(`{"type":"start","ephemeral":true}`))
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns1","ephemeral":true}`))
 	assert.NoError(t, err)
 
 	connID := <-subscribedConn

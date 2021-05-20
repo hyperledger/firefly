@@ -23,22 +23,18 @@ import (
 func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 
 	firstEvent := SubOptsFirstEventNewest
-	batchEnabled := true
-	batchTimeout, _ := ParseDurationString("500ms")
-	batchSize := uint64(50)
+	readAhead := uint64(50)
 	sub1 := &Subscription{
 		Options: SubscriptionOptions{
-			FirstEvent:   &firstEvent,
-			BatchEnabled: &batchEnabled,
-			BatchTimeout: &batchTimeout,
-			BatchSize:    &batchSize,
+			FirstEvent: &firstEvent,
+			ReadAhead:  &readAhead,
 		},
 	}
 
 	// Verify it serializes as bytes to the database
 	b1, err := sub1.Options.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"firstEvent":"newest","batchEnabled":true,"batchTimeout":"500ms","batchSize":50}`, string(b1.([]byte)))
+	assert.Equal(t, `{"firstEvent":"newest","readAhead":50}`, string(b1.([]byte)))
 
 	// Verify it restores ok
 	sub2 := &Subscription{}

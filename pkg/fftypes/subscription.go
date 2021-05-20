@@ -38,28 +38,24 @@ const (
 )
 
 type SubscriptionOptions struct {
-	FirstEvent   *SubOptsFirstEvent `json:"firstEvent,omitempty"`
-	BatchEnabled *bool              `json:"batchEnabled,omitempty"`
-	BatchTimeout *FFDuration        `json:"batchTimeout,omitempty"`
-	BatchSize    *uint64            `json:"batchSize,omitempty"`
-	ExpandData   *bool              `json:"expandData,omitempty"`
-}
-
-type Subscription struct {
-	ID        *uuid.UUID          `json:"id"`
-	Namespace string              `json:"namespace"`
-	Name      string              `json:"name"`
-	Transport string              `json:"transport"`
-	Filter    SubscriptionFilter  `json:"filter"`
-	Options   SubscriptionOptions `json:"options"`
-	Ephemeral bool                `json:"ephemeral,omitempty"`
-	Created   *FFTime             `json:"created"`
+	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
+	ReadAhead  *uint64            `json:"readAhead,omitempty"`
 }
 
 type SubscriptionRef struct {
 	ID        *uuid.UUID `json:"id"`
 	Namespace string     `json:"namespace"`
 	Name      string     `json:"name"`
+}
+
+type Subscription struct {
+	SubscriptionRef
+
+	Transport string              `json:"transport"`
+	Filter    SubscriptionFilter  `json:"filter"`
+	Options   SubscriptionOptions `json:"options"`
+	Ephemeral bool                `json:"ephemeral,omitempty"`
+	Created   *FFTime             `json:"created"`
 }
 
 // Scan implements sql.Scanner

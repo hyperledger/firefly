@@ -50,16 +50,35 @@ func newAggregator(ctx context.Context, di database.Plugin) *aggregator {
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		offsetType:      fftypes.OffsetTypeAggregator,
-		offsetNamespace: fftypes.SystemNamespace,
-		offsetName:      aggregatorOffsetName,
-		processEvent:    ag.processEvent,
+		offsetType:       fftypes.OffsetTypeAggregator,
+		offsetNamespace:  fftypes.SystemNamespace,
+		offsetName:       aggregatorOffsetName,
+		newEventsHandler: ag.processEventRetryAndGroup,
 	})
 	return ag
 }
 
 func (ag *aggregator) start() error {
 	return ag.eventPoller.start()
+}
+
+func (ag *aggregator) processEventRetryAndGroup(events []*fftypes.Event) (repoll bool, err error) {
+	err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) (err error) {
+		repoll, err = ag.processEvents(ctx, events)
+		return err
+	})
+	return repoll, err
+}
+
+func (ag *aggregator) processEvents(ctx context.Context, events []*fftypes.Event) (repoll bool, err error) {
+	for _, event := range events {
+		repoll, err = ag.processEvent(ctx, event)
+		if err != nil {
+			return false, err
+		}
+	}
+	err = ag.eventPoller.commitOffset(ctx)
+	return repoll, err
 }
 
 func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (bool, error) {

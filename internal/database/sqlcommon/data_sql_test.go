@@ -22,9 +22,9 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,6 +113,12 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(dataRes))
 	dataReadJson, _ = json.Marshal(dataRes[0])
 	assert.Equal(t, string(dataJson), string(dataReadJson))
+
+	dataRefRes, err := s.GetDataRefs(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(dataRefRes))
+	assert.Equal(t, *dataUpdated.ID, *dataRefRes[0].ID)
+	assert.Equal(t, dataUpdated.Hash, dataRefRes[0].Hash)
 
 	// Update
 	v2 := "2.0.0"
@@ -248,6 +254,31 @@ func TestGetDataReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
+	assert.Regexp(t, "FF10121", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetDataRefsQueryFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetDataRefs(context.Background(), f)
+	assert.Regexp(t, "FF10115", err.Error())
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetDataRefsBuildQueryFail(t *testing.T) {
+	s, _ := getMockDB()
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetDataRefs(context.Background(), f)
+	assert.Regexp(t, "FF10149.*id", err.Error())
+}
+
+func TestGetDataRefsReadMessageFail(t *testing.T) {
+	s, mock := getMockDB()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
+	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetDataRefs(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -86,10 +86,11 @@ func (wc *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse
 }
 
 func (wc *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) (err error) {
-	if start.Ephemeral {
-		return wc.callbacks.EphemeralSubscription(connID, start.Filter, start.Options)
-	} else if start.Namespace == "" || start.Name == "" {
+	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(wc.ctx, i18n.MsgWSInvalidStartAction)
+	}
+	if start.Ephemeral {
+		return wc.callbacks.EphemeralSubscription(connID, start.Namespace, start.Filter, start.Options)
 	}
 	wc.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
 		return sr.Namespace == start.Namespace && sr.Name == start.Name

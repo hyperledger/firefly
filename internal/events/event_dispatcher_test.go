@@ -27,16 +27,21 @@ import (
 
 func newTestEventDispatcher(mdi database.Plugin) *eventDispatcher {
 	ten := uint64(10)
-	secs15, _ := fftypes.ParseDurationString("15s")
-	return newEventDispatcher(context.Background(), mdi, &fftypes.Subscription{
-		Namespace: "ns1",
-		Name:      "sub1",
-		Ephemeral: true,
-		Options: fftypes.SubscriptionOptions{
-			BatchSize:    &ten,
-			BatchTimeout: &secs15,
+	return newEventDispatcher(context.Background(), mdi, fftypes.NewUUID().String(),
+		&subscription{
+			dispatcherElection: make(chan bool, 1),
+			definition: &fftypes.Subscription{
+				SubscriptionRef: fftypes.SubscriptionRef{
+					Namespace: "ns1",
+					Name:      "sub1",
+				},
+				Ephemeral: true,
+				Options: fftypes.SubscriptionOptions{
+					ReadAhead: &ten,
+				},
+			},
 		},
-	})
+	)
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -45,14 +50,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	assert.Equal(t, int(10), ed.eventPoller.conf.eventBatchSize)
 	assert.Equal(t, fftypes.ParseToDuration("15s"), ed.eventPoller.conf.eventBatchTimeout)
-	err := ed.start()
-	assert.NoError(t, err)
+	ed.start()
 	ed.eventPoller.newEvents <- fftypes.NewUUID()
 	ed.close()
-}
-
-func TestProcessEventNoop(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	ed := newTestEventDispatcher(mdi)
-	ed.processEvent(context.Background(), fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, "ns1", fftypes.NewUUID()))
 }

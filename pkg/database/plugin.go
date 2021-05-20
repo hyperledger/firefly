@@ -125,6 +125,9 @@ type PeristenceInterface interface {
 	// Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
 
+	// Get data references only (no data)
+	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
+
 	// Upsert a batch
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)

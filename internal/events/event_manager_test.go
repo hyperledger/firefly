@@ -20,7 +20,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
-	"github.com/kaleido-io/firefly/mocks/eventtransportmocks"
+	"github.com/kaleido-io/firefly/mocks/eventsmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
-	met := &eventtransportmocks.Plugin{}
+	met := &eventsmocks.Plugin{}
 	met.On("Name").Return("ut").Maybe()
 	em, err := NewEventManager(ctx, mpi, mdi)
 	assert.NoError(t, err)
