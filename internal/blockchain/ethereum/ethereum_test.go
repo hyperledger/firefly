@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
@@ -27,7 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/restclient"
-	"github.com/kaleido-io/firefly/internal/wsserver"
+	"github.com/kaleido-io/firefly/internal/wsclient"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/wsmocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
@@ -74,24 +74,27 @@ func TestInitMissingTopic(t *testing.T) {
 
 func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 
-	log.SetLevel("debug")
+	log.SetLevel("trace")
 	e := &Ethereum{}
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
+	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x12345/BroadcastBatch", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
@@ -100,7 +103,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		})
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	utEthconnectConf.Set(restclient.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
@@ -117,10 +120,11 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	err = e.Start()
 	assert.NoError(t, err)
 
-	sender, receiver, _ := wsServer.GetChannels("topic1")
-	sender <- []fftypes.JSONObject{} // empty batch, will be ignored, but acked
-	err = <-receiver
-	assert.NoError(t, err) // should be ack, not error
+	startupMessage := <-toServer
+	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	fromServer <- `[]` // empty batch, will be ignored, but acked
+	reply := <-toServer
+	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
 
 }
 
