@@ -74,7 +74,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, et events.P
 func (sm *subscriptionManager) start() error {
 	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
 	filter := fb.And(
-		fb.Eq("transport", sm.transport),
+		fb.Eq("transport", sm.transport.Name()),
 	).Limit(sm.maxSubs)
 	persistedSubs, err := sm.database.GetSubscriptions(sm.ctx, filter)
 	if err != nil {
