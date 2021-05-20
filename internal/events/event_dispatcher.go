@@ -76,7 +76,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
 		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
+		startupOffsetRetryAttempts: 0, // We need to keep trying to start indefinitely
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventDispatcherRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
@@ -111,9 +111,11 @@ func (ed *eventDispatcher) electAndStart() {
 		l.Debugf("Closed before we became leader")
 		return
 	}
-	// We're ready to go
-	ed.elected = true
-	go ed.eventPoller.start()
+	// We're ready to go - not
+	go func() {
+		err := ed.eventPoller.start()
+		l.Debugf("Event dispatcher completed: %v", err)
+	}()
 	// Wait until we close
 	<-ed.eventPoller.closed
 	// Unelect ourselves on close, to let another dispatcher in

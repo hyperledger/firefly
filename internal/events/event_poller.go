@@ -113,7 +113,7 @@ func (ep *eventPoller) restoreOffset() error {
 			}
 		}
 		if err != nil {
-			return (attempt <= ep.conf.startupOffsetRetryAttempts), err
+			return ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts, err
 		}
 		log.L(ep.ctx).Infof("Event offset restored %d", ep.pollingOffset)
 		return false, nil
