@@ -250,6 +250,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 			return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
 		}
 	}
+
 	return &FilterInfo{
 		Children:   children,
 		Op:         f.op,

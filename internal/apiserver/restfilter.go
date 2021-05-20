@@ -21,9 +21,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
+)
+
+var (
+	// Defaults set with config
+	defaultFilterLimit uint64
+	maxFilterLimit     uint64
+	maxFilterSkip      uint64
 )
 
 func getValues(values url.Values, key string) (results []string) {
@@ -36,10 +43,10 @@ func getValues(values url.Values, key string) (results []string) {
 	return results
 }
 
-func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter {
+func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilter, error) {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
-	fb := ff.NewFilterLimit(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
+	fb := ff.NewFilterLimit(ctx, defaultFilterLimit)
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()
@@ -60,11 +67,17 @@ func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter
 	skipVals := getValues(req.Form, "skip")
 	if len(skipVals) > 0 {
 		s, _ := strconv.ParseUint(skipVals[0], 10, 64)
+		if maxFilterSkip != 0 && s > maxFilterSkip {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterSkip, maxFilterSkip)
+		}
 		filter.Skip(s)
 	}
 	limitVals := getValues(req.Form, "limit")
 	if len(limitVals) > 0 {
 		l, _ := strconv.ParseUint(limitVals[0], 10, 64)
+		if maxFilterLimit != 0 && l > maxFilterLimit {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterLimit, maxFilterLimit)
+		}
 		filter.Limit(l)
 	}
 	sortVals := getValues(req.Form, "sort")
@@ -81,7 +94,7 @@ func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter
 	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.ToLower(descendingVals[0]) == "true") {
 		filter.Descending()
 	}
-	return filter
+	return filter, nil
 }
 
 func getCondition(fb database.FilterBuilder, field, value string) database.Filter {

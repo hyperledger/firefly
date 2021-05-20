@@ -67,6 +67,10 @@ func createListener(ctx context.Context) (net.Listener, error) {
 
 func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
 
+	defaultFilterLimit = uint64(config.GetUint(config.APIDefaultFilterLimit))
+	maxFilterLimit = uint64(config.GetUint(config.APIMaxFilterLimit))
+	maxFilterSkip = uint64(config.GetUint(config.APIMaxFilterSkip))
+
 	// Support client auth
 	clientAuth := tls.NoClientCert
 	if config.GetBool(config.HttpTLSClientAuth) {
@@ -176,7 +180,7 @@ func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handle
 		}
 		var filter database.AndFilter
 		if route.FilterFactory != nil {
-			filter = buildFilter(req, route.FilterFactory)
+			filter, err = buildFilter(req, route.FilterFactory)
 		}
 		if err == nil {
 			status = route.JSONOutputCode

@@ -23,10 +23,29 @@ import (
 )
 
 func TestBuildFilter(t *testing.T) {
+	maxFilterLimit = 250
+
 	req := httptest.NewRequest("GET", "/things?created=0&confirmed=!0&ID=>abc&Id=<abc&id=<=abc&id=>=abc&id=@abc&id=^abc&id=!@abc&id=!^abc&skip=10&limit=50&sort=id,sequence&descending", nil)
-	filter := buildFilter(req, database.MessageQueryFactory)
+	filter, err := buildFilter(req, database.MessageQueryFactory)
+	assert.NoError(t, err)
 	fi, err := filter.Finalize()
 	assert.NoError(t, err)
 
 	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( id %! 'abc' ) || ( id ^! 'abc' ) || ( id <= 'abc' ) || ( id < 'abc' ) || ( id >= 'abc' ) || ( id > 'abc' ) || ( id %= 'abc' ) || ( id ^= 'abc' ) ) sort=id,sequence descending skip=10 limit=50", fi.String())
+}
+
+func TestBuildFilterLimitSkip(t *testing.T) {
+	maxFilterSkip = 250
+
+	req := httptest.NewRequest("GET", "/things?skip=251", nil)
+	_, err := buildFilter(req, database.MessageQueryFactory)
+	assert.Regexp(t, "FF10183.*250", err.Error())
+}
+
+func TestBuildFilterLimitLimit(t *testing.T) {
+	maxFilterLimit = 500
+
+	req := httptest.NewRequest("GET", "/things?limit=501", nil)
+	_, err := buildFilter(req, database.MessageQueryFactory)
+	assert.Regexp(t, "FF10184.*500", err.Error())
 }
