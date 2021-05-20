@@ -49,6 +49,7 @@ func TestStartStop(t *testing.T) {
 		Current:   12345,
 	}, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- fftypes.NewUUID()
 	cancel()

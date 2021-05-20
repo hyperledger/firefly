@@ -44,6 +44,34 @@ func TestShutdownOnCancel(t *testing.T) {
 	<-ag.eventPoller.closed
 }
 
+func TestProcessEventsNoopIncrement(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	mdi := &databasemocks.Plugin{}
+	var runAsGroupFn func(context.Context) error
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil, nil)
+	mdi.On("RunAsGroup", mock.Anything, mock.MatchedBy(
+		func(fn func(context.Context) error) bool {
+			runAsGroupFn = fn
+			return true
+		},
+	)).Return(nil, nil)
+	defer cancel()
+	ag := newAggregator(ctx, mdi)
+
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev1.Sequence = 111
+	ev2 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev2.Sequence = 112
+	ev3 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
+	ev3.Sequence = 113
+	_, err := ag.processEventRetryAndGroup([]*fftypes.Event{
+		ev1, ev2, ev3,
+	})
+	runAsGroupFn(context.Background())
+	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
+}
+
 func TestProcessEventCheckSequencedReadFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ag := newAggregator(context.Background(), mdi)
