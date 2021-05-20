@@ -77,7 +77,7 @@ func (ag *aggregator) processEvents(ctx context.Context, events []*fftypes.Event
 			return false, err
 		}
 	}
-	err = ag.eventPoller.commitOffset(ctx)
+	err = ag.eventPoller.commitOffset(ctx, events[len(events)-1].Sequence)
 	return repoll, err
 }
 

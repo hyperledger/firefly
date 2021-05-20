@@ -29,15 +29,14 @@ import (
 )
 
 type eventPoller struct {
-	ctx            context.Context
-	database       database.Plugin
-	shoulderTaps   chan bool
-	newEvents      chan *uuid.UUID
-	closed         chan struct{}
-	pollingOffset  int64
-	comittedOffset int64
-	mux            sync.Mutex
-	conf           eventPollerConf
+	ctx           context.Context
+	database      database.Plugin
+	shoulderTaps  chan bool
+	newEvents     chan *uuid.UUID
+	closed        chan struct{}
+	pollingOffset int64
+	mux           sync.Mutex
+	conf          eventPollerConf
 }
 
 type newEventsHandler func(events []*fftypes.Event) (bool, error)
@@ -104,9 +103,10 @@ func (ep *eventPoller) restoreOffset() error {
 		}
 		if err == nil {
 			if offset == nil {
-				ep.pollingOffset, err = ep.calcFirstOffset(ep.ctx)
+				var newOffset int64
+				newOffset, err = ep.calcFirstOffset(ep.ctx)
 				if err == nil {
-					err = ep.commitOffset(ep.ctx)
+					err = ep.commitOffset(ep.ctx, newOffset)
 				}
 			} else {
 				ep.pollingOffset = offset.Current
@@ -138,7 +138,14 @@ func (ep *eventPoller) rewindPollingOffset(offset int64) {
 	}
 }
 
-func (ep *eventPoller) commitOffset(ctx context.Context) error {
+func (ep *eventPoller) getPollingOffset() int64 {
+	ep.mux.Lock()
+	defer ep.mux.Unlock()
+	return ep.pollingOffset
+}
+
+func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
+	// Must be called from the event polling routine
 	l := log.L(ctx)
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
@@ -146,22 +153,20 @@ func (ep *eventPoller) commitOffset(ctx context.Context) error {
 			Type:      ep.conf.offsetType,
 			Namespace: ep.conf.offsetNamespace,
 			Name:      ep.conf.offsetName,
-			Current:   ep.pollingOffset,
+			Current:   offset,
 		}
 		if err := ep.database.UpsertOffset(ctx, offset, true); err != nil {
 			return err
 		}
 	}
-	ep.comittedOffset = ep.pollingOffset
-	l.Debugf("Event polling offset committed %d", ep.comittedOffset)
+	ep.pollingOffset = offset
+	l.Debugf("Event polling offset committed %d", offset)
 	return nil
 }
 
 func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
 	var msgs []*fftypes.Event
-	ep.mux.Lock()
-	pollingOffset := ep.pollingOffset // ensure we pickup a rewound value
-	ep.mux.Unlock()
+	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
 		filter := fb.Gte("sequence", pollingOffset)
@@ -193,9 +198,6 @@ func (ep *eventPoller) eventLoop() {
 		eventCount := len(events)
 		repoll := false
 		if eventCount > 0 {
-			// Update our polling offset for the next time round
-			ep.pollingOffset = events[len(events)-1].Sequence
-
 			// We process all the events in the page in a single database run group, and
 			// keep retrying on all retryable errors, indefinitely ().
 			var err error

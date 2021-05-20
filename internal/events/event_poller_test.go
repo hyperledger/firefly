@@ -77,7 +77,6 @@ func TestRestoreOffsetNewestOK(t *testing.T) {
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), ep.pollingOffset)
-	assert.Equal(t, int64(12345), ep.comittedOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -91,7 +90,6 @@ func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ep.pollingOffset)
-	assert.Equal(t, int64(0), ep.comittedOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -104,7 +102,6 @@ func TestRestoreOffsetNewestFail(t *testing.T) {
 	err := ep.restoreOffset()
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, int64(0), ep.pollingOffset)
-	assert.Equal(t, int64(0), ep.comittedOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -118,7 +115,6 @@ func TestRestoreOffsetOldest(t *testing.T) {
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ep.pollingOffset)
-	assert.Equal(t, int64(0), ep.comittedOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -132,7 +128,6 @@ func TestRestoreOffsetSpecific(t *testing.T) {
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(123456), ep.pollingOffset)
-	assert.Equal(t, int64(123456), ep.comittedOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -258,6 +253,14 @@ func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	defer cancel()
-	ep.shoulderTaps <- true
+	ep.shoulderTap()
 	assert.True(t, ep.waitForShoulderTapOrPollTimeout(ep.conf.eventBatchSize))
+}
+
+func TestDoubleTap(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	ep, cancel := newTestEventPoller(t, mdi, nil)
+	defer cancel()
+	ep.shoulderTap()
+	ep.shoulderTap() // this should not block
 }

@@ -171,7 +171,7 @@ func (sm *subscriptionManager) RegisterConnection(connID string, matcher events.
 	for _, sub := range sm.durableSubs {
 		if matcher(sub.definition.SubscriptionRef) {
 			if _, ok := dispatchersForConn[*sub.definition.ID]; !ok {
-				dispatchersForConn[*sub.definition.ID] = newEventDispatcher(sm.ctx, sm.database, connID, sub)
+				dispatchersForConn[*sub.definition.ID] = newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, sub)
 			}
 		}
 	}
@@ -209,7 +209,7 @@ func (sm *subscriptionManager) EphemeralSubscription(connID, namespace string, f
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, sm.database, connID, newSub)
+	dispatcher := newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, newSub)
 	dispatcher.start()
 
 	dispatchersForConn[*subID] = dispatcher
