@@ -26,41 +26,49 @@ import (
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/events"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type ackNack struct {
+	id     uuid.UUID
 	isNack bool
 	offset int64
 }
 
 type eventDispatcher struct {
+	acksNacks    chan ackNack
+	cancelCtx    func()
+	closed       chan struct{}
+	connID       string
 	ctx          context.Context
 	database     database.Plugin
-	connID       string
-	subscription *subscription
+	transport    events.Plugin
+	elected      bool
 	eventPoller  *eventPoller
-	cancelCtx    func()
-	mux          sync.Mutex
 	inflight     map[uuid.UUID]*fftypes.Event
+	mux          sync.Mutex
 	namespace    string
 	readAhead    int
-	acksNacks    chan ackNack
+	subscription *subscription
 }
 
-func newEventDispatcher(ctx context.Context, di database.Plugin, connID string, sub *subscription) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:     di,
+		transport:    ei,
 		connID:       connID,
 		cancelCtx:    cancelCtx,
 		subscription: sub,
 		namespace:    sub.definition.Namespace,
+		inflight:     make(map[uuid.UUID]*fftypes.Event),
 		readAhead:    int(config.GetUint(config.SubscriptionDefaultsReadAhead)),
 		acksNacks:    make(chan ackNack),
+		closed:       make(chan struct{}),
 	}
 
 	pollerConf := eventPollerConf{
@@ -93,15 +101,19 @@ func (ed *eventDispatcher) start() {
 }
 
 func (ed *eventDispatcher) electAndStart() {
+	defer close(ed.closed)
 	l := log.L(ed.ctx)
 	l.Debugf("Dispatcher attempting to become leader")
 	select {
 	case ed.subscription.dispatcherElection <- true:
 		l.Debugf("Dispatcher became leader")
-	case <-ed.eventPoller.closed:
+	case <-ed.ctx.Done():
 		l.Debugf("Closed before we became leader")
 		return
 	}
+	// We're ready to go
+	ed.elected = true
+	go ed.eventPoller.start()
 	// Wait until we close
 	<-ed.eventPoller.closed
 	// Unelect ourselves on close, to let another dispatcher in
@@ -198,6 +210,8 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 	if len(events) == 0 {
 		return false, nil
 	}
+	highestOffset := events[len(events)-1].Sequence
+	var lastAck int64
 
 	l := log.L(ed.ctx)
 	candidates, err := ed.enrichEvents(events)
@@ -211,27 +225,38 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 
 	// We stay here blocked until we've consumed all the messages in the buffer,
 	// or a reset event happens
-	for matchCount > 0 {
+	for {
 		ed.mux.Lock()
 		var disapatchable []*fftypes.EventDelivery
 		inflightCount := len(ed.inflight)
-		dispatchCount := 1 + ed.readAhead - inflightCount
-		if dispatchCount == len(matching) {
+		maxDispatch := 1 + ed.readAhead - inflightCount
+		if maxDispatch >= len(matching) {
 			disapatchable = matching
-		} else if dispatchCount > 0 {
-			disapatchable = matching[0:dispatchCount]
-			matching = matching[dispatchCount:]
+			matching = nil
+		} else if maxDispatch > 0 {
+			disapatchable = matching[0:maxDispatch]
+			matching = matching[maxDispatch:]
 		}
 		ed.mux.Unlock()
 
 		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d",
 			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable))
+
 		for _, event := range disapatchable {
 			err := ed.deliverEvent(event)
 			if err != nil {
 				return false, err
 			}
+			ed.mux.Lock()
+			ed.inflight[*event.ID] = &event.Event
+			inflightCount = len(ed.inflight)
+			ed.mux.Unlock()
 			dispatched++
+		}
+
+		if inflightCount == 0 {
+			// We've cleared the decks. Time to look for more messages
+			break
 		}
 
 		// Block until we're closed, or woken due to a delivery response
@@ -240,25 +265,60 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 			return false, i18n.NewError(ed.ctx, i18n.MsgDispatcherClosing)
 		case an := <-ed.acksNacks:
 			if an.isNack {
-				ed.mux.Lock()
-				// If we're rejected, we need to redeliver all messages from this offset onwards,
-				// even if we've delivered messages after that.
-				// That means resetting the polling offest, and clearing out all our state
-				if ed.eventPoller.pollingOffset > an.offset {
-					ed.eventPoller.rewindPollingOffset(an.offset)
+				ed.handleNackOffsetUpdate(an)
+			} else {
+				err := ed.handleAckOffsetUpdate(an)
+				if err != nil {
+					return false, err
 				}
-				ed.inflight = map[uuid.UUID]*fftypes.Event{}
-				ed.mux.Unlock()
+				lastAck = an.offset
 			}
 		}
 	}
-	return false, nil
+	if lastAck != highestOffset {
+		err := ed.eventPoller.commitOffset(ed.ctx, highestOffset)
+		if err != nil {
+			return false, err
+		}
+	}
+	return true, nil // poll again straight away for more messages
+}
+
+func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
+	ed.mux.Lock()
+	defer ed.mux.Unlock()
+	// If we're rejected, we need to redeliver all messages from this offset onwards,
+	// even if we've delivered messages after that.
+	// That means resetting the polling offest, and clearing out all our state
+	delete(ed.inflight, nack.id)
+	if ed.eventPoller.pollingOffset > nack.offset {
+		ed.eventPoller.rewindPollingOffset(nack.offset)
+	}
+	ed.inflight = map[uuid.UUID]*fftypes.Event{}
+}
+
+func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
+	oldOffset := ed.eventPoller.getPollingOffset()
+	ed.mux.Lock()
+	delete(ed.inflight, ack.id)
+	lowestInflight := int64(-1)
+	for _, inflight := range ed.inflight {
+		if lowestInflight < 0 || inflight.Sequence < lowestInflight {
+			lowestInflight = inflight.Sequence
+		}
+	}
+	ed.mux.Unlock()
+	if lowestInflight > ack.offset && ack.offset > oldOffset {
+		// This was the lowest in flight, and we can move the offset forwards
+		return ed.eventPoller.commitOffset(ed.ctx, ack.offset)
+	}
+	return nil
 }
 
 func (ed *eventDispatcher) deliverEvent(event *fftypes.EventDelivery) error {
 	l := log.L(ed.ctx)
 	l.Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-	return nil
+	return ed.transport.DeliveryRequest(ed.connID, *event)
 }
 
 func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) error {
@@ -268,11 +328,11 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	var an ackNack
 	event, found := ed.inflight[*response.ID]
 	if found {
-		delete(ed.inflight, *response.ID)
+		an.id = *response.ID
 		an.offset = event.Sequence
 		an.isNack = response.Rejected
 	}
-	defer ed.mux.Unlock()
+	ed.mux.Unlock()
 
 	// Do some extra logging and persistent actions now we're out of lock
 	if !found {
@@ -294,5 +354,8 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 
 func (ed *eventDispatcher) close() {
 	ed.cancelCtx()
-	<-ed.eventPoller.closed
+	<-ed.closed
+	if ed.elected {
+		<-ed.eventPoller.closed
+	}
 }
