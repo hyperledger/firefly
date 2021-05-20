@@ -105,12 +105,12 @@ func (ep *eventPoller) restoreOffset() error {
 		if err == nil {
 			if offset == nil {
 				ep.pollingOffset, err = ep.calcFirstOffset(ep.ctx)
+				if err == nil {
+					err = ep.commitOffset(ep.ctx)
+				}
 			} else {
 				ep.pollingOffset = offset.Current
 			}
-		}
-		if err == nil {
-			err = ep.commitOffset(ep.ctx)
 		}
 		if err != nil {
 			return (attempt <= ep.conf.startupOffsetRetryAttempts), err

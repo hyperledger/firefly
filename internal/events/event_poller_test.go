@@ -188,24 +188,19 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 	cancel()
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil).Once()
-	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	ep.eventLoop()
 
-	dbFn := mdi.Calls[1].Arguments[1].(func(ctx context.Context) error)
-	err := dbFn(context.Background())
 	event := <-processEventCalled
 	assert.Equal(t, *ev1.ID, *event.ID)
-	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
 
 func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil)
+	ep, cancel := newTestEventPoller(t, mdi, func(events []*fftypes.Event) (bool, error) { return false, fmt.Errorf("pop") })
 	cancel()
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
-	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil).Once()
 	ep.eventLoop()
 
@@ -222,27 +217,6 @@ func TestProcessEventsFail(t *testing.T) {
 		fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID()),
 	})
 	assert.EqualError(t, err, "pop")
-	mdi.AssertExpectations(t)
-}
-
-func TestProcessEventsNoopIncrement(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, func(events []*fftypes.Event) (bool, error) {
-		return false, nil
-	})
-	defer cancel()
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil, nil)
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
-	ev1.Sequence = 111
-	ev2 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
-	ev2.Sequence = 112
-	ev3 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
-	ev3.Sequence = 113
-	_, err := ep.conf.newEventsHandler([]*fftypes.Event{
-		ev1, ev2, ev3,
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, int64(113), ep.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
