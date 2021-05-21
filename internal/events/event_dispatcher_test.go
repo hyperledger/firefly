@@ -34,7 +34,7 @@ import (
 func newTestEventDispatcher(mdi database.Plugin, mei events.Plugin, sub *subscription) (*eventDispatcher, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, fftypes.NewUUID().String(), sub), cancel
+	return newEventDispatcher(ctx, mei, mdi, fftypes.NewUUID().String(), sub, newEventNotifier(ctx)), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -62,7 +62,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	ed.start()
 	confirmedElected <- true
 	close(confirmedElected)
-	ed.eventPoller.newEvents <- fftypes.NewUUID()
+	ed.eventPoller.eventNotifier.newEvents <- 12345
 	ed.close()
 }
 

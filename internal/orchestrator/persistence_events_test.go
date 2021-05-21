@@ -19,7 +19,6 @@ import (
 
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func TestMessageCreated(t *testing.T) {
@@ -27,9 +26,9 @@ func TestMessageCreated(t *testing.T) {
 	o := &orchestrator{
 		batch: mb,
 	}
-	c := make(chan *fftypes.UUID, 1)
-	mb.On("NewMessages").Return((chan<- *fftypes.UUID)(c))
-	o.MessageCreated(fftypes.NewUUID())
+	c := make(chan int64, 1)
+	mb.On("NewMessages").Return((chan<- int64)(c))
+	o.MessageCreated(12345)
 }
 
 func TestEventCreated(t *testing.T) {
@@ -37,7 +36,7 @@ func TestEventCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan *fftypes.UUID, 1)
-	mem.On("NewEvents").Return((chan<- *fftypes.UUID)(c))
-	o.EventCreated(fftypes.NewUUID())
+	c := make(chan int64, 1)
+	mem.On("NewEvents").Return((chan<- int64)(c))
+	o.EventCreated(12345)
 }

@@ -46,7 +46,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		shoulderTap:                make(chan bool, 1),
-		newMessages:                make(chan *fftypes.UUID, readPageSize),
+		newMessages:                make(chan int64, readPageSize),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
@@ -59,7 +59,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 
 type BatchManager interface {
 	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
-	NewMessages() chan<- *fftypes.UUID
+	NewMessages() chan<- int64
 	Start() error
 	Close()
 	WaitStop()
@@ -70,7 +70,7 @@ type batchManager struct {
 	database                   database.Plugin
 	dispatchers                map[fftypes.MessageType]*dispatcher
 	shoulderTap                chan bool
-	newMessages                chan *fftypes.UUID
+	newMessages                chan int64
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
 	offsetID                   *fftypes.UUID
@@ -113,7 +113,7 @@ func (bm *batchManager) Start() error {
 	return nil
 }
 
-func (bm *batchManager) NewMessages() chan<- *fftypes.UUID {
+func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
@@ -300,7 +300,7 @@ func (bm *batchManager) newEventNotifications() {
 				l.Debugf("Exiting due to close")
 				return
 			}
-			l.Debugf("Absorbing trigger for message %s", m)
+			l.Debugf("New message sequence notification: %d", m)
 		case <-bm.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return

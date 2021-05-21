@@ -53,7 +53,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
@@ -98,7 +98,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		ed.readAhead = int(*sub.definition.Options.ReadAhead)
 	}
 
-	ed.eventPoller = newEventPoller(ctx, di, pollerConf)
+	ed.eventPoller = newEventPoller(ctx, di, en, pollerConf)
 	return ed
 }
 

@@ -24,14 +24,13 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type EventManager interface {
 	blockchain.Callbacks
 
-	NewEvents() chan<- *fftypes.UUID
+	NewEvents() chan<- int64
 	Start() error
 	WaitStop()
 }
@@ -43,12 +42,14 @@ type eventManager struct {
 	subManagers   map[string]*subscriptionManager
 	retry         retry.Retry
 	aggregator    *aggregator
+	eventNotifier *eventNotifier
 }
 
 func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin) (EventManager, error) {
 	if pi == nil || di == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
+	en := newEventNotifier(ctx)
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
@@ -59,7 +60,8 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		aggregator: newAggregator(ctx, di),
+		eventNotifier: en,
+		aggregator:    newAggregator(ctx, di, en),
 	}
 
 	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
@@ -68,7 +70,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		if err != nil {
 			return nil, err
 		}
-		em.subManagers[transport], err = newSubscriptionManager(ctx, di, et)
+		em.subManagers[transport], err = newSubscriptionManager(ctx, di, et, en)
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +89,8 @@ func (em *eventManager) Start() (err error) {
 	return err
 }
 
-func (em *eventManager) NewEvents() chan<- *fftypes.UUID {
-	return em.aggregator.eventPoller.newEvents
+func (em *eventManager) NewEvents() chan<- int64 {
+	return em.eventNotifier.newEvents
 }
 
 func (em *eventManager) WaitStop() {

@@ -134,7 +134,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 		}
 
 		s.postCommitEvent(ctx, tx, func() {
-			s.callbacks.MessageCreated(message.Header.ID)
+			s.callbacks.MessageCreated(message.Sequence)
 		})
 
 	}

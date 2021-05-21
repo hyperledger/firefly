@@ -99,7 +99,7 @@ func TestE2EDispatch(t *testing.T) {
 	err := bm.Start()
 	assert.NoError(t, err)
 
-	bm.NewMessages() <- msg.Header.ID
+	bm.NewMessages() <- msg.Sequence
 
 	readyForDispatch <- true
 	b := <-waitForDispatch
@@ -281,7 +281,7 @@ func TestWaitConsumesMessagesAndDoesNotBlock(t *testing.T) {
 	bm, _ := NewBatchManager(context.Background(), mdi)
 	go bm.(*batchManager).newEventNotifications()
 	for i := 0; i < int(bm.(*batchManager).readPageSize); i++ {
-		bm.NewMessages() <- fftypes.NewUUID()
+		bm.NewMessages() <- 12345
 	}
 	// And should generate a shoulder tap
 	<-bm.(*batchManager).shoulderTap

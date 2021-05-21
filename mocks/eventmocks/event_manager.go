@@ -16,15 +16,15 @@ type EventManager struct {
 }
 
 // NewEvents provides a mock function with given fields:
-func (_m *EventManager) NewEvents() chan<- *fftypes.UUID {
+func (_m *EventManager) NewEvents() chan<- int64 {
 	ret := _m.Called()
 
-	var r0 chan<- *fftypes.UUID
-	if rf, ok := ret.Get(0).(func() chan<- *fftypes.UUID); ok {
+	var r0 chan<- int64
+	if rf, ok := ret.Get(0).(func() chan<- int64); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan<- *fftypes.UUID)
+			r0 = ret.Get(0).(chan<- int64)
 		}
 	}
 
