@@ -248,15 +248,16 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable))
 
 		for _, event := range disapatchable {
-			err := ed.deliverEvent(event)
-			if err != nil {
-				return false, err
-			}
 			ed.mux.Lock()
 			ed.inflight[*event.ID] = &event.Event
 			inflightCount = len(ed.inflight)
 			ed.mux.Unlock()
+
 			dispatched++
+			err := ed.deliverEvent(event)
+			if err != nil {
+				return false, err
+			}
 		}
 
 		if inflightCount == 0 {
