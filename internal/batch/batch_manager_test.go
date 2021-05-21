@@ -304,6 +304,15 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 func TestAssembleMessageDataClosed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	bm, _ := NewBatchManager(context.Background(), mdi)
+	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := bm.(*batchManager).updateOffset(false, 10)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestUpdateOffsetFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mdi)
 	mdi.On("GetDataById", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	bm.Close()
 	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
