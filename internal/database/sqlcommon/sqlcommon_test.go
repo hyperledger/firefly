@@ -100,6 +100,31 @@ func TestQueryTxBadSQL(t *testing.T) {
 	assert.Regexp(t, "FF10113", err.Error())
 }
 
+func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
+	s, mdb := getMockDB()
+	mdb.ExpectBegin()
+	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow(12345))
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	s.options.InsertReturnedSyntax = true
+	sb := sq.Insert("table").Columns("col1").Values(("val1"))
+	sequence, err := s.insertTx(ctx, tx, sb)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(12345), sequence)
+}
+
+func TestInsertTxPostgreSQLReturnedSyntaxFail(t *testing.T) {
+	s, mdb := getMockDB()
+	mdb.ExpectBegin()
+	mdb.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	s.options.InsertReturnedSyntax = true
+	sb := sq.Insert("table").Columns("col1").Values(("val1"))
+	_, err = s.insertTx(ctx, tx, sb)
+	assert.Regexp(t, "FF10116", err.Error())
+}
+
 func TestInsertTxBadSQL(t *testing.T) {
 	s, _ := getMockDB()
 	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{})

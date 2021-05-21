@@ -25,10 +25,10 @@ const (
 
 type Event struct {
 	ID        *UUID     `json:"id"`
+	Sequence  int64     `json:"sequence"`
 	Type      EventType `json:"type"`
 	Namespace string    `json:"namespace"`
 	Reference *UUID     `json:"reference"`
-	Sequence  int64     `json:"sequence"`
 	Created   *FFTime   `json:"created"`
 }
 
