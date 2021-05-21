@@ -1,8 +1,7 @@
 BEGIN;
-CREATE SEQUENCE data_seq;
 CREATE TABLE data (
-  id             UUID            NOT NULL PRIMARY KEY,
-  seq            BIGINT          NOT NULL DEFAULT nextval('data_seq'),
+  seq            SERIAL          PRIMARY KEY,
+  id             UUID            NOT NULL,
   validator      VARCHAR(64)     NOT NULL,
   namespace      VARCHAR(64)     NOT NULL,
   def_name       VARCHAR(64)     NOT NULL,
@@ -11,7 +10,7 @@ CREATE TABLE data (
   created        BIGINT          NOT NULL,
   value          JSONB           NOT NULL
 );
-CREATE UNIQUE INDEX data_sequence ON data(seq);
+CREATE UNIQUE INDEX data_id ON data(id);
 CREATE INDEX data_hash ON data(namespace,hash);
 CREATE INDEX data_created ON data(namespace,created);
 COMMIT;

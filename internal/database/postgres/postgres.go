@@ -45,7 +45,8 @@ func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, callbac
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
-		PlaceholderFormat: squirrel.Dollar,
+		PlaceholderFormat:    squirrel.Dollar,
+		InsertReturnedSyntax: true,
 		SequenceField: func(tableName string) string {
 			if tableName == "" {
 				return "seq"

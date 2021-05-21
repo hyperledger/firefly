@@ -1,8 +1,7 @@
 BEGIN;
-CREATE SEQUENCE datadefs_seq;
 CREATE TABLE datadefs (
-  id          UUID            NOT NULL PRIMARY KEY,
-  seq         BIGINT          NOT NULL DEFAULT nextval('datadefs_seq'),
+  seq         SERIAL          PRIMARY KEY,
+  id          UUID            NOT NULL,
   validator   VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   name        VARCHAR(64)     NOT NULL,
@@ -12,7 +11,7 @@ CREATE TABLE datadefs (
   value       JSONB
 );
 
-CREATE UNIQUE INDEX datadefs_sequence ON data(seq);
+CREATE UNIQUE INDEX datadefs_id ON data(id);
 CREATE UNIQUE INDEX datadefs_unique ON datadefs(namespace,name,version);
 CREATE INDEX datadefs_created ON datadefs(created);
 COMMIT;

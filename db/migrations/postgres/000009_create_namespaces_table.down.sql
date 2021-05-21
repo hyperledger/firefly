@@ -1,4 +1,3 @@
 BEGIN;
 DROP TABLE IF EXISTS namespaces;
-DROP SEQUENCE namespaces_seq;
 COMMIT;

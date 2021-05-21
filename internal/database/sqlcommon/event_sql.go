@@ -74,7 +74,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
+		sequence, err := s.insertTx(ctx, tx,
 			sq.Insert("events").
 				Columns(eventColumns...).
 				Values(
@@ -84,12 +84,13 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 					event.Reference,
 					event.Created,
 				),
-		); err != nil {
+		)
+		if err != nil {
 			return err
 		}
 
 		s.postCommitEvent(ctx, tx, func() {
-			s.callbacks.EventCreated(event.Sequence)
+			s.callbacks.EventCreated(sequence)
 		})
 
 	}

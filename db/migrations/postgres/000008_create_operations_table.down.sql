@@ -1,4 +1,3 @@
 BEGIN;
 DROP TABLE IF EXISTS operations;
-DROP SEQUENCE operations_seq;
 COMMIT;
