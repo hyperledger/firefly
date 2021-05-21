@@ -299,7 +299,15 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
 	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
+	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
+
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
+
+	uiPath := config.GetString(config.UIPath)
+	if uiPath != "" {
+		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
+	}
+
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }

@@ -69,6 +69,7 @@ func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerCon
 }
 
 func (ep *eventPoller) calcFirstOffset(ctx context.Context) (firstOffset int64, err error) {
+	firstOffset = -1
 	var useNewest bool
 	switch ep.conf.firstEvent {
 	case "", fftypes.SubOptsFirstEventNewest:
@@ -112,15 +113,17 @@ func (ep *eventPoller) restoreOffset() error {
 				if err != nil {
 					return retry, err
 				}
-				err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
-					ID:        fftypes.NewUUID(),
-					Type:      ep.conf.offsetType,
-					Namespace: ep.conf.offsetNamespace,
-					Name:      ep.conf.offsetName,
-					Current:   firstOffset,
-				}, false)
-				if err != nil {
-					return retry, err
+				if !ep.conf.ephemeral {
+					err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
+						ID:        fftypes.NewUUID(),
+						Type:      ep.conf.offsetType,
+						Namespace: ep.conf.offsetNamespace,
+						Name:      ep.conf.offsetName,
+						Current:   firstOffset,
+					}, false)
+					if err != nil {
+						return retry, err
+					}
 				}
 			}
 		}
@@ -148,7 +151,7 @@ func (ep *eventPoller) rewindPollingOffset(offset int64) {
 	ep.mux.Lock()
 	defer ep.mux.Unlock()
 	if offset < ep.pollingOffset {
-		ep.pollingOffset = offset
+		ep.pollingOffset = offset // this will be re-delivered
 	}
 }
 
@@ -159,17 +162,19 @@ func (ep *eventPoller) getPollingOffset() int64 {
 }
 
 func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
+	// Next polling cycle should start one higher than this offset
+	ep.pollingOffset = offset
+
 	// Must be called from the event polling routine
 	l := log.L(ctx)
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
-		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", offset)
+		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", ep.pollingOffset)
 		if err := ep.database.UpdateOffset(ctx, ep.offsetID, u); err != nil {
 			return err
 		}
 	}
-	ep.pollingOffset = offset
-	l.Debugf("Event polling offset committed %d", offset)
+	l.Debugf("Event polling offset committed %d", ep.pollingOffset)
 	return nil
 }
 
@@ -178,7 +183,7 @@ func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
 	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
-		filter := fb.Gte("sequence", pollingOffset)
+		filter := fb.Gt("sequence", pollingOffset)
 		if ep.conf.limitNamespace != "" {
 			filter = fb.And(filter, fb.Eq("namespace", ep.conf.limitNamespace))
 		}

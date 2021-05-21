@@ -99,4 +99,5 @@ var (
 	MsgDispatcherClosing           = ffm("FF10182", "Event dispatcher closing")
 	MsgMaxFilterSkip               = ffm("FF10183", "You have reached the maximum pagination limit for this query (%d)")
 	MsgMaxFilterLimit              = ffm("FF10184", "Your query exceeds the maximum filter limit (%d)")
+	MsgAPIServerStaticFail         = ffm("FF10185", "An error occurred loading static content", 500)
 )

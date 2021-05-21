@@ -86,14 +86,14 @@ func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 0}, nil).Once()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{{}}, nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: -1}, nil).Once()
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
-		return offset.Current == 0
+		return offset.Current == -1
 	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ep.pollingOffset)
+	assert.Equal(t, int64(-1), ep.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
@@ -115,13 +115,13 @@ func TestRestoreOffsetOldest(t *testing.T) {
 	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 0}, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: -1}, nil).Once()
 	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
-		return offset.Current == 0
+		return offset.Current == -1
 	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
-	assert.Equal(t, int64(0), ep.pollingOffset)
+	assert.Equal(t, int64(-1), ep.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 

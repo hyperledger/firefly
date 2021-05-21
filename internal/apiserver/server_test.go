@@ -47,6 +47,7 @@ import (
 func TestStartStopServer(t *testing.T) {
 	config.Reset()
 	config.Set(config.HttpPort, 0)
+	config.Set(config.UIPath, "test")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	err := Serve(ctx, &orchestratormocks.Orchestrator{})
