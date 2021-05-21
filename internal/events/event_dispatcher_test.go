@@ -41,13 +41,15 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	ten := uint64(10)
+	oldest := fftypes.SubOptsFirstEventOldest
 	ed, cancel := newTestEventDispatcher(mdi, mei, &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{
 			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
 			Ephemeral:       true,
 			Options: fftypes.SubscriptionOptions{
-				ReadAhead: &ten,
+				ReadAhead:  &ten,
+				FirstEvent: &oldest,
 			},
 		},
 	})
@@ -581,6 +583,49 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 
 	<-bdDone
 	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
+}
+
+func TestBufferedDeliveryFailNack(t *testing.T) {
+	log.SetLevel("trace")
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	mei := &eventsmocks.Plugin{}
+	mdi := &databasemocks.Plugin{}
+	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	defer cancel()
+	go ed.deliverEvents()
+	ed.readAhead = 50
+
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	failNacked := make(chan bool)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	deliver.RunFn = func(a mock.Arguments) {
+		failNacked <- true
+	}
+
+	bdDone := make(chan struct{})
+	ev1 := fftypes.NewUUID()
+	ev2 := fftypes.NewUUID()
+	ed.eventPoller.pollingOffset = 100000
+	go func() {
+		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
+			{ID: ev1, Sequence: 100001},
+			{ID: ev2, Sequence: 100002},
+		})
+		assert.NoError(t, err)
+		assert.True(t, repoll)
+		close(bdDone)
+	}()
+
+	<-failNacked
+
+	<-bdDone
+	assert.Equal(t, int64(100000), ed.eventPoller.pollingOffset)
 }
 
 func TestBufferedFinalAckFail(t *testing.T) {
