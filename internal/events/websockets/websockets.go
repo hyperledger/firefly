@@ -47,6 +47,10 @@ func (ws *WebSockets) Init(ctx context.Context, prefix config.ConfigPrefix, call
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  prefix.GetInt(ReadBufferSizeKB),
 			WriteBufferSize: prefix.GetInt(WriteBufferSizeKB),
+			CheckOrigin: func(r *http.Request) bool {
+				// Cors is handled by the API server that wraps this handler
+				return true
+			},
 		},
 	}
 	return nil

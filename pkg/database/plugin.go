@@ -79,7 +79,7 @@ type PeristenceInterface interface {
 	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
 
 	// Update namespace
-	UpdateNamespace(ctx context.Context, name string, update Update) (err error)
+	UpdateNamespace(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
@@ -173,7 +173,7 @@ type PeristenceInterface interface {
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
 	// Update offset
-	UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update Update) (err error)
+	UpdateOffset(ctx context.Context, id *uuid.UUID, update Update) (err error)
 
 	// Get an offset by Id
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)

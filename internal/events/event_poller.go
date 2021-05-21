@@ -34,6 +34,7 @@ type eventPoller struct {
 	shoulderTaps  chan bool
 	newEvents     chan *uuid.UUID
 	closed        chan struct{}
+	offsetID      *uuid.UUID
 	pollingOffset int64
 	mux           sync.Mutex
 	conf          eventPollerConf
@@ -96,24 +97,38 @@ func (ep *eventPoller) calcFirstOffset(ctx context.Context) (firstOffset int64, 
 }
 
 func (ep *eventPoller) restoreOffset() error {
+	if ep.conf.ephemeral {
+		return nil
+	}
 	return ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
+		retry = ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts
 		var offset *fftypes.Offset
-		if !ep.conf.ephemeral {
+		for offset == nil {
 			offset, err = ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetNamespace, ep.conf.offsetName)
-		}
-		if err == nil {
+			if err != nil {
+				return retry, err
+			}
 			if offset == nil {
-				var newOffset int64
-				newOffset, err = ep.calcFirstOffset(ep.ctx)
-				if err == nil {
-					err = ep.commitOffset(ep.ctx, newOffset)
+				firstOffset, err := ep.calcFirstOffset(ep.ctx)
+				if err != nil {
+					return retry, err
 				}
-			} else {
-				ep.pollingOffset = offset.Current
+				err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
+					ID:        fftypes.NewUUID(),
+					Type:      ep.conf.offsetType,
+					Namespace: ep.conf.offsetNamespace,
+					Name:      ep.conf.offsetName,
+					Current:   firstOffset,
+				}, false)
+				if err != nil {
+					return retry, err
+				}
 			}
 		}
+		ep.offsetID = offset.ID
+		ep.pollingOffset = offset.Current
 		if err != nil {
-			return ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts, err
+			return
 		}
 		log.L(ep.ctx).Infof("Event offset restored %d", ep.pollingOffset)
 		return false, nil
@@ -149,13 +164,8 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 	l := log.L(ctx)
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
-		offset := &fftypes.Offset{
-			Type:      ep.conf.offsetType,
-			Namespace: ep.conf.offsetNamespace,
-			Name:      ep.conf.offsetName,
-			Current:   offset,
-		}
-		if err := ep.database.UpsertOffset(ctx, offset, true); err != nil {
+		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", offset)
+		if err := ep.database.UpdateOffset(ctx, ep.offsetID, u); err != nil {
 			return err
 		}
 	}

@@ -22,10 +22,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,8 +34,12 @@ func TestE2EDispatch(t *testing.T) {
 	log.SetLevel("debug")
 
 	mdi := &databasemocks.Plugin{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
+		ID: fftypes.NewUUID(),
+	}, nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
 	handler := func(ctx context.Context, b *fftypes.Batch) error {
@@ -144,8 +148,9 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 
 func TestInitFailCannotCreateOffset(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mdi)
 	assert.NoError(t, err)
 	defer bm.Close()

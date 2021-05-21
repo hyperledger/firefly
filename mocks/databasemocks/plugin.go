@@ -741,13 +741,13 @@ func (_m *Plugin) UpdateMessages(ctx context.Context, filter database.Filter, up
 	return r0
 }
 
-// UpdateNamespace provides a mock function with given fields: ctx, name, update
-func (_m *Plugin) UpdateNamespace(ctx context.Context, name string, update database.Update) error {
-	ret := _m.Called(ctx, name, update)
+// UpdateNamespace provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateNamespace(ctx context.Context, id *uuid.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Update) error); ok {
-		r0 = rf(ctx, name, update)
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -755,13 +755,13 @@ func (_m *Plugin) UpdateNamespace(ctx context.Context, name string, update datab
 	return r0
 }
 
-// UpdateOffset provides a mock function with given fields: ctx, t, ns, name, update
-func (_m *Plugin) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string, update database.Update) error {
-	ret := _m.Called(ctx, t, ns, name, update)
+// UpdateOffset provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateOffset(ctx context.Context, id *uuid.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string, database.Update) error); ok {
-		r0 = rf(ctx, t, ns, name, update)
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}

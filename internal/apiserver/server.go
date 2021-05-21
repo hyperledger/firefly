@@ -31,6 +31,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/events/eifactory"
+	"github.com/kaleido-io/firefly/internal/events/websockets"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/oapispec"
@@ -294,8 +296,10 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 				Methods(route.Method)
 		}
 	}
+	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
 	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
+	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
 	return r
 }

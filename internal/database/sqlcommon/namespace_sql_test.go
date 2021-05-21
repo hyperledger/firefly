@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,7 +94,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// Update
 	updateTime := fftypes.Now()
 	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
-	err = s.UpdateNamespace(ctx, namespaceUpdated.Name, up)
+	err = s.UpdateNamespace(ctx, namespaceUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -213,7 +213,7 @@ func TestNamespaceUpdateBeginFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
@@ -221,7 +221,7 @@ func TestNamespaceUpdateBuildQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*name", err.Error())
 }
 
@@ -231,6 +231,6 @@ func TestNamespaceUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
 }

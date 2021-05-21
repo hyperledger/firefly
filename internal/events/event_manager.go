@@ -19,7 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/events/etfactory"
+	"github.com/kaleido-io/firefly/internal/events/eifactory"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -64,7 +64,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 
 	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
 	for _, transport := range enabledTransports {
-		et, err := etfactory.GetPlugin(ctx, transport)
+		et, err := eifactory.GetPlugin(ctx, transport)
 		if err != nil {
 			return nil, err
 		}
