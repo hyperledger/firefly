@@ -37,7 +37,7 @@ const (
 	HTTPCustomClient = "customClient"
 )
 
-func InitConfigPrefix(prefix config.ConfigPrefix) {
+func InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(HTTPConfigURL)
 	prefix.AddKnownKey(HTTPConfigHeaders)
 	prefix.AddKnownKey(HTTPConfigAuthUsername)

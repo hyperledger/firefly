@@ -39,7 +39,7 @@ func newAggregator(ctx context.Context, di database.Plugin, en *eventNotifier) *
 		ctx:      log.WithLogField(ctx, "role", "aggregator"),
 		database: di,
 	}
-	ag.eventPoller = newEventPoller(ctx, di, en, eventPollerConf{
+	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             config.GetInt(config.EventAggregatorBatchSize),
 		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),

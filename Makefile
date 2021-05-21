@@ -11,7 +11,7 @@ coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
 lint:
-		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
+		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run -E gofmt -E gocritic
 mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Plugin           --output mocks/blockchainmocks     --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Callbacks        --output mocks/blockchainmocks     --outpkg blockchainmocks

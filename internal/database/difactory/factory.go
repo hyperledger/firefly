@@ -32,9 +32,9 @@ func init() {
 	}
 }
 
-func InitConfigPrefix(prefix config.ConfigPrefix) {
+func InitPrefix(prefix config.Prefix) {
 	for _, plugin := range plugins {
-		plugin.InitConfigPrefix(prefix.SubPrefix(plugin.Name()))
+		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
 	}
 }
 

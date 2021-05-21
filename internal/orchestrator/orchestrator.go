@@ -88,9 +88,9 @@ func NewOrchestrator() Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
-	bifactory.InitConfigPrefix(blockchainConfig)
-	difactory.InitConfigPrefix(databaseConfig)
-	psfactory.InitConfigPrefix(publicstorageConfig)
+	bifactory.InitPrefix(blockchainConfig)
+	difactory.InitPrefix(databaseConfig)
+	psfactory.InitPrefix(publicstorageConfig)
 
 	return or
 }

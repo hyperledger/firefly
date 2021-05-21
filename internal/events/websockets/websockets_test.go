@@ -41,7 +41,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ws = &WebSockets{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	svrPrefix := config.NewPluginConfig("ut.websockets")
-	ws.InitConfigPrefix(svrPrefix)
+	ws.InitPrefix(svrPrefix)
 	ws.Init(ctx, svrPrefix, cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
@@ -50,7 +50,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	svr := httptest.NewServer(ws)
 
 	clientPrefix := config.NewPluginConfig("ut.wsclient")
-	wsclient.InitConfigPrefix(clientPrefix)
+	wsclient.InitPrefix(clientPrefix)
 	qs := ""
 	if len(queryParams) > 0 {
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
@@ -146,7 +146,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, fftypes.EventDelivery{
+	ws.DeliveryRequest(connID, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
 	})
@@ -194,7 +194,7 @@ func TestStartReceiveDurable(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, fftypes.EventDelivery{
+	ws.DeliveryRequest(connID, &fftypes.EventDelivery{
 		Event: fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
@@ -203,7 +203,7 @@ func TestStartReceiveDurable(t *testing.T) {
 		},
 	})
 	// Put a second in flight
-	ws.DeliveryRequest(connID, fftypes.EventDelivery{
+	ws.DeliveryRequest(connID, &fftypes.EventDelivery{
 		Event: fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
@@ -263,7 +263,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	defer cancel()
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, fftypes.EventDelivery{
+	ws.DeliveryRequest(connID, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
 	})
@@ -441,7 +441,7 @@ func TestWebsocketDispatchAfterClose(t *testing.T) {
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
 	}
-	err := ws.DeliveryRequest("gone", fftypes.EventDelivery{})
+	err := ws.DeliveryRequest("gone", &fftypes.EventDelivery{})
 	assert.Regexp(t, "FF10173", err.Error())
 }
 
@@ -461,7 +461,7 @@ func TestDispatchAutoAck(t *testing.T) {
 		autoAck:      true,
 	}
 	wsc.ws.connections[wsc.connID] = wsc
-	err := wsc.ws.DeliveryRequest(wsc.connID, fftypes.EventDelivery{
+	err := wsc.ws.DeliveryRequest(wsc.connID, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
 	})

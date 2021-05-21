@@ -63,7 +63,7 @@ type wsClient struct {
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHandler) (WSClient, error) {
 
 	wsURL, err := buildWSUrl(ctx, prefix)
 	if err != nil {
@@ -149,7 +149,7 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
-func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error) {
+func buildWSUrl(ctx context.Context, prefix config.Prefix) (string, error) {
 	urlString := prefix.GetString(restclient.HTTPConfigURL)
 	u, err := url.Parse(urlString)
 	if err != nil {

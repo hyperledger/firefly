@@ -22,6 +22,6 @@ const (
 	SQLiteConfURL = "url"
 )
 
-func (e *SQLite) InitConfigPrefix(prefix config.ConfigPrefix) {
+func (e *SQLite) InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(SQLiteConfURL)
 }

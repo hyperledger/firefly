@@ -31,7 +31,7 @@ var utConfPrefix = config.NewPluginConfig("ws_unit_tests")
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	InitPrefix(utConfPrefix)
 }
 
 func TestWSClientE2E(t *testing.T) {

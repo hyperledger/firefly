@@ -1,2 +1,11 @@
 run:
   tests: false
+linters-settings:
+  golint: {}
+  gocritic:
+    enabled-checks:
+      - rangeValCopy
+    disabled-checks:
+      - regexpMust
+    enabled-tags:
+      - performance

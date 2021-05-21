@@ -59,7 +59,7 @@ func (u *UTDBQL) Name() string {
 	return "utdbql"
 }
 
-func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks blockchain.Callbacks) (err error) {
+func (u *UTDBQL) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	u.ctx = ctx
 	u.capabilities = &blockchain.Capabilities{

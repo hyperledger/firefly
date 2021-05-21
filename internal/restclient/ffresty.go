@@ -25,9 +25,9 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type retryCtxKey struct{}
@@ -57,7 +57,7 @@ func OnAfterResponse(c *resty.Client, resp *resty.Response) {
 //
 // You can use the normal Resty builder pattern, to set per-instance configuration
 // as required.
-func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
+func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 
 	var client *resty.Client
 

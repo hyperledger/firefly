@@ -58,7 +58,7 @@ func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 }
 
 func createListener(ctx context.Context) (net.Listener, error) {
-	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HttpAddress), config.GetUint(config.HttpPort))
+	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HTTPAddress), config.GetUint(config.HTTPPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
@@ -75,13 +75,13 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	// Support client auth
 	clientAuth := tls.NoClientCert
-	if config.GetBool(config.HttpTLSClientAuth) {
+	if config.GetBool(config.HTTPTLSClientAuth) {
 		clientAuth = tls.RequireAndVerifyClientCert
 	}
 
 	// Support custom CA file
 	var rootCAs *x509.CertPool
-	caFile := config.GetString(config.HttpTLSCAFile)
+	caFile := config.GetString(config.HTTPTLSCAFile)
 	if caFile != "" {
 		rootCAs = x509.NewCertPool()
 		var caBytes []byte
@@ -102,8 +102,8 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	srv = &http.Server{
 		Handler:      wrapCorsIfEnabled(ctx, r),
-		WriteTimeout: config.GetDuration(config.HttpWriteTimeout),
-		ReadTimeout:  config.GetDuration(config.HttpReadTimeout),
+		WriteTimeout: config.GetDuration(config.HTTPWriteTimeout),
+		ReadTimeout:  config.GetDuration(config.HTTPReadTimeout),
 		TLSConfig: &tls.Config{
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
@@ -136,8 +136,8 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 		}
 	}()
 
-	if config.GetBool(config.HttpTLSEnabled) {
-		err = srv.ServeTLS(listener, config.GetString(config.HttpTLSCertFile), config.GetString(config.HttpTLSKeyFile))
+	if config.GetBool(config.HTTPTLSEnabled) {
+		err = srv.ServeTLS(listener, config.GetString(config.HTTPTLSCertFile), config.GetString(config.HTTPTLSKeyFile))
 	} else {
 		err = srv.Serve(listener)
 	}

@@ -46,7 +46,7 @@ import (
 
 func TestStartStopServer(t *testing.T) {
 	config.Reset()
-	config.Set(config.HttpPort, 0)
+	config.Set(config.HTTPPort, 0)
 	config.Set(config.UIPath, "test")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
@@ -56,7 +56,7 @@ func TestStartStopServer(t *testing.T) {
 
 func TestInvalidListener(t *testing.T) {
 	config.Reset()
-	config.Set(config.HttpAddress, "...")
+	config.Set(config.HTTPAddress, "...")
 	_, err := createListener(context.Background())
 	assert.Error(t, err)
 }
@@ -71,7 +71,7 @@ func TestServeFail(t *testing.T) {
 
 func TestMissingCAFile(t *testing.T) {
 	config.Reset()
-	config.Set(config.HttpTLSCAFile, "badness")
+	config.Set(config.HTTPTLSCAFile, "badness")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
 	assert.Regexp(t, "FF10105", err.Error())
@@ -79,7 +79,7 @@ func TestMissingCAFile(t *testing.T) {
 
 func TestBadCAFile(t *testing.T) {
 	config.Reset()
-	config.Set(config.HttpTLSCAFile, "../../test/config/firefly.core.yaml")
+	config.Set(config.HTTPTLSCAFile, "../../test/config/firefly.core.yaml")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
 	assert.Regexp(t, "FF10106", err.Error())
@@ -115,12 +115,12 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 
 	// Start up a listener configured for TLS Mutual auth
 	config.Reset()
-	config.Set(config.HttpTLSEnabled, true)
-	config.Set(config.HttpTLSClientAuth, true)
-	config.Set(config.HttpTLSKeyFile, privateKeyFile.Name())
-	config.Set(config.HttpTLSCertFile, publicKeyFile.Name())
-	config.Set(config.HttpTLSCAFile, publicKeyFile.Name())
-	config.Set(config.HttpPort, 0)
+	config.Set(config.HTTPTLSEnabled, true)
+	config.Set(config.HTTPTLSClientAuth, true)
+	config.Set(config.HTTPTLSKeyFile, privateKeyFile.Name())
+	config.Set(config.HTTPTLSCertFile, publicKeyFile.Name())
+	config.Set(config.HTTPTLSCAFile, publicKeyFile.Name())
+	config.Set(config.HTTPPort, 0)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	l, err := createListener(ctx)
 	assert.NoError(t, err)

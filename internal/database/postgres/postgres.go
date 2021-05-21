@@ -41,7 +41,7 @@ func (e *Postgres) Name() string {
 	return "postgres"
 }
 
-func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
+func (e *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
@@ -70,7 +70,7 @@ func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, callbac
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
 }
 
-func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.ConfigPrefix, db *sql.DB) error {
+func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.Prefix, db *sql.DB) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err

@@ -36,7 +36,7 @@ type eventPoller struct {
 	offsetID      *fftypes.UUID
 	pollingOffset int64
 	mux           sync.Mutex
-	conf          eventPollerConf
+	conf          *eventPollerConf
 }
 
 type newEventsHandler func(events []*fftypes.Event) (bool, error)
@@ -56,7 +56,7 @@ type eventPollerConf struct {
 	startupOffsetRetryAttempts int
 }
 
-func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, conf eventPollerConf) *eventPoller {
+func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, conf *eventPollerConf) *eventPoller {
 	ep := &eventPoller{
 		ctx:           log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
 		database:      di,
@@ -273,7 +273,7 @@ func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool 
 			l.Debugf("Exiting due to cancelled context")
 			return false
 		}
-		longTimeoutDuration = longTimeoutDuration - ep.conf.eventBatchTimeout
+		longTimeoutDuration -= ep.conf.eventBatchTimeout
 	}
 
 	longTimeout := time.NewTimer(longTimeoutDuration)

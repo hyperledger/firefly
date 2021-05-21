@@ -63,7 +63,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, et events.P
 
 	// Initialize the transport
 	prefix := config.NewPluginConfig("events").SubPrefix(et.Name())
-	et.InitConfigPrefix(prefix)
+	et.InitPrefix(prefix)
 	err := et.Init(ctx, prefix, sm)
 	if err != nil {
 		return nil, err

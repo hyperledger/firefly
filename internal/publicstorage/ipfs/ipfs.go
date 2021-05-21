@@ -49,7 +49,7 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks publicstorage.Callbacks) error {
+func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks publicstorage.Callbacks) error {
 
 	i.ctx = log.WithLogField(ctx, "publicstorage", "ipfs")
 	i.callbacks = callbacks

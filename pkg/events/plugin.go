@@ -27,18 +27,18 @@ import (
 type Plugin interface {
 	fftypes.Named
 
-	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitConfigPrefix(prefix config.ConfigPrefix)
+	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitPrefix(prefix config.Prefix)
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, callbacks Callbacks) error
+	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
-	DeliveryRequest(connID string, event fftypes.EventDelivery) error
+	DeliveryRequest(connID string, event *fftypes.EventDelivery) error
 }
 
 type SubscriptionMatcher func(fftypes.SubscriptionRef) bool

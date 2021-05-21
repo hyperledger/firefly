@@ -37,7 +37,7 @@ func (e *QL) Name() string {
 	return "ql"
 }
 
-func (e *QL) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
+func (e *QL) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
