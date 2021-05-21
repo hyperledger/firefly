@@ -34,9 +34,9 @@ const (
 	EthconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 )
 
-func (e *Ethereum) InitConfigPrefix(prefix config.ConfigPrefix) {
+func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	wsclient.InitConfigPrefix(ethconnectConf)
+	wsclient.InitPrefix(ethconnectConf)
 	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigSkipEventstreamInit)

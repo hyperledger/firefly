@@ -36,7 +36,7 @@ var (
 func getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
 		// We choose to be case insensitive for our filters, so protocolId and protocolid can be used interchangably
-		if strings.ToLower(queryName) == key {
+		if strings.EqualFold(queryName, key) {
 			results = append(results, queryValues...)
 		}
 	}
@@ -91,32 +91,33 @@ func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilte
 		}
 	}
 	descendingVals := getValues(req.Form, "descending")
-	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.ToLower(descendingVals[0]) == "true") {
+	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.EqualFold(descendingVals[0], "true")) {
 		filter.Descending()
 	}
 	return filter, nil
 }
 
 func getCondition(fb database.FilterBuilder, field, value string) database.Filter {
-	if strings.HasPrefix(value, ">=") {
+	switch {
+	case strings.HasPrefix(value, ">="):
 		return fb.Gte(field, value[2:])
-	} else if strings.HasPrefix(value, "<=") {
+	case strings.HasPrefix(value, "<="):
 		return fb.Lte(field, value[2:])
-	} else if strings.HasPrefix(value, ">") {
+	case strings.HasPrefix(value, ">"):
 		return fb.Gt(field, value[1:])
-	} else if strings.HasPrefix(value, "<") {
+	case strings.HasPrefix(value, "<"):
 		return fb.Lt(field, value[1:])
-	} else if strings.HasPrefix(value, "@") {
+	case strings.HasPrefix(value, "@"):
 		return fb.Contains(field, value[1:])
-	} else if strings.HasPrefix(value, "^") {
+	case strings.HasPrefix(value, "^"):
 		return fb.IContains(field, value[1:])
-	} else if strings.HasPrefix(value, "!@") {
+	case strings.HasPrefix(value, "!@"):
 		return fb.NotContains(field, value[2:])
-	} else if strings.HasPrefix(value, "!^") {
+	case strings.HasPrefix(value, "!^"):
 		return fb.NotIContains(field, value[2:])
-	} else if strings.HasPrefix(value, "!") {
+	case strings.HasPrefix(value, "!"):
 		return fb.Neq(field, value[1:])
-	} else {
+	default:
 		return fb.Eq(field, value)
 	}
 }

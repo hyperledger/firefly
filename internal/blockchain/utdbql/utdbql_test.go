@@ -33,7 +33,7 @@ var utConfPrefix = config.NewPluginConfig("utdbql_unit_tests")
 func resetConf() {
 	config.Reset()
 	u := &UTDBQL{}
-	u.InitConfigPrefix(utConfPrefix)
+	u.InitPrefix(utConfPrefix)
 }
 
 func TestInit(t *testing.T) {

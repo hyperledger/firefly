@@ -29,7 +29,7 @@ const (
 	PSQLConfMigrationsDirectory = "migrations.directory"
 )
 
-func (e *Postgres) InitConfigPrefix(prefix config.ConfigPrefix) {
+func (e *Postgres) InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(PSQLConfDatabase)
 	prefix.AddKnownKey(PSQLConfURL)
 	prefix.AddKnownKey(PSQLConfMigrationsAuto)

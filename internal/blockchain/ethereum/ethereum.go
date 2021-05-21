@@ -98,7 +98,7 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks blockchain.Callbacks) (err error) {
+func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 
@@ -147,9 +147,9 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error {
+func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
 
-	var existingStreams []eventStream
+	var existingStreams []*eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
@@ -157,7 +157,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 
 	for _, stream := range existingStreams {
 		if stream.WebSocket.Topic == e.topic {
-			e.initInfo.stream = &stream
+			e.initInfo.stream = stream
 		}
 	}
 
@@ -196,7 +196,7 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	for eventType, subDesc := range requiredSubscriptions {
 
-		var existingSubs []subscription
+		var existingSubs []*subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
 		if err != nil || !res.IsSuccess() {
 			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
@@ -205,7 +205,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 		var sub *subscription
 		for _, s := range existingSubs {
 			if s.Name == eventType {
-				sub = &s
+				sub = s
 			}
 		}
 
@@ -323,6 +323,8 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
+		default:
+			l.Infof("Ignoring event with unknown signature: %s", signature)
 		}
 	}
 

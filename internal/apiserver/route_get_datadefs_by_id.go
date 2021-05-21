@@ -18,16 +18,16 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var getDataDefById = &oapispec.Route{
 	Name:   "getDataDefById",
 	Path:   "namespaces/{ns}/definitions/data/{defid}",
 	Method: http.MethodGet,
-	PathParams: []oapispec.PathParam{
+	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "defid", Description: i18n.MsgTBD},
 	},

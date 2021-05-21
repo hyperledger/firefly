@@ -29,7 +29,7 @@ import (
 func newTestSubManager(t *testing.T, mdi *databasemocks.Plugin, mei *eventsmocks.Plugin) (*subscriptionManager, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
-	mei.On("InitConfigPrefix", mock.Anything).Return()
+	mei.On("InitPrefix", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
@@ -126,7 +126,7 @@ func TestSubManagerTransportInitError(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mei.On("Name").Return("ut")
-	mei.On("InitConfigPrefix", mock.Anything).Return()
+	mei.On("InitPrefix", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := newSubscriptionManager(context.Background(), mdi, mei, newEventNotifier(context.Background()))
 	assert.EqualError(t, err, "pop")

@@ -77,7 +77,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 	if sub.definition.Options.FirstEvent != nil {
 		firstEvent = *sub.definition.Options.FirstEvent
 	}
-	pollerConf := eventPollerConf{
+	pollerConf := &eventPollerConf{
 		limitNamespace:             sub.definition.Namespace,
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
 		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
@@ -332,7 +332,7 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 func (ed *eventDispatcher) deliverEvents() {
 	for event := range ed.eventDelivery {
 		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-		err := ed.transport.DeliveryRequest(ed.connID, *event)
+		err := ed.transport.DeliveryRequest(ed.connID, event)
 		if err != nil {
 			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 		}

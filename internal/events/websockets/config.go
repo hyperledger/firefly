@@ -25,7 +25,7 @@ const (
 	WriteBufferSizeKB = "writeBufferSizeKB"
 )
 
-func (ws *WebSockets) InitConfigPrefix(prefix config.ConfigPrefix) {
+func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(ReadBufferSizeKB, bufferSizeDefault)
 	prefix.AddKnownKey(WriteBufferSizeKB, bufferSizeDefault)
 

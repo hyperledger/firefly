@@ -33,74 +33,131 @@ import (
 // The following keys can be access from the root configuration.
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
-	APIDefaultFilterLimit         RootKey = ark("api.defaultFilterLimit")
-	APIMaxFilterLimit             RootKey = ark("api.maxFilterLimit")
-	APIMaxFilterSkip              RootKey = ark("api.maxFilterLimit")
-	APIRequestTimeout             RootKey = ark("api.requestTimeout")
-	BatchManagerReadPageSize      RootKey = ark("batch.manager.readPageSize")
-	BatchManagerReadPollTimeout   RootKey = ark("batch.manager.pollTimeout")
-	BatchRetryFactor              RootKey = ark("batch.retry.factor")
-	BatchRetryInitDelay           RootKey = ark("batch.retry.initDelay")
-	BatchRetryMaxDelay            RootKey = ark("batch.retry.maxDelay")
-	BlockchainType                RootKey = ark("blockchain.type")
-	BroadcastBatchAgentTimeout    RootKey = ark("broadcast.batch.agentTimeout")
-	BroadcastBatchSize            RootKey = ark("broadcast.batch.size")
-	BroadcastBatchTimeout         RootKey = ark("broadcast.batch.timeout")
-	CorsAllowCredentials          RootKey = ark("cors.credentials")
-	CorsAllowedHeaders            RootKey = ark("cors.headers")
-	CorsAllowedMethods            RootKey = ark("cors.methods")
-	CorsAllowedOrigins            RootKey = ark("cors.origins")
-	CorsDebug                     RootKey = ark("cors.debug")
-	CorsEnabled                   RootKey = ark("cors.enabled")
-	CorsMaxAge                    RootKey = ark("cors.maxAge")
-	DatabaseType                  RootKey = ark("database.type")
-	DebugPort                     RootKey = ark("debug.port")
-	EventTransportsEnabled        RootKey = ark("event.transports.enabled")
-	EventAggregatorBatchSize      RootKey = ark("event.aggregator.batchSize")
-	EventAggregatorBatchTimeout   RootKey = ark("event.aggregator.batchTimeout")
-	EventAggregatorPollTimeout    RootKey = ark("event.aggregator.pollTimeout")
-	EventAggregatorRetryFactor    RootKey = ark("event.aggregator.retry.factor")
+	// APIDefaultFilterLimit is the default limit that will be applied to filtered queries on the API
+	APIDefaultFilterLimit RootKey = ark("api.defaultFilterLimit")
+	// APIMaxFilterLimit is the maximum limit that can be specified by an API call
+	APIMaxFilterLimit RootKey = ark("api.maxFilterLimit")
+	// APIMaxFilterSkip is the maximum skip value that can be specified on the API
+	APIMaxFilterSkip RootKey = ark("api.maxFilterLimit")
+	// APIRequestTimeout is the server side timeout for API calls (context timeout), to avoid the server continuing processing when the client gives up
+	APIRequestTimeout RootKey = ark("api.requestTimeout")
+	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
+	BatchManagerReadPageSize RootKey = ark("batch.manager.readPageSize")
+	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
+	BatchManagerReadPollTimeout RootKey = ark("batch.manager.pollTimeout")
+	// BatchRetryFactor is the retry backoff factor for database operations performed by the batch manager
+	BatchRetryFactor RootKey = ark("batch.retry.factor")
+	// BatchRetryInitDelay is the retry initial delay for database operations
+	BatchRetryInitDelay RootKey = ark("batch.retry.initDelay")
+	// BatchRetryMaxDelay is the maximum delay between retry attempts
+	BatchRetryMaxDelay RootKey = ark("batch.retry.maxDelay")
+	// BlockchainType is the name of the blockchain interface plugin being used by this firefly name
+	BlockchainType RootKey = ark("blockchain.type")
+	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
+	BroadcastBatchAgentTimeout RootKey = ark("broadcast.batch.agentTimeout")
+	// BroadcastBatchSize is the maximum size of a batch for broadcast messages
+	BroadcastBatchSize RootKey = ark("broadcast.batch.size")
+	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
+	BroadcastBatchTimeout RootKey = ark("broadcast.batch.timeout")
+	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
+	CorsAllowCredentials RootKey = ark("cors.credentials")
+	// CorsAllowedHeaders CORS setting to control the allowed headers
+	CorsAllowedHeaders RootKey = ark("cors.headers")
+	// CorsAllowedMethods CORS setting to control the allowed methods
+	CorsAllowedMethods RootKey = ark("cors.methods")
+	// CorsAllowedOrigins CORS setting to control the allowed origins
+	CorsAllowedOrigins RootKey = ark("cors.origins")
+	// CorsDebug is whether debug is enabled for the CORS implementation
+	CorsDebug RootKey = ark("cors.debug")
+	// CorsEnabled is whether cors is enabled
+	CorsEnabled RootKey = ark("cors.enabled")
+	// CorsMaxAge is the maximum age a browser should rely on CORS checks
+	CorsMaxAge RootKey = ark("cors.maxAge")
+	// DatabaseType the type of the database interface plugin to use
+	DatabaseType RootKey = ark("database.type")
+	// DebugPort a HTTP port on which to enable the go debugger
+	DebugPort RootKey = ark("debug.port")
+	// EventTransportsEnabled which event interface plugins are enabled
+	EventTransportsEnabled RootKey = ark("event.transports.enabled")
+	// EventAggregatorBatchSize the maximum number of records to read from the DB before performing an aggregation run
+	EventAggregatorBatchSize RootKey = ark("event.aggregator.batchSize")
+	// EventAggregatorBatchTimeout how long to wait for new events to arrive before performing aggregation on a page of events
+	EventAggregatorBatchTimeout RootKey = ark("event.aggregator.batchTimeout")
+	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
+	EventAggregatorPollTimeout RootKey = ark("event.aggregator.pollTimeout")
+	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
+	EventAggregatorRetryFactor RootKey = ark("event.aggregator.retry.factor")
+	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
 	EventAggregatorRetryInitDelay RootKey = ark("event.aggregator.retry.initDelay")
-	EventAggregatorRetryMaxDelay  RootKey = ark("event.aggregator.retry.maxDelay")
-	EventDispatcherPollTimeout    RootKey = ark("event.dispatcher.pollTimeout")
-	EventDispatcherBufferLength   RootKey = ark("event.dispatcher.bufferLength")
-	EventDispatcherBatchTimeout   RootKey = ark("event.dispatcher.batchTimeout")
-	EventDispatcherRetryFactor    RootKey = ark("event.dispatcher.retry.factor")
+	// EventAggregatorRetryMaxDelay the maximum delay to use for retry of data base operations
+	EventAggregatorRetryMaxDelay RootKey = ark("event.aggregator.retry.maxDelay")
+	// EventDispatcherPollTimeout the time to wait without a notification of new events, before trying a select on the table
+	EventDispatcherPollTimeout RootKey = ark("event.dispatcher.pollTimeout")
+	// EventDispatcherBufferLength the number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription
+	EventDispatcherBufferLength RootKey = ark("event.dispatcher.bufferLength")
+	// EventDispatcherBatchTimeout a short time to wait for new events to arrive before re-polling for new events
+	EventDispatcherBatchTimeout RootKey = ark("event.dispatcher.batchTimeout")
+	// EventDispatcherRetryFactor the backoff factor to use for retry of database operations
+	EventDispatcherRetryFactor RootKey = ark("event.dispatcher.retry.factor")
+	// EventDispatcherRetryInitDelay he initial delay to use for retry of data base operations
 	EventDispatcherRetryInitDelay RootKey = ark("event.dispatcher.retry.initDelay")
-	EventDispatcherRetryMaxDelay  RootKey = ark("event.dispatcher.retry.maxDelay")
-	HttpAddress                   RootKey = ark("http.address")
-	HttpPort                      RootKey = ark("http.port")
-	HttpReadTimeout               RootKey = ark("http.readTimeout")
-	HttpTLSCAFile                 RootKey = ark("http.tls.caFile")
-	HttpTLSCertFile               RootKey = ark("http.tls.certFile")
-	HttpTLSClientAuth             RootKey = ark("http.tls.clientAuth")
-	HttpTLSEnabled                RootKey = ark("http.tls.enabled")
-	HttpTLSKeyFile                RootKey = ark("http.tls.keyFile")
-	HttpWriteTimeout              RootKey = ark("http.writeTimeout")
-	Lang                          RootKey = ark("lang")
-	LogForceColor                 RootKey = ark("log.forceColor")
-	LogLevel                      RootKey = ark("log.level")
-	LogNoColor                    RootKey = ark("log.noColor")
-	LogTimeFormat                 RootKey = ark("log.timeFormat")
-	LogUTC                        RootKey = ark("log.utc")
-	NamespacesDefault             RootKey = ark("namespaces.default")
-	NamespacesPredefined          RootKey = ark("namespaces.predefined")
-	NodeIdentity                  RootKey = ark("node.identity")
-	OrchestratorStartupAttempts   RootKey = ark("orchestrator.startupAttempts")
-	PublicStorageType             RootKey = ark("publicstorage.type")
+	// EventDispatcherRetryMaxDelay he maximum delay to use for retry of data base operations
+	EventDispatcherRetryMaxDelay RootKey = ark("event.dispatcher.retry.maxDelay")
+	// HttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
+	HTTPAddress RootKey = ark("http.address")
+	// HttpPort the local port to listen on for HTTP/Websocket connections
+	HTTPPort RootKey = ark("http.port")
+	// HttpReadTimeout the write timeout for the HTTP server
+	HTTPReadTimeout RootKey = ark("http.readTimeout")
+	// HttpTLSCAFile the TLS certificate authority file for the HTTP server
+	HTTPTLSCAFile RootKey = ark("http.tls.caFile")
+	// HttpTLSCertFile the TLS certificate file for the HTTP server
+	HTTPTLSCertFile RootKey = ark("http.tls.certFile")
+	// HttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
+	HTTPTLSClientAuth RootKey = ark("http.tls.clientAuth")
+	// HttpTLSEnabled whether TLS is enabled for the HTTP server
+	HTTPTLSEnabled RootKey = ark("http.tls.enabled")
+	// HttpTLSKeyFile the private key file for TLS on the server
+	HTTPTLSKeyFile RootKey = ark("http.tls.keyFile")
+	// HttpWriteTimeout the write timeout for the HTTP server
+	HTTPWriteTimeout RootKey = ark("http.writeTimeout")
+	// Lang is the language to use for translation
+	Lang RootKey = ark("lang")
+	// LogForceColor forces color to be enabled, even if we do not detect a TTY
+	LogForceColor RootKey = ark("log.forceColor")
+	// LogLevel is the logging level
+	LogLevel RootKey = ark("log.level")
+	// LogNoColor forces color to be disabled, even if we detect a TTY
+	LogNoColor RootKey = ark("log.noColor")
+	// LogTimeFormat is a string format for timestamps
+	LogTimeFormat RootKey = ark("log.timeFormat")
+	// LogUTC sets log timestamps to the UTC timezone
+	LogUTC RootKey = ark("log.utc")
+	// NamespacesDefault is the default namespace - must be in the predefines list
+	NamespacesDefault RootKey = ark("namespaces.default")
+	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
+	NamespacesPredefined RootKey = ark("namespaces.predefined")
+	// NodeIdentity is the signing identity allocated to the node
+	NodeIdentity RootKey = ark("node.identity")
+	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
+	OrchestratorStartupAttempts RootKey = ark("orchestrator.startupAttempts")
+	// PublicStorageType specifies which public storage interface plugin to use
+	PublicStorageType RootKey = ark("publicstorage.type")
+	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead RootKey = ark("subscription.defaults.batchSize")
-	SubscriptionMaxPerTransport   RootKey = ark("subscription.maxPerTransport")
-	UIPath                        RootKey = ark("ui.path")
+	// SubscriptionMaxPerTransport maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
+	SubscriptionMaxPerTransport RootKey = ark("subscription.maxPerTransport")
+	// UIPath the path on which to serve the UI
+	UIPath RootKey = ark("ui.path")
 )
 
-// Config prefix represents the global configuration, at a nested point in
-// the config heirarchy. This allows plugins to define their
-//
+// Prefix represents the global configuration, at a nested point in
+// the config hierarchy. This allows plugins to define their
 // Note that all values are GLOBAL so this cannot be used for per-instance
 // customization. Rather for global initialization of plugins.
-type ConfigPrefix interface {
+type Prefix interface {
 	AddKnownKey(key string, defValue ...interface{})
-	SubPrefix(suffix string) ConfigPrefix
+	SubPrefix(suffix string) Prefix
 	Set(key string, value interface{})
 	Resolve(key string) string
 
@@ -155,10 +212,10 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherBatchTimeout), 0)
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets"})
-	viper.SetDefault(string(HttpAddress), "127.0.0.1")
-	viper.SetDefault(string(HttpPort), 5000)
-	viper.SetDefault(string(HttpReadTimeout), "15s")
-	viper.SetDefault(string(HttpWriteTimeout), "15s")
+	viper.SetDefault(string(HTTPAddress), "127.0.0.1")
+	viper.SetDefault(string(HTTPPort), 5000)
+	viper.SetDefault(string(HTTPReadTimeout), "15s")
+	viper.SetDefault(string(HTTPWriteTimeout), "15s")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogTimeFormat), "2006-01-02T15:04:05.000Z07:00")
@@ -188,13 +245,12 @@ func ReadConfig(cfgFile string) error {
 			err = viper.ReadConfig(f)
 		}
 		return err
-	} else {
-		viper.SetConfigName("firefly.core")
-		viper.AddConfigPath("/etc/firefly/")
-		viper.AddConfigPath("$HOME/.firefly")
-		viper.AddConfigPath(".")
-		return viper.ReadInConfig()
 	}
+	viper.SetConfigName("firefly.core")
+	viper.AddConfigPath("/etc/firefly/")
+	viper.AddConfigPath("$HOME/.firefly")
+	viper.AddConfigPath(".")
+	return viper.ReadInConfig()
 }
 
 var root *configPrefix = &configPrefix{
@@ -207,6 +263,7 @@ func ark(k string) RootKey {
 	return RootKey(k)
 }
 
+// GetKnownKeys gets the known keys
 func GetKnownKeys() []string {
 	var keys []string
 	for k := range root.keys {
@@ -223,9 +280,9 @@ type configPrefix struct {
 }
 
 // NewPluginConfig creates a new plugin configuration object, at the specified prefix
-func NewPluginConfig(prefix string) ConfigPrefix {
+func NewPluginConfig(prefix string) Prefix {
 	if !strings.HasSuffix(prefix, ".") {
-		prefix = prefix + "."
+		prefix += "."
 	}
 	return &configPrefix{
 		prefix: prefix,
@@ -241,7 +298,7 @@ func (c *configPrefix) prefixKey(k string) string {
 	return key
 }
 
-func (c *configPrefix) SubPrefix(suffix string) ConfigPrefix {
+func (c *configPrefix) SubPrefix(suffix string) Prefix {
 	return &configPrefix{
 		prefix: c.prefix + suffix + ".",
 		keys:   root.keys,

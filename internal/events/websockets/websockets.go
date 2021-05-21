@@ -38,7 +38,7 @@ type WebSockets struct {
 
 func (ws *WebSockets) Name() string { return "websockets" }
 
-func (ws *WebSockets) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks events.Callbacks) error {
+func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
 	*ws = WebSockets{
 		ctx:          ctx,
 		connections:  make(map[string]*websocketConnection),
@@ -60,14 +60,14 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, event fftypes.EventDelivery) error {
+func (ws *WebSockets) DeliveryRequest(connID string, event *fftypes.EventDelivery) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
 	if !ok {
 		return i18n.NewError(ws.ctx, i18n.MsgWSConnectionNotActive, connID)
 	}
-	return conn.dispatch(&event)
+	return conn.dispatch(event)
 }
 
 func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {

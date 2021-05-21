@@ -24,7 +24,7 @@ const (
 	IPFSConfGatewaySubconf = "gateway"
 )
 
-func (i *IPFS) InitConfigPrefix(prefix config.ConfigPrefix) {
-	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
-	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
+func (i *IPFS) InitPrefix(prefix config.Prefix) {
+	restclient.InitPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
+	restclient.InitPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
 }

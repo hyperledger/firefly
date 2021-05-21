@@ -33,10 +33,10 @@ const (
 	WSConfigKeyPath                   = "ws.path"
 )
 
-// InitConfigPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
+// InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
-func InitConfigPrefix(prefix config.ConfigPrefix) {
-	restclient.InitConfigPrefix(prefix)
+func InitPrefix(prefix config.Prefix) {
+	restclient.InitPrefix(prefix)
 	prefix.AddKnownKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)

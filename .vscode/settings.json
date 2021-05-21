@@ -1,0 +1,9 @@
+{
+  "go.formatFlags": [
+    "-s"
+  ],
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [
+    "-E","gofmt","-E","gocritic","-E","gocyclo","-E","misspell","-E","golint"
+  ]
+}

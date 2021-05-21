@@ -30,10 +30,10 @@ import (
 
 func getHost(ctx context.Context) string {
 	proto := "https"
-	if !config.GetBool(config.HttpTLSEnabled) {
+	if !config.GetBool(config.HTTPTLSEnabled) {
 		proto = "http"
 	}
-	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.HttpAddress), config.GetString(config.HttpPort))
+	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.HTTPAddress), config.GetString(config.HTTPPort))
 }
 
 func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {

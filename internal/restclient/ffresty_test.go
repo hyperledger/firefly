@@ -31,7 +31,7 @@ var utConfPrefix = config.NewPluginConfig("http_unit_tests")
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	InitPrefix(utConfPrefix)
 }
 
 func TestRequestOK(t *testing.T) {

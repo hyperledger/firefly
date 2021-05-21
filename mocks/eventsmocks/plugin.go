@@ -36,11 +36,11 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 }
 
 // DeliveryRequest provides a mock function with given fields: connID, event
-func (_m *Plugin) DeliveryRequest(connID string, event fftypes.EventDelivery) error {
+func (_m *Plugin) DeliveryRequest(connID string, event *fftypes.EventDelivery) error {
 	ret := _m.Called(connID, event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.EventDelivery) error); ok {
+	if rf, ok := ret.Get(0).(func(string, *fftypes.EventDelivery) error); ok {
 		r0 = rf(connID, event)
 	} else {
 		r0 = ret.Error(0)
@@ -50,11 +50,11 @@ func (_m *Plugin) DeliveryRequest(connID string, event fftypes.EventDelivery) er
 }
 
 // Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks events.Callbacks) error {
+func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
 	ret := _m.Called(ctx, prefix, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, events.Callbacks) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, events.Callbacks) error); ok {
 		r0 = rf(ctx, prefix, callbacks)
 	} else {
 		r0 = ret.Error(0)
@@ -63,8 +63,8 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callback
 	return r0
 }
 
-// InitConfigPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
+// InitPrefix provides a mock function with given fields: prefix
+func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 

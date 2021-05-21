@@ -18,17 +18,17 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var getOps = &oapispec.Route{
 	Name:   "getOps",
 	Path:   "namespaces/{ns}/operations",
 	Method: http.MethodGet,
-	PathParams: []oapispec.PathParam{
+	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,

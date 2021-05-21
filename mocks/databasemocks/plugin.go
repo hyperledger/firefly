@@ -609,11 +609,11 @@ func (_m *Plugin) GetTransactions(ctx context.Context, filter database.Filter) (
 }
 
 // Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
+func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 	ret := _m.Called(ctx, prefix, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.ConfigPrefix, database.Callbacks) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, database.Callbacks) error); ok {
 		r0 = rf(ctx, prefix, callbacks)
 	} else {
 		r0 = ret.Error(0)
@@ -622,8 +622,8 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.ConfigPrefix, callback
 	return r0
 }
 
-// InitConfigPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitConfigPrefix(prefix config.ConfigPrefix) {
+// InitPrefix provides a mock function with given fields: prefix
+func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 

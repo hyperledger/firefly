@@ -40,7 +40,7 @@ func (e *SQLite) Name() string {
 	return "sqlite"
 }
 
-func (e *SQLite) Init(ctx context.Context, prefix config.ConfigPrefix, callbacks database.Callbacks) error {
+func (e *SQLite) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
 	options := &sqlcommon.SQLCommonOptions{
