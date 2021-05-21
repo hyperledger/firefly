@@ -19,7 +19,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -43,9 +42,9 @@ type SubscriptionOptions struct {
 }
 
 type SubscriptionRef struct {
-	ID        *uuid.UUID `json:"id"`
-	Namespace string     `json:"namespace"`
-	Name      string     `json:"name"`
+	ID        *UUID  `json:"id"`
+	Namespace string `json:"namespace"`
+	Name      string `json:"name"`
 }
 
 type Subscription struct {

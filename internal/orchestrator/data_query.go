@@ -18,23 +18,22 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 func (e *orchestrator) verifyNamespace(ctx context.Context, ns string) error {
 	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
 }
 
-func (e *orchestrator) verifyIdAndNamespace(ctx context.Context, ns, id string) (*uuid.UUID, error) {
-	u, err := uuid.Parse(id)
+func (e *orchestrator) verifyIdAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
+	u, err := fftypes.ParseUUID(id)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
 	err = e.verifyNamespace(ctx, ns)
-	return &u, err
+	return u, err
 }
 
 func (e *orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error) {

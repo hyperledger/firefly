@@ -21,11 +21,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/likexian/gokit/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -68,9 +67,9 @@ func TestUnfilledBatch(t *testing.T) {
 	// Generate the work the work
 	work := make([]*batchWork, 5)
 	for i := 0; i < 5; i++ {
-		msgid := uuid.New()
+		msgid := fftypes.NewUUID()
 		work[i] = &batchWork{
-			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
+			msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
 			dispatched: make(chan *batchDispatch),
 		}
 	}
@@ -121,15 +120,15 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	// Generate the work the work
 	work := make([]*batchWork, 10)
 	for i := 0; i < 10; i++ {
-		msgid := uuid.New()
+		msgid := fftypes.NewUUID()
 		if i%2 == 0 {
 			work[i] = &batchWork{
-				msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
+				msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
 				dispatched: make(chan *batchDispatch),
 			}
 		} else {
 			work[i] = &batchWork{
-				data:       []*fftypes.Data{{ID: &msgid}},
+				data:       []*fftypes.Data{{ID: msgid}},
 				dispatched: make(chan *batchDispatch),
 			}
 		}
@@ -191,9 +190,9 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	}
 
 	// Generate the work the work
-	msgid := uuid.New()
+	msgid := fftypes.NewUUID()
 	work := &batchWork{
-		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: &msgid}},
+		msg:        &fftypes.Message{Header: fftypes.MessageHeader{ID: msgid}},
 		dispatched: make(chan *batchDispatch),
 	}
 

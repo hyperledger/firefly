@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -151,7 +150,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	return nil
 }
 
-func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *txWrapper, msgId *uuid.UUID) (fftypes.DataRefs, error) {
+func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *txWrapper, msgId *fftypes.UUID) (fftypes.DataRefs, error) {
 	existingRefs, err := s.queryTx(ctx, tx,
 		sq.Select(
 			"data_id",
@@ -169,7 +168,7 @@ func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *txWrapper, msgId
 
 	var dataIDs fftypes.DataRefs
 	for existingRefs.Next() {
-		var dataID uuid.UUID
+		var dataID fftypes.UUID
 		var dataHash fftypes.Bytes32
 		var dataIdx int
 		if err = existingRefs.Scan(&dataID, &dataHash, &dataIdx); err != nil {
@@ -291,8 +290,8 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 	defer existingRefs.Close()
 
 	for existingRefs.Next() {
-		var msgID uuid.UUID
-		var dataID uuid.UUID
+		var msgID fftypes.UUID
+		var dataID fftypes.UUID
 		var dataHash fftypes.Bytes32
 		var dataIdx int
 		if err = existingRefs.Scan(&msgID, &dataID, &dataHash, &dataIdx); err != nil {
@@ -344,7 +343,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error) {
+func (s *SQLCommon) GetMessageById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, s.options.SequenceField(""))
@@ -412,7 +411,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	return s.getMessagesQuery(ctx, query)
 }
 
-func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter database.Filter) (message []*fftypes.Message, err error) {
+func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataId *fftypes.UUID, filter database.Filter) (message []*fftypes.Message, err error) {
 	cols := make([]string, len(msgColumns)+1)
 	for i, col := range msgColumns {
 		cols[i] = fmt.Sprintf("m.%s", col)
@@ -456,8 +455,8 @@ func (s SQLCommon) CheckDataAvailable(ctx context.Context, msg *fftypes.Message)
 		log.L(ctx).Warnf("Invalid message %v", msg.Header.ID)
 		return false, nil
 	}
-	hashByID := make(map[uuid.UUID]fftypes.Bytes32)
-	ids := make([]*uuid.UUID, len(msg.Data))
+	hashByID := make(map[fftypes.UUID]fftypes.Bytes32)
+	ids := make([]*fftypes.UUID, len(msg.Data))
 	for i, dr := range msg.Data {
 		if dr.ID == nil || dr.Hash == nil {
 			log.L(ctx).Warnf("Invalid data reference %v/%v in message %s", dr.ID, dr.Hash, msg.Header.ID)
@@ -482,7 +481,7 @@ func (s SQLCommon) CheckDataAvailable(ctx context.Context, msg *fftypes.Message)
 	defer rows.Close()
 
 	for rows.Next() {
-		var dataID uuid.UUID
+		var dataID fftypes.UUID
 		var dataHash fftypes.Bytes32
 		err := rows.Scan(&dataID, &dataHash)
 		if err != nil {
@@ -500,7 +499,7 @@ func (s SQLCommon) CheckDataAvailable(ctx context.Context, msg *fftypes.Message)
 	return len(hashByID) == 0, nil
 }
 
-func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *fftypes.UUID, update database.Update) (err error) {
 	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx).Eq("id", msgid), update)
 }
 

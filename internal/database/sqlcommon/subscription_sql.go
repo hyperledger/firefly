@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -71,7 +70,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 		existing = subscriptionRows.Next()
 		if existing {
-			var id uuid.UUID
+			var id fftypes.UUID
 			_ = subscriptionRows.Scan(&id)
 			if subscription.ID != nil {
 				if *subscription.ID != id {

@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -273,7 +272,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnId (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
-	var txnID uuid.UUID
+	var txnID fftypes.UUID
 	copy(txnID[:], txnIDB32[0:16])
 
 	var batchIDB32 fftypes.Bytes32
@@ -282,7 +281,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchId (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
-	var batchID uuid.UUID
+	var batchID fftypes.UUID
 	copy(batchID[:], batchIDB32[0:16])
 
 	var payloadRef fftypes.Bytes32

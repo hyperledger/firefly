@@ -14,8 +14,6 @@
 
 package fftypes
 
-import "github.com/google/uuid"
-
 // WSClientActionType actions go from client->server
 type WSClientPayloadType string
 
@@ -47,7 +45,7 @@ type WSClientActionStartPayload struct {
 type WSClientActionAckPayload struct {
 	WSClientActionBase
 
-	ID           *uuid.UUID       `json:"id,omitempty"`
+	ID           *UUID            `json:"id,omitempty"`
 	Subscription *SubscriptionRef `json:"subscription,omitempty"`
 }
 

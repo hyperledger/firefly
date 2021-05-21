@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -47,7 +46,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
 		dispatchers:                make(map[fftypes.MessageType]*dispatcher),
 		shoulderTap:                make(chan bool, 1),
-		newMessages:                make(chan *uuid.UUID, readPageSize),
+		newMessages:                make(chan *fftypes.UUID, readPageSize),
 		sequencerClosed:            make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
@@ -60,7 +59,7 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 
 type BatchManager interface {
 	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
-	NewMessages() chan<- *uuid.UUID
+	NewMessages() chan<- *fftypes.UUID
 	Start() error
 	Close()
 	WaitStop()
@@ -71,10 +70,10 @@ type batchManager struct {
 	database                   database.Plugin
 	dispatchers                map[fftypes.MessageType]*dispatcher
 	shoulderTap                chan bool
-	newMessages                chan *uuid.UUID
+	newMessages                chan *fftypes.UUID
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
-	offsetID                   *uuid.UUID
+	offsetID                   *fftypes.UUID
 	offset                     int64
 	closed                     bool
 	readPageSize               uint64
@@ -114,7 +113,7 @@ func (bm *batchManager) Start() error {
 	return nil
 }
 
-func (bm *batchManager) NewMessages() chan<- *uuid.UUID {
+func (bm *batchManager) NewMessages() chan<- *fftypes.UUID {
 	return bm.newMessages
 }
 
@@ -264,7 +263,7 @@ func (bm *batchManager) messageSequencer() {
 			}
 
 			if dispatchCount > 0 {
-				msgUpdates := make(map[uuid.UUID][]driver.Value)
+				msgUpdates := make(map[fftypes.UUID][]driver.Value)
 				for i := 0; i < dispatchCount; i++ {
 					dispatched := <-dispatched
 					batchID := *dispatched.batchID
@@ -329,7 +328,7 @@ func (bm *batchManager) waitForShoulderTapOrPollTimeout() {
 	}
 }
 
-func (bm *batchManager) updateMessages(msgUpdates map[uuid.UUID][]driver.Value) (err error) {
+func (bm *batchManager) updateMessages(msgUpdates map[fftypes.UUID][]driver.Value) (err error) {
 	l := log.L(bm.ctx)
 	return bm.retry.Do(bm.ctx, "update messages", func(attempt int) (retry bool, err error) {
 		// Group the updates at the persistence layer

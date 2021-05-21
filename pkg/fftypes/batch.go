@@ -20,12 +20,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type Batch struct {
-	ID         *uuid.UUID   `json:"id"`
+	ID         *UUID        `json:"id"`
 	Namespace  string       `json:"namespace"`
 	Type       MessageType  `json:"type"`
 	Author     string       `json:"author"`

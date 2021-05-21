@@ -19,7 +19,6 @@ import (
 	"database/sql/driver"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -120,8 +119,8 @@ func TestBuildMessageTimeConvert(t *testing.T) {
 
 func TestBuildMessageStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
-	u := uuid.MustParse("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
-	b32 := fftypes.UUIDBytes(&u)
+	u := fftypes.MustParseUUID("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
+	b32 := fftypes.UUIDBytes(u)
 	f, err := fb.And(
 		fb.Lt("namespace", int(111)),
 		fb.Lt("namespace", int32(222)),
@@ -130,8 +129,8 @@ func TestBuildMessageStringConvert(t *testing.T) {
 		fb.Lt("namespace", uint32(555)),
 		fb.Lt("namespace", uint64(666)),
 		fb.Lt("namespace", nil),
+		fb.Lt("namespace", *u),
 		fb.Lt("namespace", u),
-		fb.Lt("namespace", &u),
 		fb.Lt("namespace", *b32),
 		fb.Lt("namespace", b32),
 	).Finalize()

@@ -19,11 +19,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -146,7 +145,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatchById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(batchColumns...).
@@ -197,7 +196,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 
 }
 
-func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -115,7 +114,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 	return &event, nil
 }
 
-func (s *SQLCommon) GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error) {
+func (s *SQLCommon) GetEventById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, s.options.SequenceField(""))
@@ -170,7 +169,7 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 
 }
 
-func (s *SQLCommon) UpdateEvent(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

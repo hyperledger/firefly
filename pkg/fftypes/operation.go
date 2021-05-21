@@ -14,8 +14,6 @@
 
 package fftypes
 
-import "github.com/google/uuid"
-
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
 // to be correlated with messages by operators.
@@ -69,16 +67,16 @@ func NewMessageDataOp(plugin Named, backendID string, msg *Message, dataIdx int,
 }
 
 type Operation struct {
-	ID        *uuid.UUID `json:"id"`
-	Namespace string     `json:"namespace,omitempty"`
-	Message   *uuid.UUID `json:"message"`
-	Data      *uuid.UUID `json:"data,omitempty"`
-	Type      OpType     `json:"type"`
-	Recipient string     `json:"recipient,omitempty"`
-	Status    OpStatus   `json:"status"`
-	Error     string     `json:"error,omitempty"`
-	Plugin    string     `json:"plugin"`
-	BackendID string     `json:"backendId"`
-	Created   *FFTime    `json:"created,omitempty"`
-	Updated   *FFTime    `json:"updated,omitempty"`
+	ID        *UUID    `json:"id"`
+	Namespace string   `json:"namespace,omitempty"`
+	Message   *UUID    `json:"message"`
+	Data      *UUID    `json:"data,omitempty"`
+	Type      OpType   `json:"type"`
+	Recipient string   `json:"recipient,omitempty"`
+	Status    OpStatus `json:"status"`
+	Error     string   `json:"error,omitempty"`
+	Plugin    string   `json:"plugin"`
+	BackendID string   `json:"backendId"`
+	Created   *FFTime  `json:"created,omitempty"`
+	Updated   *FFTime  `json:"updated,omitempty"`
 }

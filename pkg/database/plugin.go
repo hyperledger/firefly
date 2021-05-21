@@ -17,7 +17,6 @@ package database
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -79,7 +78,7 @@ type PeristenceInterface interface {
 	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
 
 	// Update namespace
-	UpdateNamespace(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
@@ -92,13 +91,13 @@ type PeristenceInterface interface {
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update message
-	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Update messages
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
 	// Get a message by Id
-	GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error)
+	GetMessageById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
 
 	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
@@ -107,7 +106,7 @@ type PeristenceInterface interface {
 	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
 
 	// List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter Filter) (message []*fftypes.Message, err error)
+	GetMessagesForData(ctx context.Context, dataId *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
 
 	// Check to see if all the data for this message is available
 	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
@@ -117,10 +116,10 @@ type PeristenceInterface interface {
 	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update data
-	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get a data record by Id
-	GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error)
+	GetDataById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
 
 	// Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
@@ -133,10 +132,10 @@ type PeristenceInterface interface {
 	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update data
-	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get a batch by Id
-	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
+	GetBatchById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
 
 	// Get batches
 	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
@@ -146,10 +145,10 @@ type PeristenceInterface interface {
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
 
 	// Update transaction
-	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get a transaction by Id
-	GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error)
+	GetTransactionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
 
 	// Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
@@ -158,10 +157,10 @@ type PeristenceInterface interface {
 	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) (err error)
 
 	// Update data definition
-	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get a data definition by Id
-	GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (datadef *fftypes.DataDefinition, err error)
+	GetDataDefinitionById(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.DataDefinition, err error)
 
 	// Get a data definition by name
 	GetDataDefinitionByName(ctx context.Context, ns, name string) (datadef *fftypes.DataDefinition, err error)
@@ -173,7 +172,7 @@ type PeristenceInterface interface {
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
 	// Update offset
-	UpdateOffset(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateOffset(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get an offset by Id
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
@@ -188,7 +187,7 @@ type PeristenceInterface interface {
 	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
 
 	// Get an operation by Id
-	GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error)
+	GetOperationById(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
 
 	// Get operation
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
@@ -210,10 +209,10 @@ type PeristenceInterface interface {
 	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
 
 	// Update event
-	UpdateEvent(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// Get a event by Id
-	GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error)
+	GetEventById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
 
 	// Get events
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
@@ -236,8 +235,8 @@ type PeristenceInterface interface {
 // TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
 //
 type Callbacks interface {
-	MessageCreated(id *uuid.UUID)
-	EventCreated(id *uuid.UUID)
+	MessageCreated(id *fftypes.UUID)
+	EventCreated(id *fftypes.UUID)
 }
 
 // No capabilities currently defined for the database interface - all features are mandatory

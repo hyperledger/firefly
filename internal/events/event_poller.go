@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -32,9 +31,9 @@ type eventPoller struct {
 	ctx           context.Context
 	database      database.Plugin
 	shoulderTaps  chan bool
-	newEvents     chan *uuid.UUID
+	newEvents     chan *fftypes.UUID
 	closed        chan struct{}
-	offsetID      *uuid.UUID
+	offsetID      *fftypes.UUID
 	pollingOffset int64
 	mux           sync.Mutex
 	conf          eventPollerConf
@@ -62,7 +61,7 @@ func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerCon
 		ctx:          log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
 		database:     di,
 		shoulderTaps: make(chan bool, 1),
-		newEvents:    make(chan *uuid.UUID),
+		newEvents:    make(chan *fftypes.UUID),
 		closed:       make(chan struct{}),
 		conf:         conf,
 	}

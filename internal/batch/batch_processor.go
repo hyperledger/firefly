@@ -19,11 +19,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type batchWork struct {
@@ -35,7 +34,7 @@ type batchWork struct {
 
 type batchDispatch struct {
 	msg     *fftypes.Message
-	batchID *uuid.UUID
+	batchID *fftypes.UUID
 }
 
 type batchProcessorConf struct {
@@ -142,10 +141,10 @@ func (bp *batchProcessor) assemblyLoop() {
 func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
 	l := log.L(bp.ctx)
 	if batch == nil {
-		batchID := uuid.New()
+		batchID := fftypes.NewUUID()
 		l.Debugf("New batch %s", batchID)
 		batch = &fftypes.Batch{
-			ID:        &batchID,
+			ID:        batchID,
 			Namespace: bp.conf.namespace,
 			Author:    bp.conf.author,
 			Payload:   fftypes.BatchPayload{},

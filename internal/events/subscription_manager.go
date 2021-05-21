@@ -19,7 +19,6 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -42,7 +41,7 @@ type subscriptionManager struct {
 	ctx         context.Context
 	database    database.Plugin
 	transport   events.Plugin
-	dispatchers map[string]map[uuid.UUID]*eventDispatcher
+	dispatchers map[string]map[fftypes.UUID]*eventDispatcher
 	mux         sync.Mutex
 	maxSubs     uint64
 	durableSubs []*subscription
@@ -55,7 +54,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, et events.P
 		ctx:         ctx,
 		database:    di,
 		transport:   et,
-		dispatchers: make(map[string]map[uuid.UUID]*eventDispatcher),
+		dispatchers: make(map[string]map[fftypes.UUID]*eventDispatcher),
 		maxSubs:     uint64(config.GetUint(config.SubscriptionMaxPerTransport)),
 		cancelCtx:   cancelCtx,
 	}
@@ -158,7 +157,7 @@ func (sm *subscriptionManager) RegisterConnection(connID string, matcher events.
 	// Check if there are existing dispatchers
 	dispatchersForConn, ok := sm.dispatchers[connID]
 	if !ok {
-		dispatchersForConn = make(map[uuid.UUID]*eventDispatcher)
+		dispatchersForConn = make(map[fftypes.UUID]*eventDispatcher)
 	}
 	// Make sure we don't have dispatchers now for any that don't match
 	for subID, d := range dispatchersForConn {
@@ -185,7 +184,7 @@ func (sm *subscriptionManager) EphemeralSubscription(connID, namespace string, f
 
 	dispatchersForConn, ok := sm.dispatchers[connID]
 	if !ok {
-		dispatchersForConn = make(map[uuid.UUID]*eventDispatcher)
+		dispatchersForConn = make(map[fftypes.UUID]*eventDispatcher)
 		sm.dispatchers[connID] = dispatchersForConn
 	}
 

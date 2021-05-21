@@ -21,9 +21,8 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 // QueryFactory creates a filter builder in the given context, and contains the rules on
@@ -85,11 +84,11 @@ func (f *stringField) Scan(src interface{}) error {
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case uint64:
 		f.s = strconv.FormatInt(int64(tv), 10)
-	case *uuid.UUID:
+	case *fftypes.UUID:
 		if tv != nil {
 			f.s = tv.String()
 		}
-	case uuid.UUID:
+	case fftypes.UUID:
 		f.s = tv.String()
 	case *fftypes.Bytes32:
 		f.s = tv.String()

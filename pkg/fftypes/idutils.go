@@ -16,7 +16,6 @@ package fftypes
 
 import (
 	"github.com/aidarkhanov/nanoid"
-	"github.com/google/uuid"
 )
 
 const (
@@ -26,11 +25,6 @@ const (
 
 func ShortID() string {
 	return nanoid.Must(nanoid.Generate(ShortIDlphabet, 8))
-}
-
-func NewUUID() *uuid.UUID {
-	u := uuid.New()
-	return &u
 }
 
 func SafeHashCompare(h1 *Bytes32, h2 *Bytes32) bool {

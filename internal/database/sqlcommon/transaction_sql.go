@@ -19,11 +19,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -152,7 +151,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	return &transaction, nil
 }
 
-func (s *SQLCommon) GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
 	cols = append(cols, s.options.SequenceField(""))
@@ -207,7 +206,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter)
 
 }
 
-func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

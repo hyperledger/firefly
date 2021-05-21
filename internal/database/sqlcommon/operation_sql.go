@@ -19,11 +19,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -141,7 +140,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	return &op, nil
 }
 
-func (s *SQLCommon) GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error) {
+func (s *SQLCommon) GetOperationById(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(opColumns...).

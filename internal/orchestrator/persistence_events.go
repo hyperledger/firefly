@@ -14,12 +14,12 @@
 
 package orchestrator
 
-import "github.com/google/uuid"
+import "github.com/kaleido-io/firefly/pkg/fftypes"
 
-func (e *orchestrator) MessageCreated(id *uuid.UUID) {
+func (e *orchestrator) MessageCreated(id *fftypes.UUID) {
 	e.batch.NewMessages() <- id
 }
 
-func (e *orchestrator) EventCreated(id *uuid.UUID) {
+func (e *orchestrator) EventCreated(id *fftypes.UUID) {
 	e.events.NewEvents() <- id
 }

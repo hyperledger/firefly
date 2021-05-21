@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -31,7 +30,7 @@ import (
 )
 
 type ackNack struct {
-	id     uuid.UUID
+	id     fftypes.UUID
 	isNack bool
 	offset int64
 }
@@ -46,7 +45,7 @@ type eventDispatcher struct {
 	transport    events.Plugin
 	elected      bool
 	eventPoller  *eventPoller
-	inflight     map[uuid.UUID]*fftypes.Event
+	inflight     map[fftypes.UUID]*fftypes.Event
 	mux          sync.Mutex
 	namespace    string
 	readAhead    int
@@ -65,7 +64,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		cancelCtx:    cancelCtx,
 		subscription: sub,
 		namespace:    sub.definition.Namespace,
-		inflight:     make(map[uuid.UUID]*fftypes.Event),
+		inflight:     make(map[fftypes.UUID]*fftypes.Event),
 		readAhead:    int(config.GetUint(config.SubscriptionDefaultsReadAhead)),
 		acksNacks:    make(chan ackNack),
 		closed:       make(chan struct{}),
@@ -296,7 +295,7 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	if ed.eventPoller.pollingOffset > nack.offset {
 		ed.eventPoller.rewindPollingOffset(nack.offset)
 	}
-	ed.inflight = map[uuid.UUID]*fftypes.Event{}
+	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
 }
 
 func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {

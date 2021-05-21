@@ -17,7 +17,6 @@ package events
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -104,7 +103,7 @@ func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (b
 	return false, nil
 }
 
-func (ag *aggregator) processDataArrived(ctx context.Context, ns string, dataId *uuid.UUID) (bool, error) {
+func (ag *aggregator) processDataArrived(ctx context.Context, ns string, dataId *fftypes.UUID) (bool, error) {
 	// Find all unconfirmed messages associated with this data
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	msgs, err := ag.database.GetMessagesForData(ctx, dataId, fb.And(

@@ -17,8 +17,6 @@ package fftypes
 import (
 	"crypto/sha256"
 	"encoding/json"
-
-	"github.com/google/uuid"
 )
 
 type TransactionType string
@@ -42,15 +40,15 @@ const (
 type TransactionRef struct {
 	Type TransactionType `json:"type"`
 	// ID is a direct reference to a submitted transaction
-	ID *uuid.UUID `json:"id,omitempty"`
+	ID *UUID `json:"id,omitempty"`
 }
 
 type TransactionSubject struct {
 	Author    string          `json:"author"`
 	Namespace string          `json:"namespace,omitempty"`
 	Type      TransactionType `json:"type"`
-	Message   *uuid.UUID      `json:"message,omitempty"`
-	Batch     *uuid.UUID      `json:"batch,omitempty"`
+	Message   *UUID           `json:"message,omitempty"`
+	Batch     *UUID           `json:"batch,omitempty"`
 }
 
 func (t *TransactionSubject) Hash() *Bytes32 {
@@ -63,7 +61,7 @@ func (t *TransactionSubject) Hash() *Bytes32 {
 // node, with the correlation information to look them up on the underlying
 // ledger technology
 type Transaction struct {
-	ID         *uuid.UUID         `json:"id,omitempty"`
+	ID         *UUID              `json:"id,omitempty"`
 	Hash       *Bytes32           `json:"hash"`
 	Subject    TransactionSubject `json:"subject"`
 	Sequence   int64              `json:"sequence,omitempty"`
