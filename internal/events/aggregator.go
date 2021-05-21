@@ -83,7 +83,6 @@ func (ag *aggregator) processEvents(ctx context.Context, events []*fftypes.Event
 func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (bool, error) {
 	l := log.L(ctx)
 	l.Debugf("Aggregating event %.10d/%s [%s]: %s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-	l.Tracef("Event data: %+v", event.Type)
 	switch event.Type {
 	case fftypes.EventTypeDataArrivedBroadcast:
 		return ag.processDataArrived(ctx, event.Namespace, event.Reference)

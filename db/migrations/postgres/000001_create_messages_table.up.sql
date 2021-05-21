@@ -21,7 +21,8 @@ CREATE TABLE messages (
   batch_id    UUID
 );
 
-CREATE UNIQUE INDEX messages_created ON messages(created);
-CREATE INDEX messages_sequence ON messages(seq);
+CREATE UNIQUE INDEX messages_sequence ON messages(seq);
+CREATE INDEX messages_created ON messages(created);
+CREATE INDEX messages_confirmed ON messages(confirmed);
 CREATE INDEX messages_filter ON messages(namespace,context,topic);
 COMMIT;

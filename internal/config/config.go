@@ -90,6 +90,7 @@ var (
 	PublicStorageType             RootKey = ark("publicstorage.type")
 	SubscriptionDefaultsReadAhead RootKey = ark("subscription.defaults.batchSize")
 	SubscriptionMaxPerTransport   RootKey = ark("subscription.maxPerTransport")
+	UIPath                        RootKey = ark("ui.path")
 )
 
 // Config prefix represents the global configuration, at a nested point in
