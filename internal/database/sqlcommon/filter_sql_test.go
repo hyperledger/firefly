@@ -21,6 +21,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,18 +61,21 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	s, _ := getMockDB()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
+	u := fftypes.MustParseUUID("4066ABDC-8BBD-4472-9D29-1A55B467F9B9")
 	f := fb.And(
 		fb.In("created", []driver.Value{1, 2, 3}),
-		fb.NotIn("id", []driver.Value{"a", "b", "c"}),
+		fb.Eq("id", u),
+		fb.In("id", []driver.Value{*u}),
+		fb.Neq("id", nil),
 		fb.Lt("created", "0"),
 		fb.Lte("created", "0"),
 		fb.Gte("created", "0"),
 		fb.Neq("created", "0"),
 		fb.Gt("sequence", 12345),
-		fb.Contains("id", "abc"),
-		fb.NotContains("id", "def"),
-		fb.IContains("id", "ghi"),
-		fb.NotIContains("id", "jkl"),
+		fb.Contains("context", "abc"),
+		fb.NotContains("context", "def"),
+		fb.IContains("context", "ghi"),
+		fb.NotIContains("context", "jkl"),
 	)
 
 	sel := squirrel.Select("*").From("mytable AS mt")
@@ -80,7 +84,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	sqlFilter, _, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.id NOT IN (?,?,?) AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.id LIKE ? AND mt.id NOT LIKE ? AND mt.id ILIKE ? AND mt.id NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.id = ? AND mt.id IN (?) AND mt.id IS NOT NULL AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.context LIKE ? AND mt.context NOT LIKE ? AND mt.context ILIKE ? AND mt.context NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
 }
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {

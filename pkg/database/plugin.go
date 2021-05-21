@@ -245,7 +245,7 @@ type Capabilities struct {
 }
 
 var NamespaceQueryFactory = &queryFields{
-	"id":          &StringField{},
+	"id":          &UUIDField{},
 	"type":        &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
@@ -254,24 +254,24 @@ var NamespaceQueryFactory = &queryFields{
 }
 
 var MessageQueryFactory = &queryFields{
-	"id":        &StringField{},
-	"cid":       &StringField{},
+	"id":        &UUIDField{},
+	"cid":       &UUIDField{},
 	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"topic":     &StringField{},
 	"context":   &StringField{},
-	"group":     &StringField{},
+	"group":     &UUIDField{},
 	"created":   &TimeField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
-	"tx.id":     &StringField{},
-	"batchid":   &StringField{},
+	"tx.id":     &UUIDField{},
+	"batchid":   &UUIDField{},
 }
 
 var BatchQueryFactory = &queryFields{
-	"id":         &StringField{},
+	"id":         &UUIDField{},
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
@@ -282,25 +282,25 @@ var BatchQueryFactory = &queryFields{
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
 	"tx.type":    &StringField{},
-	"tx.id":      &StringField{},
+	"tx.id":      &UUIDField{},
 }
 
 var TransactionQueryFactory = &queryFields{
-	"id":         &StringField{},
+	"id":         &UUIDField{},
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
 	"protocolid": &StringField{},
 	"status":     &StringField{},
-	"message":    &StringField{},
-	"batch":      &StringField{},
+	"message":    &UUIDField{},
+	"batch":      &UUIDField{},
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
 }
 
 var DataQueryFactory = &queryFields{
-	"id":                 &StringField{},
+	"id":                 &UUIDField{},
 	"namespace":          &StringField{},
 	"validator":          &StringField{},
 	"definition.name":    &StringField{},
@@ -310,7 +310,7 @@ var DataQueryFactory = &queryFields{
 }
 
 var DataDefinitionQueryFactory = &queryFields{
-	"id":        &StringField{},
+	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
@@ -326,10 +326,10 @@ var OffsetQueryFactory = &queryFields{
 }
 
 var OperationQueryFactory = &queryFields{
-	"id":        &StringField{},
+	"id":        &UUIDField{},
 	"namespace": &StringField{},
-	"message":   &StringField{},
-	"data":      &StringField{},
+	"message":   &UUIDField{},
+	"data":      &UUIDField{},
 	"type":      &StringField{},
 	"recipient": &StringField{},
 	"status":    &StringField{},
@@ -341,7 +341,7 @@ var OperationQueryFactory = &queryFields{
 }
 
 var SubscriptionQueryFactory = &queryFields{
-	"id":             &StringField{},
+	"id":             &UUIDField{},
 	"namespace":      &StringField{},
 	"name":           &StringField{},
 	"transport":      &StringField{},
@@ -354,10 +354,10 @@ var SubscriptionQueryFactory = &queryFields{
 }
 
 var EventQueryFactory = &queryFields{
-	"id":        &StringField{},
+	"id":        &UUIDField{},
 	"type":      &StringField{},
 	"namespace": &StringField{},
-	"reference": &StringField{},
+	"reference": &UUIDField{},
 	"sequence":  &Int64Field{},
 	"created":   &TimeField{},
 }
