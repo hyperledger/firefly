@@ -1,8 +1,8 @@
 BEGIN;
 CREATE SEQUENCE operations_seq;
 CREATE TABLE operations (
-  id          UUID            NOT NULL PRIMARY KEY,
-  seq         BIGINT          NOT NULL DEFAULT nextval('operations_seq'),
+  seq         SERIAL          PRIMARY KEY,
+  id          UUID            NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   msg_id      UUID            NOT NULL,
   data_id     UUID,
@@ -16,7 +16,7 @@ CREATE TABLE operations (
   error       VARCHAR         NOT NULL
 );
 
-CREATE UNIQUE INDEX operations_sequence ON operations(seq);
+CREATE UNIQUE INDEX operations_id ON operations(id);
 CREATE INDEX operations_created ON operations(created);
 CREATE INDEX operations_backend ON operations(backend_id);
 

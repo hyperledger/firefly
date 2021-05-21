@@ -37,6 +37,8 @@ type txContextKey struct{}
 type SQLCommonOptions struct {
 	// PlaceholderFormat as supported by the SQL sequence of the plugin
 	PlaceholderFormat sq.PlaceholderFormat
+	// Postgres requies you to add RETURNING id to get the auto-incremented sequence back
+	InsertReturnedSyntax bool
 	// SequenceField must be auto added by the database to each table, via appropriate DDL in the migrations
 	SequenceField func(tableName string) string
 }
@@ -141,22 +143,35 @@ func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, e
 	return s.queryTx(ctx, nil, q)
 }
 
-func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder) (sql.Result, error) {
+func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder) (int64, error) {
 	l := log.L(ctx)
+	if s.options.InsertReturnedSyntax {
+		q = q.Suffix(" RETURNING " + s.options.SequenceField(""))
+	}
+
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> insert: %s`, sqlQuery)
 	l.Tracef(`SQL-> insert args: %+v`, args)
-	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
-	if err != nil {
-		l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
+	var sequence int64
+	if s.options.InsertReturnedSyntax {
+		err := tx.sqlTX.QueryRowContext(ctx, sqlQuery, args...).Scan(&sequence)
+		if err != nil {
+			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
+			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
+		}
+	} else {
+		res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
+		if err != nil {
+			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
+			return -1, i18n.WrapError(ctx, err, i18n.MsgDBInsertFailed)
+		}
+		sequence, _ = res.LastInsertId()
 	}
-	ra, _ := res.RowsAffected() // currently only used for debugging
-	l.Debugf(`SQL<- insert affected=%d`, ra)
-	return res, nil
+	l.Debugf(`SQL<- inserted sequence=%d`, sequence)
+	return sequence, nil
 }
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) (sql.Result, error) {
@@ -232,9 +247,9 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool
 
 	// Emit any post commit events (these aren't currently allowed to cause errors)
 	for i, pce := range tx.postCommit {
-		l.Debugf(`-> post commit event %d`, i)
+		l.Tracef(`-> post commit event %d`, i)
 		pce()
-		l.Debugf(`<- post commit event %d`, i)
+		l.Tracef(`<- post commit event %d`, i)
 	}
 
 	return nil

@@ -109,7 +109,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
+		sequence, err := s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).
 				Values(
@@ -129,12 +129,13 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 					message.Header.TX.ID,
 					message.BatchID,
 				),
-		); err != nil {
+		)
+		if err != nil {
 			return err
 		}
 
 		s.postCommitEvent(ctx, tx, func() {
-			s.callbacks.MessageCreated(message.Sequence)
+			s.callbacks.MessageCreated(sequence)
 		})
 
 	}

@@ -35,7 +35,7 @@ func newEventNotifier(ctx context.Context) *eventNotifier {
 	en := &eventNotifier{
 		ctx:            ctx,
 		newEvents:      make(chan int64),
-		latestSequence: 0,
+		latestSequence: -1,
 		cond:           sync.NewCond(mux),
 	}
 	go en.newEventLoop()
@@ -43,6 +43,7 @@ func newEventNotifier(ctx context.Context) *eventNotifier {
 }
 
 func (en *eventNotifier) waitNext(lastSequence int64) error {
+	log.L(en.ctx).Tracef("Next notification %d", lastSequence)
 	en.cond.L.Lock()
 	closed := en.closed
 	for en.latestSequence <= lastSequence && !en.closed {
@@ -75,6 +76,7 @@ func (en *eventNotifier) newEventLoop() {
 				l.Debugf("New event notifier loop ending (closed channel)")
 				return
 			}
+			log.L(en.ctx).Tracef("Notifying %d", seq)
 			en.cond.L.Lock()
 			en.latestSequence = seq
 			en.cond.Broadcast()

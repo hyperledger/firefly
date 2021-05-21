@@ -1,8 +1,7 @@
 BEGIN;
-CREATE SEQUENCE batches_seq;
 CREATE TABLE batches (
-  id          UUID            NOT NULL PRIMARY KEY,
-  seq         BIGINT          NOT NULL DEFAULT nextval('batches_seq'),
+  seq         SERIAL          PRIMARY KEY,
+  id          UUID            NOT NULL,
   btype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
@@ -15,7 +14,7 @@ CREATE TABLE batches (
   tx_id       UUID
 );
 
-CREATE UNIQUE INDEX batches_sequence ON batches(seq);
+CREATE UNIQUE INDEX batches_id ON batches(id);
 CREATE INDEX batches_created ON batches(namespace,created);
 CREATE INDEX batches_fortx ON batches(namespace,tx_id);
 COMMIT;

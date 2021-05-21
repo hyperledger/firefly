@@ -1,8 +1,7 @@
 BEGIN;
-CREATE SEQUENCE transactions_seq;
 CREATE TABLE transactions (
-  id          UUID            NOT NULL PRIMARY KEY,
-  seq         BIGINT          NOT NULL DEFAULT nextval('transactions_seq'),
+  seq         SERIAL          PRIMARY KEY,
+  id          UUID            NOT NULL,
   ttype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   msg_id      UUID,
@@ -16,7 +15,7 @@ CREATE TABLE transactions (
   info        JSONB
 );
 
-CREATE UNIQUE INDEX transactions_sequence ON data(seq);
+CREATE UNIQUE INDEX transactions_id ON data(id);
 CREATE INDEX transactions_created ON transactions(created);
 CREATE INDEX transactions_protocol_id ON transactions(protocol_id);
 COMMIT;

@@ -1,8 +1,8 @@
 BEGIN;
 CREATE SEQUENCE namespaces_seq;
 CREATE TABLE namespaces (
-  id          UUID            NOT NULL PRIMARY KEY,
-  seq         BIGINT          NOT NULL DEFAULT nextval('namespaces_seq'),
+  seq         SERIAL          PRIMARY KEY,
+  id          UUID            NOT NULL,
   name        VARCHAR(64)     NOT NULL,
   ntype       VARCHAR(64)     NOT NULL,
   description VARCHAR(4096),
@@ -10,7 +10,7 @@ CREATE TABLE namespaces (
   confirmed   BIGINT
 );
 
-CREATE UNIQUE INDEX namespaces_sequence ON operations(seq);
+CREATE UNIQUE INDEX namespaces_id ON operations(id);
 CREATE UNIQUE INDEX namespaces_name ON namespaces(name);
 
 COMMIT;
