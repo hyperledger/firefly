@@ -64,7 +64,7 @@ func (h staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// file, return a 500 internal server error and stop
 		log.L(r.Context()).Errorf("Failed to serve file: %s", err)
 		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(&fftypes.RESTError{
+		_ = json.NewEncoder(w).Encode(&fftypes.RESTError{
 			Error: i18n.ExpandWithCode(r.Context(), i18n.MsgAPIServerStaticFail),
 		})
 		return

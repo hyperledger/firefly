@@ -36,20 +36,21 @@ type ackNack struct {
 }
 
 type eventDispatcher struct {
-	acksNacks    chan ackNack
-	cancelCtx    func()
-	closed       chan struct{}
-	connID       string
-	ctx          context.Context
-	database     database.Plugin
-	transport    events.Plugin
-	elected      bool
-	eventPoller  *eventPoller
-	inflight     map[fftypes.UUID]*fftypes.Event
-	mux          sync.Mutex
-	namespace    string
-	readAhead    int
-	subscription *subscription
+	acksNacks     chan ackNack
+	cancelCtx     func()
+	closed        chan struct{}
+	connID        string
+	ctx           context.Context
+	database      database.Plugin
+	transport     events.Plugin
+	elected       bool
+	eventPoller   *eventPoller
+	inflight      map[fftypes.UUID]*fftypes.Event
+	eventDelivery chan *fftypes.EventDelivery
+	mux           sync.Mutex
+	namespace     string
+	readAhead     int
+	subscription  *subscription
 }
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription) *eventDispatcher {
@@ -58,18 +59,23 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
-		database:     di,
-		transport:    ei,
-		connID:       connID,
-		cancelCtx:    cancelCtx,
-		subscription: sub,
-		namespace:    sub.definition.Namespace,
-		inflight:     make(map[fftypes.UUID]*fftypes.Event),
-		readAhead:    int(config.GetUint(config.SubscriptionDefaultsReadAhead)),
-		acksNacks:    make(chan ackNack),
-		closed:       make(chan struct{}),
+		database:      di,
+		transport:     ei,
+		connID:        connID,
+		cancelCtx:     cancelCtx,
+		subscription:  sub,
+		namespace:     sub.definition.Namespace,
+		inflight:      make(map[fftypes.UUID]*fftypes.Event),
+		eventDelivery: make(chan *fftypes.EventDelivery),
+		readAhead:     int(config.GetUint(config.SubscriptionDefaultsReadAhead)),
+		acksNacks:     make(chan ackNack),
+		closed:        make(chan struct{}),
 	}
 
+	firstEvent := fftypes.SubOptsFirstEventNewest
+	if sub.definition.Options.FirstEvent != nil {
+		firstEvent = *sub.definition.Options.FirstEvent
+	}
 	pollerConf := eventPollerConf{
 		limitNamespace:             sub.definition.Namespace,
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
@@ -86,6 +92,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		offsetName:       sub.definition.Name,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
+		firstEvent:       firstEvent,
 	}
 	if sub.definition.Options.ReadAhead != nil {
 		ed.readAhead = int(*sub.definition.Options.ReadAhead)
@@ -112,6 +119,7 @@ func (ed *eventDispatcher) electAndStart() {
 	}
 	// We're ready to go - not
 	ed.elected = true
+	go ed.deliverEvents()
 	go func() {
 		err := ed.eventPoller.start()
 		l.Debugf("Event dispatcher completed: %v", err)
@@ -244,8 +252,8 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 		}
 		ed.mux.Unlock()
 
-		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d",
-			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable))
+		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d highest=%d",
+			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, highestOffset)
 
 		for _, event := range disapatchable {
 			ed.mux.Lock()
@@ -254,10 +262,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 			ed.mux.Unlock()
 
 			dispatched++
-			err := ed.deliverEvent(event)
-			if err != nil {
-				return false, err
-			}
+			ed.eventDelivery <- event
 		}
 
 		if inflightCount == 0 {
@@ -314,19 +319,24 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 		}
 	}
 	ed.mux.Unlock()
-	if lowestInflight > ack.offset && ack.offset > oldOffset {
+	if (lowestInflight == -1 || lowestInflight > ack.offset) && ack.offset > oldOffset {
 		// This was the lowest in flight, and we can move the offset forwards
 		return ed.eventPoller.commitOffset(ed.ctx, ack.offset)
 	}
 	return nil
 }
 
-func (ed *eventDispatcher) deliverEvent(event *fftypes.EventDelivery) error {
-	log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-	return ed.transport.DeliveryRequest(ed.connID, *event)
+func (ed *eventDispatcher) deliverEvents() {
+	for event := range ed.eventDelivery {
+		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+		err := ed.transport.DeliveryRequest(ed.connID, *event)
+		if err != nil {
+			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+		}
+	}
 }
 
-func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) error {
+func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) {
 	l := log.L(ed.ctx)
 
 	ed.mux.Lock()
@@ -342,7 +352,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	// Do some extra logging and persistent actions now we're out of lock
 	if !found {
 		l.Warnf("Response for event not in flight: %s rejected=%t info='%s' (likely previous reject)", response.ID, response.Rejected, response.Info)
-		return nil
+		return
 	}
 
 	l.Debugf("Response for event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)
@@ -351,10 +361,9 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	select {
 	case ed.acksNacks <- an:
 	case <-ed.ctx.Done():
-		return i18n.NewError(ed.ctx, i18n.MsgDispatcherClosing)
+		l.Debugf("Delivery reponse will not be delivered: closing")
+		return
 	}
-
-	return nil
 }
 
 func (ed *eventDispatcher) close() {
@@ -362,5 +371,7 @@ func (ed *eventDispatcher) close() {
 	<-ed.closed
 	if ed.elected {
 		<-ed.eventPoller.closed
+		close(ed.eventDelivery)
+		ed.elected = false
 	}
 }

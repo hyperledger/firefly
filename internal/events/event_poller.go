@@ -93,16 +93,18 @@ func (ep *eventPoller) calcFirstOffset(ctx context.Context) (firstOffset int64, 
 			firstOffset = newestEvents[0].Sequence
 		}
 	}
+	log.L(ctx).Debugf("Event poller initial offest: %d (newest=%t)", firstOffset, useNewest)
 	return
 }
 
 func (ep *eventPoller) restoreOffset() error {
-	if ep.conf.ephemeral {
-		return nil
-	}
 	return ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
 		retry = ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts
 		var offset *fftypes.Offset
+		if ep.conf.ephemeral {
+			ep.pollingOffset, err = ep.calcFirstOffset(ep.ctx)
+			return retry, err
+		}
 		for offset == nil {
 			offset, err = ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetNamespace, ep.conf.offsetName)
 			if err != nil {
@@ -113,17 +115,15 @@ func (ep *eventPoller) restoreOffset() error {
 				if err != nil {
 					return retry, err
 				}
-				if !ep.conf.ephemeral {
-					err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
-						ID:        fftypes.NewUUID(),
-						Type:      ep.conf.offsetType,
-						Namespace: ep.conf.offsetNamespace,
-						Name:      ep.conf.offsetName,
-						Current:   firstOffset,
-					}, false)
-					if err != nil {
-						return retry, err
-					}
+				err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
+					ID:        fftypes.NewUUID(),
+					Type:      ep.conf.offsetType,
+					Namespace: ep.conf.offsetNamespace,
+					Name:      ep.conf.offsetName,
+					Current:   firstOffset,
+				}, false)
+				if err != nil {
+					return retry, err
 				}
 			}
 		}

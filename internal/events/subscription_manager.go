@@ -242,5 +242,6 @@ func (sm *subscriptionManager) DeliveryResponse(connID string, inflight fftypes.
 		return i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
 	}
 
-	return dispatcher.deliveryResponse(&inflight)
+	dispatcher.deliveryResponse(&inflight)
+	return nil
 }
