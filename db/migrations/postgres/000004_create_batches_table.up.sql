@@ -1,7 +1,7 @@
 BEGIN;
 CREATE SEQUENCE batches_seq;
 CREATE TABLE batches (
-  id          CHAR(36)        NOT NULL PRIMARY KEY,
+  id          UUID            NOT NULL PRIMARY KEY,
   seq         BIGINT          NOT NULL DEFAULT nextval('batches_seq'),
   btype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
@@ -12,9 +12,10 @@ CREATE TABLE batches (
   payload_ref CHAR(64),
   confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
-  tx_id       CHAR(36)
+  tx_id       UUID
 );
 
+CREATE UNIQUE INDEX batches_sequence ON batches(seq);
 CREATE INDEX batches_created ON batches(namespace,created);
 CREATE INDEX batches_fortx ON batches(namespace,tx_id);
 COMMIT;

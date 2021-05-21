@@ -48,7 +48,7 @@ func TestProcessEventsNoopIncrement(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	var runAsGroupFn func(context.Context) error
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil, nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("RunAsGroup", mock.Anything, mock.MatchedBy(
 		func(fn func(context.Context) error) bool {
 			runAsGroupFn = fn

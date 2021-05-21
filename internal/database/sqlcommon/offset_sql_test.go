@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,6 +39,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	// Create a new offset entry
 	rand1, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
 	offset := &fftypes.Offset{
+		ID:        fftypes.NewUUID(),
 		Type:      fftypes.OffsetTypeBatch,
 		Namespace: "ns1",
 		Name:      "offset1",
@@ -59,11 +60,19 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	rand2, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
 	offsetUpdated := &fftypes.Offset{
+		ID:        fftypes.NewUUID(),
 		Type:      fftypes.OffsetTypeBatch,
 		Namespace: "ns1",
 		Name:      "offset1",
 		Current:   rand2.Int64(),
 	}
+
+	// Attempt with wrong ID
+	err = s.UpsertOffset(context.Background(), offsetUpdated, true)
+	assert.Equal(t, err, database.IDMismatch)
+
+	// Remove ID for upsert and retry
+	offsetUpdated.ID = nil
 	err = s.UpsertOffset(context.Background(), offsetUpdated, true)
 	assert.NoError(t, err)
 
@@ -91,7 +100,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	// Update
 	rand3, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
 	up := database.OffsetQueryFactory.NewUpdate(ctx).Set("current", rand3.Int64())
-	err = s.UpdateOffset(ctx, fftypes.OffsetTypeBatch, offsetUpdated.Namespace, offsetUpdated.Name, up)
+	err = s.UpdateOffset(ctx, offsetUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -210,7 +219,7 @@ func TestOffsetUpdateBeginFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
-	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
@@ -218,7 +227,7 @@ func TestOffsetUpdateBuildQueryFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
-	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*name", err.Error())
 }
 
@@ -228,6 +237,6 @@ func TestOffsetUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
-	err := s.UpdateOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1", u)
+	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
 }

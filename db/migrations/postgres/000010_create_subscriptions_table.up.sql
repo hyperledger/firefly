@@ -14,6 +14,7 @@ CREATE TABLE subscriptions (
   created        BIGINT          NOT NULL
 );
 
+CREATE UNIQUE INDEX subscriptions_sequence ON subscriptions(seq);
 CREATE UNIQUE INDEX subscriptions_name ON subscriptions(namespace,name);
 
 COMMIT;

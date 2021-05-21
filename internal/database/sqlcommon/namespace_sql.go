@@ -20,10 +20,10 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -179,7 +179,7 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) UpdateNamespace(ctx context.Context, name string, update database.Update) (err error) {
+func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -191,7 +191,7 @@ func (s *SQLCommon) UpdateNamespace(ctx context.Context, name string, update dat
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"name": name})
+	query = query.Where(sq.Eq{"id": id})
 
 	_, err = s.updateTx(ctx, tx, query)
 	if err != nil {

@@ -1,11 +1,11 @@
 BEGIN;
 CREATE SEQUENCE offsets_seq;
 CREATE TABLE offsets (
-  seq         BIGINT          NOT NULL DEFAULT nextval('offsets_seq'),
+  seq         UUID            PRIMARY KEY NOT NULL,
   otype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   name        VARCHAR(64)     NOT NULL,
-  current     BIGINT          NOT NULL,
-  PRIMARY KEY (otype,namespace,name)
+  current     BIGINT          NOT NULL
 );
+CREATE UNIQUE INDEX offset_unique ON offsets(otype,namespace,name);
 COMMIT;

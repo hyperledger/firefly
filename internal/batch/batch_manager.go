@@ -74,6 +74,7 @@ type batchManager struct {
 	newMessages                chan *uuid.UUID
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
+	offsetID                   *uuid.UUID
 	offset                     int64
 	closed                     bool
 	readPageSize               uint64
@@ -117,18 +118,25 @@ func (bm *batchManager) NewMessages() chan<- *uuid.UUID {
 	return bm.newMessages
 }
 
-func (bm *batchManager) restoreOffset() error {
-	offset, err := bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
-	if err != nil {
-		return err
-	}
-	if offset == nil {
-		if err = bm.updateOffset(false, 0); err != nil {
+func (bm *batchManager) restoreOffset() (err error) {
+	var offset *fftypes.Offset
+	for offset == nil {
+		offset, err = bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
+		if err != nil {
 			return err
 		}
-	} else {
-		bm.offset = offset.Current
+		if offset == nil {
+			_ = bm.database.UpsertOffset(bm.ctx, &fftypes.Offset{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.OffsetTypeBatch,
+				Namespace: fftypes.SystemNamespace,
+				Name:      msgBatchOffsetName,
+				Current:   0,
+			}, false)
+		}
 	}
+	bm.offsetID = offset.ID
+	bm.offset = offset.Current
 	log.L(bm.ctx).Infof("Batch manager restored offset %d", bm.offset)
 	return nil
 }
@@ -348,13 +356,8 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 	l := log.L(bm.ctx)
 	return bm.retry.Do(bm.ctx, "update offset", func(attempt int) (retry bool, err error) {
 		bm.offset = newOffset
-		offset := &fftypes.Offset{
-			Type:      fftypes.OffsetTypeBatch,
-			Namespace: fftypes.SystemNamespace,
-			Name:      msgBatchOffsetName,
-			Current:   bm.offset,
-		}
-		err = bm.database.UpsertOffset(bm.ctx, offset, true)
+		u := database.OffsetQueryFactory.NewUpdate(bm.ctx).Set("current", bm.offset)
+		err = bm.database.UpdateOffset(bm.ctx, bm.offsetID, u)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			stillRetrying := infiniteRetry || (attempt <= bm.startupOffsetRetryAttempts)

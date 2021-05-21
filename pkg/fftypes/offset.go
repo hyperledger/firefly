@@ -14,6 +14,8 @@
 
 package fftypes
 
+import "github.com/google/uuid"
+
 type OffsetType string
 
 const (
@@ -23,6 +25,7 @@ const (
 )
 
 type Offset struct {
+	ID        *uuid.UUID `json:"id"`
 	Type      OffsetType `json:"type"`
 	Namespace string     `json:"namespace"`
 	Name      string     `json:"name"`

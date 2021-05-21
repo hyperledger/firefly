@@ -69,11 +69,12 @@ func TestRestoreOffsetNewestOK(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	defer cancel()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
-		{Sequence: 12345},
-	}, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 12345}, nil).Once()
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{{Sequence: 12345}}, nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
+		return offset.Current == 12345
+	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), ep.pollingOffset)
@@ -84,9 +85,12 @@ func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	defer cancel()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 0}, nil).Once()
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{{}}, nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
+		return offset.Current == 0
+	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ep.pollingOffset)
@@ -110,8 +114,11 @@ func TestRestoreOffsetOldest(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
 	defer cancel()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 0}, nil).Once()
+	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
+		return offset.Current == 0
+	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ep.pollingOffset)
@@ -123,8 +130,11 @@ func TestRestoreOffsetSpecific(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	ep.conf.firstEvent = fftypes.SubOptsFirstEvent("123456")
 	defer cancel()
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 123456}, nil)
+	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *fftypes.Offset) bool {
+		return offset.Current == 123456
+	}), false).Return(nil)
 	err := ep.restoreOffset()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(123456), ep.pollingOffset)
@@ -147,7 +157,7 @@ func TestRestoreOffsetFailWrite(t *testing.T) {
 	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
-	mdi.On("UpsertOffset", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := ep.restoreOffset()
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)

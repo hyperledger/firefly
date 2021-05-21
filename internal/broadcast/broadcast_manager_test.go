@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -49,7 +49,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	assert.NoError(t, err)
 
 	msg := &fftypes.Message{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, true, false).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false, false).Return(nil)
 
 	err = bm.BroadcastMessage(context.Background(), msg)
 	assert.NoError(t, err)

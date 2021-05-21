@@ -138,9 +138,11 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	// Capture offset commits
 	offsetUpdates := make(chan int64)
-	uof := mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		offsetUpdates <- a.Get(1).(*fftypes.Offset).Current
+		f, _ := a.Get(2).(database.Update).Finalize()
+		v, _ := f.SetOperations[0].Value.Value()
+		offsetUpdates <- v.(int64)
 	}
 	// Setup enrichment
 	mdi.On("GetMessages", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
