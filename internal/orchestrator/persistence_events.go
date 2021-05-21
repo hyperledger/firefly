@@ -14,12 +14,10 @@
 
 package orchestrator
 
-import "github.com/kaleido-io/firefly/pkg/fftypes"
-
-func (e *orchestrator) MessageCreated(id *fftypes.UUID) {
-	e.batch.NewMessages() <- id
+func (e *orchestrator) MessageCreated(sequence int64) {
+	e.batch.NewMessages() <- sequence
 }
 
-func (e *orchestrator) EventCreated(id *fftypes.UUID) {
-	e.events.NewEvents() <- id
+func (e *orchestrator) EventCreated(sequence int64) {
+	e.events.NewEvents() <- sequence
 }

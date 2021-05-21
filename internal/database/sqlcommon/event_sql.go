@@ -89,7 +89,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 		}
 
 		s.postCommitEvent(ctx, tx, func() {
-			s.callbacks.EventCreated(event.ID)
+			s.callbacks.EventCreated(event.Sequence)
 		})
 
 	}

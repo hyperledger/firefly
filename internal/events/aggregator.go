@@ -34,12 +34,12 @@ type aggregator struct {
 	eventPoller *eventPoller
 }
 
-func newAggregator(ctx context.Context, di database.Plugin) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, en *eventNotifier) *aggregator {
 	ag := &aggregator{
 		ctx:      log.WithLogField(ctx, "role", "aggregator"),
 		database: di,
 	}
-	ag.eventPoller = newEventPoller(ctx, di, eventPollerConf{
+	ag.eventPoller = newEventPoller(ctx, di, en, eventPollerConf{
 		eventBatchSize:             config.GetInt(config.EventAggregatorBatchSize),
 		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),

@@ -38,25 +38,27 @@ type subscription struct {
 }
 
 type subscriptionManager struct {
-	ctx         context.Context
-	database    database.Plugin
-	transport   events.Plugin
-	dispatchers map[string]map[fftypes.UUID]*eventDispatcher
-	mux         sync.Mutex
-	maxSubs     uint64
-	durableSubs []*subscription
-	cancelCtx   func()
+	ctx           context.Context
+	database      database.Plugin
+	transport     events.Plugin
+	eventNotifier *eventNotifier
+	dispatchers   map[string]map[fftypes.UUID]*eventDispatcher
+	mux           sync.Mutex
+	maxSubs       uint64
+	durableSubs   []*subscription
+	cancelCtx     func()
 }
 
-func newSubscriptionManager(ctx context.Context, di database.Plugin, et events.Plugin) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, di database.Plugin, et events.Plugin, en *eventNotifier) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
-		ctx:         ctx,
-		database:    di,
-		transport:   et,
-		dispatchers: make(map[string]map[fftypes.UUID]*eventDispatcher),
-		maxSubs:     uint64(config.GetUint(config.SubscriptionMaxPerTransport)),
-		cancelCtx:   cancelCtx,
+		ctx:           ctx,
+		database:      di,
+		transport:     et,
+		dispatchers:   make(map[string]map[fftypes.UUID]*eventDispatcher),
+		maxSubs:       uint64(config.GetUint(config.SubscriptionMaxPerTransport)),
+		cancelCtx:     cancelCtx,
+		eventNotifier: en,
 	}
 
 	// Initialize the transport
@@ -170,7 +172,7 @@ func (sm *subscriptionManager) RegisterConnection(connID string, matcher events.
 	for _, sub := range sm.durableSubs {
 		if matcher(sub.definition.SubscriptionRef) {
 			if _, ok := dispatchersForConn[*sub.definition.ID]; !ok {
-				dispatchersForConn[*sub.definition.ID] = newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, sub)
+				dispatchersForConn[*sub.definition.ID] = newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, sub, sm.eventNotifier)
 			}
 		}
 	}
@@ -208,7 +210,7 @@ func (sm *subscriptionManager) EphemeralSubscription(connID, namespace string, f
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, newSub)
+	dispatcher := newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, newSub, sm.eventNotifier)
 	dispatcher.start()
 
 	dispatchersForConn[*subID] = dispatcher

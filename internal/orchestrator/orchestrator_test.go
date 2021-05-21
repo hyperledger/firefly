@@ -20,12 +20,12 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -53,15 +53,24 @@ func TestInitPublicStoragePluginFail(t *testing.T) {
 	assert.Regexp(t, "FF10134", err.Error())
 }
 
-func TestInitBatchComponentFail(t *testing.T) {
+func TestInitEventsComponentFail(t *testing.T) {
 	or := &orchestrator{}
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
+func TestInitBatchComponentFail(t *testing.T) {
+	or := &orchestrator{
+		events: &eventmocks.EventManager{},
+	}
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
 
 func TestInitBroadcastComponentFail(t *testing.T) {
 	or := &orchestrator{
-		batch: &batchmocks.BatchManager{},
+		events: &eventmocks.EventManager{},
+		batch:  &batchmocks.BatchManager{},
 	}
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())

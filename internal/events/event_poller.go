@@ -31,7 +31,7 @@ type eventPoller struct {
 	ctx           context.Context
 	database      database.Plugin
 	shoulderTaps  chan bool
-	newEvents     chan *fftypes.UUID
+	eventNotifier *eventNotifier
 	closed        chan struct{}
 	offsetID      *fftypes.UUID
 	pollingOffset int64
@@ -56,14 +56,14 @@ type eventPollerConf struct {
 	startupOffsetRetryAttempts int
 }
 
-func newEventPoller(ctx context.Context, di database.Plugin, conf eventPollerConf) *eventPoller {
+func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, conf eventPollerConf) *eventPoller {
 	ep := &eventPoller{
-		ctx:          log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
-		database:     di,
-		shoulderTaps: make(chan bool, 1),
-		newEvents:    make(chan *fftypes.UUID),
-		closed:       make(chan struct{}),
-		conf:         conf,
+		ctx:           log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
+		database:      di,
+		shoulderTaps:  make(chan bool, 1),
+		eventNotifier: en,
+		closed:        make(chan struct{}),
+		conf:          conf,
 	}
 	return ep
 }
@@ -243,17 +243,12 @@ func (ep *eventPoller) dispatchEventsRetry(events []*fftypes.Event) (repoll bool
 // in the channel - without blocking. This is important as we must not block the notifier
 // - which might be our own eventLoop
 func (ep *eventPoller) newEventNotifications() {
-	l := log.L(ep.ctx).WithField("role", "eventPoller-newevents")
+	defer close(ep.shoulderTaps)
 	for {
-		select {
-		case m, ok := <-ep.newEvents:
-			if !ok {
-				l.Debugf("Exiting due to close")
-				return
-			}
-			l.Debugf("Absorbing trigger for message %s", m)
-		case <-ep.ctx.Done():
-			l.Debugf("Exiting due to cancelled context")
+		latestSequence := ep.getPollingOffset()
+		err := ep.eventNotifier.waitNext(latestSequence)
+		if err != nil {
+			log.L(ep.ctx).Debugf("event notifier closing")
 			return
 		}
 		ep.shoulderTap()

@@ -235,8 +235,8 @@ type PeristenceInterface interface {
 // TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
 //
 type Callbacks interface {
-	MessageCreated(id *fftypes.UUID)
-	EventCreated(id *fftypes.UUID)
+	MessageCreated(sequence int64)
+	EventCreated(sequence int64)
 }
 
 // No capabilities currently defined for the database interface - all features are mandatory

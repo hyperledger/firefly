@@ -29,7 +29,7 @@ import (
 
 func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHandler) (ep *eventPoller, cancel func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ep = newEventPoller(ctx, mdi, eventPollerConf{
+	ep = newEventPoller(ctx, mdi, newEventNotifier(ctx), eventPollerConf{
 		eventBatchSize:             10,
 		eventBatchTimeout:          1 * time.Millisecond,
 		eventPollTimeout:           10 * time.Second,
@@ -60,7 +60,7 @@ func TestStartStopEventPoller(t *testing.T) {
 	err := ep.start()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), ep.pollingOffset)
-	ep.newEvents <- fftypes.NewUUID()
+	ep.eventNotifier.newEvents <- 12345
 	cancel()
 	<-ep.closed
 }
@@ -223,14 +223,6 @@ func TestProcessEventsFail(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
-}
-
-func TestNewEventNotificationsExitOnClose(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, nil)
-	defer cancel()
-	close(ep.newEvents)
-	ep.newEventNotifications()
 }
 
 func TestWaitForShoulderTapOrExitCloseBatch(t *testing.T) {
