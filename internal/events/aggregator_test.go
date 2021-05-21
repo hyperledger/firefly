@@ -85,7 +85,7 @@ func TestProcessEventCheckSequencedReadFail(t *testing.T) {
 	mdi.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, fmt.Errorf("pop"))
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
-	_, err := ag.processEvent(context.Background(), ev1)
+	_, err := ag.processEvents(context.Background(), []*fftypes.Event{ev1})
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)

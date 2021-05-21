@@ -55,6 +55,7 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
+	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
@@ -66,8 +67,8 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		subscription:  sub,
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
-		eventDelivery: make(chan *fftypes.EventDelivery),
-		readAhead:     int(config.GetUint(config.SubscriptionDefaultsReadAhead)),
+		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
+		readAhead:     readAhead,
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 	}
@@ -225,6 +226,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 	}
 	highestOffset := events[len(events)-1].Sequence
 	var lastAck int64
+	var nacks int
 
 	l := log.L(ed.ctx)
 	candidates, err := ed.enrichEvents(events)
@@ -252,8 +254,8 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 		}
 		ed.mux.Unlock()
 
-		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d highest=%d",
-			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, highestOffset)
+		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d nacks=%d highest=%d",
+			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, nacks, highestOffset)
 
 		for _, event := range disapatchable {
 			ed.mux.Lock()
@@ -276,8 +278,9 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 			return false, i18n.NewError(ed.ctx, i18n.MsgDispatcherClosing)
 		case an := <-ed.acksNacks:
 			if an.isNack {
+				nacks++
 				ed.handleNackOffsetUpdate(an)
-			} else {
+			} else if nacks == 0 {
 				err := ed.handleAckOffsetUpdate(an)
 				if err != nil {
 					return false, err
@@ -286,7 +289,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 			}
 		}
 	}
-	if lastAck != highestOffset {
+	if nacks == 0 && lastAck != highestOffset {
 		err := ed.eventPoller.commitOffset(ed.ctx, highestOffset)
 		if err != nil {
 			return false, err
