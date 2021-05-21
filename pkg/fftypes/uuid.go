@@ -20,7 +20,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// UUID is a wrapper on a UUID implementation, ensuring Scan and Value handle nil
+// UUID is a wrapper on a UUID implementation, ensuring Value handles nil
 type UUID uuid.UUID
 
 func ParseUUID(uuidStr string) (*UUID, error) {
