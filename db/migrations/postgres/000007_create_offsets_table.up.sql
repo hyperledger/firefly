@@ -1,7 +1,7 @@
 BEGIN;
 CREATE SEQUENCE offsets_seq;
 CREATE TABLE offsets (
-  seq         UUID            PRIMARY KEY NOT NULL,
+  id          UUID            PRIMARY KEY NOT NULL,
   otype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   name        VARCHAR(64)     NOT NULL,
