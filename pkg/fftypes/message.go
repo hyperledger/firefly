@@ -19,7 +19,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -33,8 +32,8 @@ const (
 
 // MessageHeader contains all fields that contribute to the hash
 type MessageHeader struct {
-	ID        *uuid.UUID     `json:"id,omitempty"`
-	CID       *uuid.UUID     `json:"cid,omitempty"`
+	ID        *UUID          `json:"id,omitempty"`
+	CID       *UUID          `json:"cid,omitempty"`
 	Type      MessageType    `json:"type"`
 	TX        TransactionRef `json:"tx,omitempty"`
 	Author    string         `json:"author,omitempty"`
@@ -42,23 +41,23 @@ type MessageHeader struct {
 	Namespace string         `json:"namespace,omitempty"`
 	Topic     string         `json:"topic,omitempty"`
 	Context   string         `json:"context,omitempty"`
-	Group     *uuid.UUID     `json:"group,omitempty"`
+	Group     *UUID          `json:"group,omitempty"`
 	DataHash  *Bytes32       `json:"datahash,omitempty"`
 }
 
 type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
-	BatchID   *uuid.UUID    `json:"batchId,omitempty"`
+	BatchID   *UUID         `json:"batchId,omitempty"`
 	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 }
 
 type MessageRef struct {
-	ID       *uuid.UUID `json:"id,omitempty"`
-	Sequence int64      `json:"sequence,omitempty"`
-	Hash     *Bytes32   `json:"hash,omitempty"`
+	ID       *UUID    `json:"id,omitempty"`
+	Sequence int64    `json:"sequence,omitempty"`
+	Hash     *Bytes32 `json:"hash,omitempty"`
 }
 
 func (h *MessageHeader) Hash() *Bytes32 {

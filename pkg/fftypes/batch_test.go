@@ -18,18 +18,17 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSQLSerializedMessageArray(t *testing.T) {
 
-	msgID1 := uuid.New()
-	msgID2 := uuid.New()
+	msgID1 := NewUUID()
+	msgID2 := NewUUID()
 	batchPayload := BatchPayload{
 		Messages: []*Message{
-			{Header: MessageHeader{ID: &msgID1}},
-			{Header: MessageHeader{ID: &msgID2}},
+			{Header: MessageHeader{ID: msgID1}},
+			{Header: MessageHeader{ID: msgID2}},
 		},
 	}
 

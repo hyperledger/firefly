@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/gofrs/uuid"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -38,7 +37,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxId, author) }()
 
 	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
-	var batchID uuid.UUID
+	var batchID fftypes.UUID
 	copy(batchID[:], batch.BatchID[0:16])
 
 	var body io.ReadCloser

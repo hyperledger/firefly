@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
@@ -78,7 +77,7 @@ func TestE2EDispatch(t *testing.T) {
 		Hash: dataHash,
 	}
 	mdi.On("GetDataById", mock.Anything, mock.MatchedBy(func(i interface{}) bool {
-		return *(i.(*uuid.UUID)) == *dataId1
+		return *(i.(*fftypes.UUID)) == *dataId1
 	})).Return(data, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)

@@ -14,8 +14,6 @@
 
 package fftypes
 
-import "github.com/google/uuid"
-
 type ValidatorType string
 
 const (
@@ -25,7 +23,7 @@ const (
 )
 
 type DataDefinition struct {
-	ID        *uuid.UUID    `json:"id,omitempty"`
+	ID        *UUID         `json:"id,omitempty"`
 	Validator ValidatorType `json:"validator"`
 	Namespace string        `json:"namespace,omitempty"`
 	Name      string        `json:"name,omitempty"`

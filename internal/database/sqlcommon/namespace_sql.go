@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -61,7 +60,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 		existing = namespaceRows.Next()
 
 		if existing {
-			var id uuid.UUID
+			var id fftypes.UUID
 			_ = namespaceRows.Scan(&id)
 			if namespace.ID != nil {
 				if *namespace.ID != id {
@@ -179,7 +178,7 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

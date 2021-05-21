@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -141,7 +140,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataColumns...).
@@ -222,7 +221,7 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 
 }
 
-func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

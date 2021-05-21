@@ -3,7 +3,7 @@
 package databasemocks
 
 import (
-	uuid "github.com/google/uuid"
+	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,11 +13,11 @@ type Callbacks struct {
 }
 
 // EventCreated provides a mock function with given fields: id
-func (_m *Callbacks) EventCreated(id *uuid.UUID) {
+func (_m *Callbacks) EventCreated(id *fftypes.UUID) {
 	_m.Called(id)
 }
 
 // MessageCreated provides a mock function with given fields: id
-func (_m *Callbacks) MessageCreated(id *uuid.UUID) {
+func (_m *Callbacks) MessageCreated(id *fftypes.UUID) {
 	_m.Called(id)
 }

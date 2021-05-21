@@ -21,10 +21,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,9 +35,9 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new transaction entry
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	transaction := &fftypes.Transaction{
-		ID:   &transactionId,
+		ID:   transactionId,
 		Hash: fftypes.NewRandB32(),
 		Subject: fftypes.TransactionSubject{
 			Type:   fftypes.TransactionTypePin,
@@ -51,7 +50,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same transaction back
-	transactionRead, err := s.GetTransactionById(ctx, &transactionId)
+	transactionRead, err := s.GetTransactionById(ctx, transactionId)
 	// The generated sequence will have been added
 	transaction.Sequence = transactionRead.Sequence
 	assert.NoError(t, err)
@@ -63,7 +62,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Update the transaction (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	transactionUpdated := &fftypes.Transaction{
-		ID:   &transactionId,
+		ID:   transactionId,
 		Hash: fftypes.NewRandB32(),
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypePin,
@@ -89,7 +88,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the transaction elements
-	transactionRead, err = s.GetTransactionById(ctx, &transactionId)
+	transactionRead, err = s.GetTransactionById(ctx, transactionId)
 	assert.NoError(t, err)
 	// The generated sequence will have been added
 	transactionUpdated.Sequence = transaction.Sequence
@@ -150,8 +149,8 @@ func TestUpsertTransactionFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
+	transactionId := fftypes.NewUUID()
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionId}, true, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -162,50 +161,50 @@ func TestUpsertTransactionFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	transactionId := uuid.New()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
+	transactionId := fftypes.NewUUID()
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionId}, true, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertTransactionFailUpdate(t *testing.T) {
 	s, mock := getMockDB()
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(transactionId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionId}, true, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertTransactionFailCommit(t *testing.T) {
 	s, mock := getMockDB()
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: &transactionId}, true, true)
+	err := s.UpsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionId}, true, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetTransactionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTransactionById(context.Background(), &transactionId)
+	_, err := s.GetTransactionById(context.Background(), transactionId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetTransactionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetTransactionById(context.Background(), &transactionId)
+	msg, err := s.GetTransactionById(context.Background(), transactionId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -213,9 +212,9 @@ func TestGetTransactionByIdNotFound(t *testing.T) {
 
 func TestGetTransactionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
-	transactionId := uuid.New()
+	transactionId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetTransactionById(context.Background(), &transactionId)
+	_, err := s.GetTransactionById(context.Background(), transactionId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

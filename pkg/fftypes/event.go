@@ -14,10 +14,6 @@
 
 package fftypes
 
-import (
-	"github.com/google/uuid"
-)
-
 type EventType string
 
 const (
@@ -28,12 +24,12 @@ const (
 )
 
 type Event struct {
-	ID        *uuid.UUID `json:"id"`
-	Type      EventType  `json:"type"`
-	Namespace string     `json:"namespace"`
-	Reference *uuid.UUID `json:"reference"`
-	Sequence  int64      `json:"sequence"`
-	Created   *FFTime    `json:"created"`
+	ID        *UUID     `json:"id"`
+	Type      EventType `json:"type"`
+	Namespace string    `json:"namespace"`
+	Reference *UUID     `json:"reference"`
+	Sequence  int64     `json:"sequence"`
+	Created   *FFTime   `json:"created"`
 }
 
 type EventDelivery struct {
@@ -44,13 +40,13 @@ type EventDelivery struct {
 }
 
 type EventDeliveryResponse struct {
-	ID           *uuid.UUID      `json:"id"`
+	ID           *UUID           `json:"id"`
 	Rejected     bool            `json:"rejected,omitempty"`
 	Info         string          `json:"info,omitempty"`
 	Subscription SubscriptionRef `json:"subscription"`
 }
 
-func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
+func NewEvent(t EventType, ns string, ref *UUID) *Event {
 	return &Event{
 		ID:        NewUUID(),
 		Type:      t,

@@ -21,10 +21,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +35,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new data definition entry
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	randB32 := fftypes.NewRandB32()
 	val := fftypes.JSONObject{
 		"some": "dataDef",
@@ -45,7 +44,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		},
 	}
 	dataDef := &fftypes.DataDefinition{
-		ID:        &dataDefId,
+		ID:        dataDefId,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
@@ -56,7 +55,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data definition back
-	dataDefRead, err := s.GetDataDefinitionById(ctx, &dataDefId)
+	dataDefRead, err := s.GetDataDefinitionById(ctx, dataDefId)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataDefRead)
 	dataDefJson, _ := json.Marshal(&dataDef)
@@ -72,7 +71,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		},
 	}
 	dataDefUpdated := &fftypes.DataDefinition{
-		ID:        &dataDefId,
+		ID:        dataDefId,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
 		Name:      "customer",
@@ -85,7 +84,7 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the dataDef elements
-	dataDefRead, err = s.GetDataDefinitionById(ctx, &dataDefId)
+	dataDefRead, err = s.GetDataDefinitionById(ctx, dataDefId)
 	assert.NoError(t, err)
 	dataDefJson, _ = json.Marshal(&dataDefUpdated)
 	dataDefReadJson, _ = json.Marshal(&dataDefRead)
@@ -136,8 +135,8 @@ func TestUpsertDataDefinitionFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
+	dataDefId := fftypes.NewUUID()
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefId}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -148,50 +147,50 @@ func TestUpsertDataDefinitionFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataDefId := uuid.New()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
+	dataDefId := fftypes.NewUUID()
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefId}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertDataDefinitionFailUpdate(t *testing.T) {
 	s, mock := getMockDB()
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataDefId.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefId}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertDataDefinitionFailCommit(t *testing.T) {
 	s, mock := getMockDB()
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: &dataDefId}, true)
+	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefId}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetDataDefinitionByIdSelectFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), dataDefId)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetDataDefinitionByIdNotFound(t *testing.T) {
 	s, mock := getMockDB()
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
+	msg, err := s.GetDataDefinitionById(context.Background(), dataDefId)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -207,9 +206,9 @@ func TestGetDataDefinitionByNameNotFound(t *testing.T) {
 }
 func TestGetDataDefinitionByIdScanFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataDefId := uuid.New()
+	dataDefId := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataDefinitionById(context.Background(), &dataDefId)
+	_, err := s.GetDataDefinitionById(context.Background(), dataDefId)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -18,17 +18,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-
-	"github.com/google/uuid"
 )
 
 type DataRef struct {
-	ID   *uuid.UUID `json:"id,omitempty"`
-	Hash *Bytes32   `json:"hash,omitempty"`
+	ID   *UUID    `json:"id,omitempty"`
+	Hash *Bytes32 `json:"hash,omitempty"`
 }
 
 type Data struct {
-	ID         *uuid.UUID         `json:"id,omitempty"`
+	ID         *UUID              `json:"id,omitempty"`
 	Validator  ValidatorType      `json:"validator"`
 	Namespace  string             `json:"namespace,omitempty"`
 	Hash       *Bytes32           `json:"hash,omitempty"`

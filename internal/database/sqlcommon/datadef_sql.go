@@ -20,11 +20,10 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -144,7 +143,7 @@ func (s *SQLCommon) getDataDefinitionEq(ctx context.Context, eq sq.Eq, textName 
 	return dataDef, nil
 }
 
-func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (message *fftypes.DataDefinition, err error) {
+func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.DataDefinition, err error) {
 	return s.getDataDefinitionEq(ctx, sq.Eq{"id": id}, id.String())
 }
 
@@ -178,7 +177,7 @@ func (s *SQLCommon) GetDataDefinitions(ctx context.Context, filter database.Filt
 
 }
 
-func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

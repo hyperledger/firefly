@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -91,7 +90,7 @@ func (b32 *Bytes32) String() string {
 type HexUUID = Bytes32
 
 // UUIDBytes returns the bytes of a UUID as a compressed hex string
-func UUIDBytes(u *uuid.UUID) *Bytes32 {
+func UUIDBytes(u *UUID) *Bytes32 {
 	var d Bytes32
 	copy(d[:], u[:])
 	return &d

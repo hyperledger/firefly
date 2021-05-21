@@ -17,7 +17,6 @@ package blockchain
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
@@ -90,10 +89,10 @@ type TransactionStatus = fftypes.TransactionStatus
 type BroadcastBatch struct {
 
 	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events
-	TransactionID *uuid.UUID
+	TransactionID *fftypes.UUID
 
 	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
-	BatchID *uuid.UUID
+	BatchID *fftypes.UUID
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
 	BatchPaylodRef *fftypes.Bytes32

@@ -14,8 +14,6 @@
 
 package fftypes
 
-import "github.com/google/uuid"
-
 type NamespaceType string
 
 const (
@@ -24,7 +22,7 @@ const (
 )
 
 type Namespace struct {
-	ID          *uuid.UUID    `json:"id"`
+	ID          *UUID         `json:"id"`
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Type        NamespaceType `json:"type"`

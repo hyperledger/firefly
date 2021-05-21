@@ -17,7 +17,6 @@ package events
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/events/eifactory"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -25,13 +24,14 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type EventManager interface {
 	blockchain.Callbacks
 
-	NewEvents() chan<- *uuid.UUID
+	NewEvents() chan<- *fftypes.UUID
 	Start() error
 	WaitStop()
 }
@@ -87,7 +87,7 @@ func (em *eventManager) Start() (err error) {
 	return err
 }
 
-func (em *eventManager) NewEvents() chan<- *uuid.UUID {
+func (em *eventManager) NewEvents() chan<- *fftypes.UUID {
 	return em.aggregator.eventPoller.newEvents
 }
 

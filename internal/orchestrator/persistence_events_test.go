@@ -17,10 +17,9 @@ package orchestrator
 import (
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func TestMessageCreated(t *testing.T) {
@@ -28,8 +27,8 @@ func TestMessageCreated(t *testing.T) {
 	o := &orchestrator{
 		batch: mb,
 	}
-	c := make(chan *uuid.UUID, 1)
-	mb.On("NewMessages").Return((chan<- *uuid.UUID)(c))
+	c := make(chan *fftypes.UUID, 1)
+	mb.On("NewMessages").Return((chan<- *fftypes.UUID)(c))
 	o.MessageCreated(fftypes.NewUUID())
 }
 
@@ -38,7 +37,7 @@ func TestEventCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan *uuid.UUID, 1)
-	mem.On("NewEvents").Return((chan<- *uuid.UUID)(c))
+	c := make(chan *fftypes.UUID, 1)
+	mem.On("NewEvents").Return((chan<- *fftypes.UUID)(c))
 	o.EventCreated(fftypes.NewUUID())
 }

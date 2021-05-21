@@ -17,20 +17,19 @@ package fftypes
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTransactionHash(t *testing.T) {
-	msgid := uuid.MustParse("2cd37805-5f40-4e12-962e-67868cde3049")
-	batchid := uuid.MustParse("39296b6e-91b9-4a61-b279-833c85b04d94")
+	msgid := MustParseUUID("2cd37805-5f40-4e12-962e-67868cde3049")
+	batchid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
 	tx := &Transaction{}
 	tx.Subject = TransactionSubject{
 		Author:    "0x12345",
 		Namespace: "ns1",
 		Type:      TransactionTypePin,
-		Message:   &msgid,
-		Batch:     &batchid,
+		Message:   msgid,
+		Batch:     batchid,
 	}
 	assert.Equal(t, "32fe939dee0ef781e1cdc685f24d1482551b604116b7f3f3588ab2c7eafebbe5", tx.Subject.Hash().String())
 }
