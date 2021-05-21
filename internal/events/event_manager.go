@@ -67,10 +67,9 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
 	for _, transport := range enabledTransports {
 		et, err := eifactory.GetPlugin(ctx, transport)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			em.subManagers[transport], err = newSubscriptionManager(ctx, di, et, en)
 		}
-		em.subManagers[transport], err = newSubscriptionManager(ctx, di, et, en)
 		if err != nil {
 			return nil, err
 		}
