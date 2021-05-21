@@ -30,6 +30,7 @@ func TestDatabaseSerialization(t *testing.T) {
 	v, err := u.Value() // nill
 	assert.NoError(t, err)
 	assert.Nil(t, v)
+	assert.Equal(t, "", u.String())
 
 	u, err = ParseUUID("03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
 	assert.NoError(t, err)

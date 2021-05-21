@@ -111,6 +111,7 @@ func (ed *eventDispatcher) electAndStart() {
 		return
 	}
 	// We're ready to go - not
+	ed.elected = true
 	go func() {
 		err := ed.eventPoller.start()
 		l.Debugf("Event dispatcher completed: %v", err)
@@ -188,6 +189,9 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		if msg != nil {
 			topic = msg.Header.Topic
 			context = msg.Header.Context
+			if msg.Header.Group != nil {
+				group = msg.Header.Group.String()
+			}
 		}
 		if filter.topicFilter != nil && !filter.topicFilter.MatchString(topic) {
 			continue
@@ -317,8 +321,7 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 }
 
 func (ed *eventDispatcher) deliverEvent(event *fftypes.EventDelivery) error {
-	l := log.L(ed.ctx)
-	l.Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+	log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 	return ed.transport.DeliveryRequest(ed.connID, *event)
 }
 
