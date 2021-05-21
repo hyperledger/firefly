@@ -40,6 +40,9 @@ func NewUUID() *UUID {
 }
 
 func (u *UUID) String() string {
+	if u == nil {
+		return ""
+	}
 	return (*uuid.UUID)(u).String()
 }
 
