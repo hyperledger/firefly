@@ -88,6 +88,7 @@ func (sm *subscriptionManager) start() error {
 		if err != nil {
 			// Warn and continue startup
 			log.L(sm.ctx).Warnf("Failed to reload subscription %s:%s [%s]: %s", subDef.Namespace, subDef.Name, subDef.ID, err)
+			continue
 		}
 		sm.durableSubs = append(sm.durableSubs, newSub)
 	}
@@ -114,7 +115,7 @@ func (sm *subscriptionManager) createSubscription(ctx context.Context, subDefini
 	}
 
 	var groupFilter *regexp.Regexp
-	if filter.Topic != "" {
+	if filter.Group != "" {
 		groupFilter, err = regexp.Compile(filter.Group)
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.Group)
@@ -122,7 +123,7 @@ func (sm *subscriptionManager) createSubscription(ctx context.Context, subDefini
 	}
 
 	var contextFilter *regexp.Regexp
-	if filter.Topic != "" {
+	if filter.Context != "" {
 		contextFilter, err = regexp.Compile(filter.Context)
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.context", filter.Context)
@@ -172,7 +173,9 @@ func (sm *subscriptionManager) RegisterConnection(connID string, matcher events.
 	for _, sub := range sm.durableSubs {
 		if matcher(sub.definition.SubscriptionRef) {
 			if _, ok := dispatchersForConn[*sub.definition.ID]; !ok {
-				dispatchersForConn[*sub.definition.ID] = newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, sub, sm.eventNotifier)
+				dispatcher := newEventDispatcher(sm.ctx, sm.transport, sm.database, connID, sub, sm.eventNotifier)
+				dispatchersForConn[*sub.definition.ID] = dispatcher
+				dispatcher.start()
 			}
 		}
 	}

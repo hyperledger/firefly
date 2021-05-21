@@ -129,9 +129,6 @@ func (ep *eventPoller) restoreOffset() error {
 		}
 		ep.offsetID = offset.ID
 		ep.pollingOffset = offset.Current
-		if err != nil {
-			return
-		}
 		log.L(ep.ctx).Infof("Event offset restored %d", ep.pollingOffset)
 		return false, nil
 	})

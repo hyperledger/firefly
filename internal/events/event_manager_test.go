@@ -55,3 +55,19 @@ func TestStartStop(t *testing.T) {
 	cancel()
 	em.WaitStop()
 }
+
+func TestStartStopBadDependencies(t *testing.T) {
+	_, err := NewEventManager(context.Background(), nil, nil)
+	assert.Regexp(t, "FF10128", err)
+
+}
+
+func TestStartStopBadTransports(t *testing.T) {
+	config.Set(config.EventTransportsEnabled, []string{"wrongun"})
+	defer config.Reset()
+	mdi := &databasemocks.Plugin{}
+	mpi := &publicstoragemocks.Plugin{}
+	_, err := NewEventManager(context.Background(), mpi, mdi)
+	assert.Regexp(t, "FF10172", err)
+
+}
