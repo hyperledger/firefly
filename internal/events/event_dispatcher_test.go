@@ -132,6 +132,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
+	go ed.deliverEvents()
 
 	// Setup the IDs
 	ref1 := fftypes.NewUUID()
@@ -205,8 +206,8 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	// Confirm we get the offset updates in the correct order, even though the confirmations
 	// came in a different order from the app.
-	// Note there's no need update for 10000003, as we were all done at that point
 	assert.Equal(t, int64(10000001), <-offsetUpdates)
+	assert.Equal(t, int64(10000003), <-offsetUpdates)
 	assert.Equal(t, int64(10000004), <-offsetUpdates)
 
 	// This should complete the batch
@@ -238,6 +239,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
+	go ed.deliverEvents()
 
 	// Setup the IDs
 	ref1 := fftypes.NewUUID()
@@ -471,28 +473,6 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 
 }
 
-func TestBufferedDeliveryDeliverEventFail(t *testing.T) {
-
-	sub := &subscription{
-		definition: &fftypes.Subscription{},
-	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
-	defer cancel()
-
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-		{ID: fftypes.NewUUID()},
-	})
-	assert.False(t, repoll)
-	assert.EqualError(t, err, "pop")
-
-}
-
 func TestBufferedDeliveryClosedContext(t *testing.T) {
 
 	sub := &subscription{
@@ -501,6 +481,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	mdi := &databasemocks.Plugin{}
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	go ed.deliverEvents()
 	cancel()
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
@@ -524,6 +505,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
+	go ed.deliverEvents()
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
@@ -564,6 +546,7 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
+	go ed.deliverEvents()
 	ed.readAhead = 50
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
@@ -610,6 +593,7 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
+	go ed.deliverEvents()
 	ed.readAhead = 50
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
@@ -639,8 +623,7 @@ func TestAckNotInFlightNoop(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
 
-	err := ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: fftypes.NewUUID()})
-	assert.NoError(t, err)
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: fftypes.NewUUID()})
 }
 
 func TestAckClosed(t *testing.T) {
@@ -655,6 +638,5 @@ func TestAckClosed(t *testing.T) {
 
 	id1 := fftypes.NewUUID()
 	ed.inflight[*id1] = &fftypes.Event{ID: id1}
-	err := ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: id1})
-	assert.Regexp(t, "FF10182", err.Error())
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: id1})
 }
