@@ -24,10 +24,6 @@ func TestShortIDGen(t *testing.T) {
 	assert.Regexp(t, "[a-zA-Z0-9_]{8}", ShortID())
 }
 
-func TestNewUUID(t *testing.T) {
-	assert.NotNil(t, NewUUID())
-}
-
 func TestSafeHashCompare(t *testing.T) {
 	assert.False(t, SafeHashCompare(nil, NewRandB32()))
 	assert.False(t, SafeHashCompare(NewRandB32(), nil))
