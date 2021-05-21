@@ -108,6 +108,44 @@ func (f *stringField) Scan(src interface{}) error {
 func (f *stringField) Value() (driver.Value, error)         { return f.s, nil }
 func (f *StringField) getSerialization() FieldSerialization { return &stringField{} }
 
+type UUIDField struct{}
+type uuidField struct{ u *fftypes.UUID }
+
+func (f *uuidField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case string:
+		if tv == "" {
+			f.u = nil
+			return nil
+		}
+		f.u, err = fftypes.ParseUUID(tv)
+		return err
+	case *fftypes.UUID:
+		f.u = tv
+	case fftypes.UUID:
+		u := tv
+		f.u = &u
+	case *fftypes.Bytes32:
+		if tv == nil {
+			f.u = nil
+			return nil
+		}
+		var u fftypes.UUID
+		copy(u[:], tv[0:16])
+		f.u = &u
+	case fftypes.Bytes32:
+		var u fftypes.UUID
+		copy(u[:], tv[0:16])
+		f.u = &u
+	case nil:
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.u)
+	}
+	return nil
+}
+func (f *uuidField) Value() (driver.Value, error)         { return f.u.Value() }
+func (f *UUIDField) getSerialization() FieldSerialization { return &uuidField{} }
+
 type Int64Field struct{}
 type int64Field struct{ i int64 }
 
