@@ -18,7 +18,7 @@ type EventType string
 
 const (
 	EventTypeDataArrivedBroadcast      EventType = "DataArrivedBroadcast"
-	EventTypeMessageSequencedBroadcast EventType = "DessageSequencedBroadcast"
+	EventTypeMessageSequencedBroadcast EventType = "MessageSequencedBroadcast"
 	EventTypeMessageConfirmed          EventType = "MessageConfirmed"
 	EventTypeMessagesUnblocked         EventType = "MessagesUnblocked"
 )
