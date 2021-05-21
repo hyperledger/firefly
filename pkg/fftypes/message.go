@@ -31,6 +31,7 @@ const (
 )
 
 // MessageHeader contains all fields that contribute to the hash
+// The order of the serialization mut not change, once released
 type MessageHeader struct {
 	ID        *UUID          `json:"id,omitempty"`
 	CID       *UUID          `json:"cid,omitempty"`

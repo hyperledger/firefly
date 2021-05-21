@@ -266,7 +266,7 @@ func TestOperationUpdateBuildFilterFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectBegin()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateOperations(context.Background(), f, u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
