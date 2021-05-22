@@ -35,19 +35,19 @@ func TestGetNamespace(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetTransactionById(t *testing.T) {
+func TestGetTransactionByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetTransactionById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetTransactionById(context.Background(), "ns1", u.String())
+	mp.On("GetTransactionByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetTransactionByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetTransactionByIdBadId(t *testing.T) {
+func TestGetTransactionByIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetTransactionById(context.Background(), "", "")
+	_, err := o.GetTransactionByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
@@ -74,19 +74,19 @@ func TestGetTransactions(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetMessageById(t *testing.T) {
+func TestGetMessageByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetMessageById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetMessageById(context.Background(), "ns1", u.String())
+	mp.On("GetMessageByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetMessageByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetMessageByIdBadId(t *testing.T) {
+func TestGetMessageByIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetMessageById(context.Background(), "", "")
+	_, err := o.GetMessageByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
@@ -114,7 +114,7 @@ func TestGetMessagesForData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetMessagesForDataBadId(t *testing.T) {
+func TestGetMessagesForDataBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
@@ -147,7 +147,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 			{ID: fftypes.NewUUID()},
 		},
 	}
-	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, nil)
+	mp.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
 	mp.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
@@ -168,25 +168,25 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 	o.database = mp
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
-	mp.On("GetMessageById", mock.Anything, mock.Anything).Return(nil, nil)
+	mp.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, err := o.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 	assert.Nil(t, ev)
 }
 
-func TestGetBatchById(t *testing.T) {
+func TestGetBatchByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetBatchById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetBatchById(context.Background(), "ns1", u.String())
+	mp.On("GetBatchByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetBatchByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetBatchByIdBadId(t *testing.T) {
+func TestGetBatchByIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetBatchById(context.Background(), "", "")
+	_, err := o.GetBatchByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
@@ -202,19 +202,19 @@ func TestGetBatches(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetDataById(t *testing.T) {
+func TestGetDataByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetDataById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetDataById(context.Background(), "ns1", u.String())
+	mp.On("GetDataByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetDataByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetDataByIdBadId(t *testing.T) {
+func TestGetDataByIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetDataById(context.Background(), "", "")
+	_, err := o.GetDataByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
@@ -230,51 +230,51 @@ func TestGetData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetDataDefsById(t *testing.T) {
+func TestGetDataDefsByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetDataDefinitionById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetDataDefinitionById(context.Background(), "ns1", u.String())
+	mp.On("GetDataDefinitionByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetDataDefinitionByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetDataDefsByIdBadId(t *testing.T) {
+func TestGetDataDefsByIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetDataDefinitionById(context.Background(), "", "")
+	_, err := o.GetDataDefinitionByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
-func TestGetOperationById(t *testing.T) {
+func TestGetOperationByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetOperationById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetOperationById(context.Background(), "ns1", u.String())
+	mp.On("GetOperationByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetOperationByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetOperationIdBadId(t *testing.T) {
+func TestGetOperationIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetOperationById(context.Background(), "", "")
+	_, err := o.GetOperationByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
-func TestGetEventById(t *testing.T) {
+func TestGetEventByID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
 	mp := &databasemocks.Plugin{}
 	o.database = mp
 	u := fftypes.NewUUID()
-	mp.On("GetEventById", mock.Anything, u).Return(nil, nil)
-	_, err := o.GetEventById(context.Background(), "ns1", u.String())
+	mp.On("GetEventByID", mock.Anything, u).Return(nil, nil)
+	_, err := o.GetEventByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetEventIdBadId(t *testing.T) {
+func TestGetEventIDBadID(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	_, err := o.GetEventById(context.Background(), "", "")
+	_, err := o.GetEventByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 

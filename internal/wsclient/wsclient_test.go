@@ -124,7 +124,7 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	})
 	utConfPrefix.Set(restclient.HTTPConfigAuthUsername, "user")
 	utConfPrefix.Set(restclient.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -143,7 +143,7 @@ func TestWSFailStartupConnect(t *testing.T) {
 
 	resetConf()
 	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)

@@ -35,7 +35,7 @@ var (
 
 func getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
-		// We choose to be case insensitive for our filters, so protocolId and protocolid can be used interchangably
+		// We choose to be case insensitive for our filters, so protocolID and protocolid can be used interchangeably
 		if strings.EqualFold(queryName, key) {
 			results = append(results, queryValues...)
 		}

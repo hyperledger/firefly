@@ -24,14 +24,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataById(t *testing.T) {
+func TestGetDataByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/data/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDataById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetDataByID", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 

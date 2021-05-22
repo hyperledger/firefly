@@ -14,13 +14,18 @@
 
 package fftypes
 
+// NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
 type NamespaceType string
 
 const (
-	NamespaceTypeStaticLocal     NamespaceType = "local"
-	NamespaceTypeStaticBroadcast NamespaceType = "broadcast"
+	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
+	NamespaceTypeLocal NamespaceType = "local"
+	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
+	NamespaceTypeBroadcast NamespaceType = "broadcast"
 )
 
+// Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
+// Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
 	ID          *UUID         `json:"id"`
 	Name        string        `json:"name"`

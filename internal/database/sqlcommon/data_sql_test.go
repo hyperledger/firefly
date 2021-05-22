@@ -35,7 +35,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new data entry
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	val := fftypes.JSONObject{
 		"some": "data",
 		"with": map[string]interface{}{
@@ -43,7 +43,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		},
 	}
 	data := &fftypes.Data{
-		ID:        dataId,
+		ID:        dataID,
 		Validator: fftypes.ValidatorTypeBLOB,
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
@@ -54,7 +54,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back
-	dataRead, err := s.GetDataById(ctx, dataId)
+	dataRead, err := s.GetDataByID(ctx, dataID)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataRead)
 	dataJson, _ := json.Marshal(&data)
@@ -70,7 +70,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		},
 	}
 	dataUpdated := &fftypes.Data{
-		ID:        dataId,
+		ID:        dataID,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
 		Definition: &fftypes.DataDefinitionRef{
@@ -90,7 +90,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
-	dataRead, err = s.GetDataById(ctx, dataId)
+	dataRead, err = s.GetDataByID(ctx, dataID)
 	assert.NoError(t, err)
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
@@ -122,7 +122,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	// Update
 	v2 := "2.0.0"
 	up := database.DataQueryFactory.NewUpdate(ctx).Set("definition.version", v2)
-	err = s.UpdateData(ctx, dataId, up)
+	err = s.UpdateData(ctx, dataID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -162,8 +162,8 @@ func TestUpsertDataFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataId := fftypes.NewUUID()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataId}, true, true)
+	dataID := fftypes.NewUUID()
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -174,60 +174,60 @@ func TestUpsertDataFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataId := fftypes.NewUUID()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataId}, true, true)
+	dataID := fftypes.NewUUID()
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertDataFailUpdate(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataId.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataId}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertDataFailCommit(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataId}, true, true)
+	err := s.UpsertData(context.Background(), &fftypes.Data{ID: dataID}, true, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdSelectFail(t *testing.T) {
+func TestGetDataByIDSelectFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataById(context.Background(), dataId)
+	_, err := s.GetDataByID(context.Background(), dataID)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdNotFound(t *testing.T) {
+func TestGetDataByIDNotFound(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataById(context.Background(), dataId)
+	msg, err := s.GetDataByID(context.Background(), dataID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataByIdScanFail(t *testing.T) {
+func TestGetDataByIDScanFail(t *testing.T) {
 	s, mock := getMockDB()
-	dataId := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataById(context.Background(), dataId)
+	_, err := s.GetDataByID(context.Background(), dataID)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

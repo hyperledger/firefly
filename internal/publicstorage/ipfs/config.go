@@ -20,7 +20,9 @@ import (
 )
 
 const (
-	IPFSConfAPISubconf     = "api"
+	// IPFSConfAPISubconf is the http configuration to connect to the API endpoint of IPFS
+	IPFSConfAPISubconf = "api"
+	// IPFSConfGatewaySubconf is the http configuration to connect to the Gateway endpoint of IPFS
 	IPFSConfGatewaySubconf = "gateway"
 )
 

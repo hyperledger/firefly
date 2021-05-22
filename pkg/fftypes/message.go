@@ -22,12 +22,16 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+// MessageType is the fundamental type of a message
 type MessageType string
 
 const (
+	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
 	MessageTypeDefinition MessageType = "definition"
-	MessageTypeBroadcast  MessageType = "broadcast"
-	MessageTypePrivate    MessageType = "private"
+	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
+	MessageTypeBroadcast MessageType = "broadcast"
+	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
+	MessageTypePrivate MessageType = "private"
 )
 
 // MessageHeader contains all fields that contribute to the hash
@@ -46,15 +50,19 @@ type MessageHeader struct {
 	DataHash  *Bytes32       `json:"datahash,omitempty"`
 }
 
+// Message is the envelope by which coordinated data exchange can happen between parties in the network
+// Data is passed by reference in these messages, and a chain of hashes covering the data and the
+// details of the message, provides a verification against tampering.
 type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
-	BatchID   *UUID         `json:"batchId,omitempty"`
+	BatchID   *UUID         `json:"batchID,omitempty"`
 	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 }
 
+// MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
 	ID       *UUID    `json:"id,omitempty"`
 	Sequence int64    `json:"sequence,omitempty"`

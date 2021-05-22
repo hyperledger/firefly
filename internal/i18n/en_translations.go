@@ -14,6 +14,7 @@
 
 package i18n
 
+//revive:disable
 var (
 	MsgConfigFailed                = ffm("FF10101", "Failed to read config")
 	MsgTBD                         = ffm("FF10102", "TODO: Description")

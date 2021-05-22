@@ -38,16 +38,16 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// VerifyIdentitySyntax verifies that the supplied identity string is valid syntax acording to the protocol.
+	// VerifyIDentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
 	// Also applies any transformations, such as lower case
-	VerifyIdentitySyntax(ctx context.Context, identity string) (string, error)
+	VerifyIDentitySyntax(ctx context.Context, identity string) (string, error)
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
 	SubmitBroadcastBatch(ctx context.Context, identity string, batch *BroadcastBatch) (txTrackingID string, err error)
 }
 
-// BlockchainEvents is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
+// Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
 // Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
 // has completed. However, it does not matter if these events are workload balance between the firefly core
@@ -59,7 +59,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error
+	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -68,10 +68,10 @@ type Callbacks interface {
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error
+	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error
 }
 
-// BlockchainCapabilities the supported featureset of the blockchain
+// Capabilities the supported featureset of the blockchain
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
 	// GlobalSequencer means submitting an ordered piece of data visible to all
@@ -79,7 +79,7 @@ type Capabilities struct {
 	GlobalSequencer bool
 }
 
-// TransactionState is the only architecturally significant thing that Firefly tracks on blockchain transactions.
+// TransactionStatus is the only architecturally significant thing that Firefly tracks on blockchain transactions.
 // All other data is consider protocol specific, and hence stored as opaque data.
 type TransactionStatus = fftypes.TransactionStatus
 

@@ -26,6 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
 
+	// Import QL driver
 	_ "modernc.org/ql/driver"
 )
 
@@ -40,7 +41,7 @@ func (e *QL) Name() string {
 func (e *QL) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
-	options := &sqlcommon.SQLCommonOptions{
+	options := &sqlcommon.Options{
 		PlaceholderFormat: squirrel.Dollar,
 		SequenceField: func(tableName string) string {
 			return fmt.Sprintf("id(%s)", tableName)

@@ -11,7 +11,7 @@ coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
 lint:
-		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run -E gofmt -E gocritic
+		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
 mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Plugin           --output mocks/blockchainmocks     --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Callbacks        --output mocks/blockchainmocks     --outpkg blockchainmocks
@@ -22,8 +22,8 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/events    				 --name Plugin           --output mocks/eventsmocks 			  --outpkg eventsmocks
 		$(MOCKERY) --case underscore --dir pkg/events    				 --name Callbacks        --output mocks/eventsmocks 				--outpkg eventsmocks
 		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
-		$(MOCKERY) --case underscore --dir internal/batch        --name BatchManager     --output mocks/batchmocks          --outpkg batchmocks
-		$(MOCKERY) --case underscore --dir internal/broadcast    --name BroadcastManager --output mocks/broadcastmocks      --outpkg broadcastmocks
+		$(MOCKERY) --case underscore --dir internal/batch        --name Manager          --output mocks/batchmocks          --outpkg batchmocks
+		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
 		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
 firefly: ${GOFILES}

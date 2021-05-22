@@ -98,7 +98,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "es12345", body["streamId"])
+			assert.Equal(t, "es12345", body["streamID"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
@@ -327,8 +327,8 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, addr, req.FormValue("kld-from"))
 			assert.Equal(t, "false", req.FormValue("kld-sync"))
-			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)), body["txnId"])
-			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)), body["batchId"])
+			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)), body["txnID"])
+			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)), body["batchID"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
 		})
@@ -366,10 +366,10 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 func TestVerifyEthAddress(t *testing.T) {
 	e := &Ethereum{}
 
-	_, err := e.VerifyIdentitySyntax(context.Background(), "0x12345")
+	_, err := e.VerifyIDentitySyntax(context.Background(), "0x12345")
 	assert.Regexp(t, "FF10141", err.Error())
 
-	addr, err := e.VerifyIdentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	addr, err := e.VerifyIDentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", addr)
 
@@ -385,12 +385,12 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
     "data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"txnID": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+      "batchID": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "50"
   },
@@ -401,12 +401,12 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
-			"txnId": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
-      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+			"txnID": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
+      "batchID": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
@@ -440,12 +440,12 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+			"txnID": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+      "batchID": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
@@ -480,8 +480,8 @@ func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "!good",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"txnID": "!good",
+      "batchID": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
 			"timestamp": "!1620576488"
 		}
@@ -489,7 +489,7 @@ func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
+func TestHandleMessageBatchBroadcastBadIDentity(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
@@ -499,8 +499,8 @@ func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "!good",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"txnID": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+      "batchID": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
 			"timestamp": "1620576488"
 		}
@@ -518,8 +518,8 @@ func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "!good",
+			"txnID": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+      "batchID": "!good",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
 			"timestamp": "1620576488"
 		}
@@ -537,8 +537,8 @@ func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+      "batchID": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"txnID": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
       "payloadRef": "!good",
 			"timestamp": "1620576488"
 		}

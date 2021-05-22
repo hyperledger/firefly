@@ -28,8 +28,10 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
+	// Import migrate file source
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	// Import pq driver
 	_ "github.com/lib/pq"
 )
 
@@ -44,15 +46,14 @@ func (e *Postgres) Name() string {
 func (e *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
-	options := &sqlcommon.SQLCommonOptions{
+	options := &sqlcommon.Options{
 		PlaceholderFormat:    squirrel.Dollar,
 		InsertReturnedSyntax: true,
 		SequenceField: func(tableName string) string {
 			if tableName == "" {
 				return "seq"
-			} else {
-				return fmt.Sprintf("%s.seq", tableName)
 			}
+			return fmt.Sprintf("%s.seq", tableName)
 		},
 	}
 
@@ -62,7 +63,7 @@ func (e *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks dat
 	}
 
 	if prefix.GetBool(PSQLConfMigrationsAuto) {
-		if err := e.applyDbMigrations(ctx, prefix, db); err != nil {
+		if err := e.applyDBMigrations(prefix, db); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
 		}
 	}
@@ -70,7 +71,7 @@ func (e *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks dat
 	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
 }
 
-func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.Prefix, db *sql.DB) error {
+func (e *Postgres) applyDBMigrations(prefix config.Prefix, db *sql.DB) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		return err

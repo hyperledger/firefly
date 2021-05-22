@@ -28,7 +28,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
-type BroadcastManager interface {
+type Manager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
 	Start() error
 	WaitStop()
@@ -39,10 +39,10 @@ type broadcastManager struct {
 	database      database.Plugin
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
-	batch         batch.BatchManager
+	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.BatchManager) (BroadcastManager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -53,7 +53,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.
 		publicstorage: pi,
 		batch:         ba,
 	}
-	bo := batch.BatchOptions{
+	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
@@ -85,7 +85,6 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 }
 
 func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
-	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{

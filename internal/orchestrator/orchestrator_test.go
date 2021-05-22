@@ -70,7 +70,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 func TestInitBroadcastComponentFail(t *testing.T) {
 	or := &orchestrator{
 		events: &eventmocks.EventManager{},
-		batch:  &batchmocks.BatchManager{},
+		batch:  &batchmocks.Manager{},
 	}
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
@@ -88,10 +88,10 @@ func TestInitOK(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestInitBadIdentity(t *testing.T) {
+func TestInitBadIDentity(t *testing.T) {
 	or := NewOrchestrator()
 	err := config.ReadConfig("../../test/config/firefly.core.yaml")
-	config.Set(config.NodeIdentity, "!!!!wrongun")
+	config.Set(config.NodeIDentity, "!!!!wrongun")
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.Regexp(t, "FF10131", err.Error())
@@ -100,7 +100,7 @@ func TestInitBadIdentity(t *testing.T) {
 
 func TestStartBatchFail(t *testing.T) {
 	config.Reset()
-	mba := &batchmocks.BatchManager{}
+	mba := &batchmocks.Manager{}
 	mblk := &blockchainmocks.Plugin{}
 	or := &orchestrator{
 		batch:      mba,
@@ -115,9 +115,9 @@ func TestStartBatchFail(t *testing.T) {
 func TestStartStopOk(t *testing.T) {
 	config.Reset()
 	mbi := &blockchainmocks.Plugin{}
-	mba := &batchmocks.BatchManager{}
+	mba := &batchmocks.Manager{}
 	mem := &eventmocks.EventManager{}
-	mbm := &broadcastmocks.BroadcastManager{}
+	mbm := &broadcastmocks.Manager{}
 	or := &orchestrator{
 		blockchain: mbi,
 		batch:      mba,
@@ -177,7 +177,7 @@ func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 		database: mdb,
 	}
 	mdb.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{
-		Type: fftypes.NamespaceTypeStaticBroadcast, // any broadcasted NS will not be updated
+		Type: fftypes.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
 	}, nil)
 	err := or.initNamespaces(context.Background())
 	assert.NoError(t, err)

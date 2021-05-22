@@ -85,18 +85,18 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	wc.processAutoStart(req)
 }
 
-func (wc *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) error {
-	return wc.callbacks.DeliveryResponse(connID, *inflight)
+func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) error {
+	return ws.callbacks.DeliveryResponse(connID, *inflight)
 }
 
-func (wc *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) (err error) {
+func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) (err error) {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
-		return i18n.NewError(wc.ctx, i18n.MsgWSInvalidStartAction)
+		return i18n.NewError(ws.ctx, i18n.MsgWSInvalidStartAction)
 	}
 	if start.Ephemeral {
-		return wc.callbacks.EphemeralSubscription(connID, start.Namespace, start.Filter, start.Options)
+		return ws.callbacks.EphemeralSubscription(connID, start.Namespace, start.Filter, start.Options)
 	}
-	wc.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
+	ws.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
 		return sr.Namespace == start.Namespace && sr.Name == start.Name
 	})
 	return err
@@ -113,11 +113,11 @@ func (ws *WebSockets) connClosed(connID string) {
 func (ws *WebSockets) WaitClosed() {
 	closedConnections := []*websocketConnection{}
 	ws.connMux.Lock()
-	for _, wc := range ws.connections {
-		closedConnections = append(closedConnections, wc)
+	for _, ws := range ws.connections {
+		closedConnections = append(closedConnections, ws)
 	}
 	ws.connMux.Unlock()
-	for _, wc := range closedConnections {
-		wc.waitClose()
+	for _, ws := range closedConnections {
+		ws.waitClose()
 	}
 }

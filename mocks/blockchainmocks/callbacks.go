@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxId, additionalInfo
-func (_m *Callbacks) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(batch, author, protocolTxId, additionalInfo)
+// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxID, additionalInfo
+func (_m *Callbacks) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(batch, author, protocolTxID, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, map[string]interface{}) error); ok {
-		r0 = rf(batch, author, protocolTxId, additionalInfo)
+		r0 = rf(batch, author, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +28,13 @@ func (_m *Callbacks) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, a
 	return r0
 }
 
-// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
-func (_m *Callbacks) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
+func (_m *Callbacks) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID string, errorMessage string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, fftypes.TransactionStatus, string, string, map[string]interface{}) error); ok {
-		r0 = rf(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+		r0 = rf(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -60,16 +60,16 @@ func TestInitBadURL(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestVerifyIdentitySyntaxOK(t *testing.T) {
+func TestVerifyIDentitySyntaxOK(t *testing.T) {
 	u := &UTDBQL{}
-	id, err := u.VerifyIdentitySyntax(context.Background(), "good")
+	id, err := u.VerifyIDentitySyntax(context.Background(), "good")
 	assert.NoError(t, err)
 	assert.Equal(t, "good", id)
 }
 
-func TestVerifyIdentitySyntaxFail(t *testing.T) {
+func TestVerifyIDentitySyntaxFail(t *testing.T) {
 	u := &UTDBQL{}
-	_, err := u.VerifyIdentitySyntax(context.Background(), "!bad")
+	_, err := u.VerifyIDentitySyntax(context.Background(), "!bad")
 	assert.Regexp(t, "FF10131", err.Error())
 }
 

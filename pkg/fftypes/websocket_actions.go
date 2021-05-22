@@ -14,23 +14,25 @@
 
 package fftypes
 
-// WSClientActionType actions go from client->server
+// WSClientPayloadType actions go from client->server
 type WSClientPayloadType string
 
 const (
-	// Request the server to start delivering messages to the client
+	// WSClientActionStart is a request to the server to start delivering messages to the client
 	WSClientActionStart WSClientPayloadType = "start"
-	// Acknowledge an event that was delivered, allowing further messages to be sent
+	// WSClientActionAck acknowledges an event that was delivered, allowing further messages to be sent
 	WSClientActionAck WSClientPayloadType = "ack"
 
-	// Special event "type" field for server to send the client, if it performs a ProtocolError
+	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
 	WSProtocolErrorEventType WSClientPayloadType = "ProtocolError"
 )
 
+// WSClientActionBase is the base fields of all client actions sent on the websocket
 type WSClientActionBase struct {
 	Type WSClientPayloadType `json:"type,omitempty"`
 }
 
+// WSClientActionStartPayload starts a subscription on this socket - either an existing one, or creating an ephemeral one
 type WSClientActionStartPayload struct {
 	WSClientActionBase
 
@@ -42,6 +44,7 @@ type WSClientActionStartPayload struct {
 	Options   SubscriptionOptions `json:"options"`
 }
 
+// WSClientActionAckPayload acknowldges a received event (not applicable in AutoAck mode)
 type WSClientActionAckPayload struct {
 	WSClientActionBase
 
@@ -49,6 +52,7 @@ type WSClientActionAckPayload struct {
 	Subscription *SubscriptionRef `json:"subscription,omitempty"`
 }
 
+// WSProtocolErrorPayload is sent to the client by the server in the case of a protocol error
 type WSProtocolErrorPayload struct {
 	Type  WSClientPayloadType `json:"type"`
 	Error string              `json:"error"`

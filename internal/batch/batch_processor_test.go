@@ -37,7 +37,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 		persitence:         mdi,
 		dispatch:           dispatch,
 		processorQuiescing: func() {},
-		BatchOptions: BatchOptions{
+		Options: Options{
 			BatchMaxSize:   10,
 			BatchTimeout:   10 * time.Millisecond,
 			DisposeTimeout: 20 * time.Millisecond,

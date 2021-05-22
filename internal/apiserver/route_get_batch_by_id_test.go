@@ -24,14 +24,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetBatchById(t *testing.T) {
+func TestGetBatchByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/batches/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetBatchById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetBatchByID", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Batch{}, nil)
 	r.ServeHTTP(res, req)
 

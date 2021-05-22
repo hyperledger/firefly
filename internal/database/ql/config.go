@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	// QLConfURL is the connection URL for the QL database (such as memory:// or file://)
 	QLConfURL = "url"
 )
 

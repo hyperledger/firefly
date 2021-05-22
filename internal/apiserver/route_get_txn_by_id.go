@@ -24,8 +24,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getTxnById = &oapispec.Route{
-	Name:   "getTxnById",
+var getTxnByID = &oapispec.Route{
+	Name:   "getTxnByID",
 	Path:   "namespaces/{ns}/transactions/{txnid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -39,7 +39,7 @@ var getTxnById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetTransactionById(r.Ctx, r.PP["ns"], r.PP["txnid"])
+		output, err = r.Or.GetTransactionByID(r.Ctx, r.PP["ns"], r.PP["txnid"])
 		return output, err
 	},
 }

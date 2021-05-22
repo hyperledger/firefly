@@ -77,7 +77,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 	if existing {
 
 		// Update the offset
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("offsets").
 				Set("otype", string(offset.Type)).
 				Set("namespace", offset.Namespace).
@@ -182,13 +182,13 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, id *fftypes.UUID, update d
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("offsets"), update, offsetFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("offsets"), update, offsetFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

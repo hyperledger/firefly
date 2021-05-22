@@ -42,8 +42,8 @@ func (_m *Orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, 
 	return r0, r1
 }
 
-// GetBatchById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetBatchById(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
+// GetBatchByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Batch
@@ -111,8 +111,8 @@ func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.
 	return r0, r1
 }
 
-// GetDataById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetDataById(ctx context.Context, ns string, id string) (*fftypes.Data, error) {
+// GetDataByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetDataByID(ctx context.Context, ns string, id string) (*fftypes.Data, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Data
@@ -134,8 +134,8 @@ func (_m *Orchestrator) GetDataById(ctx context.Context, ns string, id string) (
 	return r0, r1
 }
 
-// GetDataDefinitionById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetDataDefinitionById(ctx context.Context, ns string, id string) (*fftypes.DataDefinition, error) {
+// GetDataDefinitionByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetDataDefinitionByID(ctx context.Context, ns string, id string) (*fftypes.DataDefinition, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.DataDefinition
@@ -180,8 +180,8 @@ func (_m *Orchestrator) GetDataDefinitions(ctx context.Context, ns string, filte
 	return r0, r1
 }
 
-// GetEventById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetEventById(ctx context.Context, ns string, id string) (*fftypes.Event, error) {
+// GetEventByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetEventByID(ctx context.Context, ns string, id string) (*fftypes.Event, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Event
@@ -226,8 +226,8 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	return r0, r1
 }
 
-// GetMessageById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetMessageById(ctx context.Context, ns string, id string) (*fftypes.Message, error) {
+// GetMessageByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Message
@@ -318,13 +318,13 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 	return r0, r1
 }
 
-// GetMessagesForData provides a mock function with given fields: ctx, ns, dataId, filter
-func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataId string, filter database.AndFilter) ([]*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, dataId, filter)
+// GetMessagesForData provides a mock function with given fields: ctx, ns, dataID, filter
+func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataID string, filter database.AndFilter) ([]*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, dataID, filter)
 
 	var r0 []*fftypes.Message
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Message); ok {
-		r0 = rf(ctx, ns, dataId, filter)
+		r0 = rf(ctx, ns, dataID, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Message)
@@ -333,7 +333,7 @@ func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataI
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
-		r1 = rf(ctx, ns, dataId, filter)
+		r1 = rf(ctx, ns, dataID, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -387,8 +387,8 @@ func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFi
 	return r0, r1
 }
 
-// GetOperationById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetOperationById(ctx context.Context, ns string, id string) (*fftypes.Operation, error) {
+// GetOperationByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id string) (*fftypes.Operation, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Operation
@@ -433,8 +433,8 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 	return r0, r1
 }
 
-// GetTransactionById provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetTransactionById(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
+// GetTransactionByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetTransactionByID(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *fftypes.Transaction
@@ -493,13 +493,13 @@ func (_m *Orchestrator) Init(ctx context.Context) error {
 	return r0
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxId, additionalInfo
-func (_m *Orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(batch, author, protocolTxId, additionalInfo)
+// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxID, additionalInfo
+func (_m *Orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(batch, author, protocolTxID, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, map[string]interface{}) error); ok {
-		r0 = rf(batch, author, protocolTxId, additionalInfo)
+		r0 = rf(batch, author, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -521,13 +521,13 @@ func (_m *Orchestrator) Start() error {
 	return r0
 }
 
-// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxId, errorMessage, additionalInfo
-func (_m *Orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId string, errorMessage string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
+func (_m *Orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID string, errorMessage string, additionalInfo map[string]interface{}) error {
+	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, fftypes.TransactionStatus, string, string, map[string]interface{}) error); ok {
-		r0 = rf(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+		r0 = rf(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

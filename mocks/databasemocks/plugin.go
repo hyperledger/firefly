@@ -56,8 +56,8 @@ func (_m *Plugin) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) 
 	return r0, r1
 }
 
-// GetBatchById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchById(ctx context.Context, id *fftypes.UUID) (*fftypes.Batch, error) {
+// GetBatchByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Batch
@@ -125,8 +125,8 @@ func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftyp
 	return r0, r1
 }
 
-// GetDataById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataById(ctx context.Context, id *fftypes.UUID) (*fftypes.Data, error) {
+// GetDataByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Data, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Data
@@ -148,8 +148,8 @@ func (_m *Plugin) GetDataById(ctx context.Context, id *fftypes.UUID) (*fftypes.D
 	return r0, r1
 }
 
-// GetDataDefinitionById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataDefinitionById(ctx context.Context, id *fftypes.UUID) (*fftypes.DataDefinition, error) {
+// GetDataDefinitionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetDataDefinitionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.DataDefinition, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.DataDefinition
@@ -240,8 +240,8 @@ func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (ffty
 	return r0, r1
 }
 
-// GetEventById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetEventById(ctx context.Context, id *fftypes.UUID) (*fftypes.Event, error) {
+// GetEventByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Event, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Event
@@ -286,8 +286,8 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fft
 	return r0, r1
 }
 
-// GetMessageById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetMessageById(ctx context.Context, id *fftypes.UUID) (*fftypes.Message, error) {
+// GetMessageByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Message
@@ -355,13 +355,13 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*f
 	return r0, r1
 }
 
-// GetMessagesForData provides a mock function with given fields: ctx, dataId, filter
-func (_m *Plugin) GetMessagesForData(ctx context.Context, dataId *fftypes.UUID, filter database.Filter) ([]*fftypes.Message, error) {
-	ret := _m.Called(ctx, dataId, filter)
+// GetMessagesForData provides a mock function with given fields: ctx, dataID, filter
+func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) ([]*fftypes.Message, error) {
+	ret := _m.Called(ctx, dataID, filter)
 
 	var r0 []*fftypes.Message
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Filter) []*fftypes.Message); ok {
-		r0 = rf(ctx, dataId, filter)
+		r0 = rf(ctx, dataID, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Message)
@@ -370,7 +370,7 @@ func (_m *Plugin) GetMessagesForData(ctx context.Context, dataId *fftypes.UUID, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, database.Filter) error); ok {
-		r1 = rf(ctx, dataId, filter)
+		r1 = rf(ctx, dataID, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -470,8 +470,8 @@ func (_m *Plugin) GetOffsets(ctx context.Context, filter database.Filter) ([]*ff
 	return r0, r1
 }
 
-// GetOperationById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetOperationById(ctx context.Context, id *fftypes.UUID) (*fftypes.Operation, error) {
+// GetOperationByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetOperationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Operation, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Operation
@@ -562,8 +562,8 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	return r0, r1
 }
 
-// GetTransactionById provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTransactionById(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+// GetTransactionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *fftypes.Transaction

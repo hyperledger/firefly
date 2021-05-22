@@ -23,8 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getOpById = &oapispec.Route{
-	Name:   "getOpById",
+var getOpByID = &oapispec.Route{
+	Name:   "getOpByID",
 	Path:   "namespaces/{ns}/operations/{opid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -38,7 +38,7 @@ var getOpById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetOperationById(r.Ctx, r.PP["ns"], r.PP["opid"])
+		output, err = r.Or.GetOperationByID(r.Ctx, r.PP["ns"], r.PP["opid"])
 		return output, err
 	},
 }

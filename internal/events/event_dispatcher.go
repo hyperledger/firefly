@@ -133,16 +133,16 @@ func (ed *eventDispatcher) electAndStart() {
 
 func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.EventDelivery, error) {
 	// We need all the messages that match event references
-	refIds := make([]driver.Value, len(events))
+	refIDs := make([]driver.Value, len(events))
 	for i, e := range events {
 		if e.Reference != nil {
-			refIds[i] = *e.Reference
+			refIDs[i] = *e.Reference
 		}
 	}
 
 	mfb := database.MessageQueryFactory.NewFilter(ed.ctx)
 	msgFilter := mfb.And(
-		mfb.In("id", refIds),
+		mfb.In("id", refIDs),
 		mfb.Eq("namespace", ed.namespace),
 	)
 	msgs, err := ed.database.GetMessages(ed.ctx, msgFilter)
@@ -152,7 +152,7 @@ func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.Eve
 
 	dfb := database.DataQueryFactory.NewFilter(ed.ctx)
 	dataFilter := dfb.And(
-		dfb.In("id", refIds),
+		dfb.In("id", refIDs),
 		dfb.Eq("namespace", ed.namespace),
 	)
 	dataRefs, err := ed.database.GetDataRefs(ed.ctx, dataFilter)
@@ -174,7 +174,7 @@ func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.Eve
 		}
 		for _, dr := range dataRefs {
 			if *e.Reference == *dr.ID {
-				enriched[i].Data = &dr
+				enriched[i].Data = dr
 				break
 			}
 		}
@@ -364,7 +364,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	select {
 	case ed.acksNacks <- an:
 	case <-ed.ctx.Done():
-		l.Debugf("Delivery reponse will not be delivered: closing")
+		l.Debugf("Delivery response will not be delivered: closing")
 		return
 	}
 }

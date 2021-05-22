@@ -100,9 +100,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 func TestBroadcastBroadcastFail(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	o.nodeIdentity = "0x12345"
+	o.nodeIDentity = "0x12345"
 	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.BroadcastManager{}
+	mb := &broadcastmocks.Manager{}
 	o.database = mp
 	o.broadcast = mb
 
@@ -122,9 +122,9 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 
 func TestBroadcastOk(t *testing.T) {
 	o := NewOrchestrator().(*orchestrator)
-	o.nodeIdentity = "0x12345"
+	o.nodeIDentity = "0x12345"
 	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.BroadcastManager{}
+	mb := &broadcastmocks.Manager{}
 	o.database = mp
 	o.broadcast = mb
 

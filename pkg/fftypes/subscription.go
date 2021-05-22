@@ -22,6 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+// SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
 type SubscriptionFilter struct {
 	Events  string `json:"events,omitempty"`
 	Topic   string `json:"topic,omitempty"`
@@ -29,24 +30,30 @@ type SubscriptionFilter struct {
 	Group   string `json:"group,omitempty"`
 }
 
+// SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values
 type SubOptsFirstEvent string
 
 const (
+	// SubOptsFirstEventOldest indicates all events should be dispatched to the subscription
 	SubOptsFirstEventOldest SubOptsFirstEvent = "oldest"
+	// SubOptsFirstEventNewest indicates only newly received events should be dispatched to the subscription
 	SubOptsFirstEventNewest SubOptsFirstEvent = "newest"
 )
 
+// SubscriptionOptions cutomize the behavior of subscriptions
 type SubscriptionOptions struct {
 	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
 	ReadAhead  *uint64            `json:"readAhead,omitempty"`
 }
 
+// SubscriptionRef are the fields that can be used to refer to a subscription
 type SubscriptionRef struct {
 	ID        *UUID  `json:"id"`
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
 }
 
+// Subscription is a binding between the stream of events within a namespace, and an event interface - such as an application listening on websockets
 type Subscription struct {
 	SubscriptionRef
 

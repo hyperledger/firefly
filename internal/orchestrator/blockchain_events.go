@@ -19,10 +19,10 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (e *orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
-	return e.events.TransactionUpdate(txTrackingID, txState, protocolTxId, errorMessage, additionalInfo)
+func (or *orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error {
+	return or.events.TransactionUpdate(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 }
 
-func (e *orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
-	return e.events.SequencedBroadcastBatch(batch, author, protocolTxId, additionalInfo)
+func (or *orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+	return or.events.SequencedBroadcastBatch(batch, author, protocolTxID, additionalInfo)
 }

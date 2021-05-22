@@ -40,7 +40,7 @@ type DataDefinitionRef struct {
 	Version string `json:"version,omitempty"`
 }
 
-type DataRefs []DataRef
+type DataRefs []*DataRef
 
 func (d DataRefs) Hash(ctx context.Context) *Bytes32 {
 	b, _ := json.Marshal(&d)

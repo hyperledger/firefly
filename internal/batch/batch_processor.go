@@ -38,7 +38,7 @@ type batchDispatch struct {
 }
 
 type batchProcessorConf struct {
-	BatchOptions
+	Options
 	namespace          string
 	author             string
 	persitence         database.Plugin
@@ -83,7 +83,7 @@ func (bp *batchProcessor) assemblyLoop() {
 	defer bp.close()
 	defer close(bp.sealBatch) // close persitenceLoop when we exit
 	l := log.L(bp.ctx)
-	var batchSize uint = 0
+	var batchSize uint
 	var lastBatchSealed = time.Now()
 	var quiescing bool
 	for {

@@ -23,8 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getMsgById = &oapispec.Route{
-	Name:   "getMsgById",
+var getMsgByID = &oapispec.Route{
+	Name:   "getMsgByID",
 	Path:   "namespaces/{ns}/messages/{msgid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -38,7 +38,7 @@ var getMsgById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		output, err = r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

@@ -17,11 +17,15 @@ package fftypes
 type OffsetType string
 
 const (
-	OffsetTypeBatch        OffsetType = "batch"
-	OffsetTypeAggregator   OffsetType = "aggregator"
+	// OffsetTypeBatch is an offset stored by the batch manager on the messages table
+	OffsetTypeBatch OffsetType = "batch"
+	// OffsetTypeAggregator is an offset stored by the aggregator on the events table
+	OffsetTypeAggregator OffsetType = "aggregator"
+	// OffsetTypeSubscription is an offeset stored by a dispatcher on the events table
 	OffsetTypeSubscription OffsetType = "subscription"
 )
 
+// Offset is a simple stored data structure that records a sequence position within another collection
 type Offset struct {
 	ID        *UUID      `json:"id"`
 	Type      OffsetType `json:"type"`

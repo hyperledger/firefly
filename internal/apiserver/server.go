@@ -105,6 +105,7 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 		WriteTimeout: config.GetDuration(config.HTTPWriteTimeout),
 		ReadTimeout:  config.GetDuration(config.HTTPReadTimeout),
 		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
 			RootCAs:    rootCAs,

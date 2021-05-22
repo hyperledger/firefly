@@ -17,11 +17,15 @@ package fftypes
 type ValidatorType string
 
 const (
-	ValidatorTypeJSON           ValidatorType = "json"
-	ValidatorTypeBLOB           ValidatorType = "blob"
+	// ValidatorTypeJSON is the validator type for JSON Schema validation
+	ValidatorTypeJSON ValidatorType = "json"
+	// ValidatorTypeBLOB is the validator type for binary blob data, that is passed through without any parsing or validation
+	ValidatorTypeBLOB ValidatorType = "blob"
+	// ValidatorTypeDataDefinition is the validator type for data definitions, which are a built in type that defines other types
 	ValidatorTypeDataDefinition ValidatorType = "datadef"
 )
 
+// DataDefinition is the structure defining a data definition, such as a JSON schema
 type DataDefinition struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Validator ValidatorType `json:"validator"`

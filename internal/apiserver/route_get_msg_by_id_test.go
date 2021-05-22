@@ -24,14 +24,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetMessageById(t *testing.T) {
+func TestGetMessageByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -24,16 +24,24 @@ const (
 )
 
 const (
-	HTTPConfigURL              = "url"
-	HTTPConfigHeaders          = "headers"
-	HTTPConfigAuthUsername     = "auth.username"
-	HTTPConfigAuthPassword     = "auth.password"
-	HTTPConfigRetryEnabled     = "retry.enabled"
-	HTTPConfigRetryCount       = "retry.count"
-	HTTPConfigRetryWaitTime    = "retry.waitTime"
-	HTTPConfigRetryMaxWaitTime = "retry.maxWaitTime"
+	// HTTPConfigURL is the url to connect to for this HTTP configuration
+	HTTPConfigURL = "url"
+	// HTTPConfigHeaders adds custom headers to the requests
+	HTTPConfigHeaders = "headers"
+	// HTTPConfigAuthUsername HTTPS Basic Auth configuration - username
+	HTTPConfigAuthUsername = "auth.username"
+	// HTTPConfigAuthPassword HTTPS Basic Auth configuration - secret / password
+	HTTPConfigAuthPassword = "auth.password"
+	// HTTPConfigRetryEnabled whether retry is enabled on the actions performed over this HTTP request (does not disable retry at higher layers)
+	HTTPConfigRetryEnabled = "retry.enabled"
+	// HTTPConfigRetryCount the maximum number of retries
+	HTTPConfigRetryCount = "retry.count"
+	// HTTPConfigRetryInitDelay the initial retry delay
+	HTTPConfigRetryInitDelay = "retry.initWaitTime"
+	// HTTPConfigRetryMaxDelay the maximum retry delay
+	HTTPConfigRetryMaxDelay = "retry.maxWaitTime"
 
-	// Unit test only
+	// HTTPCustomClient - unit test only - allows injection of a custom HTTP client to resty
 	HTTPCustomClient = "customClient"
 )
 
@@ -44,8 +52,8 @@ func InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(HTTPConfigAuthPassword)
 	prefix.AddKnownKey(HTTPConfigRetryEnabled, defaultRetryEnabled)
 	prefix.AddKnownKey(HTTPConfigRetryCount, defaultRetryCount)
-	prefix.AddKnownKey(HTTPConfigRetryWaitTime, defaultRetryWaitTime)
-	prefix.AddKnownKey(HTTPConfigRetryMaxWaitTime, defaultRetryMaxWaitTime)
+	prefix.AddKnownKey(HTTPConfigRetryInitDelay, defaultRetryWaitTime)
+	prefix.AddKnownKey(HTTPConfigRetryMaxDelay, defaultRetryMaxWaitTime)
 
 	prefix.AddKnownKey(HTTPCustomClient)
 }

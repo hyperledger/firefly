@@ -53,22 +53,22 @@ type Orchestrator interface {
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
-	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
+	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
-	GetMessagesForData(ctx context.Context, ns, dataId string, filter database.AndFilter) ([]*fftypes.Message, error)
-	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
+	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error)
+	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
-	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
+	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
-	GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
+	GetDataDefinitionByID(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
 	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
-	GetOperationById(ctx context.Context, ns, id string) (*fftypes.Operation, error)
+	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error)
-	GetEventById(ctx context.Context, ns, id string) (*fftypes.Event, error)
+	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error)
 }
 
@@ -79,9 +79,9 @@ type orchestrator struct {
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	events        events.EventManager
-	batch         batch.BatchManager
-	broadcast     broadcast.BroadcastManager
-	nodeIdentity  string
+	batch         batch.Manager
+	broadcast     broadcast.Manager
+	nodeIDentity  string
 }
 
 func NewOrchestrator() Orchestrator {
@@ -190,10 +190,10 @@ func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Pl
 	}
 	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), or)
 	if err == nil {
-		suppliedIdentity := config.GetString(config.NodeIdentity)
-		or.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
+		suppliedIDentity := config.GetString(config.NodeIDentity)
+		or.nodeIDentity, err = plugin.VerifyIDentitySyntax(ctx, suppliedIDentity)
 		if err != nil {
-			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIdentity)
+			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
 		}
 	}
 	return plugin, err
@@ -247,7 +247,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 			}
 		} else {
 			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeStaticLocal
+			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeLocal
 			ns.Description = description
 		}
 		if updated {

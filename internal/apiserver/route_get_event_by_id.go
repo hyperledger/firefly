@@ -23,8 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getEventById = &oapispec.Route{
-	Name:   "getOpById",
+var getEventByID = &oapispec.Route{
+	Name:   "getOpByID",
 	Path:   "namespaces/{ns}/events/{eid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -38,7 +38,7 @@ var getEventById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Event{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetEventById(r.Ctx, r.PP["ns"], r.PP["eid"])
+		output, err = r.Or.GetEventByID(r.Ctx, r.PP["ns"], r.PP["eid"])
 		return output, err
 	},
 }
