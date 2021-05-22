@@ -34,121 +34,121 @@ import (
 // Plugins are resonsible for defining their own keys using the Config interface
 var (
 	// APIDefaultFilterLimit is the default limit that will be applied to filtered queries on the API
-	APIDefaultFilterLimit RootKey = ark("api.defaultFilterLimit")
+	APIDefaultFilterLimit = rootKey("api.defaultFilterLimit")
 	// APIMaxFilterLimit is the maximum limit that can be specified by an API call
-	APIMaxFilterLimit RootKey = ark("api.maxFilterLimit")
+	APIMaxFilterLimit = rootKey("api.maxFilterLimit")
 	// APIMaxFilterSkip is the maximum skip value that can be specified on the API
-	APIMaxFilterSkip RootKey = ark("api.maxFilterLimit")
+	APIMaxFilterSkip = rootKey("api.maxFilterLimit")
 	// APIRequestTimeout is the server side timeout for API calls (context timeout), to avoid the server continuing processing when the client gives up
-	APIRequestTimeout RootKey = ark("api.requestTimeout")
+	APIRequestTimeout = rootKey("api.requestTimeout")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
-	BatchManagerReadPageSize RootKey = ark("batch.manager.readPageSize")
+	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
-	BatchManagerReadPollTimeout RootKey = ark("batch.manager.pollTimeout")
+	BatchManagerReadPollTimeout = rootKey("batch.manager.pollTimeout")
 	// BatchRetryFactor is the retry backoff factor for database operations performed by the batch manager
-	BatchRetryFactor RootKey = ark("batch.retry.factor")
+	BatchRetryFactor = rootKey("batch.retry.factor")
 	// BatchRetryInitDelay is the retry initial delay for database operations
-	BatchRetryInitDelay RootKey = ark("batch.retry.initDelay")
+	BatchRetryInitDelay = rootKey("batch.retry.initDelay")
 	// BatchRetryMaxDelay is the maximum delay between retry attempts
-	BatchRetryMaxDelay RootKey = ark("batch.retry.maxDelay")
+	BatchRetryMaxDelay = rootKey("batch.retry.maxDelay")
 	// BlockchainType is the name of the blockchain interface plugin being used by this firefly name
-	BlockchainType RootKey = ark("blockchain.type")
+	BlockchainType = rootKey("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
-	BroadcastBatchAgentTimeout RootKey = ark("broadcast.batch.agentTimeout")
+	BroadcastBatchAgentTimeout = rootKey("broadcast.batch.agentTimeout")
 	// BroadcastBatchSize is the maximum size of a batch for broadcast messages
-	BroadcastBatchSize RootKey = ark("broadcast.batch.size")
+	BroadcastBatchSize = rootKey("broadcast.batch.size")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
-	BroadcastBatchTimeout RootKey = ark("broadcast.batch.timeout")
+	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
 	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
-	CorsAllowCredentials RootKey = ark("cors.credentials")
+	CorsAllowCredentials = rootKey("cors.credentials")
 	// CorsAllowedHeaders CORS setting to control the allowed headers
-	CorsAllowedHeaders RootKey = ark("cors.headers")
+	CorsAllowedHeaders = rootKey("cors.headers")
 	// CorsAllowedMethods CORS setting to control the allowed methods
-	CorsAllowedMethods RootKey = ark("cors.methods")
+	CorsAllowedMethods = rootKey("cors.methods")
 	// CorsAllowedOrigins CORS setting to control the allowed origins
-	CorsAllowedOrigins RootKey = ark("cors.origins")
+	CorsAllowedOrigins = rootKey("cors.origins")
 	// CorsDebug is whether debug is enabled for the CORS implementation
-	CorsDebug RootKey = ark("cors.debug")
+	CorsDebug = rootKey("cors.debug")
 	// CorsEnabled is whether cors is enabled
-	CorsEnabled RootKey = ark("cors.enabled")
+	CorsEnabled = rootKey("cors.enabled")
 	// CorsMaxAge is the maximum age a browser should rely on CORS checks
-	CorsMaxAge RootKey = ark("cors.maxAge")
+	CorsMaxAge = rootKey("cors.maxAge")
 	// DatabaseType the type of the database interface plugin to use
-	DatabaseType RootKey = ark("database.type")
+	DatabaseType = rootKey("database.type")
 	// DebugPort a HTTP port on which to enable the go debugger
-	DebugPort RootKey = ark("debug.port")
+	DebugPort = rootKey("debug.port")
 	// EventTransportsEnabled which event interface plugins are enabled
-	EventTransportsEnabled RootKey = ark("event.transports.enabled")
+	EventTransportsEnabled = rootKey("event.transports.enabled")
 	// EventAggregatorBatchSize the maximum number of records to read from the DB before performing an aggregation run
-	EventAggregatorBatchSize RootKey = ark("event.aggregator.batchSize")
+	EventAggregatorBatchSize = rootKey("event.aggregator.batchSize")
 	// EventAggregatorBatchTimeout how long to wait for new events to arrive before performing aggregation on a page of events
-	EventAggregatorBatchTimeout RootKey = ark("event.aggregator.batchTimeout")
+	EventAggregatorBatchTimeout = rootKey("event.aggregator.batchTimeout")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
-	EventAggregatorPollTimeout RootKey = ark("event.aggregator.pollTimeout")
+	EventAggregatorPollTimeout = rootKey("event.aggregator.pollTimeout")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
-	EventAggregatorRetryFactor RootKey = ark("event.aggregator.retry.factor")
+	EventAggregatorRetryFactor = rootKey("event.aggregator.retry.factor")
 	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
-	EventAggregatorRetryInitDelay RootKey = ark("event.aggregator.retry.initDelay")
+	EventAggregatorRetryInitDelay = rootKey("event.aggregator.retry.initDelay")
 	// EventAggregatorRetryMaxDelay the maximum delay to use for retry of data base operations
-	EventAggregatorRetryMaxDelay RootKey = ark("event.aggregator.retry.maxDelay")
+	EventAggregatorRetryMaxDelay = rootKey("event.aggregator.retry.maxDelay")
 	// EventDispatcherPollTimeout the time to wait without a notification of new events, before trying a select on the table
-	EventDispatcherPollTimeout RootKey = ark("event.dispatcher.pollTimeout")
+	EventDispatcherPollTimeout = rootKey("event.dispatcher.pollTimeout")
 	// EventDispatcherBufferLength the number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription
-	EventDispatcherBufferLength RootKey = ark("event.dispatcher.bufferLength")
+	EventDispatcherBufferLength = rootKey("event.dispatcher.bufferLength")
 	// EventDispatcherBatchTimeout a short time to wait for new events to arrive before re-polling for new events
-	EventDispatcherBatchTimeout RootKey = ark("event.dispatcher.batchTimeout")
+	EventDispatcherBatchTimeout = rootKey("event.dispatcher.batchTimeout")
 	// EventDispatcherRetryFactor the backoff factor to use for retry of database operations
-	EventDispatcherRetryFactor RootKey = ark("event.dispatcher.retry.factor")
+	EventDispatcherRetryFactor = rootKey("event.dispatcher.retry.factor")
 	// EventDispatcherRetryInitDelay he initial delay to use for retry of data base operations
-	EventDispatcherRetryInitDelay RootKey = ark("event.dispatcher.retry.initDelay")
+	EventDispatcherRetryInitDelay = rootKey("event.dispatcher.retry.initDelay")
 	// EventDispatcherRetryMaxDelay he maximum delay to use for retry of data base operations
-	EventDispatcherRetryMaxDelay RootKey = ark("event.dispatcher.retry.maxDelay")
+	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
 	// HttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
-	HTTPAddress RootKey = ark("http.address")
+	HTTPAddress = rootKey("http.address")
 	// HttpPort the local port to listen on for HTTP/Websocket connections
-	HTTPPort RootKey = ark("http.port")
+	HTTPPort = rootKey("http.port")
 	// HttpReadTimeout the write timeout for the HTTP server
-	HTTPReadTimeout RootKey = ark("http.readTimeout")
+	HTTPReadTimeout = rootKey("http.readTimeout")
 	// HttpTLSCAFile the TLS certificate authority file for the HTTP server
-	HTTPTLSCAFile RootKey = ark("http.tls.caFile")
+	HTTPTLSCAFile = rootKey("http.tls.caFile")
 	// HttpTLSCertFile the TLS certificate file for the HTTP server
-	HTTPTLSCertFile RootKey = ark("http.tls.certFile")
+	HTTPTLSCertFile = rootKey("http.tls.certFile")
 	// HttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
-	HTTPTLSClientAuth RootKey = ark("http.tls.clientAuth")
+	HTTPTLSClientAuth = rootKey("http.tls.clientAuth")
 	// HttpTLSEnabled whether TLS is enabled for the HTTP server
-	HTTPTLSEnabled RootKey = ark("http.tls.enabled")
+	HTTPTLSEnabled = rootKey("http.tls.enabled")
 	// HttpTLSKeyFile the private key file for TLS on the server
-	HTTPTLSKeyFile RootKey = ark("http.tls.keyFile")
+	HTTPTLSKeyFile = rootKey("http.tls.keyFile")
 	// HttpWriteTimeout the write timeout for the HTTP server
-	HTTPWriteTimeout RootKey = ark("http.writeTimeout")
+	HTTPWriteTimeout = rootKey("http.writeTimeout")
 	// Lang is the language to use for translation
-	Lang RootKey = ark("lang")
+	Lang = rootKey("lang")
 	// LogForceColor forces color to be enabled, even if we do not detect a TTY
-	LogForceColor RootKey = ark("log.forceColor")
+	LogForceColor = rootKey("log.forceColor")
 	// LogLevel is the logging level
-	LogLevel RootKey = ark("log.level")
+	LogLevel = rootKey("log.level")
 	// LogNoColor forces color to be disabled, even if we detect a TTY
-	LogNoColor RootKey = ark("log.noColor")
+	LogNoColor = rootKey("log.noColor")
 	// LogTimeFormat is a string format for timestamps
-	LogTimeFormat RootKey = ark("log.timeFormat")
+	LogTimeFormat = rootKey("log.timeFormat")
 	// LogUTC sets log timestamps to the UTC timezone
-	LogUTC RootKey = ark("log.utc")
+	LogUTC = rootKey("log.utc")
 	// NamespacesDefault is the default namespace - must be in the predefines list
-	NamespacesDefault RootKey = ark("namespaces.default")
+	NamespacesDefault = rootKey("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
-	NamespacesPredefined RootKey = ark("namespaces.predefined")
-	// NodeIdentity is the signing identity allocated to the node
-	NodeIdentity RootKey = ark("node.identity")
+	NamespacesPredefined = rootKey("namespaces.predefined")
+	// NodeIDentity is the signing identity allocated to the node
+	NodeIDentity = rootKey("node.identity")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
-	OrchestratorStartupAttempts RootKey = ark("orchestrator.startupAttempts")
+	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// PublicStorageType specifies which public storage interface plugin to use
-	PublicStorageType RootKey = ark("publicstorage.type")
+	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
-	SubscriptionDefaultsReadAhead RootKey = ark("subscription.defaults.batchSize")
+	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")
 	// SubscriptionMaxPerTransport maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
-	SubscriptionMaxPerTransport RootKey = ark("subscription.maxPerTransport")
+	SubscriptionMaxPerTransport = rootKey("subscription.maxPerTransport")
 	// UIPath the path on which to serve the UI
-	UIPath RootKey = ark("ui.path")
+	UIPath = rootKey("ui.path")
 )
 
 // Prefix represents the global configuration, at a nested point in
@@ -172,7 +172,7 @@ type Prefix interface {
 	Get(key string) interface{}
 }
 
-// Key are the known configuration keys
+// RootKey key are the known configuration keys
 type RootKey string
 
 func Reset() {
@@ -253,12 +253,12 @@ func ReadConfig(cfgFile string) error {
 	return viper.ReadInConfig()
 }
 
-var root *configPrefix = &configPrefix{
+var root = &configPrefix{
 	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
-func ark(k string) RootKey {
+func rootKey(k string) RootKey {
 	root.AddKnownKey(k)
 	return RootKey(k)
 }
@@ -347,7 +347,7 @@ func (c *configPrefix) GetDuration(key string) time.Duration {
 	return fftypes.ParseToDuration(viper.GetString(c.prefixKey(key)))
 }
 
-// GetUInt gets a configuration uint
+// GetUint gets a configuration uint
 func GetUint(key RootKey) uint {
 	return root.GetUint(string(key))
 }
@@ -363,7 +363,7 @@ func (c *configPrefix) GetInt(key string) int {
 	return viper.GetInt(c.prefixKey(key))
 }
 
-// GetFloat gets a configuration uint
+// GetFloat64 gets a configuration uint
 func GetFloat64(key RootKey) float64 {
 	return root.GetFloat64(string(key))
 }

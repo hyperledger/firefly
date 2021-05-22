@@ -37,7 +37,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// Create a new namespace entry
 	namespace := &fftypes.Namespace{
 		ID:      nil, // generated for us
-		Type:    fftypes.NamespaceTypeStaticLocal,
+		Type:    fftypes.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
 	}
@@ -63,7 +63,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &fftypes.Namespace{
 		ID:          nil, // as long as we don't specify one we're fine
-		Type:        fftypes.NamespaceTypeStaticBroadcast,
+		Type:        fftypes.NamespaceTypeBroadcast,
 		Name:        "namespace1",
 		Description: "description1",
 		Created:     fftypes.Now(),
@@ -159,7 +159,7 @@ func TestUpsertNamespaceFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdSelectFail(t *testing.T) {
+func TestGetNamespaceByIDSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetNamespace(context.Background(), "name1")
@@ -167,7 +167,7 @@ func TestGetNamespaceByIdSelectFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdNotFound(t *testing.T) {
+func TestGetNamespaceByIDNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype", "namespace", "name"}))
 	msg, err := s.GetNamespace(context.Background(), "name1")
@@ -176,7 +176,7 @@ func TestGetNamespaceByIdNotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdScanFail(t *testing.T) {
+func TestGetNamespaceByIDScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	_, err := s.GetNamespace(context.Background(), "name1")

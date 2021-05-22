@@ -22,7 +22,7 @@ import (
 )
 
 func TestMessageCreated(t *testing.T) {
-	mb := &batchmocks.BatchManager{}
+	mb := &batchmocks.Manager{}
 	o := &orchestrator{
 		batch: mb,
 	}

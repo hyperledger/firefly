@@ -75,7 +75,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 
 	if existing {
 		// Update the namespace
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
 				// Note we do not update ID
 				Set("ntype", string(namespace.Type)).
@@ -186,13 +186,13 @@ func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, updat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("namespaces"), update, namespaceFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("namespaces"), update, namespaceFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

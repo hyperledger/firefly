@@ -102,8 +102,8 @@ type setUpdate struct {
 	setOperations []*setOperation
 }
 
-func (ub *setUpdate) IsEmpty() bool {
-	return len(ub.setOperations) == 0
+func (u *setUpdate) IsEmpty() bool {
+	return len(u.setOperations) == 0
 }
 
 func (u *setUpdate) Set(field string, value interface{}) Update {

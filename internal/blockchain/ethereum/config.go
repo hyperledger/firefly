@@ -25,12 +25,19 @@ const (
 )
 
 const (
+	// EthconnectConfigKey is a sub-key in the config to contain all the ethconnect specific config,
 	EthconnectConfigKey = "ethconnect"
 
-	EthconnectConfigInstancePath        = "instance"
-	EthconnectConfigTopic               = "topic"
-	EthconnectConfigBatchSize           = "batchSize"
-	EthconnectConfigBatchTimeout        = "batchTimeout"
+	// EthconnectConfigInstancePath is the /contracts/0x12345 or /instances/0x12345 path of the REST API exposed by ethconnect for the contract
+	EthconnectConfigInstancePath = "instance"
+	// EthconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
+	// nodes using a single ethconnect
+	EthconnectConfigTopic = "topic"
+	// EthconnectConfigBatchSize is the batch size to configure on event streams, when auto-defining them
+	EthconnectConfigBatchSize = "batchSize"
+	// EthconnectConfigBatchTimeout is the batch timeout to configure on event streams, when auto-defining them
+	EthconnectConfigBatchTimeout = "batchTimeout"
+	// EthconnectConfigSkipEventstreamInit disables auto-configuration of event streams
 	EthconnectConfigSkipEventstreamInit = "skipEventstreamInit"
 )
 

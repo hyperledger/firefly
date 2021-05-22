@@ -82,7 +82,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 
 	if existing {
 		// Update the data
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("data").
 				Set("validator", string(data.Validator)).
 				Set("namespace", data.Namespace).
@@ -140,7 +140,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataColumns...).
@@ -214,7 +214,7 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
 		}
-		refs = append(refs, ref)
+		refs = append(refs, &ref)
 	}
 
 	return refs, err
@@ -229,13 +229,13 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("data"), update, dataFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("data"), update, dataFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

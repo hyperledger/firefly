@@ -3,9 +3,37 @@ run:
 linters-settings:
   golint: {}
   gocritic:
-    enabled-checks:
-      - rangeValCopy
+    enabled-checks: []
     disabled-checks:
       - regexpMust
     enabled-tags:
       - performance
+linters:
+  disable-all: false
+  enable:
+  - bodyclose
+  - deadcode
+  - depguard
+  - dogsled
+  - errcheck
+  - gocritic
+  - goimports
+  - goprintffuncname
+  - gosec
+  - gosimple
+  - govet
+  - gofmt
+  - ineffassign
+  - misspell
+  - nakedret
+  - revive
+  - staticcheck
+  - structcheck
+  - stylecheck
+  - typecheck
+  - unconvert
+  - unused
+  - varcheck
+  - goconst
+  - gocyclo
+  - unparam

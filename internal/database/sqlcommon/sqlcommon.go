@@ -29,12 +29,13 @@ type SQLCommon struct {
 	db           *sql.DB
 	capabilities *database.Capabilities
 	callbacks    database.Callbacks
-	options      *SQLCommonOptions
+	options      *Options
 }
 
 type txContextKey struct{}
 
-type SQLCommonOptions struct {
+// Options customize the common SQL code to different databases
+type Options struct {
 	// PlaceholderFormat as supported by the SQL sequence of the plugin
 	PlaceholderFormat sq.PlaceholderFormat
 	// Postgres requies you to add RETURNING id to get the auto-incremented sequence back
@@ -48,7 +49,7 @@ type txWrapper struct {
 	postCommit []func()
 }
 
-func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, callbacks database.Callbacks, capabilities *database.Capabilities, options *SQLCommonOptions) error {
+func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, callbacks database.Callbacks, capabilities *database.Capabilities, options *Options) error {
 	s.db = db
 	s.capabilities = capabilities
 	s.callbacks = callbacks
@@ -192,25 +193,25 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 	return res, nil
 }
 
-func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) (sql.Result, error) {
+func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) error {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> update: %s`, sqlQuery)
 	l.Tracef(`SQL-> update args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL update failed: %s sql=[ %s ]`, err, sqlQuery)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBUpdateFailed)
 	}
 	ra, _ := res.RowsAffected() // currently only used for debugging
 	l.Debugf(`SQL<- update affected=%d`, ra)
-	return res, nil
+	return nil
 }
 
-func (s *SQLCommon) postCommitEvent(ctx context.Context, tx *txWrapper, fn func()) {
+func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {
 	tx.postCommit = append(tx.postCommit, fn)
 }
 

@@ -21,7 +21,9 @@ const (
 )
 
 const (
-	ReadBufferSizeKB  = "readBufferSizeKB"
+	// ReadBufferSizeKB is the read buffer size for the socket
+	ReadBufferSizeKB = "readBufferSizeKB"
+	// WriteBufferSizeKB is the write buffer size for the socket
 	WriteBufferSizeKB = "writeBufferSizeKB"
 )
 

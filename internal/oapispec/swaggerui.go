@@ -63,6 +63,6 @@ var swaggerUIHTML = `<!DOCTYPE html>
 func SwaggerUIHTML(ctx context.Context) []byte {
 	return []byte(fmt.Sprintf(
 		swaggerUIHTML,
-		getHost(ctx),
+		getHost(),
 	))
 }

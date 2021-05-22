@@ -22,7 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
+func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
 
 	// Validate the input data definition data
 	s.ID = fftypes.NewUUID()
@@ -62,7 +62,7 @@ func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s
 	data.Hash, _ = data.Value.Hash(ctx, "value")
 
 	// Write as data to the local store
-	if err = e.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
+	if err = or.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s
 		Header: fftypes.MessageHeader{
 			Namespace: s.Namespace,
 			Type:      fftypes.MessageTypeDefinition,
-			Author:    e.nodeIdentity,
+			Author:    or.nodeIDentity,
 			Topic:     fftypes.DataDefinitionaTopicName,
 			Context:   fftypes.SystemContext,
 			TX: fftypes.TransactionRef{
@@ -84,7 +84,7 @@ func (e *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s
 	}
 
 	// Broadcast the message
-	if err = e.broadcast.BroadcastMessage(ctx, msg); err != nil {
+	if err = or.broadcast.BroadcastMessage(ctx, msg); err != nil {
 		return nil, err
 	}
 

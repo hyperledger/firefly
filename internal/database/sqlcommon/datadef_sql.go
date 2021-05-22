@@ -65,7 +65,7 @@ func (s *SQLCommon) UpsertDataDefinition(ctx context.Context, dataDef *fftypes.D
 	if existing {
 
 		// Update the dataDef
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("datadefs").
 				Set("validator", string(dataDef.Validator)).
 				Set("namespace", dataDef.Namespace).
@@ -143,7 +143,7 @@ func (s *SQLCommon) getDataDefinitionEq(ctx context.Context, eq sq.Eq, textName 
 	return dataDef, nil
 }
 
-func (s *SQLCommon) GetDataDefinitionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.DataDefinition, err error) {
+func (s *SQLCommon) GetDataDefinitionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.DataDefinition, err error) {
 	return s.getDataDefinitionEq(ctx, sq.Eq{"id": id}, id.String())
 }
 
@@ -185,13 +185,13 @@ func (s *SQLCommon) UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("datadefs"), update, dataDefFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("datadefs"), update, dataDefFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

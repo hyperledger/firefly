@@ -38,7 +38,7 @@ type retryCtx struct {
 	attempts uint
 }
 
-// When using SetDoNotParseResponse(true) for streming binary replies,
+// OnAfterResponse when using SetDoNotParseResponse(true) for streming binary replies,
 // the caller should invoke ffrest.OnAfterResponse on the response manually.
 // The middleware is disabled on this path :-(
 // See: https://github.com/go-resty/resty/blob/d01e8d1bac5ba1fed0d9e03c4c47ca21e94a7e8e/client.go#L912-L948
@@ -61,9 +61,9 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 
 	var client *resty.Client
 
-	iHttpClient := staticConfig.Get(HTTPCustomClient)
-	if iHttpClient != nil {
-		if httpClient, ok := iHttpClient.(*http.Client); ok {
+	iHTTPClient := staticConfig.Get(HTTPCustomClient)
+	if iHTTPClient != nil {
+		if httpClient, ok := iHTTPClient.(*http.Client); ok {
 			client = resty.NewWithClient(httpClient)
 		}
 	}
@@ -114,8 +114,8 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 
 	if staticConfig.GetBool(HTTPConfigRetryEnabled) {
 		retryCount := staticConfig.GetInt(HTTPConfigRetryCount)
-		minTimeout := staticConfig.GetDuration(HTTPConfigRetryWaitTime)
-		maxTimeout := staticConfig.GetDuration(HTTPConfigRetryMaxWaitTime)
+		minTimeout := staticConfig.GetDuration(HTTPConfigRetryInitDelay)
+		maxTimeout := staticConfig.GetDuration(HTTPConfigRetryMaxDelay)
 		client.
 			SetRetryCount(retryCount).
 			SetRetryWaitTime(minTimeout).

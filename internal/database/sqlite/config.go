@@ -19,6 +19,7 @@ package sqlite
 import "github.com/kaleido-io/firefly/internal/config"
 
 const (
+	// SQLiteConfURL is the connection url for SQLite
 	SQLiteConfURL = "url"
 )
 

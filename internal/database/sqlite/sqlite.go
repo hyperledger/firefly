@@ -29,6 +29,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/spf13/viper"
 
+	// Import the SQLite driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -43,14 +44,13 @@ func (e *SQLite) Name() string {
 func (e *SQLite) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 
 	capabilities := &database.Capabilities{}
-	options := &sqlcommon.SQLCommonOptions{
+	options := &sqlcommon.Options{
 		PlaceholderFormat: squirrel.Dollar,
 		SequenceField: func(tableName string) string {
 			if tableName == "" {
 				return "seq"
-			} else {
-				return fmt.Sprintf("%s.seq", tableName)
 			}
+			return fmt.Sprintf("%s.seq", tableName)
 		},
 	}
 

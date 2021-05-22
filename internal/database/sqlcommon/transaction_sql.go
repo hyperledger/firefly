@@ -83,7 +83,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 	if existing {
 
 		// Update the transaction
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Subject.Type)).
 				Set("namespace", transaction.Subject.Namespace).
@@ -151,7 +151,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 	return &transaction, nil
 }
 
-func (s *SQLCommon) GetTransactionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
 	cols = append(cols, s.options.SequenceField(""))
@@ -214,13 +214,13 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("transactions"), update, transactionFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("transactions"), update, transactionFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

@@ -54,7 +54,7 @@ func (qf *queryFields) NewUpdate(ctx context.Context) UpdateBuilder {
 	}
 }
 
-// We stand on the shoulders of the well adopted SQL serialization interface here to help us define what
+// FieldSerialization - we stand on the shoulders of the well adopted SQL serialization interface here to help us define what
 // string<->value looks like, even though this plugin interface is not tightly coupled to SQL.
 type FieldSerialization interface {
 	driver.Valuer
@@ -77,7 +77,7 @@ func (f *stringField) Scan(src interface{}) error {
 	case int32:
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case int64:
-		f.s = strconv.FormatInt(int64(tv), 10)
+		f.s = strconv.FormatInt(tv, 10)
 	case uint:
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case uint32:
@@ -156,7 +156,7 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 	case int32:
 		f.i = int64(tv)
 	case int64:
-		f.i = int64(tv)
+		f.i = tv
 	case uint:
 		f.i = int64(tv)
 	case uint32:

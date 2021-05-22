@@ -28,7 +28,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-func getHost(ctx context.Context) string {
+func getHost() string {
 	proto := "https"
 	if !config.GetBool(config.HTTPTLSEnabled) {
 		proto = "http"
@@ -41,7 +41,7 @@ func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: fmt.Sprintf("%s/api/v1", getHost(ctx))},
+			{URL: fmt.Sprintf("%s/api/v1", getHost())},
 		},
 		Info: &openapi3.Info{
 			Title:       "Firefly",
@@ -55,7 +55,7 @@ func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
 	return doc
 }
 
-func getPathItem(ctx context.Context, doc *openapi3.T, path string) *openapi3.PathItem {
+func getPathItem(doc *openapi3.T, path string) *openapi3.PathItem {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -71,7 +71,7 @@ func getPathItem(ctx context.Context, doc *openapi3.T, path string) *openapi3.Pa
 	return pi
 }
 
-func addInput(ctx context.Context, input interface{}, mask []string, op *openapi3.Operation) {
+func addInput(input interface{}, mask []string, op *openapi3.Operation) {
 	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
 	op.RequestBody = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
@@ -104,7 +104,7 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 	if in == "path" {
 		required = true
 	}
-	var defValue interface{} = nil
+	var defValue interface{}
 	if def != "" {
 		defValue = &def
 	}
@@ -130,7 +130,7 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 }
 
 func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
-	pi := getPathItem(ctx, doc, route.Path)
+	pi := getPathItem(doc, route.Path)
 	op := &openapi3.Operation{
 		Description: i18n.Expand(ctx, route.Description),
 		OperationID: route.Name,
@@ -138,7 +138,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	}
 	input := route.JSONInputValue()
 	if input != nil {
-		addInput(ctx, input, route.JSONInputMask, op)
+		addInput(input, route.JSONInputMask, op)
 	}
 	output := route.JSONOutputValue()
 	if output != nil {

@@ -23,8 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getBatchById = &oapispec.Route{
-	Name:   "getBatchById",
+var getBatchByID = &oapispec.Route{
+	Name:   "getBatchByID",
 	Path:   "namespaces/{ns}/batches/{batchid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -38,7 +38,7 @@ var getBatchById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetBatchById(r.Ctx, r.PP["ns"], r.PP["batchid"])
+		output, err = r.Or.GetBatchByID(r.Ctx, r.PP["ns"], r.PP["batchid"])
 		return output, err
 	},
 }

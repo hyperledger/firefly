@@ -35,9 +35,9 @@ func TestOperationE2EWithDB(t *testing.T) {
 	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new operation entry
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	operation := &fftypes.Operation{
-		ID:        operationId,
+		ID:        operationID,
 		Namespace: "ns1",
 		Type:      fftypes.OpTypeBlockchainBatchPin,
 		Message:   fftypes.NewUUID(),
@@ -48,7 +48,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same operation back
-	operationRead, err := s.GetOperationById(ctx, operationId)
+	operationRead, err := s.GetOperationByID(ctx, operationID)
 	assert.NoError(t, err)
 	assert.NotNil(t, operationRead)
 	operationJson, _ := json.Marshal(&operation)
@@ -58,7 +58,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	// Update the operation (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	operationUpdated := &fftypes.Operation{
-		ID:        operationId,
+		ID:        operationID,
 		Namespace: "ns1",
 		Type:      fftypes.OpTypeBlockchainBatchPin,
 		Message:   fftypes.NewUUID(),
@@ -75,7 +75,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the operation elements
-	operationRead, err = s.GetOperationById(ctx, operationId)
+	operationRead, err = s.GetOperationByID(ctx, operationID)
 	assert.NoError(t, err)
 	operationJson, _ = json.Marshal(&operationUpdated)
 	operationReadJson, _ = json.Marshal(&operationRead)
@@ -149,8 +149,8 @@ func TestUpsertOperationFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	operationId := fftypes.NewUUID()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationId}, true)
+	operationID := fftypes.NewUUID()
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -161,60 +161,60 @@ func TestUpsertOperationFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	operationId := fftypes.NewUUID()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationId}, true)
+	operationID := fftypes.NewUUID()
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertOperationFailUpdate(t *testing.T) {
 	s, mock := getMockDB()
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(operationId.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(operationID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationId}, true)
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestUpsertOperationFailCommit(t *testing.T) {
 	s, mock := getMockDB()
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationId}, true)
+	err := s.UpsertOperation(context.Background(), &fftypes.Operation{ID: operationID}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOperationByIdSelectFail(t *testing.T) {
+func TestGetOperationByIDSelectFail(t *testing.T) {
 	s, mock := getMockDB()
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOperationById(context.Background(), operationId)
+	_, err := s.GetOperationByID(context.Background(), operationID)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOperationByIdNotFound(t *testing.T) {
+func TestGetOperationByIDNotFound(t *testing.T) {
 	s, mock := getMockDB()
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetOperationById(context.Background(), operationId)
+	msg, err := s.GetOperationByID(context.Background(), operationID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetOperationByIdScanFail(t *testing.T) {
+func TestGetOperationByIDScanFail(t *testing.T) {
 	s, mock := getMockDB()
-	operationId := fftypes.NewUUID()
+	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetOperationById(context.Background(), operationId)
+	_, err := s.GetOperationByID(context.Background(), operationID)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

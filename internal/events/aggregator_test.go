@@ -82,7 +82,7 @@ func TestProcessEventCheckSequencedReadFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mdi.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, fmt.Errorf("pop"))
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
 	_, err := ag.processEvents(context.Background(), []*fftypes.Event{ev1})
@@ -115,7 +115,7 @@ func TestProcessEventCheckCompleteDataNotAvailable(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mdi.On("GetMessageById", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111

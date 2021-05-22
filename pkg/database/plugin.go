@@ -23,8 +23,10 @@ import (
 )
 
 var (
+	// HashMismatch sentinel error
 	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
-	IDMismatch   = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	// IDMismatch sentinel error
+	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
 )
 
 // Plugin is the interface implemented by each plugin
@@ -42,6 +44,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 }
 
+// PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
 // while not trying to become the core database of the application (where full deeply nested
@@ -73,152 +76,152 @@ type PeristenceInterface interface {
 	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
-	// Upsert a namespace
+	// UpsertNamespace - Upsert a namespace
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
 
-	// Update namespace
+	// UpdateNamespace - Update namespace
 	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get an namespace by name
+	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 
-	// Get namespaces
+	// GetNamespaces - Get namespaces
 	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
 
-	// Upsert a message, with all the embedded data references.
+	// UpsertMessage - Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update message
+	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Update messages
+	// UpdateMessages - Update messages
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
-	// Get a message by Id
-	GetMessageById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
+	// GetMessageByID - Get a message by ID
+	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
 
-	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
+	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
-	// Lighter weight query to just get the reference info of messages
+	// GetMessageRefs - Lighter weight query to just get the reference info of messages
 	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
 
-	// List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataId *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
+	// GetMessagesForData - List messages where there is a data reference to the specified ID
+	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
 
-	// Check to see if all the data for this message is available
+	// CheckDataAvailable - Check to see if all the data for this message is available
 	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
 
-	// Upsert a data record
+	// UpsertData - Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update data
+	// UpdateData - Update data
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a data record by Id
-	GetDataById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
+	// GetDataByID - Get a data record by ID
+	GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
 
-	// Get data
+	// GetData - Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
 
-	// Get data references only (no data)
+	// GetDataRefs - Get data references only (no data)
 	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
 
-	// Upsert a batch
+	// UpsertBatch - Upsert a batch
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update data
+	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a batch by Id
-	GetBatchById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
+	// GetBatchByID - Get a batch by ID
+	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
 
-	// Get batches
+	// GetBatches - Get batches
 	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
 
-	// Upsert a transaction
+	// UpsertTransaction - Upsert a transaction
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update transaction
+	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a transaction by Id
-	GetTransactionById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
+	// GetTransactionByID - Get a transaction by ID
+	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
 
-	// Get transactions
+	// GetTransactions - Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
-	// Upsert a data definitino
+	// UpsertDataDefinition - Upsert a data definitino
 	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) (err error)
 
-	// Update data definition
+	// UpdateDataDefinition - Update data definition
 	UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a data definition by Id
-	GetDataDefinitionById(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.DataDefinition, err error)
+	// GetDataDefinitionByID - Get a data definition by ID
+	GetDataDefinitionByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.DataDefinition, err error)
 
-	// Get a data definition by name
+	// GetDataDefinitionByName - Get a data definition by name
 	GetDataDefinitionByName(ctx context.Context, ns, name string) (datadef *fftypes.DataDefinition, err error)
 
-	// Get data definitions
+	// GetDataDefinitions - Get data definitions
 	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
 
-	// Upsert an offset
+	// UpsertOffset - Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
-	// Update offset
+	// UpdateOffset - Update offset
 	UpdateOffset(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get an offset by Id
+	// GetOffset - Get an offset by ID
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
 
-	// Get offsets
+	// GetOffsets - Get offsets
 	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
 
-	// Upsert an operation
+	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
-	// Update matching operations
+	// UpdateOperations - Update matching operations
 	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
 
-	// Get an operation by Id
-	GetOperationById(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
+	// GetOperationByID - Get an operation by ID
+	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
 
-	// Get operation
+	// GetOperations - Get operation
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
 
-	// Upsert a subscription
+	// UpsertSubscription - Upsert a subscription
 	UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) (err error)
 
-	// Update subscription
+	// UpdateSubscription - Update subscription
 	// Throws IDMismatch error if updating and ids don't match
 	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
 
-	// Get an subscription by name
+	// GetSubscription - Get an subscription by name
 	GetSubscription(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
 
-	// Get subscriptions
+	// GetSubscriptions - Get subscriptions
 	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
 
-	// Upsert an event
+	// UpsertEvent - Upsert an event
 	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
 
-	// Update event
+	// UpdateEvent - Update event
 	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a event by Id
-	GetEventById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
+	// GetEventByID - Get a event by ID
+	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
 
-	// Get events
+	// GetEvents - Get events
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
 }
 
-// Events
+// Callbacks are the methods for passing data from plugin to core
 //
 // If Capabilities returns ClusterEvents=true then these should be brodcast to every instance within
 // a cluster that is connected to the database.
@@ -239,11 +242,12 @@ type Callbacks interface {
 	EventCreated(sequence int64)
 }
 
-// No capabilities currently defined for the database interface - all features are mandatory
+// Capabilities defines the capabilities a plugin can report as implementing or not
 type Capabilities struct {
 	ClusterEvents bool
 }
 
+// NamespaceQueryFactory filter fields for namespaces
 var NamespaceQueryFactory = &queryFields{
 	"id":          &UUIDField{},
 	"type":        &StringField{},
@@ -253,6 +257,7 @@ var NamespaceQueryFactory = &queryFields{
 	"confirmed":   &TimeField{},
 }
 
+// MessageQueryFactory filter fields for messages
 var MessageQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"cid":       &UUIDField{},
@@ -270,6 +275,7 @@ var MessageQueryFactory = &queryFields{
 	"batchid":   &UUIDField{},
 }
 
+// BatchQueryFactory filter fields for batches
 var BatchQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"namespace":  &StringField{},
@@ -285,6 +291,7 @@ var BatchQueryFactory = &queryFields{
 	"tx.id":      &UUIDField{},
 }
 
+// TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"namespace":  &StringField{},
@@ -299,6 +306,7 @@ var TransactionQueryFactory = &queryFields{
 	"sequence":   &Int64Field{},
 }
 
+// DataQueryFactory filter fields for data
 var DataQueryFactory = &queryFields{
 	"id":                 &UUIDField{},
 	"namespace":          &StringField{},
@@ -309,6 +317,7 @@ var DataQueryFactory = &queryFields{
 	"created":            &TimeField{},
 }
 
+// DataDefinitionQueryFactory filter fields for data definitions
 var DataDefinitionQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
@@ -318,6 +327,7 @@ var DataDefinitionQueryFactory = &queryFields{
 	"created":   &TimeField{},
 }
 
+// OffsetQueryFactory filter fields for data offsets
 var OffsetQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"name":      &StringField{},
@@ -325,6 +335,7 @@ var OffsetQueryFactory = &queryFields{
 	"current":   &Int64Field{},
 }
 
+// OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
@@ -340,6 +351,7 @@ var OperationQueryFactory = &queryFields{
 	"updated":   &TimeField{},
 }
 
+// SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
 	"id":             &UUIDField{},
 	"namespace":      &StringField{},
@@ -353,6 +365,7 @@ var SubscriptionQueryFactory = &queryFields{
 	"created":        &TimeField{},
 }
 
+// EventQueryFactory filter fields for data events
 var EventQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"type":      &StringField{},

@@ -14,10 +14,10 @@
 
 package orchestrator
 
-func (e *orchestrator) MessageCreated(sequence int64) {
-	e.batch.NewMessages() <- sequence
+func (or *orchestrator) MessageCreated(sequence int64) {
+	or.batch.NewMessages() <- sequence
 }
 
-func (e *orchestrator) EventCreated(sequence int64) {
-	e.events.NewEvents() <- sequence
+func (or *orchestrator) EventCreated(sequence int64) {
+	or.events.NewEvents() <- sequence
 }

@@ -25,12 +25,17 @@ const (
 )
 
 const (
+	// WSSpecificConfPrefix is the sub-section of the http config options that contains websocket specific config
 	WSSpecificConfPrefix = "ws"
 
-	WSConfigKeyWriteBufferSizeKB      = "ws.writeBufferSizeKB"
-	WSConfigKeyReadBufferSizeKB       = "ws.readBufferSizeKB"
+	// WSConfigKeyWriteBufferSizeKB is the write buffer size
+	WSConfigKeyWriteBufferSizeKB = "ws.writeBufferSizeKB"
+	// WSConfigKeyReadBufferSizeKB is the read buffer size
+	WSConfigKeyReadBufferSizeKB = "ws.readBufferSizeKB"
+	// WSConfigKeyInitialConnectAttempts sets how many times the websocket should attempt to connect on startup, before failing (after initial connection, retry is indefinite)
 	WSConfigKeyInitialConnectAttempts = "ws.initialConnectAttempts"
-	WSConfigKeyPath                   = "ws.path"
+	// WSConfigKeyPath if set will define the path to connect to - allows sharing of the same URL between HTTP and WebSocket connection info
+	WSConfigKeyPath = "ws.path"
 )
 
 // InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP

@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	DefaultFactor = 2.0
+	defaultFactor = 2.0
 )
 
-// Concurrency safe Retry structure that configures a simple backoff retry mechanism
+// Retry is a concurrency safe retry structure that configures a simple backoff retry mechanism
 type Retry struct {
 	InitialDelay time.Duration
 	MaximumDelay time.Duration
@@ -46,7 +46,7 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 	delay := r.InitialDelay
 	factor := r.Factor
 	if factor < 1 { // Can't reduce
-		factor = DefaultFactor
+		factor = defaultFactor
 	}
 	for {
 		attempt++
@@ -81,6 +81,5 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 		// Sleep and set the delay for next time
 		time.Sleep(delay)
 		delay = time.Duration(float64(delay) * factor)
-
 	}
 }

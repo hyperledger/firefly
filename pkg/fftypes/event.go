@@ -14,15 +14,22 @@
 
 package fftypes
 
+// EventType indicates what the event means, as well as what the Reference in the event refers to
 type EventType string
 
 const (
-	EventTypeDataArrivedBroadcast      EventType = "DataArrivedBroadcast"
+	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
+	// is available for processing by an application. Most applications only need to listen to this event type
+	EventTypeMessageConfirmed EventType = "MessageConfirmed"
+	// EventTypeDataArrivedBroadcast indicates that some data has arrived, over a broadcast transport
+	EventTypeDataArrivedBroadcast EventType = "DataArrivedBroadcast"
+	// EventTypeMessageSequencedBroadcast indicates that a deterministically sequenced message has arrived pinned to a blockchain
 	EventTypeMessageSequencedBroadcast EventType = "MessageSequencedBroadcast"
-	EventTypeMessageConfirmed          EventType = "MessageConfirmed"
-	EventTypeMessagesUnblocked         EventType = "MessagesUnblocked"
+	// EventTypeMessagesUnblocked is a special event to indidate a previously blocked context, has become unblocked
+	EventTypeMessagesUnblocked EventType = "MessagesUnblocked"
 )
 
+// Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
 type Event struct {
 	ID        *UUID     `json:"id"`
 	Sequence  int64     `json:"sequence"`
@@ -32,6 +39,8 @@ type Event struct {
 	Created   *FFTime   `json:"created"`
 }
 
+// EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to
+// be dispatched to an applciation.
 type EventDelivery struct {
 	Event
 	Subscription SubscriptionRef `json:"subscription"`
@@ -39,6 +48,8 @@ type EventDelivery struct {
 	Data         *DataRef        `json:"data,omitempty"`
 }
 
+// EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such
+// does not need to receive it again.
 type EventDeliveryResponse struct {
 	ID           *UUID           `json:"id"`
 	Rejected     bool            `json:"rejected,omitempty"`

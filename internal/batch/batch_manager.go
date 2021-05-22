@@ -33,7 +33,7 @@ const (
 	msgBatchOffsetName = "ff-msgbatch"
 )
 
-func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManager, error) {
+func NewBatchManager(ctx context.Context, database database.Plugin) (Manager, error) {
 	if database == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -57,8 +57,8 @@ func NewBatchManager(ctx context.Context, database database.Plugin) (BatchManage
 	return bm, nil
 }
 
-type BatchManager interface {
-	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions)
+type Manager interface {
+	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -83,7 +83,7 @@ type batchManager struct {
 
 type DispatchHandler func(context.Context, *fftypes.Batch) error
 
-type BatchOptions struct {
+type Options struct {
 	BatchMaxSize   uint
 	BatchTimeout   time.Duration
 	DisposeTimeout time.Duration
@@ -93,10 +93,10 @@ type dispatcher struct {
 	handler      DispatchHandler
 	mux          sync.Mutex
 	processors   map[string]*batchProcessor
-	batchOptions BatchOptions
+	batchOptions Options
 }
 
-func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions BatchOptions) {
+func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
 	bm.dispatchers[batchType] = &dispatcher{
 		handler:      handler,
 		batchOptions: batchOptions,
@@ -158,7 +158,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 		processor = newBatchProcessor(
 			bm.ctx, // Background context, not the call context
 			&batchProcessorConf{
-				BatchOptions:       dispatcher.batchOptions,
+				Options:            dispatcher.batchOptions,
 				namespace:          namespace,
 				author:             author,
 				persitence:         bm.database,
@@ -196,7 +196,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 		}
 		var d *fftypes.Data
 		err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble %s data", dataRef.ID), func(attempt int) (retry bool, err error) {
-			d, err = bm.database.GetDataById(bm.ctx, dataRef.ID)
+			d, err = bm.database.GetDataByID(bm.ctx, dataRef.ID)
 			if err != nil {
 				// continual retry for persistence error (distinct from not-found)
 				return !bm.closed, err

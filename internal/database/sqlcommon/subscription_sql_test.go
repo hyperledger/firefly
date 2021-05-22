@@ -174,7 +174,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetSubscriptionByIdSelectFail(t *testing.T) {
+func TestGetSubscriptionByIDSelectFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetSubscription(context.Background(), "ns1", "name1")
@@ -182,7 +182,7 @@ func TestGetSubscriptionByIdSelectFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetSubscriptionByIdNotFound(t *testing.T) {
+func TestGetSubscriptionByIDNotFound(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace", "name"}))
 	msg, err := s.GetSubscription(context.Background(), "ns1", "name1")
@@ -191,7 +191,7 @@ func TestGetSubscriptionByIdNotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetSubscriptionByIdScanFail(t *testing.T) {
+func TestGetSubscriptionByIDScanFail(t *testing.T) {
 	s, mock := getMockDB()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace"}).AddRow("only one"))
 	_, err := s.GetSubscription(context.Background(), "ns1", "name1")

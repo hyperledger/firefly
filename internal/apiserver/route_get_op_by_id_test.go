@@ -24,14 +24,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetOperationById(t *testing.T) {
+func TestGetOperationByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/operations/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetOperationByID", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Operation{}, nil)
 	r.ServeHTTP(res, req)
 

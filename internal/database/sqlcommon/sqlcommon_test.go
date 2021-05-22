@@ -56,8 +56,8 @@ func ensureTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
-func testSQLOptions() *SQLCommonOptions {
-	return &SQLCommonOptions{
+func testSQLOptions() *Options {
+	return &Options{
 		PlaceholderFormat: sq.Dollar,
 		SequenceField:     func(t string) string { return fmt.Sprintf("id(%s)", t) },
 	}
@@ -66,7 +66,7 @@ func testSQLOptions() *SQLCommonOptions {
 func getMockDB() (s *SQLCommon, mock sqlmock.Sqlmock) {
 	mdb, mock, _ := sqlmock.New()
 	s = &SQLCommon{
-		options: &SQLCommonOptions{
+		options: &Options{
 			PlaceholderFormat: sq.Dollar,
 			SequenceField: func(t string) string {
 				if t == "" {
@@ -133,7 +133,7 @@ func TestInsertTxBadSQL(t *testing.T) {
 
 func TestUpdateTxBadSQL(t *testing.T) {
 	s, _ := getMockDB()
-	_, err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{})
+	err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{})
 	assert.Regexp(t, "FF10113", err.Error())
 }
 

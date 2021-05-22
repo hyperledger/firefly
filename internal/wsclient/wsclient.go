@@ -78,8 +78,8 @@ func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHa
 			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryWaitTime),
-			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxWaitTime),
+			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),
+			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxDelay),
 		},
 		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
@@ -181,6 +181,7 @@ func (w *wsClient) connect(initial bool) error {
 			var status = -1
 			if res != nil {
 				b, _ = ioutil.ReadAll(res.Body)
+				res.Body.Close()
 				status = res.StatusCode
 			}
 			l.Warnf("WS %s connect attempt %d failed [%d]: %s", w.url, attempt, status, string(b))

@@ -85,10 +85,10 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 	if existing {
 		// Update the subscription
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("subscriptions").
 				// Note we do not update ID
-				Set("namespace", string(subscription.Namespace)).
+				Set("namespace", subscription.Namespace).
 				Set("name", subscription.Name).
 				Set("transport", subscription.Transport).
 				Set("filter_events", subscription.Filter.Events).
@@ -214,7 +214,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("subscriptions"), update, subscriptionFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("subscriptions"), update, subscriptionFilterTypeMap)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 		"name":      name,
 	})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

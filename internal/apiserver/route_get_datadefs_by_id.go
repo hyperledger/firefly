@@ -23,8 +23,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getDataDefById = &oapispec.Route{
-	Name:   "getDataDefById",
+var getDataDefByID = &oapispec.Route{
+	Name:   "getDataDefByID",
 	Path:   "namespaces/{ns}/definitions/data/{defid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -38,7 +38,7 @@ var getDataDefById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.DataDefinition{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDataDefinitionById(r.Ctx, r.PP["ns"], r.PP["defid"])
+		output, err = r.Or.GetDataDefinitionByID(r.Ctx, r.PP["ns"], r.PP["defid"])
 		return output, err
 	},
 }

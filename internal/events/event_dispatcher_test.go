@@ -125,11 +125,11 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 
-	eventDeliveries := make(chan fftypes.EventDelivery)
+	eventDeliveries := make(chan *fftypes.EventDelivery)
 	mei := &eventsmocks.Plugin{}
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(fftypes.EventDelivery)
+		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
 	}
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
@@ -232,11 +232,11 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 
-	eventDeliveries := make(chan fftypes.EventDelivery)
+	eventDeliveries := make(chan *fftypes.EventDelivery)
 	mei := &eventsmocks.Plugin{}
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(fftypes.EventDelivery)
+		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
 	}
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)

@@ -15,7 +15,10 @@
 package fftypes
 
 const (
+	// DataDefinitionaTopicName is the topic for messages that broadcast data definitions
 	DataDefinitionaTopicName = "ff-datadef"
-	SystemNamespace          = "ff-system"
-	SystemContext            = "ff-system"
+	// SystemNamespace is the system reserved namespace name
+	SystemNamespace = "ff-system"
+	// SystemContext is the system reserved context name
+	SystemContext = "ff-system"
 )

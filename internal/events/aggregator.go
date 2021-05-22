@@ -87,7 +87,7 @@ func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (b
 	case fftypes.EventTypeDataArrivedBroadcast:
 		return ag.processDataArrived(ctx, event.Namespace, event.Reference)
 	case fftypes.EventTypeMessageSequencedBroadcast:
-		msg, err := ag.database.GetMessageById(ctx, event.Reference)
+		msg, err := ag.database.GetMessageByID(ctx, event.Reference)
 		if err != nil {
 			return false, err
 		}
@@ -102,10 +102,10 @@ func (ag *aggregator) processEvent(ctx context.Context, event *fftypes.Event) (b
 	return false, nil
 }
 
-func (ag *aggregator) processDataArrived(ctx context.Context, ns string, dataId *fftypes.UUID) (bool, error) {
+func (ag *aggregator) processDataArrived(ctx context.Context, ns string, dataID *fftypes.UUID) (bool, error) {
 	// Find all unconfirmed messages associated with this data
 	fb := database.MessageQueryFactory.NewFilter(ctx)
-	msgs, err := ag.database.GetMessagesForData(ctx, dataId, fb.And(
+	msgs, err := ag.database.GetMessagesForData(ctx, dataID, fb.And(
 		fb.Eq("namespace", ns),
 		fb.Eq("confirmed", nil),
 	).Sort("sequence"))

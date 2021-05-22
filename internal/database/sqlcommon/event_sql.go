@@ -63,10 +63,10 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 
 	if existing {
 		// Update the event
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("events").
 				Set("etype", string(event.Type)).
-				Set("namespace", string(event.Namespace)).
+				Set("namespace", event.Namespace).
 				Set("ref", event.Reference).
 				Set("created", event.Created).
 				Where(sq.Eq{"id": event.ID}),
@@ -89,7 +89,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 			return err
 		}
 
-		s.postCommitEvent(ctx, tx, func() {
+		s.postCommitEvent(tx, func() {
 			s.callbacks.EventCreated(sequence)
 		})
 
@@ -115,7 +115,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 	return &event, nil
 }
 
-func (s *SQLCommon) GetEventById(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
+func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, s.options.SequenceField(""))
@@ -178,13 +178,13 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("events"), update, eventFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("events"), update, eventFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

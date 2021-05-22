@@ -68,7 +68,7 @@ type subscription struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Name        string `json:"name"`
-	StreamID    string `json:"streamId"`
+	StreamID    string `json:"streamID"`
 	Stream      string `json:"stream"`
 	FromBlock   string `json:"fromBlock"`
 }
@@ -78,8 +78,8 @@ type asyncTXSubmission struct {
 }
 
 type ethBroadcastBatchInput struct {
-	TransactionID string `json:"txnId"`
-	BatchID       string `json:"batchId"`
+	TransactionID string `json:"txnID"`
+	BatchID       string `json:"batchID"`
 	PayloadRef    string `json:"payloadRef"`
 }
 
@@ -245,40 +245,40 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
 	dataJSON := msgJSON.GetObject(ctx, "data")
 	sAuthor := dataJSON.GetString(ctx, "author")
-	sTxnId := dataJSON.GetString(ctx, "txnId")
-	sBatchId := dataJSON.GetString(ctx, "batchId")
+	sTxnID := dataJSON.GetString(ctx, "txnID")
+	sBatchID := dataJSON.GetString(ctx, "batchID")
 	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		sAuthor == "" ||
-		sTxnId == "" ||
-		sBatchId == "" ||
+		sTxnID == "" ||
+		sBatchID == "" ||
 		sPayloadRef == "" {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
 		return nil // move on
 	}
 
-	author, err := e.VerifyIdentitySyntax(ctx, sAuthor)
+	author, err := e.VerifyIDentitySyntax(ctx, sAuthor)
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 
 	var txnIDB32 fftypes.Bytes32
-	err = txnIDB32.UnmarshalText([]byte(sTxnId))
+	err = txnIDB32.UnmarshalText([]byte(sTxnID))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnId (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnID(%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 	var txnID fftypes.UUID
 	copy(txnID[:], txnIDB32[0:16])
 
 	var batchIDB32 fftypes.Bytes32
-	err = batchIDB32.UnmarshalText([]byte(sBatchId))
+	err = batchIDB32.UnmarshalText([]byte(sBatchID))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchId (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchID(%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 	var batchID fftypes.UUID
@@ -359,7 +359,7 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
+func (e *Ethereum) VerifyIDentitySyntax(ctx context.Context, identity string) (string, error) {
 	identity = strings.TrimPrefix(strings.ToLower(identity), "0x")
 	if !addressVerify.MatchString(identity) {
 		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)

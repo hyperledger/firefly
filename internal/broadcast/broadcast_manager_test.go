@@ -32,7 +32,7 @@ func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
-	mb := &batchmocks.BatchManager{}
+	mb := &batchmocks.Manager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
 	b, err := NewBroadcastManager(ctx, mdi, mbi, mpi, mb)
