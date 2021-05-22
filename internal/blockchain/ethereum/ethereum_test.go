@@ -409,6 +409,22 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
+  },
+	{
+    "address": "0x06d34B270F15a0d82913EFD0627B0F62Fd22ecd5",
+    "blockNumber": "38011",
+    "transactionIndex": "0x2",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+    "data": {
+      "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+			"txnID": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
+      "batchID": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+      "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
+      "timestamp": "1620576488"
+    },
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "Random(address,uint256,bytes32,bytes32,bytes32)",
+    "logIndex": "51"
   }
 ]`)
 
