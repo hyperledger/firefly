@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE datadefs (
+CREATE TABLE datatypes (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,
   validator   VARCHAR(64)     NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE datadefs (
   value       JSONB
 );
 
-CREATE UNIQUE INDEX datadefs_id ON data(id);
-CREATE UNIQUE INDEX datadefs_unique ON datadefs(namespace,name,version);
-CREATE INDEX datadefs_created ON datadefs(created);
+CREATE UNIQUE INDEX datatypes_id ON data(id);
+CREATE UNIQUE INDEX datatypes_unique ON datatypes(namespace,name,version);
+CREATE INDEX datatypes_created ON datatypes(created);
 COMMIT;
