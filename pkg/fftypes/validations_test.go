@@ -36,3 +36,13 @@ func TestValidateFFNameField(t *testing.T) {
 	assert.Regexp(t, "FF10131.*badField", err.Error())
 
 }
+
+func TestValidateLength(t *testing.T) {
+
+	err := ValidateLength(context.Background(), "long string", "test", 5)
+	assert.Regexp(t, "FF10188.*test", err.Error())
+
+	err = ValidateLength(context.Background(), "short string", "test", 50)
+	assert.NoError(t, err)
+
+}

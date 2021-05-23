@@ -138,7 +138,7 @@ var (
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = rootKey("namespaces.predefined")
 	// NodeIDentity is the signing identity allocated to the node
-	NodeIDentity = rootKey("node.identity")
+	NodeIdentity = rootKey("node.identity")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// PublicStorageType specifies which public storage interface plugin to use

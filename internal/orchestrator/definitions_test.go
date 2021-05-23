@@ -17,40 +17,59 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
-	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestBroadcastDataDefinitionBadType(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	or := newTestOrchestrator()
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Validator: fftypes.ValidatorType("wrong"),
 	})
 	assert.Regexp(t, "FF10132.*validator", err.Error())
 }
 
 func TestBroadcastDataDefinitionBadNamespace(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "_ns1", &fftypes.DataDefinition{})
+	or := newTestOrchestrator()
+	_, err := or.BroadcastDataDefinition(context.Background(), "_ns1", &fftypes.DataDefinition{})
 	assert.Regexp(t, "FF10131.*namespace", err.Error())
 }
 
-func TestBroadcastDataDefinitionBadEntity(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+func TestBroadcastDataDefinitionMissingNS(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+		Namespace: "ns1",
+	})
+	assert.Regexp(t, "FF10131.*name", err.Error())
+}
+
+func TestBroadcastDataDefinitionNSGetFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+		Namespace: "ns1",
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBroadcastDataDefinitionBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 	})
 	assert.Regexp(t, "FF10131.*name", err.Error())
 }
 
 func TestBroadcastDataDefinitionBadVersion(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 	})
@@ -58,8 +77,9 @@ func TestBroadcastDataDefinitionBadVersion(t *testing.T) {
 }
 
 func TestBroadcastDataDefinitionMissingValue(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -68,8 +88,9 @@ func TestBroadcastDataDefinitionMissingValue(t *testing.T) {
 }
 
 func TestBroadcastDataDefinitionBadValue(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -81,13 +102,12 @@ func TestBroadcastDataDefinitionBadValue(t *testing.T) {
 }
 
 func TestBroadcastUpsertFail(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	mp := &databasemocks.Plugin{}
-	o.database = mp
+	or := newTestOrchestrator()
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -99,17 +119,14 @@ func TestBroadcastUpsertFail(t *testing.T) {
 }
 
 func TestBroadcastBroadcastFail(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	o.nodeIDentity = "0x12345"
-	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.Manager{}
-	o.database = mp
-	o.broadcast = mb
+	or := newTestOrchestrator()
+	or.nodeIDentity = "0x12345"
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
-	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -121,23 +138,61 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 }
 
 func TestBroadcastOk(t *testing.T) {
-	o := NewOrchestrator().(*orchestrator)
-	o.nodeIDentity = "0x12345"
-	mp := &databasemocks.Plugin{}
-	mb := &broadcastmocks.Manager{}
-	o.database = mp
-	o.broadcast = mb
+	or := newTestOrchestrator()
+	or.nodeIDentity = "0x12345"
 
-	mp.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
-	mb.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := o.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
+	_, err := or.BroadcastDataDefinition(context.Background(), "ns1", &fftypes.DataDefinition{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value: fftypes.JSONObject{
 			"some": "data",
 		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestBroadcastNamespaceBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	_, err := or.BroadcastNamespaceDefinition(context.Background(), &fftypes.Namespace{
+		Name: "!ns",
+	})
+	assert.Regexp(t, "FF10131.*name", err.Error())
+}
+
+func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	buff := strings.Builder{}
+	buff.Grow(4097)
+	for i := 0; i < 4097; i++ {
+		buff.WriteByte(byte('a' + i%26))
+	}
+	_, err := or.BroadcastNamespaceDefinition(context.Background(), &fftypes.Namespace{
+		Name:        "ns1",
+		Description: buff.String(),
+	})
+	assert.Regexp(t, "FF10188.*description", err.Error())
+}
+
+func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
+	buff := strings.Builder{}
+	buff.Grow(4097)
+	for i := 0; i < 4097; i++ {
+		buff.WriteByte(byte('a' + i%26))
+	}
+	_, err := or.BroadcastNamespaceDefinition(context.Background(), &fftypes.Namespace{
+		Name:        "ns1",
+		Description: "my namespace",
 	})
 	assert.NoError(t, err)
 }

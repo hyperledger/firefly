@@ -102,4 +102,6 @@ var (
 	MsgMaxFilterLimit              = ffm("FF10184", "Your query exceeds the maximum filter limit (%d)")
 	MsgAPIServerStaticFail         = ffm("FF10185", "An error occurred loading static content", 500)
 	MsgEventListenerClosing        = ffm("FF10186", "Event listener closing")
+	MsgNamespaceNotExist           = ffm("FF10187", "Namespace does not exist")
+	MsgFieldTooLong                = ffm("FF10188", "Field '%s' maximum length is %d", 400)
 )

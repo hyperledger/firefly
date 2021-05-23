@@ -22,42 +22,16 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
-
-	// Validate the input data definition data
-	s.ID = fftypes.NewUUID()
-	s.Created = fftypes.Now()
-	s.Namespace = ns
-	if s.Validator == "" {
-		s.Validator = fftypes.ValidatorTypeJSON
-	}
-	if s.Validator != fftypes.ValidatorTypeJSON {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
-	}
-	if err = fftypes.ValidateFFNameField(ctx, s.Namespace, "namespace"); err != nil {
-		return nil, err
-	}
-	if err = fftypes.ValidateFFNameField(ctx, s.Name, "name"); err != nil {
-		return nil, err
-	}
-	if err = fftypes.ValidateFFNameField(ctx, s.Version, "version"); err != nil {
-		return nil, err
-	}
-	if len(s.Value) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
-	}
-	if s.Hash, err = s.Value.Hash(ctx, "value"); err != nil {
-		return nil, err
-	}
+func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeDataDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: s.Namespace,
+		Namespace: ns,
 		Created:   fftypes.Now(),
 	}
-	b, _ := json.Marshal(&s)
+	b, _ := json.Marshal(&defObject)
 	_ = json.Unmarshal(b, &data.Value)
 	data.Hash, _ = data.Value.Hash(ctx, "value")
 
@@ -69,10 +43,10 @@ func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, 
 	// Create a broadcast message referring to the data
 	msg = &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: s.Namespace,
+			Namespace: ns,
 			Type:      fftypes.MessageTypeDefinition,
 			Author:    or.nodeIDentity,
-			Topic:     fftypes.DataDefinitionaTopicName,
+			Topic:     topic,
 			Context:   fftypes.SystemContext,
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypePin,
@@ -89,4 +63,49 @@ func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, 
 	}
 
 	return msg, nil
+}
+
+func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, dataDef *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
+
+	// Validate the input data definition data
+	dataDef.ID = fftypes.NewUUID()
+	dataDef.Created = fftypes.Now()
+	dataDef.Namespace = ns
+	if dataDef.Validator == "" {
+		dataDef.Validator = fftypes.ValidatorTypeJSON
+	}
+	if dataDef.Validator != fftypes.ValidatorTypeJSON {
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
+	}
+	if err = or.verifyNamespaceExists(ctx, dataDef.Namespace); err != nil {
+		return nil, err
+	}
+	if err = fftypes.ValidateFFNameField(ctx, dataDef.Name, "name"); err != nil {
+		return nil, err
+	}
+	if err = fftypes.ValidateFFNameField(ctx, dataDef.Version, "version"); err != nil {
+		return nil, err
+	}
+	if len(dataDef.Value) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
+	}
+	if dataDef.Hash, err = dataDef.Value.Hash(ctx, "value"); err != nil {
+		return nil, err
+	}
+	return or.broadcastDefinition(ctx, ns, dataDef, fftypes.DataDefinitionTopicName)
+}
+
+func (or *orchestrator) BroadcastNamespaceDefinition(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
+
+	// Validate the input data definition data
+	ns.ID = fftypes.NewUUID()
+	ns.Created = fftypes.Now()
+	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
+		return nil, err
+	}
+	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
+		return nil, err
+	}
+
+	return or.broadcastDefinition(ctx, ns.Name, ns, fftypes.NamespaceDefinitionTopicName)
 }

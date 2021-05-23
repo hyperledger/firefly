@@ -100,8 +100,8 @@ func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, bat
 	return r0, r1
 }
 
-// VerifyIDentitySyntax provides a mock function with given fields: ctx, identity
-func (_m *Plugin) VerifyIDentitySyntax(ctx context.Context, identity string) (string, error) {
+// VerifyIdentitySyntax provides a mock function with given fields: ctx, identity
+func (_m *Plugin) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
 	ret := _m.Called(ctx, identity)
 
 	var r0 string

@@ -31,3 +31,10 @@ func ValidateFFNameField(ctx context.Context, str string, fieldName string) erro
 	}
 	return nil
 }
+
+func ValidateLength(ctx context.Context, str string, fieldName string, max int) error {
+	if len([]byte(str)) > max {
+		return i18n.NewError(ctx, i18n.MsgFieldTooLong, fieldName, max)
+	}
+	return nil
+}
