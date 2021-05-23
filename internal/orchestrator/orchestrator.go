@@ -47,8 +47,9 @@ type Orchestrator interface {
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 
-	// Definitions
-	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
+	// Broadcasts
+	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
+	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
@@ -64,8 +65,8 @@ type Orchestrator interface {
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
 	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
-	GetDataDefinitionByID(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
-	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
+	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
+	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error)
 	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)

@@ -21,12 +21,12 @@ const (
 	ValidatorTypeJSON ValidatorType = "json"
 	// ValidatorTypeBLOB is the validator type for binary blob data, that is passed through without any parsing or validation
 	ValidatorTypeBLOB ValidatorType = "blob"
-	// ValidatorTypeDataDefinition is the validator type for data definitions, which are a built in type that defines other types
-	ValidatorTypeDataDefinition ValidatorType = "datadef"
+	// ValidatorTypeDatatype is the validator type for data definitions, which are a built in type that defines other types
+	ValidatorTypeDatatype ValidatorType = "datadef"
 )
 
-// DataDefinition is the structure defining a data definition, such as a JSON schema
-type DataDefinition struct {
+// Datatype is the structure defining a data definition, such as a JSON schema
+type Datatype struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Validator ValidatorType `json:"validator"`
 	Namespace string        `json:"namespace,omitempty"`

@@ -202,14 +202,14 @@ func TestGetData(t *testing.T) {
 func TestGetDataDefsByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDataDefinitionByID", mock.Anything, u).Return(nil, nil)
-	_, err := or.GetDataDefinitionByID(context.Background(), "ns1", u.String())
+	or.mdi.On("GetDatatypeByID", mock.Anything, u).Return(nil, nil)
+	_, err := or.GetDatatypeByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetDataDefsByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetDataDefinitionByID(context.Background(), "", "")
+	_, err := or.GetDatatypeByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
@@ -241,13 +241,13 @@ func TestGetEventIDBadID(t *testing.T) {
 	assert.Regexp(t, "FF10142", err.Error())
 }
 
-func TestGetDataDefinitions(t *testing.T) {
+func TestGetDatatypes(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDataDefinitions", mock.Anything, mock.Anything).Return([]*fftypes.DataDefinition{}, nil)
-	fb := database.DataDefinitionQueryFactory.NewFilter(context.Background())
+	or.mdi.On("GetDatatypes", mock.Anything, mock.Anything).Return([]*fftypes.Datatype{}, nil)
+	fb := database.DatatypeQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, err := or.GetDataDefinitions(context.Background(), "ns1", f)
+	_, err := or.GetDatatypes(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 

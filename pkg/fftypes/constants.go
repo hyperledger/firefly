@@ -22,8 +22,8 @@ const (
 	// SystemContext is the system reserved context name
 	SystemContext = "ff-system"
 
-	// DataDefinitionTopicName is the topic for messages that broadcast data definitions
-	DataDefinitionTopicName = "ff-data-definition"
+	// DatatypeTopicName is the topic for messages that broadcast data definitions
+	DatatypeTopicName = "ff-data-definition"
 
 	// NamespaceDefinitionTopicName is the topic for messages that broadcast namespace definitions
 	NamespaceDefinitionTopicName = "ff-namespace-definition"

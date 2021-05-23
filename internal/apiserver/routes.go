@@ -36,5 +36,6 @@ var routes = []*oapispec.Route{
 	getOps,
 	getTxnByID,
 	getTxns,
-	postDataDefs,
+	postBroadcastDatatype,
+	postBroadcastNamespace,
 }

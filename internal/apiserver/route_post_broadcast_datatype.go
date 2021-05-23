@@ -23,9 +23,9 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postDataDefs = &oapispec.Route{
-	Name:   "postDataDefs",
-	Path:   "namespaces/{ns}/definitions/data/broadcast",
+var postBroadcastDatatype = &oapispec.Route{
+	Name:   "postBroadcastDatatype",
+	Path:   "namespaces/{ns}/broadcast/datatype",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -33,12 +33,12 @@ var postDataDefs = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.DataDefinition{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Validator"},
+	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
+	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Confirmed"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastDataDefinition(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataDefinition))
+		output, err = r.Or.BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype))
 		return output, err
 	},
 }

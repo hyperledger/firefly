@@ -148,62 +148,16 @@ func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.D
 	return r0, r1
 }
 
-// GetDataDefinitionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataDefinitionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.DataDefinition, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *fftypes.DataDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.DataDefinition); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.DataDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetDataDefinitionByName provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetDataDefinitionByName(ctx context.Context, ns string, name string) (*fftypes.DataDefinition, error) {
-	ret := _m.Called(ctx, ns, name)
-
-	var r0 *fftypes.DataDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.DataDefinition); ok {
-		r0 = rf(ctx, ns, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.DataDefinition)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetDataDefinitions provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetDataDefinitions(ctx context.Context, filter database.Filter) ([]*fftypes.DataDefinition, error) {
+// GetDataRefs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (fftypes.DataRefs, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.DataDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.DataDefinition); ok {
+	var r0 fftypes.DataRefs
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataRefs); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.DataDefinition)
+			r0 = ret.Get(0).(fftypes.DataRefs)
 		}
 	}
 
@@ -217,16 +171,62 @@ func (_m *Plugin) GetDataDefinitions(ctx context.Context, filter database.Filter
 	return r0, r1
 }
 
-// GetDataRefs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (fftypes.DataRefs, error) {
+// GetDatatypeByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Datatype, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Datatype); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Datatype)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDatatypeByName provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string) (*fftypes.Datatype, error) {
+	ret := _m.Called(ctx, ns, name)
+
+	var r0 *fftypes.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Datatype); ok {
+		r0 = rf(ctx, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Datatype)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDatatypes provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*fftypes.Datatype, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataRefs); ok {
+	var r0 []*fftypes.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Datatype); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataRefs)
+			r0 = ret.Get(0).([]*fftypes.Datatype)
 		}
 	}
 
@@ -683,8 +683,8 @@ func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update datab
 	return r0
 }
 
-// UpdateDataDefinition provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+// UpdateDatatype provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
 
 	var r0 error
@@ -837,12 +837,12 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowExist
 	return r0
 }
 
-// UpsertDataDefinition provides a mock function with given fields: ctx, datadef, allowExisting
-func (_m *Plugin) UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) error {
+// UpsertDatatype provides a mock function with given fields: ctx, datadef, allowExisting
+func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) error {
 	ret := _m.Called(ctx, datadef, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.DataDefinition, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Datatype, bool) error); ok {
 		r0 = rf(ctx, datadef, allowExisting)
 	} else {
 		r0 = ret.Error(0)

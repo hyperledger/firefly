@@ -1,12 +1,12 @@
 CREATE TABLE data (
-  id             string    NOT NULL,
-  validator      string    NOT NULL,
-  namespace      string    NOT NULL,
-  def_name       string    NOT NULL,
-  def_version    string    NOT NULL,
-  hash           string    NOT NULL,
-  created        int64     NOT NULL,
-  value          BLOB      NOT NULL
+  id               string    NOT NULL,
+  validator        string    NOT NULL,
+  namespace        string    NOT NULL,
+  datatype_name    string    NOT NULL,
+  datatype_version string    NOT NULL,
+  hash             string    NOT NULL,
+  created          int64     NOT NULL,
+  value            BLOB      NOT NULL
 );
 
 CREATE UNIQUE INDEX data_primary ON data(id);

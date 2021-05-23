@@ -26,7 +26,7 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defO
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
-		Validator: fftypes.ValidatorTypeDataDefinition,
+		Validator: fftypes.ValidatorTypeDatatype,
 		ID:        fftypes.NewUUID(),
 		Namespace: ns,
 		Created:   fftypes.Now(),
@@ -65,37 +65,37 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defO
 	return msg, nil
 }
 
-func (or *orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, dataDef *fftypes.DataDefinition) (msg *fftypes.Message, err error) {
+func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error) {
 
 	// Validate the input data definition data
-	dataDef.ID = fftypes.NewUUID()
-	dataDef.Created = fftypes.Now()
-	dataDef.Namespace = ns
-	if dataDef.Validator == "" {
-		dataDef.Validator = fftypes.ValidatorTypeJSON
+	datatype.ID = fftypes.NewUUID()
+	datatype.Created = fftypes.Now()
+	datatype.Namespace = ns
+	if datatype.Validator == "" {
+		datatype.Validator = fftypes.ValidatorTypeJSON
 	}
-	if dataDef.Validator != fftypes.ValidatorTypeJSON {
+	if datatype.Validator != fftypes.ValidatorTypeJSON {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
 	}
-	if err = or.verifyNamespaceExists(ctx, dataDef.Namespace); err != nil {
+	if err = or.verifyNamespaceExists(ctx, datatype.Namespace); err != nil {
 		return nil, err
 	}
-	if err = fftypes.ValidateFFNameField(ctx, dataDef.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, datatype.Name, "name"); err != nil {
 		return nil, err
 	}
-	if err = fftypes.ValidateFFNameField(ctx, dataDef.Version, "version"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, datatype.Version, "version"); err != nil {
 		return nil, err
 	}
-	if len(dataDef.Value) == 0 {
+	if len(datatype.Value) == 0 {
 		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
 	}
-	if dataDef.Hash, err = dataDef.Value.Hash(ctx, "value"); err != nil {
+	if datatype.Hash, err = datatype.Value.Hash(ctx, "value"); err != nil {
 		return nil, err
 	}
-	return or.broadcastDefinition(ctx, ns, dataDef, fftypes.DataDefinitionTopicName)
+	return or.broadcastDefinition(ctx, ns, datatype, fftypes.DatatypeTopicName)
 }
 
-func (or *orchestrator) BroadcastNamespaceDefinition(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
+func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
 
 	// Validate the input data definition data
 	ns.ID = fftypes.NewUUID()

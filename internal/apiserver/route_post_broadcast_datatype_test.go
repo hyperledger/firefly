@@ -15,6 +15,8 @@
 package apiserver
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
@@ -24,16 +26,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataDefByID(t *testing.T) {
+func TestPostDatatypes(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/definitions/data/abcd12345", nil)
+	input := fftypes.Datatype{}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&input)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/broadcast/datatype", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDatatypeByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Datatype{}, nil)
+	o.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype")).
+		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+	assert.Equal(t, 202, res.Result().StatusCode)
 }

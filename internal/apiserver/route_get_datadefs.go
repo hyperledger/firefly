@@ -32,13 +32,13 @@ var getDataDefs = &oapispec.Route{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.DataDefinitionQueryFactory,
+	FilterFactory:   database.DatatypeQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return []*fftypes.DataDefinition{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Datatype{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDataDefinitions(r.Ctx, r.PP["ns"], r.Filter)
+		output, err = r.Or.GetDatatypes(r.Ctx, r.PP["ns"], r.Filter)
 		return output, err
 	},
 }

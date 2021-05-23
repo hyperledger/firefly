@@ -156,20 +156,20 @@ type PeristenceInterface interface {
 	// GetTransactions - Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
-	// UpsertDataDefinition - Upsert a data definitino
-	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) (err error)
+	// UpsertDatatype - Upsert a data definitino
+	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
 
-	// UpdateDataDefinition - Update data definition
-	UpdateDataDefinition(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// UpdateDatatype - Update data definition
+	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetDataDefinitionByID - Get a data definition by ID
-	GetDataDefinitionByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.DataDefinition, err error)
+	// GetDatatypeByID - Get a data definition by ID
+	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
 
-	// GetDataDefinitionByName - Get a data definition by name
-	GetDataDefinitionByName(ctx context.Context, ns, name string) (datadef *fftypes.DataDefinition, err error)
+	// GetDatatypeByName - Get a data definition by name
+	GetDatatypeByName(ctx context.Context, ns, name string) (datadef *fftypes.Datatype, err error)
 
-	// GetDataDefinitions - Get data definitions
-	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
+	// GetDatatypes - Get data definitions
+	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
 
 	// UpsertOffset - Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
@@ -308,17 +308,17 @@ var TransactionQueryFactory = &queryFields{
 
 // DataQueryFactory filter fields for data
 var DataQueryFactory = &queryFields{
-	"id":                 &UUIDField{},
-	"namespace":          &StringField{},
-	"validator":          &StringField{},
-	"definition.name":    &StringField{},
-	"definition.version": &StringField{},
-	"hash":               &StringField{},
-	"created":            &TimeField{},
+	"id":               &UUIDField{},
+	"namespace":        &StringField{},
+	"validator":        &StringField{},
+	"datatype.name":    &StringField{},
+	"datatype.version": &StringField{},
+	"hash":             &StringField{},
+	"created":          &TimeField{},
 }
 
-// DataDefinitionQueryFactory filter fields for data definitions
-var DataDefinitionQueryFactory = &queryFields{
+// DatatypeQueryFactory filter fields for data definitions
+var DatatypeQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"validator": &StringField{},

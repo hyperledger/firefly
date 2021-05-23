@@ -19,12 +19,12 @@ type Orchestrator struct {
 	mock.Mock
 }
 
-// BroadcastDataDefinition provides a mock function with given fields: ctx, ns, s
-func (_m *Orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error) {
+// BroadcastDatatype provides a mock function with given fields: ctx, ns, s
+func (_m *Orchestrator) BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, s)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.DataDefinition) *fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Datatype) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, s)
 	} else {
 		if ret.Get(0) != nil {
@@ -33,8 +33,31 @@ func (_m *Orchestrator) BroadcastDataDefinition(ctx context.Context, ns string, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.DataDefinition) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Datatype) error); ok {
 		r1 = rf(ctx, ns, s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastNamespace provides a mock function with given fields: ctx, s
+func (_m *Orchestrator) BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, s)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) *fftypes.Message); ok {
+		r0 = rf(ctx, s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace) error); ok {
+		r1 = rf(ctx, s)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -134,16 +157,16 @@ func (_m *Orchestrator) GetDataByID(ctx context.Context, ns string, id string) (
 	return r0, r1
 }
 
-// GetDataDefinitionByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetDataDefinitionByID(ctx context.Context, ns string, id string) (*fftypes.DataDefinition, error) {
+// GetDatatypeByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, ns string, id string) (*fftypes.Datatype, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 *fftypes.DataDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.DataDefinition); ok {
+	var r0 *fftypes.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Datatype); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.DataDefinition)
+			r0 = ret.Get(0).(*fftypes.Datatype)
 		}
 	}
 
@@ -157,16 +180,16 @@ func (_m *Orchestrator) GetDataDefinitionByID(ctx context.Context, ns string, id
 	return r0, r1
 }
 
-// GetDataDefinitions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
+// GetDatatypes provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.DataDefinition
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.DataDefinition); ok {
+	var r0 []*fftypes.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Datatype); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.DataDefinition)
+			r0 = ret.Get(0).([]*fftypes.Datatype)
 		}
 	}
 

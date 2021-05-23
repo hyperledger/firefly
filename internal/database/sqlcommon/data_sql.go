@@ -30,16 +30,16 @@ var (
 		"id",
 		"validator",
 		"namespace",
-		"def_name",
-		"def_version",
+		"datatype_name",
+		"datatype_version",
 		"hash",
 		"created",
 		"value",
 	}
 	dataFilterTypeMap = map[string]string{
-		"validator":          "validator",
-		"definition.name":    "def_name",
-		"definition.version": "def_version",
+		"validator":        "validator",
+		"datatype.name":    "datatype_name",
+		"datatype.version": "datatype_version",
 	}
 )
 
@@ -75,9 +75,9 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 		dataRows.Close()
 	}
 
-	dataDef := data.Definition
-	if dataDef == nil {
-		dataDef = &fftypes.DataDefinitionRef{}
+	datatype := data.Datatype
+	if datatype == nil {
+		datatype = &fftypes.DatatypeRef{}
 	}
 
 	if existing {
@@ -86,8 +86,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 			sq.Update("data").
 				Set("validator", string(data.Validator)).
 				Set("namespace", data.Namespace).
-				Set("def_name", dataDef.Name).
-				Set("def_version", dataDef.Version).
+				Set("datatype_name", datatype.Name).
+				Set("datatype_version", datatype.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
 				Set("value", data.Value).
@@ -103,8 +103,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					data.ID,
 					string(data.Validator),
 					data.Namespace,
-					dataDef.Name,
-					dataDef.Version,
+					datatype.Name,
+					datatype.Version,
 					data.Hash,
 					data.Created,
 					data.Value,
@@ -119,20 +119,20 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 
 func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
 	data := fftypes.Data{
-		Definition: &fftypes.DataDefinitionRef{},
+		Datatype: &fftypes.DatatypeRef{},
 	}
 	err := row.Scan(
 		&data.ID,
 		&data.Validator,
 		&data.Namespace,
-		&data.Definition.Name,
-		&data.Definition.Version,
+		&data.Datatype.Name,
+		&data.Datatype.Version,
 		&data.Hash,
 		&data.Created,
 		&data.Value,
 	)
-	if data.Definition.Name == "" && data.Definition.Version == "" {
-		data.Definition = nil
+	if data.Datatype.Name == "" && data.Datatype.Version == "" {
+		data.Datatype = nil
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")

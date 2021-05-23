@@ -26,16 +26,16 @@ type DataRef struct {
 }
 
 type Data struct {
-	ID         *UUID              `json:"id,omitempty"`
-	Validator  ValidatorType      `json:"validator"`
-	Namespace  string             `json:"namespace,omitempty"`
-	Hash       *Bytes32           `json:"hash,omitempty"`
-	Created    *FFTime            `json:"created,omitempty"`
-	Definition *DataDefinitionRef `json:"definition,omitempty"`
-	Value      JSONObject         `json:"value,omitempty"`
+	ID        *UUID         `json:"id,omitempty"`
+	Validator ValidatorType `json:"validator"`
+	Namespace string        `json:"namespace,omitempty"`
+	Hash      *Bytes32      `json:"hash,omitempty"`
+	Created   *FFTime       `json:"created,omitempty"`
+	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
+	Value     JSONObject    `json:"value,omitempty"`
 }
 
-type DataDefinitionRef struct {
+type DatatypeRef struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }

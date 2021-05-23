@@ -87,12 +87,12 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*fftype
 	return or.database.GetDataByID(ctx, u)
 }
 
-func (or *orchestrator) GetDataDefinitionByID(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error) {
+func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetDataDefinitionByID(ctx, u)
+	return or.database.GetDatatypeByID(ctx, u)
 }
 
 func (or *orchestrator) GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error) {
@@ -171,9 +171,9 @@ func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID strin
 	return or.database.GetMessagesForData(ctx, u, filter)
 }
 
-func (or *orchestrator) GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error) {
+func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.database.GetDataDefinitions(ctx, filter)
+	return or.database.GetDatatypes(ctx, filter)
 }
 
 func (or *orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error) {

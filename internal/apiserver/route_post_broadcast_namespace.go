@@ -17,28 +17,25 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getDataDefByID = &oapispec.Route{
-	Name:   "getDataDefByID",
-	Path:   "namespaces/{ns}/definitions/data/{defid}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "defid", Description: i18n.MsgTBD},
-	},
+var postBroadcastNamespace = &oapispec.Route{
+	Name:            "postBroadcastNamespace",
+	Path:            "broadcast/namespace",
+	Method:          http.MethodPost,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
+	JSONInputMask:   []string{"ID", "Name", "Created", "Confirmed", "Type"},
+	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
+	JSONOutputCode:  http.StatusAccepted,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["defid"])
+		output, err = r.Or.BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
 		return output, err
 	},
 }

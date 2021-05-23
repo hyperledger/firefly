@@ -26,17 +26,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostDataDefinitions(t *testing.T) {
+func TestPostBroadcastNamespace(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
-	input := fftypes.DataDefinition{}
+	input := fftypes.Namespace{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/definitions/data/broadcast", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/broadcast/namespace", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("BroadcastDataDefinition", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataDefinition")).
+	o.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
