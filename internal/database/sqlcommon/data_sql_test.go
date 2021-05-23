@@ -73,7 +73,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		ID:        dataID,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
-		Definition: &fftypes.DataDefinitionRef{
+		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
 		},
@@ -102,8 +102,8 @@ func TestDataE2EWithDB(t *testing.T) {
 		fb.Eq("id", dataUpdated.ID.String()),
 		fb.Eq("namespace", dataUpdated.Namespace),
 		fb.Eq("validator", string(dataUpdated.Validator)),
-		fb.Eq("definition.name", dataUpdated.Definition.Name),
-		fb.Eq("definition.version", dataUpdated.Definition.Version),
+		fb.Eq("datatype.name", dataUpdated.Datatype.Name),
+		fb.Eq("datatype.version", dataUpdated.Datatype.Version),
 		fb.Eq("hash", dataUpdated.Hash),
 		fb.Gt("created", 0),
 	)
@@ -121,14 +121,14 @@ func TestDataE2EWithDB(t *testing.T) {
 
 	// Update
 	v2 := "2.0.0"
-	up := database.DataQueryFactory.NewUpdate(ctx).Set("definition.version", v2)
+	up := database.DataQueryFactory.NewUpdate(ctx).Set("datatype.version", v2)
 	err = s.UpdateData(ctx, dataID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
-		fb.Eq("definition.version", v2),
+		fb.Eq("datatype.version", v2),
 	)
 	dataRes, err = s.GetData(ctx, filter)
 	assert.NoError(t, err)

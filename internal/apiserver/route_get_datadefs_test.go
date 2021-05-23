@@ -31,8 +31,8 @@ func TestGetDataDefs(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDataDefinitions", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.DataDefinition{}, nil)
+	o.On("GetDatatypes", mock.Anything, "mynamespace", mock.Anything).
+		Return([]*fftypes.Datatype{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

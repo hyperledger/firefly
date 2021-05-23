@@ -27,51 +27,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDataDefinitionE2EWithDB(t *testing.T) {
+func TestDatatypeE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
 	s := newQLTestProvider(t)
 	defer s.Close()
 	ctx := context.Background()
 
-	// Create a new data definition entry
-	dataDefID := fftypes.NewUUID()
+	// Create a new datatype entry
+	datatypeID := fftypes.NewUUID()
 	randB32 := fftypes.NewRandB32()
 	val := fftypes.JSONObject{
-		"some": "dataDef",
+		"some": "datatype",
 		"with": map[string]interface{}{
 			"nesting": 12345,
 		},
 	}
-	dataDef := &fftypes.DataDefinition{
-		ID:        dataDefID,
+	datatype := &fftypes.Datatype{
+		ID:        datatypeID,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
 		Value:     val,
 	}
-	err := s.UpsertDataDefinition(ctx, dataDef, true)
+	err := s.UpsertDatatype(ctx, datatype, true)
 	assert.NoError(t, err)
 
-	// Check we get the exact same data definition back
-	dataDefRead, err := s.GetDataDefinitionByID(ctx, dataDefID)
+	// Check we get the exact same datatype back
+	datatypeRead, err := s.GetDatatypeByID(ctx, datatypeID)
 	assert.NoError(t, err)
-	assert.NotNil(t, dataDefRead)
-	dataDefJson, _ := json.Marshal(&dataDef)
-	dataDefReadJson, _ := json.Marshal(&dataDefRead)
-	assert.Equal(t, string(dataDefJson), string(dataDefReadJson))
+	assert.NotNil(t, datatypeRead)
+	datatypeJson, _ := json.Marshal(&datatype)
+	datatypeReadJson, _ := json.Marshal(&datatypeRead)
+	assert.Equal(t, string(datatypeJson), string(datatypeReadJson))
 
-	// Update the data definition (this is testing what's possible at the database layer,
+	// Update the datatype (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	val2 := fftypes.JSONObject{
 		"another": "set",
 		"of": map[string]interface{}{
-			"dataDef": 12345,
+			"datatype": 12345,
 		},
 	}
-	dataDefUpdated := &fftypes.DataDefinition{
-		ID:        dataDefID,
+	datatypeUpdated := &fftypes.Datatype{
+		ID:        datatypeID,
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
 		Name:      "customer",
@@ -80,186 +80,186 @@ func TestDataDefinitionE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     val2,
 	}
-	err = s.UpsertDataDefinition(context.Background(), dataDefUpdated, true)
+	err = s.UpsertDatatype(context.Background(), datatypeUpdated, true)
 	assert.NoError(t, err)
 
-	// Check we get the exact same data back - note the removal of one of the dataDef elements
-	dataDefRead, err = s.GetDataDefinitionByID(ctx, dataDefID)
+	// Check we get the exact same data back - note the removal of one of the datatype elements
+	datatypeRead, err = s.GetDatatypeByID(ctx, datatypeID)
 	assert.NoError(t, err)
-	dataDefJson, _ = json.Marshal(&dataDefUpdated)
-	dataDefReadJson, _ = json.Marshal(&dataDefRead)
-	assert.Equal(t, string(dataDefJson), string(dataDefReadJson))
+	datatypeJson, _ = json.Marshal(&datatypeUpdated)
+	datatypeReadJson, _ = json.Marshal(&datatypeRead)
+	assert.Equal(t, string(datatypeJson), string(datatypeReadJson))
 
 	// Query back the data
-	fb := database.DataDefinitionQueryFactory.NewFilter(ctx)
+	fb := database.DatatypeQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("id", dataDefUpdated.ID.String()),
-		fb.Eq("namespace", dataDefUpdated.Namespace),
-		fb.Eq("validator", string(dataDefUpdated.Validator)),
-		fb.Eq("name", dataDefUpdated.Name),
-		fb.Eq("version", dataDefUpdated.Version),
+		fb.Eq("id", datatypeUpdated.ID.String()),
+		fb.Eq("namespace", datatypeUpdated.Namespace),
+		fb.Eq("validator", string(datatypeUpdated.Validator)),
+		fb.Eq("name", datatypeUpdated.Name),
+		fb.Eq("version", datatypeUpdated.Version),
 		fb.Gt("created", "0"),
 	)
-	dataDefs, err := s.GetDataDefinitions(ctx, filter)
+	datatypes, err := s.GetDatatypes(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(dataDefs))
-	dataDefReadJson, _ = json.Marshal(dataDefs[0])
-	assert.Equal(t, string(dataDefJson), string(dataDefReadJson))
+	assert.Equal(t, 1, len(datatypes))
+	datatypeReadJson, _ = json.Marshal(datatypes[0])
+	assert.Equal(t, string(datatypeJson), string(datatypeReadJson))
 
 	// Update
 	v2 := "2.0.0"
-	up := database.DataDefinitionQueryFactory.NewUpdate(ctx).Set("version", v2)
-	err = s.UpdateDataDefinition(ctx, dataDefUpdated.ID, up)
+	up := database.DatatypeQueryFactory.NewUpdate(ctx).Set("version", v2)
+	err = s.UpdateDatatype(ctx, datatypeUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
-		fb.Eq("id", dataDefUpdated.ID.String()),
+		fb.Eq("id", datatypeUpdated.ID.String()),
 		fb.Eq("version", v2),
 	)
-	dataDefs, err = s.GetDataDefinitions(ctx, filter)
+	datatypes, err = s.GetDatatypes(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(dataDefs))
+	assert.Equal(t, 1, len(datatypes))
 }
 
-func TestUpsertDataDefinitionFailBegin(t *testing.T) {
+func TestUpsertDatatypeFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{}, true)
+	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataDefinitionFailSelect(t *testing.T) {
+func TestUpsertDatatypeFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataDefID := fftypes.NewUUID()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefID}, true)
+	datatypeID := fftypes.NewUUID()
+	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataDefinitionFailInsert(t *testing.T) {
+func TestUpsertDatatypeFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	dataDefID := fftypes.NewUUID()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefID}, true)
+	datatypeID := fftypes.NewUUID()
+	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10116", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataDefinitionFailUpdate(t *testing.T) {
+func TestUpsertDatatypeFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
-	dataDefID := fftypes.NewUUID()
+	datatypeID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataDefID.String()))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(datatypeID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefID}, true)
+	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10117", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertDataDefinitionFailCommit(t *testing.T) {
+func TestUpsertDatatypeFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
-	dataDefID := fftypes.NewUUID()
+	datatypeID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDataDefinition(context.Background(), &fftypes.DataDefinition{ID: dataDefID}, true)
+	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10119", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataDefinitionByIDSelectFail(t *testing.T) {
+func TestGetDatatypeByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	dataDefID := fftypes.NewUUID()
+	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetDataDefinitionByID(context.Background(), dataDefID)
+	_, err := s.GetDatatypeByID(context.Background(), datatypeID)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataDefinitionByIDNotFound(t *testing.T) {
+func TestGetDatatypeByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	dataDefID := fftypes.NewUUID()
+	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataDefinitionByID(context.Background(), dataDefID)
+	msg, err := s.GetDatatypeByID(context.Background(), datatypeID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataDefinitionByNameNotFound(t *testing.T) {
+func TestGetDatatypeByNameNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDataDefinitionByName(context.Background(), "ns1", "name1")
+	msg, err := s.GetDatatypeByName(context.Background(), "ns1", "name1")
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-func TestGetDataDefinitionByIDScanFail(t *testing.T) {
+func TestGetDatatypeByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	dataDefID := fftypes.NewUUID()
+	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetDataDefinitionByID(context.Background(), dataDefID)
+	_, err := s.GetDatatypeByID(context.Background(), datatypeID)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataDefinitionsQueryFail(t *testing.T) {
+func TestGetDatatypesQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetDataDefinitions(context.Background(), f)
+	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetDataDefinitionsBuildQueryFail(t *testing.T) {
+func TestGetDatatypesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetDataDefinitions(context.Background(), f)
+	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
+	_, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
-func TestGetDataDefinitionsReadMessageFail(t *testing.T) {
+func TestGetDatatypesReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	f := database.DataDefinitionQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetDataDefinitions(context.Background(), f)
+	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
+	_, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestDataDefinitionUpdateBeginFail(t *testing.T) {
+func TestDatatypeUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.DataDefinitionQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
-	err := s.UpdateDataDefinition(context.Background(), fftypes.NewUUID(), u)
+	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
+	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
-func TestDataDefinitionUpdateBuildQueryFail(t *testing.T) {
+func TestDatatypeUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	u := database.DataDefinitionQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateDataDefinition(context.Background(), fftypes.NewUUID(), u)
+	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
+	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
-func TestDataDefinitionUpdateFail(t *testing.T) {
+func TestDatatypeUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	u := database.DataDefinitionQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateDataDefinition(context.Background(), fftypes.NewUUID(), u)
+	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
+	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
 }
