@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -29,10 +28,9 @@ import (
 
 func TestOperationE2EWithDB(t *testing.T) {
 
-	log.SetLevel("debug")
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new operation entry
 	operationID := fftypes.NewUUID()
@@ -137,7 +135,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertOperationFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertOperation(context.Background(), &fftypes.Operation{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -145,7 +143,7 @@ func TestUpsertOperationFailBegin(t *testing.T) {
 }
 
 func TestUpsertOperationFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -156,7 +154,7 @@ func TestUpsertOperationFailSelect(t *testing.T) {
 }
 
 func TestUpsertOperationFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -168,7 +166,7 @@ func TestUpsertOperationFailInsert(t *testing.T) {
 }
 
 func TestUpsertOperationFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(operationID.String()))
@@ -180,7 +178,7 @@ func TestUpsertOperationFailUpdate(t *testing.T) {
 }
 
 func TestUpsertOperationFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -192,7 +190,7 @@ func TestUpsertOperationFailCommit(t *testing.T) {
 }
 
 func TestGetOperationByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetOperationByID(context.Background(), operationID)
@@ -201,7 +199,7 @@ func TestGetOperationByIDSelectFail(t *testing.T) {
 }
 
 func TestGetOperationByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetOperationByID(context.Background(), operationID)
@@ -211,7 +209,7 @@ func TestGetOperationByIDNotFound(t *testing.T) {
 }
 
 func TestGetOperationByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetOperationByID(context.Background(), operationID)
@@ -220,7 +218,7 @@ func TestGetOperationByIDScanFail(t *testing.T) {
 }
 
 func TestGetOperationsQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetOperations(context.Background(), f)
@@ -229,14 +227,14 @@ func TestGetOperationsQueryFail(t *testing.T) {
 }
 
 func TestGetOperationsBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetOperations(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGettOperationsReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetOperations(context.Background(), f)
@@ -245,7 +243,7 @@ func TestGettOperationsReadMessageFail(t *testing.T) {
 }
 
 func TestOperationUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
@@ -254,7 +252,7 @@ func TestOperationUpdateBeginFail(t *testing.T) {
 }
 
 func TestOperationUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
@@ -263,7 +261,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestOperationUpdateBuildFilterFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
@@ -272,7 +270,7 @@ func TestOperationUpdateBuildFilterFail(t *testing.T) {
 }
 
 func TestOperationUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()

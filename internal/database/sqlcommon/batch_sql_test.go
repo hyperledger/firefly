@@ -28,9 +28,9 @@ import (
 
 func TestBatch2EWithDB(t *testing.T) {
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new batch entry
 	batchID := fftypes.NewUUID()
@@ -142,7 +142,7 @@ func TestBatch2EWithDB(t *testing.T) {
 }
 
 func TestUpsertBatchFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertBatch(context.Background(), &fftypes.Batch{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -150,7 +150,7 @@ func TestUpsertBatchFailBegin(t *testing.T) {
 }
 
 func TestUpsertBatchFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -161,7 +161,7 @@ func TestUpsertBatchFailSelect(t *testing.T) {
 }
 
 func TestUpsertBatchFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -173,7 +173,7 @@ func TestUpsertBatchFailInsert(t *testing.T) {
 }
 
 func TestUpsertBatchFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	batchID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(batchID.String()))
@@ -185,7 +185,7 @@ func TestUpsertBatchFailUpdate(t *testing.T) {
 }
 
 func TestUpsertBatchFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	batchID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -197,7 +197,7 @@ func TestUpsertBatchFailCommit(t *testing.T) {
 }
 
 func TestGetBatchByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	batchID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetBatchByID(context.Background(), batchID)
@@ -206,7 +206,7 @@ func TestGetBatchByIDSelectFail(t *testing.T) {
 }
 
 func TestGetBatchByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	batchID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetBatchByID(context.Background(), batchID)
@@ -216,7 +216,7 @@ func TestGetBatchByIDNotFound(t *testing.T) {
 }
 
 func TestGetBatchByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	batchID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetBatchByID(context.Background(), batchID)
@@ -225,7 +225,7 @@ func TestGetBatchByIDScanFail(t *testing.T) {
 }
 
 func TestGetBatchesQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
@@ -234,14 +234,14 @@ func TestGetBatchesQueryFail(t *testing.T) {
 }
 
 func TestGetBatchesBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetBatchesReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetBatches(context.Background(), f)
@@ -250,7 +250,7 @@ func TestGetBatchesReadMessageFail(t *testing.T) {
 }
 
 func TestBatchUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
@@ -258,7 +258,7 @@ func TestBatchUpdateBeginFail(t *testing.T) {
 }
 
 func TestBatchUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
@@ -266,7 +266,7 @@ func TestBatchUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestBatchUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()

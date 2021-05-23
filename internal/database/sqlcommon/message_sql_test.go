@@ -22,7 +22,6 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -32,12 +31,11 @@ import (
 func TestUpsertE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	me := databasemocks.Callbacks{}
-	InitSQLCommon(ctx, s, ensureTestDB(t), &me, &database.Capabilities{}, testSQLOptions())
 
-	me.On("MessageCreated", mock.Anything).Return()
+	s.callbacks.On("MessageCreated", mock.Anything).Return()
 
 	// Create a new message
 	msgID := fftypes.NewUUID()
@@ -197,7 +195,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertMessageFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -205,7 +203,7 @@ func TestUpsertMessageFailBegin(t *testing.T) {
 }
 
 func TestUpsertMessageFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -216,7 +214,7 @@ func TestUpsertMessageFailSelect(t *testing.T) {
 }
 
 func TestUpsertMessageFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -228,7 +226,7 @@ func TestUpsertMessageFailInsert(t *testing.T) {
 }
 
 func TestUpsertMessageFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(msgID.String()))
@@ -240,7 +238,7 @@ func TestUpsertMessageFailUpdate(t *testing.T) {
 }
 
 func TestUpsertMessageFailLoadRefs(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -253,7 +251,7 @@ func TestUpsertMessageFailLoadRefs(t *testing.T) {
 }
 
 func TestUpsertMessageFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -266,7 +264,7 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 }
 
 func TestGetMessageDataRefsScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
@@ -277,7 +275,7 @@ func TestGetMessageDataRefsScanFail(t *testing.T) {
 }
 
 func TestUpdateMessageDataRefsNilID(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
@@ -293,7 +291,7 @@ func TestUpdateMessageDataRefsNilID(t *testing.T) {
 }
 
 func TestUpdateMessageDataRefsNilHash(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
@@ -309,7 +307,7 @@ func TestUpdateMessageDataRefsNilHash(t *testing.T) {
 }
 
 func TestUpdateMessageDataDeleteFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
@@ -325,7 +323,7 @@ func TestUpdateMessageDataDeleteFail(t *testing.T) {
 }
 
 func TestUpdateMessageDataAddFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
@@ -342,7 +340,7 @@ func TestUpdateMessageDataAddFail(t *testing.T) {
 }
 
 func TestUpdateMessageDataSwitchIDxFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	dataID1 := fftypes.NewUUID()
 	dataHash1 := fftypes.NewRandB32()
@@ -367,7 +365,7 @@ func TestUpdateMessageDataSwitchIDxFail(t *testing.T) {
 }
 
 func TestLoadMessageDataRefsQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.loadDataRefs(context.Background(), []*fftypes.Message{
@@ -380,7 +378,7 @@ func TestLoadMessageDataRefsQueryFail(t *testing.T) {
 }
 
 func TestLoadMessageDataRefsScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}).AddRow("only one"))
 	err := s.loadDataRefs(context.Background(), []*fftypes.Message{
@@ -393,7 +391,7 @@ func TestLoadMessageDataRefsScanFail(t *testing.T) {
 }
 
 func TestLoadMessageDataRefsEmpty(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id", "data_hash"}))
@@ -404,7 +402,7 @@ func TestLoadMessageDataRefsEmpty(t *testing.T) {
 }
 
 func TestGetMessageByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
@@ -413,7 +411,7 @@ func TestGetMessageByIDSelectFail(t *testing.T) {
 }
 
 func TestGetMessageByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetMessageByID(context.Background(), msgID)
@@ -423,7 +421,7 @@ func TestGetMessageByIDNotFound(t *testing.T) {
 }
 
 func TestGetMessageByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
@@ -432,7 +430,7 @@ func TestGetMessageByIDScanFail(t *testing.T) {
 }
 
 func TestGetMessageByIDLoadRefsFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	b32 := fftypes.NewRandB32()
 	cols := append([]string{}, msgColumns...)
@@ -446,14 +444,14 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 }
 
 func TestGetMessagesBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetMessagesQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
@@ -462,7 +460,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 }
 
 func TestGetMessagesForDataBadQuery(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
 	assert.Regexp(t, "FF10148", err.Error())
@@ -470,7 +468,7 @@ func TestGetMessagesForDataBadQuery(t *testing.T) {
 }
 
 func TestGetMessagesReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
@@ -479,7 +477,7 @@ func TestGetMessagesReadMessageFail(t *testing.T) {
 }
 
 func TestGetMessagesLoadRefsFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	b32 := fftypes.NewRandB32()
 	cols := append([]string{}, msgColumns...)
@@ -494,14 +492,14 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 }
 
 func TestGetMessageRefsBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetMessageRefs(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetMessageRefsQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessageRefs(context.Background(), f)
@@ -510,7 +508,7 @@ func TestGetMessageRefsQueryFail(t *testing.T) {
 }
 
 func TestGetMessageRefsReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessageRefs(context.Background(), f)
@@ -519,7 +517,7 @@ func TestGetMessageRefsReadMessageFail(t *testing.T) {
 }
 
 func TestMessageUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
@@ -527,7 +525,7 @@ func TestMessageUpdateBeginFail(t *testing.T) {
 }
 
 func TestMessageUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
@@ -535,7 +533,7 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestMessagesUpdateBuildFilterFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
@@ -544,7 +542,7 @@ func TestMessagesUpdateBuildFilterFail(t *testing.T) {
 }
 
 func TestMessageUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -554,14 +552,14 @@ func TestMessageUpdateFail(t *testing.T) {
 }
 
 func TestCheckDataAvailableFalseBadMessage(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{})
 	assert.False(t, ok)
 	assert.NoError(t, err) // function just returns false and logs if the data cannot be checked for input error
 }
 
 func TestCheckDataAvailableFalseBadMessageRefs(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
@@ -576,7 +574,7 @@ func TestCheckDataAvailableFalseBadMessageRefs(t *testing.T) {
 }
 
 func TestCheckDataAvailableTrueNoData(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
@@ -588,7 +586,7 @@ func TestCheckDataAvailableTrueNoData(t *testing.T) {
 }
 
 func TestCheckDataAvailableDatabaseError(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -605,7 +603,7 @@ func TestCheckDataAvailableDatabaseError(t *testing.T) {
 }
 
 func TestCheckDataAvailableScanError(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{

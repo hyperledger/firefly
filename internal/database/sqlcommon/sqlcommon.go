@@ -19,45 +19,50 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+
+	// Import migrate file source
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type SQLCommon struct {
 	db           *sql.DB
 	capabilities *database.Capabilities
 	callbacks    database.Callbacks
-	options      *Options
+	provider     Provider
 }
 
 type txContextKey struct{}
-
-// Options customize the common SQL code to different databases
-type Options struct {
-	// PlaceholderFormat as supported by the SQL sequence of the plugin
-	PlaceholderFormat sq.PlaceholderFormat
-	// Postgres requies you to add RETURNING id to get the auto-incremented sequence back
-	InsertReturnedSyntax bool
-	// SequenceField must be auto added by the database to each table, via appropriate DDL in the migrations
-	SequenceField func(tableName string) string
-}
 
 type txWrapper struct {
 	sqlTX      *sql.Tx
 	postCommit []func()
 }
 
-func InitSQLCommon(ctx context.Context, s *SQLCommon, db *sql.DB, callbacks database.Callbacks, capabilities *database.Capabilities, options *Options) error {
-	s.db = db
+func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
 	s.capabilities = capabilities
 	s.callbacks = callbacks
-	if options == nil || options.PlaceholderFormat == nil || options.SequenceField == nil {
-		log.L(ctx).Errorf("Invalid SQL options from plugin: %+v", options)
+	s.provider = provider
+	if s.provider == nil || s.provider.PlaceholderFormat() == nil || s.provider.SequenceField("") == "" {
+		log.L(ctx).Errorf("Invalid SQL options from provider '%T'", s.provider)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)
 	}
-	s.options = options
+
+	if s.db, err = provider.Open(prefix.GetString(SQLConfDatasourceURL)); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
+	}
+
+	if prefix.GetBool(SQLConfMigrationsAuto) {
+		if err = s.applyDBMigrations(ctx, prefix, provider); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
+		}
+	}
+
 	return nil
 }
 
@@ -75,6 +80,23 @@ func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context)
 	}
 
 	return s.commitTx(ctx, tx, false /* we _are_ the auto-committer */)
+}
+
+func (s *SQLCommon) applyDBMigrations(ctx context.Context, prefix config.Prefix, provider Provider) error {
+	driver, err := provider.GetMigrationDriver(s.db)
+	if err == nil {
+		var m *migrate.Migrate
+		m, err = migrate.NewWithDatabaseInstance(
+			"file://"+prefix.GetString(SQLConfMigrationsDirectory),
+			provider.Name(), driver)
+		if err == nil {
+			err = m.Up()
+		}
+	}
+	if err != nil && err != migrate.ErrNoChange {
+		return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
+	}
+	return nil
 }
 
 func getTXFromContext(ctx context.Context) *txWrapper {
@@ -120,7 +142,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuild
 	}
 
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -146,18 +168,16 @@ func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, e
 
 func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder) (int64, error) {
 	l := log.L(ctx)
-	if s.options.InsertReturnedSyntax {
-		q = q.Suffix(" RETURNING " + s.options.SequenceField(""))
-	}
+	q, useQuery := s.provider.UpdateInsertForSequenceReturn(q)
 
-	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
 		return -1, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> insert: %s`, sqlQuery)
 	l.Tracef(`SQL-> insert args: %+v`, args)
 	var sequence int64
-	if s.options.InsertReturnedSyntax {
+	if useQuery {
 		err := tx.sqlTX.QueryRowContext(ctx, sqlQuery, args...).Scan(&sequence)
 		if err != nil {
 			l.Errorf(`SQL insert failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
@@ -177,7 +197,7 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) (sql.Result, error) {
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -195,7 +215,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 
 func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) error {
 	l := log.L(ctx)
-	sqlQuery, args, err := q.PlaceholderFormat(s.options.PlaceholderFormat).ToSql()
+	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
@@ -254,4 +274,15 @@ func (s *SQLCommon) commitTx(ctx context.Context, tx *txWrapper, autoCommit bool
 	}
 
 	return nil
+}
+
+func (s *SQLCommon) DB() *sql.DB {
+	return s.db
+}
+
+func (s *SQLCommon) Close() {
+	if s.db != nil {
+		err := s.db.Close()
+		log.L(context.Background()).Debugf("Database closed (err=%v)", err)
+	}
 }

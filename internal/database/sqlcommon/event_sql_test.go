@@ -21,8 +21,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -31,13 +29,11 @@ import (
 
 func TestEventE2EWithDB(t *testing.T) {
 
-	log.SetLevel("trace")
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	me := databasemocks.Callbacks{}
-	InitSQLCommon(ctx, s, ensureTestDB(t), &me, &database.Capabilities{}, testSQLOptions())
 
-	me.On("EventCreated", mock.Anything).Return()
+	s.callbacks.On("EventCreated", mock.Anything).Return()
 
 	// Create a new event entry
 	eventID := fftypes.NewUUID()
@@ -121,7 +117,7 @@ func TestEventE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertEventFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertEvent(context.Background(), &fftypes.Event{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -129,7 +125,7 @@ func TestUpsertEventFailBegin(t *testing.T) {
 }
 
 func TestUpsertEventFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -140,7 +136,7 @@ func TestUpsertEventFailSelect(t *testing.T) {
 }
 
 func TestUpsertEventFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -152,7 +148,7 @@ func TestUpsertEventFailInsert(t *testing.T) {
 }
 
 func TestUpsertEventFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(eventID.String()))
@@ -164,7 +160,7 @@ func TestUpsertEventFailUpdate(t *testing.T) {
 }
 
 func TestUpsertEventFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -176,7 +172,7 @@ func TestUpsertEventFailCommit(t *testing.T) {
 }
 
 func TestGetEventByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetEventByID(context.Background(), eventID)
@@ -185,7 +181,7 @@ func TestGetEventByIDSelectFail(t *testing.T) {
 }
 
 func TestGetEventByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetEventByID(context.Background(), eventID)
@@ -195,7 +191,7 @@ func TestGetEventByIDNotFound(t *testing.T) {
 }
 
 func TestGetEventByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetEventByID(context.Background(), eventID)
@@ -204,7 +200,7 @@ func TestGetEventByIDScanFail(t *testing.T) {
 }
 
 func TestGetEventsQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetEvents(context.Background(), f)
@@ -213,14 +209,14 @@ func TestGetEventsQueryFail(t *testing.T) {
 }
 
 func TestGetEventsBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetEvents(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGettEventsReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetEvents(context.Background(), f)
@@ -229,7 +225,7 @@ func TestGettEventsReadMessageFail(t *testing.T) {
 }
 
 func TestEventUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
@@ -237,7 +233,7 @@ func TestEventUpdateBeginFail(t *testing.T) {
 }
 
 func TestEventUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
@@ -245,7 +241,7 @@ func TestEventUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestEventUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()

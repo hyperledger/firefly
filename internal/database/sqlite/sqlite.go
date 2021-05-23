@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build cgo
-
 package sqlite
 
 import (
@@ -22,42 +20,49 @@ import (
 
 	"database/sql"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
+	migratedb "github.com/golang-migrate/migrate/v4/database"
+	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/spf13/viper"
 
 	// Import the SQLite driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type SQLite struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *SQLite) Name() string {
+func (sqlite *SQLite) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+	capabilities := &database.Capabilities{}
+	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
+}
+
+func (sqlite *SQLite) Name() string {
 	return "sqlite"
 }
 
-func (e *SQLite) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+func (sqlite *SQLite) PlaceholderFormat() sq.PlaceholderFormat {
+	return sq.Dollar
+}
 
-	capabilities := &database.Capabilities{}
-	options := &sqlcommon.Options{
-		PlaceholderFormat: squirrel.Dollar,
-		SequenceField: func(tableName string) string {
-			if tableName == "" {
-				return "seq"
-			}
-			return fmt.Sprintf("%s.seq", tableName)
-		},
+func (sqlite *SQLite) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+	return insert, false
+}
+
+func (sqlite *SQLite) SequenceField(tableName string) string {
+	if tableName != "" {
+		return fmt.Sprintf("%s.seq", tableName)
 	}
+	return "seq"
+}
 
-	db, err := sql.Open("sqlite", viper.GetString("URL"))
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
-	}
+func (sqlite *SQLite) Open(url string) (*sql.DB, error) {
+	return sql.Open(sqlite.Name(), url)
+}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
+func (sqlite *SQLite) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
+	return migratesqlite.WithInstance(db, &migratesqlite.Config{})
 }

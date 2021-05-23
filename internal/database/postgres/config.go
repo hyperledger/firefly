@@ -18,24 +18,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 )
 
-const (
-	defaultMigrationsDirectory = "./db/migrations/postgres"
-)
-
-const (
-	// PSQLConfDatabase is the database name to use (can be blank if specified in the connection URL)
-	PSQLConfDatabase = "database"
-	// PSQLConfURL is the PostgreSQL connection URL string
-	PSQLConfURL = "url"
-	// PSQLConfMigrationsAuto enables automatic migrations
-	PSQLConfMigrationsAuto = "migrations.auto"
-	// PSQLConfMigrationsDirectory is the directory containing the numerically ordered migration DDL files to apply to the database
-	PSQLConfMigrationsDirectory = "migrations.directory"
-)
-
-func (e *Postgres) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(PSQLConfDatabase)
-	prefix.AddKnownKey(PSQLConfURL)
-	prefix.AddKnownKey(PSQLConfMigrationsAuto)
-	prefix.AddKnownKey(PSQLConfMigrationsDirectory, defaultMigrationsDirectory)
+func (psql *Postgres) InitPrefix(prefix config.Prefix) {
+	psql.SQLCommon.InitPrefix(psql, prefix)
 }

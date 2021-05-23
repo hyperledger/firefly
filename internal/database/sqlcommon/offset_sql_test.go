@@ -32,9 +32,9 @@ import (
 func TestOffsetsE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new offset entry
 	rand1, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
@@ -114,7 +114,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertOffsetFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertOffset(context.Background(), &fftypes.Offset{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -122,7 +122,7 @@ func TestUpsertOffsetFailBegin(t *testing.T) {
 }
 
 func TestUpsertOffsetFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -132,7 +132,7 @@ func TestUpsertOffsetFailSelect(t *testing.T) {
 }
 
 func TestUpsertOffsetFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -143,7 +143,7 @@ func TestUpsertOffsetFailInsert(t *testing.T) {
 }
 
 func TestUpsertOffsetFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype", "namespace", "name"}).
 		AddRow(fftypes.OffsetTypeBatch, "ns1", "name1"))
@@ -155,7 +155,7 @@ func TestUpsertOffsetFailUpdate(t *testing.T) {
 }
 
 func TestUpsertOffsetFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype", "namespace", "name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -166,7 +166,7 @@ func TestUpsertOffsetFailCommit(t *testing.T) {
 }
 
 func TestGetOffsetByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1")
 	assert.Regexp(t, "FF10115", err.Error())
@@ -174,7 +174,7 @@ func TestGetOffsetByIDSelectFail(t *testing.T) {
 }
 
 func TestGetOffsetByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype", "namespace", "name"}))
 	msg, err := s.GetOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1")
 	assert.NoError(t, err)
@@ -183,7 +183,7 @@ func TestGetOffsetByIDNotFound(t *testing.T) {
 }
 
 func TestGetOffsetByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype"}).AddRow("only one"))
 	_, err := s.GetOffset(context.Background(), fftypes.OffsetTypeBatch, "ns1", "name1")
 	assert.Regexp(t, "FF10121", err.Error())
@@ -191,7 +191,7 @@ func TestGetOffsetByIDScanFail(t *testing.T) {
 }
 
 func TestGetOffsetQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetOffsets(context.Background(), f)
@@ -200,14 +200,14 @@ func TestGetOffsetQueryFail(t *testing.T) {
 }
 
 func TestGetOffsetBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, err := s.GetOffsets(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err.Error())
 }
 
 func TestGetOffsetReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"otype"}).AddRow("only one"))
 	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetOffsets(context.Background(), f)
@@ -216,7 +216,7 @@ func TestGetOffsetReadMessageFail(t *testing.T) {
 }
 
 func TestOffsetUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
 	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
@@ -224,7 +224,7 @@ func TestOffsetUpdateBeginFail(t *testing.T) {
 }
 
 func TestOffsetUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
@@ -232,7 +232,7 @@ func TestOffsetUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestOffsetUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
