@@ -1,5 +1,4 @@
 BEGIN;
-CREATE SEQUENCE operations_seq;
 CREATE TABLE operations (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,

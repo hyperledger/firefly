@@ -1,5 +1,4 @@
 BEGIN;
-CREATE SEQUENCE namespaces_seq;
 CREATE TABLE namespaces (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,
