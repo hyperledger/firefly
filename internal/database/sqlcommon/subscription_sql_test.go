@@ -21,18 +21,16 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSubscriptionsE2EWithDB(t *testing.T) {
-	log.SetLevel("debug")
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new subscription entry
 	subscription := &fftypes.Subscription{
@@ -123,7 +121,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -131,7 +129,7 @@ func TestUpsertSubscriptionFailBegin(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -141,7 +139,7 @@ func TestUpsertSubscriptionFailSelect(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -152,7 +150,7 @@ func TestUpsertSubscriptionFailInsert(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).
 		AddRow("name1"))
@@ -164,7 +162,7 @@ func TestUpsertSubscriptionFailUpdate(t *testing.T) {
 }
 
 func TestUpsertSubscriptionFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -175,7 +173,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 }
 
 func TestGetSubscriptionByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetSubscription(context.Background(), "ns1", "name1")
 	assert.Regexp(t, "FF10115", err.Error())
@@ -183,7 +181,7 @@ func TestGetSubscriptionByIDSelectFail(t *testing.T) {
 }
 
 func TestGetSubscriptionByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace", "name"}))
 	msg, err := s.GetSubscription(context.Background(), "ns1", "name1")
 	assert.NoError(t, err)
@@ -192,7 +190,7 @@ func TestGetSubscriptionByIDNotFound(t *testing.T) {
 }
 
 func TestGetSubscriptionByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace"}).AddRow("only one"))
 	_, err := s.GetSubscription(context.Background(), "ns1", "name1")
 	assert.Regexp(t, "FF10121", err.Error())
@@ -200,7 +198,7 @@ func TestGetSubscriptionByIDScanFail(t *testing.T) {
 }
 
 func TestGetSubscriptionQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
 	_, err := s.GetSubscriptions(context.Background(), f)
@@ -209,14 +207,14 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 }
 
 func TestGetSubscriptionBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
 	_, err := s.GetSubscriptions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err.Error())
 }
 
 func TestGetSubscriptionReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
 	_, err := s.GetSubscriptions(context.Background(), f)
@@ -225,7 +223,7 @@ func TestGetSubscriptionReadMessageFail(t *testing.T) {
 }
 
 func TestSubscriptionUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
@@ -233,7 +231,7 @@ func TestSubscriptionUpdateBeginFail(t *testing.T) {
 }
 
 func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
@@ -241,7 +239,7 @@ func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestSubscriptionUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()

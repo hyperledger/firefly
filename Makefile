@@ -2,6 +2,8 @@ VGO=go
 BINARY_NAME=firefly
 GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
 MOCKERY=mockery
+# Expect that ireFly compiles with CGO disabled
+CGO_ENABLED=0
 .DELETE_ON_ERROR:
 
 all: build test
@@ -26,9 +28,11 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
 		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
+firefly-nocgo: ${GOFILES}		
+		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
-build: ${BINARY_NAME}
+build: firefly-nocgo firefly
 clean: 
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}

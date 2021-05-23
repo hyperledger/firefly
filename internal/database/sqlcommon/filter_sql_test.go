@@ -26,7 +26,7 @@ import (
 )
 
 func TestSQLQueryFactory(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
 		fb.Eq("namespace", "ns1"),
@@ -59,7 +59,7 @@ func TestSQLQueryFactory(t *testing.T) {
 
 func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	u := fftypes.MustParseUUID("4066ABDC-8BBD-4472-9D29-1A55B467F9B9")
 	f := fb.And(
@@ -89,7 +89,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 }
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
@@ -98,7 +98,7 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 
 func TestSQLQueryFactoryBadOp(t *testing.T) {
 
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOp("wrong"),
@@ -108,7 +108,7 @@ func TestSQLQueryFactoryBadOp(t *testing.T) {
 
 func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOpOr,
@@ -121,7 +121,7 @@ func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 
 func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
 
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOpAnd,

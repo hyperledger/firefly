@@ -18,11 +18,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 )
 
-const (
-	// QLConfURL is the connection URL for the QL database (such as memory:// or file://)
-	QLConfURL = "url"
-)
-
-func (e *QL) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(QLConfURL)
+func (ql *QL) InitPrefix(prefix config.Prefix) {
+	ql.SQLCommon.InitPrefix(ql, prefix)
 }

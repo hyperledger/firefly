@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build cgo
-
 package sqlite
 
 import "github.com/kaleido-io/firefly/internal/config"
 
-const (
-	// SQLiteConfURL is the connection url for SQLite
-	SQLiteConfURL = "url"
-)
-
-func (e *SQLite) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(SQLiteConfURL)
+func (sqlite *SQLite) InitPrefix(prefix config.Prefix) {
+	sqlite.SQLCommon.InitPrefix(sqlite, prefix)
 }

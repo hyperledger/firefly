@@ -104,7 +104,7 @@ func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
 
 func (s *SQLCommon) mapField(tableName, fieldName string, tm map[string]string) string {
 	if fieldName == "sequence" {
-		return s.options.SequenceField(tableName)
+		return s.provider.SequenceField(tableName)
 	}
 	var field = fieldName
 	if tm != nil {

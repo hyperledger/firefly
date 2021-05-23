@@ -30,9 +30,9 @@ import (
 func TestDataE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new data entry
 	dataID := fftypes.NewUUID()
@@ -150,7 +150,7 @@ func TestDataE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertData(context.Background(), &fftypes.Data{}, true, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -158,7 +158,7 @@ func TestUpsertDataFailBegin(t *testing.T) {
 }
 
 func TestUpsertDataFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -169,7 +169,7 @@ func TestUpsertDataFailSelect(t *testing.T) {
 }
 
 func TestUpsertDataFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -181,7 +181,7 @@ func TestUpsertDataFailInsert(t *testing.T) {
 }
 
 func TestUpsertDataFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(dataID.String()))
@@ -193,7 +193,7 @@ func TestUpsertDataFailUpdate(t *testing.T) {
 }
 
 func TestUpsertDataFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
@@ -205,7 +205,7 @@ func TestUpsertDataFailCommit(t *testing.T) {
 }
 
 func TestGetDataByIDSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetDataByID(context.Background(), dataID)
@@ -214,7 +214,7 @@ func TestGetDataByIDSelectFail(t *testing.T) {
 }
 
 func TestGetDataByIDNotFound(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	msg, err := s.GetDataByID(context.Background(), dataID)
@@ -224,7 +224,7 @@ func TestGetDataByIDNotFound(t *testing.T) {
 }
 
 func TestGetDataByIDScanFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	dataID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetDataByID(context.Background(), dataID)
@@ -233,7 +233,7 @@ func TestGetDataByIDScanFail(t *testing.T) {
 }
 
 func TestGetDataQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
@@ -242,14 +242,14 @@ func TestGetDataQueryFail(t *testing.T) {
 }
 
 func TestGetDataBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetData(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetDataReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetData(context.Background(), f)
@@ -258,7 +258,7 @@ func TestGetDataReadMessageFail(t *testing.T) {
 }
 
 func TestGetDataRefsQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataRefs(context.Background(), f)
@@ -267,14 +267,14 @@ func TestGetDataRefsQueryFail(t *testing.T) {
 }
 
 func TestGetDataRefsBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetDataRefs(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err.Error())
 }
 
 func TestGetDataRefsReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDataRefs(context.Background(), f)
@@ -283,7 +283,7 @@ func TestGetDataRefsReadMessageFail(t *testing.T) {
 }
 
 func TestDataUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
@@ -291,7 +291,7 @@ func TestDataUpdateBeginFail(t *testing.T) {
 }
 
 func TestDataUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
@@ -299,7 +299,7 @@ func TestDataUpdateBuildQueryFail(t *testing.T) {
 }
 
 func TestDataUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()

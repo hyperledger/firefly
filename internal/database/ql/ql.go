@@ -20,10 +20,11 @@ import (
 
 	"database/sql"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
+	migratedb "github.com/golang-migrate/migrate/v4/database"
+	migrateql "github.com/golang-migrate/migrate/v4/database/ql"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
 
 	// Import QL driver
@@ -34,24 +35,32 @@ type QL struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *QL) Name() string {
+func (ql *QL) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+	capabilities := &database.Capabilities{}
+	return ql.SQLCommon.Init(ctx, ql, prefix, callbacks, capabilities)
+}
+
+func (ql *QL) Name() string {
 	return "ql"
 }
 
-func (e *QL) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+func (ql *QL) PlaceholderFormat() sq.PlaceholderFormat {
+	return sq.Dollar
+}
 
-	capabilities := &database.Capabilities{}
-	options := &sqlcommon.Options{
-		PlaceholderFormat: squirrel.Dollar,
-		SequenceField: func(tableName string) string {
-			return fmt.Sprintf("id(%s)", tableName)
-		},
-	}
+func (ql *QL) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+	// No tweaking needed, as QL supports the Go semantic for returning the id() from insert
+	return insert, false
+}
 
-	db, err := sql.Open("ql", prefix.GetString(QLConfURL))
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
-	}
+func (ql *QL) SequenceField(tableName string) string {
+	return fmt.Sprintf("id(%s)", tableName)
+}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, callbacks, capabilities, options)
+func (ql *QL) Open(url string) (*sql.DB, error) {
+	return sql.Open(ql.Name(), url)
+}
+
+func (ql *QL) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
+	return migrateql.WithInstance(db, &migrateql.Config{})
 }

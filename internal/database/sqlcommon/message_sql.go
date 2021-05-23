@@ -343,7 +343,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("messages").
@@ -400,7 +400,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, err error) {
 	cols := append([]string{}, msgColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
 	if err != nil {
 		return nil, err
@@ -413,7 +413,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 	for i, col := range msgColumns {
 		cols[i] = fmt.Sprintf("m.%s", col)
 	}
-	cols[len(msgColumns)] = s.options.SequenceField("m")
+	cols[len(msgColumns)] = s.provider.SequenceField("m")
 	query, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterTypeMap,
 		sq.Eq{"md.data_id": dataID})
 	if err != nil {
@@ -425,7 +425,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 }
 
 func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, error) {
-	query, err := s.filterSelect(ctx, "", sq.Select("id", s.options.SequenceField(""), "hash").From("messages"), filter, msgFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select("id", s.provider.SequenceField(""), "hash").From("messages"), filter, msgFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}

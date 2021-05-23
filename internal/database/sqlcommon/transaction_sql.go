@@ -154,7 +154,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("transactions").
@@ -181,7 +181,7 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (m
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
 
 	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
 	if err != nil {
 		return nil, err
