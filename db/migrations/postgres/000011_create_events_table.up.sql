@@ -1,5 +1,4 @@
 BEGIN;
-CREATE SEQUENCE events_seq;
 CREATE TABLE events (
   seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,

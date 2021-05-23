@@ -1,5 +1,4 @@
 BEGIN;
-CREATE SEQUENCE subscriptions_seq;
 CREATE TABLE subscriptions (
   seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,
