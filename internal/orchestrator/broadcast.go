@@ -100,6 +100,7 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 	// Validate the input data definition data
 	ns.ID = fftypes.NewUUID()
 	ns.Created = fftypes.Now()
+	ns.Type = fftypes.NamespaceTypeBroadcast
 	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
 		return nil, err
 	}

@@ -78,8 +78,8 @@ type asyncTXSubmission struct {
 }
 
 type ethBroadcastBatchInput struct {
-	TransactionID string `json:"txnID"`
-	BatchID       string `json:"batchID"`
+	TransactionID string `json:"txnId"`
+	BatchID       string `json:"batchId"`
 	PayloadRef    string `json:"payloadRef"`
 }
 
@@ -245,8 +245,8 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
 	dataJSON := msgJSON.GetObject(ctx, "data")
 	sAuthor := dataJSON.GetString(ctx, "author")
-	sTxnID := dataJSON.GetString(ctx, "txnID")
-	sBatchID := dataJSON.GetString(ctx, "batchID")
+	sTxnID := dataJSON.GetString(ctx, "txnId")
+	sBatchID := dataJSON.GetString(ctx, "batchId")
 	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
 
 	if sBlockNumber == "" ||
