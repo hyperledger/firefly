@@ -27,7 +27,7 @@ import (
 func TestGetDataDefByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/definitions/data/abcd12345", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
