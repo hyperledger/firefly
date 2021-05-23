@@ -134,29 +134,38 @@ func (or *orchestrator) WaitStop() {
 		or.broadcast.WaitStop()
 		or.broadcast = nil
 	}
+	or.started = false
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.database == nil {
-		if or.database, err = or.initDatabasePlugin(ctx); err != nil {
+		diType := config.GetString(config.DatabaseType)
+		if or.database, err = difactory.GetPlugin(ctx, diType); err != nil {
 			return err
 		}
+	}
+	if err = or.database.Init(ctx, databaseConfig.SubPrefix(or.database.Name()), or); err != nil {
+		return err
 	}
 
 	if or.blockchain == nil {
-		if or.blockchain, err = or.initBlockchainPlugin(ctx); err != nil {
+		biType := config.GetString(config.BlockchainType)
+		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
 			return err
 		}
+	}
+	if err = or.initBlockchainPlugin(ctx); err != nil {
+		return err
 	}
 
 	if or.publicstorage == nil {
-		if or.publicstorage, err = or.initPublicStoragePlugin(ctx); err != nil {
+		psType := config.GetString(config.PublicStorageType)
+		if or.publicstorage, err = psfactory.GetPlugin(ctx, psType); err != nil {
 			return err
 		}
 	}
-
-	return nil
+	return or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
@@ -182,41 +191,18 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
-	pluginType := config.GetString(config.BlockchainType)
-	plugin, err := bifactory.GetPlugin(ctx, pluginType)
+func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
+	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), or)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), or)
-	if err == nil {
-		suppliedIDentity := config.GetString(config.NodeIDentity)
-		or.nodeIDentity, err = plugin.VerifyIDentitySyntax(ctx, suppliedIDentity)
-		if err != nil {
-			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
-		}
-	}
-	return plugin, err
-}
-
-func (or *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
-	pluginType := config.GetString(config.DatabaseType)
-	plugin, err := difactory.GetPlugin(ctx, pluginType)
+	suppliedIDentity := config.GetString(config.NodeIdentity)
+	or.nodeIDentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
 	if err != nil {
-		return nil, err
+		log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
+		return err
 	}
-	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), or)
-	return plugin, err
-}
-
-func (or *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
-	pluginType := config.GetString(config.PublicStorageType)
-	plugin, err := psfactory.GetPlugin(ctx, pluginType)
-	if err != nil {
-		return nil, err
-	}
-	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), or)
-	return plugin, err
+	return nil
 }
 
 func (or *orchestrator) initNamespaces(ctx context.Context) error {

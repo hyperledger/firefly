@@ -100,7 +100,7 @@ func (u *UTDBQL) Start() error {
 	return nil
 }
 
-func (u *UTDBQL) VerifyIDentitySyntax(ctx context.Context, identity string) (string, error) {
+func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
 	if err := fftypes.ValidateFFNameField(ctx, identity, "identity"); err != nil {
 		return "", err
 	}

@@ -23,7 +23,22 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) verifyNamespace(ctx context.Context, ns string) error {
+func (or *orchestrator) verifyNamespaceExists(ctx context.Context, ns string) error {
+	err := fftypes.ValidateFFNameField(ctx, ns, "namespace")
+	if err != nil {
+		return err
+	}
+	namespace, err := or.database.GetNamespace(ctx, ns)
+	if err != nil {
+		return err
+	}
+	if namespace == nil {
+		return i18n.WrapError(ctx, err, i18n.MsgNamespaceNotExist)
+	}
+	return nil
+}
+
+func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
 	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
 }
 
@@ -32,7 +47,7 @@ func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
 	}
-	err = or.verifyNamespace(ctx, ns)
+	err = or.verifyNamespaceSyntax(ctx, ns)
 	return u, err
 }
 

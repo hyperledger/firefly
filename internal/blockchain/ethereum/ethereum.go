@@ -260,7 +260,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		return nil // move on
 	}
 
-	author, err := e.VerifyIDentitySyntax(ctx, sAuthor)
+	author, err := e.VerifyIdentitySyntax(ctx, sAuthor)
 	if err != nil {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
 		return nil // move on
@@ -359,7 +359,7 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) VerifyIDentitySyntax(ctx context.Context, identity string) (string, error) {
+func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
 	identity = strings.TrimPrefix(strings.ToLower(identity), "0x")
 	if !addressVerify.MatchString(identity) {
 		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)

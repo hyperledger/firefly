@@ -38,9 +38,9 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// VerifyIDentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
+	// VerifyIdentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
 	// Also applies any transformations, such as lower case
-	VerifyIDentitySyntax(ctx context.Context, identity string) (string, error)
+	VerifyIdentitySyntax(ctx context.Context, identity string) (string, error)
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates

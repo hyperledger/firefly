@@ -366,10 +366,10 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 func TestVerifyEthAddress(t *testing.T) {
 	e := &Ethereum{}
 
-	_, err := e.VerifyIDentitySyntax(context.Background(), "0x12345")
+	_, err := e.VerifyIdentitySyntax(context.Background(), "0x12345")
 	assert.Regexp(t, "FF10141", err.Error())
 
-	addr, err := e.VerifyIDentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	addr, err := e.VerifyIdentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
 	assert.NoError(t, err)
 	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", addr)
 
