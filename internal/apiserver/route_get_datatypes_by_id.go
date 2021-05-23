@@ -20,25 +20,25 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getDataDefs = &oapispec.Route{
-	Name:   "getDataDefs",
-	Path:   "namespaces/{ns}/definitions/data",
+var getDataDefByID = &oapispec.Route{
+	Name:   "getDataDefByID",
+	Path:   "namespaces/{ns}/datatypes/{dtypeid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "dtypeid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.DatatypeQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return nil },
-	JSONOutputValue: func() interface{} { return []*fftypes.Datatype{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypes(r.Ctx, r.PP["ns"], r.Filter)
+		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtypeid"])
 		return output, err
 	},
 }
