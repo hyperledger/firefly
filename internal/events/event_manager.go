@@ -104,6 +104,10 @@ func (em *eventManager) WaitStop() {
 }
 
 func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {
+	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
+		return i18n.NewError(ctx, i18n.MsgInvalidSubscription)
+	}
+
 	if subDef.Transport == "" {
 		subDef.Transport = em.defaultTransport
 	}
@@ -125,7 +129,7 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, id *fftypes.UUID) (err error) {
 	subDef, err := em.database.GetSubscriptionByID(ctx, id)
-	if err == nil {
+	if err != nil {
 		return err
 	}
 	if subDef == nil {
