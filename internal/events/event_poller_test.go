@@ -112,7 +112,8 @@ func TestRestoreOffsetNewestFail(t *testing.T) {
 func TestRestoreOffsetOldest(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
-	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
+	firstEvent := fftypes.SubOptsFirstEventOldest
+	ep.conf.firstEvent = &firstEvent
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: -1}, nil).Once()
@@ -128,7 +129,8 @@ func TestRestoreOffsetOldest(t *testing.T) {
 func TestRestoreOffsetSpecific(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
-	ep.conf.firstEvent = fftypes.SubOptsFirstEvent("123456")
+	firstEvent := fftypes.SubOptsFirstEvent("123456")
+	ep.conf.firstEvent = &firstEvent
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(&fftypes.Offset{Current: 123456}, nil)
@@ -154,7 +156,8 @@ func TestRestoreOffsetFailRead(t *testing.T) {
 func TestRestoreOffsetFailWrite(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
-	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
+	firstEvent := fftypes.SubOptsFirstEventOldest
+	ep.conf.firstEvent = &firstEvent
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, nil)
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -166,7 +169,8 @@ func TestRestoreOffsetFailWrite(t *testing.T) {
 func TestRestoreOffsetEphemeral(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil)
-	ep.conf.firstEvent = fftypes.SubOptsFirstEventOldest
+	firstEvent := fftypes.SubOptsFirstEventOldest
+	ep.conf.firstEvent = &firstEvent
 	ep.conf.ephemeral = true
 	defer cancel()
 	err := ep.restoreOffset()
@@ -230,7 +234,8 @@ func TestWaitForShoulderTapOrExitCloseBatch(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, nil)
 	cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Minute
-	assert.False(t, ep.waitForShoulderTapOrPollTimeout(0))
+	ep.conf.eventBatchSize = 50
+	assert.False(t, ep.waitForShoulderTapOrPollTimeout(1))
 }
 
 func TestWaitForShoulderTapOrExitClosePoll(t *testing.T) {
@@ -248,7 +253,8 @@ func TestWaitForShoulderTapOrPollTimeoutBatchAndPoll(t *testing.T) {
 	defer cancel()
 	ep.conf.eventBatchTimeout = 1 * time.Microsecond
 	ep.conf.eventPollTimeout = 1 * time.Microsecond
-	assert.True(t, ep.waitForShoulderTapOrPollTimeout(0))
+	ep.conf.eventBatchSize = 50
+	assert.True(t, ep.waitForShoulderTapOrPollTimeout(1))
 }
 
 func TestWaitForShoulderTapOrPollTimeoutTap(t *testing.T) {

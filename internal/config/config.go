@@ -77,8 +77,12 @@ var (
 	DatabaseType = rootKey("database.type")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = rootKey("debug.port")
+	// EventTransportsDefault the default event transport for new subscriptions
+	EventTransportsDefault = rootKey("event.transports.default")
 	// EventTransportsEnabled which event interface plugins are enabled
 	EventTransportsEnabled = rootKey("event.transports.enabled")
+	// EventAggregatorFirstEvent the first event the aggregator should process, if no previous offest is stored in the DB
+	EventAggregatorFirstEvent = rootKey("event.aggregator.firstEvent")
 	// EventAggregatorBatchSize the maximum number of records to read from the DB before performing an aggregation run
 	EventAggregatorBatchSize = rootKey("event.aggregator.batchSize")
 	// EventAggregatorBatchTimeout how long to wait for new events to arrive before performing aggregation on a page of events
@@ -145,8 +149,16 @@ var (
 	PublicStorageType = rootKey("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")
-	// SubscriptionMaxPerTransport maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
-	SubscriptionMaxPerTransport = rootKey("subscription.maxPerTransport")
+	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
+	SubscriptionMax = rootKey("subscription.max")
+	// SubscriptionsRetryMaxLookupAttemps is the maximum number of times to retry the lookup of a subscription, when starting. This is to account for async propagation via the DB of new subs
+	SubscriptionsRetryMaxLookupAttempts = rootKey("subscription.retry.maxLookupAttempts")
+	// SubscriptionsRetryInitialDelay is the initial retry delay
+	SubscriptionsRetryInitialDelay = rootKey("subscription.retry.initDelay")
+	// SubscriptionsRetryMaxDelay is the initial retry delay
+	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
+	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
+	SubscriptionsRetryFactor = rootKey("event.dispatcher.retry.factor")
 	// UIPath the path on which to serve the UI
 	UIPath = rootKey("ui.path")
 )
@@ -202,6 +214,7 @@ func Reset() {
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DebugPort), -1)
+	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 100)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
@@ -212,6 +225,7 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherBatchTimeout), 0)
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets"})
+	viper.SetDefault(string(EventTransportsDefault), "websockets")
 	viper.SetDefault(string(HTTPAddress), "127.0.0.1")
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")
@@ -224,7 +238,11 @@ func Reset() {
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
 	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
-	viper.SetDefault(string(SubscriptionMaxPerTransport), 500)
+	viper.SetDefault(string(SubscriptionMax), 500)
+	viper.SetDefault(string(SubscriptionsRetryMaxLookupAttempts), 10)
+	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "100ms")
+	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "1s")
+	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
 
 	i18n.SetLang(GetString(Lang))
 }

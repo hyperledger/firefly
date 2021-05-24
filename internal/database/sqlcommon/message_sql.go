@@ -241,7 +241,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 
 	// Fun through the extra IDs that are no longer needed
 	for _, idToDelete := range dataIDs {
-		if _, err = s.deleteTx(ctx, tx,
+		if err = s.deleteTx(ctx, tx,
 			sq.Delete("messages_data").
 				Where(sq.And{
 					sq.Eq{"message_id": message.Header.ID},

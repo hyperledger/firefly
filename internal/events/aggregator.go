@@ -39,6 +39,7 @@ func newAggregator(ctx context.Context, di database.Plugin, en *eventNotifier) *
 		ctx:      log.WithLogField(ctx, "role", "aggregator"),
 		database: di,
 	}
+	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             config.GetInt(config.EventAggregatorBatchSize),
 		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
@@ -49,6 +50,7 @@ func newAggregator(ctx context.Context, di database.Plugin, en *eventNotifier) *
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
+		firstEvent:       &firstEvent,
 		offsetType:       fftypes.OffsetTypeAggregator,
 		offsetNamespace:  fftypes.SystemNamespace,
 		offsetName:       aggregatorOffsetName,

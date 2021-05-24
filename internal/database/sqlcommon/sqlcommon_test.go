@@ -98,7 +98,7 @@ func TestUpdateTxBadSQL(t *testing.T) {
 
 func TestDeleteTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
+	err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
 	assert.Regexp(t, "FF10113", err.Error())
 }
 

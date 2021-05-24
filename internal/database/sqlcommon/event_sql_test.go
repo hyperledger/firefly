@@ -114,6 +114,8 @@ func TestEventE2EWithDB(t *testing.T) {
 	events, err = s.GetEvents(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertEventFailBegin(t *testing.T) {
