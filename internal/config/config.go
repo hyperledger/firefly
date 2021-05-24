@@ -151,8 +151,6 @@ var (
 	SubscriptionDefaultsReadAhead = rootKey("subscription.defaults.batchSize")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
 	SubscriptionMax = rootKey("subscription.max")
-	// SubscriptionsRetryMaxLookupAttemps is the maximum number of times to retry the lookup of a subscription, when starting. This is to account for async propagation via the DB of new subs
-	SubscriptionsRetryMaxLookupAttempts = rootKey("subscription.retry.maxLookupAttempts")
 	// SubscriptionsRetryInitialDelay is the initial retry delay
 	SubscriptionsRetryInitialDelay = rootKey("subscription.retry.initDelay")
 	// SubscriptionsRetryMaxDelay is the initial retry delay
@@ -239,9 +237,8 @@ func Reset() {
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
 	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
 	viper.SetDefault(string(SubscriptionMax), 500)
-	viper.SetDefault(string(SubscriptionsRetryMaxLookupAttempts), 10)
-	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "100ms")
-	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "1s")
+	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
+	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
 
 	i18n.SetLang(GetString(Lang))

@@ -58,7 +58,6 @@ type subscriptionManager struct {
 	cancelCtx            func()
 	newSubscriptions     chan *fftypes.UUID
 	deletedSubscriptions chan *fftypes.UUID
-	maxLookupAttempts    int
 	retry                retry.Retry
 }
 
@@ -75,7 +74,6 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, en *eventNo
 		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
 		cancelCtx:            cancelCtx,
 		eventNotifier:        en,
-		maxLookupAttempts:    config.GetInt(config.SubscriptionsRetryMaxLookupAttempts),
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.SubscriptionsRetryInitialDelay),
 			MaximumDelay: config.GetDuration(config.SubscriptionsRetryMaxDelay),
