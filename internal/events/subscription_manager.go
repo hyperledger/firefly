@@ -179,7 +179,7 @@ func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
 		sm.durableSubs[*subDef.ID] = newSub
 		for _, conn := range sm.connections {
 			if conn.matcher != nil && conn.matcher(subDef.SubscriptionRef) {
-				sm.matchedSubscriptionLocked(conn, newSub)
+				sm.matchedSubscriptionWithLock(conn, newSub)
 			}
 		}
 	}
@@ -316,14 +316,14 @@ func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID strin
 	// Make new dispatchers for all durable subscriptions that match
 	for _, sub := range sm.durableSubs {
 		if conn.matcher(sub.definition.SubscriptionRef) {
-			sm.matchedSubscriptionLocked(conn, sub)
+			sm.matchedSubscriptionWithLock(conn, sub)
 		}
 	}
 
 	return nil
 }
 
-func (sm *subscriptionManager) matchedSubscriptionLocked(conn *connection, sub *subscription) {
+func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub *subscription) {
 	ei, foundTransport := sm.transports[sub.definition.Transport]
 	if foundTransport {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {

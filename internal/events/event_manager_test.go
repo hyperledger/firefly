@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
@@ -72,4 +73,131 @@ func TestStartStopBadTransports(t *testing.T) {
 	_, err := NewEventManager(context.Background(), mpi, mdi)
 	assert.Regexp(t, "FF10172", err)
 
+}
+
+func TestEmitSubscriptionEventsNoops(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
+		Type:      fftypes.OffsetTypeAggregator,
+		Namespace: fftypes.SystemNamespace,
+		Name:      aggregatorOffsetName,
+		Current:   12345,
+	}, nil)
+	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+
+	getSubCallReady := make(chan bool, 1)
+	getSubCalled := make(chan bool)
+	getSub := mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, nil)
+	getSub.RunFn = func(a mock.Arguments) {
+		<-getSubCallReady
+		getSubCalled <- true
+	}
+
+	assert.NoError(t, em.Start())
+	defer cancel()
+
+	// Wait until the gets occur for these events, which will return nil
+	getSubCallReady <- true
+	em.NewSubscriptions() <- fftypes.NewUUID()
+	<-getSubCalled
+
+	getSubCallReady <- true
+	em.DeletedSubscriptions() <- fftypes.NewUUID()
+	<-getSubCalled
+
+	close(getSubCallReady)
+}
+
+func TestCreateDurableSubscriptionBadSub(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	err := em.CreateDurableSubscription(em.ctx, &fftypes.Subscription{})
+	assert.Regexp(t, "FF10189", err.Error())
+}
+
+func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Filter: fftypes.SubscriptionFilter{
+			Events: "![[[[[",
+		},
+	}
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.Regexp(t, "FF10171", err.Error())
+}
+
+func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+	}
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestCreateDurableSubscriptionOk(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+	}
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
+		{Sequence: 12345},
+	}, nil)
+	mdi.On("UpsertSubscription", mock.Anything, mock.Anything, false).Return(nil)
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.NoError(t, err)
+	// Check genreated fields
+	assert.NotNil(t, sub.ID)
+	assert.Equal(t, "websockets", sub.Transport)
+	assert.Equal(t, "12345", string(*sub.Options.FirstEvent))
+}
+
+func TestCreateDeleteDurableSubscriptionLookupError(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	err := em.DeleteDurableSubscription(em.ctx, fftypes.NewUUID())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestCreateDeleteDurableSubscriptionNotFound(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, nil)
+	err := em.DeleteDurableSubscription(em.ctx, fftypes.NewUUID())
+	assert.Regexp(t, "FF10109", err.Error())
+}
+
+func TestCreateDeleteDurableSubscriptionOk(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	subId := fftypes.NewUUID()
+	mdi.On("GetSubscriptionByID", mock.Anything, subId).Return(&fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{ID: subId}}, nil)
+	mdi.On("DeleteSubscriptionByID", mock.Anything, subId).Return(nil)
+	err := em.DeleteDurableSubscription(em.ctx, subId)
+	assert.NoError(t, err)
 }
