@@ -89,17 +89,16 @@ func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse
 	return ws.callbacks.DeliveryResponse(connID, *inflight)
 }
 
-func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) (err error) {
+func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) error {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(ws.ctx, i18n.MsgWSInvalidStartAction)
 	}
 	if start.Ephemeral {
 		return ws.callbacks.EphemeralSubscription(connID, start.Namespace, start.Filter, start.Options)
 	}
-	ws.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
+	return ws.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
 		return sr.Namespace == start.Namespace && sr.Name == start.Name
 	})
-	return err
 }
 
 func (ws *WebSockets) connClosed(connID string) {

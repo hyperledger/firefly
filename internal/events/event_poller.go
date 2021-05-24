@@ -17,7 +17,6 @@ package events
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -46,7 +45,7 @@ type eventPollerConf struct {
 	eventBatchSize             int
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
-	firstEvent                 fftypes.SubOptsFirstEvent
+	firstEvent                 *fftypes.SubOptsFirstEvent
 	limitNamespace             string
 	newEventsHandler           newEventsHandler
 	offsetName                 string
@@ -68,41 +67,12 @@ func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, 
 	return ep
 }
 
-func (ep *eventPoller) calcFirstOffset(ctx context.Context) (firstOffset int64, err error) {
-	firstOffset = -1
-	var useNewest bool
-	switch ep.conf.firstEvent {
-	case "", fftypes.SubOptsFirstEventNewest:
-		useNewest = true
-	case fftypes.SubOptsFirstEventOldest:
-		useNewest = false
-	default:
-		specificSequence, err := strconv.ParseInt(string(ep.conf.firstEvent), 10, 64)
-		if err == nil {
-			firstOffset = specificSequence
-			useNewest = false
-		}
-	}
-	if useNewest {
-		f := database.EventQueryFactory.NewFilter(ctx).And().Sort("sequence").Descending().Limit(1)
-		newestEvents, err := ep.database.GetEvents(ctx, f)
-		if err != nil {
-			return 0, err
-		}
-		if len(newestEvents) > 0 {
-			firstOffset = newestEvents[0].Sequence
-		}
-	}
-	log.L(ctx).Debugf("Event poller initial offest: %d (newest=%t)", firstOffset, useNewest)
-	return
-}
-
 func (ep *eventPoller) restoreOffset() error {
 	return ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
 		retry = ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts
 		var offset *fftypes.Offset
 		if ep.conf.ephemeral {
-			ep.pollingOffset, err = ep.calcFirstOffset(ep.ctx)
+			ep.pollingOffset, err = calcFirstOffset(ep.ctx, ep.database, ep.conf.firstEvent)
 			return retry, err
 		}
 		for offset == nil {
@@ -111,7 +81,7 @@ func (ep *eventPoller) restoreOffset() error {
 				return retry, err
 			}
 			if offset == nil {
-				firstOffset, err := ep.calcFirstOffset(ep.ctx)
+				firstOffset, err := calcFirstOffset(ep.ctx, ep.database, ep.conf.firstEvent)
 				if err != nil {
 					return retry, err
 				}
@@ -264,11 +234,11 @@ func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool 
 	l := log.L(ep.ctx)
 	longTimeoutDuration := ep.conf.eventPollTimeout
 	// We avoid a tight spin with the eventBatchingTimeout to allow messages to arrive
-	if lastEventCount < ep.conf.eventBatchSize {
+	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 && lastEventCount < ep.conf.eventBatchSize {
 		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
 		select {
 		case <-shortTimeout.C:
-			l.Debugf("Woken after poll timeout")
+			l.Tracef("Woken after batch timeout")
 		case <-ep.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return false

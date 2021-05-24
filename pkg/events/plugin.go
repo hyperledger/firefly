@@ -50,7 +50,7 @@ type Callbacks interface {
 	// It can be fired multiple times for the same connection ID, to update the subscription list
 	// For a "connect-out" style plugin (MQTT/AMQP/JMS broker), you might fire it at startup (from Init) for each target queue, with a subscription match
 	// For a "connect-in" style plugin (inbound WebSocket connections), you fire it every time the client application connects attaches to a subscription
-	RegisterConnection(connID string, matcher SubscriptionMatcher)
+	RegisterConnection(connID string, matcher SubscriptionMatcher) error
 
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
 	EphemeralSubscription(connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error

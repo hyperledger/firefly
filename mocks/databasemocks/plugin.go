@@ -56,6 +56,34 @@ func (_m *Plugin) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) 
 	return r0, r1
 }
 
+// DeleteOffset provides a mock function with given fields: ctx, t, ns, name
+func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string) error {
+	ret := _m.Called(ctx, t, ns, name)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string) error); ok {
+		r0 = rf(ctx, t, ns, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteSubscriptionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBatchByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, id)
@@ -516,8 +544,31 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetSubscription provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetSubscription(ctx context.Context, ns string, name string) (*fftypes.Subscription, error) {
+// GetSubscriptionByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Subscription); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSubscriptionByName provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetSubscriptionByName(ctx context.Context, ns string, name string) (*fftypes.Subscription, error) {
 	ret := _m.Called(ctx, ns, name)
 
 	var r0 *fftypes.Subscription

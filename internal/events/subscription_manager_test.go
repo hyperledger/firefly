@@ -19,22 +19,29 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/eventsmocks"
+	"github.com/kaleido-io/firefly/pkg/events"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestSubManager(t *testing.T, mdi *databasemocks.Plugin, mei *eventsmocks.Plugin) (*subscriptionManager, func()) {
+	config.Reset()
+	config.Set(config.EventTransportsEnabled, []string{})
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
 	mei.On("InitPrefix", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, mei, newEventNotifier(ctx))
+	sm, err := newSubscriptionManager(ctx, mdi, newEventNotifier(ctx))
 	assert.NoError(t, err)
+	sm.transports = map[string]events.Plugin{
+		"ut": mei,
+	}
 	return sm, cancel
 }
 
@@ -46,10 +53,10 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{
 		{SubscriptionRef: fftypes.SubscriptionRef{
 			ID: sub1,
-		}},
+		}, Transport: "ut"},
 		{SubscriptionRef: fftypes.SubscriptionRef{
 			ID: sub2,
-		}},
+		}, Transport: "ut"},
 	}, nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
@@ -60,26 +67,31 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 	testED1, cancel1 := newTestEventDispatcher(mdi, mei, &subscription{definition: &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{ID: sub1}}})
 	testED1.start()
 	defer cancel1()
-	sm.dispatchers["conn1"] = map[fftypes.UUID]*eventDispatcher{
-		*sub1: testED1,
+	sm.connections["conn1"] = &connection{
+		ei: mei,
+		id: "conn1",
+		dispatchers: map[fftypes.UUID]*eventDispatcher{
+			*sub1: testED1,
+		},
 	}
+	be := &boundCallbacks{sm: sm, ei: mei}
 
-	sm.RegisterConnection("conn1", func(sr fftypes.SubscriptionRef) bool {
+	be.RegisterConnection("conn1", func(sr fftypes.SubscriptionRef) bool {
 		return *sr.ID == *sub2
 	})
-	sm.RegisterConnection("conn2", func(sr fftypes.SubscriptionRef) bool {
+	be.RegisterConnection("conn2", func(sr fftypes.SubscriptionRef) bool {
 		return *sr.ID == *sub1
 	})
 
-	assert.Equal(t, 1, len(sm.dispatchers["conn1"]))
-	assert.Equal(t, *sub2, *sm.dispatchers["conn1"][*sub2].subscription.definition.ID)
-	assert.Equal(t, 1, len(sm.dispatchers["conn2"]))
-	assert.Equal(t, *sub1, *sm.dispatchers["conn2"][*sub1].subscription.definition.ID)
+	assert.Equal(t, 1, len(sm.connections["conn1"].dispatchers))
+	assert.Equal(t, *sub2, *sm.connections["conn1"].dispatchers[*sub2].subscription.definition.ID)
+	assert.Equal(t, 1, len(sm.connections["conn2"].dispatchers))
+	assert.Equal(t, *sub1, *sm.connections["conn2"].dispatchers[*sub1].subscription.definition.ID)
 
 	// Close with active conns
 	sm.close()
-	assert.Nil(t, sm.dispatchers["conn1"])
-	assert.Nil(t, sm.dispatchers["conn2"])
+	assert.Nil(t, sm.connections["conn1"])
+	assert.Nil(t, sm.connections["conn2"])
 }
 
 func TestRegisterEphemeralSubscriptions(t *testing.T) {
@@ -90,20 +102,21 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	defer cancel()
 	err := sm.start()
 	assert.NoError(t, err)
+	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = sm.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
+	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(sm.dispatchers["conn1"]))
-	for _, d := range sm.dispatchers["conn1"] {
+	assert.Equal(t, 1, len(sm.connections["conn1"].dispatchers))
+	for _, d := range sm.connections["conn1"].dispatchers {
 		assert.True(t, d.subscription.definition.Ephemeral)
 	}
 
-	sm.ConnnectionClosed("conn1")
-	assert.Nil(t, sm.dispatchers["conn1"])
+	be.ConnnectionClosed("conn1")
+	assert.Nil(t, sm.connections["conn1"])
 	// Check we swallow dup closes without errors
-	sm.ConnnectionClosed("conn1")
-	assert.Nil(t, sm.dispatchers["conn1"])
+	be.ConnnectionClosed("conn1")
+	assert.Nil(t, sm.connections["conn1"])
 }
 
 func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
@@ -114,21 +127,34 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	defer cancel()
 	err := sm.start()
 	assert.NoError(t, err)
+	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = sm.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{
+	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{
 		Topic: "[[[[[ !wrong",
 	}, fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10171", err.Error())
-	assert.Empty(t, sm.dispatchers["conn1"])
+	assert.Empty(t, sm.connections["conn1"].dispatchers)
 
 }
+
+func TestSubManagerBadPlugin(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	config.Reset()
+	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
+	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background()))
+	assert.Regexp(t, "FF10172", err.Error())
+}
+
 func TestSubManagerTransportInitError(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mei.On("Name").Return("ut")
 	mei.On("InitPrefix", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := newSubscriptionManager(context.Background(), mdi, mei, newEventNotifier(context.Background()))
+	sm, cancel := newTestSubManager(t, mdi, mei)
+	defer cancel()
+
+	err := sm.initTransports()
 	assert.EqualError(t, err, "pop")
 }
 
@@ -184,7 +210,7 @@ func TestCreateSubscriptionBadEventilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
-	_, err := sm.createSubscription(sm.ctx, &fftypes.Subscription{
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
 			Events: "[[[[! badness",
 		},
@@ -197,7 +223,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
-	_, err := sm.createSubscription(sm.ctx, &fftypes.Subscription{
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
 			Topic: "[[[[! badness",
 		},
@@ -210,7 +236,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
-	_, err := sm.createSubscription(sm.ctx, &fftypes.Subscription{
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
 			Context: "[[[[! badness",
 		},
@@ -223,7 +249,7 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
-	_, err := sm.createSubscription(sm.ctx, &fftypes.Subscription{
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
 			Group: "[[[[! badness",
 		},
@@ -239,18 +265,19 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 	defer cancel()
 	err := sm.start()
 	assert.NoError(t, err)
+	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = sm.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
+	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 1, len(sm.dispatchers["conn1"]))
+	assert.Equal(t, 1, len(sm.connections["conn1"].dispatchers))
 	var subID *fftypes.UUID
-	for _, d := range sm.dispatchers["conn1"] {
+	for _, d := range sm.connections["conn1"].dispatchers {
 		assert.True(t, d.subscription.definition.Ephemeral)
 		subID = d.subscription.definition.ID
 	}
 
-	err = sm.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{
+	err = be.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(), // Won't be in-flight, but that's fine
 		Subscription: fftypes.SubscriptionRef{
 			ID: subID,
@@ -267,12 +294,43 @@ func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
 	defer cancel()
 	err := sm.start()
 	assert.NoError(t, err)
+	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = sm.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{
+	err = be.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(),
 		Subscription: fftypes.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
 	})
 	assert.Regexp(t, "FF10181", err.Error())
+}
+
+func TestConnIDSafetyChecking(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mei1 := &eventsmocks.Plugin{}
+	mei2 := &eventsmocks.Plugin{}
+	mei2.On("Name").Return("ut2")
+	sm, cancel := newTestSubManager(t, mdi, mei1)
+	defer cancel()
+	be2 := &boundCallbacks{sm: sm, ei: mei2}
+
+	sm.connections["conn1"] = &connection{
+		ei:          mei1,
+		id:          "conn1",
+		dispatchers: map[fftypes.UUID]*eventDispatcher{},
+	}
+
+	err := be2.RegisterConnection("conn1", func(sr fftypes.SubscriptionRef) bool { return true })
+	assert.Regexp(t, "FF10190", err.Error())
+
+	err = be2.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
+	assert.Regexp(t, "FF10190", err.Error())
+
+	err = be2.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{})
+	assert.Regexp(t, "FF10190", err.Error())
+
+	be2.ConnnectionClosed("conn1")
+
+	assert.NotNil(t, sm.connections["conn1"])
+
 }

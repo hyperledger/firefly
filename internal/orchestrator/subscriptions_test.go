@@ -13,21 +13,3 @@
 // limitations under the License.
 
 package orchestrator
-
-import "github.com/kaleido-io/firefly/pkg/fftypes"
-
-func (or *orchestrator) MessageCreated(sequence int64) {
-	or.batch.NewMessages() <- sequence
-}
-
-func (or *orchestrator) EventCreated(sequence int64) {
-	or.events.NewEvents() <- sequence
-}
-
-func (or *orchestrator) SubscriptionCreated(id *fftypes.UUID) {
-	or.events.NewSubscriptions() <- id
-}
-
-func (or *orchestrator) SubscriptionDeleted(id *fftypes.UUID) {
-	or.events.DeletedSubscriptions() <- id
-}

@@ -17,6 +17,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -127,6 +128,11 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 		); err != nil {
 			return err
 		}
+
+		s.postCommitEvent(tx, func() {
+			s.callbacks.SubscriptionCreated(subscription.ID)
+		})
+
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
@@ -152,15 +158,12 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 	return &subscription, nil
 }
 
-func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string) (message *fftypes.Subscription, err error) {
+func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Subscription, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(subscriptionColumns...).
 			From("subscriptions").
-			Where(sq.Eq{
-				"namespace": namespace,
-				"name":      name,
-			}),
+			Where(eq),
 	)
 	if err != nil {
 		return nil, err
@@ -168,7 +171,7 @@ func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string)
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Subscription '%s' not found", name)
+		log.L(ctx).Debugf("Subscription '%s' not found", textName)
 		return nil, nil
 	}
 
@@ -178,6 +181,14 @@ func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string)
 	}
 
 	return subscription, nil
+}
+
+func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"id": id}, id.String())
+}
+
+func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) (message *fftypes.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
 }
 
 func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, err error) {
@@ -227,6 +238,26 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	if err != nil {
 		return err
 	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{"id": id}))
+	if err != nil {
+		return err
+	}
+
+	s.postCommitEvent(tx, func() {
+		s.callbacks.SubscriptionDeleted(id)
+	})
 
 	return s.commitTx(ctx, tx, autoCommit)
 }

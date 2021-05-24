@@ -48,6 +48,15 @@ func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filt
 }
 
 // RegisterConnection provides a mock function with given fields: connID, matcher
-func (_m *Callbacks) RegisterConnection(connID string, matcher events.SubscriptionMatcher) {
-	_m.Called(connID, matcher)
+func (_m *Callbacks) RegisterConnection(connID string, matcher events.SubscriptionMatcher) error {
+	ret := _m.Called(connID, matcher)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, events.SubscriptionMatcher) error); ok {
+		r0 = rf(connID, matcher)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }

@@ -73,10 +73,6 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		closed:        make(chan struct{}),
 	}
 
-	firstEvent := fftypes.SubOptsFirstEventNewest
-	if sub.definition.Options.FirstEvent != nil {
-		firstEvent = *sub.definition.Options.FirstEvent
-	}
 	pollerConf := &eventPollerConf{
 		limitNamespace:             sub.definition.Namespace,
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
@@ -93,7 +89,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		offsetName:       sub.definition.Name,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
-		firstEvent:       firstEvent,
+		firstEvent:       sub.definition.Options.FirstEvent,
 	}
 	if sub.definition.Options.ReadAhead != nil {
 		ed.readAhead = int(*sub.definition.Options.ReadAhead)
@@ -370,6 +366,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 }
 
 func (ed *eventDispatcher) close() {
+	log.L(ed.ctx).Infof("Dispatcher closing for conn=%s subscription=%s", ed.connID, ed.subscription.definition.ID)
 	ed.cancelCtx()
 	<-ed.closed
 	if ed.elected {

@@ -195,3 +195,23 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, id *fftypes.UUID, update d
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
+
+func (s *SQLCommon) DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("offsets").Where(sq.Eq{
+		"otype":     t,
+		"namespace": ns,
+		"name":      name,
+	}))
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}

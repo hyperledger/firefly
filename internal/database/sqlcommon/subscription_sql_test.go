@@ -24,6 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestSubscriptionsE2EWithDB(t *testing.T) {
@@ -41,11 +42,15 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		},
 		Created: fftypes.Now(),
 	}
+
+	s.callbacks.On("SubscriptionCreated", mock.Anything).Return()
+	s.callbacks.On("SubscriptionDeleted", mock.Anything).Return()
+
 	err := s.UpsertSubscription(ctx, subscription, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same subscription back
-	subscriptionRead, err := s.GetSubscription(ctx, subscription.Namespace, subscription.Name)
+	subscriptionRead, err := s.GetSubscriptionByName(ctx, subscription.Namespace, subscription.Name)
 	assert.NoError(t, err)
 	assert.NotNil(t, subscriptionRead)
 	subscriptionJson, _ := json.Marshal(&subscription)
@@ -86,7 +91,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the subscription elements
-	subscriptionRead, err = s.GetSubscription(ctx, subscription.Namespace, subscription.Name)
+	subscriptionRead, err = s.GetSubscriptionByID(ctx, subscription.ID)
 	assert.NoError(t, err)
 	subscriptionJson, _ = json.Marshal(&subscriptionUpdated)
 	subscriptionReadJson, _ = json.Marshal(&subscriptionRead)
@@ -118,6 +123,15 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	subscriptions, err := s.GetSubscriptions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptions))
+
+	// Test delete, and refind no return
+	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
+	assert.NoError(t, err)
+	subscriptions, err = s.GetSubscriptions(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(subscriptions))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertSubscriptionFailBegin(t *testing.T) {
@@ -175,7 +189,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 func TestGetSubscriptionByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetSubscription(context.Background(), "ns1", "name1")
+	_, err := s.GetSubscriptionByName(context.Background(), "ns1", "name1")
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -183,7 +197,7 @@ func TestGetSubscriptionByIDSelectFail(t *testing.T) {
 func TestGetSubscriptionByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace", "name"}))
-	msg, err := s.GetSubscription(context.Background(), "ns1", "name1")
+	msg, err := s.GetSubscriptionByName(context.Background(), "ns1", "name1")
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -192,7 +206,7 @@ func TestGetSubscriptionByIDNotFound(t *testing.T) {
 func TestGetSubscriptionByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"namespace"}).AddRow("only one"))
-	_, err := s.GetSubscription(context.Background(), "ns1", "name1")
+	_, err := s.GetSubscriptionByName(context.Background(), "ns1", "name1")
 	assert.Regexp(t, "FF10121", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -246,4 +260,19 @@ func TestSubscriptionUpdateFail(t *testing.T) {
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
 	assert.Regexp(t, "FF10117", err.Error())
+}
+
+func TestSubscriptionDeleteBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestSubscriptionDeleteFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10118", err.Error())
 }

@@ -195,22 +195,22 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 	return sequence, nil
 }
 
-func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) (sql.Result, error) {
+func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) error {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> delete: %s`, sqlQuery)
 	l.Tracef(`SQL-> delete args: %+v`, args)
 	res, err := tx.sqlTX.ExecContext(ctx, sqlQuery, args...)
 	if err != nil {
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBDeleteFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgDBDeleteFailed)
 	}
 	ra, _ := res.RowsAffected() // currently only used for debugging
 	l.Debugf(`SQL<- delete affected=%d`, ra)
-	return res, nil
+	return nil
 }
 
 func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) error {

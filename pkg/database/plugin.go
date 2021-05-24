@@ -177,11 +177,14 @@ type PeristenceInterface interface {
 	// UpdateOffset - Update offset
 	UpdateOffset(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetOffset - Get an offset by ID
+	// GetOffset - Get an offset by name
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
 
 	// GetOffsets - Get offsets
 	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
+
+	// DeleteOffset - Delete an offset by name
+	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -202,11 +205,17 @@ type PeristenceInterface interface {
 	// Throws IDMismatch error if updating and ids don't match
 	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
 
-	// GetSubscription - Get an subscription by name
-	GetSubscription(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
+	// GetSubscriptionByName - Get an subscription by name
+	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
+
+	// GetSubscriptionByID - Get an subscription by id
+	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Subscription, err error)
 
 	// GetSubscriptions - Get subscriptions
 	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
+
+	// DeleteSubscriptionByID - Delete a subscription
+	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// UpsertEvent - Upsert an event
 	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
@@ -240,6 +249,8 @@ type PeristenceInterface interface {
 type Callbacks interface {
 	MessageCreated(sequence int64)
 	EventCreated(sequence int64)
+	SubscriptionCreated(id *fftypes.UUID)
+	SubscriptionDeleted(id *fftypes.UUID)
 }
 
 // Capabilities defines the capabilities a plugin can report as implementing or not

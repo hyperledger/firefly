@@ -111,6 +111,14 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	offsets, err := s.GetOffsets(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(offsets))
+
+	// Test delete
+	err = s.DeleteOffset(ctx, fftypes.OffsetTypeBatch, offsetUpdated.Namespace, offsetUpdated.Name)
+	assert.NoError(t, err)
+	offsets, err = s.GetOffsets(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(offsets))
+
 }
 
 func TestUpsertOffsetFailBegin(t *testing.T) {
@@ -239,4 +247,20 @@ func TestOffsetUpdateFail(t *testing.T) {
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
+}
+
+func TestOffsetDeleteBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteOffset(context.Background(), fftypes.OffsetTypeSubscription, "ns1", "sub1")
+	assert.Regexp(t, "FF10114", err.Error())
+}
+
+func TestOffsetDeleteFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteOffset(context.Background(), fftypes.OffsetTypeSubscription, "ns1", "sub1")
+	assert.Regexp(t, "FF10118", err.Error())
 }

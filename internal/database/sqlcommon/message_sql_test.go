@@ -192,6 +192,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertMessageFailBegin(t *testing.T) {

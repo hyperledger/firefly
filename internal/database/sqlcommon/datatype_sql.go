@@ -52,7 +52,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 		// Do a select within the transaction to detemine if the UUID already exists
 		datatypeRows, err := s.queryTx(ctx, tx,
 			sq.Select("id").
-				From("datadefs").
+				From("datatypes").
 				Where(sq.Eq{"id": datatype.ID}),
 		)
 		if err != nil {
@@ -66,7 +66,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 
 		// Update the datatype
 		if err = s.updateTx(ctx, tx,
-			sq.Update("datadefs").
+			sq.Update("datatypes").
 				Set("validator", string(datatype.Validator)).
 				Set("namespace", datatype.Namespace).
 				Set("name", datatype.Name).
@@ -80,7 +80,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 		}
 	} else {
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("datadefs").
+			sq.Insert("datatypes").
 				Columns(datatypeColumns...).
 				Values(
 					datatype.ID,
@@ -113,7 +113,7 @@ func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&datatype.Value,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "datadefs")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "datatypes")
 	}
 	return &datatype, nil
 }
@@ -122,7 +122,7 @@ func (s *SQLCommon) getDatatypeEq(ctx context.Context, eq sq.Eq, textName string
 
 	rows, err := s.query(ctx,
 		sq.Select(datatypeColumns...).
-			From("datadefs").
+			From("datatypes").
 			Where(eq),
 	)
 	if err != nil {
@@ -153,7 +153,7 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name string) (mes
 
 func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datadefs"), filter, datatypeFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("datadefs"), update, datatypeFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("datatypes"), update, datatypeFilterTypeMap)
 	if err != nil {
 		return err
 	}
