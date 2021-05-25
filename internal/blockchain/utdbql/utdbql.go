@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -26,13 +28,14 @@ import (
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 
+	// Import the QL driver
 	_ "modernc.org/ql/driver"
 )
 
 type UTDBQL struct {
 	ctx          context.Context
 	capabilities *blockchain.Capabilities
-	events       blockchain.Events
+	callbacks    blockchain.Callbacks
 	db           *sql.DB
 	eventStream  chan *utEvent
 	closed       bool
@@ -59,13 +62,13 @@ func (u *UTDBQL) Name() string {
 	return "utdbql"
 }
 
-func (u *UTDBQL) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
+func (u *UTDBQL) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	u.ctx = ctx
 	u.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true, // fake for unit testing
 	}
-	u.events = events
+	u.callbacks = callbacks
 	u.eventStream = make(chan *utEvent, eventQueueLength)
 
 	u.db, err = sql.Open("ql", prefix.GetString(UTDBQLConfURL))
@@ -169,9 +172,9 @@ func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 			log.L(u.ctx).Errorf("Failed to unmarshal '%s' event '%s': %s", ev.txType, ev.txID, err)
 			return
 		}
-		err = u.events.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
+		err = u.callbacks.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
-		err = u.events.TransactionUpdate(ev.trackingID, fftypes.TransactionStatusConfirmed, ev.txID, "", nil)
+		err = u.callbacks.TransactionUpdate(ev.trackingID, fftypes.TransactionStatusConfirmed, ev.txID, "", nil)
 	}
 	if err != nil {
 		log.L(u.ctx).Errorf("Exiting due to error")

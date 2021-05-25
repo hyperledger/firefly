@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -64,19 +66,33 @@ type OrFilter interface{ MultiConditionFilter }
 type FilterOp string
 
 const (
-	FilterOpAnd      FilterOp = "&&"
-	FilterOpOr       FilterOp = "||"
-	FilterOpEq       FilterOp = "=="
-	FilterOpNe       FilterOp = "!="
-	FilterOpIn       FilterOp = "IN"
-	FilterOpNotIn    FilterOp = "NI"
-	FilterOpGt       FilterOp = ">"
-	FilterOpLt       FilterOp = "<"
-	FilterOpGte      FilterOp = ">="
-	FilterOpLte      FilterOp = "<="
-	FilterOpCont     FilterOp = "%="
-	FilterOpNotCont  FilterOp = "%!"
-	FilterOpICont    FilterOp = "^="
+	// FilterOpAnd and
+	FilterOpAnd FilterOp = "&&"
+	// FilterOpOr or
+	FilterOpOr FilterOp = "||"
+	// FilterOpEq equal
+	FilterOpEq FilterOp = "=="
+	// FilterOpNe not equal
+	FilterOpNe FilterOp = "!="
+	// FilterOpIn in list of values
+	FilterOpIn FilterOp = "IN"
+	// FilterOpNotIn not in list of values
+	FilterOpNotIn FilterOp = "NI"
+	// FilterOpGt greater than
+	FilterOpGt FilterOp = ">"
+	// FilterOpLt less than
+	FilterOpLt FilterOp = "<"
+	// FilterOpGte greater than or equal
+	FilterOpGte FilterOp = ">="
+	// FilterOpLte less than or equal
+	FilterOpLte FilterOp = "<="
+	// FilterOpCont contains the specified text, case sensitive
+	FilterOpCont FilterOp = "%="
+	// FilterOpNotCont does not contain the specified text, case sensitive
+	FilterOpNotCont FilterOp = "%!"
+	// FilterOpICont contains the specified text, case insensitive
+	FilterOpICont FilterOp = "^="
+	// FilterOpNotICont does not contain the specified text, case insensitive
 	FilterOpNotICont FilterOp = "^!"
 )
 
@@ -250,6 +266,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 			return nil, i18n.WrapError(f.fb.ctx, err, i18n.MsgInvalidValueForFilterField, name)
 		}
 	}
+
 	return &FilterInfo{
 		Children:   children,
 		Op:         f.op,

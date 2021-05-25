@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,12 +22,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type Batch struct {
-	ID         *uuid.UUID   `json:"id"`
+	ID         *UUID        `json:"id"`
 	Namespace  string       `json:"namespace"`
 	Type       MessageType  `json:"type"`
 	Author     string       `json:"author"`

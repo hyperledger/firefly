@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,24 +19,25 @@ package apiserver
 import "github.com/kaleido-io/firefly/internal/oapispec"
 
 var routes = []*oapispec.Route{
-	getBatchById,
+	getBatchByID,
 	getBatches,
 	getData,
-	getDataById,
-	getDataDefById,
+	getDataByID,
+	getDataDefByID,
 	getDataDefs,
 	getDataMsgs,
-	getEventById,
+	getEventByID,
 	getEvents,
-	getMsgById,
+	getMsgByID,
 	getMsgEvents,
 	getMsgOps,
 	getMsgs,
 	getNamespace,
 	getNamespaces,
-	getOpById,
+	getOpByID,
 	getOps,
-	getTxnById,
+	getTxnByID,
 	getTxns,
-	postDataDefs,
+	postBroadcastDatatype,
+	postBroadcastNamespace,
 }

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -31,6 +33,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/events/eifactory"
+	"github.com/kaleido-io/firefly/internal/events/websockets"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/oapispec"
@@ -38,8 +42,6 @@ import (
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
-
-const uiUrlPrefix = "/ui"
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
@@ -58,7 +60,7 @@ func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 }
 
 func createListener(ctx context.Context) (net.Listener, error) {
-	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HttpAddress), config.GetUint(config.HttpPort))
+	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HTTPAddress), config.GetUint(config.HTTPPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
@@ -69,15 +71,19 @@ func createListener(ctx context.Context) (net.Listener, error) {
 
 func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
 
+	defaultFilterLimit = uint64(config.GetUint(config.APIDefaultFilterLimit))
+	maxFilterLimit = uint64(config.GetUint(config.APIMaxFilterLimit))
+	maxFilterSkip = uint64(config.GetUint(config.APIMaxFilterSkip))
+
 	// Support client auth
 	clientAuth := tls.NoClientCert
-	if config.GetBool(config.HttpTLSClientAuth) {
+	if config.GetBool(config.HTTPTLSClientAuth) {
 		clientAuth = tls.RequireAndVerifyClientCert
 	}
 
 	// Support custom CA file
 	var rootCAs *x509.CertPool
-	caFile := config.GetString(config.HttpTLSCAFile)
+	caFile := config.GetString(config.HTTPTLSCAFile)
 	if caFile != "" {
 		rootCAs = x509.NewCertPool()
 		var caBytes []byte
@@ -98,9 +104,10 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 
 	srv = &http.Server{
 		Handler:      wrapCorsIfEnabled(ctx, r),
-		WriteTimeout: config.GetDuration(config.HttpWriteTimeout),
-		ReadTimeout:  config.GetDuration(config.HttpReadTimeout),
+		WriteTimeout: config.GetDuration(config.HTTPWriteTimeout),
+		ReadTimeout:  config.GetDuration(config.HTTPReadTimeout),
 		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
 			ClientAuth: clientAuth,
 			ClientCAs:  rootCAs,
 			RootCAs:    rootCAs,
@@ -132,8 +139,8 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 		}
 	}()
 
-	if config.GetBool(config.HttpTLSEnabled) {
-		err = srv.ServeTLS(listener, config.GetString(config.HttpTLSCertFile), config.GetString(config.HttpTLSKeyFile))
+	if config.GetBool(config.HTTPTLSEnabled) {
+		err = srv.ServeTLS(listener, config.GetString(config.HTTPTLSCertFile), config.GetString(config.HTTPTLSKeyFile))
 	} else {
 		err = srv.Serve(listener)
 	}
@@ -178,7 +185,7 @@ func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handle
 		}
 		var filter database.AndFilter
 		if route.FilterFactory != nil {
-			filter = buildFilter(req, route.FilterFactory)
+			filter, err = buildFilter(req, route.FilterFactory)
 		}
 		if err == nil {
 			status = route.JSONOutputCode
@@ -248,7 +255,7 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, durationMS, err)
 			res.Header().Add("Content-Type", "application/json")
 			res.WriteHeader(status)
-			_ = json.NewEncoder(res).Encode(&RESTError{
+			_ = json.NewEncoder(res).Encode(&fftypes.RESTError{
 				Error: err.Error(),
 			})
 		} else {
@@ -292,13 +299,16 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 				Methods(route.Method)
 		}
 	}
+	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
 	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
+	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
+
+	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
 	uiPath := config.GetString(config.UIPath)
 	if uiPath != "" {
-		uiHandler := UIHandler{staticPath: uiPath, indexPath: "index.html", urlPrefix: uiUrlPrefix}
-		r.PathPrefix(uiUrlPrefix).Handler(uiHandler)
+		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
 	}
 
 	r.NotFoundHandler = apiWrapper(notFoundHandler)

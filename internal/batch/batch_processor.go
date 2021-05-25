@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type batchWork struct {
@@ -35,11 +36,11 @@ type batchWork struct {
 
 type batchDispatch struct {
 	msg     *fftypes.Message
-	batchID *uuid.UUID
+	batchID *fftypes.UUID
 }
 
 type batchProcessorConf struct {
-	BatchOptions
+	Options
 	namespace          string
 	author             string
 	persitence         database.Plugin
@@ -84,7 +85,7 @@ func (bp *batchProcessor) assemblyLoop() {
 	defer bp.close()
 	defer close(bp.sealBatch) // close persitenceLoop when we exit
 	l := log.L(bp.ctx)
-	var batchSize uint = 0
+	var batchSize uint
 	var lastBatchSealed = time.Now()
 	var quiescing bool
 	for {
@@ -142,10 +143,10 @@ func (bp *batchProcessor) assemblyLoop() {
 func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
 	l := log.L(bp.ctx)
 	if batch == nil {
-		batchID := uuid.New()
+		batchID := fftypes.NewUUID()
 		l.Debugf("New batch %s", batchID)
 		batch = &fftypes.Batch{
-			ID:        &batchID,
+			ID:        batchID,
 			Namespace: bp.conf.namespace,
 			Author:    bp.conf.author,
 			Payload:   fftypes.BatchPayload{},

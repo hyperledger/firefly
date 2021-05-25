@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -38,6 +40,8 @@ type WSAuthConfig struct {
 type WSClient interface {
 	Connect() error
 	Receive() <-chan []byte
+	URL() string
+	SetURL(url string)
 	Send(ctx context.Context, message []byte) error
 	Close()
 }
@@ -61,7 +65,7 @@ type wsClient struct {
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHandler) (WSClient, error) {
 
 	wsURL, err := buildWSUrl(ctx, prefix)
 	if err != nil {
@@ -76,8 +80,8 @@ func New(ctx context.Context, prefix config.ConfigPrefix, afterConnect WSPostCon
 			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
 		},
 		retry: retry.Retry{
-			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryWaitTime),
-			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxWaitTime),
+			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),
+			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxDelay),
 		},
 		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
 		headers:              make(http.Header),
@@ -127,6 +131,14 @@ func (w *wsClient) Receive() <-chan []byte {
 	return w.receive
 }
 
+func (w *wsClient) URL() string {
+	return w.url
+}
+
+func (w *wsClient) SetURL(url string) {
+	w.url = url
+}
+
 func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	// Send
 	select {
@@ -139,7 +151,7 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
-func buildWSUrl(ctx context.Context, prefix config.ConfigPrefix) (string, error) {
+func buildWSUrl(ctx context.Context, prefix config.Prefix) (string, error) {
 	urlString := prefix.GetString(restclient.HTTPConfigURL)
 	u, err := url.Parse(urlString)
 	if err != nil {
@@ -171,6 +183,7 @@ func (w *wsClient) connect(initial bool) error {
 			var status = -1
 			if res != nil {
 				b, _ = ioutil.ReadAll(res.Body)
+				res.Body.Close()
 				status = res.StatusCode
 			}
 			l.Warnf("WS %s connect attempt %d failed [%d]: %s", w.url, attempt, status, string(b))
@@ -214,10 +227,9 @@ func (w *wsClient) sendLoop(receiverDone chan struct{}) {
 	for {
 		select {
 		case message := <-w.send:
+			l.Tracef("WS sending: %s", message)
 			if err := w.wsconn.WriteMessage(websocket.TextMessage, message); err != nil {
 				l.Errorf("WS %s send failed: %s", w.url, err)
-				// Keep the message for when we reconnect
-				w.sendDone <- message
 				return
 			}
 		case <-receiverDone:

@@ -1,0 +1,6 @@
+{
+  "go.formatFlags": [
+    "-s"
+  ],
+  "go.lintTool": "golangci-lint"
+}

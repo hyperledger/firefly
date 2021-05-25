@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +18,6 @@ package fftypes
 
 import (
 	"github.com/aidarkhanov/nanoid"
-	"github.com/google/uuid"
 )
 
 const (
@@ -26,11 +27,6 @@ const (
 
 func ShortID() string {
 	return nanoid.Must(nanoid.Generate(ShortIDlphabet, 8))
-}
-
-func NewUUID() *uuid.UUID {
-	u := uuid.New()
-	return &u
 }
 
 func SafeHashCompare(h1 *Bytes32, h2 *Bytes32) bool {

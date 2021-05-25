@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,32 +19,34 @@ package database
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
+	// HashMismatch sentinel error
 	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
-	IDMismatch   = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	// IDMismatch sentinel error
+	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
 )
 
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
 	PeristenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
 
-	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitConfigPrefix(prefix config.ConfigPrefix)
+	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitPrefix(prefix config.Prefix)
 
-	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
+	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
+	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 }
 
+// PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
 // while not trying to become the core database of the application (where full deeply nested
@@ -74,149 +78,161 @@ type PeristenceInterface interface {
 	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
-	// Upsert a namespace
+	// UpsertNamespace - Upsert a namespace
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
 
-	// Update namespace
-	UpdateNamespace(ctx context.Context, name string, update Update) (err error)
+	// UpdateNamespace - Update namespace
+	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get an namespace by name
+	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 
-	// Get namespaces
+	// GetNamespaces - Get namespaces
 	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
 
-	// Upsert a message, with all the embedded data references.
+	// UpsertMessage - Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update message
-	UpdateMessage(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateMessage - Update message
+	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Update messages
+	// UpdateMessages - Update messages
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
-	// Get a message by Id
-	GetMessageById(ctx context.Context, id *uuid.UUID) (message *fftypes.Message, err error)
+	// GetMessageByID - Get a message by ID
+	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
 
-	// List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
+	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
 	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
 
-	// Lighter weight query to just get the reference info of messages
+	// GetMessageRefs - Lighter weight query to just get the reference info of messages
 	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
 
-	// List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataId *uuid.UUID, filter Filter) (message []*fftypes.Message, err error)
+	// GetMessagesForData - List messages where there is a data reference to the specified ID
+	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
 
-	// Check to see if all the data for this message is available
+	// CheckDataAvailable - Check to see if all the data for this message is available
 	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
 
-	// Upsert a data record
+	// UpsertData - Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update data
-	UpdateData(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateData - Update data
+	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a data record by Id
-	GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error)
+	// GetDataByID - Get a data record by ID
+	GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
 
-	// Get data
+	// GetData - Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
 
-	// Upsert a batch
+	// GetDataRefs - Get data references only (no data)
+	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
+
+	// UpsertBatch - Upsert a batch
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update data
-	UpdateBatch(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateBatch - Update data
+	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a batch by Id
-	GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error)
+	// GetBatchByID - Get a batch by ID
+	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
 
-	// Get batches
+	// GetBatches - Get batches
 	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
 
-	// Upsert a transaction
+	// UpsertTransaction - Upsert a transaction
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
 
-	// Update transaction
-	UpdateTransaction(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateTransaction - Update transaction
+	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a transaction by Id
-	GetTransactionById(ctx context.Context, id *uuid.UUID) (message *fftypes.Transaction, err error)
+	// GetTransactionByID - Get a transaction by ID
+	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
 
-	// Get transactions
+	// GetTransactions - Get transactions
 	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
 
-	// Upsert a data definitino
-	UpsertDataDefinition(ctx context.Context, datadef *fftypes.DataDefinition, allowExisting bool) (err error)
+	// UpsertDatatype - Upsert a data definitino
+	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
 
-	// Update data definition
-	UpdateDataDefinition(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateDatatype - Update data definition
+	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a data definition by Id
-	GetDataDefinitionById(ctx context.Context, id *uuid.UUID) (datadef *fftypes.DataDefinition, err error)
+	// GetDatatypeByID - Get a data definition by ID
+	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
 
-	// Get a data definition by name
-	GetDataDefinitionByName(ctx context.Context, ns, name string) (datadef *fftypes.DataDefinition, err error)
+	// GetDatatypeByName - Get a data definition by name
+	GetDatatypeByName(ctx context.Context, ns, name string) (datadef *fftypes.Datatype, err error)
 
-	// Get data definitions
-	GetDataDefinitions(ctx context.Context, filter Filter) (datadef []*fftypes.DataDefinition, err error)
+	// GetDatatypes - Get data definitions
+	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
 
-	// Upsert an offset
+	// UpsertOffset - Upsert an offset
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
-	// Update offset
-	UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update Update) (err error)
+	// UpdateOffset - Update offset
+	UpdateOffset(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get an offset by Id
+	// GetOffset - Get an offset by name
 	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
 
-	// Get offsets
+	// GetOffsets - Get offsets
 	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
 
-	// Upsert an operation
+	// DeleteOffset - Delete an offset by name
+	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
+
+	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
-	// Update matching operations
+	// UpdateOperations - Update matching operations
 	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
 
-	// Get an operation by Id
-	GetOperationById(ctx context.Context, id *uuid.UUID) (operation *fftypes.Operation, err error)
+	// GetOperationByID - Get an operation by ID
+	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
 
-	// Get operation
+	// GetOperations - Get operation
 	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
 
-	// Upsert a subscription
+	// UpsertSubscription - Upsert a subscription
 	UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) (err error)
 
-	// Update subscription
+	// UpdateSubscription - Update subscription
 	// Throws IDMismatch error if updating and ids don't match
 	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
 
-	// Get an subscription by name
-	GetSubscription(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
+	// GetSubscriptionByName - Get an subscription by name
+	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
 
-	// Get subscriptions
+	// GetSubscriptionByID - Get an subscription by id
+	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Subscription, err error)
+
+	// GetSubscriptions - Get subscriptions
 	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
 
-	// Upsert an event
+	// DeleteSubscriptionByID - Delete a subscription
+	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+
+	// UpsertEvent - Upsert an event
 	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
 
-	// Update event
-	UpdateEvent(ctx context.Context, id *uuid.UUID, update Update) (err error)
+	// UpdateEvent - Update event
+	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// Get a event by Id
-	GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error)
+	// GetEventByID - Get a event by ID
+	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
 
-	// Get events
+	// GetEvents - Get events
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
 }
 
-// Events
+// Callbacks are the methods for passing data from plugin to core
 //
 // If Capabilities returns ClusterEvents=true then these should be brodcast to every instance within
 // a cluster that is connected to the database.
@@ -232,18 +248,21 @@ type PeristenceInterface interface {
 //
 // TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
 //
-type Events interface {
-	MessageCreated(id *uuid.UUID)
-	EventCreated(id *uuid.UUID)
+type Callbacks interface {
+	MessageCreated(sequence int64)
+	EventCreated(sequence int64)
+	SubscriptionCreated(id *fftypes.UUID)
+	SubscriptionDeleted(id *fftypes.UUID)
 }
 
-// No capabilities currently defined for the database interface - all features are mandatory
+// Capabilities defines the capabilities a plugin can report as implementing or not
 type Capabilities struct {
 	ClusterEvents bool
 }
 
+// NamespaceQueryFactory filter fields for namespaces
 var NamespaceQueryFactory = &queryFields{
-	"id":          &StringField{},
+	"id":          &UUIDField{},
 	"type":        &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
@@ -251,25 +270,27 @@ var NamespaceQueryFactory = &queryFields{
 	"confirmed":   &TimeField{},
 }
 
+// MessageQueryFactory filter fields for messages
 var MessageQueryFactory = &queryFields{
-	"id":        &StringField{},
-	"cid":       &StringField{},
+	"id":        &UUIDField{},
+	"cid":       &UUIDField{},
 	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"topic":     &StringField{},
 	"context":   &StringField{},
-	"group":     &StringField{},
+	"group":     &UUIDField{},
 	"created":   &TimeField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
-	"tx.id":     &StringField{},
-	"batchid":   &StringField{},
+	"tx.id":     &UUIDField{},
+	"batchid":   &UUIDField{},
 }
 
+// BatchQueryFactory filter fields for batches
 var BatchQueryFactory = &queryFields{
-	"id":         &StringField{},
+	"id":         &UUIDField{},
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
@@ -280,35 +301,38 @@ var BatchQueryFactory = &queryFields{
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
 	"tx.type":    &StringField{},
-	"tx.id":      &StringField{},
+	"tx.id":      &UUIDField{},
 }
 
+// TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
-	"id":         &StringField{},
+	"id":         &UUIDField{},
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
 	"protocolid": &StringField{},
 	"status":     &StringField{},
-	"message":    &StringField{},
-	"batch":      &StringField{},
+	"message":    &UUIDField{},
+	"batch":      &UUIDField{},
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
 }
 
+// DataQueryFactory filter fields for data
 var DataQueryFactory = &queryFields{
-	"id":                 &StringField{},
-	"namespace":          &StringField{},
-	"validator":          &StringField{},
-	"definition.name":    &StringField{},
-	"definition.version": &StringField{},
-	"hash":               &StringField{},
-	"created":            &TimeField{},
+	"id":               &UUIDField{},
+	"namespace":        &StringField{},
+	"validator":        &StringField{},
+	"datatype.name":    &StringField{},
+	"datatype.version": &StringField{},
+	"hash":             &StringField{},
+	"created":          &TimeField{},
 }
 
-var DataDefinitionQueryFactory = &queryFields{
-	"id":        &StringField{},
+// DatatypeQueryFactory filter fields for data definitions
+var DatatypeQueryFactory = &queryFields{
+	"id":        &UUIDField{},
 	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
@@ -316,6 +340,7 @@ var DataDefinitionQueryFactory = &queryFields{
 	"created":   &TimeField{},
 }
 
+// OffsetQueryFactory filter fields for data offsets
 var OffsetQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"name":      &StringField{},
@@ -323,11 +348,12 @@ var OffsetQueryFactory = &queryFields{
 	"current":   &Int64Field{},
 }
 
+// OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
-	"id":        &StringField{},
+	"id":        &UUIDField{},
 	"namespace": &StringField{},
-	"message":   &StringField{},
-	"data":      &StringField{},
+	"message":   &UUIDField{},
+	"data":      &UUIDField{},
 	"type":      &StringField{},
 	"recipient": &StringField{},
 	"status":    &StringField{},
@@ -338,11 +364,12 @@ var OperationQueryFactory = &queryFields{
 	"updated":   &TimeField{},
 }
 
+// SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":             &StringField{},
+	"id":             &UUIDField{},
 	"namespace":      &StringField{},
 	"name":           &StringField{},
-	"dispatcher":     &StringField{},
+	"transport":      &StringField{},
 	"events":         &StringField{},
 	"filter.topic":   &StringField{},
 	"filter.context": &StringField{},
@@ -351,11 +378,12 @@ var SubscriptionQueryFactory = &queryFields{
 	"created":        &TimeField{},
 }
 
+// EventQueryFactory filter fields for data events
 var EventQueryFactory = &queryFields{
-	"id":        &StringField{},
+	"id":        &UUIDField{},
 	"type":      &StringField{},
 	"namespace": &StringField{},
-	"reference": &StringField{},
+	"reference": &UUIDField{},
 	"sequence":  &Int64Field{},
 	"created":   &TimeField{},
 }

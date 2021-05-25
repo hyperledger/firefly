@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,10 +20,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/gorilla/mux"
 	"github.com/kaleido-io/firefly/internal/apiserver"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -29,8 +33,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/orchestrator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	_ "net/http/pprof"
 )
 
 var sigs = make(chan os.Signal, 1)
@@ -119,8 +121,14 @@ func run() error {
 	// Start debug listener
 	debugPort := config.GetInt(config.DebugPort)
 	if debugPort >= 0 {
+		r := mux.NewRouter()
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		go func() {
-			log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d: %s", debugPort, http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), nil))
+			log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d: %s", debugPort, http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), r))
 		}()
 	}
 

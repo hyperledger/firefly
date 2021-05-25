@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -33,7 +35,7 @@ var utConfPrefix = config.NewPluginConfig("utdbql_unit_tests")
 func resetConf() {
 	config.Reset()
 	u := &UTDBQL{}
-	u.InitConfigPrefix(utConfPrefix)
+	u.InitPrefix(utConfPrefix)
 }
 
 func TestInit(t *testing.T) {
@@ -42,7 +44,7 @@ func TestInit(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
 
-	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "utdbql", u.Name())
@@ -56,7 +58,7 @@ func TestInitBadURL(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "!badness://")
 
-	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := u.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Error(t, err)
 }
 
@@ -75,7 +77,7 @@ func TestVerifyIdentitySyntaxFail(t *testing.T) {
 
 func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
 	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -115,7 +117,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 
 func TestCloseOnEventDispatchError(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
 	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("Pop"))
@@ -149,7 +151,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 
 func TestVerifyBroadcastDBError(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
@@ -169,7 +171,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 
 func TestVerifyEventLoopCancelledContext(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")
@@ -186,7 +188,7 @@ func TestVerifyEventLoopCancelledContext(t *testing.T) {
 
 func TestVerifyDispatchEventBadData(t *testing.T) {
 	u := &UTDBQL{}
-	me := &blockchainmocks.Events{}
+	me := &blockchainmocks.Callbacks{}
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")

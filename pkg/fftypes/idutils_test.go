@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,10 +24,6 @@ import (
 
 func TestShortIDGen(t *testing.T) {
 	assert.Regexp(t, "[a-zA-Z0-9_]{8}", ShortID())
-}
-
-func TestNewUUID(t *testing.T) {
-	assert.NotNil(t, NewUUID())
 }
 
 func TestSafeHashCompare(t *testing.T) {

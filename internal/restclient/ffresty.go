@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,9 +27,9 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 type retryCtxKey struct{}
@@ -38,7 +40,7 @@ type retryCtx struct {
 	attempts uint
 }
 
-// When using SetDoNotParseResponse(true) for streming binary replies,
+// OnAfterResponse when using SetDoNotParseResponse(true) for streming binary replies,
 // the caller should invoke ffrest.OnAfterResponse on the response manually.
 // The middleware is disabled on this path :-(
 // See: https://github.com/go-resty/resty/blob/d01e8d1bac5ba1fed0d9e03c4c47ca21e94a7e8e/client.go#L912-L948
@@ -57,13 +59,13 @@ func OnAfterResponse(c *resty.Client, resp *resty.Response) {
 //
 // You can use the normal Resty builder pattern, to set per-instance configuration
 // as required.
-func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
+func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 
 	var client *resty.Client
 
-	iHttpClient := staticConfig.Get(HTTPCustomClient)
-	if iHttpClient != nil {
-		if httpClient, ok := iHttpClient.(*http.Client); ok {
+	iHTTPClient := staticConfig.Get(HTTPCustomClient)
+	if iHTTPClient != nil {
+		if httpClient, ok := iHTTPClient.(*http.Client); ok {
 			client = resty.NewWithClient(httpClient)
 		}
 	}
@@ -114,8 +116,8 @@ func New(ctx context.Context, staticConfig config.ConfigPrefix) *resty.Client {
 
 	if staticConfig.GetBool(HTTPConfigRetryEnabled) {
 		retryCount := staticConfig.GetInt(HTTPConfigRetryCount)
-		minTimeout := staticConfig.GetDuration(HTTPConfigRetryWaitTime)
-		maxTimeout := staticConfig.GetDuration(HTTPConfigRetryMaxWaitTime)
+		minTimeout := staticConfig.GetDuration(HTTPConfigRetryInitDelay)
+		maxTimeout := staticConfig.GetDuration(HTTPConfigRetryMaxDelay)
 		client.
 			SetRetryCount(retryCount).
 			SetRetryWaitTime(minTimeout).

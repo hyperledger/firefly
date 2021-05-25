@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -38,7 +40,7 @@ func TestDefaults(t *testing.T) {
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(CorsAllowCredentials))
-	assert.Equal(t, uint(0), GetUint(HttpPort))
+	assert.Equal(t, uint(0), GetUint(HTTPPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
 	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))

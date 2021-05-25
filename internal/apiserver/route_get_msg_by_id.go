@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,16 +20,16 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getMsgById = &oapispec.Route{
-	Name:   "getMsgById",
+var getMsgByID = &oapispec.Route{
+	Name:   "getMsgByID",
 	Path:   "namespaces/{ns}/messages/{msgid}",
 	Method: http.MethodGet,
-	PathParams: []oapispec.PathParam{
+	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "msgid", Description: i18n.MsgTBD},
 	},
@@ -38,7 +40,7 @@ var getMsgById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageById(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		output, err = r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

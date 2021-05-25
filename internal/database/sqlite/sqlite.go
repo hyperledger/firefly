@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -12,8 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build cgo
-
 package sqlite
 
 import (
@@ -22,42 +22,49 @@ import (
 
 	"database/sql"
 
-	"github.com/Masterminds/squirrel"
+	sq "github.com/Masterminds/squirrel"
+	migratedb "github.com/golang-migrate/migrate/v4/database"
+	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/spf13/viper"
+	"github.com/kaleido-io/firefly/pkg/database"
 
-	_ "github.com/mattn/go-sqlite3"
+	// Import the SQLite driver
+	_ "modernc.org/sqlite"
 )
 
 type SQLite struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *SQLite) Name() string {
+func (sqlite *SQLite) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+	capabilities := &database.Capabilities{}
+	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
+}
+
+func (sqlite *SQLite) Name() string {
 	return "sqlite"
 }
 
-func (e *SQLite) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
+func (sqlite *SQLite) PlaceholderFormat() sq.PlaceholderFormat {
+	return sq.Dollar
+}
 
-	capabilities := &database.Capabilities{}
-	options := &sqlcommon.SQLCommonOptions{
-		PlaceholderFormat: squirrel.Dollar,
-		SequenceField: func(tableName string) string {
-			if tableName == "" {
-				return "seq"
-			} else {
-				return fmt.Sprintf("%s.seq", tableName)
-			}
-		},
+func (sqlite *SQLite) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+	return insert, false
+}
+
+func (sqlite *SQLite) SequenceField(tableName string) string {
+	if tableName != "" {
+		return fmt.Sprintf("%s.seq", tableName)
 	}
+	return "seq"
+}
 
-	db, err := sql.Open("sqlite", viper.GetString("URL"))
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
-	}
+func (sqlite *SQLite) Open(url string) (*sql.DB, error) {
+	return sql.Open(sqlite.Name(), url)
+}
 
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
+func (sqlite *SQLite) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
+	return migratesqlite.WithInstance(db, &migratesqlite.Config{})
 }

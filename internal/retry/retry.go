@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -23,10 +25,10 @@ import (
 )
 
 const (
-	DefaultFactor = 2.0
+	defaultFactor = 2.0
 )
 
-// Concurrency safe Retry structure that configures a simple backoff retry mechanism
+// Retry is a concurrency safe retry structure that configures a simple backoff retry mechanism
 type Retry struct {
 	InitialDelay time.Duration
 	MaximumDelay time.Duration
@@ -46,7 +48,7 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 	delay := r.InitialDelay
 	factor := r.Factor
 	if factor < 1 { // Can't reduce
-		factor = DefaultFactor
+		factor = defaultFactor
 	}
 	for {
 		attempt++
@@ -81,6 +83,5 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 		// Sleep and set the delay for next time
 		time.Sleep(delay)
 		delay = time.Duration(float64(delay) * factor)
-
 	}
 }

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,9 +27,9 @@ import (
 
 	"github.com/jarcoal/httpmock"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/restclient"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +38,7 @@ var utConfPrefix = config.NewPluginConfig("ipfs_unit_tests")
 func resetConf() {
 	config.Reset()
 	i := &IPFS{}
-	i.InitConfigPrefix(utConfPrefix)
+	i.InitPrefix(utConfPrefix)
 }
 
 func TestInitMissingAPIURL(t *testing.T) {
@@ -44,7 +46,7 @@ func TestInitMissingAPIURL(t *testing.T) {
 	resetConf()
 
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
@@ -53,7 +55,7 @@ func TestInitMissingGWURL(t *testing.T) {
 	resetConf()
 
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err.Error())
 }
 
@@ -63,7 +65,7 @@ func TestInit(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.Equal(t, "ipfs", i.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
@@ -112,7 +114,7 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -140,7 +142,7 @@ func TestIPFSUploadFail(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -166,7 +168,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	data := []byte(`{"hello": "world"}`)
@@ -197,7 +199,7 @@ func TestIPFSDownloadFail(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
@@ -222,7 +224,7 @@ func TestIPFSDownloadError(t *testing.T) {
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Events{})
+	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -24,17 +26,17 @@ import (
 	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
 	"github.com/kaleido-io/firefly/internal/restclient"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type IPFS struct {
 	ctx          context.Context
 	capabilities *publicstorage.Capabilities
-	events       publicstorage.Events
+	callbacks    publicstorage.Callbacks
 	apiClient    *resty.Client
 	gwClient     *resty.Client
 }
@@ -49,10 +51,10 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, prefix config.ConfigPrefix, events publicstorage.Events) error {
+func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks publicstorage.Callbacks) error {
 
 	i.ctx = log.WithLogField(ctx, "publicstorage", "ipfs")
-	i.events = events
+	i.callbacks = callbacks
 
 	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
 	if apiPrefix.GetString(restclient.HTTPConfigURL) == "" {

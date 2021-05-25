@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -64,10 +65,10 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 
 	if existing {
 		// Update the event
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("events").
 				Set("etype", string(event.Type)).
-				Set("namespace", string(event.Namespace)).
+				Set("namespace", event.Namespace).
 				Set("ref", event.Reference).
 				Set("created", event.Created).
 				Where(sq.Eq{"id": event.ID}),
@@ -75,7 +76,7 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
+		sequence, err := s.insertTx(ctx, tx,
 			sq.Insert("events").
 				Columns(eventColumns...).
 				Values(
@@ -85,12 +86,13 @@ func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allow
 					event.Reference,
 					event.Created,
 				),
-		); err != nil {
+		)
+		if err != nil {
 			return err
 		}
 
-		s.postCommitEvent(ctx, tx, func() {
-			s.events.EventCreated(event.ID)
+		s.postCommitEvent(tx, func() {
+			s.callbacks.EventCreated(sequence)
 		})
 
 	}
@@ -115,10 +117,10 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 	return &event, nil
 }
 
-func (s *SQLCommon) GetEventById(ctx context.Context, id *uuid.UUID) (message *fftypes.Event, err error) {
+func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("events").
@@ -145,7 +147,7 @@ func (s *SQLCommon) GetEventById(ctx context.Context, id *uuid.UUID) (message *f
 func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.options.SequenceField(""))
+	cols = append(cols, s.provider.SequenceField(""))
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterTypeMap)
 	if err != nil {
 		return nil, err
@@ -170,7 +172,7 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 
 }
 
-func (s *SQLCommon) UpdateEvent(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -178,13 +180,13 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *uuid.UUID, update datab
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("events"), update, eventFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("events"), update, eventFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

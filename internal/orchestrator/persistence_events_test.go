@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,20 +19,18 @@ package orchestrator
 import (
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 )
 
 func TestMessageCreated(t *testing.T) {
-	mb := &batchmocks.BatchManager{}
+	mb := &batchmocks.Manager{}
 	o := &orchestrator{
 		batch: mb,
 	}
-	c := make(chan *uuid.UUID, 1)
-	mb.On("NewMessages").Return((chan<- *uuid.UUID)(c))
-	o.MessageCreated(fftypes.NewUUID())
+	c := make(chan int64, 1)
+	mb.On("NewMessages").Return((chan<- int64)(c))
+	o.MessageCreated(12345)
 }
 
 func TestEventCreated(t *testing.T) {
@@ -38,7 +38,7 @@ func TestEventCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan *uuid.UUID, 1)
-	mem.On("NewEvents").Return((chan<- *uuid.UUID)(c))
-	o.EventCreated(fftypes.NewUUID())
+	c := make(chan int64, 1)
+	mem.On("NewEvents").Return((chan<- int64)(c))
+	o.EventCreated(12345)
 }

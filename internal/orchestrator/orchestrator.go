@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,18 +21,18 @@ import (
 	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/batch"
-	"github.com/kaleido-io/firefly/pkg/blockchain"
-	"github.com/kaleido-io/firefly/internal/blockchain/blockchainfactory"
+	"github.com/kaleido-io/firefly/internal/blockchain/bifactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/database/databasefactory"
+	"github.com/kaleido-io/firefly/internal/database/difactory"
 	"github.com/kaleido-io/firefly/internal/events"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
-	"github.com/kaleido-io/firefly/internal/publicstorage/publicstoragefactory"
+	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 var (
@@ -41,34 +43,35 @@ var (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	blockchain.Events
+	blockchain.Callbacks
 
 	Init(ctx context.Context) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 
-	// Definitions
-	BroadcastDataDefinition(ctx context.Context, ns string, s *fftypes.DataDefinition) (*fftypes.Message, error)
+	// Broadcasts
+	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
+	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
-	GetTransactionById(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageById(ctx context.Context, ns, id string) (*fftypes.Message, error)
+	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
-	GetMessagesForData(ctx context.Context, ns, dataId string, filter database.AndFilter) ([]*fftypes.Message, error)
-	GetBatchById(ctx context.Context, ns, id string) (*fftypes.Batch, error)
+	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error)
+	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
-	GetDataById(ctx context.Context, ns, id string) (*fftypes.Data, error)
+	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
-	GetDataDefinitionById(ctx context.Context, ns, id string) (*fftypes.DataDefinition, error)
-	GetDataDefinitions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.DataDefinition, error)
-	GetOperationById(ctx context.Context, ns, id string) (*fftypes.Operation, error)
+	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
+	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error)
+	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error)
-	GetEventById(ctx context.Context, ns, id string) (*fftypes.Event, error)
+	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error)
 }
 
@@ -79,18 +82,18 @@ type orchestrator struct {
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	events        events.EventManager
-	batch         batch.BatchManager
-	broadcast     broadcast.BroadcastManager
-	nodeIdentity  string
+	batch         batch.Manager
+	broadcast     broadcast.Manager
+	nodeIDentity  string
 }
 
 func NewOrchestrator() Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
-	blockchainfactory.InitConfigPrefix(blockchainConfig)
-	databasefactory.InitConfigPrefix(databaseConfig)
-	publicstoragefactory.InitConfigPrefix(publicstorageConfig)
+	bifactory.InitPrefix(blockchainConfig)
+	difactory.InitPrefix(databaseConfig)
+	psfactory.InitPrefix(publicstorageConfig)
 
 	return or
 }
@@ -134,34 +137,46 @@ func (or *orchestrator) WaitStop() {
 		or.broadcast.WaitStop()
 		or.broadcast = nil
 	}
+	or.started = false
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.database == nil {
-		if or.database, err = or.initDatabasePlugin(ctx); err != nil {
+		diType := config.GetString(config.DatabaseType)
+		if or.database, err = difactory.GetPlugin(ctx, diType); err != nil {
 			return err
 		}
+	}
+	if err = or.database.Init(ctx, databaseConfig.SubPrefix(or.database.Name()), or); err != nil {
+		return err
 	}
 
 	if or.blockchain == nil {
-		if or.blockchain, err = or.initBlockchainPlugin(ctx); err != nil {
+		biType := config.GetString(config.BlockchainType)
+		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
 			return err
 		}
+	}
+	if err = or.initBlockchainPlugin(ctx); err != nil {
+		return err
 	}
 
 	if or.publicstorage == nil {
-		if or.publicstorage, err = or.initPublicStoragePlugin(ctx); err != nil {
+		psType := config.GetString(config.PublicStorageType)
+		if or.publicstorage, err = psfactory.GetPlugin(ctx, psType); err != nil {
 			return err
 		}
 	}
-
-	return nil
+	return or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.events == nil {
-		or.events = events.NewEventManager(ctx, or.publicstorage, or.database)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database)
+		if err != nil {
+			return err
+		}
 	}
 
 	if or.batch == nil {
@@ -179,41 +194,18 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) initBlockchainPlugin(ctx context.Context) (blockchain.Plugin, error) {
-	pluginType := config.GetString(config.BlockchainType)
-	plugin, err := blockchainfactory.GetPlugin(ctx, pluginType)
+func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
+	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), or)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = plugin.Init(ctx, blockchainConfig.SubPrefix(pluginType), or)
-	if err == nil {
-		suppliedIdentity := config.GetString(config.NodeIdentity)
-		or.nodeIdentity, err = plugin.VerifyIdentitySyntax(ctx, suppliedIdentity)
-		if err != nil {
-			log.L(ctx).Errorf("Invalid node identity: %s", suppliedIdentity)
-		}
-	}
-	return plugin, err
-}
-
-func (or *orchestrator) initDatabasePlugin(ctx context.Context) (database.Plugin, error) {
-	pluginType := config.GetString(config.DatabaseType)
-	plugin, err := databasefactory.GetPlugin(ctx, pluginType)
+	suppliedIDentity := config.GetString(config.NodeIdentity)
+	or.nodeIDentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
 	if err != nil {
-		return nil, err
+		log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
+		return err
 	}
-	err = plugin.Init(ctx, databaseConfig.SubPrefix(pluginType), or)
-	return plugin, err
-}
-
-func (or *orchestrator) initPublicStoragePlugin(ctx context.Context) (publicstorage.Plugin, error) {
-	pluginType := config.GetString(config.PublicStorageType)
-	plugin, err := publicstoragefactory.GetPlugin(ctx, pluginType)
-	if err != nil {
-		return nil, err
-	}
-	err = plugin.Init(ctx, publicstorageConfig.SubPrefix(pluginType), or)
-	return plugin, err
+	return nil
 }
 
 func (or *orchestrator) initNamespaces(ctx context.Context) error {
@@ -244,7 +236,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 			}
 		} else {
 			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeStaticLocal
+			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeLocal
 			ns.Description = description
 		}
 		if updated {

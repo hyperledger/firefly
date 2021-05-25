@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,11 +22,13 @@ import (
 )
 
 const (
-	IPFSConfAPISubconf     = "api"
+	// IPFSConfAPISubconf is the http configuration to connect to the API endpoint of IPFS
+	IPFSConfAPISubconf = "api"
+	// IPFSConfGatewaySubconf is the http configuration to connect to the Gateway endpoint of IPFS
 	IPFSConfGatewaySubconf = "gateway"
 )
 
-func (i *IPFS) InitConfigPrefix(prefix config.ConfigPrefix) {
-	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
-	restclient.InitConfigPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
+func (i *IPFS) InitPrefix(prefix config.Prefix) {
+	restclient.InitPrefix(prefix.SubPrefix(IPFSConfAPISubconf))
+	restclient.InitPrefix(prefix.SubPrefix(IPFSConfGatewaySubconf))
 }

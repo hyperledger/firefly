@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,25 +23,32 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 )
 
+var (
+	// Defaults set with config
+	defaultFilterLimit uint64
+	maxFilterLimit     uint64
+	maxFilterSkip      uint64
+)
+
 func getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
-		// We choose to be case insensitive for our filters, so protocolId and protocolid can be used interchangably
-		if strings.ToLower(queryName) == key {
+		// We choose to be case insensitive for our filters, so protocolID and protocolid can be used interchangeably
+		if strings.EqualFold(queryName, key) {
 			results = append(results, queryValues...)
 		}
 	}
 	return results
 }
 
-func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter {
+func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilter, error) {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
-	fb := ff.NewFilterLimit(ctx, uint64(config.GetUint(config.APIDefaultFilterLimit)))
+	fb := ff.NewFilterLimit(ctx, defaultFilterLimit)
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()
@@ -60,11 +69,17 @@ func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter
 	skipVals := getValues(req.Form, "skip")
 	if len(skipVals) > 0 {
 		s, _ := strconv.ParseUint(skipVals[0], 10, 64)
+		if maxFilterSkip != 0 && s > maxFilterSkip {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterSkip, maxFilterSkip)
+		}
 		filter.Skip(s)
 	}
 	limitVals := getValues(req.Form, "limit")
 	if len(limitVals) > 0 {
 		l, _ := strconv.ParseUint(limitVals[0], 10, 64)
+		if maxFilterLimit != 0 && l > maxFilterLimit {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterLimit, maxFilterLimit)
+		}
 		filter.Limit(l)
 	}
 	sortVals := getValues(req.Form, "sort")
@@ -78,32 +93,33 @@ func buildFilter(req *http.Request, ff database.QueryFactory) database.AndFilter
 		}
 	}
 	descendingVals := getValues(req.Form, "descending")
-	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.ToLower(descendingVals[0]) == "true") {
+	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.EqualFold(descendingVals[0], "true")) {
 		filter.Descending()
 	}
-	return filter
+	return filter, nil
 }
 
 func getCondition(fb database.FilterBuilder, field, value string) database.Filter {
-	if strings.HasPrefix(value, ">=") {
+	switch {
+	case strings.HasPrefix(value, ">="):
 		return fb.Gte(field, value[2:])
-	} else if strings.HasPrefix(value, "<=") {
+	case strings.HasPrefix(value, "<="):
 		return fb.Lte(field, value[2:])
-	} else if strings.HasPrefix(value, ">") {
+	case strings.HasPrefix(value, ">"):
 		return fb.Gt(field, value[1:])
-	} else if strings.HasPrefix(value, "<") {
+	case strings.HasPrefix(value, "<"):
 		return fb.Lt(field, value[1:])
-	} else if strings.HasPrefix(value, "@") {
+	case strings.HasPrefix(value, "@"):
 		return fb.Contains(field, value[1:])
-	} else if strings.HasPrefix(value, "^") {
+	case strings.HasPrefix(value, "^"):
 		return fb.IContains(field, value[1:])
-	} else if strings.HasPrefix(value, "!@") {
+	case strings.HasPrefix(value, "!@"):
 		return fb.NotContains(field, value[2:])
-	} else if strings.HasPrefix(value, "!^") {
+	case strings.HasPrefix(value, "!^"):
 		return fb.NotIContains(field, value[2:])
-	} else if strings.HasPrefix(value, "!") {
+	case strings.HasPrefix(value, "!"):
 		return fb.Neq(field, value[1:])
-	} else {
+	default:
 		return fb.Eq(field, value)
 	}
 }

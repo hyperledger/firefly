@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -31,7 +33,7 @@ var utConfPrefix = config.NewPluginConfig("http_unit_tests")
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	InitPrefix(utConfPrefix)
 }
 
 func TestRequestOK(t *testing.T) {
@@ -74,7 +76,7 @@ func TestRequestRetry(t *testing.T) {
 	resetConf()
 	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
 	utConfPrefix.Set(HTTPConfigRetryEnabled, true)
-	utConfPrefix.Set(HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(HTTPConfigRetryInitDelay, 1)
 
 	c := New(ctx, utConfPrefix)
 	httpmock.ActivateNonDefault(c.GetClient())

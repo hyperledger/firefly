@@ -1,4 +1,3 @@
 BEGIN;
 DROP TABLE IF EXISTS events;
-DROP SEQUENCE events_seq;
 COMMIT;

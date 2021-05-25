@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,6 +18,6 @@ package events
 
 import "github.com/kaleido-io/firefly/pkg/fftypes"
 
-func (em *eventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxId, errorMessage string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error {
 	return nil
 }

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -240,4 +242,10 @@ func TestFFDurationParseValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "12.345s", v)
 
+}
+
+func TestDurationParsing(t *testing.T) {
+	assert.Zero(t, ParseToDuration("!a duration"))
+	assert.Zero(t, ParseToDuration(""))
+	assert.Equal(t, "15ms", ParseToDuration("15ms").String())
 }

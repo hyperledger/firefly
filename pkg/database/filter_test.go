@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,7 +21,6 @@ import (
 	"database/sql/driver"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,20 +59,20 @@ func TestBuildMessageFilter2(t *testing.T) {
 func TestBuildMessageFilter3(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
-		fb.Lt("sequence", "0"),
-		fb.Lte("sequence", "0"),
-		fb.Gte("sequence", "0"),
-		fb.Neq("sequence", "0"),
-		fb.Contains("id", "abc"),
-		fb.NotContains("id", "def"),
-		fb.IContains("id", "ghi"),
-		fb.NotIContains("id", "jkl"),
-		fb.In("id", []driver.Value{"a", "b", "c"}),
-		fb.NotIn("id", []driver.Value{"a", "b", "c"}),
+		fb.In("created", []driver.Value{1, 2, 3}),
+		fb.NotIn("created", []driver.Value{1, 2, 3}),
+		fb.Lt("created", "0"),
+		fb.Lte("created", "0"),
+		fb.Gte("created", "0"),
+		fb.Neq("created", "0"),
+		fb.Gt("sequence", 12345),
+		fb.Contains("context", "abc"),
+		fb.NotContains("context", "def"),
+		fb.IContains("context", "ghi"),
+		fb.NotIContains("context", "jkl"),
 	).Finalize()
-
 	assert.NoError(t, err)
-	assert.Equal(t, "( sequence < 0 ) && ( sequence <= 0 ) && ( sequence >= 0 ) && ( sequence != 0 ) && ( id %= 'abc' ) && ( id %! 'def' ) && ( id ^= 'ghi' ) && ( id ^! 'jkl' ) && ( id IN ['a','b','c'] ) && ( id NI ['a','b','c'] )", f.String())
+	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( context %= 'abc' ) && ( context %! 'def' ) && ( context ^= 'ghi' ) && ( context ^! 'jkl' )", f.String())
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
@@ -88,6 +89,26 @@ func TestBuildMessageBadInFilterValue(t *testing.T) {
 		fb.In("sequence", []driver.Value{"!integer"}),
 	).Finalize()
 	assert.Regexp(t, "FF10149", err.Error())
+}
+
+func TestBuildMessageUUIDConvert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	u := fftypes.MustParseUUID("4066ABDC-8BBD-4472-9D29-1A55B467F9B9")
+	b32 := fftypes.UUIDBytes(u)
+	var nilB32 *fftypes.Bytes32
+	f, err := fb.And(
+		fb.Eq("id", u),
+		fb.Eq("id", *u),
+		fb.In("id", []driver.Value{*u}),
+		fb.Eq("id", u.String()),
+		fb.Neq("id", nil),
+		fb.Eq("id", b32),
+		fb.Neq("id", *b32),
+		fb.Eq("id", ""),
+		fb.Eq("id", nilB32),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, "( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id IN ['4066abdc-8bbd-4472-9d29-1a55b467f9b9'] ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != null ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == null ) && ( id == null )", f.String())
 }
 
 func TestBuildMessageIntConvert(t *testing.T) {
@@ -120,8 +141,8 @@ func TestBuildMessageTimeConvert(t *testing.T) {
 
 func TestBuildMessageStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
-	u := uuid.MustParse("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
-	b32 := fftypes.UUIDBytes(&u)
+	u := fftypes.MustParseUUID("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
+	b32 := fftypes.UUIDBytes(u)
 	f, err := fb.And(
 		fb.Lt("namespace", int(111)),
 		fb.Lt("namespace", int32(222)),
@@ -130,8 +151,8 @@ func TestBuildMessageStringConvert(t *testing.T) {
 		fb.Lt("namespace", uint32(555)),
 		fb.Lt("namespace", uint64(666)),
 		fb.Lt("namespace", nil),
+		fb.Lt("namespace", *u),
 		fb.Lt("namespace", u),
-		fb.Lt("namespace", &u),
 		fb.Lt("namespace", *b32),
 		fb.Lt("namespace", b32),
 	).Finalize()

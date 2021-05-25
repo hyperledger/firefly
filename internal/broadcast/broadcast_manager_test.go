@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +34,7 @@ func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
-	mb := &batchmocks.BatchManager{}
+	mb := &batchmocks.Manager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
 	b, err := NewBroadcastManager(ctx, mdi, mbi, mpi, mb)
@@ -49,7 +51,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	assert.NoError(t, err)
 
 	msg := &fftypes.Message{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, true, false).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false, false).Return(nil)
 
 	err = bm.BroadcastMessage(context.Background(), msg)
 	assert.NoError(t, err)
