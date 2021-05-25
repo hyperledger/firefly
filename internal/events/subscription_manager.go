@@ -222,8 +222,12 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	}
 }
 
-func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDefinition *fftypes.Subscription) (sub *subscription, err error) {
-	filter := subDefinition.Filter
+func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *fftypes.Subscription) (sub *subscription, err error) {
+	filter := subDef.Filter
+
+	if _, ok := sm.transports[subDef.Transport]; !ok {
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownEventTransportPlugin, subDef.Transport)
+	}
 
 	var eventFilter *regexp.Regexp
 	if filter.Events != "" {
@@ -259,7 +263,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDefi
 
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
-		definition:         subDefinition,
+		definition:         subDef,
 		eventMatcher:       eventFilter,
 		topicFilter:        topicFilter,
 		groupFilter:        groupFilter,

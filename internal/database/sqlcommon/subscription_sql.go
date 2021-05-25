@@ -252,7 +252,9 @@ func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{"id": id}))
+	err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{
+		"id": id,
+	}))
 	if err != nil {
 		return err
 	}

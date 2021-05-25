@@ -117,9 +117,26 @@ func TestCreateDurableSubscriptionBadSub(t *testing.T) {
 	assert.Regexp(t, "FF10189", err.Error())
 }
 
+func TestCreateDurableSubscriptionDupName(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(sub, nil)
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.Regexp(t, "FF10193", err.Error())
+}
+
 func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
 	sub := &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
@@ -130,8 +147,49 @@ func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 			Events: "![[[[[",
 		},
 	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
 	assert.Regexp(t, "FF10171", err.Error())
+}
+
+func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	wrongFirstEvent := fftypes.SubOptsFirstEvent("lobster")
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Options: fftypes.SubscriptionOptions{
+			FirstEvent: &wrongFirstEvent,
+		},
+	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.Regexp(t, "FF10191", err.Error())
+}
+
+func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	wrongFirstEvent := fftypes.SubOptsFirstEvent("-12345")
+	mdi := em.database.(*databasemocks.Plugin)
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Options: fftypes.SubscriptionOptions{
+			FirstEvent: &wrongFirstEvent,
+		},
+	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
+	err := em.CreateDurableSubscription(em.ctx, sub)
+	assert.Regexp(t, "FF10192", err.Error())
 }
 
 func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
@@ -145,6 +203,7 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 			Name:      "sub1",
 		},
 	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := em.CreateDurableSubscription(em.ctx, sub)
 	assert.EqualError(t, err, "pop")
@@ -161,6 +220,7 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 			Name:      "sub1",
 		},
 	}
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
 		{Sequence: 12345},
 	}, nil)
@@ -173,31 +233,14 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 	assert.Equal(t, "12345", string(*sub.Options.FirstEvent))
 }
 
-func TestCreateDeleteDurableSubscriptionLookupError(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	err := em.DeleteDurableSubscription(em.ctx, fftypes.NewUUID())
-	assert.EqualError(t, err, "pop")
-}
-
-func TestCreateDeleteDurableSubscriptionNotFound(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, nil)
-	err := em.DeleteDurableSubscription(em.ctx, fftypes.NewUUID())
-	assert.Regexp(t, "FF10109", err.Error())
-}
-
 func TestCreateDeleteDurableSubscriptionOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	subId := fftypes.NewUUID()
-	mdi.On("GetSubscriptionByID", mock.Anything, subId).Return(&fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{ID: subId}}, nil)
+	sub := &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{ID: subId, Namespace: "ns1"}}
+	mdi.On("GetSubscriptionByID", mock.Anything, subId).Return(sub, nil)
 	mdi.On("DeleteSubscriptionByID", mock.Anything, subId).Return(nil)
-	err := em.DeleteDurableSubscription(em.ctx, subId)
+	err := em.DeleteDurableSubscription(em.ctx, sub)
 	assert.NoError(t, err)
 }

@@ -155,11 +155,12 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 
 func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
-	route.JSONInputValue()
-	route.JSONOutputValue()
 	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 		l := log.L(req.Context())
-		input := route.JSONInputValue()
+		var input interface{}
+		if route.JSONInputValue != nil {
+			input = route.JSONInputValue()
+		}
 		var output interface{}
 		contentType := req.Header.Get("Content-Type")
 		if req.Method != http.MethodGet && !strings.HasPrefix(strings.ToLower(contentType), "application/json") {

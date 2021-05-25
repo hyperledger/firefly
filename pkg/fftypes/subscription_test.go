@@ -25,7 +25,7 @@ import (
 func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 
 	firstEvent := SubOptsFirstEventNewest
-	readAhead := uint64(50)
+	readAhead := uint16(50)
 	sub1 := &Subscription{
 		Options: SubscriptionOptions{
 			FirstEvent: &firstEvent,

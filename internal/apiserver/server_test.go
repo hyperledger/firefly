@@ -205,7 +205,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
-		JSONInputValue:  func() interface{} { return nil },
+		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
@@ -230,7 +230,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
-		JSONInputValue:  func() interface{} { return nil },
+		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
@@ -255,7 +255,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
-		JSONInputValue:  func() interface{} { return nil },
+		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
@@ -280,7 +280,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
-		JSONInputValue:  func() interface{} { return nil },
+		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  200,
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
@@ -305,7 +305,7 @@ func TestStatusInvalidContentType(t *testing.T) {
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
-		JSONInputValue:  func() interface{} { return nil },
+		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 		JSONOutputCode:  204,
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

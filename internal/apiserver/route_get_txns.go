@@ -36,7 +36,7 @@ var getTxns = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return nil },
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

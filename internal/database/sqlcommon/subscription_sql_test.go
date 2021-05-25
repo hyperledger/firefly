@@ -62,7 +62,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	// Update the subscription (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	newest := fftypes.SubOptsFirstEventNewest
-	fifty := uint64(50)
+	fifty := uint16(50)
 	subscriptionUpdated := &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(), // will fail with us trying to update this
