@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,15 +22,15 @@ import (
 	"encoding/json"
 
 	"github.com/kaleido-io/firefly/internal/batch"
-	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
-type BroadcastManager interface {
+type Manager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
 	Start() error
 	WaitStop()
@@ -39,10 +41,10 @@ type broadcastManager struct {
 	database      database.Plugin
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
-	batch         batch.BatchManager
+	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.BatchManager) (BroadcastManager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -53,7 +55,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.
 		publicstorage: pi,
 		batch:         ba,
 	}
-	bo := batch.BatchOptions{
+	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
@@ -85,7 +87,6 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 }
 
 func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
-	// Write the transation to our DB, to collect transaction submission updates
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
@@ -158,7 +159,7 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.M
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return bm.database.UpsertMessage(ctx, msg, true, false /* should be new, or idempotent replay */)
+	return bm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
 }
 
 func (bm *broadcastManager) Start() error {

@@ -1,0 +1,415 @@
+// Copyright © 2021 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package events
+
+import (
+	"context"
+	"regexp"
+	"sync"
+
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/events/eifactory"
+	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/events"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+)
+
+type subscription struct {
+	definition *fftypes.Subscription
+
+	dispatcherElection chan bool
+	eventMatcher       *regexp.Regexp
+	topicFilter        *regexp.Regexp
+	groupFilter        *regexp.Regexp
+	contextFilter      *regexp.Regexp
+}
+
+type connection struct {
+	id          string
+	matcher     events.SubscriptionMatcher
+	dispatchers map[fftypes.UUID]*eventDispatcher
+	ei          events.Plugin
+}
+
+type subscriptionManager struct {
+	ctx                  context.Context
+	database             database.Plugin
+	eventNotifier        *eventNotifier
+	transports           map[string]events.Plugin
+	connections          map[string]*connection
+	mux                  sync.Mutex
+	maxSubs              uint64
+	durableSubs          map[fftypes.UUID]*subscription
+	cancelCtx            func()
+	newSubscriptions     chan *fftypes.UUID
+	deletedSubscriptions chan *fftypes.UUID
+	retry                retry.Retry
+}
+
+func newSubscriptionManager(ctx context.Context, di database.Plugin, en *eventNotifier) (*subscriptionManager, error) {
+	ctx, cancelCtx := context.WithCancel(ctx)
+	sm := &subscriptionManager{
+		ctx:                  ctx,
+		database:             di,
+		transports:           make(map[string]events.Plugin),
+		connections:          make(map[string]*connection),
+		durableSubs:          make(map[fftypes.UUID]*subscription),
+		newSubscriptions:     make(chan *fftypes.UUID),
+		deletedSubscriptions: make(chan *fftypes.UUID),
+		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
+		cancelCtx:            cancelCtx,
+		eventNotifier:        en,
+		retry: retry.Retry{
+			InitialDelay: config.GetDuration(config.SubscriptionsRetryInitialDelay),
+			MaximumDelay: config.GetDuration(config.SubscriptionsRetryMaxDelay),
+			Factor:       config.GetFloat64(config.SubscriptionsRetryFactor),
+		},
+	}
+
+	err := sm.loadTransports()
+	if err == nil {
+		err = sm.initTransports()
+	}
+	return sm, err
+}
+
+func (sm *subscriptionManager) loadTransports() error {
+	var err error
+	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
+	for _, transport := range enabledTransports {
+		sm.transports[transport], err = eifactory.GetPlugin(sm.ctx, transport)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (sm *subscriptionManager) initTransports() error {
+	var err error
+	for _, ei := range sm.transports {
+		prefix := config.NewPluginConfig("events").SubPrefix(ei.Name())
+		ei.InitPrefix(prefix)
+		err = ei.Init(sm.ctx, prefix, &boundCallbacks{sm: sm, ei: ei})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (sm *subscriptionManager) start() error {
+	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
+	filter := fb.And().Limit(sm.maxSubs)
+	persistedSubs, err := sm.database.GetSubscriptions(sm.ctx, filter)
+	if err != nil {
+		return err
+	}
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+	for _, subDef := range persistedSubs {
+		newSub, err := sm.parseSubscriptionDef(sm.ctx, subDef)
+		if err != nil {
+			// Warn and continue startup
+			log.L(sm.ctx).Warnf("Failed to reload subscription %s:%s [%s]: %s", subDef.Namespace, subDef.Name, subDef.ID, err)
+			continue
+		}
+		sm.durableSubs[*subDef.ID] = newSub
+	}
+	go sm.subscriptionEventListener()
+	return nil
+}
+
+func (sm *subscriptionManager) subscriptionEventListener() {
+	for {
+		select {
+		case id := <-sm.newSubscriptions:
+			go sm.newDurableSubscription(id)
+		case id := <-sm.deletedSubscriptions:
+			go sm.deletedDurableSubscription(id)
+		case <-sm.ctx.Done():
+			return
+		}
+	}
+}
+
+func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
+	var subDef *fftypes.Subscription
+	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
+		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
+		return err != nil, err // indefinite retry
+	})
+	if err != nil || subDef == nil {
+		// either the context was cancelled (so we're closing), or the subscription no longer exists
+		log.L(sm.ctx).Infof("Unable to process new subscription event for id=%s (%v)", id, err)
+		return
+	}
+
+	log.L(sm.ctx).Infof("Created subscription %s:%s [%s]", subDef.Namespace, subDef.Name, subDef.ID)
+
+	newSub, err := sm.parseSubscriptionDef(sm.ctx, subDef)
+	if err != nil {
+		// Swallow this, as the subscription is simply invalid
+		log.L(sm.ctx).Errorf("Subscription rejected by subscription manager: %s", err)
+		return
+	}
+
+	// Now we're ready to update our locked state, adding this subscription to our
+	// in-memory table, and creating any missing dispatchers
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+	if sm.durableSubs[*subDef.ID] == nil {
+		sm.durableSubs[*subDef.ID] = newSub
+		for _, conn := range sm.connections {
+			if conn.matcher != nil && conn.matcher(subDef.SubscriptionRef) {
+				sm.matchedSubscriptionWithLock(conn, newSub)
+			}
+		}
+	}
+}
+
+func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
+	var subDef *fftypes.Subscription
+	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
+		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
+		return err != nil, err // indefinite retry
+	})
+	if err != nil || subDef == nil {
+		// either the context was cancelled (so we're closing), or the subscription no longer exists
+		log.L(sm.ctx).Infof("Unable to process deleted subscription event for id=%s (%v)", id, err)
+		return
+	}
+
+	sm.mux.Lock()
+	var dispatchers []*eventDispatcher
+	// Remove it from the list of durable subs (if there)
+	_, loaded := sm.durableSubs[*id]
+	if loaded {
+		delete(sm.durableSubs, *id)
+		// Find any active dispatchers, while we're in the lock, and remove them
+		for _, conn := range sm.connections {
+			dispatcher, ok := conn.dispatchers[*id]
+			if ok {
+				dispatchers = append(dispatchers, dispatcher)
+				delete(conn.dispatchers, *id)
+			}
+		}
+	}
+	sm.mux.Unlock()
+
+	log.L(sm.ctx).Infof("Deleting subscription %s:%s [%s] loaded=%t dispatchers=%d", subDef.Namespace, subDef.Name, subDef.ID, loaded, len(dispatchers))
+
+	// Outside the lock, close out the active dispatchers
+	for _, dispatcher := range dispatchers {
+		dispatcher.close()
+	}
+}
+
+func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDefinition *fftypes.Subscription) (sub *subscription, err error) {
+	filter := subDefinition.Filter
+
+	var eventFilter *regexp.Regexp
+	if filter.Events != "" {
+		eventFilter, err = regexp.Compile(filter.Events)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.events", filter.Events)
+		}
+	}
+
+	var topicFilter *regexp.Regexp
+	if filter.Topic != "" {
+		topicFilter, err = regexp.Compile(filter.Topic)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topic", filter.Topic)
+		}
+	}
+
+	var groupFilter *regexp.Regexp
+	if filter.Group != "" {
+		groupFilter, err = regexp.Compile(filter.Group)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.group", filter.Group)
+		}
+	}
+
+	var contextFilter *regexp.Regexp
+	if filter.Context != "" {
+		contextFilter, err = regexp.Compile(filter.Context)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.context", filter.Context)
+		}
+	}
+
+	sub = &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition:         subDefinition,
+		eventMatcher:       eventFilter,
+		topicFilter:        topicFilter,
+		groupFilter:        groupFilter,
+		contextFilter:      contextFilter,
+	}
+	return sub, err
+}
+
+func (sm *subscriptionManager) close() {
+	sm.mux.Lock()
+	conns := make([]*connection, 0, len(sm.connections))
+	for _, conn := range sm.connections {
+		conns = append(conns, conn)
+	}
+	sm.mux.Unlock()
+	for _, conn := range conns {
+		sm.connnectionClosed(conn.ei, conn.id)
+	}
+}
+
+func (sm *subscriptionManager) getCreateConnLocked(ei events.Plugin, connID string) *connection {
+	conn, ok := sm.connections[connID]
+	if !ok {
+		conn = &connection{
+			id:          connID,
+			dispatchers: make(map[fftypes.UUID]*eventDispatcher),
+			ei:          ei,
+		}
+		sm.connections[connID] = conn
+	}
+	return conn
+}
+
+func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID string, matcher events.SubscriptionMatcher) error {
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+
+	// Check if there are existing dispatchers
+	conn := sm.getCreateConnLocked(ei, connID)
+	if conn.ei != ei {
+		return i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+	}
+
+	// Update the matcher for this connection ID
+	conn.matcher = matcher
+
+	// Make sure we don't have dispatchers now for any that don't match
+	for subID, d := range conn.dispatchers {
+		if !d.subscription.definition.Ephemeral && !conn.matcher(d.subscription.definition.SubscriptionRef) {
+			d.close()
+			delete(conn.dispatchers, subID)
+		}
+	}
+	// Make new dispatchers for all durable subscriptions that match
+	for _, sub := range sm.durableSubs {
+		if conn.matcher(sub.definition.SubscriptionRef) {
+			sm.matchedSubscriptionWithLock(conn, sub)
+		}
+	}
+
+	return nil
+}
+
+func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub *subscription) {
+	ei, foundTransport := sm.transports[sub.definition.Transport]
+	if foundTransport {
+		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
+			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, conn.id, sub, sm.eventNotifier)
+			conn.dispatchers[*sub.definition.ID] = dispatcher
+			dispatcher.start()
+		}
+	} else {
+		log.L(sm.ctx).Warnf("Subscription %s:%s [%s] defined for unknown transport '%s", sub.definition.Namespace, sub.definition.Name, sub.definition.ID, sub.definition.Transport)
+	}
+}
+
+func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
+	sm.mux.Lock()
+	defer sm.mux.Unlock()
+
+	conn := sm.getCreateConnLocked(ei, connID)
+
+	if conn.ei != ei {
+		return i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+	}
+
+	subID := fftypes.NewUUID()
+	subDefinition := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        subID,
+			Name:      subID.String(),
+			Namespace: namespace,
+		},
+		Transport: ei.Name(),
+		Ephemeral: true,
+		Filter:    filter,
+		Options:   options,
+		Created:   fftypes.Now(),
+	}
+
+	newSub, err := sm.parseSubscriptionDef(sm.ctx, subDefinition)
+	if err != nil {
+		return err
+	}
+
+	// Create the dispatcher, and start immediately
+	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, connID, newSub, sm.eventNotifier)
+	dispatcher.start()
+
+	conn.dispatchers[*subID] = dispatcher
+	return nil
+}
+
+func (sm *subscriptionManager) connnectionClosed(ei events.Plugin, connID string) {
+	sm.mux.Lock()
+	conn, ok := sm.connections[connID]
+	if ok && conn.ei != ei {
+		log.L(sm.ctx).Warnf(i18n.ExpandWithCode(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name()))
+		sm.mux.Unlock()
+		return
+	}
+	delete(sm.connections, connID)
+	sm.mux.Unlock()
+
+	if !ok {
+		log.L(sm.ctx).Debugf("Connections already disposed: %s", connID)
+		return
+	}
+	log.L(sm.ctx).Debugf("Closing %d dispatcher(s) for connection '%s'", len(conn.dispatchers), connID)
+	for _, d := range conn.dispatchers {
+		d.close()
+	}
+}
+
+func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight fftypes.EventDeliveryResponse) error {
+	sm.mux.Lock()
+	var dispatcher *eventDispatcher
+	conn, ok := sm.connections[connID]
+	if ok && inflight.Subscription.ID != nil {
+		dispatcher = conn.dispatchers[*inflight.Subscription.ID]
+	}
+	sm.mux.Unlock()
+
+	if ok && conn.ei != ei {
+		return i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+	}
+	if dispatcher == nil {
+		return i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
+	}
+
+	dispatcher.deliveryResponse(&inflight)
+	return nil
+}

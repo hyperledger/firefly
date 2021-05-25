@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,16 +22,14 @@ import (
 
 	"database/sql"
 
-	"github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
-	"github.com/kaleido-io/firefly/internal/i18n"
-
-	"github.com/golang-migrate/migrate/v4"
+	sq "github.com/Masterminds/squirrel"
+	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/database/sqlcommon"
+	"github.com/kaleido-io/firefly/pkg/database"
 
+	// Import pq driver
 	_ "github.com/lib/pq"
 )
 
@@ -37,53 +37,34 @@ type Postgres struct {
 	sqlcommon.SQLCommon
 }
 
-func (e *Postgres) Name() string {
+func (psql *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+	capabilities := &database.Capabilities{}
+	return psql.SQLCommon.Init(ctx, psql, prefix, callbacks, capabilities)
+}
+
+func (psql *Postgres) Name() string {
 	return "postgres"
 }
 
-func (e *Postgres) Init(ctx context.Context, prefix config.ConfigPrefix, events database.Events) error {
-
-	capabilities := &database.Capabilities{}
-	options := &sqlcommon.SQLCommonOptions{
-		PlaceholderFormat: squirrel.Dollar,
-		SequenceField: func(tableName string) string {
-			if tableName == "" {
-				return "seq"
-			} else {
-				return fmt.Sprintf("%s.seq", tableName)
-			}
-		},
-	}
-
-	db, err := sql.Open("postgres", prefix.GetString(PSQLConfURL))
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
-	}
-
-	if prefix.GetBool(PSQLConfMigrationsAuto) {
-		if err := e.applyDbMigrations(ctx, prefix, db); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBMigrationFailed)
-		}
-	}
-
-	return sqlcommon.InitSQLCommon(ctx, &e.SQLCommon, db, events, capabilities, options)
+func (psql *Postgres) PlaceholderFormat() sq.PlaceholderFormat {
+	return sq.Dollar
 }
 
-func (e *Postgres) applyDbMigrations(ctx context.Context, prefix config.ConfigPrefix, db *sql.DB) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return err
+func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+	return insert.Suffix(" RETURNING seq"), true
+}
+
+func (psql *Postgres) SequenceField(tableName string) string {
+	if tableName != "" {
+		return fmt.Sprintf("%s.seq", tableName)
 	}
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://"+prefix.GetString(PSQLConfMigrationsDirectory),
-		"postgres", driver)
-	if err != nil {
-		return err
-	}
-	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
-			return err
-		}
-	}
-	return nil
+	return "seq"
+}
+
+func (psql *Postgres) Open(url string) (*sql.DB, error) {
+	return sql.Open(psql.Name(), url)
+}
+
+func (psql *Postgres) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
+	return postgres.WithInstance(db, &postgres.Config{})
 }

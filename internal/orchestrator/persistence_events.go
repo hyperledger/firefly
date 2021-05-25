@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,12 +16,20 @@
 
 package orchestrator
 
-import "github.com/google/uuid"
+import "github.com/kaleido-io/firefly/pkg/fftypes"
 
-func (e *orchestrator) MessageCreated(id *uuid.UUID) {
-	e.batch.NewMessages() <- id
+func (or *orchestrator) MessageCreated(sequence int64) {
+	or.batch.NewMessages() <- sequence
 }
 
-func (e *orchestrator) EventCreated(id *uuid.UUID) {
-	e.events.NewEvents() <- id
+func (or *orchestrator) EventCreated(sequence int64) {
+	or.events.NewEvents() <- sequence
+}
+
+func (or *orchestrator) SubscriptionCreated(id *fftypes.UUID) {
+	or.events.NewSubscriptions() <- id
+}
+
+func (or *orchestrator) SubscriptionDeleted(id *fftypes.UUID) {
+	or.events.DeletedSubscriptions() <- id
 }

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,52 +16,50 @@
 
 package fftypes
 
-import (
-	"context"
-	"database/sql/driver"
-	"encoding/json"
-	"strings"
-
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/internal/i18n"
-)
-
+// EventType indicates what the event means, as well as what the Reference in the event refers to
 type EventType string
 
-type EventTypes []EventType
-
 const (
-	EventTypeDataArrivedBroadcast      EventType = "DataArrivedBroadcast"
-	EventTypeMessageSequencedBroadcast EventType = "DessageSequencedBroadcast"
-	EventTypeMessageConfirmed          EventType = "MessageConfirmed"
-	EventTypeMessagesUnblocked         EventType = "MessagesUnblocked"
+	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
+	// is available for processing by an application. Most applications only need to listen to this event type
+	EventTypeMessageConfirmed EventType = "MessageConfirmed"
+	// EventTypeDataArrivedBroadcast indicates that some data has arrived, over a broadcast transport
+	EventTypeDataArrivedBroadcast EventType = "DataArrivedBroadcast"
+	// EventTypeMessageSequencedBroadcast indicates that a deterministically sequenced message has arrived pinned to a blockchain
+	EventTypeMessageSequencedBroadcast EventType = "MessageSequencedBroadcast"
+	// EventTypeMessagesUnblocked is a special event to indidate a previously blocked context, has become unblocked
+	EventTypeMessagesUnblocked EventType = "MessagesUnblocked"
 )
 
+// Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
 type Event struct {
-	ID        *uuid.UUID `json:"id"`
-	Type      EventType  `json:"type"`
-	Namespace string     `json:"namespace"`
-	Reference *uuid.UUID `json:"reference"`
-	Sequence  int64      `json:"sequence"`
-	Created   *FFTime    `json:"created"`
+	ID        *UUID     `json:"id"`
+	Sequence  int64     `json:"sequence"`
+	Type      EventType `json:"type"`
+	Namespace string    `json:"namespace"`
+	Reference *UUID     `json:"reference"`
+	Created   *FFTime   `json:"created"`
 }
 
-type MessageWithEvent struct {
-	Message
-	Event Event `json:"event"`
+// EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to
+// be dispatched to an applciation.
+type EventDelivery struct {
+	Event
+	Subscription SubscriptionRef `json:"subscription"`
+	Message      *Message        `json:"message,omitempty"`
+	Data         *DataRef        `json:"data,omitempty"`
 }
 
-type DataWithEvent struct {
-	Data
-	Event Event `json:"event"`
+// EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such
+// does not need to receive it again.
+type EventDeliveryResponse struct {
+	ID           *UUID           `json:"id"`
+	Rejected     bool            `json:"rejected,omitempty"`
+	Info         string          `json:"info,omitempty"`
+	Subscription SubscriptionRef `json:"subscription"`
 }
 
-type DataRefWithEvent struct {
-	DataRef
-	Event Event `json:"event"`
-}
-
-func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
+func NewEvent(t EventType, ns string, ref *UUID) *Event {
 	return &Event{
 		ID:        NewUUID(),
 		Type:      t,
@@ -67,71 +67,4 @@ func NewEvent(t EventType, ns string, ref *uuid.UUID) *Event {
 		Reference: ref,
 		Created:   Now(),
 	}
-}
-
-func (et *EventTypes) UnmarshalJSON(b []byte) error {
-	stringArray := []string{}
-	err := json.Unmarshal(b, &stringArray)
-	if err != nil {
-		var strValue string
-		err = json.Unmarshal(b, &strValue)
-		if err != nil {
-			return i18n.WrapError(context.Background(), err, i18n.MsgEventTypesParseFail)
-		}
-		if len(strValue) > 0 {
-			stringArray = strings.Split(strValue, ",")
-		}
-	}
-	*et, err = stringArrayToEventTypes(stringArray)
-	return err
-}
-
-func stringArrayToEventTypes(stringArray []string) (EventTypes, error) {
-	eventTypes := make(EventTypes, len(stringArray))
-	for i, eventString := range stringArray {
-		switch strings.ToLower(eventString) {
-		case strings.ToLower(string(EventTypeMessageConfirmed)):
-			eventTypes[i] = EventTypeMessageConfirmed
-		default:
-			return nil, i18n.NewError(context.Background(), i18n.MsgUnknownEventType, eventString)
-		}
-	}
-	return eventTypes, nil
-}
-
-// Scan implements sql.Scanner
-func (et *EventTypes) Scan(src interface{}) (err error) {
-	switch src := src.(type) {
-	case []byte:
-		var stringArray []string
-		if len(src) > 0 {
-			stringArray = strings.Split(string(src), ",")
-		}
-		*et, err = stringArrayToEventTypes(stringArray)
-		return err
-	case string:
-		var stringArray []string
-		if len(src) > 0 {
-			stringArray = strings.Split(src, ",")
-		}
-		*et, err = stringArrayToEventTypes(stringArray)
-		return err
-	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, et)
-	}
-
-}
-
-// Value implements sql.Valuer
-func (et EventTypes) Value() (driver.Value, error) {
-	stringArray := make([]string, len(et))
-	for i, eventType := range et {
-		stringArray[i] = string(eventType)
-	}
-	return strings.Join(stringArray, ","), nil
-}
-
-func (et *EventTypes) String() string {
-	s, _ := et.Value()
-	return s.(string)
 }

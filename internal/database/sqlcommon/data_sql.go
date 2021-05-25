@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -31,16 +32,16 @@ var (
 		"id",
 		"validator",
 		"namespace",
-		"def_name",
-		"def_version",
+		"datatype_name",
+		"datatype_version",
 		"hash",
 		"created",
 		"value",
 	}
 	dataFilterTypeMap = map[string]string{
-		"validator":          "validator",
-		"definition.name":    "def_name",
-		"definition.version": "def_version",
+		"validator":        "validator",
+		"datatype.name":    "datatype_name",
+		"datatype.version": "datatype_version",
 	}
 )
 
@@ -76,19 +77,19 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 		dataRows.Close()
 	}
 
-	dataDef := data.Definition
-	if dataDef == nil {
-		dataDef = &fftypes.DataDefinitionRef{}
+	datatype := data.Datatype
+	if datatype == nil {
+		datatype = &fftypes.DatatypeRef{}
 	}
 
 	if existing {
 		// Update the data
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("data").
 				Set("validator", string(data.Validator)).
 				Set("namespace", data.Namespace).
-				Set("def_name", dataDef.Name).
-				Set("def_version", dataDef.Version).
+				Set("datatype_name", datatype.Name).
+				Set("datatype_version", datatype.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
 				Set("value", data.Value).
@@ -104,8 +105,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					data.ID,
 					string(data.Validator),
 					data.Namespace,
-					dataDef.Name,
-					dataDef.Version,
+					datatype.Name,
+					datatype.Version,
 					data.Hash,
 					data.Created,
 					data.Value,
@@ -120,20 +121,20 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 
 func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
 	data := fftypes.Data{
-		Definition: &fftypes.DataDefinitionRef{},
+		Datatype: &fftypes.DatatypeRef{},
 	}
 	err := row.Scan(
 		&data.ID,
 		&data.Validator,
 		&data.Namespace,
-		&data.Definition.Name,
-		&data.Definition.Version,
+		&data.Datatype.Name,
+		&data.Datatype.Version,
 		&data.Hash,
 		&data.Created,
 		&data.Value,
 	)
-	if data.Definition.Name == "" && data.Definition.Version == "" {
-		data.Definition = nil
+	if data.Datatype.Name == "" && data.Datatype.Version == "" {
+		data.Datatype = nil
 	}
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
@@ -141,7 +142,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataById(ctx context.Context, id *uuid.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(dataColumns...).
@@ -192,7 +193,37 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, err error) {
+
+	query, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterTypeMap)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	refs := fftypes.DataRefs{}
+	for rows.Next() {
+		ref := fftypes.DataRef{}
+		err := rows.Scan(
+			&ref.ID,
+			&ref.Hash,
+		)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+		}
+		refs = append(refs, &ref)
+	}
+
+	return refs, err
+
+}
+
+func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -200,13 +231,13 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *uuid.UUID, update databa
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("data"), update, dataFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("data"), update, dataFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

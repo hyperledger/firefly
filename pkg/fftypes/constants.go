@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,7 +17,16 @@
 package fftypes
 
 const (
-	DataDefinitionaTopicName = "ff-datadef"
-	SystemNamespace          = "ff-system"
-	SystemContext            = "ff-system"
+
+	// SystemNamespace is the system reserved namespace name
+	SystemNamespace = "ff-system"
+
+	// SystemContext is the system reserved context name
+	SystemContext = "ff-system"
+
+	// DatatypeTopicName is the topic for messages that broadcast data definitions
+	DatatypeTopicName = "ff-data-definition"
+
+	// NamespaceDefinitionTopicName is the topic for messages that broadcast namespace definitions
+	NamespaceDefinitionTopicName = "ff-namespace-definition"
 )

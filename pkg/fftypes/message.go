@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,22 +21,26 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+// MessageType is the fundamental type of a message
 type MessageType string
 
 const (
+	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
 	MessageTypeDefinition MessageType = "definition"
-	MessageTypeBroadcast  MessageType = "broadcast"
-	MessageTypePrivate    MessageType = "private"
+	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
+	MessageTypeBroadcast MessageType = "broadcast"
+	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
+	MessageTypePrivate MessageType = "private"
 )
 
 // MessageHeader contains all fields that contribute to the hash
+// The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID        *uuid.UUID     `json:"id,omitempty"`
-	CID       *uuid.UUID     `json:"cid,omitempty"`
+	ID        *UUID          `json:"id,omitempty"`
+	CID       *UUID          `json:"cid,omitempty"`
 	Type      MessageType    `json:"type"`
 	TX        TransactionRef `json:"tx,omitempty"`
 	Author    string         `json:"author,omitempty"`
@@ -42,23 +48,27 @@ type MessageHeader struct {
 	Namespace string         `json:"namespace,omitempty"`
 	Topic     string         `json:"topic,omitempty"`
 	Context   string         `json:"context,omitempty"`
-	Group     *uuid.UUID     `json:"group,omitempty"`
+	Group     *UUID          `json:"group,omitempty"`
 	DataHash  *Bytes32       `json:"datahash,omitempty"`
 }
 
+// Message is the envelope by which coordinated data exchange can happen between parties in the network
+// Data is passed by reference in these messages, and a chain of hashes covering the data and the
+// details of the message, provides a verification against tampering.
 type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
-	BatchID   *uuid.UUID    `json:"batchId,omitempty"`
+	BatchID   *UUID         `json:"batchID,omitempty"`
 	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 }
 
+// MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
-	ID       *uuid.UUID `json:"id,omitempty"`
-	Sequence int64      `json:"sequence,omitempty"`
-	Hash     *Bytes32   `json:"hash,omitempty"`
+	ID       *UUID    `json:"id,omitempty"`
+	Sequence int64    `json:"sequence,omitempty"`
+	Hash     *Bytes32 `json:"hash,omitempty"`
 }
 
 func (h *MessageHeader) Hash() *Bytes32 {

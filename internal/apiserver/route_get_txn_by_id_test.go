@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,20 +20,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetTXById(t *testing.T) {
+func TestGetTXByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/transactions/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetTransactionById", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetTransactionByID", mock.Anything, "mynamespace", "abcd12345").
 		Return(&fftypes.Transaction{}, nil)
 	r.ServeHTTP(res, req)
 

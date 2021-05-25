@@ -109,9 +109,9 @@ It depends on the following Kaleido services:
               └─────┬─────────┘    * Including Swagger. UI
                     │
               ┌─────┴─────────┐  - WebSocket server
-              │ wsserver  [Ws]│    * Provides a JSON based simple protocol
-              │               │    * Apps sent `type: "listen"` to start streaming with a `topic`
-              └─────┬─────────┘    * Apps must send `type: "ack"` for each message to confirm receipt
+              │           [Ws]│    * Developer friendly JSON based protocol business app development
+              │ websockets    │    * Reliable sequenced delivery
+              └─────┬─────────┘    * _Event interface [Ei] supports lower level integration with other compute frameworks/transports_
                     │
               ┌─────┴─────────┐  - Core data types
               │ fftypes   [Ft]│    * Used for API and Serialization
@@ -246,7 +246,17 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ postgres      │   │ QL            │   │ SQLite         │
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
-  ... more TBD
+  │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications
+  ├───────────┤ event     [Ei]│    * Supports long-lived (durable) and ephemeral event subscriptions
+  │           │ interface     │    * Batching, filtering, all handled in core prior to transport
+  │           └─────┬─────────┘    * Interface supports connect-in (websocket) and connect-out (broker runtime style) plugins
+  │                 │
+  │                 ├───────── ... extensible to integrate off-chain compute framework (Hyperledger Avalon, TEE, ZKP, MPC etc.)
+  │                 │          ... extensible to additional event delivery brokers/subsystems (Webhooks, Kafka, AMQP etc.)
+  │           ┌─────┴─────────┐
+  │           │ WebSockets    │
+  │           └───────────────┘
+  │  ... more TBD
 
   Additional utility framworks
               ┌───────────────┐  - REST API client

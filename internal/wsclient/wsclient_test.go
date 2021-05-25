@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +18,6 @@ package wsclient
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +26,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/restclient"
-	"github.com/kaleido-io/firefly/internal/wsserver"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,57 +33,50 @@ var utConfPrefix = config.NewPluginConfig("ws_unit_tests")
 
 func resetConf() {
 	config.Reset()
-	InitConfigPrefix(utConfPrefix)
+	InitPrefix(utConfPrefix)
 }
 
 func TestWSClientE2E(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-
-	acks := make(chan bool)
-	sender, receiver, _ := wsServer.GetChannels("topic1")
-	go func() {
-		sender <- map[string]string{"test": "message"}
-		err := <-receiver
-		assert.Nil(t, err)
-		acks <- true
-	}()
+	toServer, fromServer, url, close := NewTestWSServer(func(req *http.Request) {
+		assert.Equal(t, "/test/updated", req.URL.Path)
+	})
+	defer close()
 
 	afterConnect := func(ctx context.Context, w WSClient) error {
-		// Send a listen on topic1 in the connect options
-		b, _ := json.Marshal(map[string]string{"type": "listen", "topic": "topic1"})
-		return w.Send(ctx, b)
+		return w.Send(ctx, []byte(`after connect message`))
 	}
 
+	// Init from config
 	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(WSConfigKeyPath, "/ws")
-
+	utConfPrefix.Set(restclient.HTTPConfigURL, url)
+	utConfPrefix.Set(WSConfigKeyPath, "/test")
 	wsClient, err := New(context.Background(), utConfPrefix, afterConnect)
 	assert.NoError(t, err)
 
+	//  Change the settings and connect
+	wsClient.SetURL(wsClient.URL() + "/updated")
 	err = wsClient.Connect()
 	assert.NoError(t, err)
 
-	// Receive the message sent by the server
-	b := <-wsClient.Receive()
-	var msg map[string]string
-	err = json.Unmarshal(b, &msg)
+	// Receive the message automatically sent in afterConnect
+	message1 := <-toServer
+	assert.Equal(t, `after connect message`, message1)
+
+	// Tell the unit test server to send us a reply, and confirm it
+	fromServer <- `some data from server`
+	reply := <-wsClient.Receive()
+	assert.Equal(t, `some data from server`, string(reply))
+
+	// Send some data back
+	err = wsClient.Send(context.Background(), []byte(`some data to server`))
 	assert.NoError(t, err)
-	assert.Equal(t, "message", msg["test"])
 
-	// Ack it
-	b, _ = json.Marshal(map[string]string{"type": "ack", "topic": "topic1"})
-	err = wsClient.Send(context.Background(), b)
-	assert.NoError(t, err)
+	// Check the sevrer got it
+	message2 := <-toServer
+	assert.Equal(t, `some data to server`, message2)
 
-	// Wait for server to process our ack
-	<-acks
-
-	// Close out
-	wsServer.Close()
+	// Close the client
 	wsClient.Close()
 
 }
@@ -133,7 +126,7 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	})
 	utConfPrefix.Set(restclient.HTTPConfigAuthUsername, "user")
 	utConfPrefix.Set(restclient.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -152,7 +145,7 @@ func TestWSFailStartupConnect(t *testing.T) {
 
 	resetConf()
 	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(restclient.HTTPConfigRetryWaitTime, 1)
+	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
@@ -162,12 +155,8 @@ func TestWSFailStartupConnect(t *testing.T) {
 
 func TestWSSendClosed(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-
 	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
+	utConfPrefix.Set(restclient.HTTPConfigURL, "ws://localhost:12345")
 
 	w, err := New(context.Background(), utConfPrefix, nil)
 	assert.NoError(t, err)
@@ -203,20 +192,14 @@ func TestWSConnectClosed(t *testing.T) {
 
 func TestWSReadLoopSendFailure(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-	defer wsServer.Close()
+	toServer, _, url, done := NewTestWSServer(nil)
+	defer done()
 
-	sender, _, _ := wsServer.GetChannels("topic1")
-	go func() {
-		sender <- map[string]string{"test": "message"}
-	}()
-
-	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
+	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	wsconn.WriteJSON(map[string]string{"type": "listen", "topic": "topic1"})
 	assert.NoError(t, err)
-	defer wsconn.Close()
+	<-toServer
+	wsconn.Close()
 	w := &wsClient{
 		ctx:      context.Background(),
 		closed:   true,
@@ -232,14 +215,12 @@ func TestWSReadLoopSendFailure(t *testing.T) {
 
 }
 
-func TestWSReconnect(t *testing.T) {
+func TestWSReconnectFail(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-	defer wsServer.Close()
+	_, _, url, done := NewTestWSServer(nil)
+	defer done()
 
-	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
+	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	assert.NoError(t, err)
 	wsconn.Close()
 	ctxCancelled, cancel := context.WithCancel(context.Background())
@@ -258,12 +239,10 @@ func TestWSReconnect(t *testing.T) {
 
 func TestWSSendFail(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-	defer wsServer.Close()
+	_, _, url, done := NewTestWSServer(nil)
+	defer done()
 
-	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
+	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	assert.NoError(t, err)
 	wsconn.Close()
 	w := &wsClient{
@@ -281,12 +260,10 @@ func TestWSSendFail(t *testing.T) {
 
 func TestWSSendInstructClose(t *testing.T) {
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
-	defer wsServer.Close()
+	_, _, url, done := NewTestWSServer(nil)
+	defer done()
 
-	wsconn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://%s", svr.Listener.Addr()), nil)
+	wsconn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	assert.NoError(t, err)
 	wsconn.Close()
 	w := &wsClient{

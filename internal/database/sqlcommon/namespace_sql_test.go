@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,23 +23,23 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNamespacesE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
-	s := &SQLCommon{}
+	s := newQLTestProvider(t)
+	defer s.Close()
 	ctx := context.Background()
-	InitSQLCommon(ctx, s, ensureTestDB(t), nil, &database.Capabilities{}, testSQLOptions())
 
 	// Create a new namespace entry
 	namespace := &fftypes.Namespace{
 		ID:      nil, // generated for us
-		Type:    fftypes.NamespaceTypeStaticLocal,
+		Type:    fftypes.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
 	}
@@ -63,7 +65,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &fftypes.Namespace{
 		ID:          nil, // as long as we don't specify one we're fine
-		Type:        fftypes.NamespaceTypeStaticBroadcast,
+		Type:        fftypes.NamespaceTypeBroadcast,
 		Name:        "namespace1",
 		Description: "description1",
 		Created:     fftypes.Now(),
@@ -94,7 +96,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// Update
 	updateTime := fftypes.Now()
 	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
-	err = s.UpdateNamespace(ctx, namespaceUpdated.Name, up)
+	err = s.UpdateNamespace(ctx, namespaceUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -108,7 +110,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 }
 
 func TestUpsertNamespaceFailBegin(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{}, true)
 	assert.Regexp(t, "FF10114", err.Error())
@@ -116,7 +118,7 @@ func TestUpsertNamespaceFailBegin(t *testing.T) {
 }
 
 func TestUpsertNamespaceFailSelect(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
@@ -126,7 +128,7 @@ func TestUpsertNamespaceFailSelect(t *testing.T) {
 }
 
 func TestUpsertNamespaceFailInsert(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -137,7 +139,7 @@ func TestUpsertNamespaceFailInsert(t *testing.T) {
 }
 
 func TestUpsertNamespaceFailUpdate(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).
 		AddRow("name1"))
@@ -149,7 +151,7 @@ func TestUpsertNamespaceFailUpdate(t *testing.T) {
 }
 
 func TestUpsertNamespaceFailCommit(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -159,16 +161,16 @@ func TestUpsertNamespaceFailCommit(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdSelectFail(t *testing.T) {
-	s, mock := getMockDB()
+func TestGetNamespaceByIDSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetNamespace(context.Background(), "name1")
 	assert.Regexp(t, "FF10115", err.Error())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdNotFound(t *testing.T) {
-	s, mock := getMockDB()
+func TestGetNamespaceByIDNotFound(t *testing.T) {
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype", "namespace", "name"}))
 	msg, err := s.GetNamespace(context.Background(), "name1")
 	assert.NoError(t, err)
@@ -176,8 +178,8 @@ func TestGetNamespaceByIdNotFound(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetNamespaceByIdScanFail(t *testing.T) {
-	s, mock := getMockDB()
+func TestGetNamespaceByIDScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	_, err := s.GetNamespace(context.Background(), "name1")
 	assert.Regexp(t, "FF10121", err.Error())
@@ -185,7 +187,7 @@ func TestGetNamespaceByIdScanFail(t *testing.T) {
 }
 
 func TestGetNamespaceQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
@@ -194,14 +196,14 @@ func TestGetNamespaceQueryFail(t *testing.T) {
 }
 
 func TestGetNamespaceBuildQueryFail(t *testing.T) {
-	s, _ := getMockDB()
+	s, _ := newMockProvider().init()
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err.Error())
 }
 
 func TestGetNamespaceReadMessageFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
@@ -210,27 +212,27 @@ func TestGetNamespaceReadMessageFail(t *testing.T) {
 }
 
 func TestNamespaceUpdateBeginFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
 func TestNamespaceUpdateBuildQueryFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*name", err.Error())
 }
 
 func TestNamespaceUpdateFail(t *testing.T) {
-	s, mock := getMockDB()
+	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
-	err := s.UpdateNamespace(context.Background(), "name1", u)
+	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err.Error())
 }

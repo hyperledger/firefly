@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,7 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
@@ -27,7 +29,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/restclient"
-	"github.com/kaleido-io/firefly/internal/wsserver"
+	"github.com/kaleido-io/firefly/internal/wsclient"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/wsmocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
@@ -42,13 +44,13 @@ var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
 func resetConf() {
 	config.Reset()
 	e := &Ethereum{}
-	e.InitConfigPrefix(utConfPrefix)
+	e.InitPrefix(utConfPrefix)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	e := &Ethereum{}
 	resetConf()
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*url", err.Error())
 }
 
@@ -58,7 +60,7 @@ func TestInitMissingInstance(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*instance", err.Error())
 }
 
@@ -68,44 +70,47 @@ func TestInitMissingTopic(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*topic", err.Error())
 }
 
 func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 
-	log.SetLevel("debug")
+	log.SetLevel("trace")
 	e := &Ethereum{}
 
-	wsServer := wsserver.NewWebSocketServer(context.Background())
-	svr := httptest.NewServer(wsServer.Handler())
-	defer svr.Close()
+	toServer, fromServer, wsURL, done := wsclient.NewTestWSServer(nil)
+	defer done()
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
+	u, _ := url.Parse(wsURL)
+	u.Scheme = "http"
+	httpURL := u.String()
+
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/eventstreams", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", fmt.Sprintf("http://%s/subscriptions", svr.Listener.Addr()),
+	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("http://%s/instances/0x12345/BroadcastBatch", svr.Listener.Addr()),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x12345/BroadcastBatch", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "es12345", body["streamId"])
+			assert.Equal(t, "es12345", body["streamID"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	utEthconnectConf.Set(restclient.HTTPConfigURL, httpURL)
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ethereum", e.Name())
@@ -117,10 +122,11 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	err = e.Start()
 	assert.NoError(t, err)
 
-	sender, receiver, _ := wsServer.GetChannels("topic1")
-	sender <- []fftypes.JSONObject{} // empty batch, will be ignored, but acked
-	err = <-receiver
-	assert.NoError(t, err) // should be ack, not error
+	startupMessage := <-toServer
+	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
+	fromServer <- `[]` // empty batch, will be ignored, but acked
+	reply := <-toServer
+	assert.Equal(t, `{"topic":"topic1","type":"ack"}`, reply)
 
 }
 
@@ -134,7 +140,7 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err.Error())
 
 }
@@ -173,7 +179,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -201,7 +207,7 @@ func TestStreamQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -228,7 +234,7 @@ func TestStreamCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -257,7 +263,7 @@ func TestSubQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -288,7 +294,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Events{})
+	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
 	assert.Regexp(t, "FF10111", err.Error())
 	assert.Regexp(t, "pop", err.Error())
@@ -386,7 +392,7 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "50"
   },
@@ -402,15 +408,31 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+    "logIndex": "51"
+  },
+	{
+    "address": "0x06d34B270F15a0d82913EFD0627B0F62Fd22ecd5",
+    "blockNumber": "38011",
+    "transactionIndex": "0x2",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+    "data": {
+      "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+			"txnId": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
+      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+      "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
+      "timestamp": "1620576488"
+    },
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "Random(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
 ]`)
 
-	em := &blockchainmocks.Events{}
+	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		events: em,
+		callbacks: em,
 	}
 
 	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
@@ -441,15 +463,15 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
-    "subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "logIndex": "51"
   }
 ]`)
 
-	em := &blockchainmocks.Events{}
+	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		events: em,
+		callbacks: em,
 	}
 
 	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -460,15 +482,15 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
 }
 
 func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"}]`))
 	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
 		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
@@ -485,9 +507,9 @@ func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+func TestHandleMessageBatchBroadcastBadIDentity(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
 		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
@@ -505,8 +527,8 @@ func TestHandleMessageBatchBroadcastBadIdentity(t *testing.T) {
 }
 
 func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
 		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
@@ -524,8 +546,8 @@ func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
 }
 
 func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`[{
 		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
     "blockNumber": "38011",
@@ -543,22 +565,22 @@ func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
 }
 
 func TestHandleMessageBatchBadJSON(t *testing.T) {
-	em := &blockchainmocks.Events{}
-	e := &Ethereum{events: em}
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
 	e.handleMessageBatch(context.Background(), []byte(`!good`))
 	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestEventLoopContextCancelled(t *testing.T) {
-	em := &blockchainmocks.Events{}
+	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	ctxCancelled, cancel := context.WithCancel(context.Background())
 	cancel()
 	e := &Ethereum{
-		ctx:    ctxCancelled,
-		topic:  "topic1",
-		events: em,
-		wsconn: wsm,
+		ctx:       ctxCancelled,
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
 	}
 	r := make(<-chan []byte)
 	wsm.On("Receive").Return(r)
@@ -566,13 +588,13 @@ func TestEventLoopContextCancelled(t *testing.T) {
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
-	em := &blockchainmocks.Events{}
+	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:    context.Background(),
-		topic:  "topic1",
-		events: em,
-		wsconn: wsm,
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
 	}
 	r := make(chan []byte)
 	close(r)
@@ -581,13 +603,13 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
-	em := &blockchainmocks.Events{}
+	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:    context.Background(),
-		topic:  "topic1",
-		events: em,
-		wsconn: wsm,
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`[]`)

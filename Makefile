@@ -2,6 +2,8 @@ VGO=go
 BINARY_NAME=firefly
 GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
 MOCKERY=mockery
+# Expect that ireFly compiles with CGO disabled
+CGO_ENABLED=0
 .DELETE_ON_ERROR:
 
 all: build test
@@ -13,20 +15,24 @@ coverage: test coverage.html
 lint:
 		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
 mocks: ${GOFILES}
-		$(MOCKERY) --case underscore --dir internal/blockchain        --name Plugin           --output mocks/blockchainmocks    --outpkg blockchainmocks
-		$(MOCKERY) --case underscore --dir internal/blockchain        --name Events           --output mocks/blockchainmocks    --outpkg blockchainmocks
-		$(MOCKERY) --case underscore --dir internal/database          --name Plugin           --output mocks/databasemocks      --outpkg databasemocks
-		$(MOCKERY) --case underscore --dir internal/database          --name Events           --output mocks/databasemocks      --outpkg databasemocks
-		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Plugin           --output mocks/publicstoragemocks --outpkg publicstoragemocks
-		$(MOCKERY) --case underscore --dir internal/publicstorage     --name Events           --output mocks/publicstoragemocks --outpkg publicstoragemocks
-		$(MOCKERY) --case underscore --dir internal/events            --name EventManager     --output mocks/eventmocks         --outpkg eventmocks
-		$(MOCKERY) --case underscore --dir internal/batch             --name BatchManager     --output mocks/batchmocks         --outpkg batchmocks
-		$(MOCKERY) --case underscore --dir internal/broadcast         --name BroadcastManager --output mocks/broadcastmocks     --outpkg broadcastmocks
-		$(MOCKERY) --case underscore --dir internal/orchestrator      --name Orchestrator     --output mocks/orchestratormocks  --outpkg orchestratormocks
-		$(MOCKERY) --case underscore --dir internal/wsclient          --name WSClient         --output mocks/wsmocks            --outpkg wsmocks
+		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Plugin           --output mocks/blockchainmocks     --outpkg blockchainmocks
+		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Callbacks        --output mocks/blockchainmocks     --outpkg blockchainmocks
+		$(MOCKERY) --case underscore --dir pkg/database          --name Plugin           --output mocks/databasemocks       --outpkg databasemocks
+		$(MOCKERY) --case underscore --dir pkg/database          --name Callbacks        --output mocks/databasemocks       --outpkg databasemocks
+		$(MOCKERY) --case underscore --dir pkg/publicstorage     --name Plugin           --output mocks/publicstoragemocks  --outpkg publicstoragemocks
+		$(MOCKERY) --case underscore --dir pkg/publicstorage     --name Callbacks        --output mocks/publicstoragemocks  --outpkg publicstoragemocks
+		$(MOCKERY) --case underscore --dir pkg/events    				 --name Plugin           --output mocks/eventsmocks 			  --outpkg eventsmocks
+		$(MOCKERY) --case underscore --dir pkg/events    				 --name Callbacks        --output mocks/eventsmocks 				--outpkg eventsmocks
+		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
+		$(MOCKERY) --case underscore --dir internal/batch        --name Manager          --output mocks/batchmocks          --outpkg batchmocks
+		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
+		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
+		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
+firefly-nocgo: ${GOFILES}		
+		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
-build: ${BINARY_NAME}
+build: firefly-nocgo firefly
 clean: 
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}

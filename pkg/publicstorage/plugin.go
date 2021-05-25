@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -26,12 +28,12 @@ import (
 type Plugin interface {
 	fftypes.Named
 
-	// InitConfigPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitConfigPrefix(prefix config.ConfigPrefix)
+	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitPrefix(prefix config.Prefix)
 
-	// Init initializes the plugin, with the config marshaled into the return of ConfigInterface
+	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.ConfigPrefix, events Events) error
+	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -43,7 +45,7 @@ type Plugin interface {
 	RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error)
 }
 
-type Events interface {
+type Callbacks interface {
 }
 
 type Capabilities struct {

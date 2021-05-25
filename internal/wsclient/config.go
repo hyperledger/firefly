@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,18 +27,23 @@ const (
 )
 
 const (
+	// WSSpecificConfPrefix is the sub-section of the http config options that contains websocket specific config
 	WSSpecificConfPrefix = "ws"
 
-	WSConfigKeyWriteBufferSizeKB      = "ws.writeBufferSizeKB"
-	WSConfigKeyReadBufferSizeKB       = "ws.readBufferSizeKB"
+	// WSConfigKeyWriteBufferSizeKB is the write buffer size
+	WSConfigKeyWriteBufferSizeKB = "ws.writeBufferSizeKB"
+	// WSConfigKeyReadBufferSizeKB is the read buffer size
+	WSConfigKeyReadBufferSizeKB = "ws.readBufferSizeKB"
+	// WSConfigKeyInitialConnectAttempts sets how many times the websocket should attempt to connect on startup, before failing (after initial connection, retry is indefinite)
 	WSConfigKeyInitialConnectAttempts = "ws.initialConnectAttempts"
-	WSConfigKeyPath                   = "ws.path"
+	// WSConfigKeyPath if set will define the path to connect to - allows sharing of the same URL between HTTP and WebSocket connection info
+	WSConfigKeyPath = "ws.path"
 )
 
-// InitConfigPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
+// InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
-func InitConfigPrefix(prefix config.ConfigPrefix) {
-	restclient.InitConfigPrefix(prefix)
+func InitPrefix(prefix config.Prefix) {
+	restclient.InitPrefix(prefix)
 	prefix.AddKnownKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)

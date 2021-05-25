@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -70,13 +72,13 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string,
 	return sel.Where(fop), nil
 }
 
-func (s *SQLCommon) buildUpdate(ctx context.Context, tableName string, sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
+func (s *SQLCommon) buildUpdate(sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {
 	ui, err := update.Finalize()
 	if err != nil {
 		return sel, err
 	}
 	for _, so := range ui.SetOperations {
-		sel = sel.Set(s.mapField(tableName, so.Field, typeMap), so.Value)
+		sel = sel.Set(s.mapField("", so.Field, typeMap), so.Value)
 	}
 	return sel, nil
 }
@@ -104,7 +106,7 @@ func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
 
 func (s *SQLCommon) mapField(tableName, fieldName string, tm map[string]string) string {
 	if fieldName == "sequence" {
-		return s.options.SequenceField(tableName)
+		return s.provider.SequenceField(tableName)
 	}
 	var field = fieldName
 	if tm != nil {

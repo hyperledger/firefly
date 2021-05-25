@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,8 +18,8 @@ package oapispec
 
 import (
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/database"
 )
 
 // Route defines each API operation on the REST API of Firefly
@@ -30,14 +32,14 @@ type Route struct {
 	// Path is a Gorilla mux path spec
 	Path string
 	// PathParams is a list of documented path parameters
-	PathParams []PathParam
+	PathParams []*PathParam
 	// QueryParams is a list of documented query parameters
-	QueryParams []QueryParam
+	QueryParams []*QueryParam
 	// FilterFactory is a reference to a filter object that defines the search param on resource collection interfaces
 	FilterFactory database.QueryFactory
 	// Method is the HTTP method
 	Method string
-	// Description is a message key to a translatable descripiton of the operation
+	// Description is a message key to a translatable description of the operation
 	Description i18n.MessageKey
 	// JSONInputValue is a function that returns a pointer to a structure to take JSON input
 	JSONInputValue func() interface{}
@@ -62,7 +64,7 @@ type PathParam struct {
 	Example string
 	// ExampleFromConf is a field to fill in, in the helper UI, from the runtime configuration
 	ExampleFromConf config.RootKey
-	// Description is a message key to a translatable descripiton of the parameter
+	// Description is a message key to a translatable description of the parameter
 	Description i18n.MessageKey
 }
 
@@ -76,6 +78,6 @@ type QueryParam struct {
 	Example string
 	// ExampleFromConf is a field to fill in, in the helper UI, from the runtime configuration
 	ExampleFromConf config.RootKey
-	// Description is a message key to a translatable descripiton of the parameter
+	// Description is a message key to a translatable description of the parameter
 	Description i18n.MessageKey
 }

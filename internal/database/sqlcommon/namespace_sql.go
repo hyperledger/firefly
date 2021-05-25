@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -61,7 +62,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 		existing = namespaceRows.Next()
 
 		if existing {
-			var id uuid.UUID
+			var id fftypes.UUID
 			_ = namespaceRows.Scan(&id)
 			if namespace.ID != nil {
 				if *namespace.ID != id {
@@ -76,7 +77,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 
 	if existing {
 		// Update the namespace
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
 				// Note we do not update ID
 				Set("ntype", string(namespace.Type)).
@@ -179,7 +180,7 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) UpdateNamespace(ctx context.Context, name string, update database.Update) (err error) {
+func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -187,13 +188,13 @@ func (s *SQLCommon) UpdateNamespace(ctx context.Context, name string, update dat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("namespaces"), update, namespaceFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("namespaces"), update, namespaceFilterTypeMap)
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"name": name})
+	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

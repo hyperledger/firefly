@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -23,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -42,7 +43,7 @@ type Ethereum struct {
 	topic        string
 	instancePath string
 	capabilities *blockchain.Capabilities
-	events       blockchain.Events
+	callbacks    blockchain.Callbacks
 	client       *resty.Client
 	initInfo     struct {
 		stream *eventStream
@@ -69,7 +70,7 @@ type subscription struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Name        string `json:"name"`
-	StreamID    string `json:"streamId"`
+	StreamID    string `json:"streamID"`
 	Stream      string `json:"stream"`
 	FromBlock   string `json:"fromBlock"`
 }
@@ -99,12 +100,12 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.ConfigPrefix, events blockchain.Events) (err error) {
+func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.events = events
+	e.callbacks = callbacks
 
 	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
@@ -148,9 +149,9 @@ func (e *Ethereum) Capabilities() *blockchain.Capabilities {
 	return e.capabilities
 }
 
-func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error {
+func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
 
-	var existingStreams []eventStream
+	var existingStreams []*eventStream
 	res, err := e.client.R().SetContext(e.ctx).SetResult(&existingStreams).Get("/eventstreams")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
@@ -158,7 +159,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.ConfigPrefix) error 
 
 	for _, stream := range existingStreams {
 		if stream.WebSocket.Topic == e.topic {
-			e.initInfo.stream = &stream
+			e.initInfo.stream = stream
 		}
 	}
 
@@ -197,7 +198,7 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 	for eventType, subDesc := range requiredSubscriptions {
 
-		var existingSubs []subscription
+		var existingSubs []*subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
 		if err != nil || !res.IsSuccess() {
 			return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
@@ -206,7 +207,7 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 		var sub *subscription
 		for _, s := range existingSubs {
 			if s.Name == eventType {
-				sub = &s
+				sub = s
 			}
 		}
 
@@ -246,16 +247,16 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
 	dataJSON := msgJSON.GetObject(ctx, "data")
 	sAuthor := dataJSON.GetString(ctx, "author")
-	sTxnId := dataJSON.GetString(ctx, "txnId")
-	sBatchId := dataJSON.GetString(ctx, "batchId")
+	sTxnID := dataJSON.GetString(ctx, "txnId")
+	sBatchID := dataJSON.GetString(ctx, "batchId")
 	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		sAuthor == "" ||
-		sTxnId == "" ||
-		sBatchId == "" ||
+		sTxnID == "" ||
+		sBatchID == "" ||
 		sPayloadRef == "" {
 		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
 		return nil // move on
@@ -268,21 +269,21 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	var txnIDB32 fftypes.Bytes32
-	err = txnIDB32.UnmarshalText([]byte(sTxnId))
+	err = txnIDB32.UnmarshalText([]byte(sTxnID))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnId (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnID(%s): %+v", err, msgJSON)
 		return nil // move on
 	}
-	var txnID uuid.UUID
+	var txnID fftypes.UUID
 	copy(txnID[:], txnIDB32[0:16])
 
 	var batchIDB32 fftypes.Bytes32
-	err = batchIDB32.UnmarshalText([]byte(sBatchId))
+	err = batchIDB32.UnmarshalText([]byte(sBatchID))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchId (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchID(%s): %+v", err, msgJSON)
 		return nil // move on
 	}
-	var batchID uuid.UUID
+	var batchID fftypes.UUID
 	copy(batchID[:], batchIDB32[0:16])
 
 	var payloadRef fftypes.Bytes32
@@ -299,7 +300,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.events.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
+	return e.callbacks.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
@@ -324,6 +325,8 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
+		default:
+			l.Infof("Ignoring event with unknown signature: %s", signature)
 		}
 	}
 

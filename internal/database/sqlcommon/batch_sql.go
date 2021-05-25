@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,11 +21,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -83,7 +84,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 	if existing {
 
 		// Update the batch
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("batches").
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
@@ -146,7 +147,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchById(ctx context.Context, id *uuid.UUID) (message *fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(batchColumns...).
@@ -197,7 +198,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 
 }
 
-func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -205,13 +206,13 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *uuid.UUID, update datab
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("batches"), update, batchFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("batches"), update, batchFilterTypeMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}

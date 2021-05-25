@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,9 +23,8 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 // QueryFactory creates a filter builder in the given context, and contains the rules on
@@ -55,7 +56,7 @@ func (qf *queryFields) NewUpdate(ctx context.Context) UpdateBuilder {
 	}
 }
 
-// We stand on the shoulders of the well adopted SQL serialization interface here to help us define what
+// FieldSerialization - we stand on the shoulders of the well adopted SQL serialization interface here to help us define what
 // string<->value looks like, even though this plugin interface is not tightly coupled to SQL.
 type FieldSerialization interface {
 	driver.Valuer
@@ -78,18 +79,18 @@ func (f *stringField) Scan(src interface{}) error {
 	case int32:
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case int64:
-		f.s = strconv.FormatInt(int64(tv), 10)
+		f.s = strconv.FormatInt(tv, 10)
 	case uint:
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case uint32:
 		f.s = strconv.FormatInt(int64(tv), 10)
 	case uint64:
 		f.s = strconv.FormatInt(int64(tv), 10)
-	case *uuid.UUID:
+	case *fftypes.UUID:
 		if tv != nil {
 			f.s = tv.String()
 		}
-	case uuid.UUID:
+	case fftypes.UUID:
 		f.s = tv.String()
 	case *fftypes.Bytes32:
 		f.s = tv.String()
@@ -109,6 +110,44 @@ func (f *stringField) Scan(src interface{}) error {
 func (f *stringField) Value() (driver.Value, error)         { return f.s, nil }
 func (f *StringField) getSerialization() FieldSerialization { return &stringField{} }
 
+type UUIDField struct{}
+type uuidField struct{ u *fftypes.UUID }
+
+func (f *uuidField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case string:
+		if tv == "" {
+			f.u = nil
+			return nil
+		}
+		f.u, err = fftypes.ParseUUID(tv)
+		return err
+	case *fftypes.UUID:
+		f.u = tv
+	case fftypes.UUID:
+		u := tv
+		f.u = &u
+	case *fftypes.Bytes32:
+		if tv == nil {
+			f.u = nil
+			return nil
+		}
+		var u fftypes.UUID
+		copy(u[:], tv[0:16])
+		f.u = &u
+	case fftypes.Bytes32:
+		var u fftypes.UUID
+		copy(u[:], tv[0:16])
+		f.u = &u
+	case nil:
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.u)
+	}
+	return nil
+}
+func (f *uuidField) Value() (driver.Value, error)         { return f.u.Value() }
+func (f *UUIDField) getSerialization() FieldSerialization { return &uuidField{} }
+
 type Int64Field struct{}
 type int64Field struct{ i int64 }
 
@@ -119,7 +158,7 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 	case int32:
 		f.i = int64(tv)
 	case int64:
-		f.i = int64(tv)
+		f.i = tv
 	case uint:
 		f.i = int64(tv)
 	case uint32:

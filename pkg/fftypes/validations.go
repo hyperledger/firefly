@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -28,6 +30,13 @@ var (
 func ValidateFFNameField(ctx context.Context, str string, fieldName string) error {
 	if !ffNameValidator.MatchString(str) {
 		return i18n.NewError(ctx, i18n.MsgInvalidName, fieldName)
+	}
+	return nil
+}
+
+func ValidateLength(ctx context.Context, str string, fieldName string, max int) error {
+	if len([]byte(str)) > max {
+		return i18n.NewError(ctx, i18n.MsgFieldTooLong, fieldName, max)
 	}
 	return nil
 }

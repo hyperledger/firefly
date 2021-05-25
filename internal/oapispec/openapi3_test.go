@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,9 +24,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +38,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Name:   "op1",
 			Path:   "namespaces/{ns}/example1/{id}",
 			Method: http.MethodPost,
-			PathParams: []PathParam{
+			PathParams: []*PathParam{
 				{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 				{Name: "id", Description: i18n.MsgTBD},
 			},
@@ -65,7 +67,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Path:       "example2",
 			Method:     http.MethodPut,
 			PathParams: nil,
-			QueryParams: []QueryParam{
+			QueryParams: []*QueryParam{
 				{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 				{Name: "id", Description: i18n.MsgTBD},
 				{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
@@ -80,7 +82,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			Name:   "op4",
 			Path:   "example2/{id}",
 			Method: http.MethodDelete,
-			PathParams: []PathParam{
+			PathParams: []*PathParam{
 				{Name: "id", Description: i18n.MsgTBD},
 			},
 			QueryParams:     nil,

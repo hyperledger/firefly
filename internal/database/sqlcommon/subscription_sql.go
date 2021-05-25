@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,13 +19,13 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
@@ -31,8 +33,8 @@ var (
 		"id",
 		"namespace",
 		"name",
-		"dispatcher",
-		"events",
+		"transport",
+		"filter_events",
 		"filter_topic",
 		"filter_context",
 		"filter_group",
@@ -40,6 +42,7 @@ var (
 		"created",
 	}
 	subscriptionFilterTypeMap = map[string]string{
+		"filter.events":  "filter_events",
 		"filter.topic":   "filter_topic",
 		"filter.context": "filter_context",
 		"filter.group":   "filter_group",
@@ -70,7 +73,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 		existing = subscriptionRows.Next()
 		if existing {
-			var id uuid.UUID
+			var id fftypes.UUID
 			_ = subscriptionRows.Scan(&id)
 			if subscription.ID != nil {
 				if *subscription.ID != id {
@@ -85,13 +88,13 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 	if existing {
 		// Update the subscription
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("subscriptions").
 				// Note we do not update ID
-				Set("namespace", string(subscription.Namespace)).
+				Set("namespace", subscription.Namespace).
 				Set("name", subscription.Name).
-				Set("dispatcher", subscription.Dispatcher).
-				Set("events", subscription.Events).
+				Set("transport", subscription.Transport).
+				Set("filter_events", subscription.Filter.Events).
 				Set("filter_topic", subscription.Filter.Topic).
 				Set("filter_context", subscription.Filter.Context).
 				Set("filter_group", subscription.Filter.Group).
@@ -116,8 +119,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.ID,
 					subscription.Namespace,
 					subscription.Name,
-					subscription.Dispatcher,
-					subscription.Events,
+					subscription.Transport,
+					subscription.Filter.Events,
 					subscription.Filter.Topic,
 					subscription.Filter.Context,
 					subscription.Filter.Group,
@@ -127,6 +130,11 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 		); err != nil {
 			return err
 		}
+
+		s.postCommitEvent(tx, func() {
+			s.callbacks.SubscriptionCreated(subscription.ID)
+		})
+
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
@@ -138,8 +146,8 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.ID,
 		&subscription.Namespace,
 		&subscription.Name,
-		&subscription.Dispatcher,
-		&subscription.Events,
+		&subscription.Transport,
+		&subscription.Filter.Events,
 		&subscription.Filter.Topic,
 		&subscription.Filter.Context,
 		&subscription.Filter.Group,
@@ -152,15 +160,12 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 	return &subscription, nil
 }
 
-func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string) (message *fftypes.Subscription, err error) {
+func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Subscription, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(subscriptionColumns...).
 			From("subscriptions").
-			Where(sq.Eq{
-				"namespace": namespace,
-				"name":      name,
-			}),
+			Where(eq),
 	)
 	if err != nil {
 		return nil, err
@@ -168,7 +173,7 @@ func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string)
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Subscription '%s' not found", name)
+		log.L(ctx).Debugf("Subscription '%s' not found", textName)
 		return nil, nil
 	}
 
@@ -178,6 +183,14 @@ func (s *SQLCommon) GetSubscription(ctx context.Context, namespace, name string)
 	}
 
 	return subscription, nil
+}
+
+func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"id": id}, id.String())
+}
+
+func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) (message *fftypes.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
 }
 
 func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, err error) {
@@ -214,7 +227,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("subscriptions"), update, subscriptionFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("subscriptions"), update, subscriptionFilterTypeMap)
 	if err != nil {
 		return err
 	}
@@ -223,10 +236,30 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 		"name":      name,
 	})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
 	if err != nil {
 		return err
 	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{"id": id}))
+	if err != nil {
+		return err
+	}
+
+	s.postCommitEvent(tx, func() {
+		s.callbacks.SubscriptionDeleted(id)
+	})
 
 	return s.commitTx(ctx, tx, autoCommit)
 }

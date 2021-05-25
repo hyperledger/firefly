@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,16 +20,16 @@ import (
 	"net/http"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getEventById = &oapispec.Route{
-	Name:   "getOpById",
+var getEventByID = &oapispec.Route{
+	Name:   "getOpByID",
 	Path:   "namespaces/{ns}/events/{eid}",
 	Method: http.MethodGet,
-	PathParams: []oapispec.PathParam{
+	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "eid", Description: i18n.MsgTBD},
 	},
@@ -38,7 +40,7 @@ var getEventById = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Event{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetEventById(r.Ctx, r.PP["ns"], r.PP["eid"])
+		output, err = r.Or.GetEventByID(r.Ctx, r.PP["ns"], r.PP["eid"])
 		return output, err
 	},
 }

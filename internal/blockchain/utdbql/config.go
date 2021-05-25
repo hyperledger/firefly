@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,9 +19,10 @@ package utdbql
 import "github.com/kaleido-io/firefly/internal/config"
 
 const (
+	// UTDBQLConfURL is the QL connection url - likely a memory:// or file:// url
 	UTDBQLConfURL = "url"
 )
 
-func (u *UTDBQL) InitConfigPrefix(prefix config.ConfigPrefix) {
+func (u *UTDBQL) InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(UTDBQLConfURL)
 }

@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,7 +21,6 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/gofrs/uuid"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -32,13 +33,13 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
 
-	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxId, author)
-	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxId, author) }()
+	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author)
+	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author) }()
 
 	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
-	var batchID uuid.UUID
+	var batchID fftypes.UUID
 	copy(batchID[:], batch.BatchID[0:16])
 
 	var body io.ReadCloser
@@ -53,7 +54,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 	var batchData *fftypes.Batch
 	err := json.NewDecoder(body).Decode(&batchData)
 	if err != nil {
-		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxId)
+		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxID)
 		return nil // log and swallow unprocessable data
 	}
 	body.Close()
@@ -66,7 +67,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			return em.persistBatch(ctx, batchData, author, protocolTxId, additionalInfo)
+			return em.persistBatch(ctx, batchData, author, protocolTxID, additionalInfo)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
@@ -74,7 +75,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxId string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
@@ -111,7 +112,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Get any existing record for the batch transaction record
-	tx, err := em.database.GetTransactionById(ctx, batch.Payload.TX.ID)
+	tx, err := em.database.GetTransactionByID(ctx, batch.Payload.TX.ID)
 	if err != nil {
 		l.Errorf("Failed to query transaction '%s': %s", batch.Payload.TX.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
@@ -139,7 +140,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 
 	// Set the updates on the transaction
 	tx.Confirmed = now
-	tx.ProtocolID = protocolTxId
+	tx.ProtocolID = protocolTxID
 	tx.Info = additionalInfo
 	tx.Status = fftypes.TransactionStatusConfirmed
 
@@ -163,7 +164,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
-		if err = em.persistBatchMessage(ctx, batch, now, i, msg); err != nil {
+		if err = em.persistBatchMessage(ctx, batch, i, msg); err != nil {
 			return err
 		}
 	}
@@ -207,7 +208,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 	return nil
 }
 
-func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, now *fftypes.FFTime, i int, msg *fftypes.Message) error {
+func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message) error {
 	l := log.L(ctx)
 	l.Tracef("Batch %s message %d: %+v", batch.ID, i, msg)
 

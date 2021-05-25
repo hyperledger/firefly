@@ -61,3 +61,22 @@ func (_m *WSClient) Send(ctx context.Context, message []byte) error {
 
 	return r0
 }
+
+// SetURL provides a mock function with given fields: url
+func (_m *WSClient) SetURL(url string) {
+	_m.Called(url)
+}
+
+// URL provides a mock function with given fields:
+func (_m *WSClient) URL() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}

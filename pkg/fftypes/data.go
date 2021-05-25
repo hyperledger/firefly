@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,31 +20,29 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-
-	"github.com/google/uuid"
 )
 
 type DataRef struct {
-	ID   *uuid.UUID `json:"id,omitempty"`
-	Hash *Bytes32   `json:"hash,omitempty"`
+	ID   *UUID    `json:"id,omitempty"`
+	Hash *Bytes32 `json:"hash,omitempty"`
 }
 
 type Data struct {
-	ID         *uuid.UUID         `json:"id,omitempty"`
-	Validator  ValidatorType      `json:"validator"`
-	Namespace  string             `json:"namespace,omitempty"`
-	Hash       *Bytes32           `json:"hash,omitempty"`
-	Created    *FFTime            `json:"created,omitempty"`
-	Definition *DataDefinitionRef `json:"definition,omitempty"`
-	Value      JSONObject         `json:"value,omitempty"`
+	ID        *UUID         `json:"id,omitempty"`
+	Validator ValidatorType `json:"validator"`
+	Namespace string        `json:"namespace,omitempty"`
+	Hash      *Bytes32      `json:"hash,omitempty"`
+	Created   *FFTime       `json:"created,omitempty"`
+	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
+	Value     JSONObject    `json:"value,omitempty"`
 }
 
-type DataDefinitionRef struct {
+type DatatypeRef struct {
 	Name    string `json:"name,omitempty"`
 	Version string `json:"version,omitempty"`
 }
 
-type DataRefs []DataRef
+type DataRefs []*DataRef
 
 func (d DataRefs) Hash(ctx context.Context) *Bytes32 {
 	b, _ := json.Marshal(&d)

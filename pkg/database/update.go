@@ -60,7 +60,7 @@ type SetOperation struct {
 // UpdateInfo is the structure returned by Finalize to the plugin, to serialize this uilter
 // into the underlying database mechanism's uilter language
 type UpdateInfo struct {
-	SetOperations []SetOperation
+	SetOperations []*SetOperation
 }
 
 type setOperation struct {
@@ -102,8 +102,8 @@ type setUpdate struct {
 	setOperations []*setOperation
 }
 
-func (ub *setUpdate) IsEmpty() bool {
-	return len(ub.setOperations) == 0
+func (u *setUpdate) IsEmpty() bool {
+	return len(u.setOperations) == 0
 }
 
 func (u *setUpdate) Set(field string, value interface{}) Update {
@@ -124,7 +124,7 @@ func (u *UpdateInfo) String() string {
 
 func (u *setUpdate) Finalize() (*UpdateInfo, error) {
 	ui := &UpdateInfo{
-		SetOperations: make([]SetOperation, len(u.setOperations)),
+		SetOperations: make([]*SetOperation, len(u.setOperations)),
 	}
 	for i, si := range u.setOperations {
 		name := strings.ToLower(si.field)
@@ -136,7 +136,7 @@ func (u *setUpdate) Finalize() (*UpdateInfo, error) {
 		if err := value.Scan(si.value); err != nil {
 			return nil, i18n.WrapError(u.ub.ctx, err, i18n.MsgInvalidValueForFilterField, name)
 		}
-		ui.SetOperations[i] = SetOperation{
+		ui.SetOperations[i] = &SetOperation{
 			Field: name,
 			Value: value,
 		}

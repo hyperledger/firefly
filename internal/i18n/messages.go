@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,6 +21,7 @@ import (
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"golang.org/x/text/message/catalog"
 )
 
 // MessageKey is the english translation text
@@ -45,12 +48,12 @@ type (
 
 type msg struct {
 	msgid       MessageKey
-	localString string
+	localString catalog.Message
 }
 
 type lang struct {
 	tag      string
-	messages []msg
+	messages []*msg
 }
 
 var serverLangs = []language.Tag{
@@ -61,14 +64,14 @@ var langMatcher = language.NewMatcher(serverLangs)
 
 // enTranslations are special, as new messages are added here first using the en_translations.go file
 // and are allocated their IDs there
-var enTranslations = []msg{}
+var enTranslations = []*msg{}
 
 var statusHints = map[string]int{}
 
 // ffm is the enTranslations helper to define a new message (not used in translation files)
 func ffm(key, enTranslation string, statusHint ...int) MessageKey {
-	m := msg{MessageKey(key), enTranslation}
-	enTranslations = append(enTranslations, m)
+	m := msg{MessageKey(key), catalog.String(enTranslation)}
+	enTranslations = append(enTranslations, &m)
 	if len(statusHint) > 0 {
 		statusHints[key] = statusHint[0]
 	}
@@ -86,13 +89,13 @@ func pFor(ctx context.Context) *message.Printer {
 }
 
 func init() {
-	all := [...]lang{
+	all := []*lang{
 		{"en", enTranslations},
 	}
 	for _, e := range all {
 		tag := language.MustParse(e.tag)
 		for _, msg := range e.messages {
-			_ = message.SetString(tag, string(msg.msgid), msg.localString)
+			_ = message.Set(tag, string(msg.msgid), msg.localString)
 		}
 	}
 	SetLang("en")

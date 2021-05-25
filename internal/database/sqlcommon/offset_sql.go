@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,14 +21,15 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var (
 	offsetColumns = []string{
+		"id",
 		"otype",
 		"namespace",
 		"name",
@@ -48,7 +51,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
 		offsetRows, err := s.queryTx(ctx, tx,
-			sq.Select("otype", "namespace", "name").
+			sq.Select("id").
 				From("offsets").
 				Where(
 					sq.Eq{"otype": offset.Type,
@@ -59,21 +62,30 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 			return err
 		}
 		existing = offsetRows.Next()
+		if existing {
+			var id fftypes.UUID
+			_ = offsetRows.Scan(&id)
+			if offset.ID != nil {
+				if *offset.ID != id {
+					offsetRows.Close()
+					return database.IDMismatch
+				}
+			}
+			offset.ID = &id // Update on returned object
+		}
 		offsetRows.Close()
 	}
 
 	if existing {
 
 		// Update the offset
-		if _, err = s.updateTx(ctx, tx,
+		if err = s.updateTx(ctx, tx,
 			sq.Update("offsets").
 				Set("otype", string(offset.Type)).
 				Set("namespace", offset.Namespace).
 				Set("name", offset.Name).
 				Set("current", offset.Current).
-				Where(sq.Eq{"otype": offset.Type,
-					"namespace": offset.Namespace,
-					"name":      offset.Name}),
+				Where(sq.Eq{"id": offset.ID}),
 		); err != nil {
 			return err
 		}
@@ -82,6 +94,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 			sq.Insert("offsets").
 				Columns(offsetColumns...).
 				Values(
+					offset.ID,
 					string(offset.Type),
 					offset.Namespace,
 					offset.Name,
@@ -98,6 +111,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*fftypes.Offset, error) {
 	offset := fftypes.Offset{}
 	err := row.Scan(
+		&offset.ID,
 		&offset.Type,
 		&offset.Namespace,
 		&offset.Name,
@@ -162,7 +176,7 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 
 }
 
-func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, name string, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOffset(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -170,15 +184,33 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, t fftypes.OffsetType, ns, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(ctx, "", sq.Update("offsets"), update, offsetFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("offsets"), update, offsetFilterTypeMap)
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"otype": t,
-		"namespace": ns,
-		"name":      name})
+	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("offsets").Where(sq.Eq{
+		"otype":     t,
+		"namespace": ns,
+		"name":      name,
+	}))
 	if err != nil {
 		return err
 	}

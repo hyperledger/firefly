@@ -1,5 +1,7 @@
 // Copyright © 2021 Kaleido, Inc.
 //
+// SPDX-License-Identifier: Apache-2.0
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,7 +23,6 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
@@ -91,7 +92,7 @@ func (b32 *Bytes32) String() string {
 type HexUUID = Bytes32
 
 // UUIDBytes returns the bytes of a UUID as a compressed hex string
-func UUIDBytes(u *uuid.UUID) *Bytes32 {
+func UUIDBytes(u *UUID) *Bytes32 {
 	var d Bytes32
 	copy(d[:], u[:])
 	return &d

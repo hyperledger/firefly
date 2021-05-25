@@ -18,17 +18,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdateBuilderOK(t *testing.T) {
-	uuid := uuid.MustParse("c414cab3-9bd4-48f3-b16a-0d74a3bbb60e")
+	uuid := fftypes.MustParseUUID("c414cab3-9bd4-48f3-b16a-0d74a3bbb60e")
 	u := MessageQueryFactory.NewUpdate(context.Background()).S()
 	assert.True(t, u.IsEmpty())
 	u.Set("sequence", 12345).
-		Set("cid", &uuid).
+		Set("cid", uuid).
 		Set("author", "0x1234").
 		Set("type", fftypes.MessageTypePrivate)
 	assert.False(t, u.IsEmpty())
