@@ -19,6 +19,7 @@ package apiserver
 import "github.com/kaleido-io/firefly/internal/oapispec"
 
 var routes = []*oapispec.Route{
+	deleteSubscription,
 	getBatchByID,
 	getBatches,
 	getData,
@@ -36,8 +37,11 @@ var routes = []*oapispec.Route{
 	getNamespaces,
 	getOpByID,
 	getOps,
+	getSubsriptions,
+	getSubscriptionByID,
 	getTxnByID,
 	getTxns,
 	postBroadcastDatatype,
 	postBroadcastNamespace,
+	postNewSubscription,
 }

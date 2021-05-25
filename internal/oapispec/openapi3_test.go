@@ -103,3 +103,12 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 	fmt.Print(string(b))
 
 }
+
+func TestDuplicateOperationIDCheck(t *testing.T) {
+	routes := []*Route{
+		{Name: "op1"}, {Name: "op1"},
+	}
+	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
+		_ = SwaggerGen(context.Background(), routes)
+	})
+}

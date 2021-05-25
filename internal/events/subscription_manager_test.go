@@ -207,6 +207,15 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 	assert.NoError(t, err) // swallowed and startup continues
 }
 
+func TestCreateSubscriptionBadTransport(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mdi, mei)
+	defer cancel()
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{})
+	assert.Regexp(t, "FF1017", err.Error())
+}
+
 func TestCreateSubscriptionBadEventilter(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
@@ -216,6 +225,7 @@ func TestCreateSubscriptionBadEventilter(t *testing.T) {
 		Filter: fftypes.SubscriptionFilter{
 			Events: "[[[[! badness",
 		},
+		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*events", err.Error())
 }
@@ -229,6 +239,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 		Filter: fftypes.SubscriptionFilter{
 			Topic: "[[[[! badness",
 		},
+		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*topic", err.Error())
 }
@@ -242,6 +253,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 		Filter: fftypes.SubscriptionFilter{
 			Context: "[[[[! badness",
 		},
+		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*context", err.Error())
 }
@@ -255,6 +267,7 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 		Filter: fftypes.SubscriptionFilter{
 			Group: "[[[[! badness",
 		},
+		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*group", err.Error())
 }
@@ -381,7 +394,48 @@ func TestNewDurableSubscriptionUnknownTransport(t *testing.T) {
 	sm.newDurableSubscription(subID)
 
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
+	assert.Empty(t, sm.durableSubs)
+}
+
+func TestNewDurableSubscriptionOK(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mdi, mei)
+	defer cancel()
+
+	sm.connections["conn1"] = &connection{
+		ei: mei,
+		id: "conn1",
+		matcher: func(sr fftypes.SubscriptionRef) bool {
+			return sr.Namespace == "ns1" && sr.Name == "sub1"
+		},
+		dispatchers: map[fftypes.UUID]*eventDispatcher{},
+	}
+
+	subID := fftypes.NewUUID()
+	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        subID,
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Transport: "ut",
+	}, nil)
+	sm.newDurableSubscription(subID)
+
+	assert.NotEmpty(t, sm.connections["conn1"].dispatchers)
 	assert.NotEmpty(t, sm.durableSubs)
+}
+
+func TestMatchedSubscriptionWithLockUnknownTransport(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mdi, mei)
+	defer cancel()
+
+	conn := &connection{}
+	sm.matchedSubscriptionWithLock(conn, &subscription{definition: &fftypes.Subscription{Transport: "Wrong!"}})
+	assert.Nil(t, conn.dispatchers)
 }
 
 func TestDeletewDurableSubscriptionOk(t *testing.T) {

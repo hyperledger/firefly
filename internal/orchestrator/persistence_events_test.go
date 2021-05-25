@@ -21,6 +21,7 @@ import (
 
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func TestMessageCreated(t *testing.T) {
@@ -31,6 +32,7 @@ func TestMessageCreated(t *testing.T) {
 	c := make(chan int64, 1)
 	mb.On("NewMessages").Return((chan<- int64)(c))
 	o.MessageCreated(12345)
+	mb.AssertExpectations(t)
 }
 
 func TestEventCreated(t *testing.T) {
@@ -41,4 +43,27 @@ func TestEventCreated(t *testing.T) {
 	c := make(chan int64, 1)
 	mem.On("NewEvents").Return((chan<- int64)(c))
 	o.EventCreated(12345)
+	mem.AssertExpectations(t)
+}
+
+func TestSubscriptionCreated(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		events: mem,
+	}
+	c := make(chan *fftypes.UUID, 1)
+	mem.On("NewSubscriptions").Return((chan<- *fftypes.UUID)(c))
+	o.SubscriptionCreated(fftypes.NewUUID())
+	mem.AssertExpectations(t)
+}
+
+func TestSubscriptionDeleted(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		events: mem,
+	}
+	c := make(chan *fftypes.UUID, 1)
+	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(c))
+	o.SubscriptionDeleted(fftypes.NewUUID())
+	mem.AssertExpectations(t)
 }

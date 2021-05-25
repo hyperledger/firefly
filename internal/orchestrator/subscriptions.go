@@ -15,3 +15,53 @@
 // limitations under the License.
 
 package orchestrator
+
+import (
+	"context"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+)
+
+func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+	subDef.ID = fftypes.NewUUID()
+	subDef.Created = fftypes.Now()
+	subDef.Namespace = ns
+	subDef.Ephemeral = false
+	if err := or.verifyNamespaceExists(ctx, subDef.Namespace); err != nil {
+		return nil, err
+	}
+	if err := fftypes.ValidateFFNameField(ctx, subDef.Name, "name"); err != nil {
+		return nil, err
+	}
+	return subDef, or.events.CreateDurableSubscription(ctx, subDef)
+}
+
+func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) error {
+	u, err := fftypes.ParseUUID(id)
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+	}
+	sub, err := or.database.GetSubscriptionByID(ctx, u)
+	if err != nil {
+		return err
+	}
+	if sub == nil || sub.Namespace != ns {
+		return i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return or.events.DeleteDurableSubscription(ctx, sub)
+}
+
+func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error) {
+	filter = or.scopeNS(ns, filter)
+	return or.database.GetSubscriptions(ctx, filter)
+}
+
+func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error) {
+	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return or.database.GetSubscriptionByID(ctx, u)
+}

@@ -53,6 +53,12 @@ type Orchestrator interface {
 	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
 	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
 
+	// Subscription management
+	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
+	GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error)
+	CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
+	DeleteSubscription(ctx context.Context, ns, id string) error
+
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
