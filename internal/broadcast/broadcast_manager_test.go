@@ -24,6 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -32,17 +33,18 @@ import (
 
 func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	mb := &batchmocks.Manager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
-	b, err := NewBroadcastManager(ctx, mdi, mbi, mpi, mb)
+	b, err := NewBroadcastManager(ctx, mdi, mdm, mbi, mpi, mb)
 	return b.(*broadcastManager), err
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err.Error())
 }
 

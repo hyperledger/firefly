@@ -188,13 +188,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.batch == nil {
 		or.batch, err = batch.NewBatchManager(ctx, or.database, or.data)
 		if err != nil {
@@ -203,7 +196,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+			return err
+		}
+	}
+
+	if or.events == nil {
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast)
+		if err != nil {
 			return err
 		}
 	}
