@@ -157,6 +157,8 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 		// Process system messgaes
 		if msg.Header.Namespace == fftypes.SystemNamespace {
+			// We handle system events in-line on the aggregator, as it would be confusing for apps to be
+			// dispatched subsequent events before we have processed the system events they depend on.
 			if err = ag.broadcast.HandleSystemBroadcast(ctx, msg); err != nil {
 				// Should only return errors that are retryable
 				return false, err

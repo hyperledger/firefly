@@ -18,6 +18,7 @@ package i18n
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -67,9 +68,14 @@ var langMatcher = language.NewMatcher(serverLangs)
 var enTranslations = []*msg{}
 
 var statusHints = map[string]int{}
+var msgIDUniq = map[string]bool{}
 
 // ffm is the enTranslations helper to define a new message (not used in translation files)
 func ffm(key, enTranslation string, statusHint ...int) MessageKey {
+	if _, exists := msgIDUniq[key]; exists {
+		panic(fmt.Sprintf("Message ID %s re-used", key))
+	}
+	msgIDUniq[key] = true
 	m := msg{MessageKey(key), catalog.String(enTranslation)}
 	enTranslations = append(enTranslations, &m)
 	if len(statusHint) > 0 {
@@ -99,6 +105,7 @@ func init() {
 		}
 	}
 	SetLang("en")
+	msgIDUniq = map[string]bool{} // Clear out that memory as no longer needed
 }
 
 func SetLang(lang string) {

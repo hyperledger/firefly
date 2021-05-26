@@ -33,6 +33,16 @@ func uuidMatches(id1 *fftypes.UUID) interface{} {
 
 func TestCreateSubscriptionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
+	_, err := or.CreateSubscription(or.ctx, "!wrong", &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			Name: "sub1",
+		},
+	})
+	assert.Regexp(t, "FF10131", err.Error())
+}
+
+func TestCreateSubscriptionNamespace(t *testing.T) {
+	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{

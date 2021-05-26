@@ -225,45 +225,70 @@ func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
 	return nil
 }
 
-func (or *orchestrator) initNamespaces(ctx context.Context) error {
+func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftypes.Namespace, error) {
 	defaultNS := config.GetString(config.NamespacesDefault)
 	predefined := config.GetObjectArray(config.NamespacesPredefined)
+	namespaces := []*fftypes.Namespace{
+		{
+			Name:        fftypes.SystemNamespace,
+			Type:        fftypes.NamespaceTypeSystem,
+			Description: i18n.Expand(ctx, i18n.MsgSystemNSDescription),
+		},
+	}
 	foundDefault := false
 	for i, nsObject := range predefined {
 		name := nsObject.GetString(ctx, "name")
-		description := nsObject.GetString(ctx, "description")
 		err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		foundDefault = foundDefault || name == defaultNS
+		description := nsObject.GetString(ctx, "description")
+		dup := false
+		for _, existing := range namespaces {
+			if existing.Name == name {
+				log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
+				dup = true
+			}
+		}
+		if !dup {
+			namespaces = append(namespaces, &fftypes.Namespace{
+				Type:        fftypes.NamespaceTypeLocal,
+				Name:        name,
+				Description: description,
+			})
+		}
+	}
+	if !foundDefault {
+		return nil, i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
+	}
+	return namespaces, nil
+}
 
-		ns, err := or.database.GetNamespace(ctx, name)
+func (or *orchestrator) initNamespaces(ctx context.Context) error {
+	predefined, err := or.getPrefdefinedNamespaces(ctx)
+	if err != nil {
+		return err
+	}
+	for _, newNS := range predefined {
+		ns, err := or.database.GetNamespace(ctx, newNS.Name)
 		if err != nil {
 			return err
 		}
 		var updated bool
 		if ns == nil {
 			updated = true
-			ns = &fftypes.Namespace{
-				ID:          fftypes.NewUUID(),
-				Name:        name,
-				Description: description,
-				Created:     fftypes.Now(),
-			}
+			newNS.ID = fftypes.NewUUID()
+			newNS.Created = fftypes.Now()
 		} else {
 			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeLocal
-			ns.Description = description
+			updated = ns.Description != newNS.Description && ns.Type == fftypes.NamespaceTypeLocal
 		}
 		if updated {
-			if err := or.database.UpsertNamespace(ctx, ns, true); err != nil {
+			if err := or.database.UpsertNamespace(ctx, newNS, true); err != nil {
 				return err
 			}
 		}
-	}
-	if !foundDefault {
-		return i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
 	}
 	return nil
 }

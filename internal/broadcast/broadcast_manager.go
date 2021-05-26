@@ -173,12 +173,3 @@ func (bm *broadcastManager) Start() error {
 func (bm *broadcastManager) WaitStop() {
 	// No go routines
 }
-
-func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error {
-	switch msg.Header.Topic {
-	case fftypes.SystemTopicBroadcastDatatype:
-
-	case fftypes.SystemTopicBroadcastNamespace:
-	}
-	return nil
-}
