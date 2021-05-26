@@ -51,8 +51,21 @@ func newJSONValidator(ctx context.Context, datatype *fftypes.Datatype) (*jsonVal
 	return jv, nil
 }
 
-func (jv *jsonValidator) Validate(ctx context.Context, b fftypes.Byteable) error {
-	res, err := jv.schema.Validate(gojsonschema.NewBytesLoader([]byte(b)))
+func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error {
+	if data.Value == nil {
+		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
+	}
+
+	hash := data.Value.Hash()
+	if data.Hash == nil || *hash != *data.Hash {
+		return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, data.Hash)
+	}
+
+	return jv.validateBytes(ctx, []byte(data.Value))
+}
+
+func (jv *jsonValidator) validateBytes(ctx context.Context, b []byte) error {
+	res, err := jv.schema.Validate(gojsonschema.NewBytesLoader(b))
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDataCannotBeValidated)
 	}

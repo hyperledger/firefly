@@ -23,6 +23,6 @@ import (
 )
 
 type Validator interface {
-	Validate(ctx context.Context, b fftypes.Byteable) error
+	Validate(ctx context.Context, data *fftypes.Data) error
 	Size() int64 // for cache management
 }
