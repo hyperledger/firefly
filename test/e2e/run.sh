@@ -21,5 +21,7 @@ then
 	$CLI start $STACK_NAME
 fi
 
+docker ps
+
 export STACK_FILE
 cd $CWD && go test -v .
