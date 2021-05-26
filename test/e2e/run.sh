@@ -11,7 +11,7 @@ CREATE_STACK=true
 
 if $DOWNLOAD_CLI
 then
-	GO111MODULE=off go get github.com/kaleido-io/firefly-cli/ff
+	go install github.com/kaleido-io/firefly-cli/ff@latest
 fi
 
 if $CREATE_STACK
