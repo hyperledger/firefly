@@ -103,7 +103,7 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 		return nil, err
 	}
 
-	return or.broadcastDefinition(ctx, ns, datatype, fftypes.DatatypeTopicName)
+	return or.broadcastDefinition(ctx, ns, datatype, fftypes.SystemTopicBroadcastDatatype)
 }
 
 func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
@@ -119,5 +119,5 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 		return nil, err
 	}
 
-	return or.broadcastDefinition(ctx, ns.Name, ns, fftypes.NamespaceDefinitionTopicName)
+	return or.broadcastDefinition(ctx, ns.Name, ns, fftypes.SystemTopicBroadcastNamespace)
 }

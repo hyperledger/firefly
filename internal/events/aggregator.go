@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 
+	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -33,13 +34,15 @@ const (
 type aggregator struct {
 	ctx         context.Context
 	database    database.Plugin
+	broadcast   broadcast.Manager
 	eventPoller *eventPoller
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, en *eventNotifier) *aggregator {
 	ag := &aggregator{
-		ctx:      log.WithLogField(ctx, "role", "aggregator"),
-		database: di,
+		ctx:       log.WithLogField(ctx, "role", "aggregator"),
+		database:  di,
+		broadcast: bm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -154,7 +157,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 		// Process system messgaes
 		if msg.Header.Namespace == fftypes.SystemNamespace {
-			if err = ag.handleSystemEvent(ctx, msg); err != nil {
+			if err = ag.broadcast.HandleSystemBroadcast(ctx, msg); err != nil {
 				// Should only return errors that are retryable
 				return false, err
 			}
@@ -198,8 +201,4 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 	}
 	return repoll, nil
-}
-
-func (ag *aggregator) handleSystemEvent(ctx context.Context, msg *fftypes.Message) error {
-	return nil
 }
