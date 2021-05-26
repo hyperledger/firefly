@@ -50,7 +50,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
-		Value:     val,
+		Value:     []byte(val.String()),
 	}
 	err := s.UpsertData(ctx, data, true, true)
 	assert.NoError(t, err)
@@ -69,6 +69,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		"another": "set",
 		"of": map[string]interface{}{
 			"data": 12345,
+			"and":  "stuff",
 		},
 	}
 	dataUpdated := &fftypes.Data{
@@ -81,7 +82,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		},
 		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
-		Value:   val2,
+		Value:   []byte(val2.String()),
 	}
 
 	// Check disallows hash update
@@ -97,6 +98,10 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataJson, _ = json.Marshal(&dataUpdated)
 	dataReadJson, _ = json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
+
+	valRestored, err := dataRead.Value.JSONObject()
+	assert.NoError(t, err)
+	assert.Equal(t, "stuff", valRestored.GetObject(ctx, "of").GetString(ctx, "and"))
 
 	// Query back the data
 	fb := database.DataQueryFactory.NewFilter(ctx)

@@ -8,7 +8,7 @@ CREATE TABLE data (
   datatype_version VARCHAR(64)     NOT NULL,
   hash             CHAR(64)        NOT NULL,
   created          BIGINT          NOT NULL,
-  value            JSONB           NOT NULL
+  value            BYTEA           NOT NULL
 );
 CREATE UNIQUE INDEX data_id ON data(id);
 CREATE INDEX data_hash ON data(namespace,hash);

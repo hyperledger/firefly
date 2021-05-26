@@ -8,7 +8,9 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
 	github.com/bombsimon/wsl/v2 v2.0.0 // indirect
+	github.com/coocood/freecache v1.1.1
 	github.com/coreos/etcd v3.3.13+incompatible // indirect
+	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.62.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-lintpack/lintpack v0.5.2 // indirect
@@ -28,7 +30,10 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/jarcoal/httpmock v1.0.8
+	github.com/kaleido-io/firefly-cli v0.0.0-20210526151655-4f498066563b // indirect
+	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.2
@@ -44,6 +49,7 @@ require (
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pelletier/go-toml v1.9.1 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0 // indirect
@@ -61,6 +67,7 @@ require (
 	github.com/tommy-muehle/go-mnd v1.1.1 // indirect
 	github.com/ugorji/go v1.1.4 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
+	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
 	golang.org/x/sys v0.0.0-20210521203332-0cec03c779c1 // indirect
@@ -69,6 +76,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	gotest.tools v2.2.0+incompatible
 	modernc.org/b v1.0.1 // indirect
 	modernc.org/db v1.0.1 // indirect
 	modernc.org/file v1.0.2 // indirect

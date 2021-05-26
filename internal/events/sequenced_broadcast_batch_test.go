@@ -341,7 +341,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 			},
 		},
 	}
-	batch.Payload.Data[0].Hash, _ = batch.Payload.Data[0].Value.Hash(context.Background(), "ut")
+	batch.Payload.Data[0].Hash = batch.Payload.Data[0].Value.Hash()
 	batch.Hash = batch.Payload.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -378,7 +378,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 			},
 		},
 	}
-	batch.Payload.Messages[0].Header.DataHash = batch.Payload.Messages[0].Data.Hash(context.Background())
+	batch.Payload.Messages[0].Header.DataHash = batch.Payload.Messages[0].Data.Hash()
 	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
 	batch.Hash = batch.Payload.Hash()
 
@@ -422,7 +422,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
+	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
@@ -442,7 +442,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
+	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
@@ -461,7 +461,7 @@ func TestPersistBatchDataUpsertEventError(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
+	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -481,7 +481,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 	data := &fftypes.Data{
 		ID: fftypes.NewUUID(),
 	}
-	data.Hash, _ = data.Value.Hash(context.Background(), "ut")
+	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -518,7 +518,7 @@ func TestPersistBatchMessageUpsertHashMismatch(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	msg.Header.DataHash = msg.Data.Hash(context.Background())
+	msg.Header.DataHash = msg.Data.Hash()
 	msg.Hash = msg.Header.Hash()
 	assert.NoError(t, msg.Verify(context.Background()))
 
@@ -541,7 +541,7 @@ func TestPersistBatchMessageUpsertMessageFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	msg.Header.DataHash = msg.Data.Hash(context.Background())
+	msg.Header.DataHash = msg.Data.Hash()
 	msg.Hash = msg.Header.Hash()
 	assert.NoError(t, msg.Verify(context.Background()))
 
@@ -563,7 +563,7 @@ func TestPersistBatchMessageUpsertEventFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	msg.Header.DataHash = msg.Data.Hash(context.Background())
+	msg.Header.DataHash = msg.Data.Hash()
 	msg.Hash = msg.Header.Hash()
 	assert.NoError(t, msg.Verify(context.Background()))
 
@@ -586,7 +586,7 @@ func TestPersistBatchMessageOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	msg.Header.DataHash = msg.Data.Hash(context.Background())
+	msg.Header.DataHash = msg.Data.Hash()
 	msg.Hash = msg.Header.Hash()
 	assert.NoError(t, msg.Verify(context.Background()))
 

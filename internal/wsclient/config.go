@@ -23,17 +23,17 @@ import (
 
 const (
 	defaultIntialConnectAttempts = 5
-	defaultBufferSizeKB          = 1024
+	defaultBufferSize            = "16Kb"
 )
 
 const (
 	// WSSpecificConfPrefix is the sub-section of the http config options that contains websocket specific config
 	WSSpecificConfPrefix = "ws"
 
-	// WSConfigKeyWriteBufferSizeKB is the write buffer size
-	WSConfigKeyWriteBufferSizeKB = "ws.writeBufferSizeKB"
-	// WSConfigKeyReadBufferSizeKB is the read buffer size
-	WSConfigKeyReadBufferSizeKB = "ws.readBufferSizeKB"
+	// WSConfigKeyWriteBufferSize is the write buffer size
+	WSConfigKeyWriteBufferSize = "ws.writeBufferSize"
+	// WSConfigKeyReadBufferSize is the read buffer size
+	WSConfigKeyReadBufferSize = "ws.readBufferSize"
 	// WSConfigKeyInitialConnectAttempts sets how many times the websocket should attempt to connect on startup, before failing (after initial connection, retry is indefinite)
 	WSConfigKeyInitialConnectAttempts = "ws.initialConnectAttempts"
 	// WSConfigKeyPath if set will define the path to connect to - allows sharing of the same URL between HTTP and WebSocket connection info
@@ -44,8 +44,8 @@ const (
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
 func InitPrefix(prefix config.Prefix) {
 	restclient.InitPrefix(prefix)
-	prefix.AddKnownKey(WSConfigKeyWriteBufferSizeKB, defaultBufferSizeKB)
-	prefix.AddKnownKey(WSConfigKeyReadBufferSizeKB, defaultBufferSizeKB)
+	prefix.AddKnownKey(WSConfigKeyWriteBufferSize, defaultBufferSize)
+	prefix.AddKnownKey(WSConfigKeyReadBufferSize, defaultBufferSize)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
 	prefix.AddKnownKey(WSConfigKeyPath)
 }

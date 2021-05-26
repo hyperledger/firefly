@@ -20,6 +20,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 type DataRef struct {
@@ -34,7 +37,7 @@ type Data struct {
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     JSONObject    `json:"value,omitempty"`
+	Value     Byteable      `json:"value,omitempty"`
 }
 
 type DatatypeRef struct {
@@ -42,10 +45,31 @@ type DatatypeRef struct {
 	Version string `json:"version,omitempty"`
 }
 
+func (dr *DatatypeRef) String() string {
+	if dr == nil {
+		return "null"
+	}
+	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
+}
+
 type DataRefs []*DataRef
 
-func (d DataRefs) Hash(ctx context.Context) *Bytes32 {
+func (d DataRefs) Hash() *Bytes32 {
 	b, _ := json.Marshal(&d)
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32
+}
+
+func (d *Data) Seal(ctx context.Context) error {
+	if d.Value == nil {
+		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
+	}
+	if d.ID == nil {
+		d.ID = NewUUID()
+	}
+	if d.Created == nil {
+		d.Created = Now()
+	}
+	d.Hash = d.Value.Hash()
+	return nil
 }

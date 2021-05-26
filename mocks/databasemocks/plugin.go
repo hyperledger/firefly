@@ -222,13 +222,13 @@ func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*fftyp
 	return r0, r1
 }
 
-// GetDatatypeByName provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string) (*fftypes.Datatype, error) {
-	ret := _m.Called(ctx, ns, name)
+// GetDatatypeByName provides a mock function with given fields: ctx, ns, name, version
+func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string, version string) (*fftypes.Datatype, error) {
+	ret := _m.Called(ctx, ns, name, version)
 
 	var r0 *fftypes.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Datatype); ok {
-		r0 = rf(ctx, ns, name)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.Datatype); ok {
+		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Datatype)
@@ -236,8 +236,8 @@ func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, name)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, ns, name, version)
 	} else {
 		r1 = ret.Error(1)
 	}

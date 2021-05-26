@@ -51,7 +51,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
-		Value:     val,
+		Value:     []byte(val.String()),
 	}
 	err := s.UpsertDatatype(ctx, datatype, true)
 	assert.NoError(t, err)
@@ -80,7 +80,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		Version:   "0.0.1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
-		Value:     val2,
+		Value:     []byte(val2.String()),
 	}
 	err = s.UpsertDatatype(context.Background(), datatypeUpdated, true)
 	assert.NoError(t, err)
@@ -201,7 +201,7 @@ func TestGetDatatypeByIDNotFound(t *testing.T) {
 func TestGetDatatypeByNameNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetDatatypeByName(context.Background(), "ns1", "name1")
+	msg, err := s.GetDatatypeByName(context.Background(), "ns1", "name1", "0.0.1")
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())

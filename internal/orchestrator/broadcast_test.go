@@ -96,11 +96,9 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"json": map[bool]string{false: "unparsable"},
-		},
+		Value:     fftypes.Byteable(`!unparsable`),
 	})
-	assert.Regexp(t, "FF10151.*value", err.Error())
+	assert.Regexp(t, "FF10137.*value", err.Error())
 }
 
 func TestBroadcastUpsertFail(t *testing.T) {
@@ -113,9 +111,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.EqualError(t, err, "pop")
 }
@@ -132,9 +128,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.EqualError(t, err, "pop")
 }
@@ -151,9 +145,7 @@ func TestBroadcastOk(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.NoError(t, err)
 }

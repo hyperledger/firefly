@@ -33,9 +33,13 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defO
 		Namespace: ns,
 		Created:   fftypes.Now(),
 	}
-	b, _ := json.Marshal(&defObject)
-	_ = json.Unmarshal(b, &data.Value)
-	data.Hash, _ = data.Value.Hash(ctx, "value")
+	data.Value, err = json.Marshal(&defObject)
+	if err == nil {
+		err = data.Seal(ctx)
+	}
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
 
 	// Write as data to the local store
 	if err = or.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
@@ -91,9 +95,7 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 	if len(datatype.Value) == 0 {
 		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
 	}
-	if datatype.Hash, err = datatype.Value.Hash(ctx, "value"); err != nil {
-		return nil, err
-	}
+	datatype.Hash = datatype.Value.Hash()
 	return or.broadcastDefinition(ctx, ns, datatype, fftypes.DatatypeTopicName)
 }
 
