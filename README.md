@@ -192,7 +192,7 @@ It depends on the following Kaleido services:
   │       │   └──────┬────────┘  - Manages creation of batch processor instances
   │       │          │
   │       │   ┌──────┴────────┐  - Short lived agent spun up to assemble batches on demand
-  │       ├───┤ batch     [Bp]│    * Coupled to an author+type of messages
+  │       │   │ batch     [Bp]│    * Coupled to an author+type of messages
   │       │   │ processor     │  - Builds batches of 100s messages for efficient pinning
   │       │   │               │    * Aggregates messages and data, with rolled up hashes for pinning
   │       │   └───────────────┘  - Shuts down automatically after a configurable inactivity period

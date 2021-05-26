@@ -64,12 +64,15 @@ func TestValidateE2E(t *testing.T) {
 		Namespace: "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil)
-	err := dm.Validate(context.Background(), data)
+	v, err := dm.GetValidator(context.Background(), data)
+	assert.NoError(t, err)
+
+	err = v.Validate(context.Background(), data)
 	assert.Regexp(t, "FF10198", err.Error())
 
 	data.Value = fftypes.Byteable(`{"field1":"value1"}`)
 	data.Seal(context.Background())
-	err = dm.Validate(context.Background(), data)
+	err = v.Validate(context.Background(), data)
 	assert.NoError(t, err)
 
 }
@@ -84,7 +87,7 @@ func TestValidatorForWrongType(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
 
-	_, err := dm.getValidatorFor(&fftypes.Data{
+	_, err := dm.GetValidator(context.Background(), &fftypes.Data{
 		Validator: fftypes.ValidatorType("wrong"),
 	})
 	assert.Regexp(t, "FF10200.*wrong", err.Error())
@@ -96,7 +99,7 @@ func TestValidatorForMissingName(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
 
-	_, err := dm.getValidatorFor(&fftypes.Data{
+	_, err := dm.GetValidator(context.Background(), &fftypes.Data{
 		Validator: fftypes.ValidatorTypeJSON,
 	})
 	assert.Regexp(t, "FF10195.*null", err.Error())
@@ -108,7 +111,7 @@ func TestValidatorUnknown(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.getValidatorFor(&fftypes.Data{
+	_, err := dm.GetValidator(context.Background(), &fftypes.Data{
 		Namespace: "ns1",
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
@@ -134,7 +137,7 @@ func TestValidatorLookupError(t *testing.T) {
 		Value: fftypes.Byteable(`anything`),
 	}
 	data.Seal(context.Background())
-	err := dm.Validate(context.Background(), data)
+	_, err := dm.GetValidator(context.Background(), data)
 	assert.Regexp(t, "pop", err.Error())
 
 }
@@ -160,11 +163,11 @@ func TestValidatorLookupCached(t *testing.T) {
 		Namespace: "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil).Once()
-	lookup1, err := dm.getValidatorFor(data)
+	lookup1, err := dm.GetValidator(context.Background(), data)
 	assert.NoError(t, err)
 	assert.Equal(t, "customer", lookup1.(*jsonValidator).datatype.Name)
 
-	lookup2, err := dm.getValidatorFor(data)
+	lookup2, err := dm.GetValidator(context.Background(), data)
 	assert.Equal(t, lookup1, lookup2)
 
 }
@@ -181,9 +184,20 @@ func TestValidateBadHash(t *testing.T) {
 			Name:    "customer",
 			Version: "0.0.1",
 		},
-		Hash: fftypes.NewRandB32(),
+		Value: fftypes.Byteable(`{}`),
+		Hash:  fftypes.NewRandB32(),
 	}
-	err := dm.Validate(context.Background(), data)
+	dt := &fftypes.Datatype{
+		ID:        fftypes.NewUUID(),
+		Validator: fftypes.ValidatorTypeJSON,
+		Value:     fftypes.Byteable(`{}`),
+		Name:      "customer",
+		Namespace: "0.0.1",
+	}
+	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil).Once()
+	v, err := dm.GetValidator(context.Background(), data)
+	assert.NoError(t, err)
+	err = v.Validate(context.Background(), data)
 	assert.Regexp(t, "FF10201", err.Error())
 
 }
