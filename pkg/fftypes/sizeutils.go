@@ -14,23 +14,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websockets
+package fftypes
 
-import "github.com/kaleido-io/firefly/internal/config"
+import (
+	"context"
 
-const (
-	bufferSizeDefault = "16Kb"
+	"github.com/docker/go-units"
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
-const (
-	// ReadBufferSize is the read buffer size for the socket
-	ReadBufferSize = "readBufferSize"
-	// WriteBufferSize is the write buffer size for the socket
-	WriteBufferSize = "writeBufferSize"
-)
-
-func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
-
+// ParseToByteSize is a standard handling of a number of bytes, in config or API options
+func ParseToByteSize(byteString string) int64 {
+	if byteString == "" {
+		return 0
+	}
+	bytes, err := units.RAMInBytes(byteString)
+	if err != nil {
+		log.L(context.Background()).Warn(err.Error())
+		return 0
+	}
+	return bytes
 }

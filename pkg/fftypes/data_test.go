@@ -14,23 +14,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websockets
+package fftypes
 
-import "github.com/kaleido-io/firefly/internal/config"
+import (
+	"context"
+	"testing"
 
-const (
-	bufferSizeDefault = "16Kb"
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// ReadBufferSize is the read buffer size for the socket
-	ReadBufferSize = "readBufferSize"
-	// WriteBufferSize is the write buffer size for the socket
-	WriteBufferSize = "writeBufferSize"
-)
+func TestDatatypeReference(t *testing.T) {
 
-func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
+	var dr *DatatypeRef
+	assert.Equal(t, "null", dr.String())
+	dr = &DatatypeRef{
+		Name:    "customer",
+		Version: "0.0.1",
+	}
+	assert.Equal(t, "customer/0.0.1", dr.String())
 
+}
+
+func TestSealNoData(t *testing.T) {
+	d := &Data{}
+	err := d.Seal(context.Background())
+	assert.Regexp(t, "FF10199", err.Error())
+}
+
+func TestSealOK(t *testing.T) {
+	d := &Data{
+		Value: []byte("{}"),
+	}
+	err := d.Seal(context.Background())
+	assert.NoError(t, err)
 }

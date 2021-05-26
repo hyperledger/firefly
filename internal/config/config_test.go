@@ -48,10 +48,12 @@ func TestDefaults(t *testing.T) {
 	assert.True(t, GetBool(CorsAllowCredentials))
 	assert.Equal(t, uint(0), GetUint(HTTPPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
+	assert.Equal(t, int64(0), GetInt64(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
 	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))
 	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
 	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
+	assert.Equal(t, int64(1024*1024), GetByteSize(ValidatorCacheSize))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {

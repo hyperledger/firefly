@@ -14,23 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websockets
+package fftypes
 
-import "github.com/kaleido-io/firefly/internal/config"
+import (
+	"testing"
 
-const (
-	bufferSizeDefault = "16Kb"
+	"gotest.tools/assert"
 )
 
-const (
-	// ReadBufferSize is the read buffer size for the socket
-	ReadBufferSize = "readBufferSize"
-	// WriteBufferSize is the write buffer size for the socket
-	WriteBufferSize = "writeBufferSize"
-)
-
-func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
-
+func TestByteSize(t *testing.T) {
+	assert.Equal(t, int64(0), ParseToByteSize(""))
+	assert.Equal(t, int64(0), ParseToByteSize("Wrong!"))
+	assert.Equal(t, int64(1024*1024), ParseToByteSize("1Mb"))
 }

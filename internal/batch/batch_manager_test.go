@@ -325,3 +325,10 @@ func TestUpdateOffsetFail(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 }
+
+func TestWaitForShoulderTap(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	bm, _ := NewBatchManager(context.Background(), mdi)
+	bm.(*batchManager).shoulderTap <- true
+	bm.(*batchManager).waitForShoulderTapOrPollTimeout()
+}

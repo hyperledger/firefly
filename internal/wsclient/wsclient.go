@@ -76,8 +76,8 @@ func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHa
 		ctx: ctx,
 		url: wsURL,
 		wsdialer: &websocket.Dialer{
-			ReadBufferSize:  prefix.GetInt(WSConfigKeyReadBufferSizeKB) * 1024,
-			WriteBufferSize: prefix.GetInt(WSConfigKeyWriteBufferSizeKB) * 1024,
+			ReadBufferSize:  int(prefix.GetByteSize(WSConfigKeyReadBufferSize)),
+			WriteBufferSize: int(prefix.GetByteSize(WSConfigKeyWriteBufferSize)),
 		},
 		retry: retry.Retry{
 			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),

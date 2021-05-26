@@ -84,7 +84,7 @@ func TestDispatchBatchInvalidData(t *testing.T) {
 	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{Value: fftypes.JSONObject{"!json": map[bool]bool{false: true}}},
+				{Value: fftypes.Byteable(`!json`)},
 			},
 		},
 	})

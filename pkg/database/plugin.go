@@ -168,7 +168,7 @@ type PeristenceInterface interface {
 	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
 
 	// GetDatatypeByName - Get a data definition by name
-	GetDatatypeByName(ctx context.Context, ns, name string) (datadef *fftypes.Datatype, err error)
+	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *fftypes.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
 	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)

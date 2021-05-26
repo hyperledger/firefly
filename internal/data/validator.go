@@ -14,23 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package websockets
+package data
 
-import "github.com/kaleido-io/firefly/internal/config"
+import (
+	"context"
 
-const (
-	bufferSizeDefault = "16Kb"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-const (
-	// ReadBufferSize is the read buffer size for the socket
-	ReadBufferSize = "readBufferSize"
-	// WriteBufferSize is the write buffer size for the socket
-	WriteBufferSize = "writeBufferSize"
-)
-
-func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
-
+type Validator interface {
+	Validate(ctx context.Context, b fftypes.Byteable) error
+	Size() int64 // for cache management
 }
