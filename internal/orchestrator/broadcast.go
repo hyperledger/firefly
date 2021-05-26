@@ -96,6 +96,13 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
 	}
 	datatype.Hash = datatype.Value.Hash()
+
+	// Verify the data type is now all valid, before we broadcast it
+	err = or.data.CheckDatatype(ctx, datatype)
+	if err != nil {
+		return nil, err
+	}
+
 	return or.broadcastDefinition(ctx, ns, datatype, fftypes.DatatypeTopicName)
 }
 

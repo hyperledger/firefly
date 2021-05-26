@@ -201,3 +201,96 @@ func TestValidateBadHash(t *testing.T) {
 	assert.Regexp(t, "FF10201", err.Error())
 
 }
+
+func TestGetMessageDataDBError(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
+	})
+	assert.Nil(t, data)
+	assert.False(t, foundAll)
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestGetMessageDataNilEntry(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, nil)
+	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{nil},
+	})
+	assert.Empty(t, data)
+	assert.False(t, foundAll)
+	assert.NoError(t, err)
+
+}
+
+func TestGetMessageDataNotFound(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, nil)
+	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
+	})
+	assert.Empty(t, data)
+	assert.False(t, foundAll)
+	assert.NoError(t, err)
+
+}
+
+func TestGetMessageDataHashMismatch(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	dataID := fftypes.NewUUID()
+	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(&fftypes.Data{
+		ID:   dataID,
+		Hash: fftypes.NewRandB32(),
+	}, nil)
+	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: fftypes.NewRandB32()}},
+	})
+	assert.Empty(t, data)
+	assert.False(t, foundAll)
+	assert.NoError(t, err)
+
+}
+
+func TestGetMessageDataOk(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	dataID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(&fftypes.Data{
+		ID:   dataID,
+		Hash: hash,
+	}, nil)
+	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
+	})
+	assert.NotEmpty(t, data)
+	assert.Equal(t, *dataID, *data[0].ID)
+	assert.True(t, foundAll)
+	assert.NoError(t, err)
+
+}
+
+func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	err := dm.CheckDatatype(context.Background(), &fftypes.Datatype{})
+	assert.Regexp(t, "FF10196", err.Error())
+}

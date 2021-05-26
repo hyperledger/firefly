@@ -152,6 +152,14 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 			return false, nil
 		}
 
+		// Process system messgaes
+		if msg.Header.Namespace == fftypes.SystemNamespace {
+			if err = ag.handleSystemEvent(ctx, msg); err != nil {
+				// Should only return errors that are retryable
+				return false, err
+			}
+		}
+
 		// This message is now confirmed
 		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
 		err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
@@ -190,4 +198,8 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 	}
 	return repoll, nil
+}
+
+func (ag *aggregator) handleSystemEvent(ctx context.Context, msg *fftypes.Message) error {
+	return nil
 }

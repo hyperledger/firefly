@@ -196,7 +196,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or.database)
+		or.batch, err = batch.NewBatchManager(ctx, or.database, or.data)
 		if err != nil {
 			return err
 		}

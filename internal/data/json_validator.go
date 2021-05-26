@@ -21,11 +21,13 @@ import (
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/xeipuuv/gojsonschema"
 )
 
 type jsonValidator struct {
+	id       *fftypes.UUID
 	size     int64
 	datatype *fftypes.DatatypeRef
 	schema   *gojsonschema.Schema
@@ -33,6 +35,7 @@ type jsonValidator struct {
 
 func newJSONValidator(ctx context.Context, datatype *fftypes.Datatype) (*jsonValidator, error) {
 	jv := &jsonValidator{
+		id: datatype.ID,
 		datatype: &fftypes.DatatypeRef{
 			Name:    datatype.Name,
 			Version: datatype.Version,
@@ -61,7 +64,11 @@ func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error
 		return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, data.Hash)
 	}
 
-	return jv.validateBytes(ctx, []byte(data.Value))
+	err := jv.validateBytes(ctx, []byte(data.Value))
+	if err != nil {
+		log.L(ctx).Warnf("JSON schema %s [%v] validation of data %v failed: %s", jv.datatype, jv.id, data.ID, err)
+	}
+	return err
 }
 
 func (jv *jsonValidator) validateBytes(ctx context.Context, b []byte) error {
@@ -74,7 +81,8 @@ func (jv *jsonValidator) validateBytes(ctx context.Context, b []byte) error {
 		for i, e := range res.Errors() {
 			errStrings[i] = e.String()
 		}
-		return i18n.NewError(ctx, i18n.MsgJSONDataInvalidPerSchema, jv.datatype, strings.Join(errStrings, ","))
+		errors := strings.Join(errStrings, ",")
+		return i18n.NewError(ctx, i18n.MsgJSONDataInvalidPerSchema, jv.datatype, errors)
 	}
 	return nil
 }
