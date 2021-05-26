@@ -50,25 +50,35 @@ func TestByteableSerializeObjects(t *testing.T) {
 
 	ts := &testStruct{}
 
-	err := json.Unmarshal([]byte(`{"prop": {
-		"a": 12345,
-		"b": "test",
-		"c": {
-			"d": false,
-			"e": 1.00000000001
-		}
-	}}`), &ts)
+	err := json.Unmarshal([]byte(`{"prop":{"b":"test","b":"duplicate","a":12345,"c":{"e":1.00000000001,"d":false}}}`), &ts)
 	assert.NoError(t, err)
 	b, err := json.Marshal(&ts)
-	assert.Equal(t, `{"prop":{"a":12345,"b":"test","c":{"d":false,"e":1.00000000001}}}`, string(b))
+	assert.NoError(t, err)
+	assert.Equal(t, `{"prop":{"b":"test","b":"duplicate","a":12345,"c":{"e":1.00000000001,"d":false}}}`, string(b))
+	err = json.Unmarshal([]byte(`{"prop"
+		:{"b":"test", "b":"duplicate","a" 				:12345,"c":{
+			  "e":1.00000000001,
+		"d":false}
+	}}`), &ts)
+	b, err = json.Marshal(&ts)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"prop":{"b":"test","b":"duplicate","a":12345,"c":{"e":1.00000000001,"d":false}}}`, string(b))
 	b, err = json.Marshal(&ts.Prop)
-	assert.Equal(t, `{"a":12345,"b":"test","c":{"d":false,"e":1.00000000001}}`, string(b))
-	assert.Equal(t, "5aa173f985912461abe6bad6408ca97efd972a95f0f51ec22badd8118ffdd819", ts.Prop.Hash().String())
+	assert.Equal(t, `{"b":"test","b":"duplicate","a":12345,"c":{"e":1.00000000001,"d":false}}`, string(b))
+	assert.Equal(t, "8eff3083f052a77bda0934236bf8e5eccbd186d5ae81ada7a5bbee516ecd5726", ts.Prop.Hash().String())
 
 	jo, err := ts.Prop.JSONObject()
 	assert.NoError(t, err)
-	assert.Equal(t, "test", jo.GetString(context.Background(), "b"))
+	assert.Equal(t, "duplicate", jo.GetString(context.Background(), "b"))
 
+}
+
+func TestByteableMarshalNull(t *testing.T) {
+
+	var pb Byteable
+	b, err := pb.MarshalJSON()
+	assert.NoError(t, err)
+	assert.Equal(t, "null", string(b))
 }
 
 func TestByteableUnmarshalFail(t *testing.T) {

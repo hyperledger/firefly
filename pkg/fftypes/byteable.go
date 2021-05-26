@@ -17,30 +17,30 @@
 package fftypes
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 )
 
-// Byteable de-serializes any valid JSON field type into JSON bytes, that can be restored as they came in.
-// Noting that when a JSON object is passed in, things like whitespace and duplicate keys will be lost.
+// Byteable uses raw encode/decode to preserve field order, and can handle any types of field.
+// It validates the JSON can be unmarshalled, but does not change the order.
+// It does however trim out whitespace
 type Byteable []byte
 
 func (h *Byteable) UnmarshalJSON(b []byte) error {
-	var src interface{}
-
-	dec := json.NewDecoder(bytes.NewReader(b))
-	dec.UseNumber()
-	err := dec.Decode(&src)
+	var flattener json.RawMessage
+	err := json.Unmarshal(b, &flattener)
 	if err != nil {
 		return err
 	}
-	*h, err = json.Marshal(&src)
+	*h, err = json.Marshal(flattener)
 	return err
 }
 
 func (h Byteable) MarshalJSON() ([]byte, error) {
-	return []byte(h), nil
+	if h == nil {
+		return []byte("null"), nil
+	}
+	return h, nil
 }
 
 func (h Byteable) Hash() *Bytes32 {
