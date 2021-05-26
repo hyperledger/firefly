@@ -24,6 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain/bifactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/database/difactory"
 	"github.com/kaleido-io/firefly/internal/events"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -90,6 +91,7 @@ type orchestrator struct {
 	events        events.EventManager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
+	data          data.Manager
 	nodeIDentity  string
 }
 
@@ -178,6 +180,14 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+
+	if or.data == nil {
+		or.data, err = data.NewDataManager(ctx, or.database)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database)
 		if err != nil {
@@ -197,6 +207,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
 	return nil
 }
 

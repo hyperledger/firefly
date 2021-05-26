@@ -28,11 +28,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func newTestDataManager(t *testing.T, mdi *databasemocks.Plugin) *dataManager {
+	dm, err := NewDataManager(context.Background(), mdi)
+	assert.NoError(t, err)
+	return dm.(*dataManager)
+}
+
 func TestValidateE2E(t *testing.T) {
 
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi)
+	dm := newTestDataManager(t, mdi)
 	data := &fftypes.Data{
 		Namespace: "ns1",
 		Validator: fftypes.ValidatorTypeJSON,
@@ -68,10 +74,15 @@ func TestValidateE2E(t *testing.T) {
 
 }
 
+func TestInitBadDeps(t *testing.T) {
+	_, err := NewDataManager(context.Background(), nil)
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
 func TestValidatorForWrongType(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 
 	_, err := dm.getValidatorFor(&fftypes.Data{
 		Validator: fftypes.ValidatorType("wrong"),
@@ -83,7 +94,7 @@ func TestValidatorForWrongType(t *testing.T) {
 func TestValidatorForMissingName(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 
 	_, err := dm.getValidatorFor(&fftypes.Data{
 		Validator: fftypes.ValidatorTypeJSON,
@@ -95,7 +106,7 @@ func TestValidatorForMissingName(t *testing.T) {
 func TestValidatorUnknown(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
 	_, err := dm.getValidatorFor(&fftypes.Data{
 		Namespace: "ns1",
@@ -111,7 +122,7 @@ func TestValidatorUnknown(t *testing.T) {
 func TestValidatorLookupError(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
 	data := &fftypes.Data{
 		Namespace: "ns1",
@@ -132,7 +143,7 @@ func TestValidatorLookupCached(t *testing.T) {
 
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 	data := &fftypes.Data{
 		Namespace: "ns1",
 		Validator: fftypes.ValidatorTypeJSON,
@@ -162,7 +173,7 @@ func TestValidateBadHash(t *testing.T) {
 
 	config.Reset()
 	mdi := &databasemocks.Plugin{}
-	dm := NewDataManager(context.Background(), mdi).(*dataManager)
+	dm := newTestDataManager(t, mdi)
 	data := &fftypes.Data{
 		Namespace: "ns1",
 		Validator: fftypes.ValidatorTypeJSON,
