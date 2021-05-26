@@ -33,6 +33,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const configDir = "../../test/data/config"
+
 type testOrchestrator struct {
 	orchestrator
 
@@ -240,7 +242,7 @@ func TestInitOK(t *testing.T) {
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	err := config.ReadConfig("../../test/config/firefly.core.yaml")
+	err := config.ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.NoError(t, err)

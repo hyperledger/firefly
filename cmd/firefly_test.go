@@ -28,6 +28,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const configDir = "../test/data/config"
+
 func TestGetEngine(t *testing.T) {
 	assert.NotNil(t, getOrchestrator())
 }
@@ -55,7 +57,7 @@ func TestExecEngineInitFail(t *testing.T) {
 	o.On("Init", mock.Anything).Return(fmt.Errorf("splutter"))
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
-	os.Chdir("../test/config")
+	os.Chdir(configDir)
 	err := Execute()
 	assert.Regexp(t, "splutter", err.Error())
 }
@@ -66,7 +68,7 @@ func TestExecEngineStartFail(t *testing.T) {
 	o.On("Start").Return(fmt.Errorf("bang"))
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
-	os.Chdir("../test/config")
+	os.Chdir(configDir)
 	err := Execute()
 	assert.Regexp(t, "bang", err.Error())
 }
@@ -79,7 +81,7 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
 
-	os.Chdir("../test/config")
+	os.Chdir(configDir)
 	go func() {
 		sigs <- syscall.SIGINT
 	}()
