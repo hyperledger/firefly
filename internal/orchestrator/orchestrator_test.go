@@ -246,6 +246,23 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 	assert.Regexp(t, "FF10166", err.Error())
 }
 
+func TestInitNamespacesDupName(t *testing.T) {
+	config.Reset()
+	or := newTestOrchestrator()
+	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
+		{"name": "ns1"},
+		{"name": "ns2"},
+		{"name": "ns2"},
+	})
+	config.Set(config.NamespacesDefault, "ns1")
+	nsList, err := or.getPrefdefinedNamespaces(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, nsList, 3)
+	assert.Equal(t, fftypes.SystemNamespace, nsList[0].Name)
+	assert.Equal(t, "ns1", nsList[1].Name)
+	assert.Equal(t, "ns2", nsList[2].Name)
+}
+
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)

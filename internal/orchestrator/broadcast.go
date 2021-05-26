@@ -80,20 +80,11 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 	if datatype.Validator == "" {
 		datatype.Validator = fftypes.ValidatorTypeJSON
 	}
-	if datatype.Validator != fftypes.ValidatorTypeJSON {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
+	if err := datatype.Validate(ctx, false); err != nil {
+		return nil, err
 	}
 	if err = or.verifyNamespaceExists(ctx, datatype.Namespace); err != nil {
 		return nil, err
-	}
-	if err = fftypes.ValidateFFNameField(ctx, datatype.Name, "name"); err != nil {
-		return nil, err
-	}
-	if err = fftypes.ValidateFFNameField(ctx, datatype.Version, "version"); err != nil {
-		return nil, err
-	}
-	if len(datatype.Value) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
 	}
 	datatype.Hash = datatype.Value.Hash()
 
@@ -112,10 +103,7 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 	ns.ID = fftypes.NewUUID()
 	ns.Created = fftypes.Now()
 	ns.Type = fftypes.NamespaceTypeBroadcast
-	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
-		return nil, err
-	}
-	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
+	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
 
