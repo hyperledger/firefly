@@ -50,7 +50,7 @@ var (
 	MsgInvalidContentType          = ffm("FF10130", "Invalid content type", 415)
 	MsgInvalidName                 = ffm("FF10131", "Field '%s' must be 1-64 characters, including alphanumerics (a-zA-Z0-9), dot (.), dash (-) and underscore (_), and must start/end in an alphanumeric", 400)
 	MsgUnknownFieldValue           = ffm("FF10132", "Unknown '%s", 400)
-	MsgDataNotFound                = ffm("FF10133", "Data not found with UUID '%s", 400)
+	MsgDataNotFound                = ffm("FF10133", "Data not found for message %s", 400)
 	MsgUnknownPublicStoragePlugin  = ffm("FF10134", "Unknown Public Storage plugin '%s'")
 	MsgIPFSHashDecodeFailed        = ffm("FF10135", "Failed to decode IPFS hash into 32byte value '%s'")
 	MsgIPFSRESTErr                 = ffm("FF10136", "Error from IPFS: %s")

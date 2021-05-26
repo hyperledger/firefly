@@ -92,6 +92,7 @@ func TestBroadcastDatatypeMissingValue(t *testing.T) {
 func TestBroadcastDatatypeBadValue(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
@@ -106,6 +107,24 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
+
+	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
+		Namespace: "ns1",
+		Name:      "ent1",
+		Version:   "0.0.1",
+		Value:     fftypes.Byteable(`{"some": "data"}`),
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBroadcastDatatypeInvalid(t *testing.T) {
+	or := newTestOrchestrator()
+	or.nodeIDentity = "0x12345"
+
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
@@ -122,6 +141,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
@@ -139,6 +159,7 @@ func TestBroadcastOk(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
@@ -178,6 +199,7 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 	buff := strings.Builder{}
 	buff.Grow(4097)

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -35,14 +36,15 @@ const (
 	msgBatchOffsetName = "ff-msgbatch"
 )
 
-func NewBatchManager(ctx context.Context, database database.Plugin) (Manager, error) {
-	if database == nil {
+func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (Manager, error) {
+	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
 	bm := &batchManager{
 		ctx:                        log.WithLogField(ctx, "role", "batchmgr"),
-		database:                   database,
+		database:                   di,
+		data:                       dm,
 		readPageSize:               uint64(readPageSize),
 		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
@@ -70,6 +72,7 @@ type Manager interface {
 type batchManager struct {
 	ctx                        context.Context
 	database                   database.Plugin
+	data                       data.Manager
 	dispatchers                map[fftypes.MessageType]*dispatcher
 	shoulderTap                chan bool
 	newMessages                chan int64
@@ -191,27 +194,17 @@ func (bm *batchManager) Close() {
 }
 
 func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
-	// Load all the data - must all be present for us to send
-	for _, dataRef := range msg.Data {
-		if dataRef.ID == nil {
-			continue
-		}
-		var d *fftypes.Data
-		err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble %s data", dataRef.ID), func(attempt int) (retry bool, err error) {
-			d, err = bm.database.GetDataByID(bm.ctx, dataRef.ID)
-			if err != nil {
-				// continual retry for persistence error (distinct from not-found)
-				return !bm.closed, err
-			}
-			return false, nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		if d == nil {
-			return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, dataRef.ID)
-		}
-		data = append(data, d)
+	var foundAll = false
+	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
+		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg)
+		// continual retry for persistence error (distinct from not-found)
+		return err != nil && !bm.closed, err
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !foundAll {
+		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
 	}
 	log.L(bm.ctx).Infof("Added broadcast message %s", msg.Header.ID)
 	return data, nil
