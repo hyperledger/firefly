@@ -22,7 +22,7 @@ func pollForUp(t *testing.T, client *resty.Client) {
 		}
 		time.Sleep(5 * time.Second)
 	}
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
@@ -33,9 +33,9 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	port1, err := GetMemberPort(stackFile, 0)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	port2, err := GetMemberPort(stackFile, 1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	client1 := resty.New()
 	client1.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port1))
@@ -51,11 +51,11 @@ func TestEndToEnd(t *testing.T) {
 	definitionName := "definition1"
 
 	resp, err = BroadcastDatatype(client1, definitionName)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
 	resp, err = GetData(client1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode())
 	data := resp.Result().(*[]fftypes.Data)
 	assert.Equal(t, 1, len(*data))
@@ -64,7 +64,7 @@ func TestEndToEnd(t *testing.T) {
 	assert.Equal(t, definitionName, (*data)[0].Value["name"])
 
 	resp, err = GetData(client2)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode())
 	data = resp.Result().(*[]fftypes.Data)
 	t.Logf("Returned results from member 2: %d", len(*data))
