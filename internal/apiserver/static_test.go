@@ -28,7 +28,7 @@ import (
 )
 
 func TestStaticHosting(t *testing.T) {
-	sc := newStaticHandler("../../test/config", "index.html", "/config")
+	sc := newStaticHandler(configDir, "index.html", "/config")
 	var handler http.HandlerFunc = sc.ServeHTTP
 	res := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/config/firefly.core.yaml", nil)
@@ -50,7 +50,7 @@ func Test404UnRelablePath(t *testing.T) {
 }
 
 func TestServeDefault(t *testing.T) {
-	sc := newStaticHandler("../../test/config", "firefly.core.yaml", "/config")
+	sc := newStaticHandler(configDir, "firefly.core.yaml", "/config")
 	var handler http.HandlerFunc = sc.ServeHTTP
 	res := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/config", nil)
@@ -62,7 +62,7 @@ func TestServeDefault(t *testing.T) {
 }
 
 func TestServeNotFoundServeDefault(t *testing.T) {
-	sc := newStaticHandler("../../test/config", "firefly.core.yaml", "/config")
+	sc := newStaticHandler(configDir, "firefly.core.yaml", "/config")
 	var handler http.HandlerFunc = sc.ServeHTTP
 	res := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/config/wrong", nil)

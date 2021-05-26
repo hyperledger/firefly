@@ -27,6 +27,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const configDir = "../../test/data/config"
+
 func TestInitConfigOK(t *testing.T) {
 	viper.Reset()
 	err := ReadConfig("")
@@ -34,8 +36,12 @@ func TestInitConfigOK(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
-	os.Chdir("../../test/config")
-	err := ReadConfig("")
+	cwd, err := os.Getwd()
+	assert.NoError(t, err)
+	os.Chdir(configDir)
+	defer os.Chdir(cwd)
+
+	err = ReadConfig("")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
@@ -49,12 +55,12 @@ func TestDefaults(t *testing.T) {
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
-	err := ReadConfig("../../test/config/firefly.core.yaml")
+	err := ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
-	err := ReadConfig("../../test/config/no.hope.yaml")
+	err := ReadConfig(configDir + "/no.hope.yaml")
 	assert.Error(t, err)
 }
 
