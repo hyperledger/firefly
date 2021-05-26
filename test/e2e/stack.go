@@ -3,7 +3,6 @@ package e2e
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 )
 
 type Stack struct {
@@ -15,13 +14,7 @@ type Member struct {
 }
 
 func GetMemberPort(filename string, n int) (int, error) {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		return 0, err
-	}
-	defer jsonFile.Close()
-
-	jsonBytes, err := ioutil.ReadAll(jsonFile)
+	jsonBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return 0, err
 	}
