@@ -26,6 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -39,6 +40,7 @@ type testOrchestrator struct {
 	orchestrator
 
 	mdi *databasemocks.Plugin
+	mdm *datamocks.Manager
 	mbm *broadcastmocks.Manager
 	mba *batchmocks.Manager
 	mei *eventmocks.EventManager
@@ -52,6 +54,7 @@ func newTestOrchestrator() *testOrchestrator {
 			ctx: context.Background(),
 		},
 		mdi: &databasemocks.Plugin{},
+		mdm: &datamocks.Manager{},
 		mbm: &broadcastmocks.Manager{},
 		mba: &batchmocks.Manager{},
 		mei: &eventmocks.EventManager{},
@@ -59,14 +62,13 @@ func newTestOrchestrator() *testOrchestrator {
 		mbi: &blockchainmocks.Plugin{},
 	}
 	tor.orchestrator.database = tor.mdi
+	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mei
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.blockchain = tor.mbi
 	tor.mdi.On("Name").Return("mock-di").Maybe()
-	tor.mbm.On("Name").Return("mock-bi").Maybe()
-	tor.mba.On("Name").Return("mock-ba").Maybe()
 	tor.mei.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
 	tor.mbi.On("Name").Return("mock-bi").Maybe()
@@ -142,7 +144,9 @@ func TestBadPublicStorageInitFail(t *testing.T) {
 }
 
 func TestInitEventsComponentFail(t *testing.T) {
-	or := &orchestrator{}
+	or := newTestOrchestrator()
+	or.database = nil
+	or.events = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
@@ -159,6 +163,14 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.broadcast = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
+func TestInitDataComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.data = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }

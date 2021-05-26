@@ -39,7 +39,10 @@ type dataManager struct {
 	validatorCacheTTL time.Duration
 }
 
-func NewDataManager(ctx context.Context, di database.Plugin) Manager {
+func NewDataManager(ctx context.Context, di database.Plugin) (Manager, error) {
+	if di == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
 	dm := &dataManager{
 		ctx:               ctx,
 		database:          di,
@@ -50,7 +53,7 @@ func NewDataManager(ctx context.Context, di database.Plugin) Manager {
 		ccache.Configure().
 			MaxSize(config.GetByteSize(config.ValidatorCacheSize)),
 	)
-	return dm
+	return dm, nil
 }
 
 func (dm *dataManager) getValidatorFor(data *fftypes.Data) (Validator, error) {
