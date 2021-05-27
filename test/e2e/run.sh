@@ -24,10 +24,7 @@ if $CREATE_STACK
 then
 	$CLI remove -f $STACK_NAME || true
 	$CLI init $STACK_NAME 2
-	#$CLI start $STACK_NAME
-	pushd $STACK_DIR/$STACK_NAME
-	docker compose up -d
-	popd
+	$CLI start $STACK_NAME
 fi
 
 docker ps
