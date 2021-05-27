@@ -22,11 +22,16 @@ func BroadcastDatatype(client *resty.Client, name string) (*resty.Response, erro
 		SetBody(fftypes.Datatype{
 			Name:    name,
 			Version: "1",
-			Value: fftypes.JSONObject{
-				"property1": "string",
-			},
-		}).
-		Post(urlBroadcastDatatype)
+			Value: fftypes.Byteable(`
+			{
+				"type": "object",
+				"properties": {
+					"property1": {
+						"type": "string"
+					}
+				}
+			}`),
+		}).Post(urlBroadcastDatatype)
 }
 
 func GetData(client *resty.Client) (*resty.Response, error) {

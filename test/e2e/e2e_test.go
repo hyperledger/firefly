@@ -61,7 +61,7 @@ func TestEndToEnd(t *testing.T) {
 	assert.Equal(t, 1, len(*data))
 	assert.Equal(t, "default", (*data)[0].Namespace)
 	assert.Equal(t, fftypes.ValidatorType("datadef"), (*data)[0].Validator)
-	assert.Equal(t, definitionName, (*data)[0].Value["name"])
+	assert.Equal(t, definitionName, (*data)[0].Value.JSONObject().GetString("name"))
 
 	resp, err = GetData(client2)
 	require.NoError(t, err)

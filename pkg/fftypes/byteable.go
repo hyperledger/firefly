@@ -17,8 +17,11 @@
 package fftypes
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
+
+	"github.com/kaleido-io/firefly/internal/log"
 )
 
 // Byteable uses raw encode/decode to preserve field order, and can handle any types of field.
@@ -48,10 +51,19 @@ func (h Byteable) Hash() *Bytes32 {
 	return &b32
 }
 
-// JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
-// Will fail if the type is array, string, bool, number etc.
-func (h Byteable) JSONObject() (*JSONObject, error) {
+func (h Byteable) JSONObjectOk() (*JSONObject, bool) {
 	var jo *JSONObject
 	err := json.Unmarshal(h, &jo)
-	return jo, err
+	if err != nil {
+		log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
+		jo = &JSONObject{}
+	}
+	return jo, err == nil
+}
+
+// JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
+// Will fail if the type is array, string, bool, number etc.
+func (h Byteable) JSONObject() *JSONObject {
+	jo, _ := h.JSONObjectOk()
+	return jo
 }

@@ -47,35 +47,35 @@ func (jd *JSONObject) Scan(src interface{}) error {
 
 }
 
-func (jd JSONObject) GetString(ctx context.Context, key string) string {
-	s, _ := jd.GetStringOk(ctx, key)
+func (jd JSONObject) GetString(key string) string {
+	s, _ := jd.GetStringOk(key)
 	return s
 }
 
-func (jd JSONObject) GetStringOk(ctx context.Context, key string) (string, bool) {
+func (jd JSONObject) GetStringOk(key string) (string, bool) {
 	vInterace, ok := jd[key]
 	if ok && vInterace != nil {
 		if vString, ok := vInterace.(string); ok {
 			return vString, true
 		}
 	}
-	log.L(ctx).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
+	log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
 	return "", false
 }
 
-func (jd JSONObject) GetObject(ctx context.Context, key string) JSONObject {
-	ob, _ := jd.GetObjectOk(ctx, key)
+func (jd JSONObject) GetObject(key string) JSONObject {
+	ob, _ := jd.GetObjectOk(key)
 	return ob
 }
 
-func (jd JSONObject) GetObjectOk(ctx context.Context, key string) (JSONObject, bool) {
+func (jd JSONObject) GetObjectOk(key string) (JSONObject, bool) {
 	vInterace, ok := jd[key]
 	if ok && vInterace != nil {
 		if vMap, ok := vInterace.(map[string]interface{}); ok {
 			return JSONObject(vMap), true
 		}
 	}
-	log.L(ctx).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
+	log.L(context.Background()).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
 	return JSONObject{}, false // Ensures a non-nil return
 }
 
@@ -95,17 +95,17 @@ func ToJSONObjectArray(unknown interface{}) (JSONObjectArray, bool) {
 	return joa, ok
 }
 
-func (jd JSONObject) GetObjectArray(ctx context.Context, key string) JSONObjectArray {
-	oa, _ := jd.GetObjectArrayOk(ctx, key)
+func (jd JSONObject) GetObjectArray(key string) JSONObjectArray {
+	oa, _ := jd.GetObjectArrayOk(key)
 	return oa
 }
 
-func (jd JSONObject) GetObjectArrayOk(ctx context.Context, key string) (JSONObjectArray, bool) {
+func (jd JSONObject) GetObjectArrayOk(key string) (JSONObjectArray, bool) {
 	vInterace, ok := jd[key]
 	if ok && vInterace != nil {
 		return ToJSONObjectArray(vInterace)
 	}
-	log.L(ctx).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
+	log.L(context.Background()).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
 	return JSONObjectArray{}, false // Ensures a non-nil return
 }
 
@@ -119,10 +119,10 @@ func (jd JSONObject) String() string {
 	return string(b)
 }
 
-func (jd JSONObject) Hash(ctx context.Context, jsonDesc string) (*Bytes32, error) {
+func (jd JSONObject) Hash(jsonDesc string) (*Bytes32, error) {
 	b, err := json.Marshal(&jd)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgJSONObjectParseFailed, jsonDesc)
+		return nil, i18n.NewError(context.Background(), i18n.MsgJSONObjectParseFailed, jsonDesc)
 	}
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32, nil
@@ -158,10 +158,10 @@ func (jd JSONObjectArray) String() string {
 	return string(b)
 }
 
-func (jd JSONObjectArray) Hash(ctx context.Context, jsonDesc string) (*Bytes32, error) {
+func (jd JSONObjectArray) Hash(jsonDesc string) (*Bytes32, error) {
 	b, err := json.Marshal(&jd)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgJSONObjectParseFailed, jsonDesc)
+		return nil, i18n.NewError(context.Background(), i18n.MsgJSONObjectParseFailed, jsonDesc)
 	}
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32, nil

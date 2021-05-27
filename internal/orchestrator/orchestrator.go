@@ -237,13 +237,13 @@ func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftype
 	}
 	foundDefault := false
 	for i, nsObject := range predefined {
-		name := nsObject.GetString(ctx, "name")
+		name := nsObject.GetString("name")
 		err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
 		if err != nil {
 			return nil, err
 		}
 		foundDefault = foundDefault || name == defaultNS
-		description := nsObject.GetString(ctx, "description")
+		description := nsObject.GetString("description")
 		dup := false
 		for _, existing := range namespaces {
 			if existing.Name == name {

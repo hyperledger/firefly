@@ -17,7 +17,6 @@
 package fftypes
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -59,12 +58,12 @@ func TestJSONObject(t *testing.T) {
 	err = dataRead.Scan(&wrongType)
 	assert.Error(t, err)
 
-	hash, err := dataRead.Hash(context.Background(), "goodStuff")
+	hash, err := dataRead.Hash("goodStuff")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	var badJson JSONObject = map[string]interface{}{"not": map[bool]string{true: "json"}}
-	hash, err = badJson.Hash(context.Background(), "badStuff")
+	hash, err = badJson.Hash("badStuff")
 	assert.Regexp(t, "FF10151.*badStuff", err.Error())
 	assert.Nil(t, hash)
 }
@@ -103,12 +102,12 @@ func TestJSONObjectArray(t *testing.T) {
 	err = dataRead.Scan(&wrongType)
 	assert.Error(t, err)
 
-	hash, err := dataRead.Hash(context.Background(), "goodStuff")
+	hash, err := dataRead.Hash("goodStuff")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	var badJson JSONObjectArray = []JSONObject{{"not": map[bool]string{true: "json"}}}
-	hash, err = badJson.Hash(context.Background(), "badStuff")
+	hash, err = badJson.Hash("badStuff")
 	assert.Regexp(t, "FF10151.*badStuff", err.Error())
 	assert.Nil(t, hash)
 
@@ -130,34 +129,33 @@ func TestJSONNestedSafeGet(t *testing.T) {
 	`), &jd)
 	assert.NoError(t, err)
 
-	ctx := context.Background()
-	va, ok := jd.GetObjectArrayOk(ctx, "wrong")
+	va, ok := jd.GetObjectArrayOk("wrong")
 	assert.False(t, ok)
 	assert.NotNil(t, va)
 
-	vo, ok := jd.GetObjectOk(ctx, "wrong")
+	vo, ok := jd.GetObjectOk("wrong")
 	assert.False(t, ok)
 	assert.NotNil(t, vo)
 
 	assert.Equal(t, "value",
-		jd.GetObjectArray(ctx, "nested_array")[0].
-			GetObject(ctx, "with").
-			GetString(ctx, "some"),
+		jd.GetObjectArray("nested_array")[0].
+			GetObject("with").
+			GetString("some"),
 	)
 
-	remapped, ok := ToJSONObjectArray(jd.GetObjectArray(ctx, "nested_array"))
+	remapped, ok := ToJSONObjectArray(jd.GetObjectArray("nested_array"))
 	assert.True(t, ok)
 	assert.Equal(t, "value",
 		remapped[0].
-			GetObject(ctx, "with").
-			GetString(ctx, "some"),
+			GetObject("with").
+			GetString("some"),
 	)
 
 	assert.Equal(t, "",
-		jd.GetObject(ctx, "no").
-			GetObject(ctx, "path").
-			GetObject(ctx, "to").
-			GetString(ctx, "here"),
+		jd.GetObject("no").
+			GetObject("path").
+			GetObject("to").
+			GetString("here"),
 	)
 
 }
