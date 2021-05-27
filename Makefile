@@ -2,8 +2,9 @@ VGO=go
 BINARY_NAME=firefly
 GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
 MOCKERY=mockery
-# Expect that ireFly compiles with CGO disabled
+# Expect that FireFly compiles with CGO disabled
 CGO_ENABLED=0
+GOGC=30
 .DELETE_ON_ERROR:
 
 all: build test
@@ -13,7 +14,7 @@ coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
 lint:
-		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run
+		$(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run -v
 mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Plugin           --output mocks/blockchainmocks     --outpkg blockchainmocks
 		$(MOCKERY) --case underscore --dir pkg/blockchain        --name Callbacks        --output mocks/blockchainmocks     --outpkg blockchainmocks
