@@ -99,9 +99,9 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataReadJson, _ = json.Marshal(&dataRead)
 	assert.Equal(t, string(dataJson), string(dataReadJson))
 
-	valRestored, err := dataRead.Value.JSONObject()
-	assert.NoError(t, err)
-	assert.Equal(t, "stuff", valRestored.GetObject(ctx, "of").GetString(ctx, "and"))
+	valRestored, ok := dataRead.Value.JSONObjectOk()
+	assert.True(t, ok)
+	assert.Equal(t, "stuff", valRestored.GetObject("of").GetString("and"))
 
 	// Query back the data
 	fb := database.DataQueryFactory.NewFilter(ctx)

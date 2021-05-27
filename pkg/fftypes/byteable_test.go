@@ -17,7 +17,6 @@
 package fftypes
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -67,9 +66,9 @@ func TestByteableSerializeObjects(t *testing.T) {
 	assert.Equal(t, `{"b":"test","b":"duplicate","a":12345,"c":{"e":1.00000000001,"d":false}}`, string(b))
 	assert.Equal(t, "8eff3083f052a77bda0934236bf8e5eccbd186d5ae81ada7a5bbee516ecd5726", ts.Prop.Hash().String())
 
-	jo, err := ts.Prop.JSONObject()
-	assert.NoError(t, err)
-	assert.Equal(t, "duplicate", jo.GetString(context.Background(), "b"))
+	jo, ok := ts.Prop.JSONObjectOk()
+	assert.True(t, ok)
+	assert.Equal(t, "duplicate", jo.GetString("b"))
 
 }
 
@@ -87,4 +86,6 @@ func TestByteableUnmarshalFail(t *testing.T) {
 	err := b.UnmarshalJSON([]byte(`!json`))
 	assert.Error(t, err)
 
+	jo := b.JSONObject()
+	assert.Equal(t, JSONObject{}, *jo)
 }
