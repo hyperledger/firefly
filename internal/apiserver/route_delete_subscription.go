@@ -19,25 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postBroadcastNamespace = &oapispec.Route{
-	Name:            "postBroadcastNamespace",
-	Path:            "broadcast/namespace",
-	Method:          http.MethodPost,
-	PathParams:      nil,
+var deleteSubscription = &oapispec.Route{
+	Name:   "deleteSubscription",
+	Path:   "namespaces/{ns}/subscriptions/{subid}",
+	Method: http.MethodDelete,
+	PathParams: []*oapispec.PathParam{
+		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "subid", Description: i18n.MsgTBD},
+	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONInputMask:   []string{"ID", "Created", "Confirmed", "Type"},
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
+	JSONInputValue:  nil,
+	JSONInputMask:   nil,
+	JSONOutputValue: nil,
+	JSONOutputCode:  http.StatusNoContent, // Sync operation, no output
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
-		return output, err
+		err = r.Or.DeleteSubscription(r.Ctx, r.PP["ns"], r.PP["subid"])
+		return nil, err
 	},
 }

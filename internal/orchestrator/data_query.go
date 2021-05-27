@@ -35,7 +35,7 @@ func (or *orchestrator) verifyNamespaceExists(ctx context.Context, ns string) er
 		return err
 	}
 	if namespace == nil {
-		return i18n.WrapError(ctx, err, i18n.MsgNamespaceNotExist)
+		return i18n.NewError(ctx, i18n.MsgNamespaceNotExist)
 	}
 	return nil
 }

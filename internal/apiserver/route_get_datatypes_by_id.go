@@ -36,7 +36,7 @@ var getDataDefByID = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return nil },
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

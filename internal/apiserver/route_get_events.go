@@ -36,7 +36,7 @@ var getEvents = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   database.EventQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return nil },
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

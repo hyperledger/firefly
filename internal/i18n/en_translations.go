@@ -108,4 +108,7 @@ var (
 	MsgFieldTooLong                = ffm("FF10188", "Field '%s' maximum length is %d", 400)
 	MsgInvalidSubscription         = ffm("FF10189", "Invalid subscription", 400)
 	MsgMismatchedTransport         = ffm("FF10190", "Connection ID '%s' appears not to be unique between transport '%s' and '%s'", 400)
+	MsgInvalidFirstEvent           = ffm("FF10191", "Invalid firstEvent definition - must be 'newest','oldest' or a sequence number", 400)
+	MsgNumberMustBeGreaterEqual    = ffm("FF10192", "Number must be greater than or equal to %d", 400)
+	MsgAlreadyExists               = ffm("FF10193", "A %s with name '%s:%s' already exists", 409)
 )

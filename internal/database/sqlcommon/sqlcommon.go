@@ -210,8 +210,11 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 		l.Errorf(`SQL delete failed: %s sql=[ %s ]: %s`, err, sqlQuery, err)
 		return i18n.WrapError(ctx, err, i18n.MsgDBDeleteFailed)
 	}
-	ra, _ := res.RowsAffected() // currently only used for debugging
+	ra, _ := res.RowsAffected()
 	l.Debugf(`SQL<- delete affected=%d`, ra)
+	if ra < 1 {
+		return i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
 	return nil
 }
 

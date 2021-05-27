@@ -19,6 +19,7 @@ package oapispec
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -51,8 +52,13 @@ func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
 			Description: "Copyright © 2021 Kaleido, Inc.",
 		},
 	}
+	opIds := make(map[string]bool)
 	for _, route := range routes {
+		if route.Name == "" || opIds[route.Name] {
+			log.Panicf("Duplicate/invalid name (used as operation ID in swagger): %s", route.Name)
+		}
 		addRoute(ctx, doc, route)
+		opIds[route.Name] = true
 	}
 	return doc
 }
@@ -138,11 +144,17 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 	}
-	input := route.JSONInputValue()
+	var input interface{}
+	if route.JSONInputValue != nil {
+		input = route.JSONInputValue()
+	}
 	if input != nil {
 		addInput(input, route.JSONInputMask, op)
 	}
-	output := route.JSONOutputValue()
+	var output interface{}
+	if route.JSONOutputValue != nil {
+		output = route.JSONOutputValue()
+	}
 	if output != nil {
 		addOutput(ctx, route, output, op)
 	}

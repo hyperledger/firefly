@@ -26,7 +26,7 @@ import (
 )
 
 var getEventByID = &oapispec.Route{
-	Name:   "getOpByID",
+	Name:   "getEventByID",
 	Path:   "namespaces/{ns}/events/{eid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -36,7 +36,7 @@ var getEventByID = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return nil },
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Event{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

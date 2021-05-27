@@ -36,6 +36,8 @@ type EventManager interface {
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
+	DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
+	CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	Start() error
 	WaitStop()
 }
@@ -115,6 +117,13 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 	if _, err = em.subManager.parseSubscriptionDef(ctx, subDef); err != nil {
 		return err
 	}
+
+	// Do a check first for existence, to give a nice 409 if we find one
+	existing, _ := em.database.GetSubscriptionByName(ctx, subDef.Namespace, subDef.Name)
+	if existing != nil {
+		return i18n.NewError(ctx, i18n.MsgAlreadyExists, "subscription", subDef.Namespace, subDef.Name)
+	}
+
 	// We lock in the starting sequence at creation time, rather than when the first dispatcher
 	// starts, as that's a more obvious behavior for users
 	sequence, err := calcFirstOffset(ctx, em.database, subDef.Options.FirstEvent)
@@ -123,18 +132,12 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 	}
 	lockedInFirstEvent := fftypes.SubOptsFirstEvent(strconv.FormatInt(sequence, 10))
 	subDef.Options.FirstEvent = &lockedInFirstEvent
+
 	// The event in the database for the creation of the susbscription, will asynchronously update the submanager
 	return em.database.UpsertSubscription(ctx, subDef, false)
 }
 
-func (em *eventManager) DeleteDurableSubscription(ctx context.Context, id *fftypes.UUID) (err error) {
-	subDef, err := em.database.GetSubscriptionByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	if subDef == nil {
-		return i18n.NewError(ctx, i18n.Msg404NotFound)
-	}
+func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
 	return em.database.DeleteSubscriptionByID(ctx, subDef.ID)
 }

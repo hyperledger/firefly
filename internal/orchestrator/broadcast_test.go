@@ -47,7 +47,7 @@ func TestBroadcastDatatypeMissingNS(t *testing.T) {
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 	})
-	assert.Regexp(t, "FF10131.*name", err.Error())
+	assert.Regexp(t, "FF10187", err.Error())
 }
 
 func TestBroadcastDatatypeNSGetFail(t *testing.T) {
