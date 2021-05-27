@@ -112,7 +112,7 @@ func TestBlockedsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(blockeds))
 
 	// Test delete
-	err = s.DeleteBlocked(ctx, blockedUpdated.Namespace, blockedUpdated.Context, blockedUpdated.Group)
+	err = s.DeleteBlocked(ctx, blockedUpdated.ID)
 	assert.NoError(t, err)
 	blockeds, err = s.GetBlocked(ctx, filter)
 	assert.NoError(t, err)
@@ -251,7 +251,7 @@ func TestBlockedUpdateFail(t *testing.T) {
 func TestBlockedDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteBlocked(context.Background(), "ns1", "sub1", nil)
+	err := s.DeleteBlocked(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10114", err.Error())
 }
 
@@ -260,6 +260,6 @@ func TestBlockedDeleteFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.DeleteBlocked(context.Background(), "ns1", "sub1", nil)
+	err := s.DeleteBlocked(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err.Error())
 }

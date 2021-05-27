@@ -203,7 +203,7 @@ type PeristenceInterface interface {
 	GetBlocked(ctx context.Context, filter Filter) (offset []*fftypes.Blocked, err error)
 
 	// DeleteBlocked - Delete an offset by name
-	DeleteBlocked(ctx context.Context, ns, context string, groupID *fftypes.UUID) (err error)
+	DeleteBlocked(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
