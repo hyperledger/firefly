@@ -207,7 +207,7 @@ func (s *SQLCommon) UpdateBlocked(ctx context.Context, id *fftypes.UUID, update 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) DeleteBlocked(ctx context.Context, ns, context string, groupID *fftypes.UUID) (err error) {
+func (s *SQLCommon) DeleteBlocked(ctx context.Context, id *fftypes.UUID) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -216,9 +216,7 @@ func (s *SQLCommon) DeleteBlocked(ctx context.Context, ns, context string, group
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	err = s.deleteTx(ctx, tx, sq.Delete("blocked").Where(sq.Eq{
-		"namespace": ns,
-		"context":   context,
-		"group_id":  groupID,
+		"id": id,
 	}))
 	if err != nil {
 		return err

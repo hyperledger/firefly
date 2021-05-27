@@ -28,6 +28,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func uuidMatches(id1 *fftypes.UUID) interface{} {
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
+}
+
 func TestShutdownOnCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
@@ -105,29 +109,413 @@ func TestProcessEventIgnoredTypeConfirmed(t *testing.T) {
 	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
-	repoll, err := ag.processEvent(context.Background(), ev1)
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
 	mdi.AssertExpectations(t)
 }
 
-func TestProcessEventCheckCompleteDataNotAvailable(t *testing.T) {
+func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
-	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID())
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, nil)
+	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
 	ev1.Sequence = 111
-	repoll, err := ag.processEvent(context.Background(), ev1)
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
+	assert.False(t, repoll)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteDataAvailableBlocked(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		Message: fftypes.NewUUID(), // Another message, not us
+	}, nil)
+
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
+	assert.False(t, repoll)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteWeUnblock(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
+		{ID: fftypes.NewUUID()},
+	}, nil)
+	mdi.On("UpdateBlocked", mock.Anything, uuidMatches(blockedID), mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
+	assert.True(t, repoll)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
+		{ID: fftypes.NewUUID()},
+	}, nil)
+	mdi.On("UpdateBlocked", mock.Anything, uuidMatches(blockedID), mock.Anything).Return(fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
+	assert.False(t, repoll)
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil).Once()
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
+		{ID: fftypes.NewUUID()},
+	}, nil)
+	mdi.On("UpdateBlocked", mock.Anything, uuidMatches(blockedID), mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
+	assert.False(t, repoll)
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
+		{ID: msgID2},
+	}, nil)
+	mdi.On("UpdateBlocked", mock.Anything, uuidMatches(blockedID), mock.Anything).Return(nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll) // No need to re-poll, as we've got the interesting event in our lookahead buffer
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
+	mdi.On("DeleteBlocked", mock.Anything, uuidMatches(blockedID)).Return(nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll) // No need to re-poll, as we've got the interesting event in our lookahead buffer
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll) // No need to re-poll, as we've got the interesting event in our lookahead buffer
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      fftypes.NewUUID(),
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll) // No need to re-poll, as we've got the interesting event in our lookahead buffer
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      fftypes.NewUUID(),
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
+	mdi.On("DeleteBlocked", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll) // No need to re-poll, as we've got the interesting event in our lookahead buffer
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msgID2 := fftypes.NewUUID()
+	blockedID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
+		ID:      blockedID,
+		Message: msgID, // Blocked by us
+	}, nil)
+	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
+	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
+	mdi.On("DeleteBlocked", mock.Anything, uuidMatches(blockedID)).Return(fmt.Errorf("pop"))
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{
+		*msgID2: []*fftypes.Event{{Type: fftypes.EventTypeMessageConfirmed}},
+	}, ev1)
+	assert.False(t, repoll)
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessEvent(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        msgID,
+			Namespace: "ns1",
+			Context:   "context1",
+		},
+	}
+	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, nil)
+	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(nil)
+	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
+	ev1.Sequence = 111
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
@@ -143,7 +531,7 @@ func TestProcessEventDataArrivedNoMsgs(t *testing.T) {
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
-	repoll, err := ag.processEvent(context.Background(), ev1)
+	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), ag.eventPoller.pollingOffset)
@@ -157,13 +545,14 @@ func TestProcessDataArrivedError(t *testing.T) {
 	defer cancel()
 	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	repoll, err := ag.processDataArrived(context.Background(), "ns1", fftypes.NewUUID())
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeDataArrivedBroadcast}
+	repoll, err := ag.processDataArrived(context.Background(), "ns1", eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 }
 
-func TestProcessDataCompleteMessageBlocked(t *testing.T) {
+func TestProcessDataCompleteMsgInLookahead(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -175,15 +564,18 @@ func TestProcessDataCompleteMessageBlocked(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{{ID: fftypes.NewUUID(), Sequence: 111}}, nil)
-	repoll, err := ag.processDataArrived(context.Background(), "ns1", fftypes.NewUUID())
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeDataArrivedBroadcast}
+	repoll, err := ag.processDataArrived(context.Background(), "ns1", eventsByRef{
+		*msg.Header.ID: []*fftypes.Event{
+			{Type: fftypes.EventTypeMessageSequencedBroadcast},
+		},
+	}, ev)
 	assert.False(t, repoll)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
 
-func TestProcessDataCompleteQueryBlockedFail(t *testing.T) {
+func TestProcessDataCompleteMsgNotPinnedYet(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -195,9 +587,29 @@ func TestProcessDataCompleteQueryBlockedFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	repoll, err := ag.processDataArrived(context.Background(), "ns1", fftypes.NewUUID())
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeDataArrivedBroadcast}
+	repoll, err := ag.processDataArrived(context.Background(), "ns1", eventsByRef{}, ev)
+	assert.False(t, repoll)
+	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
+}
+
+func TestProcessDataCompleteDrivesMsgGetEventsFailure(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeDataArrivedBroadcast}
+	repoll, err := ag.processDataArrived(context.Background(), "ns1", eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -215,7 +627,8 @@ func TestCheckMessageCompleteDataAvailFail(t *testing.T) {
 		},
 	}
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
+	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -232,10 +645,11 @@ func TestCheckMessageCompleteUpdateFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
+	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -252,17 +666,18 @@ func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
+	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 }
 
-func TestCheckMessageCompleteGetUnblockedFail(t *testing.T) {
+func TestCheckMessageCompleteInsertBlockEventFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -273,37 +688,11 @@ func TestCheckMessageCompleteGetUnblockedFail(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
-	assert.False(t, repoll)
-	assert.EqualError(t, err, "pop")
-	mdi.AssertExpectations(t)
-}
-
-func TestCheckMessageCompleteInsertUnblockEventFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID: fftypes.NewUUID(),
-		},
-	}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil).Once()
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
-		{ID: fftypes.NewUUID(), Sequence: 111},
-	}, nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
+	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
+	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
@@ -323,45 +712,24 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 			Topic:     fftypes.SystemTopicBroadcastDatatype,
 		},
 	}
+	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
 	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
-		{ID: fftypes.NewUUID(), Sequence: 111},
-	}, nil)
+	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
+	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 }
 
-func TestCheckMessageCompleteInsertUnblockOK(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Context:   fftypes.SystemContext,
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+func TestEventsByRefRemoveNoMatch(t *testing.T) {
+	u := fftypes.NewUUID()
+	ebr := eventsByRef{
+		*u: []*fftypes.Event{
+			{Type: fftypes.EventTypeMessageConfirmed, ID: u},
 		},
 	}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{}, nil).Once()
-	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil).Once()
-	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
-		{ID: fftypes.NewUUID(), Sequence: 111},
-	}, nil)
-	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
-	repoll, err := ag.checkMessageComplete(context.Background(), msg)
-	assert.True(t, repoll)
-	assert.NoError(t, err)
-	mdi.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	assert.True(t, ebr.remove(*u))
+	assert.False(t, ebr.remove(*u))
 }
