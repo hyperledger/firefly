@@ -42,7 +42,7 @@ func newTestEventDispatcher(mdi database.Plugin, mei events.Plugin, sub *subscri
 func TestEventDispatcherStartStop(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
-	ten := uint64(10)
+	ten := uint16(10)
 	oldest := fftypes.SubOptsFirstEventOldest
 	ed, cancel := newTestEventDispatcher(mdi, mei, &subscription{
 		dispatcherElection: make(chan bool, 1),
@@ -113,7 +113,7 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 
 func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	log.SetLevel("debug")
-	var five = uint64(5)
+	var five = uint16(5)
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{

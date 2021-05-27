@@ -65,6 +65,43 @@ func (_m *Orchestrator) BroadcastNamespace(ctx context.Context, s *fftypes.Names
 	return r0, r1
 }
 
+// CreateSubscription provides a mock function with given fields: ctx, ns, subDef
+func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, ns, subDef)
+
+	var r0 *fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Subscription) *fftypes.Subscription); ok {
+		r0 = rf(ctx, ns, subDef)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Subscription) error); ok {
+		r1 = rf(ctx, ns, subDef)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeleteSubscription provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) DeleteSubscription(ctx context.Context, ns string, id string) error {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetBatchByID provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) (*fftypes.Batch, error) {
 	ret := _m.Called(ctx, ns, id)
@@ -443,6 +480,52 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+		r1 = rf(ctx, ns, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSubscriptionByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id string) (*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Subscription); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSubscriptions provides a mock function with given fields: ctx, ns, filter
+func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, ns, filter)
+
+	var r0 []*fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.Subscription); ok {
+		r0 = rf(ctx, ns, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Subscription)
 		}
 	}
 

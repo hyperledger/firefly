@@ -38,7 +38,7 @@ var postBroadcastDatatype = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
 	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Confirmed"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted,
+	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype))
 		return output, err

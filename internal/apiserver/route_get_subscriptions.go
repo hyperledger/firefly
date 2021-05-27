@@ -19,25 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postBroadcastNamespace = &oapispec.Route{
-	Name:            "postBroadcastNamespace",
-	Path:            "broadcast/namespace",
-	Method:          http.MethodPost,
-	PathParams:      nil,
+var getSubsriptions = &oapispec.Route{
+	Name:   "getSubsriptions",
+	Path:   "namespaces/{ns}/subscriptions",
+	Method: http.MethodGet,
+	PathParams: []*oapispec.PathParam{
+		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.SubscriptionQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONInputMask:   []string{"ID", "Created", "Confirmed", "Type"},
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*fftypes.Subscription{} },
+	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
+		output, err = r.Or.GetSubscriptions(r.Ctx, r.PP["ns"], r.Filter)
 		return output, err
 	},
 }

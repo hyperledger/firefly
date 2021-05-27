@@ -104,6 +104,18 @@ func TestDeleteTxBadSQL(t *testing.T) {
 	assert.Regexp(t, "FF10113", err.Error())
 }
 
+func TestDeleteTxZeroRowsAffected(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectBegin()
+	mdb.ExpectExec("DELETE.*").WillReturnResult(driver.ResultNoRows)
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	s.fakePSQLInsert = true
+	sb := sq.Delete("table")
+	err = s.deleteTx(ctx, tx, sb)
+	assert.Regexp(t, "FF10109", err.Error())
+}
+
 func TestRunAsGroup(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()

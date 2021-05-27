@@ -45,7 +45,7 @@ const (
 // SubscriptionOptions cutomize the behavior of subscriptions
 type SubscriptionOptions struct {
 	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
-	ReadAhead  *uint64            `json:"readAhead,omitempty"`
+	ReadAhead  *uint16            `json:"readAhead,omitempty"`
 }
 
 // SubscriptionRef are the fields that can be used to refer to a subscription
