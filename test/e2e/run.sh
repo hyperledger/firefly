@@ -8,6 +8,12 @@ STACK_NAME=firefly-e2e
 STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 DOWNLOAD_CLI=true
 CREATE_STACK=true
+BUILD_FIREFLY=true
+
+if $BUILD_FIREFLY
+then
+	docker build -t kaleidoinc/firefly:latest .
+fi
 
 if $DOWNLOAD_CLI
 then
