@@ -151,7 +151,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 			return false, err
 		}
 		if len(incomplete) > 0 {
-			log.L(ctx).Infof("Message %s (seq=%d) blocked by incompleted message %s (seq=%d)", msg.Header.ID, msg.Sequence, incomplete[0].ID, incomplete[0].Sequence)
+			log.L(ctx).Infof("Message %s (seq=%d) blocked by incomplete message %s (seq=%d)", msg.Header.ID, msg.Sequence, incomplete[0].ID, incomplete[0].Sequence)
 			return false, nil
 		}
 

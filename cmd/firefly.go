@@ -122,14 +122,15 @@ func run() error {
 	debugPort := config.GetInt(config.DebugPort)
 	if debugPort >= 0 {
 		r := mux.NewRouter()
-		r.HandleFunc("/debug/pprof/", pprof.Index)
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		r.PathPrefix("/debug/pprof/cmdline").HandlerFunc(pprof.Cmdline)
+		r.PathPrefix("/debug/pprof/profile").HandlerFunc(pprof.Profile)
+		r.PathPrefix("/debug/pprof/symbol").HandlerFunc(pprof.Symbol)
+		r.PathPrefix("/debug/pprof/trace").HandlerFunc(pprof.Trace)
+		r.PathPrefix("/debug/pprof/").HandlerFunc(pprof.Index)
 		go func() {
-			log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d: %s", debugPort, http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), r))
+			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", debugPort), r)
 		}()
+		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
 	}
 
 	if err = o.Init(ctx); err != nil {

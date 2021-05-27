@@ -24,13 +24,13 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
+func (or *orchestrator) broadcastDefinition(ctx context.Context, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeDatatype,
 		ID:        fftypes.NewUUID(),
-		Namespace: ns,
+		Namespace: fftypes.SystemNamespace,
 		Created:   fftypes.Now(),
 	}
 	data.Value, err = json.Marshal(&defObject)
@@ -49,7 +49,7 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defO
 	// Create a broadcast message referring to the data
 	msg = &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: ns,
+			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeDefinition,
 			Author:    or.nodeIDentity,
 			Topic:     topic,
@@ -94,7 +94,7 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 		return nil, err
 	}
 
-	return or.broadcastDefinition(ctx, ns, datatype, fftypes.SystemTopicBroadcastDatatype)
+	return or.broadcastDefinition(ctx, datatype, fftypes.SystemTopicBroadcastDatatype)
 }
 
 func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
@@ -107,5 +107,5 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 		return nil, err
 	}
 
-	return or.broadcastDefinition(ctx, ns.Name, ns, fftypes.SystemTopicBroadcastNamespace)
+	return or.broadcastDefinition(ctx, ns, fftypes.SystemTopicBroadcastNamespace)
 }

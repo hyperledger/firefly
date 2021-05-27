@@ -26,6 +26,7 @@ import (
 
 func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error {
 	l := log.L(ctx)
+	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Topic, msg.Header.ID)
 	switch msg.Header.Topic {
 	case fftypes.SystemTopicBroadcastDatatype:
 		return bm.handleDatatypeBroadcast(ctx, msg)
