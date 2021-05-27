@@ -213,7 +213,7 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 	ra, _ := res.RowsAffected()
 	l.Debugf(`SQL<- delete affected=%d`, ra)
 	if ra < 1 {
-		return i18n.NewError(ctx, i18n.Msg404NotFound)
+		return database.DeleteRecordNotFound
 	}
 	return nil
 }
