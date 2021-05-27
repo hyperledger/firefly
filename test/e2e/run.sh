@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CWD=$(dirname "$0")
-CLI=ff
+CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
 STACK_NAME=firefly-e2e
 STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
