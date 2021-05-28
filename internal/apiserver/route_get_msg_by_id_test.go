@@ -33,8 +33,22 @@ func TestGetMessageByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Message{}, nil)
+	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", false).
+		Return(&fftypes.MessageInput{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+}
+
+func TestGetMessageByIDWithData(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345?data", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", true).
+		Return(&fftypes.MessageInput{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

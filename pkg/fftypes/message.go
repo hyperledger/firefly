@@ -79,9 +79,9 @@ type InputData []*DataRefOrValue
 type DataRefOrValue struct {
 	DataRef
 
-	Validator ValidatorType `json:"validator"`
+	Validator ValidatorType `json:"validator,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value"`
+	Value     Byteable      `json:"value,omitempty"`
 }
 
 // MessageRef is a lightweight data structure that can be used to refer to a message

@@ -66,7 +66,7 @@ type Orchestrator interface {
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
+	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
