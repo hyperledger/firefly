@@ -18,6 +18,7 @@ package oapispec
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -79,8 +80,17 @@ func getPathItem(doc *openapi3.T, path string) *openapi3.PathItem {
 	return pi
 }
 
-func addInput(input interface{}, mask []string, op *openapi3.Operation) {
-	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
+func addInput(input interface{}, mask []string, schemaDef string, op *openapi3.Operation) {
+	var schemaRef *openapi3.SchemaRef
+	if schemaDef != "" {
+		err := json.Unmarshal([]byte(schemaDef), &schemaRef)
+		if err != nil {
+			panic(fmt.Sprintf("invalid schema for %T: %s", input, err))
+		}
+	}
+	if schemaRef == nil {
+		schemaRef, _, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
+	}
 	op.RequestBody = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
 			Content: openapi3.Content{
@@ -149,7 +159,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		input = route.JSONInputValue()
 	}
 	if input != nil {
-		addInput(input, route.JSONInputMask, op)
+		addInput(input, route.JSONInputMask, route.JSONInputSchema, op)
 	}
 	var output interface{}
 	if route.JSONOutputValue != nil {

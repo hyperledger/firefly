@@ -123,4 +123,5 @@ var (
 	MsgNilID                       = ffm("FF10203", "ID is nil")
 	MsgDataReferenceUnresolvable   = ffm("FF10204", "Data reference %d cannot be resolved", 400)
 	MsgDataMissing                 = ffm("FF10205", "Data entry %d has neither 'id' to refer to existing data, or 'value' to include in-line JSON data", 400)
+	MsgAuthorInvalid               = ffm("FF10206", "Invalid header.author in message", 400)
 )
