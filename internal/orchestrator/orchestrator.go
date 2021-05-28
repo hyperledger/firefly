@@ -53,6 +53,7 @@ type Orchestrator interface {
 	// Broadcasts
 	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
 	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
+	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)

@@ -169,3 +169,54 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 }
+
+func TestBroadcastMessageOk(t *testing.T) {
+	or := newTestOrchestrator()
+
+	ctx := context.Background()
+	rag := or.mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+	or.mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}, nil)
+	or.mbm.On("BroadcastMessage", ctx, mock.Anything).Return(nil)
+
+	msg, err := or.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, msg.Data[0].ID)
+	assert.NotNil(t, msg.Data[0].Hash)
+	assert.Equal(t, "ns1", msg.Header.Namespace)
+
+	or.mdi.AssertExpectations(t)
+	or.mdm.AssertExpectations(t)
+	or.mbm.AssertExpectations(t)
+}
+
+func TestBroadcastMessageBadInput(t *testing.T) {
+	or := newTestOrchestrator()
+
+	ctx := context.Background()
+	rag := or.mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+	or.mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := or.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+	or.mdi.AssertExpectations(t)
+	or.mdm.AssertExpectations(t)
+}
