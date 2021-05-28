@@ -45,6 +45,8 @@ type Route struct {
 	JSONInputValue func() interface{}
 	// JSONInputMask are fields that aren't available for users to supply on input
 	JSONInputMask []string
+	// JSONInputSchema is a custom schema definition, for the case where the auto-gen + mask isn't good enough
+	JSONInputSchema string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONOutputCode is the success response code

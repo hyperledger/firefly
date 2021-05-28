@@ -68,7 +68,6 @@ type Message struct {
 // will be broken out and stored separately during the call.
 type MessageInput struct {
 	Message
-
 	InputData InputData `json:"data"`
 }
 

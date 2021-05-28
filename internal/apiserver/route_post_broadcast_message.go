@@ -25,6 +25,58 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
+var messageSchema = `{
+	"properties": {
+		 "data": {
+				"items": {
+					 "properties": {
+							"id": {"type": "string"},
+							"hash": {"type": "string"},
+							"validator": {"type": "string"},
+							"datatype": {
+								"type": "object",
+								"properties": {
+									"name": {"type": "string"},
+									"version": {"type": "string"}
+								}
+							},
+							"value": {
+								"type": "object"
+							}
+					 },
+					 "type": "object"
+				},
+				"type": "array"
+		 },
+		 "header": {
+				"properties": {
+					 "author": {
+							"type": "string"
+					 },
+					 "cid": {},
+					 "context": {
+							"type": "string"
+					 },
+					 "group": {},
+					 "topic": {
+							"type": "string"
+					 },
+					 "tx": {
+							"properties": {
+								 "type": {
+										"type": "string",
+										"default": "pin"
+								 }
+							},
+							"type": "object"
+					 }
+				},
+				"type": "object"
+		 }
+	},
+	"type": "object"
+}`
+
 var postBroadcastMessage = &oapispec.Route{
 	Name:   "postBroadcastMessage",
 	Path:   "namespaces/{ns}/broadcast/message",
@@ -36,7 +88,7 @@ var postBroadcastMessage = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInput{} },
-	JSONInputMask:   []string{"Hash", "BatchID", "Sequence", "Confirmed"},
+	JSONInputSchema: messageSchema,
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

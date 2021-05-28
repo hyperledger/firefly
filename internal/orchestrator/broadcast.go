@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
@@ -113,6 +114,14 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 func (or *orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	in.Header.Namespace = ns
+	in.Header.Type = fftypes.MessageTypeBroadcast
+	if in.Header.Author == "" {
+		in.Header.Author = config.GetString(config.NodeIdentity)
+	}
+	in.Header.Author, err = or.blockchain.VerifyIdentitySyntax(ctx, in.Header.Author)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	}
 	err = or.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
 		in.Message.Data, err = or.data.ResolveInputData(ctx, ns, in.InputData)

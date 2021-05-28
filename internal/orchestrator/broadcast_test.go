@@ -179,12 +179,18 @@ func TestBroadcastMessageOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
+	or.mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
 	or.mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, nil)
 	or.mbm.On("BroadcastMessage", ctx, mock.Anything).Return(nil)
 
 	msg, err := or.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Author: "0x12345",
+			},
+		},
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
 		},
@@ -199,10 +205,25 @@ func TestBroadcastMessageOk(t *testing.T) {
 	or.mbm.AssertExpectations(t)
 }
 
+func TestBroadcastMessageBadAuthor(t *testing.T) {
+	or := newTestOrchestrator()
+
+	ctx := context.Background()
+	or.mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("", fmt.Errorf("pop"))
+
+	_, err := or.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+		},
+	})
+	assert.Regexp(t, "FF10206.*pop", err)
+}
+
 func TestBroadcastMessageBadInput(t *testing.T) {
 	or := newTestOrchestrator()
 
 	ctx := context.Background()
+	or.mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("0x12345", nil)
 	rag := or.mdi.On("RunAsGroup", ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
 		var fn = a[1].(func(context.Context) error)
