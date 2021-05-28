@@ -181,8 +181,18 @@ func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handle
 			}
 		}
 		queryParams := make(map[string]string)
-		for _, qp := range route.PathParams {
-			queryParams[qp.Name] = req.Form.Get(qp.Name)
+		for _, qp := range route.QueryParams {
+			val, exists := req.URL.Query()[qp.Name]
+			if qp.IsBool {
+				if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
+					val = []string{"true"}
+				} else {
+					val = []string{"false"}
+				}
+			}
+			if exists && len(val) > 0 {
+				queryParams[qp.Name] = val[0]
+			}
 		}
 		var filter database.AndFilter
 		if route.FilterFactory != nil {

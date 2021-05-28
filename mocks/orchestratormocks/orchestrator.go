@@ -309,22 +309,22 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	return r0, r1
 }
 
-// GetMessageByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetMessageByID provides a mock function with given fields: ctx, ns, id, withValues
+func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string, withValues bool) (*fftypes.MessageInput, error) {
+	ret := _m.Called(ctx, ns, id, withValues)
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, id)
+	var r0 *fftypes.MessageInput
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) *fftypes.MessageInput); ok {
+		r0 = rf(ctx, ns, id, withValues)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(*fftypes.MessageInput)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, bool) error); ok {
+		r1 = rf(ctx, ns, id, withValues)
 	} else {
 		r1 = ret.Error(1)
 	}

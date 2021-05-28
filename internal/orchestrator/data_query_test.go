@@ -69,10 +69,80 @@ func TestGetTransactions(t *testing.T) {
 
 func TestGetMessageByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetMessageByID(context.Background(), "", "")
+	_, err := or.GetMessageByID(context.Background(), "", "", false)
 	assert.Regexp(t, "FF10142", err)
 }
 
+func TestGetMessageByIDOkNoValues(t *testing.T) {
+	or := newTestOrchestrator()
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: msgID,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	}
+	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
+
+	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), false)
+	assert.NoError(t, err)
+	assert.NotNil(t, msgI.InputData[0].ID)
+	assert.NotNil(t, msgI.InputData[0].Hash)
+	assert.Nil(t, msgI.InputData[0].Value)
+	assert.NotNil(t, msgI.InputData[1].ID)
+	assert.NotNil(t, msgI.InputData[1].Hash)
+	assert.Nil(t, msgI.InputData[1].Value)
+}
+
+func TestGetMessageByIDOkWithValues(t *testing.T) {
+	or := newTestOrchestrator()
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: msgID,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	}
+	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
+	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.Byteable("{}")},
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.Byteable("{}")},
+	}, true, nil)
+
+	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), true)
+	assert.NoError(t, err)
+	assert.NotNil(t, msgI.InputData[0].ID)
+	assert.NotNil(t, msgI.InputData[0].Hash)
+	assert.NotNil(t, msgI.InputData[0].Value)
+	assert.NotNil(t, msgI.InputData[1].ID)
+	assert.NotNil(t, msgI.InputData[1].Hash)
+	assert.NotNil(t, msgI.InputData[1].Value)
+}
+
+func TestGetMessageByIDValuesFail(t *testing.T) {
+	or := newTestOrchestrator()
+	msgID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: msgID,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+		},
+	}
+	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	or.mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+
+	_, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), true)
+	assert.EqualError(t, err, "pop")
+}
 func TestGetMessages(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()

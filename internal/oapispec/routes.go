@@ -74,6 +74,8 @@ type PathParam struct {
 type QueryParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// IsBool if this is a boolean query
+	IsBool bool
 	// Default is the value that will be used in the case no value is supplied
 	Default string
 	// Example is a field to fill in, in the helper UI

@@ -65,7 +65,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	return or.database.GetTransactionByID(ctx, u)
 }
 
-func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
+func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err
@@ -75,6 +75,43 @@ func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*fft
 		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
 	}
 	return msg, err
+}
+func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error) {
+	msg, err := or.getMessageByID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	msgI := &fftypes.MessageInput{
+		Message: *msg,
+	}
+	if withValues {
+		// Lookup the full data
+		data, _, err := or.data.GetMessageData(ctx, msg, true)
+		if err != nil {
+			return nil, err
+		}
+		msgI.InputData = make(fftypes.InputData, len(data))
+		for i, d := range data {
+			msgI.InputData[i] = &fftypes.DataRefOrValue{
+				DataRef: fftypes.DataRef{
+					ID:   d.ID,
+					Hash: d.Hash,
+				},
+				Validator: d.Validator,
+				Datatype:  d.Datatype,
+				Value:     d.Value,
+			}
+		}
+	} else {
+		// Just put the data refs into the serialized struct
+		msgI.InputData = make(fftypes.InputData, len(msg.Data))
+		for i, dr := range msg.Data {
+			msgI.InputData[i] = &fftypes.DataRefOrValue{
+				DataRef: *dr,
+			}
+		}
+	}
+	return msgI, err
 }
 
 func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -142,7 +179,7 @@ func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string,
 }
 
 func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
-	msg, err := or.GetMessageByID(ctx, ns, id)
+	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}
@@ -151,7 +188,7 @@ func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*f
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
-	msg, err := or.GetMessageByID(ctx, ns, id)
+	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}
