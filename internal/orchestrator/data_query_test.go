@@ -67,14 +67,6 @@ func TestGetTransactions(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetMessageByID(t *testing.T) {
-	or := newTestOrchestrator()
-	u := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, u).Return(nil, nil)
-	_, err := or.GetMessageByID(context.Background(), "ns1", u.String())
-	assert.NoError(t, err)
-}
-
 func TestGetMessageByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetMessageByID(context.Background(), "", "")
@@ -117,6 +109,30 @@ func TestGetMessageOperations(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetMessageData(t *testing.T) {
+	or := newTestOrchestrator()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+			{ID: fftypes.NewUUID()},
+		},
+	}
+	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	or.mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
+	_, err := or.GetMessageData(context.Background(), "ns1", fftypes.NewUUID().String())
+	assert.NoError(t, err)
+}
+
+func TestGetMessageDataBadMsg(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, nil)
+	_, err := or.GetMessageData(context.Background(), "ns1", fftypes.NewUUID().String())
+	assert.Regexp(t, "FF10109", err)
+}
+
 func TestGetMessageEventsOk(t *testing.T) {
 	or := newTestOrchestrator()
 	msg := &fftypes.Message{
@@ -149,7 +165,7 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, err := or.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
-	assert.NoError(t, err)
+	assert.Regexp(t, "FF10109", err)
 	assert.Nil(t, ev)
 }
 

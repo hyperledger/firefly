@@ -70,7 +70,11 @@ func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*fft
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetMessageByID(ctx, u)
+	msg, err := or.database.GetMessageByID(ctx, u)
+	if err == nil && msg == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return msg, err
 }
 
 func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -135,6 +139,15 @@ func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string,
 	filter = or.scopeNS(ns, filter)
 	filter = filter.Condition(filter.Builder().Eq("message", id))
 	return or.database.GetOperations(ctx, filter)
+}
+
+func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
+	msg, err := or.GetMessageByID(ctx, ns, id)
+	if err != nil || msg == nil {
+		return nil, err
+	}
+	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	return data, err
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {

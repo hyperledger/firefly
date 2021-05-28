@@ -332,6 +332,29 @@ func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string
 	return r0, r1
 }
 
+// GetMessageData provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetMessageData(ctx context.Context, ns string, id string) ([]*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 []*fftypes.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*fftypes.Data); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Data)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessageEvents provides a mock function with given fields: ctx, ns, id, filter
 func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
 	ret := _m.Called(ctx, ns, id, filter)

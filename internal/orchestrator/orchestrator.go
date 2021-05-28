@@ -70,6 +70,7 @@ type Orchestrator interface {
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
+	GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error)
 	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
