@@ -25,22 +25,22 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postNewSubscription = &oapispec.Route{
-	Name:   "postNewSubscription",
-	Path:   "namespaces/{ns}/subscriptions",
-	Method: http.MethodPost,
+var getMsgData = &oapispec.Route{
+	Name:   "getMsgData",
+	Path:   "namespaces/{ns}/messages/{msgid}/data",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   nil, // No filtering on this route - use namespaces/{ns}/data
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Created", "Ephemeral"},
-	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
-	JSONOutputCode:  http.StatusCreated, // Sync operation
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },
+	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.CreateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
+		output, err = r.Or.GetMessageData(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

@@ -30,6 +30,7 @@ var routes = []*oapispec.Route{
 	getEventByID,
 	getEvents,
 	getMsgByID,
+	getMsgData,
 	getMsgEvents,
 	getMsgOps,
 	getMsgs,
