@@ -57,3 +57,16 @@ func TestBinaryMarshaling(t *testing.T) {
 	assert.Equal(t, "03d31dfb-9dbb-43f2-9e0b-84dd3d293499", u2.String())
 
 }
+
+func TestSafeEquals(t *testing.T) {
+
+	var u1, u2 *UUID
+	assert.True(t, u1.Equals(u2))
+	u1 = NewUUID()
+	assert.False(t, u1.Equals(u2))
+	u2 = MustParseUUID(u1.String())
+	assert.True(t, u1.Equals(u2))
+	u2 = NewUUID()
+	assert.False(t, u1.Equals(u2))
+
+}

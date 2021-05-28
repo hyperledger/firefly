@@ -19,18 +19,18 @@ package websockets
 import "github.com/kaleido-io/firefly/internal/config"
 
 const (
-	bufferSizeDefault = 1024
+	bufferSizeDefault = "16Kb"
 )
 
 const (
-	// ReadBufferSizeKB is the read buffer size for the socket
-	ReadBufferSizeKB = "readBufferSizeKB"
-	// WriteBufferSizeKB is the write buffer size for the socket
-	WriteBufferSizeKB = "writeBufferSizeKB"
+	// ReadBufferSize is the read buffer size for the socket
+	ReadBufferSize = "readBufferSize"
+	// WriteBufferSize is the write buffer size for the socket
+	WriteBufferSize = "writeBufferSize"
 )
 
 func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSizeKB, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSizeKB, bufferSizeDefault)
+	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
+	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
 
 }

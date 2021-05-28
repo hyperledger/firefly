@@ -24,18 +24,22 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
+func (or *orchestrator) broadcastDefinition(ctx context.Context, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeDatatype,
 		ID:        fftypes.NewUUID(),
-		Namespace: ns,
+		Namespace: fftypes.SystemNamespace,
 		Created:   fftypes.Now(),
 	}
-	b, _ := json.Marshal(&defObject)
-	_ = json.Unmarshal(b, &data.Value)
-	data.Hash, _ = data.Value.Hash(ctx, "value")
+	data.Value, err = json.Marshal(&defObject)
+	if err == nil {
+		err = data.Seal(ctx)
+	}
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
 
 	// Write as data to the local store
 	if err = or.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
@@ -45,7 +49,7 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, ns string, defO
 	// Create a broadcast message referring to the data
 	msg = &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: ns,
+			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeDefinition,
 			Author:    or.nodeIDentity,
 			Topic:     topic,
@@ -76,25 +80,21 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 	if datatype.Validator == "" {
 		datatype.Validator = fftypes.ValidatorTypeJSON
 	}
-	if datatype.Validator != fftypes.ValidatorTypeJSON {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator")
+	if err := datatype.Validate(ctx, false); err != nil {
+		return nil, err
 	}
 	if err = or.verifyNamespaceExists(ctx, datatype.Namespace); err != nil {
 		return nil, err
 	}
-	if err = fftypes.ValidateFFNameField(ctx, datatype.Name, "name"); err != nil {
+	datatype.Hash = datatype.Value.Hash()
+
+	// Verify the data type is now all valid, before we broadcast it
+	err = or.data.CheckDatatype(ctx, datatype)
+	if err != nil {
 		return nil, err
 	}
-	if err = fftypes.ValidateFFNameField(ctx, datatype.Version, "version"); err != nil {
-		return nil, err
-	}
-	if len(datatype.Value) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
-	}
-	if datatype.Hash, err = datatype.Value.Hash(ctx, "value"); err != nil {
-		return nil, err
-	}
-	return or.broadcastDefinition(ctx, ns, datatype, fftypes.DatatypeTopicName)
+
+	return or.broadcastDefinition(ctx, datatype, fftypes.SystemTopicBroadcastDatatype)
 }
 
 func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
@@ -103,12 +103,9 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 	ns.ID = fftypes.NewUUID()
 	ns.Created = fftypes.Now()
 	ns.Type = fftypes.NamespaceTypeBroadcast
-	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
-		return nil, err
-	}
-	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
+	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
 
-	return or.broadcastDefinition(ctx, ns.Name, ns, fftypes.NamespaceDefinitionTopicName)
+	return or.broadcastDefinition(ctx, ns, fftypes.SystemTopicBroadcastNamespace)
 }

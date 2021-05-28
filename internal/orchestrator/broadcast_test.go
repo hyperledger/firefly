@@ -35,72 +35,28 @@ func TestBroadcastDatatypeBadType(t *testing.T) {
 	assert.Regexp(t, "FF10132.*validator", err.Error())
 }
 
-func TestBroadcastDatatypeBadNamespace(t *testing.T) {
-	or := newTestOrchestrator()
-	_, err := or.BroadcastDatatype(context.Background(), "_ns1", &fftypes.Datatype{})
-	assert.Regexp(t, "FF10131.*namespace", err.Error())
-}
-
-func TestBroadcastDatatypeMissingNS(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
-		Namespace: "ns1",
-	})
-	assert.Regexp(t, "FF10187", err.Error())
-}
-
 func TestBroadcastDatatypeNSGetFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
+		Name:      "name1",
 		Namespace: "ns1",
+		Version:   "0.0.1",
+		Value:     fftypes.Byteable(`{}`),
 	})
 	assert.EqualError(t, err, "pop")
 }
-
-func TestBroadcastDatatypeBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
-		Namespace: "ns1",
-	})
-	assert.Regexp(t, "FF10131.*name", err.Error())
-}
-
-func TestBroadcastDatatypeBadVersion(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
-		Namespace: "ns1",
-		Name:      "ent1",
-	})
-	assert.Regexp(t, "FF10131.*version", err.Error())
-}
-
-func TestBroadcastDatatypeMissingValue(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
-		Namespace: "ns1",
-		Name:      "ent1",
-		Version:   "0.0.1",
-	})
-	assert.Regexp(t, "FF10140.*value", err.Error())
-}
-
 func TestBroadcastDatatypeBadValue(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"json": map[bool]string{false: "unparsable"},
-		},
+		Value:     fftypes.Byteable(`!unparsable`),
 	})
-	assert.Regexp(t, "FF10151.*value", err.Error())
+	assert.Regexp(t, "FF10137.*value", err.Error())
 }
 
 func TestBroadcastUpsertFail(t *testing.T) {
@@ -108,14 +64,30 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBroadcastDatatypeInvalid(t *testing.T) {
+	or := newTestOrchestrator()
+	or.nodeIDentity = "0x12345"
+
+	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
+		Namespace: "ns1",
+		Name:      "ent1",
+		Version:   "0.0.1",
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.EqualError(t, err, "pop")
 }
@@ -126,15 +98,14 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.EqualError(t, err, "pop")
 }
@@ -145,15 +116,14 @@ func TestBroadcastOk(t *testing.T) {
 
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := or.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
-		Value: fftypes.JSONObject{
-			"some": "data",
-		},
+		Value:     fftypes.Byteable(`{"some": "data"}`),
 	})
 	assert.NoError(t, err)
 }
@@ -186,6 +156,7 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	or.mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	or.mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	or.mbm.On("BroadcastMessage", mock.Anything, mock.Anything).Return(nil)
 	buff := strings.Builder{}
 	buff.Grow(4097)

@@ -24,6 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/blockchain/bifactory"
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/database/difactory"
 	"github.com/kaleido-io/firefly/internal/events"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -90,6 +91,7 @@ type orchestrator struct {
 	events        events.EventManager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
+	data          data.Manager
 	nodeIDentity  string
 }
 
@@ -178,25 +180,34 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database)
+
+	if or.data == nil {
+		or.data, err = data.NewDataManager(ctx, or.database)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or.database)
+		or.batch, err = batch.NewBatchManager(ctx, or.database, or.data)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
+
+	if or.events == nil {
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -214,45 +225,70 @@ func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
 	return nil
 }
 
-func (or *orchestrator) initNamespaces(ctx context.Context) error {
+func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftypes.Namespace, error) {
 	defaultNS := config.GetString(config.NamespacesDefault)
 	predefined := config.GetObjectArray(config.NamespacesPredefined)
+	namespaces := []*fftypes.Namespace{
+		{
+			Name:        fftypes.SystemNamespace,
+			Type:        fftypes.NamespaceTypeSystem,
+			Description: i18n.Expand(ctx, i18n.MsgSystemNSDescription),
+		},
+	}
 	foundDefault := false
 	for i, nsObject := range predefined {
-		name := nsObject.GetString(ctx, "name")
-		description := nsObject.GetString(ctx, "description")
+		name := nsObject.GetString("name")
 		err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		foundDefault = foundDefault || name == defaultNS
+		description := nsObject.GetString("description")
+		dup := false
+		for _, existing := range namespaces {
+			if existing.Name == name {
+				log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
+				dup = true
+			}
+		}
+		if !dup {
+			namespaces = append(namespaces, &fftypes.Namespace{
+				Type:        fftypes.NamespaceTypeLocal,
+				Name:        name,
+				Description: description,
+			})
+		}
+	}
+	if !foundDefault {
+		return nil, i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
+	}
+	return namespaces, nil
+}
 
-		ns, err := or.database.GetNamespace(ctx, name)
+func (or *orchestrator) initNamespaces(ctx context.Context) error {
+	predefined, err := or.getPrefdefinedNamespaces(ctx)
+	if err != nil {
+		return err
+	}
+	for _, newNS := range predefined {
+		ns, err := or.database.GetNamespace(ctx, newNS.Name)
 		if err != nil {
 			return err
 		}
 		var updated bool
 		if ns == nil {
 			updated = true
-			ns = &fftypes.Namespace{
-				ID:          fftypes.NewUUID(),
-				Name:        name,
-				Description: description,
-				Created:     fftypes.Now(),
-			}
+			newNS.ID = fftypes.NewUUID()
+			newNS.Created = fftypes.Now()
 		} else {
 			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != description && ns.Type == fftypes.NamespaceTypeLocal
-			ns.Description = description
+			updated = ns.Description != newNS.Description && ns.Type == fftypes.NamespaceTypeLocal
 		}
 		if updated {
-			if err := or.database.UpsertNamespace(ctx, ns, true); err != nil {
+			if err := or.database.UpsertNamespace(ctx, newNS, true); err != nil {
 				return err
 			}
 		}
-	}
-	if !foundDefault {
-		return i18n.NewError(ctx, i18n.MsgDefaultNamespaceNotFound, defaultNS)
 	}
 	return nil
 }

@@ -16,6 +16,12 @@
 
 package fftypes
 
+import (
+	"context"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
+)
+
 type ValidatorType string
 
 const (
@@ -36,5 +42,33 @@ type Datatype struct {
 	Version   string        `json:"version,omitempty"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
-	Value     JSONObject    `json:"value,omitempty"`
+	Value     Byteable      `json:"value,omitempty"`
+}
+
+func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
+	if dt.Validator != ValidatorTypeJSON {
+		return i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator", dt.Validator)
+	}
+	if err = ValidateFFNameField(ctx, dt.Namespace, "namespace"); err != nil {
+		return err
+	}
+	if err = ValidateFFNameField(ctx, dt.Name, "name"); err != nil {
+		return err
+	}
+	if err = ValidateFFNameField(ctx, dt.Version, "version"); err != nil {
+		return err
+	}
+	if len(dt.Value) == 0 {
+		return i18n.NewError(ctx, i18n.MsgMissingRequiredField, "value")
+	}
+	if existing {
+		if dt.ID == nil {
+			return i18n.NewError(ctx, i18n.MsgNilID)
+		}
+		hash := dt.Value.Hash()
+		if dt.Hash == nil || *dt.Hash != *hash {
+			return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, dt.Hash)
+		}
+	}
+	return nil
 }

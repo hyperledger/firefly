@@ -45,7 +45,6 @@ func newEventNotifier(ctx context.Context) *eventNotifier {
 }
 
 func (en *eventNotifier) waitNext(lastSequence int64) error {
-	log.L(en.ctx).Tracef("Next notification %d", lastSequence)
 	en.cond.L.Lock()
 	closed := en.closed
 	for en.latestSequence <= lastSequence && !en.closed {

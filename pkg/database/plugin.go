@@ -29,6 +29,8 @@ var (
 	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
 	// IDMismatch sentinel error
 	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	// DeleteRecordNotFound sentinel error
+	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
 )
 
 // Plugin is the interface implemented by each plugin
@@ -168,7 +170,7 @@ type PeristenceInterface interface {
 	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
 
 	// GetDatatypeByName - Get a data definition by name
-	GetDatatypeByName(ctx context.Context, ns, name string) (datadef *fftypes.Datatype, err error)
+	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *fftypes.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
 	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
@@ -187,6 +189,21 @@ type PeristenceInterface interface {
 
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
+
+	// UpsertBlocked - Upsert an offset
+	UpsertBlocked(ctx context.Context, blocked *fftypes.Blocked, allowExisting bool) (err error)
+
+	// UpdateBlocked - Update offset
+	UpdateBlocked(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetBlocked - Get an offset by name
+	GetBlockedByContext(ctx context.Context, ns, context string, groupID *fftypes.UUID) (message *fftypes.Blocked, err error)
+
+	// GetBlocked - Get offsets
+	GetBlocked(ctx context.Context, filter Filter) (offset []*fftypes.Blocked, err error)
+
+	// DeleteBlocked - Delete an offset by name
+	DeleteBlocked(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -385,5 +402,15 @@ var EventQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"reference": &UUIDField{},
 	"sequence":  &Int64Field{},
+	"created":   &TimeField{},
+}
+
+// BlockedQueryFactory filter fields for blocked contexts
+var BlockedQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"namespace": &StringField{},
+	"context":   &StringField{},
+	"group":     &UUIDField{},
+	"message":   &UUIDField{},
 	"created":   &TimeField{},
 }

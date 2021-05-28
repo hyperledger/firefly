@@ -90,7 +90,7 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 	}
 	err = m.DupDataCheck(ctx)
 	if err == nil {
-		m.Header.DataHash = m.Data.Hash(ctx)
+		m.Header.DataHash = m.Data.Hash()
 		m.Hash = m.Header.Hash()
 	}
 	return err
@@ -120,7 +120,7 @@ func (m *Message) Verify(ctx context.Context) error {
 		return i18n.NewError(ctx, i18n.MsgVerifyFailedNilHashes)
 	}
 	headerHash := m.Header.Hash()
-	dataHash := m.Data.Hash(ctx)
+	dataHash := m.Data.Hash()
 	if *m.Hash != *headerHash || *m.Header.DataHash != *dataHash {
 		return i18n.NewError(ctx, i18n.MsgVerifyFailedInvalidHashes, m.Hash.String(), headerHash.String(), m.Header.DataHash.String(), dataHash.String())
 	}

@@ -182,14 +182,14 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 		return nil // skip data entry
 	}
 
-	hash, err := data.Value.Hash(ctx, "value")
-	if err != nil || data.Hash == nil || *data.Hash != *hash {
-		l.Errorf("Invalid data entry %d in batch '%s'. Hash does not match value. Found=%s Expected=%s (err=%s)", i, batch.ID, hash, data.Hash, err)
+	hash := data.Value.Hash()
+	if data.Hash == nil || *data.Hash != *hash {
+		l.Errorf("Invalid data entry %d in batch '%s'. Hash does not match value. Found=%s Expected=%s", i, batch.ID, hash, data.Hash)
 		return nil // skip data entry
 	}
 
 	// Insert the data, ensuring the hash doesn't change
-	if err = em.database.UpsertData(ctx, data, true, false); err != nil {
+	if err := em.database.UpsertData(ctx, data, true, false); err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid data entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, data.ID, data.Hash)
 			return nil // This is not retryable. skip this data entry
@@ -200,7 +200,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 
 	// Persist a data arrival event
 	event := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, data.Namespace, data.ID)
-	if err = em.database.UpsertEvent(ctx, event, false); err != nil {
+	if err := em.database.UpsertEvent(ctx, event, false); err != nil {
 		l.Errorf("Failed to insert %s event for data %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
 	}

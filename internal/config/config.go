@@ -161,6 +161,10 @@ var (
 	SubscriptionsRetryFactor = rootKey("event.dispatcher.retry.factor")
 	// UIPath the path on which to serve the UI
 	UIPath = rootKey("ui.path")
+	// ValidatorCacheSize
+	ValidatorCacheSize = rootKey("validator.cache.size")
+	// ValidatorCacheTTL
+	ValidatorCacheTTL = rootKey("validator.cache.ttl")
 )
 
 // Prefix represents the global configuration, at a nested point in
@@ -176,6 +180,8 @@ type Prefix interface {
 	GetString(key string) string
 	GetBool(key string) bool
 	GetInt(key string) int
+	GetInt64(key string) int64
+	GetByteSize(key string) int64
 	GetUint(key string) uint
 	GetDuration(key string) time.Duration
 	GetStringSlice(key string) []string
@@ -242,6 +248,8 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
+	viper.SetDefault(string(ValidatorCacheTTL), "1h")
 
 	i18n.SetLang(GetString(Lang))
 }
@@ -364,6 +372,14 @@ func (c *configPrefix) GetDuration(key string) time.Duration {
 	return fftypes.ParseToDuration(viper.GetString(c.prefixKey(key)))
 }
 
+// GetByteSize get a size in bytes
+func GetByteSize(key RootKey) int64 {
+	return root.GetByteSize(string(key))
+}
+func (c *configPrefix) GetByteSize(key string) int64 {
+	return fftypes.ParseToByteSize(c.GetString(key))
+}
+
 // GetUint gets a configuration uint
 func GetUint(key RootKey) uint {
 	return root.GetUint(string(key))
@@ -378,6 +394,14 @@ func GetInt(key RootKey) int {
 }
 func (c *configPrefix) GetInt(key string) int {
 	return viper.GetInt(c.prefixKey(key))
+}
+
+// GetInt64 gets a configuration uint
+func GetInt64(key RootKey) int64 {
+	return root.GetInt64(string(key))
+}
+func (c *configPrefix) GetInt64(key string) int64 {
+	return viper.GetInt64(c.prefixKey(key))
 }
 
 // GetFloat64 gets a configuration uint

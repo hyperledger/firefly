@@ -24,9 +24,10 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/publicstorage     --name Callbacks        --output mocks/publicstoragemocks  --outpkg publicstoragemocks
 		$(MOCKERY) --case underscore --dir pkg/events    				 --name Plugin           --output mocks/eventsmocks 			  --outpkg eventsmocks
 		$(MOCKERY) --case underscore --dir pkg/events    				 --name Callbacks        --output mocks/eventsmocks 				--outpkg eventsmocks
-		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
+		$(MOCKERY) --case underscore --dir internal/data         --name Manager          --output mocks/datamocks           --outpkg datamocks
 		$(MOCKERY) --case underscore --dir internal/batch        --name Manager          --output mocks/batchmocks          --outpkg batchmocks
 		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
+		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
 		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
 		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
 firefly-nocgo: ${GOFILES}		

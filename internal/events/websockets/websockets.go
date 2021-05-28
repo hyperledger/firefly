@@ -47,8 +47,8 @@ func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks 
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
 		upgrader: websocket.Upgrader{
-			ReadBufferSize:  prefix.GetInt(ReadBufferSizeKB),
-			WriteBufferSize: prefix.GetInt(WriteBufferSizeKB),
+			ReadBufferSize:  int(prefix.GetByteSize(ReadBufferSize)),
+			WriteBufferSize: int(prefix.GetByteSize(WriteBufferSize)),
 			CheckOrigin: func(r *http.Request) bool {
 				// Cors is handled by the API server that wraps this handler
 				return true

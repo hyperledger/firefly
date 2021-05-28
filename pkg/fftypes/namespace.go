@@ -16,6 +16,12 @@
 
 package fftypes
 
+import (
+	"context"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
+)
+
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
 type NamespaceType string
 
@@ -24,6 +30,8 @@ const (
 	NamespaceTypeLocal NamespaceType = "local"
 	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
 	NamespaceTypeBroadcast NamespaceType = "broadcast"
+	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
+	NamespaceTypeSystem NamespaceType = "system"
 )
 
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
@@ -35,4 +43,19 @@ type Namespace struct {
 	Type        NamespaceType `json:"type"`
 	Created     *FFTime       `json:"created"`
 	Confirmed   *FFTime       `json:"confirmed"`
+}
+
+func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
+		return err
+	}
+	if err = ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
+		return err
+	}
+	if existing {
+		if ns.ID == nil {
+			return i18n.NewError(ctx, i18n.MsgNilID)
+		}
+	}
+	return nil
 }

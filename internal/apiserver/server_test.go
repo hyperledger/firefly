@@ -46,6 +46,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const configDir = "../../test/data/config"
+
 func TestStartStopServer(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPPort, 0)
@@ -81,7 +83,7 @@ func TestMissingCAFile(t *testing.T) {
 
 func TestBadCAFile(t *testing.T) {
 	config.Reset()
-	config.Set(config.HTTPTLSCAFile, "../../test/config/firefly.core.yaml")
+	config.Set(config.HTTPTLSCAFile, configDir+"/firefly.core.yaml")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
 	assert.Regexp(t, "FF10106", err.Error())

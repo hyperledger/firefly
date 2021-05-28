@@ -27,6 +27,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const configDir = "../../test/data/config"
+
 func TestInitConfigOK(t *testing.T) {
 	viper.Reset()
 	err := ReadConfig("")
@@ -34,27 +36,33 @@ func TestInitConfigOK(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
-	os.Chdir("../../test/config")
-	err := ReadConfig("")
+	cwd, err := os.Getwd()
+	assert.NoError(t, err)
+	os.Chdir(configDir)
+	defer os.Chdir(cwd)
+
+	err = ReadConfig("")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(CorsAllowCredentials))
 	assert.Equal(t, uint(0), GetUint(HTTPPort))
 	assert.Equal(t, int(0), GetInt(DebugPort))
+	assert.Equal(t, int64(0), GetInt64(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
 	assert.Equal(t, float64(2.0), GetFloat64(EventAggregatorRetryFactor))
 	assert.Equal(t, []string{"*"}, GetStringSlice(CorsAllowedOrigins))
 	assert.NotEmpty(t, GetObjectArray(NamespacesPredefined))
+	assert.Equal(t, int64(1024*1024), GetByteSize(ValidatorCacheSize))
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
-	err := ReadConfig("../../test/config/firefly.core.yaml")
+	err := ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
-	err := ReadConfig("../../test/config/no.hope.yaml")
+	err := ReadConfig(configDir + "/no.hope.yaml")
 	assert.Error(t, err)
 }
 
