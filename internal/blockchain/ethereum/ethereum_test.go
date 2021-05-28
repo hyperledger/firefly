@@ -51,7 +51,7 @@ func TestInitMissingURL(t *testing.T) {
 	e := &Ethereum{}
 	resetConf()
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
-	assert.Regexp(t, "FF10138.*url", err.Error())
+	assert.Regexp(t, "FF10138.*url", err)
 }
 
 func TestInitMissingInstance(t *testing.T) {
@@ -61,7 +61,7 @@ func TestInitMissingInstance(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
-	assert.Regexp(t, "FF10138.*instance", err.Error())
+	assert.Regexp(t, "FF10138.*instance", err)
 }
 
 func TestInitMissingTopic(t *testing.T) {
@@ -71,7 +71,7 @@ func TestInitMissingTopic(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
-	assert.Regexp(t, "FF10138.*topic", err.Error())
+	assert.Regexp(t, "FF10138.*topic", err)
 }
 
 func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
@@ -141,7 +141,7 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
-	assert.Regexp(t, "FF10162", err.Error())
+	assert.Regexp(t, "FF10162", err)
 
 }
 
@@ -209,8 +209,8 @@ func TestStreamQueryError(t *testing.T) {
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10111", err.Error())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -236,8 +236,8 @@ func TestStreamCreateError(t *testing.T) {
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10111", err.Error())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -265,8 +265,8 @@ func TestSubQueryError(t *testing.T) {
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10111", err.Error())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -296,8 +296,8 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	err := e.Init(context.Background(), utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10111", err.Error())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -360,8 +360,8 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 
 	_, err := e.SubmitBroadcastBatch(context.Background(), addr, batch)
 
-	assert.Regexp(t, "FF10111", err.Error())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "FF10111", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -369,7 +369,7 @@ func TestVerifyEthAddress(t *testing.T) {
 	e := &Ethereum{}
 
 	_, err := e.VerifyIdentitySyntax(context.Background(), "0x12345")
-	assert.Regexp(t, "FF10141", err.Error())
+	assert.Regexp(t, "FF10141", err)
 
 	addr, err := e.VerifyIdentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
 	assert.NoError(t, err)

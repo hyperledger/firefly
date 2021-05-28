@@ -121,4 +121,6 @@ var (
 	MsgDataInvalidHash             = ffm("FF10201", "Invalid data: hashes do not match Hash=%s Expected=%s", 400)
 	MsgSystemNSDescription         = ffm("FF10202", "FireFly system namespace")
 	MsgNilID                       = ffm("FF10203", "ID is nil")
+	MsgDataReferenceUnresolvable   = ffm("FF10204", "Data reference %d cannot be resolved", 400)
+	MsgDataMissing                 = ffm("FF10205", "Data entry %d has neither 'id' to refer to existing data, or 'value' to include in-line JSON data", 400)
 )

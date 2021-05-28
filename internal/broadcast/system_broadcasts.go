@@ -40,7 +40,7 @@ func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *ffty
 
 func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, res interface{}) (valid bool, err error) {
 	l := log.L(ctx)
-	data, allFound, err := bm.data.GetMessageData(ctx, msg)
+	data, allFound, err := bm.data.GetMessageData(ctx, msg, true)
 	if err != nil {
 		return false, err // only database errors are returned as an error (driving retry until we succeed)
 	}
@@ -99,7 +99,7 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 		return nil
 	}
 
-	if err = bm.data.CheckDatatype(ctx, &dt); err != nil {
+	if err = bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 		return nil
 	}

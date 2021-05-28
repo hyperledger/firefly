@@ -126,7 +126,7 @@ type PeristenceInterface interface {
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetDataByID - Get a data record by ID
-	GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
+	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
 
 	// GetData - Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)

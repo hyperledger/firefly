@@ -78,7 +78,7 @@ func TestMissingCAFile(t *testing.T) {
 	config.Set(config.HTTPTLSCAFile, "badness")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
-	assert.Regexp(t, "FF10105", err.Error())
+	assert.Regexp(t, "FF10105", err)
 }
 
 func TestBadCAFile(t *testing.T) {
@@ -86,7 +86,7 @@ func TestBadCAFile(t *testing.T) {
 	config.Set(config.HTTPTLSCAFile, configDir+"/firefly.core.yaml")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
-	assert.Regexp(t, "FF10106", err.Error())
+	assert.Regexp(t, "FF10106", err)
 }
 
 func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {

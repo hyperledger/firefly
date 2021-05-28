@@ -39,7 +39,7 @@ func TestExecMissingConfig(t *testing.T) {
 	defer func() { _utOrchestrator = nil }()
 	viper.Reset()
 	err := Execute()
-	assert.Regexp(t, "Not Found", err.Error())
+	assert.Regexp(t, "Not Found", err)
 }
 
 func TestShowConfig(t *testing.T) {
@@ -59,7 +59,7 @@ func TestExecEngineInitFail(t *testing.T) {
 	defer func() { _utOrchestrator = nil }()
 	os.Chdir(configDir)
 	err := Execute()
-	assert.Regexp(t, "splutter", err.Error())
+	assert.Regexp(t, "splutter", err)
 }
 
 func TestExecEngineStartFail(t *testing.T) {
@@ -70,7 +70,7 @@ func TestExecEngineStartFail(t *testing.T) {
 	defer func() { _utOrchestrator = nil }()
 	os.Chdir(configDir)
 	err := Execute()
-	assert.Regexp(t, "bang", err.Error())
+	assert.Regexp(t, "bang", err)
 }
 
 func TestExecOkExitSIGINT(t *testing.T) {

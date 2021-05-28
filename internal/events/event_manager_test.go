@@ -117,7 +117,7 @@ func TestCreateDurableSubscriptionBadSub(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	err := em.CreateDurableSubscription(em.ctx, &fftypes.Subscription{})
-	assert.Regexp(t, "FF10189", err.Error())
+	assert.Regexp(t, "FF10189", err)
 }
 
 func TestCreateDurableSubscriptionDupName(t *testing.T) {
@@ -133,7 +133,7 @@ func TestCreateDurableSubscriptionDupName(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(sub, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10193", err.Error())
+	assert.Regexp(t, "FF10193", err)
 }
 
 func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
@@ -152,7 +152,7 @@ func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10171", err.Error())
+	assert.Regexp(t, "FF10171", err)
 }
 
 func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
@@ -172,7 +172,7 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10191", err.Error())
+	assert.Regexp(t, "FF10191", err)
 }
 
 func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
@@ -192,7 +192,7 @@ func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10192", err.Error())
+	assert.Regexp(t, "FF10192", err)
 }
 
 func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {

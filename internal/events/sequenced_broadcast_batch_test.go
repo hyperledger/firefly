@@ -92,7 +92,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 
 	err := em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
 	mpi.AssertExpectations(t)
-	assert.Regexp(t, "FF10158", err.Error())
+	assert.Regexp(t, "FF10158", err)
 }
 
 func TestSequencedBroadcastBatchBadData(t *testing.T) {

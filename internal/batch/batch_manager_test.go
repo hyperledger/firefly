@@ -78,7 +78,7 @@ func TestE2EDispatch(t *testing.T) {
 		ID:   dataID1,
 		Hash: dataHash,
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -144,7 +144,7 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 	defer bm.Close()
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestInitFailCannotCreateOffset(t *testing.T) {
@@ -158,7 +158,7 @@ func TestInitFailCannotCreateOffset(t *testing.T) {
 	defer bm.Close()
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
 	err = bm.Start()
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestGetInvalidBatchTypeMsg(t *testing.T) {
@@ -172,7 +172,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 	defer bm.Close()
 	msg := &fftypes.Message{Header: fftypes.MessageHeader{}}
 	err := bm.(*batchManager).dispatchMessage(nil, msg)
-	assert.Regexp(t, "FF10126", err.Error())
+	assert.Regexp(t, "FF10126", err)
 }
 
 func TestMessageSequencerCancelledContext(t *testing.T) {
@@ -207,7 +207,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return(nil, false, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
 
 	bm.(*batchManager).messageSequencer()
 	mdi.AssertExpectations(t)
@@ -234,7 +234,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 
 	bm.(*batchManager).messageSequencer()
 	mdi.AssertExpectations(t)
@@ -264,7 +264,7 @@ func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -306,7 +306,7 @@ func TestAssembleMessageDataNilData(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
 	bm.Close()
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return(nil, false, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
 	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -330,7 +330,7 @@ func TestGetMessageDataFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 	bm.Close()
 	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -347,7 +347,7 @@ func TestGetMessageNotFound(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
-	mdm.On("GetMessageData", mock.Anything, mock.Anything).Return(nil, false, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return(nil, false, nil)
 	bm.Close()
 	_, err := bm.(*batchManager).assembleMessageData(&fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -357,7 +357,7 @@ func TestGetMessageNotFound(t *testing.T) {
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	})
-	assert.Regexp(t, "FF10133", err.Error())
+	assert.Regexp(t, "FF10133", err)
 }
 
 func TestWaitForShoulderTap(t *testing.T) {

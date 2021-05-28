@@ -80,7 +80,7 @@ func TestBuildMessageBadInFilterField(t *testing.T) {
 	_, err := fb.And(
 		fb.In("!wrong", []driver.Value{"a", "b", "c"}),
 	).Finalize()
-	assert.Regexp(t, "FF10148", err.Error())
+	assert.Regexp(t, "FF10148", err)
 }
 
 func TestBuildMessageBadInFilterValue(t *testing.T) {
@@ -88,7 +88,7 @@ func TestBuildMessageBadInFilterValue(t *testing.T) {
 	_, err := fb.And(
 		fb.In("sequence", []driver.Value{"!integer"}),
 	).Finalize()
-	assert.Regexp(t, "FF10149", err.Error())
+	assert.Regexp(t, "FF10149", err)
 }
 
 func TestBuildMessageUUIDConvert(t *testing.T) {
@@ -163,19 +163,19 @@ func TestBuildMessageStringConvert(t *testing.T) {
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*namespace", err.Error())
+	assert.Regexp(t, "FF10149.*namespace", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("sequence", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*sequence", err.Error())
+	assert.Regexp(t, "FF10149.*sequence", err)
 }
 
 func TestBuildMessageFailTimeConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("created", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*created", err.Error())
+	assert.Regexp(t, "FF10149.*created", err)
 }
 
 func TestQueryFactoryBadField(t *testing.T) {

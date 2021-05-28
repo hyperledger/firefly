@@ -38,7 +38,7 @@ func TestDatatypeReference(t *testing.T) {
 func TestSealNoData(t *testing.T) {
 	d := &Data{}
 	err := d.Seal(context.Background())
-	assert.Regexp(t, "FF10199", err.Error())
+	assert.Regexp(t, "FF10199", err)
 }
 
 func TestSealOK(t *testing.T) {

@@ -86,7 +86,7 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetDataByID(ctx, u)
+	return or.database.GetDataByID(ctx, u, true)
 }
 
 func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error) {

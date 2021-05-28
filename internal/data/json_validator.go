@@ -29,13 +29,15 @@ import (
 type jsonValidator struct {
 	id       *fftypes.UUID
 	size     int64
+	ns       string
 	datatype *fftypes.DatatypeRef
 	schema   *gojsonschema.Schema
 }
 
-func newJSONValidator(ctx context.Context, datatype *fftypes.Datatype) (*jsonValidator, error) {
+func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype) (*jsonValidator, error) {
 	jv := &jsonValidator{
 		id: datatype.ID,
+		ns: ns,
 		datatype: &fftypes.DatatypeRef{
 			Name:    datatype.Name,
 			Version: datatype.Version,
@@ -51,22 +53,29 @@ func newJSONValidator(ctx context.Context, datatype *fftypes.Datatype) (*jsonVal
 	jv.schema = schema
 	jv.size = int64(len(schemaBytes))
 
+	log.L(ctx).Debugf("Found JSON schema validator for %s/%s: %v", datatype, jv.ns, jv.id)
 	return jv, nil
 }
 
 func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error {
-	if data.Value == nil {
+	return jv.ValidateValue(ctx, data.Value, data.Hash)
+}
+
+func (jv *jsonValidator) ValidateValue(ctx context.Context, value fftypes.Byteable, expectedHash *fftypes.Bytes32) error {
+	if value == nil {
 		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 
-	hash := data.Value.Hash()
-	if data.Hash == nil || *hash != *data.Hash {
-		return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, data.Hash)
+	if expectedHash != nil {
+		hash := value.Hash()
+		if *hash != *expectedHash {
+			return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, expectedHash)
+		}
 	}
 
-	err := jv.validateBytes(ctx, []byte(data.Value))
+	err := jv.validateBytes(ctx, []byte(value))
 	if err != nil {
-		log.L(ctx).Warnf("JSON schema %s [%v] validation of data %v failed: %s", jv.datatype, jv.id, data.ID, err)
+		log.L(ctx).Warnf("JSON schema %s [%v] validation failed: %s", jv.datatype, jv.id, err)
 	}
 	return err
 }

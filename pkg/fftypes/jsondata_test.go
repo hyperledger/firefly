@@ -64,7 +64,7 @@ func TestJSONObject(t *testing.T) {
 
 	var badJson JSONObject = map[string]interface{}{"not": map[bool]string{true: "json"}}
 	hash, err = badJson.Hash("badStuff")
-	assert.Regexp(t, "FF10151.*badStuff", err.Error())
+	assert.Regexp(t, "FF10151.*badStuff", err)
 	assert.Nil(t, hash)
 }
 
@@ -108,7 +108,7 @@ func TestJSONObjectArray(t *testing.T) {
 
 	var badJson JSONObjectArray = []JSONObject{{"not": map[bool]string{true: "json"}}}
 	hash, err = badJson.Hash("badStuff")
-	assert.Regexp(t, "FF10151.*badStuff", err.Error())
+	assert.Regexp(t, "FF10151.*badStuff", err)
 	assert.Nil(t, hash)
 
 }

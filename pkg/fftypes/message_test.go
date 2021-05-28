@@ -41,7 +41,7 @@ func TestSealNilDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10144.*0", err.Error())
+	assert.Regexp(t, "FF10144.*0", err)
 }
 
 func TestVerifyNilDataHash(t *testing.T) {
@@ -51,7 +51,7 @@ func TestVerifyNilDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10144.*0", err.Error())
+	assert.Regexp(t, "FF10144.*0", err)
 }
 
 func TestSeaDupDataID(t *testing.T) {
@@ -65,7 +65,7 @@ func TestSeaDupDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10145.*1", err.Error())
+	assert.Regexp(t, "FF10145.*1", err)
 }
 
 func TestVerifylDupDataHash(t *testing.T) {
@@ -79,13 +79,13 @@ func TestVerifylDupDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10145.*1", err.Error())
+	assert.Regexp(t, "FF10145.*1", err)
 }
 
 func TestVerifyNilHashes(t *testing.T) {
 	msg := Message{}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10147", err.Error())
+	assert.Regexp(t, "FF10147", err)
 }
 
 func TestVerifyNilMisMatchedHashes(t *testing.T) {
@@ -96,7 +96,7 @@ func TestVerifyNilMisMatchedHashes(t *testing.T) {
 		Hash: NewRandB32(),
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10146", err.Error())
+	assert.Regexp(t, "FF10146", err)
 }
 
 func TestSealKnownMessage(t *testing.T) {

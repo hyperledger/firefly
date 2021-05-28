@@ -196,7 +196,7 @@ func (bm *batchManager) Close() {
 func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftypes.Data, err error) {
 	var foundAll = false
 	err = bm.retry.Do(bm.ctx, fmt.Sprintf("assemble message %s data", msg.Header.ID), func(attempt int) (retry bool, err error) {
-		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg)
+		data, foundAll, err = bm.data.GetMessageData(bm.ctx, msg, true)
 		// continual retry for persistence error (distinct from not-found)
 		return err != nil && !bm.closed, err
 	})

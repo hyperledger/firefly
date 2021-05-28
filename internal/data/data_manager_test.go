@@ -68,7 +68,7 @@ func TestValidateE2E(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = v.Validate(context.Background(), data)
-	assert.Regexp(t, "FF10198", err.Error())
+	assert.Regexp(t, "FF10198", err)
 
 	data.Value = fftypes.Byteable(`{"field1":"value1"}`)
 	data.Seal(context.Background())
@@ -79,7 +79,7 @@ func TestValidateE2E(t *testing.T) {
 
 func TestInitBadDeps(t *testing.T) {
 	_, err := NewDataManager(context.Background(), nil)
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestValidatorForWrongType(t *testing.T) {
@@ -90,7 +90,7 @@ func TestValidatorForWrongType(t *testing.T) {
 	_, err := dm.GetValidator(context.Background(), &fftypes.Data{
 		Validator: fftypes.ValidatorType("wrong"),
 	})
-	assert.Regexp(t, "FF10200.*wrong", err.Error())
+	assert.Regexp(t, "FF10200.*wrong", err)
 
 }
 
@@ -102,7 +102,7 @@ func TestValidatorForMissingName(t *testing.T) {
 	_, err := dm.GetValidator(context.Background(), &fftypes.Data{
 		Validator: fftypes.ValidatorTypeJSON,
 	})
-	assert.Regexp(t, "FF10195.*null", err.Error())
+	assert.Regexp(t, "FF10195.*null", err)
 
 }
 
@@ -118,7 +118,7 @@ func TestValidatorUnknown(t *testing.T) {
 			Version: "0.0.1",
 		},
 	})
-	assert.Regexp(t, "FF10195", err.Error())
+	assert.Regexp(t, "FF10195", err)
 
 }
 
@@ -138,7 +138,7 @@ func TestValidatorLookupError(t *testing.T) {
 	}
 	data.Seal(context.Background())
 	_, err := dm.GetValidator(context.Background(), data)
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -198,7 +198,7 @@ func TestValidateBadHash(t *testing.T) {
 	v, err := dm.GetValidator(context.Background(), data)
 	assert.NoError(t, err)
 	err = v.Validate(context.Background(), data)
-	assert.Regexp(t, "FF10201", err.Error())
+	assert.Regexp(t, "FF10201", err)
 
 }
 
@@ -206,11 +206,11 @@ func TestGetMessageDataDBError(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
 	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
-	})
+	}, true)
 	assert.Nil(t, data)
 	assert.False(t, foundAll)
 	assert.EqualError(t, err, "pop")
@@ -221,11 +221,11 @@ func TestGetMessageDataNilEntry(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
 	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{nil},
-	})
+	}, true)
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -236,11 +236,11 @@ func TestGetMessageDataNotFound(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
 	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
-	})
+	}, true)
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -252,14 +252,14 @@ func TestGetMessageDataHashMismatch(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
 	dataID := fftypes.NewUUID()
-	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(&fftypes.Data{
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
 		ID:   dataID,
 		Hash: fftypes.NewRandB32(),
 	}, nil)
 	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: dataID, Hash: fftypes.NewRandB32()}},
-	})
+	}, true)
 	assert.Empty(t, data)
 	assert.False(t, foundAll)
 	assert.NoError(t, err)
@@ -272,14 +272,14 @@ func TestGetMessageDataOk(t *testing.T) {
 	dm := newTestDataManager(t, mdi)
 	dataID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
-	mdi.On("GetDataByID", mock.Anything, mock.Anything).Return(&fftypes.Data{
+	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
 		ID:   dataID,
 		Hash: hash,
 	}, nil)
 	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
-	})
+	}, true)
 	assert.NotEmpty(t, data)
 	assert.Equal(t, *dataID, *data[0].ID)
 	assert.True(t, foundAll)
@@ -291,6 +291,199 @@ func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	dm := newTestDataManager(t, mdi)
-	err := dm.CheckDatatype(context.Background(), &fftypes.Datatype{})
-	assert.Regexp(t, "FF10196", err.Error())
+	err := dm.CheckDatatype(context.Background(), "ns1", &fftypes.Datatype{})
+	assert.Regexp(t, "FF10196", err)
+}
+
+func TestResolveInputDataEmpty(t *testing.T) {
+
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	refs, err := dm.ResolveInputData(context.Background(), "ns1", fftypes.InputData{})
+	assert.NoError(t, err)
+	assert.Empty(t, refs)
+
+}
+
+func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+
+	ctx := context.Background()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns1",
+		Hash:      dataHash,
+	}, nil)
+
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{DataRef: fftypes.DataRef{ID: dataID}},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, refs, 1)
+	assert.Equal(t, dataID, refs[0].ID)
+	assert.Equal(t, dataHash, refs[0].Hash)
+}
+
+func TestResolveInputDataRefBadNamespace(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+
+	ctx := context.Background()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns2",
+		Hash:      dataHash,
+	}, nil)
+
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{DataRef: fftypes.DataRef{ID: dataID, Hash: dataHash}},
+	})
+	assert.Regexp(t, "FF10204", err)
+	assert.Empty(t, refs)
+}
+
+func TestResolveInputDataRefBadHash(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+
+	ctx := context.Background()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns2",
+		Hash:      dataHash,
+	}, nil)
+
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{DataRef: fftypes.DataRef{ID: dataID, Hash: fftypes.NewRandB32()}},
+	})
+	assert.Regexp(t, "FF10204", err)
+	assert.Empty(t, refs)
+}
+
+func TestResolveInputDataRefLookkupFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+
+	ctx := context.Background()
+	dataID := fftypes.NewUUID()
+
+	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
+
+	_, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{DataRef: fftypes.DataRef{ID: dataID, Hash: fftypes.NewRandB32()}},
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestResolveInputDataValueNoValidatorOK(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	ctx := context.Background()
+
+	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
+
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{Value: fftypes.Byteable(`{"some":"json"}`)},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, refs, 1)
+	assert.NotNil(t, refs[0].ID)
+	assert.NotNil(t, refs[0].Hash)
+}
+
+func TestResolveInputDataValueNoValidatorStoreFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	ctx := context.Background()
+
+	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(fmt.Errorf("pop"))
+
+	_, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{Value: fftypes.Byteable(`{"some":"json"}`)},
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestResolveInputDataValueWithValidation(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	ctx := context.Background()
+
+	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
+	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(&fftypes.Datatype{
+		ID:        fftypes.NewUUID(),
+		Validator: fftypes.ValidatorTypeJSON,
+		Namespace: "ns1",
+		Name:      "customer",
+		Version:   "0.0.1",
+		Value: fftypes.Byteable(`{
+			"properties": {
+				"field1": {
+					"type": "string"
+				}
+			},
+			"additionalProperties": false
+		}`),
+	}, nil)
+
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{
+			Datatype: &fftypes.DatatypeRef{
+				Name:    "customer",
+				Version: "0.0.1",
+			},
+			Value: fftypes.Byteable(`{"field1":"value1"}`),
+		},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, refs, 1)
+	assert.NotNil(t, refs[0].ID)
+	assert.NotNil(t, refs[0].Hash)
+
+	_, err = dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{
+			Datatype: &fftypes.DatatypeRef{
+				Name:    "customer",
+				Version: "0.0.1",
+			},
+			Value: fftypes.Byteable(`{"not_allowed":"value"}`),
+		},
+	})
+	assert.Regexp(t, "FF10198", err)
+}
+
+func TestResolveInputDataNoRefOrValue(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	ctx := context.Background()
+
+	_, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
+		{ /* missing */ },
+	})
+	assert.Regexp(t, "FF10205", err)
+}
+
+func TestValidateAndStoreLoadDatatypeFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	ctx := context.Background()
+
+	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
+	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+		Datatype: &fftypes.DatatypeRef{
+			Name:    "customer",
+			Version: "0.0.1",
+		},
+	})
+	assert.EqualError(t, err, "pop")
 }

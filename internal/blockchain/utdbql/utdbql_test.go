@@ -72,7 +72,7 @@ func TestVerifyIdentitySyntaxOK(t *testing.T) {
 func TestVerifyIdentitySyntaxFail(t *testing.T) {
 	u := &UTDBQL{}
 	_, err := u.VerifyIdentitySyntax(context.Background(), "!bad")
-	assert.Regexp(t, "FF10131", err.Error())
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestVerifyBroadcastBatchTXCycle(t *testing.T) {

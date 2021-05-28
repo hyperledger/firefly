@@ -32,7 +32,7 @@ const configDir = "../../test/data/config"
 func TestInitConfigOK(t *testing.T) {
 	viper.Reset()
 	err := ReadConfig("")
-	assert.Regexp(t, "Not Found", err.Error())
+	assert.Regexp(t, "Not Found", err)
 }
 
 func TestDefaults(t *testing.T) {

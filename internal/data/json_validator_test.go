@@ -42,17 +42,17 @@ func TestJSONValidator(t *testing.T) {
 		Value:     fftypes.Byteable(schemaBinary),
 	}
 
-	jv, err := newJSONValidator(context.Background(), dt)
+	jv, err := newJSONValidator(context.Background(), "ns1", dt)
 	assert.NoError(t, err)
 
 	err = jv.validateBytes(context.Background(), []byte(`{}`))
-	assert.Regexp(t, "FF10198.*prop1", err.Error())
+	assert.Regexp(t, "FF10198.*prop1", err)
 
 	err = jv.validateBytes(context.Background(), []byte(`{"prop1": "a value"}`))
 	assert.NoError(t, err)
 
 	err = jv.validateBytes(context.Background(), []byte(`{!bad json`))
-	assert.Regexp(t, "FF10197", err.Error())
+	assert.Regexp(t, "FF10197", err)
 
 	assert.Equal(t, int64(len(schemaBinary)), jv.Size())
 
@@ -67,8 +67,8 @@ func TestJSONValidatorParseSchemaFail(t *testing.T) {
 		Value:     fftypes.Byteable(`{!json`),
 	}
 
-	_, err := newJSONValidator(context.Background(), dt)
-	assert.Regexp(t, "FF10196", err.Error())
+	_, err := newJSONValidator(context.Background(), "ns1", dt)
+	assert.Regexp(t, "FF10196", err)
 
 }
 
@@ -76,6 +76,6 @@ func TestJSONValidatorNilData(t *testing.T) {
 
 	v := &jsonValidator{}
 	err := v.Validate(context.Background(), &fftypes.Data{})
-	assert.Regexp(t, "FF10199", err.Error())
+	assert.Regexp(t, "FF10199", err)
 
 }

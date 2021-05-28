@@ -41,7 +41,7 @@ func TestBuildFilterLimitSkip(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/things?skip=251", nil)
 	_, err := buildFilter(req, database.MessageQueryFactory)
-	assert.Regexp(t, "FF10183.*250", err.Error())
+	assert.Regexp(t, "FF10183.*250", err)
 }
 
 func TestBuildFilterLimitLimit(t *testing.T) {
@@ -49,5 +49,5 @@ func TestBuildFilterLimitLimit(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/things?limit=501", nil)
 	_, err := buildFilter(req, database.MessageQueryFactory)
-	assert.Regexp(t, "FF10184.*500", err.Error())
+	assert.Regexp(t, "FF10184.*500", err)
 }

@@ -64,6 +64,27 @@ type Message struct {
 	Data      DataRefs      `json:"data"`
 }
 
+// MessageInput allows API users to submit values in-line in the payload submitted, which
+// will be broken out and stored separately during the call.
+type MessageInput struct {
+	Message
+
+	InputData InputData `json:"data"`
+}
+
+// InputData is an array of data references or values
+type InputData []*DataRefOrValue
+
+// DataRefOrValue allows a value to be specified in-line in the data array of an input
+// message, avoiding the need for a multiple API calls.
+type DataRefOrValue struct {
+	DataRef
+
+	Validator ValidatorType `json:"validator"`
+	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
+	Value     Byteable      `json:"value"`
+}
+
 // MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
 	ID       *UUID    `json:"id,omitempty"`
