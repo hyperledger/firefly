@@ -43,3 +43,10 @@ func TestGetStatusHint(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 400, code)
 }
+
+func TestDuplicateKey(t *testing.T) {
+	ffm("ABCD1234", "test1")
+	assert.Panics(t, func() {
+		ffm("ABCD1234", "test2")
+	})
+}

@@ -26,6 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -33,10 +34,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const configDir = "../../test/data/config"
+
 type testOrchestrator struct {
 	orchestrator
 
 	mdi *databasemocks.Plugin
+	mdm *datamocks.Manager
 	mbm *broadcastmocks.Manager
 	mba *batchmocks.Manager
 	mei *eventmocks.EventManager
@@ -50,6 +54,7 @@ func newTestOrchestrator() *testOrchestrator {
 			ctx: context.Background(),
 		},
 		mdi: &databasemocks.Plugin{},
+		mdm: &datamocks.Manager{},
 		mbm: &broadcastmocks.Manager{},
 		mba: &batchmocks.Manager{},
 		mei: &eventmocks.EventManager{},
@@ -57,14 +62,13 @@ func newTestOrchestrator() *testOrchestrator {
 		mbi: &blockchainmocks.Plugin{},
 	}
 	tor.orchestrator.database = tor.mdi
+	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mei
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.blockchain = tor.mbi
 	tor.mdi.On("Name").Return("mock-di").Maybe()
-	tor.mbm.On("Name").Return("mock-bi").Maybe()
-	tor.mba.On("Name").Return("mock-ba").Maybe()
 	tor.mei.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
 	tor.mbi.On("Name").Return("mock-bi").Maybe()
@@ -140,7 +144,9 @@ func TestBadPublicStorageInitFail(t *testing.T) {
 }
 
 func TestInitEventsComponentFail(t *testing.T) {
-	or := &orchestrator{}
+	or := newTestOrchestrator()
+	or.database = nil
+	or.events = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
@@ -157,6 +163,14 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.broadcast = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err.Error())
+}
+
+func TestInitDataComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.data = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err.Error())
 }
@@ -232,6 +246,23 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 	assert.Regexp(t, "FF10166", err.Error())
 }
 
+func TestInitNamespacesDupName(t *testing.T) {
+	config.Reset()
+	or := newTestOrchestrator()
+	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
+		{"name": "ns1"},
+		{"name": "ns2"},
+		{"name": "ns2"},
+	})
+	config.Set(config.NamespacesDefault, "ns1")
+	nsList, err := or.getPrefdefinedNamespaces(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, nsList, 3)
+	assert.Equal(t, fftypes.SystemNamespace, nsList[0].Name)
+	assert.Equal(t, "ns1", nsList[1].Name)
+	assert.Equal(t, "ns2", nsList[2].Name)
+}
+
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -240,7 +271,7 @@ func TestInitOK(t *testing.T) {
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	err := config.ReadConfig("../../test/config/firefly.core.yaml")
+	err := config.ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.NoError(t, err)

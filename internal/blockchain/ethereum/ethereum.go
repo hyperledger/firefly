@@ -242,14 +242,14 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 }
 
 func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) error {
-	sBlockNumber := msgJSON.GetString(ctx, "blockNumber")
-	sTransactionIndex := msgJSON.GetString(ctx, "transactionIndex")
-	sTransactionHash := msgJSON.GetString(ctx, "transactionHash")
-	dataJSON := msgJSON.GetObject(ctx, "data")
-	sAuthor := dataJSON.GetString(ctx, "author")
-	sTxnID := dataJSON.GetString(ctx, "txnId")
-	sBatchID := dataJSON.GetString(ctx, "batchId")
-	sPayloadRef := dataJSON.GetString(ctx, "payloadRef")
+	sBlockNumber := msgJSON.GetString("blockNumber")
+	sTransactionIndex := msgJSON.GetString("transactionIndex")
+	sTransactionHash := msgJSON.GetString("transactionHash")
+	dataJSON := msgJSON.GetObject("data")
+	sAuthor := dataJSON.GetString("author")
+	sTxnID := dataJSON.GetString("txnId")
+	sBatchID := dataJSON.GetString("batchId")
+	sPayloadRef := dataJSON.GetString("payloadRef")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -316,7 +316,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 	for i, msgJSON := range msgsJSON {
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
-		signature := msgJSON.GetString(ctx, "signature")
+		signature := msgJSON.GetString("signature")
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 

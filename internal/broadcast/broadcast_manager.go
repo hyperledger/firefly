@@ -23,6 +23,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/batch"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -32,6 +33,7 @@ import (
 
 type Manager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
+	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error
 	Start() error
 	WaitStop()
 }
@@ -39,18 +41,20 @@ type Manager interface {
 type broadcastManager struct {
 	ctx           context.Context
 	database      database.Plugin
+	data          data.Manager
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
 		database:      di,
+		data:          dm,
 		blockchain:    bi,
 		publicstorage: pi,
 		batch:         ba,

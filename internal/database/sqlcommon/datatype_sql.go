@@ -149,8 +149,8 @@ func (s *SQLCommon) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (mess
 	return s.getDatatypeEq(ctx, sq.Eq{"id": id}, id.String())
 }
 
-func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name string) (message *fftypes.Datatype, err error) {
-	return s.getDatatypeEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
+func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version string) (message *fftypes.Datatype, err error) {
+	return s.getDatatypeEq(ctx, sq.Eq{"namespace": ns, "name": name, "version": version}, fmt.Sprintf("%s:%s", ns, name))
 }
 
 func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, err error) {

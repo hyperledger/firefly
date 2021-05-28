@@ -74,3 +74,14 @@ func (u *UUID) Value() (driver.Value, error) {
 func (u *UUID) Scan(src interface{}) error {
 	return (*uuid.UUID)(u).Scan(src)
 }
+
+func (u *UUID) Equals(u2 *UUID) bool {
+	switch {
+	case u == nil && u2 == nil:
+		return true
+	case u == nil || u2 == nil:
+		return false
+	default:
+		return *u == *u2
+	}
+}
