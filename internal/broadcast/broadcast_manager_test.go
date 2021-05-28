@@ -45,7 +45,7 @@ func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 
 func TestInitFail(t *testing.T) {
 	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil)
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestBroadcastMessageGood(t *testing.T) {
@@ -75,7 +75,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false).Return(nil)
 
 	err = bm.BroadcastMessage(context.Background(), msg)
-	assert.Regexp(t, "FF10144", err.Error())
+	assert.Regexp(t, "FF10144", err)
 
 }
 
@@ -90,7 +90,7 @@ func TestDispatchBatchInvalidData(t *testing.T) {
 			},
 		},
 	})
-	assert.Regexp(t, "FF10137", err.Error())
+	assert.Regexp(t, "FF10137", err)
 }
 
 func TestDispatchBatchUploadFail(t *testing.T) {
@@ -131,7 +131,7 @@ func TestDispatchBatchSubmitBroadcastBatchFail(t *testing.T) {
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	fn := dbMocks.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
@@ -144,7 +144,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	err = bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
@@ -157,7 +157,7 @@ func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	err = bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
@@ -184,7 +184,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	}
 
 	err = bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
@@ -214,7 +214,7 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 	}
 
 	err = bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {

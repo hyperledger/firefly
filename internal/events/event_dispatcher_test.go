@@ -496,7 +496,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 		{ID: fftypes.NewUUID()},
 	})
 	assert.False(t, repoll)
-	assert.Regexp(t, "FF10182", err.Error())
+	assert.Regexp(t, "FF10182", err)
 
 }
 

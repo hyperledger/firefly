@@ -85,7 +85,7 @@ func TestBadDatabasePlugin(t *testing.T) {
 	config.Set(config.DatabaseType, "wrong")
 	or.database = nil
 	err := or.Init(context.Background())
-	assert.Regexp(t, "FF10122.*wrong", err.Error())
+	assert.Regexp(t, "FF10122.*wrong", err)
 }
 
 func TestBadDatabaseInitFail(t *testing.T) {
@@ -102,7 +102,7 @@ func TestBadBlockchainPlugin(t *testing.T) {
 	or.blockchain = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	err := or.Init(context.Background())
-	assert.Regexp(t, "FF10110.*wrong", err.Error())
+	assert.Regexp(t, "FF10110.*wrong", err)
 }
 
 func TestBlockchaiInitFail(t *testing.T) {
@@ -130,7 +130,7 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	err := or.Init(context.Background())
-	assert.Regexp(t, "FF10134.*wrong", err.Error())
+	assert.Regexp(t, "FF10134.*wrong", err)
 }
 
 func TestBadPublicStorageInitFail(t *testing.T) {
@@ -148,7 +148,7 @@ func TestInitEventsComponentFail(t *testing.T) {
 	or.database = nil
 	or.events = nil
 	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestInitBatchComponentFail(t *testing.T) {
@@ -156,7 +156,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 	or.database = nil
 	or.batch = nil
 	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestInitBroadcastComponentFail(t *testing.T) {
@@ -164,7 +164,7 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	or.database = nil
 	or.broadcast = nil
 	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestInitDataComponentFail(t *testing.T) {
@@ -172,7 +172,7 @@ func TestInitDataComponentFail(t *testing.T) {
 	or.database = nil
 	or.data = nil
 	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err.Error())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestStartBatchFail(t *testing.T) {
@@ -181,7 +181,7 @@ func TestStartBatchFail(t *testing.T) {
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	or.mbi.On("Start").Return(nil)
 	err := or.Start()
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestStartStopOk(t *testing.T) {
@@ -208,7 +208,7 @@ func TestInitNamespacesBadName(t *testing.T) {
 	})
 	or := newTestOrchestrator()
 	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "FF10131", err.Error())
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestInitNamespacesGetFail(t *testing.T) {
@@ -216,7 +216,7 @@ func TestInitNamespacesGetFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestInitNamespacesUpsertFail(t *testing.T) {
@@ -225,7 +225,7 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
@@ -243,7 +243,7 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{})
 	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "FF10166", err.Error())
+	assert.Regexp(t, "FF10166", err)
 }
 
 func TestInitNamespacesDupName(t *testing.T) {

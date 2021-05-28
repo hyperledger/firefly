@@ -89,7 +89,7 @@ func (or *orchestrator) BroadcastDatatype(ctx context.Context, ns string, dataty
 	datatype.Hash = datatype.Value.Hash()
 
 	// Verify the data type is now all valid, before we broadcast it
-	err = or.data.CheckDatatype(ctx, datatype)
+	err = or.data.CheckDatatype(ctx, ns, datatype)
 	if err != nil {
 		return nil, err
 	}
@@ -108,4 +108,28 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 	}
 
 	return or.broadcastDefinition(ctx, ns, fftypes.SystemTopicBroadcastNamespace)
+}
+
+func (or *orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin),
+	// as it's common that API calls will include the data in-line for the message send rather than making multiple calls.
+	// So set the namesspace, and call down into the heavy lifting function.
+	in.Header.Namespace = ns
+	err = or.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		return or.broadcastMessage(ctx, ns, in)
+	})
+	if err != nil {
+		return nil, err
+	}
+	// The broadcastMessage function modifies the input message to create all the refs
+	return &in.Message, err
+}
+
+func (or *orchestrator) broadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (err error) {
+
+	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+	in.Message.Data, err = or.data.ResolveInputData(ctx, ns, in.InputData)
+
+	return err
+
 }

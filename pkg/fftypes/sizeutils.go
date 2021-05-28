@@ -30,7 +30,7 @@ func ParseToByteSize(byteString string) int64 {
 	}
 	bytes, err := units.RAMInBytes(byteString)
 	if err != nil {
-		log.L(context.Background()).Warn(err.Error())
+		log.L(context.Background()).Warn(err)
 		return 0
 	}
 	return bytes

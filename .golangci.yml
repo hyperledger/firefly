@@ -9,7 +9,7 @@ linters-settings:
     enabled-tags:
       - performance
   goheader:
-    template: |
+    template: |-
       Copyright © {{ YEAR }} Kaleido, Inc.
       
       SPDX-License-Identifier: Apache-2.0
@@ -37,7 +37,7 @@ linters:
   - gocritic
   - gocyclo
   - gofmt
-  # - goheader
+  - goheader
   - goimports
   - goprintffuncname
   - gosec

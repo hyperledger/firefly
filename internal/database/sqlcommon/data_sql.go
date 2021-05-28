@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	dataColumns = []string{
+	dataColumnsNoValue = []string{
 		"id",
 		"validator",
 		"namespace",
@@ -36,9 +36,9 @@ var (
 		"datatype_version",
 		"hash",
 		"created",
-		"value",
 	}
-	dataFilterTypeMap = map[string]string{
+	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
+	dataFilterTypeMap    = map[string]string{
 		"validator":        "validator",
 		"datatype.name":    "datatype_name",
 		"datatype.version": "datatype_version",
@@ -100,7 +100,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 	} else {
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("data").
-				Columns(dataColumns...).
+				Columns(dataColumnsWithValue...).
 				Values(
 					data.ID,
 					string(data.Validator),
@@ -119,11 +119,11 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Data, error) {
+func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue bool) (*fftypes.Data, error) {
 	data := fftypes.Data{
 		Datatype: &fftypes.DatatypeRef{},
 	}
-	err := row.Scan(
+	results := []interface{}{
 		&data.ID,
 		&data.Validator,
 		&data.Namespace,
@@ -131,8 +131,11 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 		&data.Datatype.Version,
 		&data.Hash,
 		&data.Created,
-		&data.Value,
-	)
+	}
+	if withValue {
+		results = append(results, &data.Value)
+	}
+	err := row.Scan(results...)
 	if data.Datatype.Name == "" && data.Datatype.Version == "" {
 		data.Datatype = nil
 	}
@@ -142,10 +145,16 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows) (*fftypes.Dat
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error) {
 
+	var cols []string
+	if withValue {
+		cols = dataColumnsWithValue
+	} else {
+		cols = dataColumnsNoValue
+	}
 	rows, err := s.query(ctx,
-		sq.Select(dataColumns...).
+		sq.Select(cols...).
 			From("data").
 			Where(sq.Eq{"id": id}),
 	)
@@ -159,7 +168,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID) (message 
 		return nil, nil
 	}
 
-	data, err := s.dataResult(ctx, rows)
+	data, err := s.dataResult(ctx, rows, withValue)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +178,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID) (message 
 
 func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(dataColumns...).From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +191,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 
 	data := []*fftypes.Data{}
 	for rows.Next() {
-		d, err := s.dataResult(ctx, rows)
+		d, err := s.dataResult(ctx, rows, true)
 		if err != nil {
 			return nil, err
 		}

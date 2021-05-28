@@ -37,14 +37,14 @@ func TestInitSQLCommon(t *testing.T) {
 func TestInitSQLCommonMissingOptions(t *testing.T) {
 	s := &SQLCommon{}
 	err := s.Init(context.Background(), nil, nil, nil, nil)
-	assert.Regexp(t, "FF10112", err.Error())
+	assert.Regexp(t, "FF10112", err)
 }
 
 func TestInitSQLCommonOpenFailed(t *testing.T) {
 	mp := newMockProvider()
 	mp.openError = fmt.Errorf("pop")
 	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
-	assert.Regexp(t, "FF10112.*pop", err.Error())
+	assert.Regexp(t, "FF10112.*pop", err)
 }
 
 func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
@@ -52,13 +52,13 @@ func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	mp.prefix.Set(SQLConfMigrationsAuto, true)
 	mp.getMigrationDriverError = fmt.Errorf("pop")
 	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
-	assert.Regexp(t, "FF10163.*pop", err.Error())
+	assert.Regexp(t, "FF10163.*pop", err)
 }
 
 func TestQueryTxBadSQL(t *testing.T) {
 	tp := newQLTestProvider(t)
 	_, err := tp.queryTx(context.Background(), nil, sq.SelectBuilder{})
-	assert.Regexp(t, "FF10113", err.Error())
+	assert.Regexp(t, "FF10113", err)
 }
 
 func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
@@ -83,25 +83,25 @@ func TestInsertTxPostgreSQLReturnedSyntaxFail(t *testing.T) {
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
 	_, err = s.insertTx(ctx, tx, sb)
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 }
 
 func TestInsertTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
 	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{})
-	assert.Regexp(t, "FF10113", err.Error())
+	assert.Regexp(t, "FF10113", err)
 }
 
 func TestUpdateTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
 	err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{})
-	assert.Regexp(t, "FF10113", err.Error())
+	assert.Regexp(t, "FF10113", err)
 }
 
 func TestDeleteTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
 	err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
-	assert.Regexp(t, "FF10113", err.Error())
+	assert.Regexp(t, "FF10113", err)
 }
 
 func TestDeleteTxZeroRowsAffected(t *testing.T) {
@@ -113,7 +113,7 @@ func TestDeleteTxZeroRowsAffected(t *testing.T) {
 	s.fakePSQLInsert = true
 	sb := sq.Delete("table")
 	err = s.deleteTx(ctx, tx, sb)
-	assert.Regexp(t, "FF10109", err.Error())
+	assert.Regexp(t, "FF10109", err)
 }
 
 func TestRunAsGroup(t *testing.T) {
@@ -158,7 +158,7 @@ func TestRunAsGroupBeginFail(t *testing.T) {
 		return
 	})
 	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestRunAsGroupFunctionFails(t *testing.T) {
@@ -177,7 +177,7 @@ func TestRunAsGroupFunctionFails(t *testing.T) {
 		return fmt.Errorf("pop")
 	})
 	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "pop", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestRunAsGroupCommitFail(t *testing.T) {
@@ -188,7 +188,7 @@ func TestRunAsGroupCommitFail(t *testing.T) {
 		return
 	})
 	assert.NoError(t, mock.ExpectationsWereMet())
-	assert.Regexp(t, "FF10119", err.Error())
+	assert.Regexp(t, "FF10119", err)
 }
 
 func TestRollbackFail(t *testing.T) {

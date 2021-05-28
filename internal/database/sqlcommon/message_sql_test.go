@@ -201,7 +201,7 @@ func TestUpsertMessageFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{}, true, true)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -212,7 +212,7 @@ func TestUpsertMessageFailSelect(t *testing.T) {
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -224,7 +224,7 @@ func TestUpsertMessageFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	msgID := fftypes.NewUUID()
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -236,7 +236,7 @@ func TestUpsertMessageFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -249,7 +249,7 @@ func TestUpsertMessageFailLoadRefs(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -262,7 +262,7 @@ func TestUpsertMessageFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertMessage(context.Background(), &fftypes.Message{Header: fftypes.MessageHeader{ID: msgID}}, true, true)
-	assert.Regexp(t, "FF10119", err.Error())
+	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -273,7 +273,7 @@ func TestGetMessageDataRefsScanFail(t *testing.T) {
 	tx, _ := s.db.Begin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"data_id"}).AddRow("not the uuid you are looking for"))
 	_, err := s.getMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, msgID)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -289,7 +289,7 @@ func TestUpdateMessageDataRefsNilID(t *testing.T) {
 		Header: fftypes.MessageHeader{ID: msgID},
 		Data:   []*fftypes.DataRef{{ID: nil}},
 	})
-	assert.Regexp(t, "FF10123", err.Error())
+	assert.Regexp(t, "FF10123", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -305,7 +305,7 @@ func TestUpdateMessageDataRefsNilHash(t *testing.T) {
 		Header: fftypes.MessageHeader{ID: msgID},
 		Data:   []*fftypes.DataRef{{ID: fftypes.NewUUID()}},
 	})
-	assert.Regexp(t, "FF10139", err.Error())
+	assert.Regexp(t, "FF10139", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -321,7 +321,7 @@ func TestUpdateMessageDataDeleteFail(t *testing.T) {
 	err := s.updateMessageDataRefs(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: msgID},
 	})
-	assert.Regexp(t, "FF10118", err.Error())
+	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -338,7 +338,7 @@ func TestUpdateMessageDataAddFail(t *testing.T) {
 		Header: fftypes.MessageHeader{ID: msgID},
 		Data:   []*fftypes.DataRef{{ID: dataID, Hash: dataHash}},
 	})
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -363,7 +363,7 @@ func TestUpdateMessageDataSwitchIDxFail(t *testing.T) {
 		Header: fftypes.MessageHeader{ID: msgID},
 		Data:   []*fftypes.DataRef{{ID: dataID2, Hash: dataHash2}, {ID: dataID1, Hash: dataHash1}},
 	})
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -376,7 +376,7 @@ func TestLoadMessageDataRefsQueryFail(t *testing.T) {
 			Header: fftypes.MessageHeader{ID: msgID},
 		},
 	})
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -389,7 +389,7 @@ func TestLoadMessageDataRefsScanFail(t *testing.T) {
 			Header: fftypes.MessageHeader{ID: msgID},
 		},
 	})
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -409,7 +409,7 @@ func TestGetMessageByIDSelectFail(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -428,7 +428,7 @@ func TestGetMessageByIDScanFail(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -442,7 +442,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -450,7 +450,7 @@ func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestGetMessagesQueryFail(t *testing.T) {
@@ -458,7 +458,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -466,7 +466,7 @@ func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
-	assert.Regexp(t, "FF10148", err.Error())
+	assert.Regexp(t, "FF10148", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -475,7 +475,7 @@ func TestGetMessagesReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -490,7 +490,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -498,7 +498,7 @@ func TestGetMessageRefsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestGetMessageRefsQueryFail(t *testing.T) {
@@ -506,7 +506,7 @@ func TestGetMessageRefsQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -515,7 +515,7 @@ func TestGetMessageRefsReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetMessageRefs(context.Background(), f)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -524,7 +524,7 @@ func TestMessageUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestMessageUpdateBuildQueryFail(t *testing.T) {
@@ -532,7 +532,7 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestMessagesUpdateBuildFilterFail(t *testing.T) {
@@ -541,7 +541,7 @@ func TestMessagesUpdateBuildFilterFail(t *testing.T) {
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
 	err := s.UpdateMessages(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestMessageUpdateFail(t *testing.T) {
@@ -551,7 +551,7 @@ func TestMessageUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("group", fftypes.NewUUID())
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 }
 
 func TestCheckDataAvailableFalseBadMessage(t *testing.T) {
@@ -600,7 +600,7 @@ func TestCheckDataAvailableDatabaseError(t *testing.T) {
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	})
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.False(t, ok)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -617,7 +617,7 @@ func TestCheckDataAvailableScanError(t *testing.T) {
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	})
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.False(t, ok)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

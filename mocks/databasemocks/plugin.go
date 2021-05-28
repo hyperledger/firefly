@@ -213,13 +213,13 @@ func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftyp
 	return r0, r1
 }
 
-// GetDataByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, id)
+// GetDataByID provides a mock function with given fields: ctx, id, withValue
+func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, id, withValue)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Data); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, bool) *fftypes.Data); ok {
+		r0 = rf(ctx, id, withValue)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -227,8 +227,8 @@ func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.D
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, bool) error); ok {
+		r1 = rf(ctx, id, withValue)
 	} else {
 		r1 = ret.Error(1)
 	}
