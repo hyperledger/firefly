@@ -111,25 +111,19 @@ func (or *orchestrator) BroadcastNamespace(ctx context.Context, ns *fftypes.Name
 }
 
 func (or *orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin),
-	// as it's common that API calls will include the data in-line for the message send rather than making multiple calls.
-	// So set the namesspace, and call down into the heavy lifting function.
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	in.Header.Namespace = ns
 	err = or.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return or.broadcastMessage(ctx, ns, in)
+		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+		in.Message.Data, err = or.data.ResolveInputData(ctx, ns, in.InputData)
+		if err != nil {
+			return err
+		}
+		return or.broadcast.BroadcastMessage(ctx, &in.Message)
 	})
 	if err != nil {
 		return nil, err
 	}
 	// The broadcastMessage function modifies the input message to create all the refs
 	return &in.Message, err
-}
-
-func (or *orchestrator) broadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (err error) {
-
-	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	in.Message.Data, err = or.data.ResolveInputData(ctx, ns, in.InputData)
-
-	return err
-
 }

@@ -37,11 +37,12 @@ var routes = []*oapispec.Route{
 	getNamespaces,
 	getOpByID,
 	getOps,
-	getSubsriptions,
 	getSubscriptionByID,
+	getSubsriptions,
 	getTxnByID,
 	getTxns,
 	postBroadcastDatatype,
+	postBroadcastMessage,
 	postBroadcastNamespace,
 	postNewSubscription,
 }

@@ -42,6 +42,29 @@ func (_m *Orchestrator) BroadcastDatatype(ctx context.Context, ns string, s *fft
 	return r0, r1
 }
 
+// BroadcastMessage provides a mock function with given fields: ctx, ns, in
+func (_m *Orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+		r1 = rf(ctx, ns, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BroadcastNamespace provides a mock function with given fields: ctx, s
 func (_m *Orchestrator) BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, s)
