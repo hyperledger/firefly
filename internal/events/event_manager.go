@@ -22,6 +22,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
@@ -48,6 +49,7 @@ type eventManager struct {
 	publicstorage    publicstorage.Plugin
 	database         database.Plugin
 	broadcast        broadcast.Manager
+	data             data.Manager
 	subManager       *subscriptionManager
 	retry            retry.Retry
 	aggregator       *aggregator
@@ -55,7 +57,7 @@ type eventManager struct {
 	defaultTransport string
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, bm broadcast.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
 	if pi == nil || di == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -65,6 +67,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		publicstorage: pi,
 		database:      di,
 		broadcast:     bm,
+		data:          dm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
@@ -72,7 +75,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		},
 		defaultTransport: config.GetString(config.EventTransportsDefault),
 		eventNotifier:    en,
-		aggregator:       newAggregator(ctx, di, bm, en),
+		aggregator:       newAggregator(ctx, di, bm, dm, en),
 	}
 
 	var err error
