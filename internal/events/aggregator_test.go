@@ -121,6 +121,7 @@ func TestProcessEventIgnoredTypeConfirmed(t *testing.T) {
 func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -131,7 +132,7 @@ func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, false, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
@@ -146,17 +147,25 @@ func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
 func TestProcessMsgCompleteDataAvailableBlocked(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        msgID,
 			Namespace: "ns1",
 			Context:   "context1",
 		},
+		Data: fftypes.DataRefs{
+			{ID: dataID, Hash: dataHash},
+		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{
+		{ID: dataID, Hash: dataHash, Namespace: "ns1"},
+	}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		Message: fftypes.NewUUID(), // Another message, not us
 	}, nil)
@@ -173,8 +182,11 @@ func TestProcessMsgCompleteDataAvailableBlocked(t *testing.T) {
 func TestProcessMsgCompleteWeUnblock(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
+	dataID := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
 	blockedID := fftypes.NewUUID()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -182,13 +194,19 @@ func TestProcessMsgCompleteWeUnblock(t *testing.T) {
 			Namespace: "ns1",
 			Context:   "context1",
 		},
+		Data: fftypes.DataRefs{
+			{ID: dataID, Hash: dataHash},
+		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{
+		{ID: dataID, Hash: dataHash, Namespace: "ns1"},
+	}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
 	}, nil)
+	mdm.On("ValidateAll", mock.Anything, mock.Anything).Return(true, nil)
 	mdi.On("UpdateMessage", mock.Anything, uuidMatches(msgID), mock.Anything).Return(nil) // set confirmed
 	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)                // confirmed event
 	mdi.On("GetMessageRefs", mock.Anything, mock.Anything).Return([]*fftypes.MessageRef{
@@ -208,6 +226,7 @@ func TestProcessMsgCompleteWeUnblock(t *testing.T) {
 func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
@@ -219,7 +238,7 @@ func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
@@ -242,6 +261,7 @@ func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
 func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
@@ -253,7 +273,7 @@ func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
@@ -277,6 +297,7 @@ func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
 func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -289,7 +310,7 @@ func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
@@ -314,6 +335,7 @@ func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
 func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -326,7 +348,7 @@ func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
@@ -349,6 +371,7 @@ func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
 func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -360,7 +383,7 @@ func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, fmt.Errorf("pop"))
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
 	ev1.Sequence = 111
@@ -376,6 +399,7 @@ func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
 func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -387,7 +411,7 @@ func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      fftypes.NewUUID(),
 		Message: msgID, // Blocked by us
@@ -409,6 +433,7 @@ func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
 func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -420,7 +445,7 @@ func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      fftypes.NewUUID(),
 		Message: msgID, // Blocked by us
@@ -443,6 +468,7 @@ func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
 func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
@@ -455,7 +481,7 @@ func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(&fftypes.Blocked{
 		ID:      blockedID,
 		Message: msgID, // Blocked by us
@@ -475,9 +501,10 @@ func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestProcessEvent(t *testing.T) {
+func TestProcessEventDataNoAvailable(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -488,7 +515,7 @@ func TestProcessEvent(t *testing.T) {
 		},
 	}
 	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, false, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, "ns1", "context1", (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", msgID)
@@ -585,24 +612,25 @@ func TestProcessDataCompleteDrivesMsgGetEventsFailure(t *testing.T) {
 
 func TestCheckMessageCompleteDataAvailFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
-	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return(nil, false, fmt.Errorf("pop"))
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
 	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
-	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestCheckMessageCompleteUpdateFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -610,7 +638,7 @@ func TestCheckMessageCompleteUpdateFail(t *testing.T) {
 		},
 	}
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
@@ -622,6 +650,7 @@ func TestCheckMessageCompleteUpdateFail(t *testing.T) {
 func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -629,7 +658,7 @@ func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 		},
 	}
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
@@ -642,6 +671,7 @@ func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 func TestCheckMessageCompleteInsertBlockEventFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -649,7 +679,7 @@ func TestCheckMessageCompleteInsertBlockEventFail(t *testing.T) {
 		},
 	}
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(false, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return(nil, false, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
 	mdi.On("UpsertBlocked", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
@@ -662,6 +692,7 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
 	mbm := ag.broadcast.(*broadcastmocks.Manager)
+	mdm := ag.data.(*datamocks.Manager)
 	defer cancel()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -672,9 +703,9 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 		},
 	}
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
-	mdi.On("CheckDataAvailable", mock.Anything, mock.Anything).Return(true, nil)
+	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
-	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
@@ -691,4 +722,41 @@ func TestEventsByRefRemoveNoMatch(t *testing.T) {
 	}
 	assert.True(t, ebr.remove(*u))
 	assert.False(t, ebr.remove(*u))
+}
+
+func TestHandleCompleteMessageValidateDBError(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	mdm := ag.data.(*datamocks.Manager)
+	defer cancel()
+	dataID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID}},
+	}
+	data := &fftypes.Data{ID: dataID}
+	mdm.On("ValidateAll", mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+	err := ag.handleCompleteMessage(context.Background(), msg, []*fftypes.Data{data})
+	assert.EqualError(t, err, "pop")
+	mdm.AssertExpectations(t)
+}
+
+func TestHandleCompleteMessageValidationError(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	mdm := ag.data.(*datamocks.Manager)
+	mdi := ag.database.(*databasemocks.Plugin)
+	defer cancel()
+	dataID := fftypes.NewUUID()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data:   fftypes.DataRefs{{ID: dataID}},
+	}
+	data := &fftypes.Data{ID: dataID}
+	mdm.On("ValidateAll", mock.Anything, mock.Anything).Return(false, nil)
+	mdi.On("UpdateMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
+		return ev.Type == fftypes.EventTypeMessageInvalid
+	}), false).Return(nil)
+	err := ag.handleCompleteMessage(context.Background(), msg, []*fftypes.Data{data})
+	assert.NoError(t, err)
+	mdm.AssertExpectations(t)
 }
