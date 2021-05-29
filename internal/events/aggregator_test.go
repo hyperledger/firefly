@@ -23,6 +23,7 @@ import (
 
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,10 +33,18 @@ func uuidMatches(id1 *fftypes.UUID) interface{} {
 	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
 }
 
-func TestShutdownOnCancel(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
+	mdm := &datamocks.Manager{}
+	ctx, cancel := context.WithCancel(context.Background())
+	ag := newAggregator(ctx, mdi, mbm, mdm, newEventNotifier(ctx))
+	return ag, cancel
+}
+
+func TestShutdownOnCancel(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
 		Type:      fftypes.OffsetTypeAggregator,
 		Namespace: fftypes.SystemNamespace,
@@ -43,7 +52,6 @@ func TestShutdownOnCancel(t *testing.T) {
 		Current:   12345,
 	}, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	err := ag.start()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
@@ -53,9 +61,8 @@ func TestShutdownOnCancel(t *testing.T) {
 }
 
 func TestProcessEventsNoopIncrement(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	var runAsGroupFn func(context.Context) error
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("RunAsGroup", mock.Anything, mock.MatchedBy(
@@ -65,7 +72,6 @@ func TestProcessEventsNoopIncrement(t *testing.T) {
 		},
 	)).Return(nil, nil)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
@@ -82,11 +88,9 @@ func TestProcessEventsNoopIncrement(t *testing.T) {
 }
 
 func TestProcessEventCheckSequencedReadFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -102,11 +106,9 @@ func TestProcessEventCheckSequencedReadFail(t *testing.T) {
 }
 
 func TestProcessEventIgnoredTypeConfirmed(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
 	repoll, err := ag.processEvent(context.Background(), eventsByRef{}, ev1)
@@ -117,11 +119,9 @@ func TestProcessEventIgnoredTypeConfirmed(t *testing.T) {
 }
 
 func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -144,11 +144,9 @@ func TestProcessMsgCompleteDataNotAvailableBlock(t *testing.T) {
 }
 
 func TestProcessMsgCompleteDataAvailableBlocked(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -173,11 +171,9 @@ func TestProcessMsgCompleteDataAvailableBlocked(t *testing.T) {
 }
 
 func TestProcessMsgCompleteWeUnblock(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -210,11 +206,9 @@ func TestProcessMsgCompleteWeUnblock(t *testing.T) {
 }
 
 func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -246,11 +240,9 @@ func TestProcessMsgCompleteUpdateBlockedFail(t *testing.T) {
 }
 
 func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -283,11 +275,9 @@ func TestProcessMsgCompleteFailInsertUnblockEvent(t *testing.T) {
 }
 
 func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
@@ -322,11 +312,9 @@ func TestProcessMsgCompleteWeUnblockLookAheadOptimized(t *testing.T) {
 }
 
 func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
@@ -359,11 +347,9 @@ func TestProcessDataArrivedWeUnblockNoFutureMsgsFromData(t *testing.T) {
 }
 
 func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -388,11 +374,9 @@ func TestProcessMsgCompleteGetBlockedByContextFail(t *testing.T) {
 }
 
 func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -423,11 +407,9 @@ func TestProcessMsgCompleteBlockedGetMessageRefsFail(t *testing.T) {
 }
 
 func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -459,11 +441,9 @@ func TestProcessMsgCompleteBlockedDeleteBlockedFail(t *testing.T) {
 }
 
 func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
 	blockedID := fftypes.NewUUID()
@@ -496,11 +476,9 @@ func TestProcessMsgCompleteDeleteBlockedFail(t *testing.T) {
 }
 
 func TestProcessEvent(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msgID := fftypes.NewUUID()
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -523,11 +501,9 @@ func TestProcessEvent(t *testing.T) {
 }
 
 func TestProcessEventDataArrivedNoMsgs(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
 	ev1 := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, "ns1", fftypes.NewUUID())
 	ev1.Sequence = 111
@@ -539,11 +515,9 @@ func TestProcessEventDataArrivedNoMsgs(t *testing.T) {
 }
 
 func TestProcessDataArrivedError(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	mdi.On("GetMessagesForData", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeDataArrivedBroadcast}
 	repoll, err := ag.processDataArrived(context.Background(), "ns1", eventsByRef{}, ev)
@@ -553,11 +527,9 @@ func TestProcessDataArrivedError(t *testing.T) {
 }
 
 func TestProcessDataCompleteMsgInLookahead(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -576,11 +548,9 @@ func TestProcessDataCompleteMsgInLookahead(t *testing.T) {
 }
 
 func TestProcessDataCompleteMsgNotPinnedYet(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -596,11 +566,9 @@ func TestProcessDataCompleteMsgNotPinnedYet(t *testing.T) {
 }
 
 func TestProcessDataCompleteDrivesMsgGetEventsFailure(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -616,11 +584,9 @@ func TestProcessDataCompleteDrivesMsgGetEventsFailure(t *testing.T) {
 }
 
 func TestCheckMessageCompleteDataAvailFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -635,11 +601,9 @@ func TestCheckMessageCompleteDataAvailFail(t *testing.T) {
 }
 
 func TestCheckMessageCompleteUpdateFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -656,11 +620,9 @@ func TestCheckMessageCompleteUpdateFail(t *testing.T) {
 }
 
 func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -678,11 +640,9 @@ func TestCheckMessageCompleteInsertEventFail(t *testing.T) {
 }
 
 func TestCheckMessageCompleteInsertBlockEventFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
@@ -699,11 +659,10 @@ func TestCheckMessageCompleteInsertBlockEventFail(t *testing.T) {
 }
 
 func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	ctx, cancel := context.WithCancel(context.Background())
+	ag, cancel := newTestAggregator()
+	mdi := ag.database.(*databasemocks.Plugin)
+	mbm := ag.broadcast.(*broadcastmocks.Manager)
 	defer cancel()
-	ag := newAggregator(ctx, mdi, mbm, newEventNotifier(ctx))
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),

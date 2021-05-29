@@ -21,6 +21,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -63,14 +64,16 @@ type aggregator struct {
 	ctx         context.Context
 	database    database.Plugin
 	broadcast   broadcast.Manager
+	data        data.Manager
 	eventPoller *eventPoller
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, dm data.Manager, en *eventNotifier) *aggregator {
 	ag := &aggregator{
 		ctx:       log.WithLogField(ctx, "role", "aggregator"),
 		database:  di,
 		broadcast: bm,
+		data:      dm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{

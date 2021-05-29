@@ -24,6 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventsmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -38,8 +39,9 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
+	mdm := &datamocks.Manager{}
 	met.On("Name").Return("ut").Maybe()
-	em, err := NewEventManager(ctx, mpi, mdi, mbm)
+	em, err := NewEventManager(ctx, mpi, mdi, mbm, mdm)
 	assert.NoError(t, err)
 	return em.(*eventManager), cancel
 }
@@ -62,7 +64,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -73,7 +75,8 @@ func TestStartStopBadTransports(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mbm)
+	mdm := &datamocks.Manager{}
+	_, err := NewEventManager(context.Background(), mpi, mdi, mbm, mdm)
 	assert.Regexp(t, "FF10172", err)
 
 }
