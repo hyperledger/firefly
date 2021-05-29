@@ -35,27 +35,6 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
-// CheckDataAvailable provides a mock function with given fields: ctx, msg
-func (_m *Plugin) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error) {
-	ret := _m.Called(ctx, msg)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) bool); ok {
-		r0 = rf(ctx, msg)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message) error); ok {
-		r1 = rf(ctx, msg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // DeleteBlocked provides a mock function with given fields: ctx, id
 func (_m *Plugin) DeleteBlocked(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)

@@ -53,7 +53,7 @@ func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype
 	jv.schema = schema
 	jv.size = int64(len(schemaBytes))
 
-	log.L(ctx).Debugf("Found JSON schema validator for %s/%s: %v", datatype, jv.ns, jv.id)
+	log.L(ctx).Debugf("Found JSON schema validator for json:%s:%s: %v", jv.ns, datatype, jv.id)
 	return jv, nil
 }
 

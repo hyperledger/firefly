@@ -5,7 +5,6 @@ package datamocks
 import (
 	context "context"
 
-	data "github.com/kaleido-io/firefly/internal/data"
 	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
@@ -60,29 +59,6 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
-// GetValidator provides a mock function with given fields: ctx, _a1
-func (_m *Manager) GetValidator(ctx context.Context, _a1 *fftypes.Data) (data.Validator, error) {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 data.Validator
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data) data.Validator); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(data.Validator)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Data) error); ok {
-		r1 = rf(ctx, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ResolveInputData provides a mock function with given fields: ctx, ns, inData
 func (_m *Manager) ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error) {
 	ret := _m.Called(ctx, ns, inData)
@@ -99,6 +75,27 @@ func (_m *Manager) ResolveInputData(ctx context.Context, ns string, inData fftyp
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InputData) error); ok {
 		r1 = rf(ctx, ns, inData)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ValidateAll provides a mock function with given fields: ctx, _a1
+func (_m *Manager) ValidateAll(ctx context.Context, _a1 []*fftypes.Data) (bool, error) {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Data) bool); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.Data) error); ok {
+		r1 = rf(ctx, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -24,51 +24,43 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error {
+func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Topic, msg.Header.ID)
 	switch msg.Header.Topic {
 	case fftypes.SystemTopicBroadcastDatatype:
-		return bm.handleDatatypeBroadcast(ctx, msg)
+		return bm.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTopicBroadcastNamespace:
-		return bm.handleNamespaceBroadcast(ctx, msg)
+		return bm.handleNamespaceBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Topic, msg.Header.ID)
 	}
 	return nil
 }
 
-func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, res interface{}) (valid bool, err error) {
+func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res interface{}) (valid bool) {
 	l := log.L(ctx)
-	data, allFound, err := bm.data.GetMessageData(ctx, msg, true)
-	if err != nil {
-		return false, err // only database errors are returned as an error (driving retry until we succeed)
-	}
-	if !allFound {
-		l.Warnf("Unable to process system broadcast %s - missing data", msg.Header.ID)
-		return false, nil
-	}
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachement, found %d", msg.Header.ID, len(data))
-		return false, nil
+		return false
 	}
-	err = json.Unmarshal(data[0].Value, &res)
+	err := json.Unmarshal(data[0].Value, &res)
 	if err != nil {
 		l.Warnf("Unable to process system broadcast %s - unmarshal failed: %s", msg.Header.ID, err)
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
-func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message) error {
+func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
-	valid, err := bm.getSystemBroadcastPayload(ctx, msg, &ns)
-	if !valid || err != nil {
-		return err
+	valid := bm.getSystemBroadcastPayload(ctx, msg, data, &ns)
+	if !valid {
+		return nil
 	}
-	if err = ns.Validate(ctx, true); err != nil {
+	if err := ns.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
 		return nil
 	}
@@ -85,21 +77,21 @@ func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *f
 	return bm.database.UpsertNamespace(ctx, &ns, true)
 }
 
-func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message) error {
+func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
-	valid, err := bm.getSystemBroadcastPayload(ctx, msg, &dt)
-	if !valid || err != nil {
-		return err
+	valid := bm.getSystemBroadcastPayload(ctx, msg, data, &dt)
+	if !valid {
+		return nil
 	}
 
-	if err = dt.Validate(ctx, true); err != nil {
+	if err := dt.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process data broadcast %s - validate failed: %s", msg.Header.ID, err)
 		return nil
 	}
 
-	if err = bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
+	if err := bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 		return nil
 	}

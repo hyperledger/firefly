@@ -31,7 +31,7 @@ import (
 
 type Manager interface {
 	CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error
-	GetValidator(ctx context.Context, data *fftypes.Data) (Validator, error)
+	ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error)
 	GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error)
 	ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error)
 }
@@ -70,37 +70,38 @@ func (dm *dataManager) CheckDatatype(ctx context.Context, ns string, datatype *f
 	return err
 }
 
-func (dm *dataManager) GetValidator(ctx context.Context, data *fftypes.Data) (Validator, error) {
-	return dm.getValidatorForDatatype(ctx, data.Namespace, data.Validator, data.Datatype)
-}
-
+// getValidatorForDatatype only returns database errors - not found (of all kinds) is a nil
 func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, validator fftypes.ValidatorType, datatypeRef *fftypes.DatatypeRef) (Validator, error) {
 	if validator == "" {
 		validator = fftypes.ValidatorTypeJSON
 	}
-	if validator != fftypes.ValidatorTypeJSON {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownValidatorType, validator)
+
+	if ns == "" || datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
+		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, ns, datatypeRef)
+		return nil, nil
 	}
 
-	if datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatypeRef)
+	key := fmt.Sprintf("%s:%s:%s", validator, ns, datatypeRef)
+	if cached := dm.validatorCache.Get(key); cached != nil {
+		cached.Extend(dm.validatorCacheTTL)
+		return cached.Value().(Validator), nil
 	}
 
-	key := fmt.Sprintf("%s:%s:%s", ns, validator, datatypeRef)
-	v, err := dm.validatorCache.Fetch(key, dm.validatorCacheTTL, func() (interface{}, error) {
-		datatype, err := dm.database.GetDatatypeByName(ctx, ns, datatypeRef.Name, datatypeRef.Version)
-		if err != nil {
-			return nil, err
-		}
-		if datatype == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatypeRef.Name)
-		}
-		return newJSONValidator(ctx, ns, datatype)
-	})
+	datatype, err := dm.database.GetDatatypeByName(ctx, ns, datatypeRef.Name, datatypeRef.Version)
 	if err != nil {
 		return nil, err
 	}
-	return v.Value().(Validator), err
+	if datatype == nil {
+		return nil, nil
+	}
+	v, err := newJSONValidator(ctx, ns, datatype)
+	if err != nil {
+		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, ns, datatypeRef, err)
+		return nil, nil
+	}
+
+	dm.validatorCache.Set(key, v, dm.validatorCacheTTL)
+	return v, err
 }
 
 // GetMessageData looks for all the data attached to the message.
@@ -125,6 +126,26 @@ func (dm *dataManager) GetMessageData(ctx context.Context, msg *fftypes.Message,
 	return data, foundAll, nil
 }
 
+func (dm *dataManager) ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error) {
+	for _, d := range data {
+		if d.Datatype != nil {
+			v, err := dm.getValidatorForDatatype(ctx, d.Namespace, d.Validator, d.Datatype)
+			if err != nil {
+				return false, err
+			}
+			if v == nil {
+				log.L(ctx).Errorf("Datatype %s:%s:%s not found", d.Validator, d.Namespace, d.Datatype)
+				return false, err
+			}
+			err = v.ValidateValue(ctx, d.Value, d.Hash)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+	return true, nil
+}
+
 func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *fftypes.DataRef, withValue bool) (*fftypes.Data, error) {
 	if dataRef == nil || dataRef.ID == nil {
 		log.L(ctx).Warnf("data is nil")
@@ -146,13 +167,31 @@ func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *fftyp
 	}
 }
 
+func (dm *dataManager) checkValidatorType(ctx context.Context, validator fftypes.ValidatorType) error {
+	switch validator {
+	case "", fftypes.ValidatorTypeJSON:
+		return nil
+	default:
+		return i18n.NewError(ctx, i18n.MsgUnknownValidatorType, validator)
+	}
+}
+
 func (dm *dataManager) validateAndStore(ctx context.Context, ns string, value *fftypes.DataRefOrValue) (*fftypes.DataRef, error) {
 
 	// If a datatype is specified, we need to verify the payload conforms
 	if value.Datatype != nil {
+		if err := dm.checkValidatorType(ctx, value.Validator); err != nil {
+			return nil, err
+		}
+		if value.Datatype == nil || value.Datatype.Name == "" || value.Datatype.Version == "" {
+			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, value.Datatype)
+		}
 		v, err := dm.getValidatorForDatatype(ctx, ns, value.Validator, value.Datatype)
 		if err != nil {
 			return nil, err
+		}
+		if v == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, value.Datatype)
 		}
 		err = v.ValidateValue(ctx, value.Value, nil)
 		if err != nil {

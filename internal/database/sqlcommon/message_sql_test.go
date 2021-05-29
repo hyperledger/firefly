@@ -158,11 +158,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, msgUpdated.Hash, msgRefs[0].Hash)
 	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)
 
-	// The data will not be available though, confirm we report as such
-	dataAvailable, err := s.CheckDataAvailable(ctx, msgUpdated)
-	assert.NoError(t, err)
-	assert.False(t, dataAvailable)
-
 	// Check we can get it with a filter on only mesasges with a particular data ref
 	msgs, err = s.GetMessagesForData(ctx, dataID3, filter)
 	assert.NoError(t, err)
@@ -552,72 +547,4 @@ func TestMessageUpdateFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("group", fftypes.NewUUID())
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
-}
-
-func TestCheckDataAvailableFalseBadMessage(t *testing.T) {
-	s, _ := newMockProvider().init()
-	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{})
-	assert.False(t, ok)
-	assert.NoError(t, err) // function just returns false and logs if the data cannot be checked for input error
-}
-
-func TestCheckDataAvailableFalseBadMessageRefs(t *testing.T) {
-	s, _ := newMockProvider().init()
-	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-		},
-		Data: fftypes.DataRefs{
-			{ID: fftypes.NewUUID(), Hash: nil},
-		},
-	})
-	assert.False(t, ok)
-	assert.NoError(t, err) // function just returns false and logs if the data cannot be checked for input error
-}
-
-func TestCheckDataAvailableTrueNoData(t *testing.T) {
-	s, _ := newMockProvider().init()
-	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-		},
-	})
-	assert.True(t, ok)
-	assert.NoError(t, err)
-}
-
-func TestCheckDataAvailableDatabaseError(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-		},
-		Data: fftypes.DataRefs{
-			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-		},
-	})
-	assert.Regexp(t, "FF10115", err)
-	assert.False(t, ok)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestCheckDataAvailableScanError(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	ok, err := s.CheckDataAvailable(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-		},
-		Data: fftypes.DataRefs{
-			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-		},
-	})
-	assert.Regexp(t, "FF10121", err)
-	assert.False(t, ok)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }

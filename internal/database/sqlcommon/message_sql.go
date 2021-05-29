@@ -448,56 +448,6 @@ func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) 
 	return msgRefs, nil
 }
 
-func (s SQLCommon) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error) {
-
-	if msg.Header.Namespace == "" || msg.Header.ID == nil {
-		log.L(ctx).Warnf("Invalid message %v", msg.Header.ID)
-		return false, nil
-	}
-	hashByID := make(map[fftypes.UUID]fftypes.Bytes32)
-	ids := make([]*fftypes.UUID, len(msg.Data))
-	for i, dr := range msg.Data {
-		if dr.ID == nil || dr.Hash == nil {
-			log.L(ctx).Warnf("Invalid data reference %v/%v in message %s", dr.ID, dr.Hash, msg.Header.ID)
-			return false, nil
-		}
-		ids[i] = dr.ID
-		hashByID[*dr.ID] = *dr.Hash
-	}
-	if len(ids) == 0 {
-		log.L(ctx).Tracef("Message %s has no data", msg.Header.ID)
-		return true, nil
-	}
-
-	rows, err := s.query(ctx,
-		sq.Select("id", "hash").
-			From("data").
-			Where(sq.Eq{"id": ids, "namespace": msg.Header.Namespace}),
-	)
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var dataID fftypes.UUID
-		var dataHash fftypes.Bytes32
-		err := rows.Scan(&dataID, &dataHash)
-		if err != nil {
-			return false, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
-		}
-		expectedHash, ok := hashByID[dataID]
-		if ok {
-			ok = expectedHash == dataHash
-		}
-		if ok {
-			delete(hashByID, dataID)
-		}
-	}
-	log.L(ctx).Tracef("Remaining data count for %s: %d (%v)", msg.Header.ID, len(hashByID), hashByID)
-	return len(hashByID) == 0, nil
-}
-
 func (s *SQLCommon) UpdateMessage(ctx context.Context, msgid *fftypes.UUID, update database.Update) (err error) {
 	return s.UpdateMessages(ctx, database.MessageQueryFactory.NewFilter(ctx).Eq("id", msgid), update)
 }
