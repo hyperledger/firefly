@@ -205,6 +205,38 @@ func (ag *aggregator) checkUpdateContextBlocked(ctx context.Context, msg *fftype
 	return blocked, nil
 }
 
+func (ag *aggregator) handleCompleteMessage(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+	// Process system messgaes
+	eventType := fftypes.EventTypeMessageConfirmed
+	if msg.Header.Namespace == fftypes.SystemNamespace {
+		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the system events they depend on.
+		if err := ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
+			// Should only return errors that are retryable
+			return err
+		}
+	} else if len(msg.Data) > 0 {
+		valid, err := ag.data.ValidateAll(ctx, data)
+		if err != nil {
+			return err
+		}
+		if !valid {
+			eventType = fftypes.EventTypeMessageInvalid
+		}
+	}
+
+	// This message is now confirmed
+	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
+	err := ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
+	if err != nil {
+		return err
+	}
+
+	// Emit the appropriate event
+	completeEvent := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+	return ag.database.UpsertEvent(ctx, completeEvent, false)
+}
+
 func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Message, lookahead eventsByRef, event *fftypes.Event) (bool, error) {
 	l := log.L(ctx)
 
@@ -241,35 +273,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 	repoll := false
 
-	// Process system messgaes
-	eventType := fftypes.EventTypeMessageConfirmed
-	if msg.Header.Namespace == fftypes.SystemNamespace {
-		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
-		// dispatched subsequent events before we have processed the system events they depend on.
-		if err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
-			// Should only return errors that are retryable
-			return false, err
-		}
-	} else {
-		valid, err := ag.data.ValidateAll(ctx, data)
-		if err != nil {
-			return false, err
-		}
-		if !valid {
-			eventType = fftypes.EventTypeMessageInvalid
-		}
-	}
-
-	// This message is now confirmed
-	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
-	err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
-	if err != nil {
-		return false, err
-	}
-
-	// Emit the appropriate event
-	completeEvent := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
-	if err = ag.database.UpsertEvent(ctx, completeEvent, false); err != nil {
+	if err := ag.handleCompleteMessage(ctx, msg, data); err != nil {
 		return false, err
 	}
 
