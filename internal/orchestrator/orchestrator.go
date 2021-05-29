@@ -204,7 +204,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast, or.data)
 		if err != nil {
 			return err
 		}

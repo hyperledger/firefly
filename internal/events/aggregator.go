@@ -225,9 +225,9 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 	}
 
 	// Check this message is complete
-	complete, err := ag.database.CheckDataAvailable(ctx, msg)
+	data, complete, err := ag.data.GetMessageData(ctx, msg, true)
 	if err != nil {
-		return false, err // CheckDataAvailable should only return an error if there's a problem with persistence
+		return false, err // err only set on persistence errors
 	}
 
 	// Check if the context is currently blocked, or we will block it.
@@ -242,12 +242,21 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 	repoll := false
 
 	// Process system messgaes
+	eventType := fftypes.EventTypeMessageConfirmed
 	if msg.Header.Namespace == fftypes.SystemNamespace {
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
-		if err = ag.broadcast.HandleSystemBroadcast(ctx, msg); err != nil {
+		if err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
 			// Should only return errors that are retryable
 			return false, err
+		}
+	} else {
+		valid, err := ag.data.ValidateAll(ctx, data)
+		if err != nil {
+			return false, err
+		}
+		if !valid {
+			eventType = fftypes.EventTypeMessageInvalid
 		}
 	}
 
@@ -258,9 +267,9 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 		return false, err
 	}
 
-	// Emit the confirmed event
-	confirmedEvent := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, msg.Header.Namespace, msg.Header.ID)
-	if err = ag.database.UpsertEvent(ctx, confirmedEvent, false); err != nil {
+	// Emit the appropriate event
+	completeEvent := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+	if err = ag.database.UpsertEvent(ctx, completeEvent, false); err != nil {
 		return false, err
 	}
 

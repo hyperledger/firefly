@@ -23,6 +23,8 @@ const (
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
 	EventTypeMessageConfirmed EventType = "MessageConfirmed"
+	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
+	EventTypeMessageInvalid EventType = "MessageInvalid"
 	// EventTypeDataArrivedBroadcast indicates that some data has arrived, over a broadcast transport
 	EventTypeDataArrivedBroadcast EventType = "DataArrivedBroadcast"
 	// EventTypeMessageSequencedBroadcast indicates that a deterministically sequenced message has arrived pinned to a blockchain

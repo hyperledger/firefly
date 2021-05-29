@@ -146,19 +146,6 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(dataRes))
 
-	// Check if we refer correctly to this data, we have it reported as available to a message
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: dataUpdated.Namespace,
-		},
-		Data: fftypes.DataRefs{
-			{ID: dataUpdated.ID, Hash: dataUpdated.Hash},
-		},
-	}
-	dataAvailable, err := s.CheckDataAvailable(ctx, msg)
-	assert.NoError(t, err)
-	assert.True(t, dataAvailable)
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {

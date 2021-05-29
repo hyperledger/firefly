@@ -115,9 +115,6 @@ type PeristenceInterface interface {
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
 
-	// CheckDataAvailable - Check to see if all the data for this message is available
-	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
-
 	// UpsertData - Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)

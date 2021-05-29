@@ -33,7 +33,7 @@ import (
 
 type Manager interface {
 	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
-	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error
+	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error
 	Start() error
 	WaitStop()
 }
