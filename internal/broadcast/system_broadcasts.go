@@ -24,7 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Topic, msg.Header.ID)
 	switch msg.Header.Topic {
@@ -35,7 +35,7 @@ func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *ffty
 	default:
 		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Topic, msg.Header.ID)
 	}
-	return nil
+	return false, nil
 }
 
 func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res interface{}) (valid bool) {
@@ -52,58 +52,65 @@ func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *
 	return true
 }
 
-func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var ns fftypes.Namespace
-	valid := bm.getSystemBroadcastPayload(ctx, msg, data, &ns)
+	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
-		return nil
+		return false, nil
 	}
 	if err := ns.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return nil
+		return false, nil
 	}
 
 	existing, err := bm.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
-		return err // We only return database errors
+		return false, err // We only return database errors
 	}
 	if existing != nil && existing.Type != fftypes.NamespaceTypeLocal {
 		l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
-		return nil
+		return false, nil
 	}
 
-	return bm.database.UpsertNamespace(ctx, &ns, true)
+	if err = bm.database.UpsertNamespace(ctx, &ns, true); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
-func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
-	valid := bm.getSystemBroadcastPayload(ctx, msg, data, &dt)
+	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
-		return nil
+		return false, nil
 	}
 
-	if err := dt.Validate(ctx, true); err != nil {
+	if err = dt.Validate(ctx, true); err != nil {
 		l.Warnf("Unable to process data broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return nil
+		return false, nil
 	}
 
-	if err := bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
+	if err = bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
-		return nil
+		return false, nil
 	}
 
 	existing, err := bm.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
 	if err != nil {
-		return err // We only return database errors
+		return false, err // We only return database errors
 	}
 	if existing != nil {
 		l.Warnf("Unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
-		return nil
+		return false, nil
 	}
 
-	return bm.database.UpsertDatatype(ctx, &dt, false)
+	if err = bm.database.UpsertDatatype(ctx, &dt, false); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

@@ -705,7 +705,7 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}
 	mdm.On("GetMessageData", mock.Anything, msg, true).Return([]*fftypes.Data{}, true, nil)
 	mdi.On("GetBlockedByContext", mock.Anything, mock.Anything, mock.Anything, (*fftypes.UUID)(nil)).Return(nil, nil)
-	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
 	repoll, err := ag.checkMessageComplete(context.Background(), msg, eventsByRef{}, ev)
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
