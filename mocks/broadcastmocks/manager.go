@@ -29,17 +29,24 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) e
 }
 
 // HandleSystemBroadcast provides a mock function with given fields: ctx, msg, data
-func (_m *Manager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+func (_m *Manager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (bool, error) {
 	ret := _m.Called(ctx, msg, data)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data) error); ok {
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data) bool); ok {
 		r0 = rf(ctx, msg, data)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, []*fftypes.Data) error); ok {
+		r1 = rf(ctx, msg, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Start provides a mock function with given fields:

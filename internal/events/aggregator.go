@@ -205,18 +205,19 @@ func (ag *aggregator) checkUpdateContextBlocked(ctx context.Context, msg *fftype
 	return blocked, nil
 }
 
-func (ag *aggregator) handleCompleteMessage(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) error {
+func (ag *aggregator) handleCompleteMessage(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (err error) {
 	// Process system messgaes
+	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
 	if msg.Header.Namespace == fftypes.SystemNamespace {
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
-		if err := ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
+		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
 			// Should only return errors that are retryable
 			return err
 		}
 	} else if len(msg.Data) > 0 {
-		valid, err := ag.data.ValidateAll(ctx, data)
+		valid, err = ag.data.ValidateAll(ctx, data)
 		if err != nil {
 			return err
 		}
@@ -225,11 +226,13 @@ func (ag *aggregator) handleCompleteMessage(ctx context.Context, msg *fftypes.Me
 		}
 	}
 
-	// This message is now confirmed
-	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
-	err := ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
-	if err != nil {
-		return err
+	if valid {
+		// This message is now confirmed
+		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
+		err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Emit the appropriate event
