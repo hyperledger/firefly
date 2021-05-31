@@ -187,7 +187,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	return ops, err
 }
 
-func (s *SQLCommon) UpdateOperations(ctx context.Context, filter database.Filter, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -199,11 +199,7 @@ func (s *SQLCommon) UpdateOperations(ctx context.Context, filter database.Filter
 	if err != nil {
 		return err
 	}
-
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterTypeMap)
-	if err != nil {
-		return err
-	}
+	query = query.Where(sq.Eq{"id": id})
 
 	err = s.updateTx(ctx, tx, query)
 	if err != nil {

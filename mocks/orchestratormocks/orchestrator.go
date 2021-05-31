@@ -5,10 +5,7 @@ package orchestratormocks
 import (
 	context "context"
 
-	blockchain "github.com/kaleido-io/firefly/pkg/blockchain"
-
 	database "github.com/kaleido-io/firefly/pkg/database"
-
 	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
@@ -691,20 +688,6 @@ func (_m *Orchestrator) Init(ctx context.Context) error {
 	return r0
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxID, additionalInfo
-func (_m *Orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(batch, author, protocolTxID, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, map[string]interface{}) error); ok {
-		r0 = rf(batch, author, protocolTxID, additionalInfo)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Start provides a mock function with given fields:
 func (_m *Orchestrator) Start() error {
 	ret := _m.Called()
@@ -712,20 +695,6 @@ func (_m *Orchestrator) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
-func (_m *Orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID string, errorMessage string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.TransactionStatus, string, string, map[string]interface{}) error); ok {
-		r0 = rf(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

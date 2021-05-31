@@ -33,11 +33,11 @@ type OpStatus string
 
 const (
 	// OpStatusPending indicates the operation has been submitted, but is not yet confirmed as successful or failed
-	OpStatusPending OpStatus = "pending"
+	OpStatusPending OpStatus = "Pending"
 	// OpStatusSucceeded the infrastructure runtime has returned success for the operation.
-	OpStatusSucceeded OpStatus = "succeeded"
+	OpStatusSucceeded OpStatus = "Succeeded"
 	// OpStatusFailed happens when an error is reported by the infrastructure runtime
-	OpStatusFailed OpStatus = "failed"
+	OpStatusFailed OpStatus = "Failed"
 )
 
 type Named interface {

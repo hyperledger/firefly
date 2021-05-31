@@ -33,8 +33,6 @@ import (
 )
 
 type EventManager interface {
-	blockchain.Callbacks
-
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
@@ -42,19 +40,24 @@ type EventManager interface {
 	CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	Start() error
 	WaitStop()
+
+	// Bound blockchain callbacks
+	TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
+	SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 type eventManager struct {
-	ctx              context.Context
-	publicstorage    publicstorage.Plugin
-	database         database.Plugin
-	broadcast        broadcast.Manager
-	data             data.Manager
-	subManager       *subscriptionManager
-	retry            retry.Retry
-	aggregator       *aggregator
-	eventNotifier    *eventNotifier
-	defaultTransport string
+	ctx                  context.Context
+	publicstorage        publicstorage.Plugin
+	database             database.Plugin
+	broadcast            broadcast.Manager
+	data                 data.Manager
+	subManager           *subscriptionManager
+	retry                retry.Retry
+	aggregator           *aggregator
+	eventNotifier        *eventNotifier
+	opCorrelationRetries int
+	defaultTransport     string
 }
 
 func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
@@ -73,9 +76,10 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		defaultTransport: config.GetString(config.EventTransportsDefault),
-		eventNotifier:    en,
-		aggregator:       newAggregator(ctx, di, bm, dm, en),
+		defaultTransport:     config.GetString(config.EventTransportsDefault),
+		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
+		eventNotifier:        en,
+		aggregator:           newAggregator(ctx, di, bm, dm, en),
 	}
 
 	var err error

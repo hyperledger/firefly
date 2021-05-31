@@ -322,9 +322,9 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed: %+v", reply)
 		return nil // Swallow this and move on
 	}
-	updateType := fftypes.TransactionStatusConfirmed
+	updateType := fftypes.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
-		updateType = fftypes.TransactionStatusFailed
+		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
 	return e.callbacks.TransactionUpdate(requestID, updateType, txHash, message, reply)

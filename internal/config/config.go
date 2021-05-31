@@ -89,6 +89,9 @@ var (
 	EventAggregatorBatchSize = rootKey("event.aggregator.batchSize")
 	// EventAggregatorBatchTimeout how long to wait for new events to arrive before performing aggregation on a page of events
 	EventAggregatorBatchTimeout = rootKey("event.aggregator.batchTimeout")
+	// EventAggregatorOpCorrelationRetries how many times to correlate an event for an operation (such as tx submission) back to an operation.
+	// Needed because the operation update might come back before we are finished persisting the ID of the request
+	EventAggregatorOpCorrelationRetries = rootKey("event.aggregator.opCorrelationRetries")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
 	EventAggregatorPollTimeout = rootKey("event.aggregator.pollTimeout")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
@@ -225,8 +228,9 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
-	viper.SetDefault(string(EventAggregatorRetryInitDelay), "250ms")
+	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
+	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
 	viper.SetDefault(string(EventDispatcherBatchTimeout), 0)
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")

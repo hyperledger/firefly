@@ -61,7 +61,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error
+	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
 
 	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -70,7 +70,7 @@ type Callbacks interface {
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error
+	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -83,7 +83,7 @@ type Capabilities struct {
 
 // TransactionStatus is the only architecturally significant thing that Firefly tracks on blockchain transactions.
 // All other data is consider protocol specific, and hence stored as opaque data.
-type TransactionStatus = fftypes.TransactionStatus
+type TransactionStatus = fftypes.OpStatus
 
 // BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
 // Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members

@@ -33,7 +33,7 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
 	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author)
 	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author) }()
@@ -75,7 +75,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
@@ -142,7 +142,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	tx.Confirmed = now
 	tx.ProtocolID = protocolTxID
 	tx.Info = additionalInfo
-	tx.Status = fftypes.TransactionStatusConfirmed
+	tx.Status = fftypes.OpStatusSucceeded
 
 	// Upsert the transaction, ensuring the hash does not change
 	err = em.database.UpsertTransaction(ctx, tx, true, false)

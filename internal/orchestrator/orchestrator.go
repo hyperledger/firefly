@@ -44,8 +44,6 @@ var (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	blockchain.Callbacks
-
 	Init(ctx context.Context) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
@@ -216,7 +214,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
-	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), or)
+	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), BindBlockchainCallbacks(or.blockchain, or.events))
 	if err != nil {
 		return err
 	}

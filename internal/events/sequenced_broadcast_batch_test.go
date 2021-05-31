@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
@@ -66,8 +67,9 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mbi := &blockchainmocks.Plugin{}
 
-	err = em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err = em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -89,8 +91,9 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	cancel() // to avoid retry
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -108,8 +111,9 @@ func TestSequencedBroadcastBatchBadData(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
+	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 

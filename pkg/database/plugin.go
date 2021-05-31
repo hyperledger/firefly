@@ -205,8 +205,8 @@ type PeristenceInterface interface {
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
-	// UpdateOperations - Update matching operations
-	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
+	// UpdateOperation - Update matching operations
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
