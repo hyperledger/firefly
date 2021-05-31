@@ -192,7 +192,14 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 		Type:  "listen",
 		Topic: e.topic,
 	})
-	return w.Send(ctx, b)
+	err := w.Send(ctx, b)
+	if err == nil {
+		b, _ = json.Marshal(&ethWSCommandPayload{
+			Type: "listenreplies",
+		})
+		err = w.Send(ctx, b)
+	}
+	return err
 }
 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
@@ -303,17 +310,37 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	return e.callbacks.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
 }
 
-func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
-
+func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
 	l := log.L(ctx)
-	var msgsJSON []fftypes.JSONObject
-	err := json.Unmarshal(message, &msgsJSON)
-	if err != nil {
-		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(message))
+
+	headers := reply.GetObject("headers")
+	requestID := headers.GetString("requestId")
+	replyType := headers.GetString("type")
+	txHash := reply.GetString("transactionHash")
+	message := reply.GetString("errorMessage")
+	if requestID == "" || replyType == "" {
+		l.Errorf("Reply cannot be processed: %+v", reply)
 		return nil // Swallow this and move on
 	}
+	updateType := fftypes.TransactionStatusConfirmed
+	if replyType != "TransactionSuccess" {
+		updateType = fftypes.TransactionStatusFailed
+	}
 
-	for i, msgJSON := range msgsJSON {
+	return e.callbacks.TransactionUpdate(requestID, updateType, txHash, message, reply)
+}
+
+func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
+	l := log.L(ctx)
+
+	for i, msgI := range messages {
+		msgMap, ok := msgI.(map[string]interface{})
+		if !ok {
+			l.Errorf("Message cannot be parsed as JSON: %+v", msgI)
+			return nil // Swallow this and move on
+		}
+		msgJSON := fftypes.JSONObject(msgMap)
+
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		signature := msgJSON.GetString("signature")
@@ -322,7 +349,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 
 		switch signature {
 		case broadcastBatchEventSignature:
-			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
+			if err := e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
 		default:
@@ -347,9 +374,24 @@ func (e *Ethereum) eventLoop() {
 				l.Debugf("Event loop exiting (receive channel closed)")
 				return
 			}
-			err := e.handleMessageBatch(ctx, msgBytes)
-			if err == nil {
-				err = e.wsconn.Send(ctx, ack)
+
+			var msgParsed interface{}
+			err := json.Unmarshal(msgBytes, &msgParsed)
+			if err != nil {
+				l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
+				continue // Swallow this and move on
+			}
+			switch msgTyped := msgParsed.(type) {
+			case []interface{}:
+				err = e.handleMessageBatch(ctx, msgTyped)
+				if err == nil {
+					err = e.wsconn.Send(ctx, ack)
+				}
+			case map[string]interface{}:
+				err = e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+			default:
+				l.Errorf("Message unexpected: %+v", msgTyped)
+				continue
 			}
 
 			// Send the ack - only fails if shutting down
