@@ -25,9 +25,9 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getMsgOps = &oapispec.Route{
-	Name:   "getMsgOps",
-	Path:   "namespaces/{ns}/messages/{msgid}/operations",
+var getMsgTxn = &oapispec.Route{
+	Name:   "getMsgTxn",
+	Path:   "namespaces/{ns}/messages/{msgid}/transaction",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -37,10 +37,10 @@ var getMsgOps = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		output, err = r.Or.GetMessageTransaction(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

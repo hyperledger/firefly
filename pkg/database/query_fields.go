@@ -20,6 +20,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"reflect"
 	"strconv"
 
@@ -211,3 +212,24 @@ func (f *timeField) Value() (driver.Value, error) {
 	return f.t.UnixNano(), nil
 }
 func (f *TimeField) getSerialization() FieldSerialization { return &timeField{} }
+
+type JSONField struct{}
+type jsonField struct{ b []byte }
+
+func (f *jsonField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case string:
+		f.b = []byte(tv)
+	case []byte:
+		f.b = tv
+	case fftypes.JSONObject:
+		f.b, err = json.Marshal(tv)
+	case nil:
+		f.b = nil
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
+	}
+	return err
+}
+func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
+func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }

@@ -117,7 +117,7 @@ func TestSealKnownMessage(t *testing.T) {
 			CID:  cid,
 			Type: MessageTypePrivate,
 			TX: TransactionRef{
-				Type: TransactionTypePin,
+				Type: TransactionTypeBatchPin,
 				ID:   txid,
 			},
 			Author:    "0x12345",
@@ -145,10 +145,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"BatchPin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `c1c1c4f4ae7ab97b108fdc4b5e7c9b895104dd01398235d2844cd97aff825d92`, msgHash.String())
+	assert.Equal(t, `0375fc21a32d4b46338c26b394f72752fee0a85a40851bbb8d73479e7bfaea9f`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good

@@ -56,7 +56,7 @@ func (or *orchestrator) broadcastDefinition(ctx context.Context, defObject inter
 			Topic:     topic,
 			Context:   fftypes.SystemContext,
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 			},
 		},
 		Data: fftypes.DataRefs{

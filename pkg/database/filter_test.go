@@ -160,6 +160,18 @@ func TestBuildMessageStringConvert(t *testing.T) {
 	assert.Equal(t, "( namespace < '111' ) && ( namespace < '222' ) && ( namespace < '333' ) && ( namespace < '444' ) && ( namespace < '555' ) && ( namespace < '666' ) && ( namespace < '' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
 }
 
+func TestBuildMessageJSONConvert(t *testing.T) {
+	fb := TransactionQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.Eq("info", nil),
+		fb.Eq("info", `{}`),
+		fb.Eq("info", []byte(`{}`)),
+		fb.Eq("info", fftypes.JSONObject{"some": "value"}),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, `( info == null ) && ( info == '{}' ) && ( info == '{}' ) && ( info == '{"some":"value"}' )`, f.String())
+}
+
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
@@ -212,4 +224,10 @@ func TestQueryFactoryGetFields(t *testing.T) {
 func TestQueryFactoryGetBuilder(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background()).Gt("sequence", 0)
 	assert.NotNil(t, fb.Builder())
+}
+
+func TestBuildMessageFailJSONConvert(t *testing.T) {
+	fb := TransactionQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("info", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*info", err)
 }

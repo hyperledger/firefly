@@ -30,9 +30,7 @@ import (
 var (
 	opColumns = []string{
 		"id",
-		"namespace",
-		"msg_id",
-		"data_id",
+		"tx_id",
 		"optype",
 		"opstatus",
 		"recipient",
@@ -41,10 +39,10 @@ var (
 		"created",
 		"updated",
 		"error",
+		"info",
 	}
 	opFilterTypeMap = map[string]string{
-		"message":   "msg_id",
-		"data":      "data_id",
+		"tx":        "tx_id",
 		"type":      "optype",
 		"status":    "opstatus",
 		"backendid": "backend_id",
@@ -79,9 +77,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 		// Update the operation
 		if err = s.updateTx(ctx, tx,
 			sq.Update("operations").
-				Set("namespace", operation.Namespace).
-				Set("msg_id", operation.Message).
-				Set("data_id", operation.Data).
+				Set("tx_id", operation.Transaction).
 				Set("optype", operation.Type).
 				Set("opstatus", operation.Status).
 				Set("recipient", operation.Recipient).
@@ -90,6 +86,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("created", operation.Created).
 				Set("updated", operation.Updated).
 				Set("error", operation.Error).
+				Set("info", operation.Info).
 				Where(sq.Eq{"id": operation.ID}),
 		); err != nil {
 			return err
@@ -100,9 +97,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Columns(opColumns...).
 				Values(
 					operation.ID,
-					operation.Namespace,
-					operation.Message,
-					operation.Data,
+					operation.Transaction,
 					string(operation.Type),
 					string(operation.Status),
 					operation.Recipient,
@@ -111,6 +106,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Created,
 					operation.Updated,
 					operation.Error,
+					operation.Info,
 				),
 		); err != nil {
 			return err
@@ -124,9 +120,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	var op fftypes.Operation
 	err := row.Scan(
 		&op.ID,
-		&op.Namespace,
-		&op.Message,
-		&op.Data,
+		&op.Transaction,
 		&op.Type,
 		&op.Status,
 		&op.Recipient,
@@ -135,6 +129,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Created,
 		&op.Updated,
 		&op.Error,
+		&op.Info,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "operations")

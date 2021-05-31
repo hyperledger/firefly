@@ -378,13 +378,13 @@ func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id stri
 	return r0, r1
 }
 
-// GetMessageOperations provides a mock function with given fields: ctx, ns, id, filter
-func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
-	ret := _m.Called(ctx, ns, id, filter)
+// GetMessageOperations provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id)
 
 	var r0 []*fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.Operation); ok {
-		r0 = rf(ctx, ns, id, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Operation)
@@ -392,8 +392,31 @@ func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
-		r1 = rf(ctx, ns, id, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetMessageTransaction provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetMessageTransaction(ctx context.Context, ns string, id string) (*fftypes.Transaction, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Transaction); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -595,6 +618,29 @@ func (_m *Orchestrator) GetTransactionByID(ctx context.Context, ns string, id st
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Transaction)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTransactionOperations provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 []*fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Operation)
 		}
 	}
 
