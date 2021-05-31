@@ -28,7 +28,7 @@ import (
 )
 
 func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return *id1 == *id2 })
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
 }
 
 func TestCreateSubscriptionBadNamespace(t *testing.T) {

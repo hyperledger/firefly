@@ -124,4 +124,8 @@ var (
 	MsgDataReferenceUnresolvable   = ffm("FF10204", "Data reference %d cannot be resolved", 400)
 	MsgDataMissing                 = ffm("FF10205", "Data entry %d has neither 'id' to refer to existing data, or 'value' to include in-line JSON data", 400)
 	MsgAuthorInvalid               = ffm("FF10206", "Invalid header.author in message", 400)
+	MsgNoTransaction               = ffm("FF10207", "Message does not have a transaction", 404)
+	MsgBatchNotSet                 = ffm("FF10208", "Message does not have an assigned batch", 404)
+	MsgBatchNotFound               = ffm("FF10209", "Batch '%s' not found for message", 500)
+	MsgBatchTXNotSet               = ffm("FF10210", "Batch '%s' does not have an assigned transaction", 404)
 )

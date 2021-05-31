@@ -78,7 +78,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID:   txid,
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 			},
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: msgID1}},

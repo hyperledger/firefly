@@ -37,12 +37,11 @@ func TestOperationE2EWithDB(t *testing.T) {
 	// Create a new operation entry
 	operationID := fftypes.NewUUID()
 	operation := &fftypes.Operation{
-		ID:        operationID,
-		Namespace: "ns1",
-		Type:      fftypes.OpTypeBlockchainBatchPin,
-		Message:   fftypes.NewUUID(),
-		Status:    fftypes.OpStatusPending,
-		Created:   fftypes.Now(),
+		ID:          operationID,
+		Type:        fftypes.OpTypeBlockchainBatchPin,
+		Transaction: fftypes.NewUUID(),
+		Status:      fftypes.OpStatusPending,
+		Created:     fftypes.Now(),
 	}
 	err := s.UpsertOperation(ctx, operation, true)
 	assert.NoError(t, err)
@@ -58,18 +57,17 @@ func TestOperationE2EWithDB(t *testing.T) {
 	// Update the operation (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	operationUpdated := &fftypes.Operation{
-		ID:        operationID,
-		Namespace: "ns1",
-		Type:      fftypes.OpTypeBlockchainBatchPin,
-		Message:   fftypes.NewUUID(),
-		Data:      fftypes.NewUUID(),
-		Status:    fftypes.OpStatusFailed,
-		Recipient: "sally",
-		Plugin:    "ethereum",
-		BackendID: fftypes.NewRandB32().String(),
-		Error:     "pop",
-		Created:   fftypes.Now(),
-		Updated:   fftypes.Now(),
+		ID:          operationID,
+		Type:        fftypes.OpTypeBlockchainBatchPin,
+		Transaction: fftypes.NewUUID(),
+		Status:      fftypes.OpStatusFailed,
+		Recipient:   "sally",
+		Plugin:      "ethereum",
+		BackendID:   fftypes.NewRandB32().String(),
+		Error:       "pop",
+		Info:        fftypes.JSONObject{"some": "info"},
+		Created:     fftypes.Now(),
+		Updated:     fftypes.Now(),
 	}
 	err = s.UpsertOperation(context.Background(), operationUpdated, true)
 	assert.NoError(t, err)
@@ -85,9 +83,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", operationUpdated.ID.String()),
-		fb.Eq("namespace", operationUpdated.Namespace),
-		fb.Eq("message", operationUpdated.Message),
-		fb.Eq("data", operationUpdated.Data),
+		fb.Eq("tx", operationUpdated.Transaction),
 		fb.Eq("type", operationUpdated.Type),
 		fb.Eq("recipient", operationUpdated.Recipient),
 		fb.Eq("status", operationUpdated.Status),

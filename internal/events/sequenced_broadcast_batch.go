@@ -122,18 +122,18 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		tx = &fftypes.Transaction{
 			ID: batch.Payload.TX.ID,
 			Subject: fftypes.TransactionSubject{
-				Type:      fftypes.TransactionTypePin,
+				Type:      fftypes.TransactionTypeBatchPin,
 				Author:    author,
 				Namespace: batch.Namespace,
-				Batch:     batch.ID,
+				Reference: batch.ID,
 			},
 		}
 		tx.Hash = tx.Subject.Hash()
-	} else if tx.Subject.Type != fftypes.TransactionTypePin ||
+	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
 		tx.Subject.Author != author ||
 		tx.Subject.Namespace != batch.Namespace ||
-		tx.Subject.Batch == nil ||
-		*tx.Subject.Batch != *batch.ID {
+		tx.Subject.Reference == nil ||
+		*tx.Subject.Reference != *batch.ID {
 		l.Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batch.ID, tx.ID)
 		return nil // This is not retryable. skip this batch
 	}

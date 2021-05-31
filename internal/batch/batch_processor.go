@@ -162,7 +162,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	if seal {
 		// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
 		batch.Payload.TX = fftypes.TransactionRef{
-			Type: fftypes.TransactionTypePin,
+			Type: fftypes.TransactionTypeBatchPin,
 			ID:   fftypes.NewUUID(),
 		}
 		batch.Hash = batch.Payload.Hash()

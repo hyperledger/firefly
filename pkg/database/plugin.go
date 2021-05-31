@@ -324,13 +324,13 @@ var TransactionQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"protocolid": &StringField{},
 	"status":     &StringField{},
-	"message":    &UUIDField{},
-	"batch":      &UUIDField{},
+	"reference":  &UUIDField{},
+	"protocolid": &StringField{},
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
+	"info":       &JSONField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -365,14 +365,13 @@ var OffsetQueryFactory = &queryFields{
 // OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"message":   &UUIDField{},
-	"data":      &UUIDField{},
+	"tx":        &UUIDField{},
 	"type":      &StringField{},
 	"recipient": &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
+	"info":      &JSONField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},

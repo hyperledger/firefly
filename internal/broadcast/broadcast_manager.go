@@ -94,10 +94,9 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: batch.Namespace,
-			Author:    batch.Author,
-			Batch:     batch.ID,
+			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
 		Status:  fftypes.TransactionStatusPending,
@@ -124,35 +123,27 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		return err
 	}
 
-	// Store the operations for each message
-	for _, msg := range batch.Payload.Messages {
-
-		// The pending blockchain transaction
-		op := fftypes.NewMessageOp(
-			bm.blockchain,
-			blockchainTrackingID,
-			msg,
-			fftypes.OpTypeBlockchainBatchPin,
-			fftypes.OpStatusPending,
-			"")
-		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
-			return err
-		}
-
-		// The completed PublicStorage upload
-		op = fftypes.NewMessageOp(
-			bm.publicstorage,
-			publicstorageID,
-			msg,
-			fftypes.OpTypePublicStorageBatchBroadcast,
-			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
-			"")
-		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
-			return err
-		}
+	// The pending blockchain transaction
+	op := fftypes.NewTXOperation(
+		bm.blockchain,
+		batch.Payload.TX.ID,
+		blockchainTrackingID,
+		fftypes.OpTypeBlockchainBatchPin,
+		fftypes.OpStatusPending,
+		"")
+	if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
+		return err
 	}
 
-	return nil
+	// The completed PublicStorage upload
+	op = fftypes.NewTXOperation(
+		bm.publicstorage,
+		batch.Payload.TX.ID,
+		publicstorageID,
+		fftypes.OpTypePublicStorageBatchBroadcast,
+		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
+		"")
+	return bm.database.UpsertOperation(ctx, op, false)
 }
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {

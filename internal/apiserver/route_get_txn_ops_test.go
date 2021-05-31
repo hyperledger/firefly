@@ -14,30 +14,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package apiserver
 
 import (
+	"net/http/httptest"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type fakePlugin struct{}
+func TestGetTxnOps(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	r := createMuxRouter(o)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/transactions/abcd12345/operations", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
 
-func (f *fakePlugin) Name() string { return "fake" }
+	o.On("GetTransactionOperations", mock.Anything, "mynamespace", "abcd12345").
+		Return([]*fftypes.Operation{}, nil)
+	r.ServeHTTP(res, req)
 
-func TestNewPendingMessageOp(t *testing.T) {
-
-	txID := NewUUID()
-	op := NewTXOperation(&fakePlugin{}, txID, "testBackend", OpTypePublicStorageBatchBroadcast, OpStatusPending, "recipient")
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Transaction: txID,
-		Plugin:      "fake",
-		BackendID:   "testBackend",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Recipient:   "recipient",
-		Status:      OpStatusPending,
-		Created:     op.Created,
-	}, *op)
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

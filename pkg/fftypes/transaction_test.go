@@ -23,15 +23,13 @@ import (
 )
 
 func TestTransactionHash(t *testing.T) {
-	msgid := MustParseUUID("2cd37805-5f40-4e12-962e-67868cde3049")
 	batchid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
 	tx := &Transaction{}
 	tx.Subject = TransactionSubject{
 		Author:    "0x12345",
 		Namespace: "ns1",
-		Type:      TransactionTypePin,
-		Message:   msgid,
-		Batch:     batchid,
+		Type:      TransactionTypeBatchPin,
+		Reference: batchid,
 	}
-	assert.Equal(t, "32fe939dee0ef781e1cdc685f24d1482551b604116b7f3f3588ab2c7eafebbe5", tx.Subject.Hash().String())
+	assert.Equal(t, "0b963f14e85b997642c5cd40a766f9f6562dfde93a61717b65dd88251eb42824", tx.Subject.Hash().String())
 }

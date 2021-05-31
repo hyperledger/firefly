@@ -326,7 +326,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 	if replyType != "TransactionSuccess" {
 		updateType = fftypes.TransactionStatusFailed
 	}
-
+	l.Infof("Ethconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
 	return e.callbacks.TransactionUpdate(requestID, updateType, txHash, message, reply)
 }
 

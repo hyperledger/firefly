@@ -102,7 +102,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Group:     gid,
 			DataHash:  fftypes.NewRandB32(),
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   txid,
 			},
 		},

@@ -236,6 +236,10 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	batch := &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   fftypes.NewUUID(),
+			},
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
 					ID: msgID,
@@ -248,13 +252,13 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	assert.NoError(t, err)
 
 	op1 := dbMocks.Calls[2].Arguments[1].(*fftypes.Operation)
-	assert.Equal(t, *msgID, *op1.Message)
+	assert.Equal(t, *batch.Payload.TX.ID, *op1.Transaction)
 	assert.Equal(t, "ut_blockchain", op1.Plugin)
 	assert.Equal(t, "blockchain_id", op1.BackendID)
 	assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op1.Type)
 
 	op2 := dbMocks.Calls[3].Arguments[1].(*fftypes.Operation)
-	assert.Equal(t, *msgID, *op2.Message)
+	assert.Equal(t, *batch.Payload.TX.ID, *op2.Transaction)
 	assert.Equal(t, "ut_publicstorage", op2.Plugin)
 	assert.Equal(t, "ipfs_id", op2.BackendID)
 	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op2.Type)

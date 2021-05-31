@@ -65,6 +65,19 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	return or.database.GetTransactionByID(ctx, u)
 }
 
+func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
+	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", u),
+		fb.Eq("namespace", ns),
+	)
+	return or.database.GetOperations(ctx, filter)
+}
+
 func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
@@ -76,6 +89,7 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	}
 	return msg, err
 }
+
 func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil {
@@ -172,12 +186,6 @@ func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 	return or.database.GetMessages(ctx, filter)
 }
 
-func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
-	filter = or.scopeNS(ns, filter)
-	filter = filter.Condition(filter.Builder().Eq("message", id))
-	return or.database.GetOperations(ctx, filter)
-}
-
 func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
@@ -185,6 +193,50 @@ func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*f
 	}
 	data, _, err := or.data.GetMessageData(ctx, msg, true)
 	return data, err
+}
+
+func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
+	msg, err := or.getMessageByID(ctx, ns, id)
+	if err != nil || msg == nil {
+		return nil, err
+	}
+	var txID *fftypes.UUID
+	if msg.Header.TX.Type == fftypes.TransactionTypeBatchPin {
+		if msg.BatchID == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchNotSet)
+		}
+		batch, err := or.database.GetBatchByID(ctx, msg.BatchID)
+		if err != nil {
+			return nil, err
+		}
+		if batch == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
+		}
+		txID = batch.Payload.TX.ID
+		if txID == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
+		}
+	} else {
+		return nil, i18n.NewError(ctx, i18n.MsgNoTransaction)
+	}
+	return txID, nil
+}
+
+func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
+	txID, err := or.getMessageTransactionID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return or.database.GetTransactionByID(ctx, txID)
+}
+
+func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
+	txID, err := or.getMessageTransactionID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
+	return or.database.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {

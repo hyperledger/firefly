@@ -25,20 +25,20 @@ type TransactionType string
 
 const (
 	// TransactionTypeNone indicates no transaction should be used for this message/batch
-	TransactionTypeNone TransactionType = "none"
-	// TransactionTypePin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypePin TransactionType = "pin"
+	TransactionTypeNone TransactionType = "None"
+	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
+	TransactionTypeBatchPin TransactionType = "BatchPin"
 )
 
 type TransactionStatus string
 
 const (
 	// TransactionStatusPending the transaction has been submitted
-	TransactionStatusPending TransactionStatus = "pending"
+	TransactionStatusPending TransactionStatus = "Pending"
 	// TransactionStatusConfirmed the transaction is considered final per the rules of the blockchain technology
-	TransactionStatusConfirmed TransactionStatus = "confirmed"
+	TransactionStatusConfirmed TransactionStatus = "Confirmed"
 	// TransactionStatusFailed the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
-	TransactionStatusFailed TransactionStatus = "error"
+	TransactionStatusFailed TransactionStatus = "Error"
 )
 
 // TransactionRef refers to a transaction, in other types
@@ -53,8 +53,7 @@ type TransactionSubject struct {
 	Author    string          `json:"author"`
 	Namespace string          `json:"namespace,omitempty"`
 	Type      TransactionType `json:"type"`
-	Message   *UUID           `json:"message,omitempty"`
-	Batch     *UUID           `json:"batch,omitempty"`
+	Reference *UUID           `json:"reference,omitempty"`
 }
 
 func (t *TransactionSubject) Hash() *Bytes32 {
