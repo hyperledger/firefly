@@ -693,7 +693,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	em.On("TransactionUpdate",
 		"4373614c-e0f7-47b0-640e-7eacec417a9e",
-		fftypes.TransactionStatusConfirmed,
+		fftypes.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
 		mock.Anything).Return(nil)
@@ -733,7 +733,7 @@ func TestHandleReceiptTXFail(t *testing.T) {
 
 	em.On("TransactionUpdate",
 		"6fb94fff-81d3-4094-567d-e031b1871694",
-		fftypes.TransactionStatusFailed,
+		fftypes.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(nil)

@@ -99,7 +99,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
-		Status:  fftypes.TransactionStatusPending,
+		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
 	err := bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)

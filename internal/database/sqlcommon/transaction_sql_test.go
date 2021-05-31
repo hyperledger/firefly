@@ -45,7 +45,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 			Reference: fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
-		Status:  fftypes.TransactionStatusPending,
+		Status:  fftypes.OpStatusPending,
 	}
 	err := s.UpsertTransaction(ctx, transaction, true, false)
 	assert.NoError(t, err)
@@ -73,7 +73,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		},
 		Created:    fftypes.Now(),
 		ProtocolID: "0x33333",
-		Status:     fftypes.TransactionStatusFailed,
+		Status:     fftypes.OpStatusFailed,
 		Info: fftypes.JSONObject{
 			"some": "data",
 		},
@@ -122,14 +122,14 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update
 	up := database.TransactionQueryFactory.NewUpdate(ctx).
-		Set("status", fftypes.TransactionStatusConfirmed)
+		Set("status", fftypes.OpStatusSucceeded)
 	err = s.UpdateTransaction(ctx, transactionUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
-		fb.Eq("status", fftypes.TransactionStatusConfirmed),
+		fb.Eq("status", fftypes.OpStatusSucceeded),
 	)
 	transactions, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)

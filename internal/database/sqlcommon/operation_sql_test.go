@@ -115,9 +115,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Set("status", fftypes.OpStatusSucceeded).
 		Set("updated", updateTime).
 		Set("error", "")
-	idFilter := database.OperationQueryFactory.NewFilter(ctx).
-		Eq("id", operationUpdated.ID)
-	err = s.UpdateOperations(ctx, idFilter, up)
+	err = s.UpdateOperation(ctx, operationUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -243,27 +241,16 @@ func TestGettOperationsReadMessageFail(t *testing.T) {
 func TestOperationUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperations(context.Background(), f, u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
 func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateOperations(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*id", err)
-}
-
-func TestOperationUpdateBuildFilterFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperations(context.Background(), f, u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -272,8 +259,7 @@ func TestOperationUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", fftypes.NewUUID())
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateOperations(context.Background(), f, u)
+	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

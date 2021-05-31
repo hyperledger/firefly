@@ -30,17 +30,6 @@ const (
 	TransactionTypeBatchPin TransactionType = "BatchPin"
 )
 
-type TransactionStatus string
-
-const (
-	// TransactionStatusPending the transaction has been submitted
-	TransactionStatusPending TransactionStatus = "Pending"
-	// TransactionStatusConfirmed the transaction is considered final per the rules of the blockchain technology
-	TransactionStatusConfirmed TransactionStatus = "Confirmed"
-	// TransactionStatusFailed the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
-	TransactionStatusFailed TransactionStatus = "Error"
-)
-
 // TransactionRef refers to a transaction, in other types
 type TransactionRef struct {
 	Type TransactionType `json:"type"`
@@ -71,7 +60,7 @@ type Transaction struct {
 	Subject    TransactionSubject `json:"subject"`
 	Sequence   int64              `json:"sequence,omitempty"`
 	Created    *FFTime            `json:"created"`
-	Status     TransactionStatus  `json:"status"`
+	Status     OpStatus           `json:"status"`
 	ProtocolID string             `json:"protocolID,omitempty"`
 	Confirmed  *FFTime            `json:"confirmed,omitempty"`
 	Info       JSONObject         `json:"info,omitempty"`

@@ -20,29 +20,26 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestTransactionUpdate(t *testing.T) {
-	mem := &eventmocks.EventManager{}
-	o := &orchestrator{
-		events: mem,
-	}
-	mem.On("TransactionUpdate", "node1", fftypes.TransactionStatusConfirmed, "protoid", "", mock.Anything).Return(fmt.Errorf("pop"))
-	err := o.TransactionUpdate("node1", fftypes.TransactionStatusConfirmed, "protoid", "", nil)
-	assert.EqualError(t, err, "pop")
-}
+func TestBoundBlockchainCallbacks(t *testing.T) {
+	mei := &eventmocks.EventManager{}
+	mbi := &blockchainmocks.Plugin{}
+	bbc := BindBlockchainCallbacks(mbi, mei)
 
-func TestSequencedBroadcastBatch(t *testing.T) {
-	mem := &eventmocks.EventManager{}
-	o := &orchestrator{
-		events: mem,
-	}
-	mem.On("SequencedBroadcastBatch", mock.Anything, "0x12345", "protoid", mock.Anything).Return(fmt.Errorf("pop"))
-	err := o.SequencedBroadcastBatch(&blockchain.BroadcastBatch{}, "0x12345", "protoid", nil)
+	info := fftypes.JSONObject{"hello": "world"}
+	batch := &blockchain.BroadcastBatch{TransactionID: fftypes.NewUUID()}
+
+	mei.On("SequencedBroadcastBatch", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
+	err := bbc.SequencedBroadcastBatch(batch, "0x12345", "tx12345", info)
+	assert.EqualError(t, err, "pop")
+
+	mei.On("TransactionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info).Return(fmt.Errorf("pop"))
+	err = bbc.TransactionUpdate("tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info)
 	assert.EqualError(t, err, "pop")
 }
