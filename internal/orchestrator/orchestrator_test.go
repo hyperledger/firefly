@@ -26,8 +26,10 @@ import (
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
+	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -46,6 +48,8 @@ type testOrchestrator struct {
 	mem *eventmocks.EventManager
 	mps *publicstoragemocks.Plugin
 	mbi *blockchainmocks.Plugin
+	mii *identitymocks.Plugin
+	mdx *dataexchangemocks.Plugin
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -60,6 +64,8 @@ func newTestOrchestrator() *testOrchestrator {
 		mem: &eventmocks.EventManager{},
 		mps: &publicstoragemocks.Plugin{},
 		mbi: &blockchainmocks.Plugin{},
+		mii: &identitymocks.Plugin{},
+		mdx: &dataexchangemocks.Plugin{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -68,10 +74,14 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.blockchain = tor.mbi
+	tor.orchestrator.identity = tor.mii
+	tor.orchestrator.dataexchange = tor.mdx
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
 	tor.mbi.On("Name").Return("mock-bi").Maybe()
+	tor.mii.On("Name").Return("mock-ii").Maybe()
+	tor.mdx.On("Name").Return("mock-dx").Maybe()
 	return tor
 }
 
@@ -96,17 +106,36 @@ func TestBadDatabaseInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestBadIdentityPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	config.Set(config.IdentityType, "wrong")
+	or.identity = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	err := or.Init(context.Background())
+	assert.Regexp(t, "FF10212.*wrong", err)
+}
+
+func TestBadIdentityInitFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := or.Init(context.Background())
+	assert.EqualError(t, err, "pop")
+}
+
 func TestBadBlockchainPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.BlockchainType, "wrong")
 	or.blockchain = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	err := or.Init(context.Background())
 	assert.Regexp(t, "FF10110.*wrong", err)
 }
 
 func TestBlockchaiInitFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := or.Init(context.Background())
@@ -116,6 +145,7 @@ func TestBlockchaiInitFail(t *testing.T) {
 func TestBlockchainVerifyIDFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	err := or.Init(context.Background())
@@ -128,6 +158,7 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 	or.publicstorage = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	err := or.Init(context.Background())
 	assert.Regexp(t, "FF10134.*wrong", err)
@@ -137,8 +168,34 @@ func TestBadPublicStorageInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	err := or.Init(context.Background())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBadDataExchangePlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	config.Set(config.DataexchangeType, "wrong")
+	or.dataexchange = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	err := or.Init(context.Background())
+	assert.Regexp(t, "FF10213.*wrong", err)
+}
+
+func TestBadPDataExchangeInitFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := or.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
@@ -266,9 +323,11 @@ func TestInitNamespacesDupName(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := config.ReadConfig(configDir + "/firefly.core.yaml")

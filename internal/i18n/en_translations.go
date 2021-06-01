@@ -129,4 +129,6 @@ var (
 	MsgBatchNotFound               = ffm("FF10209", "Batch '%s' not found for message", 500)
 	MsgBatchTXNotSet               = ffm("FF10210", "Batch '%s' does not have an assigned transaction", 404)
 	MsgOwnerMissing                = ffm("FF10211", "Owner missing", 400)
+	MsgUnknownIdentityPlugin       = ffm("FF10212", "Unknown Identity plugin '%s'")
+	MsgUnknownDataExchangePlugin   = ffm("FF10213", "Unknown Data Exchange plugin '%s'")
 )

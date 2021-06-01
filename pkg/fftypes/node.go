@@ -27,7 +27,6 @@ type Node struct {
 	ID          *UUID      `json:"id"`
 	Owner       *UUID      `json:"parent,omitempty"`
 	Identity    string     `json:"identity,omitempty"`
-	Name        string     `json:"name,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Endpoint    JSONObject `json:"endpoint,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
@@ -35,9 +34,6 @@ type Node struct {
 }
 
 func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, n.Name, "name"); err != nil {
-		return err
-	}
 	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
 		return err
 	}

@@ -14,22 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxfactory
+package iifactory
 
 import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/dataexchange/dxhttps"
 	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/kaleido-io/firefly/internal/identity/onchain"
+	"github.com/kaleido-io/firefly/pkg/identity"
 )
 
-var plugins = []dataexchange.Plugin{
-	&dxhttps.HTTPS{},
+var plugins = []identity.Plugin{
+	&onchain.OnChain{},
 }
 
-var pluginsByName = make(map[string]dataexchange.Plugin)
+var pluginsByName = make(map[string]identity.Plugin)
 
 func init() {
 	for _, p := range plugins {
@@ -43,10 +43,10 @@ func InitPrefix(prefix config.Prefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
+func GetPlugin(ctx context.Context, pluginType string) (identity.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDataExchangePlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownIdentityPlugin, pluginType)
 	}
 	return plugin, nil
 }

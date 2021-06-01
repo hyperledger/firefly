@@ -14,39 +14,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxfactory
+package dxhttps
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/dataexchange/dxhttps"
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/stretchr/testify/assert"
 )
 
-var plugins = []dataexchange.Plugin{
-	&dxhttps.HTTPS{},
+var utConfPrefix = config.NewPluginConfig("dxhttps_unit_tests")
+
+func TestInit(t *testing.T) {
+	var oc dataexchange.Plugin = &HTTPS{}
+	oc.InitPrefix(utConfPrefix)
+	err := oc.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	assert.NoError(t, err)
+	assert.Equal(t, "https", oc.Name())
+	err = oc.Start()
+	assert.NoError(t, err)
+	capabilities := oc.Capabilities()
+	assert.NotNil(t, capabilities)
 }
 
-var pluginsByName = make(map[string]dataexchange.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
-}
-
-func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
-	}
-}
-
-func GetPlugin(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
-	plugin, ok := pluginsByName[pluginType]
-	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDataExchangePlugin, pluginType)
-	}
-	return plugin, nil
+func TestGetEndpointInfo(t *testing.T) {
+	var h dataexchange.Plugin = &HTTPS{}
+	endpoint, err := h.GetEndpointInfo(context.Background())
+	assert.NoError(t, err)
+	assert.Nil(t, endpoint)
 }

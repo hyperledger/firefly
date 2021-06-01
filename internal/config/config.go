@@ -75,6 +75,8 @@ var (
 	CorsEnabled = rootKey("cors.enabled")
 	// CorsMaxAge is the maximum age a browser should rely on CORS checks
 	CorsMaxAge = rootKey("cors.maxAge")
+	// DataexchangeType is the name of the data exchange plugin being used by this firefly name
+	DataexchangeType = rootKey("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = rootKey("database.type")
 	// DebugPort a HTTP port on which to enable the go debugger
@@ -130,6 +132,8 @@ var (
 	HTTPTLSKeyFile = rootKey("http.tls.keyFile")
 	// HttpWriteTimeout the write timeout for the HTTP server
 	HTTPWriteTimeout = rootKey("http.writeTimeout")
+	// IdentityType is the name of the inentity interface plugin being used by this firefly name
+	IdentityType = rootKey("identity.type")
 	// Lang is the language to use for translation
 	Lang = rootKey("lang")
 	// LogForceColor forces color to be enabled, even if we do not detect a TTY
@@ -148,6 +152,12 @@ var (
 	NamespacesPredefined = rootKey("namespaces.predefined")
 	// NodeIDentity is the signing identity allocated to the node
 	NodeIdentity = rootKey("node.identity")
+	// NodeDescription is a description for the node
+	NodeName = rootKey("node.description")
+	// OrgIdentity is the signing identity allocated to the organization (can be the same as the nodes)
+	OrgIdentity = rootKey("org.identity")
+	// OrgName is a description for the org
+	OrgName = rootKey("node.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// PublicStorageType specifies which public storage interface plugin to use
@@ -222,6 +232,7 @@ func Reset() {
 	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
+	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 100)
@@ -240,6 +251,7 @@ func Reset() {
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")
 	viper.SetDefault(string(HTTPWriteTimeout), "15s")
+	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogTimeFormat), "2006-01-02T15:04:05.000Z07:00")

@@ -14,39 +14,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dxfactory
+package dxhttps
 
 import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/dataexchange/dxhttps"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var plugins = []dataexchange.Plugin{
-	&dxhttps.HTTPS{},
+type HTTPS struct {
+	capabilities *dataexchange.Capabilities
+	callbacks    dataexchange.Callbacks
 }
 
-var pluginsByName = make(map[string]dataexchange.Plugin)
-
-func init() {
-	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
-	}
+func (h *HTTPS) Name() string {
+	return "https"
 }
 
-func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
-	}
+func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) (err error) {
+	h.callbacks = callbacks
+	h.capabilities = &dataexchange.Capabilities{}
+	return nil
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
-	plugin, ok := pluginsByName[pluginType]
-	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDataExchangePlugin, pluginType)
-	}
-	return plugin, nil
+func (h *HTTPS) Start() error {
+	return nil
+}
+
+func (h *HTTPS) Capabilities() *dataexchange.Capabilities {
+	return h.capabilities
+}
+
+func (h *HTTPS) GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObject, err error) {
+	return
 }

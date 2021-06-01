@@ -232,6 +232,26 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
+  │           ┌───────────────┐  - Identity resolution and mapping
+  ├───────────┤ identity  [Ii]│    * Resolves opaque identifiers used throughout FireFly
+  │           │ interface     │    * Maps to and from blockchain signing identities
+  │           └─────┬─────────┘    * Map API/user identities from authentication, to network/organizational identities
+  │                 │
+  │                 ├───────────── ... extensible to DIDs etc.
+  │           ┌─────┴─────────┐
+  │           │ onchain       │
+  │           └───────────────┘
+  │
+  │           ┌───────────────┐  - API Authentication and Authorization Interface
+  ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
+  │           │               │    * Extracts API/user identity (for identity interface to map)
+  │           └─────┬─────────┘    * Enforcement point for fine grained API access control
+  │                 │
+  │                 ├─────────────────────┬────────── ... extensible other single sign-on technologies
+  │           ┌─────┴─────────┐   ┌───────┴───────┐
+  │           │ apikey        │   │ jwt           │
+  │           └───────────────┘   └───────────────┘
+  │
   │           ┌───────────────┐  - Database Interactions
   ├───────────┤ database  [Di]│    * Create, Read, Update, Delete (CRUD) actions
   │           │ interace      │    * Filtering and update definition interace

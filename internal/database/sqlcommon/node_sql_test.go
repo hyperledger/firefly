@@ -41,14 +41,13 @@ func TestNodesE2EWithDB(t *testing.T) {
 		ID:       fftypes.NewUUID(),
 		Owner:    fftypes.NewUUID(),
 		Identity: "0x12345",
-		Name:     "node1",
 		Created:  fftypes.Now(),
 	}
 	err := s.UpsertNode(ctx, node, true)
 	assert.NoError(t, err)
 
 	// Check we get the exact same node back
-	nodeRead, err := s.GetNode(ctx, node.Name)
+	nodeRead, err := s.GetNode(ctx, node.Identity)
 	assert.NoError(t, err)
 	assert.NotNil(t, nodeRead)
 	nodeJson, _ := json.Marshal(&node)
@@ -57,8 +56,8 @@ func TestNodesE2EWithDB(t *testing.T) {
 
 	// Rejects attempt to update ID
 	err = s.UpsertNode(context.Background(), &fftypes.Node{
-		ID:   fftypes.NewUUID(),
-		Name: "node1",
+		ID:       fftypes.NewUUID(),
+		Identity: "0x12345",
 	}, true)
 	assert.Equal(t, database.IDMismatch, err)
 
@@ -67,9 +66,8 @@ func TestNodesE2EWithDB(t *testing.T) {
 	nodeUpdated := &fftypes.Node{
 		ID:          nil, // as long as we don't specify one we're fine
 		Owner:       fftypes.NewUUID(),
-		Identity:    "0x23456",
-		Name:        "node1",
-		Description: "description2",
+		Identity:    "0x12345",
+		Description: "node1",
 		Endpoint:    fftypes.JSONObject{"some": "info"},
 		Created:     fftypes.Now(),
 		Confirmed:   fftypes.Now(),
@@ -78,7 +76,7 @@ func TestNodesE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the node elements
-	nodeRead, err = s.GetNode(ctx, node.Name)
+	nodeRead, err = s.GetNode(ctx, node.Identity)
 	assert.NoError(t, err)
 	nodeJson, _ = json.Marshal(&nodeUpdated)
 	nodeReadJson, _ = json.Marshal(&nodeRead)
@@ -88,7 +86,7 @@ func TestNodesE2EWithDB(t *testing.T) {
 	fb := database.NodeQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("description", string(nodeUpdated.Description)),
-		fb.Eq("name", nodeUpdated.Name),
+		fb.Eq("identity", nodeUpdated.Identity),
 	)
 	nodeRes, err := s.GetNodes(ctx, filter)
 	assert.NoError(t, err)
@@ -104,7 +102,7 @@ func TestNodesE2EWithDB(t *testing.T) {
 
 	// Test find updated value
 	filter = fb.And(
-		fb.Eq("name", nodeUpdated.Name),
+		fb.Eq("identity", nodeUpdated.Identity),
 		fb.Eq("confirmed", updateTime.String()),
 	)
 	nodes, err := s.GetNodes(ctx, filter)
@@ -125,7 +123,7 @@ func TestUpsertNodeFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNode(context.Background(), &fftypes.Node{Name: "name1"}, true)
+	err := s.UpsertNode(context.Background(), &fftypes.Node{Identity: "id1"}, true)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -136,7 +134,7 @@ func TestUpsertNodeFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNode(context.Background(), &fftypes.Node{Name: "name1"}, true)
+	err := s.UpsertNode(context.Background(), &fftypes.Node{Identity: "id1"}, true)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -144,11 +142,11 @@ func TestUpsertNodeFailInsert(t *testing.T) {
 func TestUpsertNodeFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).
-		AddRow("name1"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).
+		AddRow("id1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertNode(context.Background(), &fftypes.Node{Name: "name1"}, true)
+	err := s.UpsertNode(context.Background(), &fftypes.Node{Identity: "id1"}, true)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -156,10 +154,10 @@ func TestUpsertNodeFailUpdate(t *testing.T) {
 func TestUpsertNodeFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertNode(context.Background(), &fftypes.Node{Name: "name1"}, true)
+	err := s.UpsertNode(context.Background(), &fftypes.Node{Identity: "id1"}, true)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -167,15 +165,15 @@ func TestUpsertNodeFailCommit(t *testing.T) {
 func TestGetNodeByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetNode(context.Background(), "name1")
+	_, err := s.GetNode(context.Background(), "id1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetNodeByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name", "node", "name"}))
-	msg, err := s.GetNode(context.Background(), "name1")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "node", "identity"}))
+	msg, err := s.GetNode(context.Background(), "id1")
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -183,8 +181,8 @@ func TestGetNodeByIDNotFound(t *testing.T) {
 
 func TestGetNodeByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("only one"))
-	_, err := s.GetNode(context.Background(), "name1")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
+	_, err := s.GetNode(context.Background(), "id1")
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -192,7 +190,7 @@ func TestGetNodeByIDScanFail(t *testing.T) {
 func TestGetNodeQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", "")
+	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("identity", "")
 	_, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -200,15 +198,15 @@ func TestGetNodeQueryFail(t *testing.T) {
 
 func TestGetNodeBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
+	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("identity", map[bool]bool{true: false})
 	_, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
 func TestGetNodeReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("only one"))
-	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
+	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("identity", "")
 	_, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -217,7 +215,7 @@ func TestGetNodeReadMessageFail(t *testing.T) {
 func TestNodeUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
+	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("identity", "anything")
 	err := s.UpdateNode(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
@@ -225,9 +223,9 @@ func TestNodeUpdateBeginFail(t *testing.T) {
 func TestNodeUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
+	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("identity", map[bool]bool{true: false})
 	err := s.UpdateNode(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*name", err)
+	assert.Regexp(t, "FF10149.*identity", err)
 }
 
 func TestNodeUpdateFail(t *testing.T) {
@@ -235,7 +233,7 @@ func TestNodeUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
+	u := database.NodeQueryFactory.NewUpdate(context.Background()).Set("identity", fftypes.NewUUID())
 	err := s.UpdateNode(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }

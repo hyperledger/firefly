@@ -16,26 +16,10 @@
 
 package fftypes
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestOrganizationValidation(t *testing.T) {
-
-	org := &Organization{
-		Description: string(make([]byte, 4097)),
-	}
-	assert.Regexp(t, "FF10188.*description", org.Validate(context.Background(), false))
-
-	org = &Organization{
-		Description: "ok",
-		Identity:    "ok",
-	}
-	assert.NoError(t, org.Validate(context.Background(), false))
-
-	assert.Regexp(t, "FF10203", org.Validate(context.Background(), true))
-
+// Identity is a structure used to keep track of and map identity in the system.
+//
+// TODO: Mapping of more sophisticate identities (DIDs etc.) via plugins, and richer interface
+type Identity struct {
+	Identifier string `json:"identifier,omitempty"`
+	OnChain    string `json:"onchain,omitempty"`
 }

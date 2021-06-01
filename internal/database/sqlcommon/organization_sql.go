@@ -32,7 +32,6 @@ var (
 		"id",
 		"parent",
 		"identity",
-		"name",
 		"description",
 		"profile",
 		"created",
@@ -54,7 +53,7 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 		organizationRows, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("orgs").
-				Where(sq.Eq{"name": organization.Name}),
+				Where(sq.Eq{"identity": organization.Identity}),
 		)
 		if err != nil {
 			return err
@@ -82,12 +81,11 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 				// Note we do not update ID
 				Set("parent", organization.Parent).
 				Set("identity", organization.Identity).
-				Set("name", organization.Name).
 				Set("description", organization.Description).
 				Set("profile", organization.Profile).
 				Set("created", organization.Created).
 				Set("confirmed", organization.Confirmed).
-				Where(sq.Eq{"name": organization.Name}),
+				Where(sq.Eq{"identity": organization.Identity}),
 		); err != nil {
 			return err
 		}
@@ -99,7 +97,6 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 					organization.ID,
 					organization.Parent,
 					organization.Identity,
-					organization.Name,
 					organization.Description,
 					organization.Profile,
 					organization.Created,
@@ -119,7 +116,6 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 		&organization.ID,
 		&organization.Parent,
 		&organization.Identity,
-		&organization.Name,
 		&organization.Description,
 		&organization.Profile,
 		&organization.Created,
@@ -131,12 +127,12 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 	return &organization, nil
 }
 
-func (s *SQLCommon) GetOrganization(ctx context.Context, name string) (message *fftypes.Organization, err error) {
+func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(organizationColumns...).
 			From("orgs").
-			Where(sq.Eq{"name": name}),
+			Where(sq.Eq{"identity": identity}),
 	)
 	if err != nil {
 		return nil, err
@@ -144,7 +140,7 @@ func (s *SQLCommon) GetOrganization(ctx context.Context, name string) (message *
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Organization '%s' not found", name)
+		log.L(ctx).Debugf("Organization '%s' not found", identity)
 		return nil, nil
 	}
 
