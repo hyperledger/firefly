@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
@@ -30,10 +29,6 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 	in.Header.Type = fftypes.MessageTypeBroadcast
 	if in.Header.Author == "" {
 		in.Header.Author = config.GetString(config.NodeIdentity)
-	}
-	in.Header.Author, err = bm.blockchain.VerifyIdentitySyntax(ctx, in.Header.Author)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 	in.Header.TX.Type = fftypes.TransactionTypeBatchPin
 	err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {

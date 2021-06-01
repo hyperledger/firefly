@@ -195,7 +195,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err = or.initBlockchainPlugin(ctx); err != nil {
+	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bbc); err != nil {
 		return err
 	}
 
@@ -235,7 +235,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.nodeIdentity, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.nodeIdentity, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
@@ -247,20 +247,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	return nil
-}
-
-func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
-	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bbc)
-	if err != nil {
-		return err
-	}
-	suppliedIDentity := config.GetString(config.NodeIdentity)
-	or.nodeIdentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
-	if err != nil {
-		log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
-		return err
-	}
 	return nil
 }
 

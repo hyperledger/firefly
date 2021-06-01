@@ -8,6 +8,8 @@ import (
 
 	context "context"
 
+	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -80,18 +82,18 @@ func (_m *Plugin) Start() error {
 }
 
 // SubmitBroadcastBatch provides a mock function with given fields: ctx, identity, batch
-func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (string, error) {
+func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *blockchain.BroadcastBatch) (string, error) {
 	ret := _m.Called(ctx, identity, batch)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, *blockchain.BroadcastBatch) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity, *blockchain.BroadcastBatch) string); ok {
 		r0 = rf(ctx, identity, batch)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *blockchain.BroadcastBatch) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity, *blockchain.BroadcastBatch) error); ok {
 		r1 = rf(ctx, identity, batch)
 	} else {
 		r1 = ret.Error(1)
@@ -101,22 +103,15 @@ func (_m *Plugin) SubmitBroadcastBatch(ctx context.Context, identity string, bat
 }
 
 // VerifyIdentitySyntax provides a mock function with given fields: ctx, identity
-func (_m *Plugin) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
+func (_m *Plugin) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error {
 	ret := _m.Called(ctx, identity)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity) error); ok {
 		r0 = rf(ctx, identity)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, identity)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }

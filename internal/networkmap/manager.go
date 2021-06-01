@@ -26,7 +26,8 @@ import (
 )
 
 type Manager interface {
-	JoinNetwork(ctx context.Context) error
+	OrgJoinNetwork(ctx context.Context) error
+	NodeJoinNetwork(ctx context.Context) error
 }
 
 type networkMap struct {
@@ -35,8 +36,6 @@ type networkMap struct {
 	broadcast broadcast.Manager
 	exchange  dataexchange.Plugin
 	identity  identity.Plugin
-	// orgIdentity  fftypes.Identity
-	// nodeIdentity fftypes.Identity
 }
 
 func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, ii identity.Plugin) (Manager, error) {
@@ -47,6 +46,5 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		exchange:  dx,
 		identity:  ii,
 	}
-
 	return nm, nil
 }

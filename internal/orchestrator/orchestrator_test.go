@@ -142,16 +142,6 @@ func TestBlockchaiInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBlockchainVerifyIDFail(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
-	err := or.Init(context.Background())
-	assert.EqualError(t, err, "pop")
-}
-
 func TestBadPublicStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.PublicStorageType, "wrong")

@@ -25,9 +25,11 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
@@ -44,13 +46,14 @@ type broadcastManager struct {
 	ctx           context.Context
 	nodeIdentity  string
 	database      database.Plugin
+	identity      identity.Plugin
 	data          data.Manager
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -58,6 +61,7 @@ func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.P
 		ctx:           ctx,
 		nodeIdentity:  nodeIdentity,
 		database:      di,
+		identity:      ii,
 		data:          dm,
 		blockchain:    bi,
 		publicstorage: pi,
@@ -95,6 +99,25 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 }
 
 func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
+
+	id, err := bm.identity.Resolve(ctx, batch.Author)
+	if err == nil {
+		err = bm.blockchain.VerifyIdentitySyntax(ctx, id)
+	}
+	if err != nil {
+		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
+		op := fftypes.NewTXOperation(
+			bm.blockchain,
+			batch.Payload.TX.ID,
+			"",
+			fftypes.OpTypeBlockchainBatchPin,
+			fftypes.OpStatusFailed,
+			"")
+		op.Error = err.Error()
+		_ = bm.database.UpsertOperation(ctx, op, false)
+		return err
+	}
+
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
@@ -107,7 +130,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err := bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
+	err = bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
@@ -119,7 +142,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, id, &blockchain.BroadcastBatch{
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,

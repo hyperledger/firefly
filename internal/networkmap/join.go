@@ -18,7 +18,14 @@ package networkmap
 
 import "context"
 
-func (nm *networkMap) JoinNetwork(ctx context.Context) error {
+func (nm *networkMap) OrgJoinNetwork(ctx context.Context) error {
+
+	return nil
+}
+
+func (nm *networkMap) NodeJoinNetwork(ctx context.Context) error {
+
+	// Get the
 
 	return nil
 }

@@ -67,22 +67,6 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestBroadcastMessageBadAuthor(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
-
-	ctx := context.Background()
-	mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("", fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
-		},
-	})
-	assert.Regexp(t, "FF10206.*pop", err)
-}
-
 func TestBroadcastMessageBadInput(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()

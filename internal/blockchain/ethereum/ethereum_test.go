@@ -342,7 +342,7 @@ func TestSubmitBroadcastBatchOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
 		})
 
-	txid, err := e.SubmitBroadcastBatch(context.Background(), addr, batch)
+	txid, err := e.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "abcd1234", txid)
@@ -365,7 +365,7 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	_, err := e.SubmitBroadcastBatch(context.Background(), addr, batch)
+	_, err := e.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -375,12 +375,14 @@ func TestSubmitBroadcastBatchFail(t *testing.T) {
 func TestVerifyEthAddress(t *testing.T) {
 	e := &Ethereum{}
 
-	_, err := e.VerifyIdentitySyntax(context.Background(), "0x12345")
+	id := &fftypes.Identity{OnChain: "0x12345"}
+	err := e.VerifyIdentitySyntax(context.Background(), id)
 	assert.Regexp(t, "FF10141", err)
 
-	addr, err := e.VerifyIdentitySyntax(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
+	id = &fftypes.Identity{OnChain: "0x2a7c9D5248681CE6c393117E641aD037F5C079F6"}
+	err = e.VerifyIdentitySyntax(context.Background(), id)
 	assert.NoError(t, err)
-	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", addr)
+	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", id.OnChain)
 
 }
 

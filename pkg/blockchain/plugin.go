@@ -41,12 +41,12 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// VerifyIdentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
-	// Also applies any transformations, such as lower case
-	VerifyIdentitySyntax(ctx context.Context, identity string) (string, error)
+	// Can apply transformations to the supplied signing identity (only), such as lower case
+	VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error
 
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBroadcastBatch(ctx context.Context, identity string, batch *BroadcastBatch) (txTrackingID string, err error)
+	SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *BroadcastBatch) (txTrackingID string, err error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -70,7 +70,7 @@ type Callbacks interface {
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	SequencedBroadcastBatch(batch *BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	SequencedBroadcastBatch(batch *BroadcastBatch, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the blockchain

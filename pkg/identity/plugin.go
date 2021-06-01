@@ -40,7 +40,7 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// Resolve maps an identity identifier passed in a message to a full identity that includes the signing identity, and owner if known
+	// Resolve maps an identity identifier passed in a message to a full identity that includes the signing identity
 	Resolve(ctx context.Context, identifier string) (identity *fftypes.Identity, err error)
 }
 
