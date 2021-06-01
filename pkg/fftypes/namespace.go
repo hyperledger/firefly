@@ -23,7 +23,7 @@ import (
 )
 
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
-type NamespaceType string
+type NamespaceType = LowerCasedType
 
 const (
 	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node

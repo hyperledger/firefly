@@ -25,7 +25,7 @@ import (
 )
 
 // MessageType is the fundamental type of a message
-type MessageType string
+type MessageType = LowerCasedType
 
 const (
 	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)

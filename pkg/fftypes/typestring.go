@@ -17,19 +17,29 @@
 package fftypes
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"database/sql/driver"
+	"strings"
 )
 
-func TestTransactionHash(t *testing.T) {
-	batchid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
-	tx := &Transaction{}
-	tx.Subject = TransactionSubject{
-		Author:    "0x12345",
-		Namespace: "ns1",
-		Type:      TransactionTypeBatchPin,
-		Reference: batchid,
-	}
-	assert.Equal(t, "43ee7fc01a0bf867c2fb55858174d4597079fb85942f74ab7b6bc785382e35f1", tx.Subject.Hash().String())
+type LowerCasedType string
+
+func (ts LowerCasedType) String() string {
+	return strings.ToLower(string(ts))
+}
+
+func (ts LowerCasedType) Lower() LowerCasedType {
+	return LowerCasedType(strings.ToLower(string(ts)))
+}
+
+func (ts LowerCasedType) Equals(ts2 LowerCasedType) bool {
+	return strings.EqualFold(string(ts), string(ts2))
+}
+
+func (ts LowerCasedType) Value() (driver.Value, error) {
+	return ts.String(), nil
+}
+
+func (ts *LowerCasedType) UnmarshalText(b []byte) error {
+	*ts = LowerCasedType(strings.ToLower(string(b)))
+	return nil
 }

@@ -16,7 +16,7 @@
 
 package fftypes
 
-type OffsetType string
+type OffsetType = LowerCasedType
 
 const (
 	// OffsetTypeBatch is an offset stored by the batch manager on the messages table

@@ -314,7 +314,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 				l.Debugf("Not queuing unblocked event for %s, due to lookahead detection of upcoming event", unblockMsg.ID)
 			} else {
 				// Emit an event to cause the aggregator to process that message
-				unblockedEvent := fftypes.NewEvent(fftypes.EventTypeMessagesUnblocked, msg.Header.Namespace, unblockable[0].ID)
+				unblockedEvent := fftypes.NewEvent(fftypes.EventTypeMessageUnblocked, msg.Header.Namespace, unblockable[0].ID)
 				if err = ag.database.UpsertEvent(ctx, unblockedEvent, false); err != nil {
 					return false, err
 				}
