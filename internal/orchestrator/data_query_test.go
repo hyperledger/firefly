@@ -376,7 +376,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 	calculatedFilter, err := or.mdi.Calls[1].Arguments[1].(database.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
-		`( type == 'DataArrivedBroadcast' ) && ( reference IN ['%s','%s','%s'] )`,
+		`( type == 'data_arrived_broadcast' ) && ( reference IN ['%s','%s','%s'] )`,
 		msg.Header.ID, msg.Data[0].ID, msg.Data[1].ID,
 	), calculatedFilter.String())
 	assert.NoError(t, err)

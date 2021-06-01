@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 )
 
-type TransactionType string
+type TransactionType = LowerCasedType
 
 const (
 	// TransactionTypeNone indicates no transaction should be used for this message/batch
-	TransactionTypeNone TransactionType = "None"
+	TransactionTypeNone TransactionType = "none"
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypeBatchPin TransactionType = "BatchPin"
+	TransactionTypeBatchPin TransactionType = "batch_pin"
 )
 
 // TransactionRef refers to a transaction, in other types

@@ -19,13 +19,13 @@ package fftypes
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
 // to be correlated with messages by operators.
-type OpType string
+type OpType = LowerCasedType
 
 const (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
-	OpTypeBlockchainBatchPin OpType = "BlockchainBatchPin"
+	OpTypeBlockchainBatchPin OpType = "blockchain_batch_pin"
 	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
-	OpTypePublicStorageBatchBroadcast OpType = "PublicStorageBatchBroadcast"
+	OpTypePublicStorageBatchBroadcast OpType = "public_storage_batch_broadcast"
 )
 
 // OpStatus is the current status of an operation

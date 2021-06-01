@@ -17,19 +17,29 @@
 package fftypes
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTransactionHash(t *testing.T) {
-	batchid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
-	tx := &Transaction{}
-	tx.Subject = TransactionSubject{
-		Author:    "0x12345",
-		Namespace: "ns1",
-		Type:      TransactionTypeBatchPin,
-		Reference: batchid,
+func TestTypeStringCompareEtc(t *testing.T) {
+
+	txtype1 := TransactionType("Batch_Pin")
+	assert.True(t, TransactionTypeBatchPin.Equals(txtype1))
+	assert.Equal(t, TransactionTypeBatchPin, txtype1.Lower())
+
+	var tdv driver.Valuer = txtype1
+	v, err := tdv.Value()
+	assert.Nil(t, err)
+	assert.Equal(t, "batch_pin", v)
+
+	var utStruct struct {
+		TXType TransactionType `json:"txType"`
 	}
-	assert.Equal(t, "43ee7fc01a0bf867c2fb55858174d4597079fb85942f74ab7b6bc785382e35f1", tx.Subject.Hash().String())
+	err = json.Unmarshal([]byte(`{"txType": "Batch_PIN"}`), &utStruct)
+	assert.NoError(t, err)
+	assert.Equal(t, "batch_pin", string(utStruct.TXType))
+
 }
