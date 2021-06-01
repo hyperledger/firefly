@@ -241,16 +241,17 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
+func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	bm, _ := NewBatchManager(ctx, mdi, mdm)
 	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
 		return nil
 	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
 
 	dataID := fftypes.NewUUID()
-	gmMock := mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
+	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
 		{
 			Header: fftypes.MessageHeader{
 				ID:        fftypes.NewUUID(),
@@ -261,17 +262,53 @@ func TestMessageSequencerUpdateMessagesClosed(t *testing.T) {
 				{ID: dataID},
 			}},
 	}, nil)
-	gmMock.RunFn = func(a mock.Arguments) {
-		bm.Close() // so we only go round once
-	}
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
-	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
 		fn := a.Get(1).(func(context.Context) error)
-		assert.Regexp(t, "fizzle", fn(ctx).Error())
+		cancelCtx() // so we only go round once
+		bm.Close()
+		rag.ReturnArguments = mock.Arguments{fn(ctx)}
+	}
+
+	bm.(*batchManager).messageSequencer()
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestMessageSequencerUpdateBatchFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	bm, _ := NewBatchManager(ctx, mdi, mdm)
+	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+		return nil
+	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
+
+	dataID := fftypes.NewUUID()
+	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Message{
+		{
+			Header: fftypes.MessageHeader{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.MessageTypeBroadcast,
+				Namespace: "ns1",
+			},
+			Data: []*fftypes.DataRef{
+				{ID: dataID},
+			}},
+	}, nil)
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, mock.Anything).Return(fmt.Errorf("fizzle"))
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		ctx := a.Get(0).(context.Context)
+		fn := a.Get(1).(func(context.Context) error)
+		cancelCtx() // so we only go round once
+		bm.Close()
+		rag.ReturnArguments = mock.Arguments{fn(ctx)}
 	}
 
 	bm.(*batchManager).messageSequencer()

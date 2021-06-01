@@ -21,6 +21,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -109,6 +110,7 @@ func (f *stringField) Scan(src interface{}) error {
 	return nil
 }
 func (f *stringField) Value() (driver.Value, error)         { return f.s, nil }
+func (f *stringField) String() string                       { return f.s }
 func (f *StringField) getSerialization() FieldSerialization { return &stringField{} }
 
 type UUIDField struct{}
@@ -147,6 +149,7 @@ func (f *uuidField) Scan(src interface{}) (err error) {
 	return nil
 }
 func (f *uuidField) Value() (driver.Value, error)         { return f.u.Value() }
+func (f *uuidField) String() string                       { return fmt.Sprintf("%v", f.u) }
 func (f *UUIDField) getSerialization() FieldSerialization { return &uuidField{} }
 
 type Int64Field struct{}
@@ -177,6 +180,7 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 	return nil
 }
 func (f *int64Field) Value() (driver.Value, error)         { return f.i, nil }
+func (f *int64Field) String() string                       { return fmt.Sprintf("%d", f.i) }
 func (f *Int64Field) getSerialization() FieldSerialization { return &int64Field{} }
 
 type TimeField struct{}
@@ -211,6 +215,7 @@ func (f *timeField) Value() (driver.Value, error) {
 	}
 	return f.t.UnixNano(), nil
 }
+func (f *timeField) String() string                       { return fmt.Sprintf("%v", f.t) }
 func (f *TimeField) getSerialization() FieldSerialization { return &timeField{} }
 
 type JSONField struct{}
@@ -232,4 +237,5 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 	return err
 }
 func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
+func (f *jsonField) String() string                       { return fmt.Sprintf("%s", f.b) }
 func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }

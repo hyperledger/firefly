@@ -66,6 +66,10 @@ func TestJSONObject(t *testing.T) {
 	hash, err = badJson.Hash("badStuff")
 	assert.Regexp(t, "FF10151.*badStuff", err)
 	assert.Nil(t, hash)
+
+	v, ok := JSONObject{"test": false}.GetStringOk("test")
+	assert.False(t, ok)
+	assert.Equal(t, "", v)
 }
 
 func TestJSONObjectArray(t *testing.T) {

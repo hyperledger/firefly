@@ -51,6 +51,7 @@ func (em *eventManager) TransactionUpdate(bi blockchain.Plugin, txTrackingID str
 	update := database.OperationQueryFactory.NewUpdate(em.ctx).
 		Set("status", txState).
 		Set("backendid", protocolTxID).
+		Set("error", errorMessage).
 		Set("info", additionalInfo)
 	for _, op := range operations {
 		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {

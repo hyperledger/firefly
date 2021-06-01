@@ -231,3 +231,13 @@ func TestBuildMessageFailJSONConvert(t *testing.T) {
 	_, err := fb.Lt("info", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*info", err)
 }
+
+func TestStringsForTypes(t *testing.T) {
+
+	assert.Equal(t, "test", (&stringField{s: "test"}).String())
+	assert.Equal(t, "037a025d-681d-4150-a413-05f368729c66", (&uuidField{fftypes.MustParseUUID("037a025d-681d-4150-a413-05f368729c66")}).String())
+	assert.Equal(t, "12345", (&int64Field{i: 12345}).String())
+	now := fftypes.Now()
+	assert.Equal(t, now.String(), (&timeField{t: now}).String())
+	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
+}

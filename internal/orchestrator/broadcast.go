@@ -122,6 +122,7 @@ func (or *orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fft
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
+	in.Header.TX.Type = fftypes.TransactionTypeBatchPin
 	err = or.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
 		in.Message.Data, err = or.data.ResolveInputData(ctx, ns, in.InputData)

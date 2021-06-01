@@ -95,6 +95,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
+			Author:    batch.Author,
 			Namespace: batch.Namespace,
 			Reference: batch.ID,
 		},
