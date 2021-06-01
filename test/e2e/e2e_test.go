@@ -54,6 +54,9 @@ func TestEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
+	// TODO: remove
+	time.Sleep(3 * time.Second)
+
 	resp, err = GetData(client1)
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode())
