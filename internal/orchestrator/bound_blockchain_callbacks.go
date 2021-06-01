@@ -27,14 +27,6 @@ type boundBlockchainCallbacks struct {
 	ei events.EventManager
 }
 
-// BindBlockchainCallbacks binds the blockchain plugin to the events, so we can pass on each call
-func BindBlockchainCallbacks(bi blockchain.Plugin, ei events.EventManager) blockchain.Callbacks {
-	return &boundBlockchainCallbacks{
-		bi: bi,
-		ei: ei,
-	}
-}
-
 func (bbc *boundBlockchainCallbacks) TransactionUpdate(txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
 	return bbc.ei.TransactionUpdate(bbc.bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 }

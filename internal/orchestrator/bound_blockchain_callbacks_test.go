@@ -30,7 +30,7 @@ import (
 func TestBoundBlockchainCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
-	bbc := BindBlockchainCallbacks(mbi, mei)
+	bbc := boundBlockchainCallbacks{bi: mbi, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BroadcastBatch{TransactionID: fftypes.NewUUID()}

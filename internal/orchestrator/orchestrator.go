@@ -94,6 +94,7 @@ type orchestrator struct {
 	batch         batch.Manager
 	broadcast     broadcast.Manager
 	data          data.Manager
+	bbc           boundBlockchainCallbacks
 	nodeIDentity  string
 }
 
@@ -117,6 +118,9 @@ func (or *orchestrator) Init(ctx context.Context) (err error) {
 	if err == nil {
 		err = or.initNamespaces(ctx)
 	}
+	// Bind together the blockchain interface callbacks, with the events manager
+	or.bbc.bi = or.blockchain
+	or.bbc.ei = or.events
 	return err
 }
 
@@ -214,7 +218,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
-	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), BindBlockchainCallbacks(or.blockchain, or.events))
+	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bbc)
 	if err != nil {
 		return err
 	}
