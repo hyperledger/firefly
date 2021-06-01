@@ -47,11 +47,8 @@ type Orchestrator interface {
 	Init(ctx context.Context) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-
-	// Broadcasts
-	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
-	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
-	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
+	Broadcast() broadcast.Manager
+	Events() events.EventManager
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
@@ -95,7 +92,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	data          data.Manager
 	bbc           boundBlockchainCallbacks
-	nodeIDentity  string
+	nodeIdentity  string
 }
 
 func NewOrchestrator() Orchestrator {
@@ -154,6 +151,14 @@ func (or *orchestrator) WaitStop() {
 	or.started = false
 }
 
+func (or *orchestrator) Broadcast() broadcast.Manager {
+	return or.broadcast
+}
+
+func (or *orchestrator) Events() events.EventManager {
+	return or.events
+}
+
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.database == nil {
@@ -202,7 +207,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.nodeIdentity, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
@@ -223,7 +228,7 @@ func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
 		return err
 	}
 	suppliedIDentity := config.GetString(config.NodeIdentity)
-	or.nodeIDentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
+	or.nodeIdentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
 		return err

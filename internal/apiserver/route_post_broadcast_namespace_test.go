@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,8 @@ import (
 
 func TestPostBroadcastNamespace(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
+	mbm := &broadcastmocks.Manager{}
+	o.On("Broadcast").Return(mbm)
 	r := createMuxRouter(o)
 	input := fftypes.Namespace{}
 	var buf bytes.Buffer
@@ -38,7 +41,7 @@ func TestPostBroadcastNamespace(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace")).
+	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

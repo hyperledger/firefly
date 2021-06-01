@@ -5,7 +5,12 @@ package orchestratormocks
 import (
 	context "context"
 
+	broadcast "github.com/kaleido-io/firefly/internal/broadcast"
+
 	database "github.com/kaleido-io/firefly/pkg/database"
+
+	events "github.com/kaleido-io/firefly/internal/events"
+
 	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
@@ -16,73 +21,20 @@ type Orchestrator struct {
 	mock.Mock
 }
 
-// BroadcastDatatype provides a mock function with given fields: ctx, ns, s
-func (_m *Orchestrator) BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, s)
+// Broadcast provides a mock function with given fields:
+func (_m *Orchestrator) Broadcast() broadcast.Manager {
+	ret := _m.Called()
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Datatype) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, s)
+	var r0 broadcast.Manager
+	if rf, ok := ret.Get(0).(func() broadcast.Manager); ok {
+		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(broadcast.Manager)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Datatype) error); ok {
-		r1 = rf(ctx, ns, s)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastMessage provides a mock function with given fields: ctx, ns, in
-func (_m *Orchestrator) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, in)
-
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
-		r1 = rf(ctx, ns, in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastNamespace provides a mock function with given fields: ctx, s
-func (_m *Orchestrator) BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, s)
-
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) *fftypes.Message); ok {
-		r0 = rf(ctx, s)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace) error); ok {
-		r1 = rf(ctx, s)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // CreateSubscription provides a mock function with given fields: ctx, ns, subDef
@@ -117,6 +69,22 @@ func (_m *Orchestrator) DeleteSubscription(ctx context.Context, ns string, id st
 		r0 = rf(ctx, ns, id)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Events provides a mock function with given fields:
+func (_m *Orchestrator) Events() events.EventManager {
+	ret := _m.Called()
+
+	var r0 events.EventManager
+	if rf, ok := ret.Get(0).(func() events.EventManager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(events.EventManager)
+		}
 	}
 
 	return r0

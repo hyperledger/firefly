@@ -33,28 +33,18 @@ func uuidMatches(id1 *fftypes.UUID) interface{} {
 
 func TestCreateSubscriptionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "!wrong").Return(fmt.Errorf("pop"))
 	_, err := or.CreateSubscription(or.ctx, "!wrong", &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			Name: "sub1",
 		},
 	})
-	assert.Regexp(t, "FF10131", err)
-}
-
-func TestCreateSubscriptionNamespace(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
-			Name: "sub1",
-		},
-	})
-	assert.Regexp(t, "FF10187", err)
+	assert.Regexp(t, "pop", err)
 }
 
 func TestCreateSubscriptionBadName(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			Name: "!sub1",
@@ -70,8 +60,8 @@ func TestCreateSubscriptionOk(t *testing.T) {
 			Name: "sub1",
 		},
 	}
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
-	or.mei.On("CreateDurableSubscription", mock.Anything, mock.Anything).Return(nil)
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
+	or.mem.On("CreateDurableSubscription", mock.Anything, mock.Anything).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, "ns1", sub)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
@@ -116,7 +106,7 @@ func TestDeleteSubscription(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetSubscriptionByID", mock.Anything, uuidMatches(sub.ID)).Return(sub, nil)
-	or.mei.On("DeleteDurableSubscription", mock.Anything, sub).Return(nil)
+	or.mem.On("DeleteDurableSubscription", mock.Anything, sub).Return(nil)
 	err := or.DeleteSubscription(or.ctx, "ns1", sub.ID.String())
 	assert.NoError(t, err)
 }

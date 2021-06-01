@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,8 @@ import (
 
 func TestPostDatatypes(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
+	mbm := &broadcastmocks.Manager{}
+	o.On("Broadcast").Return(mbm)
 	r := createMuxRouter(o)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
@@ -38,7 +41,7 @@ func TestPostDatatypes(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype")).
+	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype")).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

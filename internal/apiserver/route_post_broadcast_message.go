@@ -92,7 +92,7 @@ var postBroadcastMessage = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInput))
+		output, err = r.Or.Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInput))
 		return output, err
 	},
 }

@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
+func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -39,23 +39,25 @@ func newTestBroadcast(ctx context.Context) (*broadcastManager, error) {
 	mb := &batchmocks.Manager{}
 	mb.On("RegisterDispatcher", fftypes.MessageTypeBroadcast, mock.Anything, mock.Anything).Return()
 	mb.On("RegisterDispatcher", fftypes.MessageTypeDefinition, mock.Anything, mock.Anything).Return()
-	b, err := NewBroadcastManager(ctx, mdi, mdm, mbi, mpi, mb)
-	return b.(*broadcastManager), err
+	ctx, cancel := context.WithCancel(context.Background())
+	b, err := NewBroadcastManager(ctx, "0x12345", mdi, mdm, mbi, mpi, mb)
+	assert.NoError(t, err)
+	return b.(*broadcastManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), "0x12345", nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
 func TestBroadcastMessageGood(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	msg := &fftypes.Message{}
 	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false, false).Return(nil)
 
-	err = bm.BroadcastMessage(context.Background(), msg)
+	err := bm.broadcastMessageCommon(context.Background(), msg)
 	assert.NoError(t, err)
 
 	bm.Start()
@@ -63,8 +65,8 @@ func TestBroadcastMessageGood(t *testing.T) {
 }
 
 func TestBroadcastMessageBad(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dupID := fftypes.NewUUID()
 	msg := &fftypes.Message{
@@ -74,16 +76,16 @@ func TestBroadcastMessageBad(t *testing.T) {
 	}
 	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false).Return(nil)
 
-	err = bm.BroadcastMessage(context.Background(), msg)
+	err := bm.broadcastMessageCommon(context.Background(), msg)
 	assert.Regexp(t, "FF10144", err)
 
 }
 
 func TestDispatchBatchInvalidData(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
-	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
 				{Value: fftypes.Byteable(`!json`)},
@@ -94,38 +96,38 @@ func TestDispatchBatchInvalidData(t *testing.T) {
 }
 
 func TestDispatchBatchUploadFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(nil, "", fmt.Errorf("pop"))
 
-	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{})
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestDispatchBatchSubmitBroadcastBatchSucceed(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
 
-	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{})
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
 }
 
 func TestDispatchBatchSubmitBroadcastBatchFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
 
-	err = bm.dispatchBatch(context.Background(), &fftypes.Batch{})
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
 
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
@@ -135,34 +137,34 @@ func TestDispatchBatchSubmitBroadcastBatchFail(t *testing.T) {
 }
 
 func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err = bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
 	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	dbMocks.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBroadcastBatch", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err = bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{}, fftypes.NewRandB32(), "id1")
 	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -183,13 +185,13 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 		},
 	}
 
-	err = bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
 	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -213,13 +215,13 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 		},
 	}
 
-	err = bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "id1")
 	assert.Regexp(t, "pop", err)
 }
 
 func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dbMocks := bm.database.(*databasemocks.Plugin)
 	dbMocks.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -248,7 +250,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 		},
 	}
 
-	err = bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "ipfs_id")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, fftypes.NewRandB32(), "ipfs_id")
 	assert.NoError(t, err)
 
 	op1 := dbMocks.Calls[2].Arguments[1].(*fftypes.Operation)
