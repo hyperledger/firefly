@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -56,6 +57,10 @@ func TestEndToEnd(t *testing.T) {
 
 	// TODO: remove
 	time.Sleep(3 * time.Second)
+	cmd := exec.Command("docker", "logs", "firefly-e2e_firefly_core_0_1")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 
 	resp, err = GetData(client1)
 	require.NoError(t, err)
