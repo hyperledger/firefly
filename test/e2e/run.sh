@@ -10,9 +10,11 @@ DOWNLOAD_CLI=true
 CREATE_STACK=true
 BUILD_FIREFLY=true
 
+cd $CWD
+
 if $BUILD_FIREFLY
 then
-	docker build -t kaleidoinc/firefly:latest .
+	docker build -t kaleidoinc/firefly:latest ../..
 fi
 
 if $DOWNLOAD_CLI
@@ -32,4 +34,4 @@ docker logs firefly-e2e_firefly_core_0_1
 docker ps
 
 export STACK_FILE
-cd $CWD && go test -v .
+go test -v .
