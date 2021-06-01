@@ -244,6 +244,30 @@ type PeristenceInterface interface {
 
 	// GetEvents - Get events
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
+
+	// UpsertOrganization - Upsert an organization
+	UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) (err error)
+
+	// UpdateOrganization - Update organization
+	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetOrganization- Get a organization by ID
+	GetOrganization(ctx context.Context, name string) (message *fftypes.Organization, err error)
+
+	// GetOrganizations - Get organizations
+	GetOrganizations(ctx context.Context, filter Filter) (message []*fftypes.Organization, err error)
+
+	// UpsertNode - Upsert an organization
+	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
+
+	// UpdateONode - Update organization
+	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetNode - Get a organization by ID
+	GetNode(ctx context.Context, name string) (message *fftypes.Node, err error)
+
+	// GetNodes - Get organizations
+	GetNodes(ctx context.Context, filter Filter) (message []*fftypes.Node, err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
@@ -409,4 +433,28 @@ var BlockedQueryFactory = &queryFields{
 	"group":     &UUIDField{},
 	"message":   &UUIDField{},
 	"created":   &TimeField{},
+}
+
+// OrganizationQueryFactory filter fields for organizations
+var OrganizationQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"parent":      &UUIDField{},
+	"identity":    &StringField{},
+	"name":        &StringField{},
+	"description": &StringField{},
+	"profile":     &JSONField{},
+	"created":     &TimeField{},
+	"confirmed":   &TimeField{},
+}
+
+// NodeQueryFactory filter fields for nodes
+var NodeQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"owner":       &UUIDField{},
+	"identity":    &StringField{},
+	"name":        &StringField{},
+	"description": &StringField{},
+	"endpoint":    &JSONField{},
+	"created":     &TimeField{},
+	"confirmed":   &TimeField{},
 }

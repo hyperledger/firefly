@@ -36,7 +36,7 @@ func (_m *Manager) NewMessages() chan<- int64 {
 }
 
 // RegisterDispatcher provides a mock function with given fields: batchType, handler, batchOptions
-func (_m *Manager) RegisterDispatcher(batchType fftypes.MessageType, handler batch.DispatchHandler, batchOptions batch.Options) {
+func (_m *Manager) RegisterDispatcher(batchType fftypes.LowerCasedType, handler batch.DispatchHandler, batchOptions batch.Options) {
 	_m.Called(batchType, handler, batchOptions)
 }
 
