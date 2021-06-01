@@ -1,6 +1,6 @@
 CREATE TABLE namespaces (
   id          string          NOT NULL,
-  message_id  string          NOT NULL,
+  message_id  string,
   name        string          NOT NULL,
   ntype       string          NOT NULL,
   description string,

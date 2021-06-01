@@ -2,7 +2,7 @@ BEGIN;
 CREATE TABLE namespaces (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,
-  message_id  UUID            NOT NULL,
+  message_id  UUID,
   name        VARCHAR(64)     NOT NULL,
   ntype       VARCHAR(64)     NOT NULL,
   description VARCHAR(4096),
