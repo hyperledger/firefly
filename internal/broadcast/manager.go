@@ -32,7 +32,9 @@ import (
 )
 
 type Manager interface {
-	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
+	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error)
+	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error)
+	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
 	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 	Start() error
 	WaitStop()
@@ -40,6 +42,7 @@ type Manager interface {
 
 type broadcastManager struct {
 	ctx           context.Context
+	nodeIdentity  string
 	database      database.Plugin
 	data          data.Manager
 	blockchain    blockchain.Plugin
@@ -47,12 +50,13 @@ type broadcastManager struct {
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
+		nodeIdentity:  nodeIdentity,
 		database:      di,
 		data:          dm,
 		blockchain:    bi,
@@ -147,7 +151,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	return bm.database.UpsertOperation(ctx, op, false)
 }
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
+func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {

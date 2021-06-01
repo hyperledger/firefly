@@ -102,3 +102,17 @@ func (_m *Manager) ValidateAll(ctx context.Context, _a1 []*fftypes.Data) (bool, 
 
 	return r0, r1
 }
+
+// VerifyNamespaceExists provides a mock function with given fields: ctx, ns
+func (_m *Manager) VerifyNamespaceExists(ctx context.Context, ns string) error {
+	ret := _m.Called(ctx, ns)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, ns)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

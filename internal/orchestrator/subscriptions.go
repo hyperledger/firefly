@@ -29,7 +29,7 @@ func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	subDef.Created = fftypes.Now()
 	subDef.Namespace = ns
 	subDef.Ephemeral = false
-	if err := or.verifyNamespaceExists(ctx, subDef.Namespace); err != nil {
+	if err := or.data.VerifyNamespaceExists(ctx, subDef.Namespace); err != nil {
 		return nil, err
 	}
 	if err := fftypes.ValidateFFNameField(ctx, subDef.Name, "name"); err != nil {

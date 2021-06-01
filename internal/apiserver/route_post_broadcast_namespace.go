@@ -37,7 +37,7 @@ var postBroadcastNamespace = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
+		output, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
 		return output, err
 	},
 }

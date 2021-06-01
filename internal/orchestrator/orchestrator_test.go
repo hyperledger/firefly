@@ -43,7 +43,7 @@ type testOrchestrator struct {
 	mdm *datamocks.Manager
 	mbm *broadcastmocks.Manager
 	mba *batchmocks.Manager
-	mei *eventmocks.EventManager
+	mem *eventmocks.EventManager
 	mps *publicstoragemocks.Plugin
 	mbi *blockchainmocks.Plugin
 }
@@ -57,7 +57,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mdm: &datamocks.Manager{},
 		mbm: &broadcastmocks.Manager{},
 		mba: &batchmocks.Manager{},
-		mei: &eventmocks.EventManager{},
+		mem: &eventmocks.EventManager{},
 		mps: &publicstoragemocks.Plugin{},
 		mbi: &blockchainmocks.Plugin{},
 	}
@@ -65,11 +65,11 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
-	tor.orchestrator.events = tor.mei
+	tor.orchestrator.events = tor.mem
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.blockchain = tor.mbi
 	tor.mdi.On("Name").Return("mock-di").Maybe()
-	tor.mei.On("Name").Return("mock-ei").Maybe()
+	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
 	tor.mbi.On("Name").Return("mock-bi").Maybe()
 	return tor
@@ -189,11 +189,11 @@ func TestStartStopOk(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
-	or.mei.On("Start").Return(nil)
+	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
-	or.mei.On("WaitStop").Return(nil)
+	or.mem.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
@@ -275,4 +275,7 @@ func TestInitOK(t *testing.T) {
 	assert.NoError(t, err)
 	err = or.Init(context.Background())
 	assert.NoError(t, err)
+
+	assert.Equal(t, or.mbm, or.Broadcast())
+	assert.Equal(t, or.mem, or.Events())
 }

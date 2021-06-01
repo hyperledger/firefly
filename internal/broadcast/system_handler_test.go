@@ -30,8 +30,8 @@ import (
 )
 
 func TestHandleSystemBroadcastUnknown(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Topic: "uknown",
@@ -42,8 +42,8 @@ func TestHandleSystemBroadcastUnknown(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Topic: "uknown",
@@ -53,8 +53,8 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Topic: "uknown",
@@ -64,8 +64,8 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -101,8 +101,8 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		Validator: fftypes.ValidatorTypeJSON,
@@ -128,8 +128,8 @@ func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastBadSchema(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -161,8 +161,8 @@ func TestHandleSystemBroadcastBadSchema(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastMissingData(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -184,8 +184,8 @@ func TestHandleSystemBroadcastMissingData(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -220,8 +220,8 @@ func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -257,8 +257,8 @@ func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -293,8 +293,8 @@ func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastNSOk(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -321,8 +321,8 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -349,8 +349,8 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -362,8 +362,8 @@ func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastNSBadID(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	ns := &fftypes.Namespace{}
 	b, err := json.Marshal(&ns)
@@ -382,10 +382,9 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastNSBadData(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
-	assert.NoError(t, err)
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!{json`),
 	}
@@ -400,8 +399,8 @@ func TestHandleSystemBroadcastNSBadData(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDuplicate(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -427,8 +426,8 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
-	bm, err := newTestBroadcast(context.Background())
-	assert.NoError(t, err)
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),

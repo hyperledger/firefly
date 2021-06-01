@@ -34,6 +34,7 @@ type Manager interface {
 	ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error)
 	GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error)
 	ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error)
+	VerifyNamespaceExists(ctx context.Context, ns string) error
 }
 
 type dataManager struct {
@@ -68,6 +69,21 @@ func NewDataManager(ctx context.Context, di database.Plugin) (Manager, error) {
 func (dm *dataManager) CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error {
 	_, err := newJSONValidator(ctx, ns, datatype)
 	return err
+}
+
+func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
+	err := fftypes.ValidateFFNameField(ctx, ns, "namespace")
+	if err != nil {
+		return err
+	}
+	namespace, err := dm.database.GetNamespace(ctx, ns)
+	if err != nil {
+		return err
+	}
+	if namespace == nil {
+		return i18n.NewError(ctx, i18n.MsgNamespaceNotExist)
+	}
+	return nil
 }
 
 // getValidatorForDatatype only returns database errors - not found (of all kinds) is a nil

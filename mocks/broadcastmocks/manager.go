@@ -14,18 +14,73 @@ type Manager struct {
 	mock.Mock
 }
 
-// BroadcastMessage provides a mock function with given fields: ctx, msg
-func (_m *Manager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) error {
-	ret := _m.Called(ctx, msg)
+// BroadcastDatatype provides a mock function with given fields: ctx, ns, datatype
+func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, datatype)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
-		r0 = rf(ctx, msg)
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Datatype) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, datatype)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Datatype) error); ok {
+		r1 = rf(ctx, ns, datatype)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastMessage provides a mock function with given fields: ctx, ns, in
+func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+		r1 = rf(ctx, ns, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastNamespace provides a mock function with given fields: ctx, ns
+func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) *fftypes.Message); ok {
+		r0 = rf(ctx, ns)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace) error); ok {
+		r1 = rf(ctx, ns)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // HandleSystemBroadcast provides a mock function with given fields: ctx, msg, data
