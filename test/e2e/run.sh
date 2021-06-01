@@ -31,6 +31,7 @@ fi
 
 sleep 5s
 docker logs firefly-e2e_firefly_core_0_1
+docker logs firefly-e2e_ethconnect_0_1
 docker ps
 
 export STACK_FILE
