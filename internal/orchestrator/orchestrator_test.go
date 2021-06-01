@@ -30,6 +30,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
+	"github.com/kaleido-io/firefly/mocks/networkmapmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,7 @@ type testOrchestrator struct {
 	mbm *broadcastmocks.Manager
 	mba *batchmocks.Manager
 	mem *eventmocks.EventManager
+	mnm *networkmapmocks.Manager
 	mps *publicstoragemocks.Plugin
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
@@ -62,6 +64,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbm: &broadcastmocks.Manager{},
 		mba: &batchmocks.Manager{},
 		mem: &eventmocks.EventManager{},
+		mnm: &networkmapmocks.Manager{},
 		mps: &publicstoragemocks.Plugin{},
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
@@ -72,6 +75,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
+	tor.orchestrator.networkmap = tor.mnm
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mii
@@ -194,6 +198,14 @@ func TestInitEventsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.events = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitNetworkMapComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.networkmap = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -327,4 +339,5 @@ func TestInitOK(t *testing.T) {
 
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mem, or.Events())
+	assert.Equal(t, or.mnm, or.NetworkMap())
 }

@@ -183,7 +183,7 @@ func TestGetNodeByIDNotFound(t *testing.T) {
 func TestGetNodeByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	_, err := s.GetNode(context.Background(), "id1")
+	_, err := s.GetNodeByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

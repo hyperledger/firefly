@@ -30,9 +30,9 @@ func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) er
 }
 
 func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
-	u, err := fftypes.ParseUUID(id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
 	err = or.verifyNamespaceSyntax(ctx, ns)
 	return u, err

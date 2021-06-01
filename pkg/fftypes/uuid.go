@@ -17,18 +17,23 @@
 package fftypes
 
 import (
+	"context"
 	"database/sql/driver"
 
 	"github.com/google/uuid"
+	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
 // UUID is a wrapper on a UUID implementation, ensuring Value handles nil
 type UUID uuid.UUID
 
-func ParseUUID(uuidStr string) (*UUID, error) {
+func ParseUUID(ctx context.Context, uuidStr string) (*UUID, error) {
 	u, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return nil, i18n.WrapError(context.Background(), err, i18n.MsgInvalidUUID)
+	}
 	uuid := UUID(u)
-	return &uuid, err
+	return &uuid, nil
 }
 
 func MustParseUUID(uuidStr string) *UUID {

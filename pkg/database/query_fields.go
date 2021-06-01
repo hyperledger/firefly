@@ -123,7 +123,7 @@ func (f *uuidField) Scan(src interface{}) (err error) {
 			f.u = nil
 			return nil
 		}
-		f.u, err = fftypes.ParseUUID(tv)
+		f.u, err = fftypes.ParseUUID(context.Background(), tv)
 		return err
 	case *fftypes.UUID:
 		f.u = tv

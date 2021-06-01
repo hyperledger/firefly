@@ -514,6 +514,29 @@ func (_m *Plugin) GetNode(ctx context.Context, identity string) (*fftypes.Node, 
 	return r0, r1
 }
 
+// GetNodeByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetNodeByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Node, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Node
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Node); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Node)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNodes provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetNodes(ctx context.Context, filter database.Filter) ([]*fftypes.Node, error) {
 	ret := _m.Called(ctx, filter)
@@ -645,6 +668,29 @@ func (_m *Plugin) GetOrganization(ctx context.Context, identity string) (*fftype
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, identity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganizationByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Organization); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Organization)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

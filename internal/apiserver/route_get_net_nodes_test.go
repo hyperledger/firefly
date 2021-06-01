@@ -17,27 +17,28 @@
 package apiserver
 
 import (
-	"net/http"
+	"net/http/httptest"
+	"testing"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/mocks/networkmapmocks"
+	"github.com/kaleido-io/firefly/mocks/orchestratormocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-var getNamespaces = &oapispec.Route{
-	Name:            "getNamespaces",
-	Path:            "namespaces",
-	Method:          http.MethodGet,
-	PathParams:      nil,
-	QueryParams:     nil,
-	FilterFactory:   database.NamespaceQueryFactory,
-	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
-	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetNamespaces(r.Ctx, r.Filter)
-		return output, err
-	},
+func TestGetNodess(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	mnm := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(mnm)
+	r := createMuxRouter(o)
+	req := httptest.NewRequest("GET", "/api/v1/network/nodes", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mnm.On("GetNodes", mock.Anything, mock.Anything).
+		Return([]*fftypes.Node{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

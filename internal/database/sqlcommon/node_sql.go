@@ -129,12 +129,12 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 	return &node, nil
 }
 
-func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error) {
+func (s *SQLCommon) getNodePred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Node, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(nodeColumns...).
 			From("nodes").
-			Where(sq.Eq{"identity": identity}),
+			Where(pred),
 	)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *ffty
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Node '%s' not found", identity)
+		log.L(ctx).Debugf("Node '%s' not found", desc)
 		return nil, nil
 	}
 
@@ -152,6 +152,14 @@ func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *ffty
 	}
 
 	return node, nil
+}
+
+func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error) {
+	return s.getNodePred(ctx, identity, sq.Eq{"identity": identity})
+}
+
+func (s *SQLCommon) GetNodeByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Node, err error) {
+	return s.getNodePred(ctx, id.String(), sq.Eq{"id": id})
 }
 
 func (s *SQLCommon) GetNodes(ctx context.Context, filter database.Filter) (message []*fftypes.Node, err error) {

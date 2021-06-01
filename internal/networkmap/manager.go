@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -29,6 +30,11 @@ import (
 type Manager interface {
 	BroadcastOrganization(ctx context.Context, org *fftypes.Organization) (msg *fftypes.Message, err error)
 	BroadcastNode(ctx context.Context) (msg *fftypes.Message, err error)
+
+	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error)
+	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, error)
+	GetNodeByID(ctx context.Context, id string) (*fftypes.Node, error)
+	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, error)
 }
 
 type networkMap struct {
@@ -40,6 +46,10 @@ type networkMap struct {
 }
 
 func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, ii identity.Plugin) (Manager, error) {
+	if di == nil || bm == nil || dx == nil || ii == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
+
 	nm := &networkMap{
 		ctx:       ctx,
 		database:  di,

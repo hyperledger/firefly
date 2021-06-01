@@ -25,19 +25,19 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getNamespaces = &oapispec.Route{
-	Name:            "getNamespaces",
-	Path:            "namespaces",
+var getNetworkOrgs = &oapispec.Route{
+	Name:            "getNetworkOrgs",
+	Path:            "network/organizations",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.NamespaceQueryFactory,
+	FilterFactory:   database.OrganizationQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.Organization{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetNamespaces(r.Ctx, r.Filter)
+		output, err = r.Or.NetworkMap().GetOrganizations(r.Ctx, r.Filter)
 		return output, err
 	},
 }
