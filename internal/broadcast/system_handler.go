@@ -38,7 +38,7 @@ func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *ffty
 	return false, nil
 }
 
-func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res interface{}) (valid bool) {
+func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data, res fftypes.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachement, found %d", msg.Header.ID, len(data))
@@ -49,6 +49,7 @@ func (bm *broadcastManager) getSystemBroadcastPayload(ctx context.Context, msg *
 		l.Warnf("Unable to process system broadcast %s - unmarshal failed: %s", msg.Header.ID, err)
 		return false
 	}
+	res.SetBroadcastMessage(msg.Header.ID)
 	return true
 }
 

@@ -39,6 +39,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// Create a new namespace entry
 	namespace := &fftypes.Namespace{
 		ID:      nil, // generated for us
+		Message: fftypes.NewUUID(),
 		Type:    fftypes.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
@@ -65,11 +66,11 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &fftypes.Namespace{
 		ID:          nil, // as long as we don't specify one we're fine
+		Message:     fftypes.NewUUID(),
 		Type:        fftypes.NamespaceTypeBroadcast,
 		Name:        "namespace1",
 		Description: "description1",
 		Created:     fftypes.Now(),
-		Confirmed:   fftypes.Now(),
 	}
 	err = s.UpsertNamespace(context.Background(), namespaceUpdated, true)
 	assert.NoError(t, err)
@@ -95,14 +96,14 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 
 	// Update
 	updateTime := fftypes.Now()
-	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
+	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("created", updateTime)
 	err = s.UpdateNamespace(ctx, namespaceUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("name", namespaceUpdated.Name),
-		fb.Eq("confirmed", updateTime.String()),
+		fb.Eq("created", updateTime.String()),
 	)
 	namespaces, err := s.GetNamespaces(ctx, filter)
 	assert.NoError(t, err)

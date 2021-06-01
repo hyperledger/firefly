@@ -31,6 +31,5 @@ func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.
 	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-
-	return bm.BroadcastDefinition(ctx, ns, fftypes.SystemTopicBroadcastNamespace)
+	return bm.broadcastDefinitionAsNode(ctx, ns, ns.Name, fftypes.SystemTopicBroadcastNamespace)
 }

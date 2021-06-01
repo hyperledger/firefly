@@ -491,13 +491,13 @@ func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetNode provides a mock function with given fields: ctx, name
-func (_m *Plugin) GetNode(ctx context.Context, name string) (*fftypes.Node, error) {
-	ret := _m.Called(ctx, name)
+// GetNode provides a mock function with given fields: ctx, identity
+func (_m *Plugin) GetNode(ctx context.Context, identity string) (*fftypes.Node, error) {
+	ret := _m.Called(ctx, identity)
 
 	var r0 *fftypes.Node
 	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Node); ok {
-		r0 = rf(ctx, name)
+		r0 = rf(ctx, identity)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Node)
@@ -506,7 +506,7 @@ func (_m *Plugin) GetNode(ctx context.Context, name string) (*fftypes.Node, erro
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
+		r1 = rf(ctx, identity)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -629,13 +629,13 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetOrganization provides a mock function with given fields: ctx, name
-func (_m *Plugin) GetOrganization(ctx context.Context, name string) (*fftypes.Organization, error) {
-	ret := _m.Called(ctx, name)
+// GetOrganization provides a mock function with given fields: ctx, identity
+func (_m *Plugin) GetOrganization(ctx context.Context, identity string) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, identity)
 
 	var r0 *fftypes.Organization
 	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Organization); ok {
-		r0 = rf(ctx, name)
+		r0 = rf(ctx, identity)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Organization)
@@ -644,7 +644,7 @@ func (_m *Plugin) GetOrganization(ctx context.Context, name string) (*fftypes.Or
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
+		r1 = rf(ctx, identity)
 	} else {
 		r1 = ret.Error(1)
 	}

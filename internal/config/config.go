@@ -153,11 +153,11 @@ var (
 	// NodeIDentity is the signing identity allocated to the node
 	NodeIdentity = rootKey("node.identity")
 	// NodeDescription is a description for the node
-	NodeName = rootKey("node.description")
+	NodeDescription = rootKey("node.description")
 	// OrgIdentity is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgIdentity = rootKey("org.identity")
-	// OrgName is a description for the org
-	OrgName = rootKey("node.description")
+	// OrgDescription is a description for the org
+	OrgDescription = rootKey("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = rootKey("orchestrator.startupAttempts")
 	// PublicStorageType specifies which public storage interface plugin to use

@@ -36,6 +36,7 @@ const (
 // Datatype is the structure defining a data definition, such as a JSON schema
 type Datatype struct {
 	ID        *UUID         `json:"id,omitempty"`
+	Message   *UUID         `json:"message,omitempty"`
 	Validator ValidatorType `json:"validator"`
 	Namespace string        `json:"namespace,omitempty"`
 	Name      string        `json:"name,omitempty"`
@@ -71,4 +72,12 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 		}
 	}
 	return nil
+}
+
+func (dt *Datatype) Context() string {
+	return namespaceContext(dt.Namespace)
+}
+
+func (dt *Datatype) SetBroadcastMessage(msgID *UUID) {
+	dt.Message = msgID
 }

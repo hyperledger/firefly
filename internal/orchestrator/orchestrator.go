@@ -100,7 +100,6 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	data          data.Manager
 	bbc           boundBlockchainCallbacks
-	nodeIdentity  string
 }
 
 func NewOrchestrator() Orchestrator {
@@ -235,7 +234,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.nodeIdentity, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}

@@ -30,14 +30,15 @@ import (
 var (
 	namespaceColumns = []string{
 		"id",
+		"message_id",
 		"ntype",
 		"name",
 		"description",
 		"created",
-		"confirmed",
 	}
 	namespaceFilterTypeMap = map[string]string{
-		"type": "ntype",
+		"message": "message_id",
+		"type":    "ntype",
 	}
 )
 
@@ -80,11 +81,11 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 		if err = s.updateTx(ctx, tx,
 			sq.Update("namespaces").
 				// Note we do not update ID
+				Set("message_id", namespace.Message).
 				Set("ntype", string(namespace.Type)).
 				Set("name", namespace.Name).
 				Set("description", namespace.Description).
 				Set("created", namespace.Created).
-				Set("confirmed", namespace.Confirmed).
 				Where(sq.Eq{"name": namespace.Name}),
 		); err != nil {
 			return err
@@ -99,11 +100,11 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 				Columns(namespaceColumns...).
 				Values(
 					namespace.ID,
+					namespace.Message,
 					string(namespace.Type),
 					namespace.Name,
 					namespace.Description,
 					namespace.Created,
-					namespace.Confirmed,
 				),
 		); err != nil {
 			return err
@@ -117,11 +118,11 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*fftype
 	namespace := fftypes.Namespace{}
 	err := row.Scan(
 		&namespace.ID,
+		&namespace.Message,
 		&namespace.Type,
 		&namespace.Name,
 		&namespace.Description,
 		&namespace.Created,
-		&namespace.Confirmed,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "namespaces")

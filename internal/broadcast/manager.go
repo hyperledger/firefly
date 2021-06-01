@@ -36,7 +36,9 @@ import (
 type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error)
+	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
+	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 	Start() error
 	WaitStop()
@@ -44,7 +46,6 @@ type Manager interface {
 
 type broadcastManager struct {
 	ctx           context.Context
-	nodeIdentity  string
 	database      database.Plugin
 	identity      identity.Plugin
 	data          data.Manager
@@ -53,13 +54,12 @@ type broadcastManager struct {
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
-		nodeIdentity:  nodeIdentity,
 		database:      di,
 		identity:      ii,
 		data:          dm,
@@ -75,6 +75,15 @@ func NewBroadcastManager(ctx context.Context, nodeIdentity string, di database.P
 	ba.RegisterDispatcher(fftypes.MessageTypeBroadcast, bm.dispatchBatch, bo)
 	ba.RegisterDispatcher(fftypes.MessageTypeDefinition, bm.dispatchBatch, bo)
 	return bm, nil
+}
+
+func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
+	nodeIdentity := config.GetString(config.NodeIdentity)
+	id, err := bm.identity.Resolve(ctx, nodeIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return id, nil
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {

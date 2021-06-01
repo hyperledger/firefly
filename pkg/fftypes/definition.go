@@ -14,18 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package networkmap
+package fftypes
 
-import "context"
-
-func (nm *networkMap) OrgJoinNetwork(ctx context.Context) error {
-
-	return nil
-}
-
-func (nm *networkMap) NodeJoinNetwork(ctx context.Context) error {
-
-	// Get the
-
-	return nil
+// Definition is implemented by all objects that can be broadcast as system definitions to the network
+type Definition interface {
+	// Context returns the context on which the object should be broadcast
+	Context() string
+	// SetBroadcastMessage sets the message that broadcast the definition
+	SetBroadcastMessage(msgID *UUID)
 }

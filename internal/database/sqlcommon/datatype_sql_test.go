@@ -47,6 +47,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	}
 	datatype := &fftypes.Datatype{
 		ID:        datatypeID,
+		Message:   fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
@@ -74,6 +75,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	}
 	datatypeUpdated := &fftypes.Datatype{
 		ID:        datatypeID,
+		Message:   fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
 		Name:      "customer",

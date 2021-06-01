@@ -252,7 +252,7 @@ type PeristenceInterface interface {
 	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOrganization- Get a organization by ID
-	GetOrganization(ctx context.Context, name string) (message *fftypes.Organization, err error)
+	GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error)
 
 	// GetOrganizations - Get organizations
 	GetOrganizations(ctx context.Context, filter Filter) (message []*fftypes.Organization, err error)
@@ -264,7 +264,7 @@ type PeristenceInterface interface {
 	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetNode - Get a organization by ID
-	GetNode(ctx context.Context, name string) (message *fftypes.Node, err error)
+	GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error)
 
 	// GetNodes - Get organizations
 	GetNodes(ctx context.Context, filter Filter) (message []*fftypes.Node, err error)
@@ -301,6 +301,7 @@ type Capabilities struct {
 // NamespaceQueryFactory filter fields for namespaces
 var NamespaceQueryFactory = &queryFields{
 	"id":          &UUIDField{},
+	"message":     &UUIDField{},
 	"type":        &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
@@ -352,7 +353,6 @@ var TransactionQueryFactory = &queryFields{
 	"reference":  &UUIDField{},
 	"protocolid": &StringField{},
 	"created":    &TimeField{},
-	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
 	"info":       &JSONField{},
 }
@@ -371,6 +371,7 @@ var DataQueryFactory = &queryFields{
 // DatatypeQueryFactory filter fields for data definitions
 var DatatypeQueryFactory = &queryFields{
 	"id":        &UUIDField{},
+	"message":   &UUIDField{},
 	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
@@ -438,23 +439,21 @@ var BlockedQueryFactory = &queryFields{
 // OrganizationQueryFactory filter fields for organizations
 var OrganizationQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"parent":      &UUIDField{},
+	"message":     &UUIDField{},
+	"parent":      &StringField{},
 	"identity":    &StringField{},
-	"name":        &StringField{},
 	"description": &StringField{},
 	"profile":     &JSONField{},
 	"created":     &TimeField{},
-	"confirmed":   &TimeField{},
 }
 
 // NodeQueryFactory filter fields for nodes
 var NodeQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"owner":       &UUIDField{},
+	"message":     &UUIDField{},
+	"owner":       &StringField{},
 	"identity":    &StringField{},
-	"name":        &StringField{},
 	"description": &StringField{},
 	"endpoint":    &JSONField{},
 	"created":     &TimeField{},
-	"confirmed":   &TimeField{},
 }

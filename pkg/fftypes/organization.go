@@ -18,6 +18,9 @@ package fftypes
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"unicode"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
@@ -25,12 +28,12 @@ import (
 // Organization is a top-level identity in the network
 type Organization struct {
 	ID          *UUID      `json:"id"`
-	Parent      *UUID      `json:"parent,omitempty"`
+	Message     *UUID      `json:"message,omitempty"`
+	Parent      string     `json:"parent,omitempty"`
 	Identity    string     `json:"identity,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Profile     JSONObject `json:"profile,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
-	Confirmed   *FFTime    `json:"updated,omitempty"`
 }
 
 func (org *Organization) Validate(ctx context.Context, existing bool) (err error) {
@@ -43,4 +46,27 @@ func (org *Organization) Validate(ctx context.Context, existing bool) (err error
 		}
 	}
 	return nil
+}
+
+func orgContext(orgIdentity string) string {
+	buf := strings.Builder{}
+	for _, r := range orgIdentity {
+		if buf.Len() > 64 {
+			break
+		}
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			buf.WriteRune(r)
+		} else {
+			buf.WriteRune('_')
+		}
+	}
+	return fmt.Sprintf("ff-org-%s", buf.String())
+}
+
+func (org *Organization) Context() string {
+	return orgContext(org.Identity)
+}
+
+func (org *Organization) SetBroadcastMessage(msgID *UUID) {
+	org.Message = msgID
 }

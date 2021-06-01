@@ -19,12 +19,29 @@ package broadcast
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, defObject interface{}, topic string) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, contextNamespace, topic string) (msg *fftypes.Message, err error) {
+	signingIdentity, err := bm.GetNodeSigningIdentity(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bm.BroadcastDefinition(ctx, def, signingIdentity, contextNamespace, topic)
+}
+
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error) {
+
+	err = bm.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the broadcast message is nil on the sending side - only set on receiving side
+	def.SetBroadcastMessage(nil)
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -33,7 +50,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, defObject i
 		Namespace: fftypes.SystemNamespace,
 		Created:   fftypes.Now(),
 	}
-	data.Value, err = json.Marshal(&defObject)
+	data.Value, err = json.Marshal(&def)
 	if err == nil {
 		err = data.Seal(ctx)
 	}
@@ -51,9 +68,9 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, defObject i
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeDefinition,
-			Author:    bm.nodeIdentity,
+			Author:    signingIdentity.Identifier,
 			Topic:     topic,
-			Context:   fftypes.SystemContext,
+			Context:   fmt.Sprintf("ff-ns-%s", contextNamespace), // Use a context restricted to the scope (namespace/org) of the thing we're broadcasting
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 			},

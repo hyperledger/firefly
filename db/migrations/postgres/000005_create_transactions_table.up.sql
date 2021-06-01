@@ -10,7 +10,6 @@ CREATE TABLE transactions (
   created     BIGINT          NOT NULL,
   protocol_id VARCHAR(256),
   status      VARCHAR(64)     NOT NULL,
-  confirmed   BIGINT,
   info        JSONB
 );
 

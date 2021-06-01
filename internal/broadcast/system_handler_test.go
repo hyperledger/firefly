@@ -48,7 +48,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Topic: "uknown",
 		},
-	}, nil, []*fftypes.Data{})
+	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
 }
 
@@ -59,7 +59,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Topic: "uknown",
 		},
-	}, nil, []*fftypes.Data{})
+	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
 }
 

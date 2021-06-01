@@ -37,6 +37,29 @@ func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *f
 	return r0, r1
 }
 
+// BroadcastDefinition provides a mock function with given fields: ctx, def, signingIdentity, contextNamespace, topic
+func (_m *Manager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace string, topic string) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, def, signingIdentity, contextNamespace, topic)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Definition, *fftypes.Identity, string, string) *fftypes.Message); ok {
+		r0 = rf(ctx, def, signingIdentity, contextNamespace, topic)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.Definition, *fftypes.Identity, string, string) error); ok {
+		r1 = rf(ctx, def, signingIdentity, contextNamespace, topic)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // BroadcastMessage provides a mock function with given fields: ctx, ns, in
 func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, in)
@@ -76,6 +99,29 @@ func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace) error); ok {
 		r1 = rf(ctx, ns)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNodeSigningIdentity provides a mock function with given fields: ctx
+func (_m *Manager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Identity); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

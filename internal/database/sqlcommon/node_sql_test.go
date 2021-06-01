@@ -39,7 +39,8 @@ func TestNodesE2EWithDB(t *testing.T) {
 	// Create a new node entry
 	node := &fftypes.Node{
 		ID:       fftypes.NewUUID(),
-		Owner:    fftypes.NewUUID(),
+		Message:  fftypes.NewUUID(),
+		Owner:    "0x23456",
 		Identity: "0x12345",
 		Created:  fftypes.Now(),
 	}
@@ -65,12 +66,12 @@ func TestNodesE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	nodeUpdated := &fftypes.Node{
 		ID:          nil, // as long as we don't specify one we're fine
-		Owner:       fftypes.NewUUID(),
+		Message:     fftypes.NewUUID(),
+		Owner:       "0x23456",
 		Identity:    "0x12345",
 		Description: "node1",
 		Endpoint:    fftypes.JSONObject{"some": "info"},
 		Created:     fftypes.Now(),
-		Confirmed:   fftypes.Now(),
 	}
 	err = s.UpsertNode(context.Background(), nodeUpdated, true)
 	assert.NoError(t, err)
@@ -96,14 +97,14 @@ func TestNodesE2EWithDB(t *testing.T) {
 
 	// Update
 	updateTime := fftypes.Now()
-	up := database.NodeQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
+	up := database.NodeQueryFactory.NewUpdate(ctx).Set("created", updateTime)
 	err = s.UpdateNode(ctx, nodeUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("identity", nodeUpdated.Identity),
-		fb.Eq("confirmed", updateTime.String()),
+		fb.Eq("created", updateTime.String()),
 	)
 	nodes, err := s.GetNodes(ctx, filter)
 	assert.NoError(t, err)

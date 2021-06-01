@@ -698,7 +698,7 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
-			Context:   fftypes.SystemContext,
+			Context:   "context1",
 			Topic:     fftypes.SystemTopicBroadcastDatatype,
 		},
 	}

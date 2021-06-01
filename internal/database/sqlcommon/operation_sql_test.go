@@ -122,7 +122,6 @@ func TestOperationE2EWithDB(t *testing.T) {
 	filter = fb.And(
 		fb.Eq("id", operationUpdated.ID.String()),
 		fb.Eq("status", fftypes.OpStatusSucceeded),
-		fb.Eq("updated", updateTime),
 		fb.Eq("error", ""),
 	)
 	operations, err = s.GetOperations(ctx, filter)

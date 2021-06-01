@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
@@ -38,11 +39,11 @@ const (
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
 	ID          *UUID         `json:"id"`
+	Message     *UUID         `json:"message,omitempty"`
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Type        NamespaceType `json:"type"`
 	Created     *FFTime       `json:"created"`
-	Confirmed   *FFTime       `json:"confirmed"`
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
@@ -58,4 +59,16 @@ func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
 		}
 	}
 	return nil
+}
+
+func namespaceContext(ns string) string {
+	return fmt.Sprintf("ff-ns-%s", ns)
+}
+
+func (ns *Namespace) Context() string {
+	return namespaceContext(ns.Name)
+}
+
+func (ns *Namespace) SetBroadcastMessage(msgID *UUID) {
+	ns.Message = msgID
 }

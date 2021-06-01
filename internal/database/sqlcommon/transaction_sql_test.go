@@ -77,7 +77,6 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Info: fftypes.JSONObject{
 			"some": "data",
 		},
-		Confirmed: fftypes.Now(),
 	}
 
 	// Check reject hash update
@@ -103,7 +102,6 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
 		fb.Eq("author", transactionUpdated.Subject.Author),
 		fb.Gt("created", "0"),
-		fb.Gt("confirmed", "0"),
 	)
 	transactions, err := s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)
@@ -114,7 +112,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Negative test on filter
 	filter = fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
-		fb.Eq("confirmed", "0"),
+		fb.Eq("created", "0"),
 	)
 	transactions, err = s.GetTransactions(ctx, filter)
 	assert.NoError(t, err)

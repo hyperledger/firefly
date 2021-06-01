@@ -39,6 +39,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	// Create a new organization entry
 	organization := &fftypes.Organization{
 		ID:       fftypes.NewUUID(),
+		Message:  fftypes.NewUUID(),
 		Identity: "0x12345",
 		Created:  fftypes.Now(),
 	}
@@ -64,12 +65,12 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	organizationUpdated := &fftypes.Organization{
 		ID:          nil, // as long as we don't specify one we're fine
-		Parent:      fftypes.NewUUID(),
+		Message:     fftypes.NewUUID(),
+		Parent:      "0x23456",
 		Identity:    "0x12345",
 		Description: "organization1",
 		Profile:     fftypes.JSONObject{"some": "info"},
 		Created:     fftypes.Now(),
-		Confirmed:   fftypes.Now(),
 	}
 	err = s.UpsertOrganization(context.Background(), organizationUpdated, true)
 	assert.NoError(t, err)
@@ -95,14 +96,14 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 
 	// Update
 	updateTime := fftypes.Now()
-	up := database.OrganizationQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
+	up := database.OrganizationQueryFactory.NewUpdate(ctx).Set("created", updateTime)
 	err = s.UpdateOrganization(ctx, organizationUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("identity", organizationUpdated.Identity),
-		fb.Eq("confirmed", updateTime.String()),
+		fb.Eq("created", updateTime.String()),
 	)
 	organizations, err := s.GetOrganizations(ctx, filter)
 	assert.NoError(t, err)
