@@ -21,23 +21,24 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getNamespaces = &oapispec.Route{
-	Name:            "getNamespaces",
-	Path:            "namespaces",
-	Method:          http.MethodGet,
-	PathParams:      nil,
+var getNetworkOrg = &oapispec.Route{
+	Name:   "getNetworkOrg",
+	Path:   "network/organizations/{oid}",
+	Method: http.MethodGet,
+	PathParams: []*oapispec.PathParam{
+		{Name: "oid", Description: i18n.MsgTBD},
+	},
 	QueryParams:     nil,
-	FilterFactory:   database.NamespaceQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Organization{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetNamespaces(r.Ctx, r.Filter)
+		output, err = r.Or.NetworkMap().GetOrganizationByID(r.Ctx, r.PP["oid"])
 		return output, err
 	},
 }

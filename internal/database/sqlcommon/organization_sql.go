@@ -129,12 +129,12 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 	return &organization, nil
 }
 
-func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error) {
+func (s *SQLCommon) getOrganizationPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Organization, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(organizationColumns...).
 			From("orgs").
-			Where(sq.Eq{"identity": identity}),
+			Where(pred),
 	)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (messa
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Organization '%s' not found", identity)
+		log.L(ctx).Debugf("Organization '%s' not found", desc)
 		return nil, nil
 	}
 
@@ -152,6 +152,14 @@ func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (messa
 	}
 
 	return organization, nil
+}
+
+func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error) {
+	return s.getOrganizationPred(ctx, identity, sq.Eq{"identity": identity})
+}
+
+func (s *SQLCommon) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Organization, err error) {
+	return s.getOrganizationPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
 func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter) (message []*fftypes.Organization, err error) {

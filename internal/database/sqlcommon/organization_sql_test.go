@@ -182,7 +182,7 @@ func TestGetOrganizationByIDNotFound(t *testing.T) {
 func TestGetOrganizationByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	_, err := s.GetOrganization(context.Background(), "id1")
+	_, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

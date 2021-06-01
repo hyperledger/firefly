@@ -32,8 +32,9 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/batch        --name Manager          --output mocks/batchmocks          --outpkg batchmocks
 		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
-		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
+		$(MOCKERY) --case underscore --dir internal/networkmap   --name Manager          --output mocks/networkmapmocks     --outpkg networkmapmocks
 		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
+		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
 firefly-nocgo: ${GOFILES}		
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}

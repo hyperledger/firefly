@@ -39,9 +39,9 @@ func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 }
 
 func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) error {
-	u, err := fftypes.ParseUUID(id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return err
 	}
 	sub, err := or.database.GetSubscriptionByID(ctx, u)
 	if err != nil {

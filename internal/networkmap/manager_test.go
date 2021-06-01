@@ -40,3 +40,8 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	return nm.(*networkMap), cancel
 
 }
+
+func TestNewNetworkMapMissingDep(t *testing.T) {
+	_, err := NewNetworkMap(context.Background(), nil, nil, nil, nil)
+	assert.Regexp(t, "FF10128", err)
+}

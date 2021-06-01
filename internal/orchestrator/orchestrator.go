@@ -31,6 +31,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/identity/iifactory"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/networkmap"
 	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -55,6 +56,7 @@ type Orchestrator interface {
 	WaitStop() // The close itself is performed by canceling the context
 	Broadcast() broadcast.Manager
 	Events() events.EventManager
+	NetworkMap() networkmap.Manager
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
@@ -96,6 +98,7 @@ type orchestrator struct {
 	publicstorage publicstorage.Plugin
 	dataexchange  dataexchange.Plugin
 	events        events.EventManager
+	networkmap    networkmap.Manager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
 	data          data.Manager
@@ -164,6 +167,10 @@ func (or *orchestrator) Broadcast() broadcast.Manager {
 
 func (or *orchestrator) Events() events.EventManager {
 	return or.events
+}
+
+func (or *orchestrator) NetworkMap() networkmap.Manager {
+	return or.networkmap
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
@@ -241,6 +248,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast, or.data)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.networkmap == nil {
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity)
 		if err != nil {
 			return err
 		}

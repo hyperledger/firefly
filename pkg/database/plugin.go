@@ -252,10 +252,13 @@ type PeristenceInterface interface {
 	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOrganization- Get a organization by ID
-	GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error)
+	GetOrganization(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByID- Get a organization by ID
+	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
 
 	// GetOrganizations - Get organizations
-	GetOrganizations(ctx context.Context, filter Filter) (message []*fftypes.Organization, err error)
+	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
 
 	// UpsertNode - Upsert an organization
 	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
@@ -264,10 +267,13 @@ type PeristenceInterface interface {
 	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetNode - Get a organization by ID
-	GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error)
+	GetNode(ctx context.Context, identity string) (node *fftypes.Node, err error)
+
+	// GetNodeByID- Get a organization by ID
+	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
 
 	// GetNodes - Get organizations
-	GetNodes(ctx context.Context, filter Filter) (message []*fftypes.Node, err error)
+	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
