@@ -128,4 +128,5 @@ var (
 	MsgBatchNotSet                 = ffm("FF10208", "Message does not have an assigned batch", 404)
 	MsgBatchNotFound               = ffm("FF10209", "Batch '%s' not found for message", 500)
 	MsgBatchTXNotSet               = ffm("FF10210", "Batch '%s' does not have an assigned transaction", 404)
+	MsgOwnerMissing                = ffm("FF10211", "Owner missing", 400)
 )
