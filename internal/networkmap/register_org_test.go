@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastOrganizationChildOk(t *testing.T) {
+func TestRegisterOrganizationChildOk(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -49,7 +49,7 @@ func TestBroadcastOrganizationChildOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, "ff-org-0x12345", fftypes.SystemTopicBroadcastOrganization).Return(mockMsg, nil)
 
-	msg, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	msg, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity:    "0x12345",
 		Parent:      "0x23456",
 		Description: "my organization",
@@ -59,7 +59,7 @@ func TestBroadcastOrganizationChildOk(t *testing.T) {
 
 }
 
-func TestBroadcastOrganizationRootOk(t *testing.T) {
+func TestRegisterOrganizationRootOk(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -72,7 +72,7 @@ func TestBroadcastOrganizationRootOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, "ff-org-0x12345", fftypes.SystemTopicBroadcastOrganization).Return(mockMsg, nil)
 
-	msg, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	msg, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity:    "0x12345",
 		Description: "my organization",
 	})
@@ -81,19 +81,19 @@ func TestBroadcastOrganizationRootOk(t *testing.T) {
 
 }
 
-func TestBroadcastOrganizationBadObject(t *testing.T) {
+func TestRegisterOrganizationBadObject(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	_, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Description: string(make([]byte, 4097)),
 	})
 	assert.Regexp(t, "FF10188", err)
 
 }
 
-func TestBroadcastOrganizationBadIdentity(t *testing.T) {
+func TestRegisterOrganizationBadIdentity(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -101,14 +101,14 @@ func TestBroadcastOrganizationBadIdentity(t *testing.T) {
 	mii := nm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", nm.ctx, "!wrong").Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity: "!wrong",
 	})
 	assert.Regexp(t, "FF10215.*pop", err)
 
 }
 
-func TestBroadcastOrganizationBadParent(t *testing.T) {
+func TestRegisterOrganizationBadParent(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -119,7 +119,7 @@ func TestBroadcastOrganizationBadParent(t *testing.T) {
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganization", nm.ctx, "wrongun").Return(nil, nil)
 
-	_, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity: "0x12345",
 		Parent:   "wrongun",
 	})
@@ -127,7 +127,7 @@ func TestBroadcastOrganizationBadParent(t *testing.T) {
 
 }
 
-func TestBroadcastOrganizationChildResolveFail(t *testing.T) {
+func TestRegisterOrganizationChildResolveFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -135,7 +135,7 @@ func TestBroadcastOrganizationChildResolveFail(t *testing.T) {
 	mii := nm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", nm.ctx, "0x12345").Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity: "0x12345",
 		Parent:   "0x23456",
 	})
@@ -143,7 +143,7 @@ func TestBroadcastOrganizationChildResolveFail(t *testing.T) {
 
 }
 
-func TestBroadcastOrganizationParentLookupFail(t *testing.T) {
+func TestRegisterOrganizationParentLookupFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -154,7 +154,7 @@ func TestBroadcastOrganizationParentLookupFail(t *testing.T) {
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganization", nm.ctx, "0x23456").Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.BroadcastOrganization(nm.ctx, &fftypes.Organization{
+	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Identity: "0x12345",
 		Parent:   "0x23456",
 	})

@@ -23,6 +23,7 @@ const (
 	defaultRetryCount       = 5
 	defaultRetryWaitTime    = "250ms"
 	defaultRetryMaxWaitTime = "30s"
+	defaultRequestTimeout   = "30s"
 )
 
 const (
@@ -42,6 +43,8 @@ const (
 	HTTPConfigRetryInitDelay = "retry.initWaitTime"
 	// HTTPConfigRetryMaxDelay the maximum retry delay
 	HTTPConfigRetryMaxDelay = "retry.maxWaitTime"
+	// HTTPConfigRequestTimeout the request timeout
+	HTTPConfigRequestTimeout = "requestTimeout"
 
 	// HTTPCustomClient - unit test only - allows injection of a custom HTTP client to resty
 	HTTPCustomClient = "customClient"
@@ -56,6 +59,7 @@ func InitPrefix(prefix config.Prefix) {
 	prefix.AddKnownKey(HTTPConfigRetryCount, defaultRetryCount)
 	prefix.AddKnownKey(HTTPConfigRetryInitDelay, defaultRetryWaitTime)
 	prefix.AddKnownKey(HTTPConfigRetryMaxDelay, defaultRetryMaxWaitTime)
+	prefix.AddKnownKey(HTTPConfigRequestTimeout, defaultRequestTimeout)
 
 	prefix.AddKnownKey(HTTPCustomClient)
 }

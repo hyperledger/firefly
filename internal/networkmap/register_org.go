@@ -39,7 +39,7 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 	return err
 }
 
-func (nm *networkMap) BroadcastOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {
+func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {
 
 	err := org.Validate(ctx, false)
 	if err != nil {
