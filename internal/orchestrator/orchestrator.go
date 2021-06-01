@@ -26,20 +26,26 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/database/difactory"
+	"github.com/kaleido-io/firefly/internal/dataexchange/dxfactory"
 	"github.com/kaleido-io/firefly/internal/events"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/identity/iifactory"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 var (
 	blockchainConfig    = config.NewPluginConfig("blockchain")
 	databaseConfig      = config.NewPluginConfig("database")
+	identityConfig      = config.NewPluginConfig("identity")
 	publicstorageConfig = config.NewPluginConfig("publicstorage")
+	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -86,7 +92,9 @@ type orchestrator struct {
 	started       bool
 	database      database.Plugin
 	blockchain    blockchain.Plugin
+	identity      identity.Plugin
 	publicstorage publicstorage.Plugin
+	dataexchange  dataexchange.Plugin
 	events        events.EventManager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
@@ -171,6 +179,16 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
+	if or.identity == nil {
+		iiType := config.GetString(config.IdentityType)
+		if or.identity, err = iifactory.GetPlugin(ctx, iiType); err != nil {
+			return err
+		}
+	}
+	if err = or.identity.Init(ctx, identityConfig.SubPrefix(or.identity.Name()), or); err != nil {
+		return err
+	}
+
 	if or.blockchain == nil {
 		biType := config.GetString(config.BlockchainType)
 		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
@@ -187,7 +205,17 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or)
+	if err = or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or); err != nil {
+		return err
+	}
+
+	if or.dataexchange == nil {
+		dxType := config.GetString(config.DataexchangeType)
+		if or.dataexchange, err = dxfactory.GetPlugin(ctx, dxType); err != nil {
+			return err
+		}
+	}
+	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), or)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {

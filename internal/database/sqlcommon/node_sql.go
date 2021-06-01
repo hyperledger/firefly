@@ -32,7 +32,6 @@ var (
 		"id",
 		"owner",
 		"identity",
-		"name",
 		"description",
 		"endpoint",
 		"created",
@@ -54,7 +53,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 		nodeRows, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("nodes").
-				Where(sq.Eq{"name": node.Name}),
+				Where(sq.Eq{"identity": node.Identity}),
 		)
 		if err != nil {
 			return err
@@ -82,12 +81,11 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 				// Note we do not update ID
 				Set("owner", node.Owner).
 				Set("identity", node.Identity).
-				Set("name", node.Name).
 				Set("description", node.Description).
 				Set("endpoint", node.Endpoint).
 				Set("created", node.Created).
 				Set("confirmed", node.Confirmed).
-				Where(sq.Eq{"name": node.Name}),
+				Where(sq.Eq{"identity": node.Identity}),
 		); err != nil {
 			return err
 		}
@@ -99,7 +97,6 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 					node.ID,
 					node.Owner,
 					node.Identity,
-					node.Name,
 					node.Description,
 					node.Endpoint,
 					node.Created,
@@ -119,7 +116,6 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 		&node.ID,
 		&node.Owner,
 		&node.Identity,
-		&node.Name,
 		&node.Description,
 		&node.Endpoint,
 		&node.Created,
@@ -131,12 +127,12 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 	return &node, nil
 }
 
-func (s *SQLCommon) GetNode(ctx context.Context, name string) (message *fftypes.Node, err error) {
+func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(nodeColumns...).
 			From("nodes").
-			Where(sq.Eq{"name": name}),
+			Where(sq.Eq{"identity": identity}),
 	)
 	if err != nil {
 		return nil, err
@@ -144,7 +140,7 @@ func (s *SQLCommon) GetNode(ctx context.Context, name string) (message *fftypes.
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Node '%s' not found", name)
+		log.L(ctx).Debugf("Node '%s' not found", identity)
 		return nil, nil
 	}
 

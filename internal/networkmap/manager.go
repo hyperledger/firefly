@@ -22,6 +22,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/kaleido-io/firefly/pkg/identity"
 )
 
 type Manager interface {
@@ -33,13 +34,19 @@ type networkMap struct {
 	database  database.Plugin
 	broadcast broadcast.Manager
 	exchange  dataexchange.Plugin
+	identity  identity.Plugin
+	// orgIdentity  fftypes.Identity
+	// nodeIdentity fftypes.Identity
 }
 
-func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin) Manager {
-	return &networkMap{
+func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, ii identity.Plugin) (Manager, error) {
+	nm := &networkMap{
 		ctx:       ctx,
 		database:  di,
 		broadcast: bm,
 		exchange:  dx,
+		identity:  ii,
 	}
+
+	return nm, nil
 }

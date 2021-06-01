@@ -14,28 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package dxhttps
 
 import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/kaleido-io/firefly/internal/config"
 )
 
-func TestOrganizationValidation(t *testing.T) {
-
-	org := &Organization{
-		Description: string(make([]byte, 4097)),
-	}
-	assert.Regexp(t, "FF10188.*description", org.Validate(context.Background(), false))
-
-	org = &Organization{
-		Description: "ok",
-		Identity:    "ok",
-	}
-	assert.NoError(t, org.Validate(context.Background(), false))
-
-	assert.Regexp(t, "FF10203", org.Validate(context.Background(), true))
-
+func (h *HTTPS) InitPrefix(prefix config.Prefix) {
 }

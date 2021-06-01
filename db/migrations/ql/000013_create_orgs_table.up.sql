@@ -2,7 +2,6 @@ CREATE TABLE orgs (
   id             string            NOT NULL,  
   parent         string,
   identity       string            NOT NULL,
-  name           string            NOT NULL,
   description    string            NOT NULL,
   profile        blob,
   created        int64             NOT NULL,
@@ -10,4 +9,4 @@ CREATE TABLE orgs (
 );
 
 CREATE UNIQUE INDEX orgs_id ON orgs(id);
-CREATE UNIQUE INDEX orgs_name ON orgs(name);
+CREATE UNIQUE INDEX orgs_identity ON orgs(identity);
