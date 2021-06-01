@@ -30,14 +30,16 @@ import (
 var (
 	organizationColumns = []string{
 		"id",
+		"message_id",
 		"parent",
 		"identity",
 		"description",
 		"profile",
 		"created",
-		"confirmed",
 	}
-	organizationFilterTypeMap = map[string]string{}
+	organizationFilterTypeMap = map[string]string{
+		"message": "message_id",
+	}
 )
 
 func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftypes.Organization, allowExisting bool) (err error) {
@@ -79,12 +81,12 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 		if err = s.updateTx(ctx, tx,
 			sq.Update("orgs").
 				// Note we do not update ID
+				Set("message_id", organization.Message).
 				Set("parent", organization.Parent).
 				Set("identity", organization.Identity).
 				Set("description", organization.Description).
 				Set("profile", organization.Profile).
 				Set("created", organization.Created).
-				Set("confirmed", organization.Confirmed).
 				Where(sq.Eq{"identity": organization.Identity}),
 		); err != nil {
 			return err
@@ -95,12 +97,12 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 				Columns(organizationColumns...).
 				Values(
 					organization.ID,
+					organization.Message,
 					organization.Parent,
 					organization.Identity,
 					organization.Description,
 					organization.Profile,
 					organization.Created,
-					organization.Confirmed,
 				),
 		); err != nil {
 			return err
@@ -114,12 +116,12 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 	organization := fftypes.Organization{}
 	err := row.Scan(
 		&organization.ID,
+		&organization.Message,
 		&organization.Parent,
 		&organization.Identity,
 		&organization.Description,
 		&organization.Profile,
 		&organization.Created,
-		&organization.Confirmed,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "orgs")

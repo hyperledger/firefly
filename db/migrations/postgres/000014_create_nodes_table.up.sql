@@ -2,12 +2,12 @@ BEGIN;
 CREATE TABLE nodes (
   seq            SERIAL          PRIMARY KEY,
   id             UUID            NOT NULL,  
-  owner          UUID            NOT NULL,
+  message_id     UUID            NOT NULL,
+  owner          VARCHAR(1024)   NOT NULL,
   identity       VARCHAR(1024)   NOT NULL,
   description    VARCHAR(4096)   NOT NULL,
   endpoint       BYTEA,
-  created        BIGINT          NOT NULL,
-  confirmed      BIGINT
+  created        BIGINT          NOT NULL
 );
 
 CREATE UNIQUE INDEX nodes_id ON nodes(id);

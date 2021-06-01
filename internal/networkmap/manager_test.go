@@ -14,36 +14,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package networkmap
 
 import (
 	"context"
 	"testing"
 
+	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
+	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNodeValidation(t *testing.T) {
+func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
+	config.Reset()
+	ctx, cancel := context.WithCancel(context.Background())
+	mdi := &databasemocks.Plugin{}
+	mbm := &broadcastmocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
+	mii := &identitymocks.Plugin{}
+	nm, err := NewNetworkMap(ctx, mdi, mbm, mdx, mii)
+	assert.NoError(t, err)
+	return nm.(*networkMap), cancel
 
-	n := &Node{
-		Description: string(make([]byte, 4097)),
-	}
-	assert.Regexp(t, "FF10188.*description", n.Validate(context.Background(), false))
-
-	n = &Node{
-		Description: "ok",
-		Identity:    "ok",
-	}
-	assert.Regexp(t, "FF10211", n.Validate(context.Background(), false))
-
-	n.Owner = "0x12345"
-	assert.NoError(t, n.Validate(context.Background(), false))
-
-	assert.Regexp(t, "FF10203", n.Validate(context.Background(), true))
-
-	var def Definition = n
-	n.Owner = "owner"
-	assert.Equal(t, "ff-org-owner", def.Context())
-	def.SetBroadcastMessage(NewUUID())
-	assert.NotNil(t, n.Message)
 }

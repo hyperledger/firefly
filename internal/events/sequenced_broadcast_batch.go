@@ -139,7 +139,6 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Set the updates on the transaction
-	tx.Confirmed = now
 	tx.ProtocolID = protocolTxID
 	tx.Info = additionalInfo
 	tx.Status = fftypes.OpStatusSucceeded

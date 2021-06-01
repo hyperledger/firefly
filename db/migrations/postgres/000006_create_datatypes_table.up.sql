@@ -2,6 +2,7 @@ BEGIN;
 CREATE TABLE datatypes (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,
+  message_id  UUID            NOT NULL,
   validator   VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   name        VARCHAR(64)     NOT NULL,

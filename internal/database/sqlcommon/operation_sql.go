@@ -199,6 +199,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 	if err != nil {
 		return err
 	}
+	query = query.Set("updated", fftypes.Now())
 	query = query.Where(sq.Eq{"id": id})
 
 	err = s.updateTx(ctx, tx, query)

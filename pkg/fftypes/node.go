@@ -25,19 +25,19 @@ import (
 // Node is a FireFly node within the network
 type Node struct {
 	ID          *UUID      `json:"id"`
-	Owner       *UUID      `json:"parent,omitempty"`
+	Message     *UUID      `json:"message,omitempty"`
+	Owner       string     `json:"parent,omitempty"`
 	Identity    string     `json:"identity,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Endpoint    JSONObject `json:"endpoint,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
-	Confirmed   *FFTime    `json:"updated,omitempty"`
 }
 
 func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
 		return err
 	}
-	if n.Owner == nil {
+	if n.Owner == "" {
 		return i18n.NewError(ctx, i18n.MsgOwnerMissing)
 	}
 	if existing {
@@ -46,4 +46,12 @@ func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
 		}
 	}
 	return nil
+}
+
+func (n *Node) Context() string {
+	return orgContext(n.Owner)
+}
+
+func (n *Node) SetBroadcastMessage(msgID *UUID) {
+	n.Message = msgID
 }

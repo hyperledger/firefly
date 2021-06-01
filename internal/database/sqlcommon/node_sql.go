@@ -30,14 +30,16 @@ import (
 var (
 	nodeColumns = []string{
 		"id",
+		"message_id",
 		"owner",
 		"identity",
 		"description",
 		"endpoint",
 		"created",
-		"confirmed",
 	}
-	nodeFilterTypeMap = map[string]string{}
+	nodeFilterTypeMap = map[string]string{
+		"message": "message_id",
+	}
 )
 
 func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExisting bool) (err error) {
@@ -79,12 +81,12 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 		if err = s.updateTx(ctx, tx,
 			sq.Update("nodes").
 				// Note we do not update ID
+				Set("message_id", node.Message).
 				Set("owner", node.Owner).
 				Set("identity", node.Identity).
 				Set("description", node.Description).
 				Set("endpoint", node.Endpoint).
 				Set("created", node.Created).
-				Set("confirmed", node.Confirmed).
 				Where(sq.Eq{"identity": node.Identity}),
 		); err != nil {
 			return err
@@ -95,12 +97,12 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 				Columns(nodeColumns...).
 				Values(
 					node.ID,
+					node.Message,
 					node.Owner,
 					node.Identity,
 					node.Description,
 					node.Endpoint,
 					node.Created,
-					node.Confirmed,
 				),
 		); err != nil {
 			return err
@@ -114,12 +116,12 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 	node := fftypes.Node{}
 	err := row.Scan(
 		&node.ID,
+		&node.Message,
 		&node.Owner,
 		&node.Identity,
 		&node.Description,
 		&node.Endpoint,
 		&node.Created,
-		&node.Confirmed,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "nodes")

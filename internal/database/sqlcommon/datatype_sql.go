@@ -31,6 +31,7 @@ import (
 var (
 	datatypeColumns = []string{
 		"id",
+		"message_id",
 		"validator",
 		"namespace",
 		"name",
@@ -39,7 +40,9 @@ var (
 		"created",
 		"value",
 	}
-	datatypeFilterTypeMap = map[string]string{}
+	datatypeFilterTypeMap = map[string]string{
+		"message": "message_id",
+	}
 )
 
 func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Datatype, allowExisting bool) (err error) {
@@ -69,6 +72,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 		// Update the datatype
 		if err = s.updateTx(ctx, tx,
 			sq.Update("datatypes").
+				Set("message_id", datatype.Message).
 				Set("validator", string(datatype.Validator)).
 				Set("namespace", datatype.Namespace).
 				Set("name", datatype.Name).
@@ -86,6 +90,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 				Columns(datatypeColumns...).
 				Values(
 					datatype.ID,
+					datatype.Message,
 					string(datatype.Validator),
 					datatype.Namespace,
 					datatype.Name,
@@ -106,6 +111,7 @@ func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*fftypes
 	var datatype fftypes.Datatype
 	err := row.Scan(
 		&datatype.ID,
+		&datatype.Message,
 		&datatype.Validator,
 		&datatype.Namespace,
 		&datatype.Name,

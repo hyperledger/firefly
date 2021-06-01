@@ -541,3 +541,34 @@ func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
+
+func TestVerifyNamespaceExistsInvalidFFName(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	dm := newTestDataManager(t, mdi)
+	err := dm.VerifyNamespaceExists(context.Background(), "!wrong")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestVerifyNamespaceExistsLookupErr(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
+	dm := newTestDataManager(t, mdi)
+	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	assert.Regexp(t, "pop", err)
+}
+
+func TestVerifyNamespaceExistsNotFound(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	dm := newTestDataManager(t, mdi)
+	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	assert.Regexp(t, "FF10187", err)
+}
+
+func TestVerifyNamespaceExistsOk(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
+	dm := newTestDataManager(t, mdi)
+	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	assert.NoError(t, err)
+}

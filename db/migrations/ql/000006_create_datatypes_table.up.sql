@@ -1,5 +1,6 @@
 CREATE TABLE datatypes (
   id          string   NOT NULL,
+  message_id  string   NOT NULL,
   validator   string   NOT NULL,
   namespace   string   NOT NULL,
   name        string   NOT NULL,

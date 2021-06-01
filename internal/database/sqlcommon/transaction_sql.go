@@ -38,7 +38,6 @@ var (
 		"created",
 		"protocol_id",
 		"status",
-		"confirmed",
 		"info",
 	}
 	transactionFilterTypeMap = map[string]string{
@@ -93,7 +92,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Set("created", transaction.Created).
 				Set("protocol_id", transaction.ProtocolID).
 				Set("status", transaction.Status).
-				Set("confirmed", transaction.Confirmed).
 				Set("info", transaction.Info).
 				Where(sq.Eq{"id": transaction.ID}),
 		); err != nil {
@@ -114,7 +112,6 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					transaction.Created,
 					transaction.ProtocolID,
 					transaction.Status,
-					transaction.Confirmed,
 					transaction.Info,
 				),
 		); err != nil {
@@ -137,7 +134,6 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.Created,
 		&transaction.ProtocolID,
 		&transaction.Status,
-		&transaction.Confirmed,
 		&transaction.Info,
 		// Must be added to the list of columns in all selects
 		&transaction.Sequence,

@@ -22,12 +22,13 @@ import (
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/pkg/identity"
 )
 
 type Manager interface {
-	OrgJoinNetwork(ctx context.Context) error
-	NodeJoinNetwork(ctx context.Context) error
+	BroadcastOrganization(ctx context.Context, org *fftypes.Organization) (msg *fftypes.Message, err error)
+	BroadcastNode(ctx context.Context) (msg *fftypes.Message, err error)
 }
 
 type networkMap struct {
