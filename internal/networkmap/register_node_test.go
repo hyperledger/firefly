@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastNodeOk(t *testing.T) {
+func TestRegisterNodeOk(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -58,13 +58,13 @@ func TestBroadcastNodeOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, "ff-org-0x23456", fftypes.SystemTopicBroadcastNode).Return(mockMsg, nil)
 
-	msg, err := nm.BroadcastNode(nm.ctx)
+	msg, err := nm.RegisterNode(nm.ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
 
 }
 
-func TestBroadcastNodeBadParentID(t *testing.T) {
+func TestRegisterNodeBadParentID(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -87,12 +87,12 @@ func TestBroadcastNodeBadParentID(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.BroadcastNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10215", err)
 
 }
 
-func TestBroadcastNodeBadNodeID(t *testing.T) {
+func TestRegisterNodeBadNodeID(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -113,12 +113,12 @@ func TestBroadcastNodeBadNodeID(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.BroadcastNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "pop", err)
 
 }
 
-func TestBroadcastNodeParentNotFound(t *testing.T) {
+func TestRegisterNodeParentNotFound(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -137,12 +137,12 @@ func TestBroadcastNodeParentNotFound(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.BroadcastNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10214", err)
 
 }
 
-func TestBroadcastNodeParentBadNode(t *testing.T) {
+func TestRegisterNodeParentBadNode(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -154,12 +154,12 @@ func TestBroadcastNodeParentBadNode(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.BroadcastNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10188", err)
 
 }
 
-func TestBroadcastNodeParentDXEndpointFail(t *testing.T) {
+func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
@@ -171,7 +171,7 @@ func TestBroadcastNodeParentDXEndpointFail(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.BroadcastNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "pop", err)
 
 }

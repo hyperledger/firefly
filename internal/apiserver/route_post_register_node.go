@@ -24,20 +24,20 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postBroadcastNamespace = &oapispec.Route{
-	Name:            "postBroadcastNamespace",
-	Path:            "broadcast/namespace",
+var postRegisterNode = &oapispec.Route{
+	Name:            "postRegisterNode",
+	Path:            "network/register/node",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
+	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
+	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
+		output, err = r.Or.NetworkMap().RegisterNode(r.Ctx)
 		return output, err
 	},
 }

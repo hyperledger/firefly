@@ -24,7 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) BroadcastNode(ctx context.Context) (*fftypes.Message, error) {
+func (nm *networkMap) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
 
 	endpoint, err := nm.exchange.GetEndpointInfo(ctx)
 	if err != nil {
