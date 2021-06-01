@@ -12,7 +12,7 @@ for more information about the project goals an architecture.
 
 ## Architecture
 
-Architecture discussions are currently facilitated by the following Git issues, but as the community evolved (within
+Architecture discussions are currently facilitated by the following Git issues, but as the community evolves (within
 the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
 
 - [Node Component Architecture - Periodic Table of Elements](https://github.com/kaleido-io/firefly/issues/6)
@@ -263,7 +263,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └─────┬─────────┘
   │                 ├─────────────────────┬───────────────────┐
   │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ postgres      │   │ QL            │   │ SQLite         │
+  │           │ postgres      │   │ ql            │   │ sqlite         │
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications
@@ -274,7 +274,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 ├───────── ... extensible to integrate off-chain compute framework (Hyperledger Avalon, TEE, ZKP, MPC etc.)
   │                 │          ... extensible to additional event delivery brokers/subsystems (Webhooks, Kafka, AMQP etc.)
   │           ┌─────┴─────────┐
-  │           │ WebSockets    │
+  │           │ websockets    │
   │           └───────────────┘
   │  ... more TBD
 

@@ -102,14 +102,11 @@ func (u *UTDBQL) Start() error {
 	return nil
 }
 
-func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
-	if err := fftypes.ValidateFFNameField(ctx, identity, "identity"); err != nil {
-		return "", err
-	}
-	return identity, nil
+func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error {
+	return fftypes.ValidateFFNameField(ctx, identity.OnChain, "identity")
 }
 
-func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	trackingID := fftypes.NewUUID().String()
 	b, _ := json.Marshal(&batch)
 
@@ -120,7 +117,7 @@ func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity string, batc
 	}
 	if err == nil {
 		defer func() { _ = tx.Rollback() }()
-		res, err = tx.Exec("INSERT INTO dbqltx (author, tracking, type, data) VALUES ($1, $2, $3, $4)", identity, trackingID, utDBQLEventTypeBroadcastBatch, string(b))
+		res, err = tx.Exec("INSERT INTO dbqltx (author, tracking, type, data) VALUES ($1, $2, $3, $4)", identity.OnChain, trackingID, utDBQLEventTypeBroadcastBatch, string(b))
 	}
 	if err == nil {
 		err = tx.Commit()
@@ -132,14 +129,14 @@ func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity string, batc
 	txID := strconv.FormatInt(lid, 10)
 	u.eventStream <- &utEvent{
 		txType:     utDBQLEventTypeBroadcastBatch,
-		identity:   identity,
+		identity:   identity.OnChain,
 		trackingID: trackingID,
 		txID:       txID,
 		data:       b,
 	}
 	u.eventStream <- &utEvent{
 		txType:     utDBQLEventTypeMined,
-		identity:   identity,
+		identity:   identity.OnChain,
 		trackingID: trackingID,
 		txID:       txID,
 		data:       nil,
