@@ -25,6 +25,7 @@ fi
 if $CREATE_STACK
 then
 	$CLI remove -f $STACK_NAME || true
+	sync
 	$CLI init $STACK_NAME 2
 	$CLI start $STACK_NAME
 fi
