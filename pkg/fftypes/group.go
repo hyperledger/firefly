@@ -32,7 +32,7 @@ type Group struct {
 	Recipients  Recipients `json:"recipients"`
 }
 
-type Recipients []Recipient
+type Recipients []*Recipient
 
 type Recipient struct {
 	Identity string `json:"identity"`
@@ -47,6 +47,16 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 	}
 	if len(group.Recipients) == 0 {
 		return i18n.NewError(ctx, i18n.MsgGroupMustHaveReciepients)
+	}
+	dupCheck := make(map[string]bool)
+	for i, r := range group.Recipients {
+		if r.Identity == "" {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientIdenity, i)
+		}
+		if dupCheck[r.Identity] {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientDuplicate, i)
+		}
+		dupCheck[r.Identity] = true
 	}
 	if existing {
 		if group.ID == nil {

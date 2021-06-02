@@ -6,6 +6,6 @@ CREATE TABLE recipients (
   identity       VARCHAR(1024)   NOT NULL
 );
 
-CREATE UNIQUE INDEX recipients_group ON recipients(group_id);
+CREATE INDEX recipients_group ON recipients(group_id);
 
 COMMIT;
