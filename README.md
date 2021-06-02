@@ -9,7 +9,7 @@ FireFly is a multiparty system for enterprise data flows, powered by blockchain.
 
 Please see the
 [Hyperledger FireFly proposal document](https://github.com/kaleido-io/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
-for more information about the project goals an architecture.
+for more information about the project goals and architecture.
 
 ## FireFly repos
 
