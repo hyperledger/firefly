@@ -26,8 +26,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getSubsriptions = &oapispec.Route{
-	Name:   "getSubsriptions",
+var getSubscriptions = &oapispec.Route{
+	Name:   "getSubscriptions",
 	Path:   "namespaces/{ns}/subscriptions",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
