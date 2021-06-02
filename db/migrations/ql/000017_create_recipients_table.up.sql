@@ -4,4 +4,4 @@ CREATE TABLE recipients (
   identity       string          NOT NULL
 );
 
-CREATE UNIQUE INDEX recipients_id ON recipients(id);
+CREATE INDEX recipients_group ON recipients(group_id);

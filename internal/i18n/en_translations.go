@@ -137,4 +137,6 @@ var (
 	MsgBlobStreamingFailed         = ffm("FF10217", "Blob streaming terminated with error", 500)
 	MsgMultiPartFormReadError      = ffm("FF10218", "Error reading multi-part form input", 400)
 	MsgGroupMustHaveReciepients    = ffm("FF10219", "Group must have at least one recipient", 400)
+	MsgEmptyRecipientIdenity       = ffm("FF10220", "Recipient identity is blank in recipient %d")
+	MsgEmptyRecipientDuplicate     = ffm("FF10221", "Recipient %d identity is a duplicate")
 )

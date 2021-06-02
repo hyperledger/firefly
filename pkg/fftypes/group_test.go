@@ -54,6 +54,25 @@ func TestGroupValidation(t *testing.T) {
 
 	assert.Regexp(t, "FF10203", group.Validate(context.Background(), true))
 
+	group = &Group{
+		Namespace:   "ok",
+		Description: "ok",
+		Recipients: Recipients{
+			{ /* blank */ },
+		},
+	}
+	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
+
+	group = &Group{
+		Namespace:   "ok",
+		Description: "ok",
+		Recipients: Recipients{
+			{Identity: "0x12345"},
+			{Identity: "0x12345"},
+		},
+	}
+	assert.Regexp(t, "FF10221", group.Validate(context.Background(), false))
+
 	var def Definition = group
 	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Context())
 	def.SetBroadcastMessage(NewUUID())

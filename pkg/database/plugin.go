@@ -463,3 +463,12 @@ var NodeQueryFactory = &queryFields{
 	"endpoint":    &JSONField{},
 	"created":     &TimeField{},
 }
+
+// GroupQueryFactory filter fields for nodes
+var GroupQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"message":     &UUIDField{},
+	"namespace":   &StringField{},
+	"description": &StringField{},
+	"created":     &TimeField{},
+}
