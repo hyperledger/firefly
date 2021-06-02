@@ -17,12 +17,14 @@
 package dxhttps
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,4 +47,11 @@ func TestGetEndpointInfo(t *testing.T) {
 	endpoint, err := h.GetEndpointInfo(context.Background())
 	assert.NoError(t, err)
 	assert.Nil(t, endpoint)
+}
+
+func TestUploadBLOB(t *testing.T) {
+	var h dataexchange.Plugin = &HTTPS{}
+	u := fftypes.NewUUID()
+	err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`hello world`)))
+	assert.NoError(t, err)
 }
