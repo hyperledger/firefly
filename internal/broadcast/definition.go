@@ -45,7 +45,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
-		Validator: fftypes.ValidatorTypeDatatype,
+		Validator: fftypes.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
 		Namespace: fftypes.SystemNamespace,
 		Created:   fftypes.Now(),

@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"reflect"
@@ -153,62 +154,103 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
+func getFirstFilePart(req *http.Request) (*multipart.Part, error) {
+
+	ctx := req.Context()
+	l := log.L(ctx)
+	mpr, err := req.MultipartReader()
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgMultiPartFormReadError)
+	}
+	for {
+		part, err := mpr.NextPart()
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgMultiPartFormReadError)
+		}
+		if part.FileName() == "" {
+			l.Debugf("Ignoring form field in multi-part upload: %s", part.FormName())
+		} else {
+			l.Debugf("Processing multi-part upload. Field='%s' Filename='%s'", part.FormName(), part.FileName())
+			return part, nil
+		}
+	}
+}
+
+func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
-		l := log.L(req.Context())
-		var input interface{}
+
+		var jsonInput interface{}
 		if route.JSONInputValue != nil {
-			input = route.JSONInputValue()
+			jsonInput = route.JSONInputValue()
 		}
-		var output interface{}
+		var part *multipart.Part
 		contentType := req.Header.Get("Content-Type")
-		if req.Method != http.MethodGet && !strings.HasPrefix(strings.ToLower(contentType), "application/json") {
-			return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)
-		}
 		var err error
-		var status = 400 // if fail parsing input
-		if err == nil {
-			if input != nil {
-				err = json.NewDecoder(req.Body).Decode(&input)
+		if req.Method != http.MethodGet && req.Method != http.MethodDelete {
+			switch {
+			case strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") && route.FormUploadHandler != nil:
+				part, err = getFirstFilePart(req)
+				if err != nil {
+					return 400, err
+				}
+				defer part.Close()
+			case strings.HasPrefix(strings.ToLower(contentType), "application/json"):
+				if jsonInput != nil {
+					err = json.NewDecoder(req.Body).Decode(&jsonInput)
+				}
+			default:
+				return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)
 			}
 		}
-		pathParams := make(map[string]string)
-		if len(route.PathParams) > 0 {
-			v := mux.Vars(req)
-			for _, pp := range route.PathParams {
-				pathParams[pp.Name] = v[pp.Name]
-			}
-		}
+
 		queryParams := make(map[string]string)
-		for _, qp := range route.QueryParams {
-			val, exists := req.URL.Query()[qp.Name]
-			if qp.IsBool {
-				if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
-					val = []string{"true"}
-				} else {
-					val = []string{"false"}
+		pathParams := make(map[string]string)
+		var filter database.AndFilter
+		var status = 400 // if fail parsing input
+		var output interface{}
+		if err == nil {
+			if len(route.PathParams) > 0 {
+				v := mux.Vars(req)
+				for _, pp := range route.PathParams {
+					pathParams[pp.Name] = v[pp.Name]
 				}
 			}
-			if exists && len(val) > 0 {
-				queryParams[qp.Name] = val[0]
+			for _, qp := range route.QueryParams {
+				val, exists := req.URL.Query()[qp.Name]
+				if qp.IsBool {
+					if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
+						val = []string{"true"}
+					} else {
+						val = []string{"false"}
+					}
+				}
+				if exists && len(val) > 0 {
+					queryParams[qp.Name] = val[0]
+				}
+			}
+			if route.FilterFactory != nil {
+				filter, err = buildFilter(req, route.FilterFactory)
 			}
 		}
-		var filter database.AndFilter
-		if route.FilterFactory != nil {
-			filter, err = buildFilter(req, route.FilterFactory)
-		}
+
 		if err == nil {
 			status = route.JSONOutputCode
-			output, err = route.JSONHandler(oapispec.APIRequest{
-				Ctx:    req.Context(),
-				Or:     o,
-				Req:    req,
-				PP:     pathParams,
-				QP:     queryParams,
-				Filter: filter,
-				Input:  input,
-			})
+			req := oapispec.APIRequest{
+				Ctx:     req.Context(),
+				Or:      o,
+				Req:     req,
+				PP:      pathParams,
+				QP:      queryParams,
+				Filter:  filter,
+				Input:   jsonInput,
+				FReader: part,
+			}
+			if part != nil {
+				output, err = route.FormUploadHandler(req)
+			} else {
+				output, err = route.JSONHandler(req)
+			}
 		}
 		if err == nil {
 			isNil := output == nil || reflect.ValueOf(output).IsNil()
@@ -222,7 +264,7 @@ func jsonHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handle
 				err = json.NewEncoder(res).Encode(output)
 				if err != nil {
 					err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
-					l.Errorf(err.Error())
+					log.L(req.Context()).Errorf(err.Error())
 				}
 			}
 		}
@@ -306,7 +348,7 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), jsonHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), routeHandler(o, route)).
 				Methods(route.Method)
 		}
 	}

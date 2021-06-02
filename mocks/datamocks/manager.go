@@ -7,6 +7,8 @@ import (
 
 	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
+	io "io"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -75,6 +77,52 @@ func (_m *Manager) ResolveInputData(ctx context.Context, ns string, inData fftyp
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InputData) error); ok {
 		r1 = rf(ctx, ns, inData)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UploadBLOB provides a mock function with given fields: ctx, ns, reader
+func (_m *Manager) UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, reader)
+
+	var r0 *fftypes.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, reader)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Data)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader) error); ok {
+		r1 = rf(ctx, ns, reader)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UploadJSON provides a mock function with given fields: ctx, ns, _a2
+func (_m *Manager) UploadJSON(ctx context.Context, ns string, _a2 *fftypes.Data) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, _a2)
+
+	var r0 *fftypes.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Data) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, _a2)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Data)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Data) error); ok {
+		r1 = rf(ctx, ns, _a2)
 	} else {
 		r1 = ret.Error(1)
 	}

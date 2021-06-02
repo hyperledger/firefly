@@ -23,23 +23,27 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestDataManager(t *testing.T, mdi *databasemocks.Plugin) *dataManager {
-	dm, err := NewDataManager(context.Background(), mdi)
+func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
+	ctx, cancel := context.WithCancel(context.Background())
+	mdi := &databasemocks.Plugin{}
+	mdx := &dataexchangemocks.Plugin{}
+	dm, err := NewDataManager(ctx, mdi, mdx)
 	assert.NoError(t, err)
-	return dm.(*dataManager)
+	return dm.(*dataManager), ctx, cancel
 }
 
 func TestValidateE2E(t *testing.T) {
 
 	config.Reset()
-	ctx := context.Background()
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	data := &fftypes.Data{
 		Namespace: "ns1",
 		Validator: fftypes.ValidatorTypeJSON,
@@ -86,20 +90,20 @@ func TestValidateE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), nil)
+	_, err := NewDataManager(context.Background(), nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
 func TestValidatorLookupCached(t *testing.T) {
 
 	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	ref := &fftypes.DatatypeRef{
 		Name:    "customer",
 		Version: "0.0.1",
 	}
-	ctx := context.Background()
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
@@ -121,8 +125,9 @@ func TestValidatorLookupCached(t *testing.T) {
 func TestValidateBadHash(t *testing.T) {
 
 	config.Reset()
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	data := &fftypes.Data{
 		Namespace: "ns1",
 		Validator: fftypes.ValidatorTypeJSON,
@@ -141,17 +146,18 @@ func TestValidateBadHash(t *testing.T) {
 		Namespace: "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil).Once()
-	_, err := dm.ValidateAll(context.Background(), []*fftypes.Data{data})
+	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
 	assert.Regexp(t, "FF10201", err)
 
 }
 
 func TestGetMessageDataDBError(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
-	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
 	}, true)
@@ -163,10 +169,11 @@ func TestGetMessageDataDBError(t *testing.T) {
 
 func TestGetMessageDataNilEntry(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
-	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{nil},
 	}, true)
@@ -178,10 +185,11 @@ func TestGetMessageDataNilEntry(t *testing.T) {
 
 func TestGetMessageDataNotFound(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
-	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
 	}, true)
@@ -193,14 +201,15 @@ func TestGetMessageDataNotFound(t *testing.T) {
 
 func TestGetMessageDataHashMismatch(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	dataID := fftypes.NewUUID()
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
 		ID:   dataID,
 		Hash: fftypes.NewRandB32(),
 	}, nil)
-	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: dataID, Hash: fftypes.NewRandB32()}},
 	}, true)
@@ -212,15 +221,16 @@ func TestGetMessageDataHashMismatch(t *testing.T) {
 
 func TestGetMessageDataOk(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	dataID := fftypes.NewUUID()
 	hash := fftypes.NewRandB32()
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&fftypes.Data{
 		ID:   dataID,
 		Hash: hash,
 	}, nil)
-	data, foundAll, err := dm.GetMessageData(context.Background(), &fftypes.Message{
+	data, foundAll, err := dm.GetMessageData(ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   fftypes.DataRefs{{ID: dataID, Hash: hash}},
 	}, true)
@@ -233,27 +243,27 @@ func TestGetMessageDataOk(t *testing.T) {
 
 func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	err := dm.CheckDatatype(context.Background(), "ns1", &fftypes.Datatype{})
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	err := dm.CheckDatatype(ctx, "ns1", &fftypes.Datatype{})
 	assert.Regexp(t, "FF10196", err)
 }
 
 func TestResolveInputDataEmpty(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	refs, err := dm.ResolveInputData(context.Background(), "ns1", fftypes.InputData{})
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	refs, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{})
 	assert.NoError(t, err)
 	assert.Empty(t, refs)
 
 }
 
 func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
-	ctx := context.Background()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
 
@@ -273,10 +283,10 @@ func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
 }
 
 func TestResolveInputDataRefBadNamespace(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
-	ctx := context.Background()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
 
@@ -294,10 +304,10 @@ func TestResolveInputDataRefBadNamespace(t *testing.T) {
 }
 
 func TestResolveInputDataRefBadHash(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
-	ctx := context.Background()
 	dataID := fftypes.NewUUID()
 	dataHash := fftypes.NewRandB32()
 
@@ -315,10 +325,10 @@ func TestResolveInputDataRefBadHash(t *testing.T) {
 }
 
 func TestResolveInputDataRefLookkupFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
-	ctx := context.Background()
 	dataID := fftypes.NewUUID()
 
 	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
@@ -330,9 +340,9 @@ func TestResolveInputDataRefLookkupFail(t *testing.T) {
 }
 
 func TestResolveInputDataValueNoValidatorOK(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
 
@@ -346,9 +356,9 @@ func TestResolveInputDataValueNoValidatorOK(t *testing.T) {
 }
 
 func TestResolveInputDataValueNoValidatorStoreFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(fmt.Errorf("pop"))
 
@@ -359,9 +369,9 @@ func TestResolveInputDataValueNoValidatorStoreFail(t *testing.T) {
 }
 
 func TestResolveInputDataValueWithValidation(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
 	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(&fftypes.Datatype{
@@ -407,9 +417,8 @@ func TestResolveInputDataValueWithValidation(t *testing.T) {
 }
 
 func TestResolveInputDataNoRefOrValue(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
 
 	_, err := dm.ResolveInputData(ctx, "ns1", fftypes.InputData{
 		{ /* missing */ },
@@ -417,13 +426,13 @@ func TestResolveInputDataNoRefOrValue(t *testing.T) {
 	assert.Regexp(t, "FF10205", err)
 }
 
-func TestValidateAndStoreLoadDatatypeFail(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+func TestUploadJSONLoadDatatypeFail(t *testing.T) {
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
-	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.UploadJSON(ctx, "ns1", &fftypes.Data{
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
@@ -433,11 +442,10 @@ func TestValidateAndStoreLoadDatatypeFail(t *testing.T) {
 }
 
 func TestValidateAndStoreLoadNilRef(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
 
-	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
 		Validator: fftypes.ValidatorTypeJSON,
 		Datatype:  nil,
 	})
@@ -446,11 +454,11 @@ func TestValidateAndStoreLoadNilRef(t *testing.T) {
 
 func TestValidateAndStoreLoadValidatorUnknown(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
 		Validator: "wrong!",
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
@@ -463,11 +471,11 @@ func TestValidateAndStoreLoadValidatorUnknown(t *testing.T) {
 
 func TestValidateAndStoreLoadBadRef(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
 		Datatype: &fftypes.DatatypeRef{
 			// Missing name
 		},
@@ -477,11 +485,11 @@ func TestValidateAndStoreLoadBadRef(t *testing.T) {
 
 func TestValidateAndStoreNotFound(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateAndStore(ctx, "ns1", &fftypes.DataRefOrValue{
+	_, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
@@ -492,8 +500,9 @@ func TestValidateAndStoreNotFound(t *testing.T) {
 
 func TestValidateAllLookupError(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
 	data := &fftypes.Data{
 		Namespace: "ns1",
@@ -504,17 +513,16 @@ func TestValidateAllLookupError(t *testing.T) {
 		},
 		Value: fftypes.Byteable(`anything`),
 	}
-	data.Seal(context.Background())
-	_, err := dm.ValidateAll(context.Background(), []*fftypes.Data{data})
+	data.Seal(ctx)
+	_, err := dm.ValidateAll(ctx, []*fftypes.Data{data})
 	assert.Regexp(t, "pop", err)
 
 }
 
 func TestGetValidatorForDatatypeNilRef(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
 	v, err := dm.getValidatorForDatatype(ctx, "", "", nil)
 	assert.Nil(t, v)
 	assert.NoError(t, err)
@@ -523,9 +531,9 @@ func TestGetValidatorForDatatypeNilRef(t *testing.T) {
 
 func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	ctx := context.Background()
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(&fftypes.Datatype{
 		Value: fftypes.Byteable(`{"not": "a", "schema": true}`),
 	}, nil)
@@ -543,32 +551,35 @@ func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 }
 
 func TestVerifyNamespaceExistsInvalidFFName(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	dm := newTestDataManager(t, mdi)
-	err := dm.VerifyNamespaceExists(context.Background(), "!wrong")
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	err := dm.VerifyNamespaceExists(ctx, "!wrong")
 	assert.Regexp(t, "FF10131", err)
 }
 
 func TestVerifyNamespaceExistsLookupErr(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
-	dm := newTestDataManager(t, mdi)
-	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	err := dm.VerifyNamespaceExists(ctx, "ns1")
 	assert.Regexp(t, "pop", err)
 }
 
 func TestVerifyNamespaceExistsNotFound(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	dm := newTestDataManager(t, mdi)
-	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	err := dm.VerifyNamespaceExists(ctx, "ns1")
 	assert.Regexp(t, "FF10187", err)
 }
 
 func TestVerifyNamespaceExistsOk(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
-	dm := newTestDataManager(t, mdi)
-	err := dm.VerifyNamespaceExists(context.Background(), "ns1")
+	err := dm.VerifyNamespaceExists(ctx, "ns1")
 	assert.NoError(t, err)
 }

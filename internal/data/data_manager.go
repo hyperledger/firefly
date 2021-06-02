@@ -19,12 +19,14 @@ package data
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/karlseguin/ccache"
 )
@@ -35,6 +37,9 @@ type Manager interface {
 	GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error)
 	ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
+
+	UploadJSON(ctx context.Context, ns string, data *fftypes.Data) (*fftypes.Data, error)
+	UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error)
 }
 
 type dataManager struct {
@@ -46,16 +51,18 @@ type dataManager struct {
 	// that should be stored on a sub structure associated with that long-lived task.
 
 	database          database.Plugin
+	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
 }
 
-func NewDataManager(ctx context.Context, di database.Plugin) (Manager, error) {
-	if di == nil {
+func NewDataManager(ctx context.Context, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
+	if di == nil || dx == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	dm := &dataManager{
 		database:          di,
+		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
 	}
 	dm.validatorCache = ccache.New(
@@ -192,41 +199,49 @@ func (dm *dataManager) checkValidatorType(ctx context.Context, validator fftypes
 	}
 }
 
-func (dm *dataManager) validateAndStore(ctx context.Context, ns string, value *fftypes.DataRefOrValue) (*fftypes.DataRef, error) {
-
+func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable) (*fftypes.Data, error) {
 	// If a datatype is specified, we need to verify the payload conforms
-	if value.Datatype != nil {
-		if err := dm.checkValidatorType(ctx, value.Validator); err != nil {
+	if datatype != nil {
+		if err := dm.checkValidatorType(ctx, validator); err != nil {
 			return nil, err
 		}
-		if value.Datatype == nil || value.Datatype.Name == "" || value.Datatype.Version == "" {
-			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, value.Datatype)
+		if datatype == nil || datatype.Name == "" || datatype.Version == "" {
+			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
 		}
-		v, err := dm.getValidatorForDatatype(ctx, ns, value.Validator, value.Datatype)
+		v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
 		if err != nil {
 			return nil, err
 		}
 		if v == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, value.Datatype)
+			return nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
 		}
-		err = v.ValidateValue(ctx, value.Value, nil)
+		err = v.ValidateValue(ctx, value, nil)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		validator = ""
 	}
 
 	// Ok, we're good to generate the full data payload and save it
 	data := &fftypes.Data{
-		Validator: value.Validator,
-		Datatype:  value.Datatype,
+		Validator: validator,
+		Datatype:  datatype,
 		Namespace: ns,
-		Hash:      value.Hash,
-		Value:     value.Value,
+		Value:     value,
 	}
 	err := data.Seal(ctx)
 	if err == nil {
 		err = dm.database.UpsertData(ctx, data, false, false)
 	}
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (dm *dataManager) validateAndStoreInlined(ctx context.Context, ns string, value *fftypes.DataRefOrValue) (*fftypes.DataRef, error) {
+	data, err := dm.validateAndStore(ctx, ns, value.Validator, value.Datatype, value.Value)
 	if err != nil {
 		return nil, err
 	}
@@ -236,6 +251,10 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, value *f
 		ID:   data.ID,
 		Hash: data.Hash,
 	}, nil
+}
+
+func (dm *dataManager) UploadJSON(ctx context.Context, ns string, data *fftypes.Data) (*fftypes.Data, error) {
+	return dm.validateAndStore(ctx, ns, data.Validator, data.Datatype, data.Value)
 }
 
 func (dm *dataManager) ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (refs fftypes.DataRefs, err error) {
@@ -258,7 +277,7 @@ func (dm *dataManager) ResolveInputData(ctx context.Context, ns string, inData f
 			}
 		case dataOrValue.Value != nil:
 			// We've got a Value, so we can validate + store it
-			if refs[i], err = dm.validateAndStore(ctx, ns, dataOrValue); err != nil {
+			if refs[i], err = dm.validateAndStoreInlined(ctx, ns, dataOrValue); err != nil {
 				return nil, err
 			}
 		default:

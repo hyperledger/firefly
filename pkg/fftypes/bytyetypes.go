@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"database/sql/driver"
 	"encoding/hex"
+	"hash"
 	"strings"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -33,6 +34,13 @@ func NewRandB32() *Bytes32 {
 	var b Bytes32
 	_, _ = rand.Read(b[0:32])
 	return &b
+}
+
+func HashResult(hash hash.Hash) *Bytes32 {
+	sum := hash.Sum(make([]byte, 0, 32))
+	var b32 Bytes32
+	copy(b32[:], sum)
+	return &b32
 }
 
 func (b32 Bytes32) MarshalText() ([]byte, error) {

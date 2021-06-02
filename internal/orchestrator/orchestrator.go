@@ -57,6 +57,7 @@ type Orchestrator interface {
 	Broadcast() broadcast.Manager
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
+	Data() data.Manager
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
@@ -173,6 +174,10 @@ func (or *orchestrator) NetworkMap() networkmap.Manager {
 	return or.networkmap
 }
 
+func (or *orchestrator) Data() data.Manager {
+	return or.data
+}
+
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.database == nil {
@@ -227,7 +232,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database)
+		or.data, err = data.NewDataManager(ctx, or.database, or.dataexchange)
 		if err != nil {
 			return err
 		}

@@ -25,22 +25,26 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var getDataDefByID = &oapispec.Route{
-	Name:   "getDataDefByID",
-	Path:   "namespaces/{ns}/datatypes/{dtid}",
-	Method: http.MethodGet,
+var postData = &oapispec.Route{
+	Name:   "postData",
+	Path:   "namespaces/{ns}/data",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "dtid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONInputValue:  func() interface{} { return &fftypes.Data{} },
+	JSONInputMask:   []string{"ID", "Namespace", "Created", "Blob"},
+	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
+	JSONOutputCode:  http.StatusCreated, // Sync operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
+		output, err = r.Or.Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Data))
+		return output, err
+	},
+	FormUploadHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], r.FReader)
 		return output, err
 	},
 }

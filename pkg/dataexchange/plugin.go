@@ -18,6 +18,7 @@ package dataexchange
 
 import (
 	"context"
+	"io"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -42,6 +43,9 @@ type Plugin interface {
 
 	// GetEndpointInfo returns the information about the local endpoint
 	GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObject, err error)
+
+	// UploadBLOB streams a blob to storage
+	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
