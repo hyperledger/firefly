@@ -26,7 +26,8 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 - Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
-> of the ecosystem of projects that integrate underneath the plugins.
+> of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
+> more information on the landscape of plugins and components.
 
 ## Architecture
 
