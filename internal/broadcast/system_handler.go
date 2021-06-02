@@ -32,6 +32,10 @@ func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *ffty
 		return bm.handleDatatypeBroadcast(ctx, msg, data)
 	case fftypes.SystemTopicBroadcastNamespace:
 		return bm.handleNamespaceBroadcast(ctx, msg, data)
+	case fftypes.SystemTopicBroadcastOrganization:
+		return bm.handleOrganizationBroadcast(ctx, msg, data)
+	case fftypes.SystemTopicBroadcastNode:
+		return bm.handleNodeBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Topic, msg.Header.ID)
 	}
@@ -91,7 +95,7 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 	}
 
 	if err = dt.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process data broadcast %s - validate failed: %s", msg.Header.ID, err)
+		l.Warnf("Unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
 		return false, nil
 	}
 
@@ -110,6 +114,116 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 	}
 
 	if err = bm.database.UpsertDatatype(ctx, &dt, false); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+	l := log.L(ctx)
+
+	var org fftypes.Organization
+	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &org)
+	if !valid {
+		return false, nil
+	}
+
+	if err = org.Validate(ctx, true); err != nil {
+		l.Warnf("Unable to process organization broadcast %s - validate failed: %s", msg.Header.ID, err)
+		return false, nil
+	}
+
+	signingIdentity := org.Identity
+	if org.Parent != "" {
+		signingIdentity = org.Parent
+		parent, err := bm.database.GetOrganization(ctx, org.Parent)
+		if err != nil {
+			return false, err // We only return database errors
+		}
+		if parent == nil {
+			l.Warnf("Unable to process organization broadcast %s - parent identity not found: %s", msg.Header.ID, org.Parent)
+			return false, nil
+		}
+	}
+
+	id, err := bm.identity.Resolve(ctx, signingIdentity)
+	if err != nil {
+		l.Warnf("Unable to process organization broadcast %s - resolve identity failed: %s", msg.Header.ID, err)
+		return false, nil
+	}
+
+	if msg.Header.Author != id.OnChain {
+		l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, id.OnChain, msg.Header.Author)
+		return false, nil
+	}
+
+	existing, err := bm.database.GetOrganization(ctx, org.Identity)
+	if err != nil {
+		return false, err // We only return database errors
+	}
+	if existing != nil {
+		if existing.Parent != org.Parent {
+			l.Warnf("Unable to process organization broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
+			return false, nil
+		}
+		org.ID = nil // we keep the existing ID
+	}
+
+	if err = bm.database.UpsertOrganization(ctx, &org, true); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+	l := log.L(ctx)
+
+	var node fftypes.Node
+	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &node)
+	if !valid {
+		return false, nil
+	}
+
+	if err = node.Validate(ctx, true); err != nil {
+		l.Warnf("Unable to process node broadcast %s - validate failed: %s", msg.Header.ID, err)
+		return false, nil
+	}
+
+	owner, err := bm.database.GetOrganization(ctx, node.Owner)
+	if err != nil {
+		return false, err // We only return database errors
+	}
+	if owner == nil {
+		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, node.Owner)
+		return false, nil
+	}
+
+	id, err := bm.identity.Resolve(ctx, node.Owner)
+	if err != nil {
+		l.Warnf("Unable to process node broadcast %s - resolve owner identity failed: %s", msg.Header.ID, err)
+		return false, nil
+	}
+
+	if msg.Header.Author != id.OnChain {
+		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, id.OnChain, msg.Header.Author)
+		return false, nil
+	}
+
+	existing, err := bm.database.GetNode(ctx, node.Identity)
+	if err != nil {
+		return false, err // We only return database errors
+	}
+	if existing != nil {
+		if existing.Owner != node.Owner {
+			l.Warnf("Unable to process node broadcast %s - mismatch with existing %v", msg.Header.ID, existing.ID)
+			return false, nil
+		}
+		node.ID = nil // we keep the existing ID
+	}
+
+	if err = bm.database.UpsertNode(ctx, &node, true); err != nil {
 		return false, err
 	}
 
