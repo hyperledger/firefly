@@ -52,15 +52,9 @@ func (dm *dataManager) UploadBLOB(ctx context.Context, ns string, reader io.Read
 		copyDone <- err
 	}()
 
-	dxDone := make(chan error, 1)
-	go func() {
-		err := dm.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
-		dxReader.Close()
-		dxDone <- err
-	}()
-
+	dxErr := dm.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
+	dxReader.Close()
 	copyErr := <-copyDone
-	dxErr := <-dxDone
 	if dxErr != nil {
 		return nil, dxErr
 	}
