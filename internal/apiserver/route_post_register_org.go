@@ -24,8 +24,8 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postRegisterOrganization = &oapispec.Route{
-	Name:            "postRegisterOrganization",
+var postRegisterOrg = &oapispec.Route{
+	Name:            "postRegisterOrg",
 	Path:            "network/register/organization",
 	Method:          http.MethodPost,
 	PathParams:      nil,

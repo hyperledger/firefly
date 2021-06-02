@@ -30,6 +30,7 @@ import (
 type Manager interface {
 	RegisterOrganization(ctx context.Context, org *fftypes.Organization) (msg *fftypes.Message, err error)
 	RegisterNode(ctx context.Context) (msg *fftypes.Message, err error)
+	RegisterNodeOrganization(ctx context.Context) (msg *fftypes.Message, err error)
 
 	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error)
 	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, error)

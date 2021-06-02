@@ -24,12 +24,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
-
-	endpoint, err := nm.exchange.GetEndpointInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, err error) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -37,8 +32,16 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (*fftypes.Message, error
 		Owner:       config.GetString(config.OrgIdentity),
 		Identity:    config.GetString(config.NodeIdentity),
 		Description: config.GetString(config.NodeDescription),
-		Endpoint:    endpoint,
 	}
+	if node.Owner == "" || node.Identity == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+	}
+
+	node.Endpoint, err = nm.exchange.GetEndpointInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	err = node.Validate(ctx, false)
 	if err != nil {
 		return nil, err

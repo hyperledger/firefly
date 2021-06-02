@@ -19,6 +19,7 @@ package networkmap
 import (
 	"context"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
@@ -37,6 +38,18 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 		parent = root.Parent
 	}
 	return err
+}
+
+// RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context) (msg *fftypes.Message, err error) {
+	org := &fftypes.Organization{
+		Identity:    config.GetString(config.OrgIdentity),
+		Description: config.GetString(config.OrgDescription),
+	}
+	if org.Identity == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+	}
+	return nm.RegisterOrganization(ctx, org)
 }
 
 func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {

@@ -18,6 +18,8 @@ package apiserver
 
 import "github.com/kaleido-io/firefly/internal/oapispec"
 
+const emptyObjectSchema = `{"type": "object"}`
+
 var routes = []*oapispec.Route{
 	deleteSubscription,
 	getBatchByID,
@@ -52,6 +54,7 @@ var routes = []*oapispec.Route{
 	postBroadcastMessage,
 	postBroadcastNamespace,
 	postNewSubscription,
-	postRegisterOrganization,
+	postRegisterOrg,
 	postRegisterNode,
+	postRegisterNodeOrg,
 }
