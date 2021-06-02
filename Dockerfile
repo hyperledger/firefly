@@ -1,7 +1,7 @@
 FROM golang:1.16-alpine3.13 AS firefly-builder
+RUN apk add make gcc build-base
 WORKDIR /firefly
 ADD . .
-RUN apk add make gcc build-base
 RUN make
 WORKDIR /firefly/solidity_firefly
 
