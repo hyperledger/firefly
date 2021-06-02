@@ -46,7 +46,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	}
 	data := &fftypes.Data{
 		ID:        dataID,
-		Validator: fftypes.ValidatorTypeBLOB,
+		Validator: fftypes.ValidatorTypeSystemDefinition,
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),

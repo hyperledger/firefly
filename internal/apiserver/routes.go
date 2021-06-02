@@ -53,6 +53,7 @@ var routes = []*oapispec.Route{
 	postBroadcastDatatype,
 	postBroadcastMessage,
 	postBroadcastNamespace,
+	postData,
 	postNewSubscription,
 	postRegisterOrg,
 	postRegisterNode,

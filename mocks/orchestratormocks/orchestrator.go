@@ -7,6 +7,8 @@ import (
 
 	broadcast "github.com/kaleido-io/firefly/internal/broadcast"
 
+	data "github.com/kaleido-io/firefly/internal/data"
+
 	database "github.com/kaleido-io/firefly/pkg/database"
 
 	events "github.com/kaleido-io/firefly/internal/events"
@@ -60,6 +62,22 @@ func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	}
 
 	return r0, r1
+}
+
+// Data provides a mock function with given fields:
+func (_m *Orchestrator) Data() data.Manager {
+	ret := _m.Called()
+
+	var r0 data.Manager
+	if rf, ok := ret.Get(0).(func() data.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(data.Manager)
+		}
+	}
+
+	return r0
 }
 
 // DeleteSubscription provides a mock function with given fields: ctx, ns, id

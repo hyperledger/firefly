@@ -134,4 +134,6 @@ var (
 	MsgParentIdentityNotFound      = ffm("FF10214", "Organization with identity '%s' not found in identity chain for %s '%s'")
 	MsgInvalidSigningIdentity      = ffm("FF10215", "Invalid signing identity")
 	MsgNodeAndOrgIDMustBeSet       = ffm("FF10216", "Node and organization identity must be configured first", 409)
+	MsgBlobStreamingFailed         = ffm("FF10217", "Blob streaming terminated with error", 500)
+	MsgMultiPartFormReadError      = ffm("FF10218", "Error reading multi-part form input", 400)
 )

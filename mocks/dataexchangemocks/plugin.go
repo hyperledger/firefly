@@ -11,6 +11,8 @@ import (
 
 	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
 
+	io "io"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -98,6 +100,20 @@ func (_m *Plugin) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UploadBLOB provides a mock function with given fields: ctx, ns, id, reader
+func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error {
+	ret := _m.Called(ctx, ns, id, reader)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
+		r0 = rf(ctx, ns, id, reader)
 	} else {
 		r0 = ret.Error(0)
 	}

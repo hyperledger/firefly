@@ -18,6 +18,7 @@ package dxhttps
 
 import (
 	"context"
+	"io"
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
@@ -49,4 +50,8 @@ func (h *HTTPS) Capabilities() *dataexchange.Capabilities {
 
 func (h *HTTPS) GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObject, err error) {
 	return
+}
+
+func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error {
+	return nil
 }

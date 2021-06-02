@@ -53,7 +53,8 @@ type Route struct {
 	JSONOutputCode int
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
 	JSONHandler func(r APIRequest) (output interface{}, err error)
-	// TODO: Handler for form content type, and/or esacpe valve custom handlers
+	// FormUploadHandler takes a single file upload, and returns a JSON object
+	FormUploadHandler func(r APIRequest) (output interface{}, err error)
 }
 
 // PathParam is a description of a path parameter

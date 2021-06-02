@@ -27,10 +27,8 @@ type ValidatorType = LowerCasedType
 const (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
 	ValidatorTypeJSON ValidatorType = "json"
-	// ValidatorTypeBLOB is the validator type for binary blob data, that is passed through without any parsing or validation
-	ValidatorTypeBLOB ValidatorType = "blob"
-	// ValidatorTypeDatatype is the validator type for data definitions, which are a built in type that defines other types
-	ValidatorTypeDatatype ValidatorType = "datatype"
+	// ValidatorTypeSystemDefinition is the validator type for system definitions
+	ValidatorTypeSystemDefinition ValidatorType = "definition"
 )
 
 // Datatype is the structure defining a data definition, such as a JSON schema
