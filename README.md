@@ -1,18 +1,37 @@
 # FireFly
 
 [![codecov](https://codecov.io/gh/kaleido-io/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/kaleido-io/firefly)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kaleido-io/firefly)](https://goreportcard.com/report/github.com/kaleido-io/firefly)
 
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
 Please see the
-[Hyperledger FireFly proposal document](https://docs.google.com/document/d/1o85YSowgCm226PEzdejbD2-3VQkrIwTdMCdpfXxsuQw/edit?usp=sharing)
-for more information about the project goals an architecture.
+[Hyperledger FireFly proposal document](https://github.com/kaleido-io/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
+for more information about the project goals and architecture.
+
+## FireFly repos
+
+FireFly has a plugin based architecture design, with a microservice runtime footprint.
+As such there are a number of repos, and the list will grow as the community evolves.
+
+But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
+
+- CLI / Developer experience - https://github.com/kaleido-io/firefly-cli
+- UI Explorer - https://github.com/kaleido-io/firefly-ui
+- Core (this repo) - https://github.com/kaleido-io/firefly
+- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/kaleido-io/ethconnect
+- Corda connector: https://github.com/kaleido-io/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2 
+- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
+
+> Note only the projects that are primarily built to support FireFly are listed here, not all
+> of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
+> more information on the landscape of plugins and components.
 
 ## Architecture
 
-Architecture discussions are currently facilitated by the following Git issues, but as the community evolved (within
+Architecture discussions are currently facilitated by the following Git issues, but as the community evolves (within
 the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
 
 - [Node Component Architecture - Periodic Table of Elements](https://github.com/kaleido-io/firefly/issues/6)
@@ -232,6 +251,26 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
+  │           ┌───────────────┐  - Identity resolution and mapping
+  ├───────────┤ identity  [Ii]│    * Resolves opaque identifiers used throughout FireFly
+  │           │ interface     │    * Maps to and from blockchain signing identities
+  │           └─────┬─────────┘    * Map API/user identities from authentication, to network/organizational identities
+  │                 │
+  │                 ├───────────── ... extensible to DIDs etc.
+  │           ┌─────┴─────────┐
+  │           │ onchain       │
+  │           └───────────────┘
+  │
+  │           ┌───────────────┐  - API Authentication and Authorization Interface
+  ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
+  │           │               │    * Extracts API/user identity (for identity interface to map)
+  │           └─────┬─────────┘    * Enforcement point for fine grained API access control
+  │                 │
+  │                 ├─────────────────────┬────────── ... extensible other single sign-on technologies
+  │           ┌─────┴─────────┐   ┌───────┴───────┐
+  │           │ apikey        │   │ jwt           │
+  │           └───────────────┘   └───────────────┘
+  │
   │           ┌───────────────┐  - Database Interactions
   ├───────────┤ database  [Di]│    * Create, Read, Update, Delete (CRUD) actions
   │           │ interace      │    * Filtering and update definition interace
@@ -243,7 +282,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └─────┬─────────┘
   │                 ├─────────────────────┬───────────────────┐
   │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ postgres      │   │ QL            │   │ SQLite         │
+  │           │ postgres      │   │ ql            │   │ sqlite         │
   │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications
@@ -254,7 +293,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 ├───────── ... extensible to integrate off-chain compute framework (Hyperledger Avalon, TEE, ZKP, MPC etc.)
   │                 │          ... extensible to additional event delivery brokers/subsystems (Webhooks, Kafka, AMQP etc.)
   │           ┌─────┴─────────┐
-  │           │ WebSockets    │
+  │           │ websockets    │
   │           └───────────────┘
   │  ... more TBD
 
