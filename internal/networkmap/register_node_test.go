@@ -64,6 +64,20 @@ func TestRegisterNodeOk(t *testing.T) {
 
 }
 
+func TestRegisterNodeMissingConfig(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	config.Set(config.NodeDescription, nil)
+	config.Set(config.NodeIdentity, nil)
+	config.Set(config.OrgIdentity, nil)
+
+	_, err := nm.RegisterNode(nm.ctx)
+	assert.Regexp(t, "FF10216", err)
+
+}
+
 func TestRegisterNodeBadParentID(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)

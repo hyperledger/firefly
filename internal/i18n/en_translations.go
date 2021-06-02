@@ -133,4 +133,5 @@ var (
 	MsgUnknownDataExchangePlugin   = ffm("FF10213", "Unknown Data Exchange plugin '%s'")
 	MsgParentIdentityNotFound      = ffm("FF10214", "Parent identity '%s' not found in identity chain for %s '%s'")
 	MsgInvalidSigningIdentity      = ffm("FF10215", "Invalid signing identity")
+	MsgNodeAndOrgIDMustBeSet       = ffm("FF10216", "Node and organization identity must be configured first", 409)
 )

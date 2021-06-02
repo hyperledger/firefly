@@ -131,6 +131,29 @@ func (_m *Manager) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
 	return r0, r1
 }
 
+// RegisterNodeOrganization provides a mock function with given fields: ctx
+func (_m *Manager) RegisterNodeOrganization(ctx context.Context) (*fftypes.Message, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Message); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RegisterOrganization provides a mock function with given fields: ctx, org
 func (_m *Manager) RegisterOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, org)

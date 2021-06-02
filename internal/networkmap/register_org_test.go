@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
@@ -59,10 +60,13 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 
 }
 
-func TestRegisterOrganizationRootOk(t *testing.T) {
+func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
+
+	config.Set(config.OrgIdentity, "0x12345")
+	config.Set(config.OrgDescription, "my organization")
 
 	mii := nm.identity.(*identitymocks.Plugin)
 	rootID := &fftypes.Identity{OnChain: "0x12345"}
@@ -72,12 +76,21 @@ func TestRegisterOrganizationRootOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, "ff-org-0x12345", fftypes.SystemTopicBroadcastOrganization).Return(mockMsg, nil)
 
-	msg, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
-		Identity:    "0x12345",
-		Description: "my organization",
-	})
+	msg, err := nm.RegisterNodeOrganization(nm.ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
+
+}
+
+func TestRegisterNodeOrganizationMissingConfig(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	config.Set(config.OrgIdentity, nil)
+
+	_, err := nm.RegisterNodeOrganization(nm.ctx)
+	assert.Regexp(t, "FF10216", err)
 
 }
 

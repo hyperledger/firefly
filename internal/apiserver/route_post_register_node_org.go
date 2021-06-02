@@ -24,9 +24,9 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var postRegisterNode = &oapispec.Route{
-	Name:            "postRegisterNode",
-	Path:            "network/register/node",
+var postRegisterNodeOrg = &oapispec.Route{
+	Name:            "postRegisterNodeOrg",
+	Path:            "network/register/node/organization",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
@@ -38,7 +38,7 @@ var postRegisterNode = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.NetworkMap().RegisterNode(r.Ctx)
+		output, err = r.Or.NetworkMap().RegisterNodeOrganization(r.Ctx)
 		return output, err
 	},
 }
