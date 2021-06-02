@@ -29,6 +29,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
@@ -50,6 +51,7 @@ type eventManager struct {
 	ctx                  context.Context
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
+	identity             identity.Plugin
 	broadcast            broadcast.Manager
 	data                 data.Manager
 	subManager           *subscriptionManager
@@ -60,8 +62,8 @@ type eventManager struct {
 	defaultTransport     string
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
-	if pi == nil || di == nil {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
+	if pi == nil || di == nil || ii == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	en := newEventNotifier(ctx)
@@ -69,6 +71,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
 		database:      di,
+		identity:      ii,
 		broadcast:     bm,
 		data:          dm,
 		retry: retry.Retry{

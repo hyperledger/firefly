@@ -92,8 +92,13 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Verify the author matches
-	if batch.Author != author {
-		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s", batch.ID, batch.Author, author)
+	id, err := em.identity.Resolve(ctx, batch.Author)
+	if err != nil {
+		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
+		return nil // This is not retryable. skip this batch
+	}
+	if author != id.OnChain {
+		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
 		return nil // This is not retryable. skip this batch
 	}
 
@@ -101,7 +106,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err := em.database.UpsertBatch(ctx, batch, true, false)
+	err = em.database.UpsertBatch(ctx, batch, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
@@ -213,7 +218,12 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 
 	if msg == nil {
 		l.Errorf("null message entry %d in batch '%s'", i, batch.ID)
-		return nil // skip data entry
+		return nil // skip entry
+	}
+
+	if msg.Header.Author != batch.Author {
+		l.Errorf("Mismatched author '%s' on message entry %d in batch '%s'", msg.Header.Author, i, batch.ID)
+		return nil // skip entry
 	}
 
 	err := msg.Verify(ctx)
