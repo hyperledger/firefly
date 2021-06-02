@@ -136,4 +136,5 @@ var (
 	MsgNodeAndOrgIDMustBeSet       = ffm("FF10216", "Node and organization identity must be configured first", 409)
 	MsgBlobStreamingFailed         = ffm("FF10217", "Blob streaming terminated with error", 500)
 	MsgMultiPartFormReadError      = ffm("FF10218", "Error reading multi-part form input", 400)
+	MsgGroupMustHaveReciepients    = ffm("FF10219", "Group must have at least one recipient", 400)
 )
