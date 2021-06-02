@@ -46,7 +46,7 @@ var routes = []*oapispec.Route{
 	getOpByID,
 	getOps,
 	getSubscriptionByID,
-	getSubsriptions,
+	getSubscriptions,
 	getTxnByID,
 	getTxnOps,
 	getTxns,
