@@ -36,6 +36,7 @@ type Recipients []*Recipient
 
 type Recipient struct {
 	Identity string `json:"identity"`
+	Node     *UUID  `json:"node"`
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {

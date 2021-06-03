@@ -23,10 +23,17 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (dm *dataManager) UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error) {
+type blobStore struct {
+	database database.Plugin
+	exchange dataexchange.Plugin
+}
+
+func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error) {
 
 	data := &fftypes.Data{
 		ID:        fftypes.NewUUID(),
@@ -52,7 +59,7 @@ func (dm *dataManager) UploadBLOB(ctx context.Context, ns string, reader io.Read
 		copyDone <- err
 	}()
 
-	dxErr := dm.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
+	dxErr := bs.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
 	dxReader.Close()
 	copyErr := <-copyDone
 	if dxErr != nil {
@@ -64,7 +71,7 @@ func (dm *dataManager) UploadBLOB(ctx context.Context, ns string, reader io.Read
 	data.Hash = fftypes.HashResult(hash)
 	log.L(ctx).Infof("Uploaded BLOB %.2fkb hash=%s", float64(written)/1024, data.Hash)
 
-	err := dm.database.UpsertData(ctx, data, false, false)
+	err := bs.database.UpsertData(ctx, data, false, false)
 	if err != nil {
 		return nil, err
 	}

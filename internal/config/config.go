@@ -61,6 +61,12 @@ var (
 	BroadcastBatchSize = rootKey("broadcast.batch.size")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
+	// PrvateBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
+	PrivateBatchAgentTimeout = rootKey("private.batch.agentTimeout")
+	// PrivateBatchSize is the maximum size of a batch for broadcast messages
+	PrivateBatchSize = rootKey("private.batch.size")
+	// PrivateBatchTimeout is the timeout to wait for a batch to fill, before sending
+	PrivateBatchTimeout = rootKey("private.batch.timeout")
 	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
 	CorsAllowCredentials = rootKey("cors.credentials")
 	// CorsAllowedHeaders CORS setting to control the allowed headers

@@ -43,12 +43,7 @@ type Manager interface {
 }
 
 type dataManager struct {
-
-	// Note that we don't store a context in dataManager, as it doesn't currently have long-running
-	// background tasks. All of the APIs for actions take a context, which might include a database
-	// transaction - so it's important that we use that passed context for all of those synchronous calls.
-	// If a context is introduce for long lived tasks, to avoid accidental use of it on API calls,
-	// that should be stored on a sub structure associated with that long-lived task.
+	blobStore
 
 	database          database.Plugin
 	exchange          dataexchange.Plugin
@@ -64,6 +59,10 @@ func NewDataManager(ctx context.Context, di database.Plugin, dx dataexchange.Plu
 		database:          di,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
+		blobStore: blobStore{
+			database: di,
+			exchange: dx,
+		},
 	}
 	dm.validatorCache = ccache.New(
 		// We use a LRU cache with a size-aware max
