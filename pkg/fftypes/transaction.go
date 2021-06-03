@@ -32,9 +32,9 @@ const (
 
 // TransactionRef refers to a transaction, in other types
 type TransactionRef struct {
-	Type TransactionType `json:"type"`
-	// ID is a direct reference to a submitted transaction
-	ID *UUID `json:"id,omitempty"`
+	Type   TransactionType `json:"type"`
+	ID     *UUID           `json:"id,omitempty"`
+	Ledger *UUID           `json:"ledger,omitempty"`
 }
 
 // TransactionSubject is the hashable reason for the transaction was performed

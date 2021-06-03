@@ -11,6 +11,6 @@ CREATE TABLE groups (
 );
 
 CREATE UNIQUE INDEX groups_id ON groups(id);
-CREATE UNIQUE INDEX groups_hash ON groups(ledger,hash);
+CREATE UNIQUE INDEX groups_hash ON groups(namespace,ledger,hash);
 
 COMMIT;

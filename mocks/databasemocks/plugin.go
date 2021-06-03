@@ -353,6 +353,52 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fft
 	return r0, r1
 }
 
+// GetGroupByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Group, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Group
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Group); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Group)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetGroups provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetGroups(ctx context.Context, filter database.Filter) ([]*fftypes.Group, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Group
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Group); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Group)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetMessageByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, id)
@@ -976,6 +1022,20 @@ func (_m *Plugin) UpdateEvent(ctx context.Context, id *fftypes.UUID, update data
 	return r0
 }
 
+// UpdateGroup provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateGroup(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateMessage provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateMessage(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -1164,6 +1224,20 @@ func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event, allowExi
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertGroup provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)

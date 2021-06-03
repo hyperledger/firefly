@@ -34,6 +34,11 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
 
 		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+		if err = pm.resolveReceipientList(ctx, in); err != nil {
+			return err
+		}
+
+		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
 		in.Message.Data, err = pm.data.ResolveInputData(ctx, ns, in.InputData)
 		if err != nil {
 			return err
