@@ -31,10 +31,9 @@ import (
 
 func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *batchProcessor) {
 	mdi := &databasemocks.Plugin{}
-	bp := newBatchProcessor(context.Background(), &batchProcessorConf{
+	bp := newBatchProcessor(context.Background(), mdi, &batchProcessorConf{
 		namespace:          "ns1",
 		author:             "0x12345",
-		persitence:         mdi,
 		dispatch:           dispatch,
 		processorQuiescing: func() {},
 		Options: Options{
@@ -49,6 +48,14 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	return mdi, bp
 }
 
+func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+}
+
 func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
 
@@ -61,6 +68,8 @@ func TestUnfilledBatch(t *testing.T) {
 		wg.Done()
 		return nil
 	})
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -115,6 +124,8 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	mockUpsert.ReturnArguments = mock.Arguments{nil}
 	unblockPersistence := make(chan time.Time)
 	mockUpsert.WaitFor = unblockPersistence
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Generate the work the work
@@ -182,6 +193,8 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
 	bp.conf.BatchTimeout = 100 * time.Second
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mup := mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	waitForCall := make(chan bool)
 	mup.RunFn = func(a mock.Arguments) {

@@ -26,33 +26,38 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/database/difactory"
+	"github.com/kaleido-io/firefly/internal/dataexchange/dxfactory"
 	"github.com/kaleido-io/firefly/internal/events"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/identity/iifactory"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/networkmap"
 	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 var (
 	blockchainConfig    = config.NewPluginConfig("blockchain")
 	databaseConfig      = config.NewPluginConfig("database")
+	identityConfig      = config.NewPluginConfig("identity")
 	publicstorageConfig = config.NewPluginConfig("publicstorage")
+	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	blockchain.Callbacks
-
 	Init(ctx context.Context) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-
-	// Broadcasts
-	BroadcastNamespace(ctx context.Context, s *fftypes.Namespace) (*fftypes.Message, error)
-	BroadcastDatatype(ctx context.Context, ns string, s *fftypes.Datatype) (*fftypes.Message, error)
+	Broadcast() broadcast.Manager
+	Events() events.EventManager
+	NetworkMap() networkmap.Manager
+	Data() data.Manager
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
@@ -64,11 +69,14 @@ type Orchestrator interface {
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
 	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
+	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
-	GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error)
+	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
+	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
+	GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error)
 	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
 	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
@@ -87,12 +95,15 @@ type orchestrator struct {
 	started       bool
 	database      database.Plugin
 	blockchain    blockchain.Plugin
+	identity      identity.Plugin
 	publicstorage publicstorage.Plugin
+	dataexchange  dataexchange.Plugin
 	events        events.EventManager
+	networkmap    networkmap.Manager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
 	data          data.Manager
-	nodeIDentity  string
+	bbc           boundBlockchainCallbacks
 }
 
 func NewOrchestrator() Orchestrator {
@@ -115,6 +126,9 @@ func (or *orchestrator) Init(ctx context.Context) (err error) {
 	if err == nil {
 		err = or.initNamespaces(ctx)
 	}
+	// Bind together the blockchain interface callbacks, with the events manager
+	or.bbc.bi = or.blockchain
+	or.bbc.ei = or.events
 	return err
 }
 
@@ -148,6 +162,22 @@ func (or *orchestrator) WaitStop() {
 	or.started = false
 }
 
+func (or *orchestrator) Broadcast() broadcast.Manager {
+	return or.broadcast
+}
+
+func (or *orchestrator) Events() events.EventManager {
+	return or.events
+}
+
+func (or *orchestrator) NetworkMap() networkmap.Manager {
+	return or.networkmap
+}
+
+func (or *orchestrator) Data() data.Manager {
+	return or.data
+}
+
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.database == nil {
@@ -160,13 +190,23 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
+	if or.identity == nil {
+		iiType := config.GetString(config.IdentityType)
+		if or.identity, err = iifactory.GetPlugin(ctx, iiType); err != nil {
+			return err
+		}
+	}
+	if err = or.identity.Init(ctx, identityConfig.SubPrefix(or.identity.Name()), or); err != nil {
+		return err
+	}
+
 	if or.blockchain == nil {
 		biType := config.GetString(config.BlockchainType)
 		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
 			return err
 		}
 	}
-	if err = or.initBlockchainPlugin(ctx); err != nil {
+	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bbc); err != nil {
 		return err
 	}
 
@@ -176,13 +216,23 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or)
+	if err = or.publicstorage.Init(ctx, publicstorageConfig.SubPrefix(or.publicstorage.Name()), or); err != nil {
+		return err
+	}
+
+	if or.dataexchange == nil {
+		dxType := config.GetString(config.DataexchangeType)
+		if or.dataexchange, err = dxfactory.GetPlugin(ctx, dxType); err != nil {
+			return err
+		}
+	}
+	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), or)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database)
+		or.data, err = data.NewDataManager(ctx, or.database, or.dataexchange)
 		if err != nil {
 			return err
 		}
@@ -196,32 +246,25 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.broadcast)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.broadcast, or.data)
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
+	if or.networkmap == nil {
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity)
+		if err != nil {
+			return err
+		}
+	}
 
-func (or *orchestrator) initBlockchainPlugin(ctx context.Context) error {
-	err := or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), or)
-	if err != nil {
-		return err
-	}
-	suppliedIDentity := config.GetString(config.NodeIdentity)
-	or.nodeIDentity, err = or.blockchain.VerifyIdentitySyntax(ctx, suppliedIDentity)
-	if err != nil {
-		log.L(ctx).Errorf("Invalid node identity: %s", suppliedIDentity)
-		return err
-	}
 	return nil
 }
 

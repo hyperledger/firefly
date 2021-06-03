@@ -26,23 +26,23 @@ import (
 func TestValidateFFNameField(t *testing.T) {
 
 	err := ValidateFFNameField(context.Background(), "_badstart", "badField")
-	assert.Regexp(t, "FF10131.*badField", err.Error())
+	assert.Regexp(t, "FF10131.*badField", err)
 
 	err = ValidateFFNameField(context.Background(), "badend_", "badField")
-	assert.Regexp(t, "FF10131.*badField", err.Error())
+	assert.Regexp(t, "FF10131.*badField", err)
 
 	err = ValidateFFNameField(context.Background(), "0123456789_123456789-123456789.123456789-123456789_1234567890123", "badField")
 	assert.NoError(t, err)
 
 	err = ValidateFFNameField(context.Background(), "0123456789_123456789-123456789.123456789-123456789_12345678901234", "badField")
-	assert.Regexp(t, "FF10131.*badField", err.Error())
+	assert.Regexp(t, "FF10131.*badField", err)
 
 }
 
 func TestValidateLength(t *testing.T) {
 
 	err := ValidateLength(context.Background(), "long string", "test", 5)
-	assert.Regexp(t, "FF10188.*test", err.Error())
+	assert.Regexp(t, "FF10188.*test", err)
 
 	err = ValidateLength(context.Background(), "short string", "test", 50)
 	assert.NoError(t, err)

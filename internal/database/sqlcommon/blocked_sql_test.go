@@ -124,7 +124,7 @@ func TestUpsertBlockedFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertBlocked(context.Background(), &fftypes.Blocked{}, true)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -134,7 +134,7 @@ func TestUpsertBlockedFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertBlocked(context.Background(), &fftypes.Blocked{Context: "context1"}, true)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -145,7 +145,7 @@ func TestUpsertBlockedFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertBlocked(context.Background(), &fftypes.Blocked{Context: "context1"}, true)
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -157,7 +157,7 @@ func TestUpsertBlockedFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertBlocked(context.Background(), &fftypes.Blocked{Context: "context1"}, true)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -168,7 +168,7 @@ func TestUpsertBlockedFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertBlocked(context.Background(), &fftypes.Blocked{Context: "context1"}, true)
-	assert.Regexp(t, "FF10119", err.Error())
+	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -176,7 +176,7 @@ func TestGetBlockedByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetBlockedByContext(context.Background(), "ns1", "context1", nil)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -193,7 +193,7 @@ func TestGetBlockedByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
 	_, err := s.GetBlockedByContext(context.Background(), "ns1", "context1", nil)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -202,7 +202,7 @@ func TestGetBlockedQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BlockedQueryFactory.NewFilter(context.Background()).Eq("context", "")
 	_, err := s.GetBlocked(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -210,7 +210,7 @@ func TestGetBlockedBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlockedQueryFactory.NewFilter(context.Background()).Eq("context", map[bool]bool{true: false})
 	_, err := s.GetBlocked(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err.Error())
+	assert.Regexp(t, "FF10149.*type", err)
 }
 
 func TestGetBlockedReadMessageFail(t *testing.T) {
@@ -218,7 +218,7 @@ func TestGetBlockedReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
 	f := database.BlockedQueryFactory.NewFilter(context.Background()).Eq("context", "")
 	_, err := s.GetBlocked(context.Background(), f)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -227,7 +227,7 @@ func TestBlockedUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.BlockedQueryFactory.NewUpdate(context.Background()).Set("context", "anything")
 	err := s.UpdateBlocked(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestBlockedUpdateBuildQueryFail(t *testing.T) {
@@ -235,7 +235,7 @@ func TestBlockedUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.BlockedQueryFactory.NewUpdate(context.Background()).Set("context", map[bool]bool{true: false})
 	err := s.UpdateBlocked(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*context", err.Error())
+	assert.Regexp(t, "FF10149.*context", err)
 }
 
 func TestBlockedUpdateFail(t *testing.T) {
@@ -245,14 +245,14 @@ func TestBlockedUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.BlockedQueryFactory.NewUpdate(context.Background()).Set("context", fftypes.NewUUID())
 	err := s.UpdateBlocked(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 }
 
 func TestBlockedDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteBlocked(context.Background(), fftypes.NewUUID())
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestBlockedDeleteFail(t *testing.T) {
@@ -261,5 +261,5 @@ func TestBlockedDeleteFail(t *testing.T) {
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.DeleteBlocked(context.Background(), fftypes.NewUUID())
-	assert.Regexp(t, "FF10118", err.Error())
+	assert.Regexp(t, "FF10118", err)
 }

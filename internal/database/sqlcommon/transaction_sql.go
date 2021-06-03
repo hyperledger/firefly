@@ -32,21 +32,18 @@ var (
 		"id",
 		"ttype",
 		"namespace",
-		"msg_id",
-		"batch_id",
+		"ref",
 		"author",
 		"hash",
 		"created",
 		"protocol_id",
 		"status",
-		"confirmed",
 		"info",
 	}
 	transactionFilterTypeMap = map[string]string{
 		"type":       "ttype",
 		"protocolid": "protocol_id",
-		"message":    "msg_id",
-		"batch":      "batch_id",
+		"reference":  "ref",
 	}
 )
 
@@ -89,14 +86,12 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 			sq.Update("transactions").
 				Set("ttype", string(transaction.Subject.Type)).
 				Set("namespace", transaction.Subject.Namespace).
-				Set("msg_id", transaction.Subject.Message).
-				Set("batch_id", transaction.Subject.Batch).
+				Set("ref", transaction.Subject.Reference).
 				Set("author", transaction.Subject.Author).
 				Set("hash", transaction.Hash).
 				Set("created", transaction.Created).
 				Set("protocol_id", transaction.ProtocolID).
 				Set("status", transaction.Status).
-				Set("confirmed", transaction.Confirmed).
 				Set("info", transaction.Info).
 				Where(sq.Eq{"id": transaction.ID}),
 		); err != nil {
@@ -111,14 +106,12 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					transaction.ID,
 					string(transaction.Subject.Type),
 					transaction.Subject.Namespace,
-					transaction.Subject.Message,
-					transaction.Subject.Batch,
+					transaction.Subject.Reference,
 					transaction.Subject.Author,
 					transaction.Hash,
 					transaction.Created,
 					transaction.ProtocolID,
 					transaction.Status,
-					transaction.Confirmed,
 					transaction.Info,
 				),
 		); err != nil {
@@ -135,14 +128,12 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.ID,
 		&transaction.Subject.Type,
 		&transaction.Subject.Namespace,
-		&transaction.Subject.Message,
-		&transaction.Subject.Batch,
+		&transaction.Subject.Reference,
 		&transaction.Subject.Author,
 		&transaction.Hash,
 		&transaction.Created,
 		&transaction.ProtocolID,
 		&transaction.Status,
-		&transaction.Confirmed,
 		&transaction.Info,
 		// Must be added to the list of columns in all selects
 		&transaction.Sequence,

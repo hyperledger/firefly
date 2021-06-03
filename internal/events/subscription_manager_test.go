@@ -134,7 +134,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{
 		Topic: "[[[[[ !wrong",
 	}, fftypes.SubscriptionOptions{})
-	assert.Regexp(t, "FF10171", err.Error())
+	assert.Regexp(t, "FF10171", err)
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
 
 }
@@ -144,7 +144,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	config.Reset()
 	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
 	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background()))
-	assert.Regexp(t, "FF10172", err.Error())
+	assert.Regexp(t, "FF10172", err)
 }
 
 func TestSubManagerTransportInitError(t *testing.T) {
@@ -213,7 +213,7 @@ func TestCreateSubscriptionBadTransport(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{})
-	assert.Regexp(t, "FF1017", err.Error())
+	assert.Regexp(t, "FF1017", err)
 }
 
 func TestCreateSubscriptionBadEventilter(t *testing.T) {
@@ -227,7 +227,7 @@ func TestCreateSubscriptionBadEventilter(t *testing.T) {
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*events", err.Error())
+	assert.Regexp(t, "FF10171.*events", err)
 }
 
 func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
@@ -241,7 +241,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*topic", err.Error())
+	assert.Regexp(t, "FF10171.*topic", err)
 }
 
 func TestCreateSubscriptionBadContextFilter(t *testing.T) {
@@ -255,7 +255,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*context", err.Error())
+	assert.Regexp(t, "FF10171.*context", err)
 }
 
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
@@ -269,7 +269,7 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*group", err.Error())
+	assert.Regexp(t, "FF10171.*group", err)
 }
 
 func TestDispatchDeliveryResponseOK(t *testing.T) {
@@ -317,7 +317,7 @@ func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	})
-	assert.Regexp(t, "FF10181", err.Error())
+	assert.Regexp(t, "FF10181", err)
 }
 
 func TestConnIDSafetyChecking(t *testing.T) {
@@ -336,13 +336,13 @@ func TestConnIDSafetyChecking(t *testing.T) {
 	}
 
 	err := be2.RegisterConnection("conn1", func(sr fftypes.SubscriptionRef) bool { return true })
-	assert.Regexp(t, "FF10190", err.Error())
+	assert.Regexp(t, "FF10190", err)
 
 	err = be2.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{}, fftypes.SubscriptionOptions{})
-	assert.Regexp(t, "FF10190", err.Error())
+	assert.Regexp(t, "FF10190", err)
 
 	err = be2.DeliveryResponse("conn1", fftypes.EventDeliveryResponse{})
-	assert.Regexp(t, "FF10190", err.Error())
+	assert.Regexp(t, "FF10190", err)
 
 	be2.ConnnectionClosed("conn1")
 

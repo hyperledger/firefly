@@ -25,29 +25,14 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) verifyNamespaceExists(ctx context.Context, ns string) error {
-	err := fftypes.ValidateFFNameField(ctx, ns, "namespace")
-	if err != nil {
-		return err
-	}
-	namespace, err := or.database.GetNamespace(ctx, ns)
-	if err != nil {
-		return err
-	}
-	if namespace == nil {
-		return i18n.NewError(ctx, i18n.MsgNamespaceNotExist)
-	}
-	return nil
-}
-
 func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
 	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
 }
 
 func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
-	u, err := fftypes.ParseUUID(id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidUUID)
+		return nil, err
 	}
 	err = or.verifyNamespaceSyntax(ctx, ns)
 	return u, err
@@ -65,12 +50,67 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	return or.database.GetTransactionByID(ctx, u)
 }
 
-func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
+func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetMessageByID(ctx, u)
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", u),
+		fb.Eq("namespace", ns),
+	)
+	return or.database.GetOperations(ctx, filter)
+}
+
+func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error) {
+	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	msg, err := or.database.GetMessageByID(ctx, u)
+	if err == nil && msg == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return msg, err
+}
+
+func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error) {
+	msg, err := or.getMessageByID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	msgI := &fftypes.MessageInput{
+		Message: *msg,
+	}
+	if withValues {
+		// Lookup the full data
+		data, _, err := or.data.GetMessageData(ctx, msg, true)
+		if err != nil {
+			return nil, err
+		}
+		msgI.InputData = make(fftypes.InputData, len(data))
+		for i, d := range data {
+			msgI.InputData[i] = &fftypes.DataRefOrValue{
+				DataRef: fftypes.DataRef{
+					ID:   d.ID,
+					Hash: d.Hash,
+				},
+				Validator: d.Validator,
+				Datatype:  d.Datatype,
+				Value:     d.Value,
+			}
+		}
+	} else {
+		// Just put the data refs into the serialized struct
+		msgI.InputData = make(fftypes.InputData, len(msg.Data))
+		for i, dr := range msg.Data {
+			msgI.InputData[i] = &fftypes.DataRefOrValue{
+				DataRef: *dr,
+			}
+		}
+	}
+	return msgI, err
 }
 
 func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error) {
@@ -86,7 +126,7 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetDataByID(ctx, u)
+	return or.database.GetDataByID(ctx, u, true)
 }
 
 func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error) {
@@ -131,14 +171,61 @@ func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 	return or.database.GetMessages(ctx, filter)
 }
 
-func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Operation, error) {
-	filter = or.scopeNS(ns, filter)
-	filter = filter.Condition(filter.Builder().Eq("message", id))
+func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error) {
+	msg, err := or.getMessageByID(ctx, ns, id)
+	if err != nil || msg == nil {
+		return nil, err
+	}
+	data, _, err := or.data.GetMessageData(ctx, msg, true)
+	return data, err
+}
+
+func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
+	msg, err := or.getMessageByID(ctx, ns, id)
+	if err != nil || msg == nil {
+		return nil, err
+	}
+	var txID *fftypes.UUID
+	if msg.Header.TX.Type == fftypes.TransactionTypeBatchPin {
+		if msg.BatchID == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchNotSet)
+		}
+		batch, err := or.database.GetBatchByID(ctx, msg.BatchID)
+		if err != nil {
+			return nil, err
+		}
+		if batch == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchNotFound, msg.BatchID)
+		}
+		txID = batch.Payload.TX.ID
+		if txID == nil {
+			return nil, i18n.NewError(ctx, i18n.MsgBatchTXNotSet, msg.BatchID)
+		}
+	} else {
+		return nil, i18n.NewError(ctx, i18n.MsgNoTransaction)
+	}
+	return txID, nil
+}
+
+func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error) {
+	txID, err := or.getMessageTransactionID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return or.database.GetTransactionByID(ctx, txID)
+}
+
+func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
+	txID, err := or.getMessageTransactionID(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
 	return or.database.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
-	msg, err := or.GetMessageByID(ctx, ns, id)
+	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}

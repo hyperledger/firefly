@@ -24,7 +24,9 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventsmocks"
+	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -35,11 +37,13 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	config.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
+	mii := &identitymocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
+	mdm := &datamocks.Manager{}
 	met.On("Name").Return("ut").Maybe()
-	em, err := NewEventManager(ctx, mpi, mdi, mbm)
+	em, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mdm)
 	assert.NoError(t, err)
 	return em.(*eventManager), cancel
 }
@@ -62,7 +66,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -71,9 +75,11 @@ func TestStartStopBadTransports(t *testing.T) {
 	config.Set(config.EventTransportsEnabled, []string{"wrongun"})
 	defer config.Reset()
 	mdi := &databasemocks.Plugin{}
+	mii := &identitymocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mbm)
+	mdm := &datamocks.Manager{}
+	_, err := NewEventManager(context.Background(), mpi, mdi, mii, mbm, mdm)
 	assert.Regexp(t, "FF10172", err)
 
 }
@@ -117,7 +123,7 @@ func TestCreateDurableSubscriptionBadSub(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	err := em.CreateDurableSubscription(em.ctx, &fftypes.Subscription{})
-	assert.Regexp(t, "FF10189", err.Error())
+	assert.Regexp(t, "FF10189", err)
 }
 
 func TestCreateDurableSubscriptionDupName(t *testing.T) {
@@ -133,7 +139,7 @@ func TestCreateDurableSubscriptionDupName(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(sub, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10193", err.Error())
+	assert.Regexp(t, "FF10193", err)
 }
 
 func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
@@ -152,7 +158,7 @@ func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10171", err.Error())
+	assert.Regexp(t, "FF10171", err)
 }
 
 func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
@@ -172,7 +178,7 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10191", err.Error())
+	assert.Regexp(t, "FF10191", err)
 }
 
 func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
@@ -192,7 +198,7 @@ func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	err := em.CreateDurableSubscription(em.ctx, sub)
-	assert.Regexp(t, "FF10192", err.Error())
+	assert.Regexp(t, "FF10192", err)
 }
 
 func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {

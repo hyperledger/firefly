@@ -95,7 +95,7 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
 	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
-	assert.Regexp(t, "FF10149.*namespace", err.Error())
+	assert.Regexp(t, "FF10149.*namespace", err)
 }
 
 func TestSQLQueryFactoryBadOp(t *testing.T) {
@@ -105,7 +105,7 @@ func TestSQLQueryFactoryBadOp(t *testing.T) {
 	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
 		Op: database.FilterOp("wrong"),
 	}, nil)
-	assert.Regexp(t, "FF10150.*wrong", err.Error())
+	assert.Regexp(t, "FF10150.*wrong", err)
 }
 
 func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
@@ -118,7 +118,7 @@ func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 			{Op: database.FilterOp("wrong")},
 		},
 	}, nil)
-	assert.Regexp(t, "FF10150.*wrong", err.Error())
+	assert.Regexp(t, "FF10150.*wrong", err)
 }
 
 func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
@@ -131,5 +131,5 @@ func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
 			{Op: database.FilterOp("wrong")},
 		},
 	}, nil)
-	assert.Regexp(t, "FF10150.*wrong", err.Error())
+	assert.Regexp(t, "FF10150.*wrong", err)
 }

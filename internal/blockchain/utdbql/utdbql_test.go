@@ -64,15 +64,14 @@ func TestInitBadURL(t *testing.T) {
 
 func TestVerifyIdentitySyntaxOK(t *testing.T) {
 	u := &UTDBQL{}
-	id, err := u.VerifyIdentitySyntax(context.Background(), "good")
+	err := u.VerifyIdentitySyntax(context.Background(), &fftypes.Identity{OnChain: "good"})
 	assert.NoError(t, err)
-	assert.Equal(t, "good", id)
 }
 
 func TestVerifyIdentitySyntaxFail(t *testing.T) {
 	u := &UTDBQL{}
-	_, err := u.VerifyIdentitySyntax(context.Background(), "!bad")
-	assert.Regexp(t, "FF10131", err.Error())
+	err := u.VerifyIdentitySyntax(context.Background(), &fftypes.Identity{OnChain: "!bad"})
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
@@ -100,7 +99,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 
 	u.Start()
 
-	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
+	trackingID, err := u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
@@ -136,7 +135,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 
 	u.Start()
 
-	trackingID, err := u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
+	trackingID, err := u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
@@ -160,7 +159,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	assert.NoError(t, err)
 	u.Close()
 
-	_, err = u.SubmitBroadcastBatch(context.Background(), "id1", &blockchain.BroadcastBatch{
+	_, err = u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),

@@ -93,13 +93,13 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, author, protocolTxID, additionalInfo
-func (_m *EventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(batch, author, protocolTxID, additionalInfo)
+// SequencedBroadcastBatch provides a mock function with given fields: bi, batch, author, protocolTxID, additionalInfo
+func (_m *EventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(bi, batch, author, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, map[string]interface{}) error); ok {
-		r0 = rf(batch, author, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BroadcastBatch, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(bi, batch, author, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -121,13 +121,13 @@ func (_m *EventManager) Start() error {
 	return r0
 }
 
-// TransactionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
-func (_m *EventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID string, errorMessage string, additionalInfo map[string]interface{}) error {
-	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+// TransactionUpdate provides a mock function with given fields: bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
+func (_m *EventManager) TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.TransactionStatus, string, string, map[string]interface{}) error); ok {
-		r0 = rf(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, string, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

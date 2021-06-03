@@ -18,6 +18,7 @@ package oapispec
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -79,13 +80,42 @@ func getPathItem(doc *openapi3.T, path string) *openapi3.PathItem {
 	return pi
 }
 
-func addInput(input interface{}, mask []string, op *openapi3.Operation) {
-	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
+func initInput(op *openapi3.Operation) {
 	op.RequestBody = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
-			Content: openapi3.Content{
-				"application/json": &openapi3.MediaType{
-					Schema: schemaRef,
+			Content: openapi3.Content{},
+		},
+	}
+}
+
+func addInput(input interface{}, mask []string, schemaDef string, op *openapi3.Operation) {
+	var schemaRef *openapi3.SchemaRef
+	if schemaDef != "" {
+		err := json.Unmarshal([]byte(schemaDef), &schemaRef)
+		if err != nil {
+			panic(fmt.Sprintf("invalid schema for %T: %s", input, err))
+		}
+	}
+	if schemaRef == nil {
+		schemaRef, _, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
+	}
+	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
+		Schema: schemaRef,
+	}
+}
+
+func addFormInput(op *openapi3.Operation) {
+	op.RequestBody.Value.Content["multipart/form-data"] = &openapi3.MediaType{
+		Schema: &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type: "object",
+				Properties: openapi3.Schemas{
+					"filename.ext": &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type:   "string",
+							Format: "binary",
+						},
+					},
 				},
 			},
 		},
@@ -144,12 +174,18 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 	}
-	var input interface{}
-	if route.JSONInputValue != nil {
-		input = route.JSONInputValue()
-	}
-	if input != nil {
-		addInput(input, route.JSONInputMask, op)
+	if route.Method != http.MethodGet && route.Method != http.MethodDelete {
+		var input interface{}
+		if route.JSONInputValue != nil {
+			input = route.JSONInputValue()
+		}
+		initInput(op)
+		if input != nil {
+			addInput(input, route.JSONInputMask, route.JSONInputSchema, op)
+		}
+		if route.FormUploadHandler != nil {
+			addFormInput(op)
+		}
 	}
 	var output interface{}
 	if route.JSONOutputValue != nil {

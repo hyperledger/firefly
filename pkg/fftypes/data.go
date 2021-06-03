@@ -33,11 +33,12 @@ type DataRef struct {
 type Data struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Validator ValidatorType `json:"validator"`
+	Blobstore bool          `json:"blobstore,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     Byteable      `json:"value,omitempty"`
+	Value     Byteable      `json:"value"`
 }
 
 type DatatypeRef struct {

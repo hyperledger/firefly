@@ -25,7 +25,7 @@ import (
 )
 
 // MessageType is the fundamental type of a message
-type MessageType string
+type MessageType = LowerCasedType
 
 const (
 	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
@@ -62,6 +62,26 @@ type Message struct {
 	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
+}
+
+// MessageInput allows API users to submit values in-line in the payload submitted, which
+// will be broken out and stored separately during the call.
+type MessageInput struct {
+	Message
+	InputData InputData `json:"data"`
+}
+
+// InputData is an array of data references or values
+type InputData []*DataRefOrValue
+
+// DataRefOrValue allows a value to be specified in-line in the data array of an input
+// message, avoiding the need for a multiple API calls.
+type DataRefOrValue struct {
+	DataRef
+
+	Validator ValidatorType `json:"validator,omitempty"`
+	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
+	Value     Byteable      `json:"value,omitempty"`
 }
 
 // MessageRef is a lightweight data structure that can be used to refer to a message

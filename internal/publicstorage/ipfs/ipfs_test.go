@@ -47,7 +47,7 @@ func TestInitMissingAPIURL(t *testing.T) {
 
 	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
-	assert.Regexp(t, "FF10138", err.Error())
+	assert.Regexp(t, "FF10138", err)
 }
 
 func TestInitMissingGWURL(t *testing.T) {
@@ -56,7 +56,7 @@ func TestInitMissingGWURL(t *testing.T) {
 
 	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfPrefix, &publicstoragemocks.Callbacks{})
-	assert.Regexp(t, "FF10138", err.Error())
+	assert.Regexp(t, "FF10138", err)
 }
 
 func TestInit(t *testing.T) {
@@ -92,14 +92,14 @@ func TestIPFSHashToBytes32BadData(t *testing.T) {
 	i := IPFS{ctx: context.Background()}
 	ipfsHash := "!!"
 	_, err := i.ipfsHashToBytes32(ipfsHash)
-	assert.Regexp(t, "FF10135", err.Error())
+	assert.Regexp(t, "FF10135", err)
 }
 
 func TestIPFSHashToBytes32WrongLen(t *testing.T) {
 	i := IPFS{ctx: context.Background()}
 	ipfsHash := "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptm"
 	_, err := i.ipfsHashToBytes32(ipfsHash)
-	assert.Regexp(t, "FF10135", err.Error())
+	assert.Regexp(t, "FF10135", err)
 }
 
 func TestIPFSUploadSuccess(t *testing.T) {
@@ -150,7 +150,7 @@ func TestIPFSUploadFail(t *testing.T) {
 
 	data := []byte(`hello world`)
 	_, _, err = i.PublishData(context.Background(), bytes.NewReader(data))
-	assert.Regexp(t, "FF10136", err.Error())
+	assert.Regexp(t, "FF10136", err)
 
 }
 
@@ -206,7 +206,7 @@ func TestIPFSDownloadFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
 	_, err = i.RetrieveData(context.Background(), &b32)
-	assert.Regexp(t, "FF10136", err.Error())
+	assert.Regexp(t, "FF10136", err)
 
 }
 
@@ -231,6 +231,6 @@ func TestIPFSDownloadError(t *testing.T) {
 		httpmock.NewErrorResponder(fmt.Errorf("pop")))
 
 	_, err = i.RetrieveData(context.Background(), &b32)
-	assert.Regexp(t, "FF10136", err.Error())
+	assert.Regexp(t, "FF10136", err)
 
 }

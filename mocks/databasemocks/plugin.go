@@ -35,27 +35,6 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
-// CheckDataAvailable provides a mock function with given fields: ctx, msg
-func (_m *Plugin) CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error) {
-	ret := _m.Called(ctx, msg)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) bool); ok {
-		r0 = rf(ctx, msg)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message) error); ok {
-		r1 = rf(ctx, msg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // DeleteBlocked provides a mock function with given fields: ctx, id
 func (_m *Plugin) DeleteBlocked(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)
@@ -71,11 +50,11 @@ func (_m *Plugin) DeleteBlocked(ctx context.Context, id *fftypes.UUID) error {
 }
 
 // DeleteOffset provides a mock function with given fields: ctx, t, ns, name
-func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string) error {
+func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) error {
 	ret := _m.Called(ctx, t, ns, name)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string, string) error); ok {
 		r0 = rf(ctx, t, ns, name)
 	} else {
 		r0 = ret.Error(0)
@@ -213,13 +192,13 @@ func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) ([]*fftyp
 	return r0, r1
 }
 
-// GetDataByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, id)
+// GetDataByID provides a mock function with given fields: ctx, id, withValue
+func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, id, withValue)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Data); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, bool) *fftypes.Data); ok {
+		r0 = rf(ctx, id, withValue)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -227,8 +206,8 @@ func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID) (*fftypes.D
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, bool) error); ok {
+		r1 = rf(ctx, id, withValue)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -512,12 +491,81 @@ func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
+// GetNode provides a mock function with given fields: ctx, identity
+func (_m *Plugin) GetNode(ctx context.Context, identity string) (*fftypes.Node, error) {
+	ret := _m.Called(ctx, identity)
+
+	var r0 *fftypes.Node
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Node); ok {
+		r0 = rf(ctx, identity)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Node)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, identity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNodeByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetNodeByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Node, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Node
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Node); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Node)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNodes provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNodes(ctx context.Context, filter database.Filter) ([]*fftypes.Node, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Node
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Node); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Node)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOffset provides a mock function with given fields: ctx, t, ns, name
-func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.OffsetType, ns string, name string) (*fftypes.Offset, error) {
+func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) (*fftypes.Offset, error) {
 	ret := _m.Called(ctx, t, ns, name)
 
 	var r0 *fftypes.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.OffsetType, string, string) *fftypes.Offset); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string, string) *fftypes.Offset); ok {
 		r0 = rf(ctx, t, ns, name)
 	} else {
 		if ret.Get(0) != nil {
@@ -526,7 +574,7 @@ func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.OffsetType, ns string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.OffsetType, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.LowerCasedType, string, string) error); ok {
 		r1 = rf(ctx, t, ns, name)
 	} else {
 		r1 = ret.Error(1)
@@ -591,6 +639,75 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganization provides a mock function with given fields: ctx, identity
+func (_m *Plugin) GetOrganization(ctx context.Context, identity string) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, identity)
+
+	var r0 *fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Organization); ok {
+		r0 = rf(ctx, identity)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Organization)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, identity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganizationByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Organization); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Organization)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganizations provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetOrganizations(ctx context.Context, filter database.Filter) ([]*fftypes.Organization, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Organization); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Organization)
 		}
 	}
 
@@ -878,6 +995,20 @@ func (_m *Plugin) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update 
 	return r0
 }
 
+// UpdateNode provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateNode(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateOffset provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateOffset(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -892,13 +1023,27 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, id *fftypes.UUID, update dat
 	return r0
 }
 
-// UpdateOperations provides a mock function with given fields: ctx, filter, update
-func (_m *Plugin) UpdateOperations(ctx context.Context, filter database.Filter, update database.Update) error {
-	ret := _m.Called(ctx, filter, update)
+// UpdateOperation provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
-		r0 = rf(ctx, filter, update)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateOrganization provides a mock function with given fields: ctx, id, update
+func (_m *Plugin) UpdateOrganization(ctx context.Context, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, id, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1032,6 +1177,20 @@ func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace, 
 	return r0
 }
 
+// UpsertNode provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertOffset provides a mock function with given fields: ctx, data, allowExisting
 func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) error {
 	ret := _m.Called(ctx, data, allowExisting)
@@ -1053,6 +1212,20 @@ func (_m *Plugin) UpsertOperation(ctx context.Context, operation *fftypes.Operat
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, bool) error); ok {
 		r0 = rf(ctx, operation, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertOrganization provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}

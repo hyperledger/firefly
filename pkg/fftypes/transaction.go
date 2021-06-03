@@ -21,24 +21,13 @@ import (
 	"encoding/json"
 )
 
-type TransactionType string
+type TransactionType = LowerCasedType
 
 const (
 	// TransactionTypeNone indicates no transaction should be used for this message/batch
 	TransactionTypeNone TransactionType = "none"
-	// TransactionTypePin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypePin TransactionType = "pin"
-)
-
-type TransactionStatus string
-
-const (
-	// TransactionStatusPending the transaction has been submitted
-	TransactionStatusPending TransactionStatus = "pending"
-	// TransactionStatusConfirmed the transaction is considered final per the rules of the blockchain technology
-	TransactionStatusConfirmed TransactionStatus = "confirmed"
-	// TransactionStatusFailed the transaction has encountered, and is unlikely to ever become final on the blockchain. However, it is not impossible it will still be mined.
-	TransactionStatusFailed TransactionStatus = "error"
+	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
+	TransactionTypeBatchPin TransactionType = "batch_pin"
 )
 
 // TransactionRef refers to a transaction, in other types
@@ -53,8 +42,7 @@ type TransactionSubject struct {
 	Author    string          `json:"author"`
 	Namespace string          `json:"namespace,omitempty"`
 	Type      TransactionType `json:"type"`
-	Message   *UUID           `json:"message,omitempty"`
-	Batch     *UUID           `json:"batch,omitempty"`
+	Reference *UUID           `json:"reference,omitempty"`
 }
 
 func (t *TransactionSubject) Hash() *Bytes32 {
@@ -72,8 +60,7 @@ type Transaction struct {
 	Subject    TransactionSubject `json:"subject"`
 	Sequence   int64              `json:"sequence,omitempty"`
 	Created    *FFTime            `json:"created"`
-	Status     TransactionStatus  `json:"status"`
+	Status     OpStatus           `json:"status"`
 	ProtocolID string             `json:"protocolID,omitempty"`
-	Confirmed  *FFTime            `json:"confirmed,omitempty"`
 	Info       JSONObject         `json:"info,omitempty"`
 }

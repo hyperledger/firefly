@@ -2,9 +2,7 @@ BEGIN;
 CREATE TABLE operations (
   seq         SERIAL          PRIMARY KEY,
   id          UUID            NOT NULL,
-  namespace   VARCHAR(64)     NOT NULL,
-  msg_id      UUID            NOT NULL,
-  data_id     UUID,
+  tx_id       UUID            NOT NULL,
   optype      VARCHAR(64)     NOT NULL,
   opstatus    VARCHAR(64)     NOT NULL,
   recipient   VARCHAR(1024),
@@ -12,7 +10,8 @@ CREATE TABLE operations (
   backend_id  VARCHAR(256)    NOT NULL,
   created     BIGINT          NOT NULL,
   updated     BIGINT,
-  error       VARCHAR         NOT NULL
+  error       VARCHAR         NOT NULL,
+  info        BYTEA
 );
 
 CREATE UNIQUE INDEX operations_id ON operations(id);

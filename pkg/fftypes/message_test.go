@@ -41,7 +41,7 @@ func TestSealNilDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10144.*0", err.Error())
+	assert.Regexp(t, "FF10144.*0", err)
 }
 
 func TestVerifyNilDataHash(t *testing.T) {
@@ -51,7 +51,7 @@ func TestVerifyNilDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10144.*0", err.Error())
+	assert.Regexp(t, "FF10144.*0", err)
 }
 
 func TestSeaDupDataID(t *testing.T) {
@@ -65,7 +65,7 @@ func TestSeaDupDataID(t *testing.T) {
 		},
 	}
 	err := msg.Seal(context.Background())
-	assert.Regexp(t, "FF10145.*1", err.Error())
+	assert.Regexp(t, "FF10145.*1", err)
 }
 
 func TestVerifylDupDataHash(t *testing.T) {
@@ -79,13 +79,13 @@ func TestVerifylDupDataHash(t *testing.T) {
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10145.*1", err.Error())
+	assert.Regexp(t, "FF10145.*1", err)
 }
 
 func TestVerifyNilHashes(t *testing.T) {
 	msg := Message{}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10147", err.Error())
+	assert.Regexp(t, "FF10147", err)
 }
 
 func TestVerifyNilMisMatchedHashes(t *testing.T) {
@@ -96,7 +96,7 @@ func TestVerifyNilMisMatchedHashes(t *testing.T) {
 		Hash: NewRandB32(),
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, "FF10146", err.Error())
+	assert.Regexp(t, "FF10146", err)
 }
 
 func TestSealKnownMessage(t *testing.T) {
@@ -117,7 +117,7 @@ func TestSealKnownMessage(t *testing.T) {
 			CID:  cid,
 			Type: MessageTypePrivate,
 			TX: TransactionRef{
-				Type: TransactionTypePin,
+				Type: TransactionTypeBatchPin,
 				ID:   txid,
 			},
 			Author:    "0x12345",
@@ -145,10 +145,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"batch_pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","topic":"topic1","context":"context1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `c1c1c4f4ae7ab97b108fdc4b5e7c9b895104dd01398235d2844cd97aff825d92`, msgHash.String())
+	assert.Equal(t, `75f90a8ffc16db1bedfd2ed8b82ad7b2937ef2ca7271321604cc6705fa4045d3`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good

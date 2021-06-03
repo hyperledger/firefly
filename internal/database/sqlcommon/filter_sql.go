@@ -78,6 +78,7 @@ func (s *SQLCommon) buildUpdate(sel sq.UpdateBuilder, update database.Update, ty
 		return sel, err
 	}
 	for _, so := range ui.SetOperations {
+
 		sel = sel.Set(s.mapField("", so.Field, typeMap), so.Value)
 	}
 	return sel, nil

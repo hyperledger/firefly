@@ -33,11 +33,11 @@ var postBroadcastNamespace = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONInputMask:   []string{"ID", "Created", "Confirmed", "Type"},
+	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
+		output, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
 		return output, err
 	},
 }

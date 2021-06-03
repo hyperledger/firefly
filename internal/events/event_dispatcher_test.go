@@ -181,7 +181,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go func() {
 		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
 			{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessagesUnblocked},
+			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageUnblocked},
 			{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeDataArrivedBroadcast}, // match
 			{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed},     // match
 		})
@@ -496,7 +496,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 		{ID: fftypes.NewUUID()},
 	})
 	assert.False(t, repoll)
-	assert.Regexp(t, "FF10182", err.Error())
+	assert.Regexp(t, "FF10182", err)
 
 }
 

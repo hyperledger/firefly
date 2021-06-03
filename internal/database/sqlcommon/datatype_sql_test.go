@@ -47,6 +47,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	}
 	datatype := &fftypes.Datatype{
 		ID:        datatypeID,
+		Message:   fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
@@ -74,6 +75,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	}
 	datatypeUpdated := &fftypes.Datatype{
 		ID:        datatypeID,
+		Message:   fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
 		Namespace: "ns2",
 		Name:      "customer",
@@ -128,7 +130,7 @@ func TestUpsertDatatypeFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{}, true)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -139,7 +141,7 @@ func TestUpsertDatatypeFailSelect(t *testing.T) {
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
 	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -151,7 +153,7 @@ func TestUpsertDatatypeFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
 	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -163,7 +165,7 @@ func TestUpsertDatatypeFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -175,7 +177,7 @@ func TestUpsertDatatypeFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
-	assert.Regexp(t, "FF10119", err.Error())
+	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -184,7 +186,7 @@ func TestGetDatatypeByIDSelectFail(t *testing.T) {
 	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetDatatypeByID(context.Background(), datatypeID)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -211,7 +213,7 @@ func TestGetDatatypeByIDScanFail(t *testing.T) {
 	datatypeID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	_, err := s.GetDatatypeByID(context.Background(), datatypeID)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -220,7 +222,7 @@ func TestGetDatatypesQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDatatypes(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -228,7 +230,7 @@ func TestGetDatatypesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, err := s.GetDatatypes(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestGetDatatypesReadMessageFail(t *testing.T) {
@@ -236,7 +238,7 @@ func TestGetDatatypesReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
 	_, err := s.GetDatatypes(context.Background(), f)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -245,7 +247,7 @@ func TestDatatypeUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
 	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestDatatypeUpdateBuildQueryFail(t *testing.T) {
@@ -253,7 +255,7 @@ func TestDatatypeUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err.Error())
+	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestDatatypeUpdateFail(t *testing.T) {
@@ -263,5 +265,5 @@ func TestDatatypeUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.DatatypeQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
 	err := s.UpdateDatatype(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 }

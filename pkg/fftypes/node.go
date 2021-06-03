@@ -1,0 +1,57 @@
+// Copyright © 2021 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package fftypes
+
+import (
+	"context"
+
+	"github.com/kaleido-io/firefly/internal/i18n"
+)
+
+// Node is a FireFly node within the network
+type Node struct {
+	ID          *UUID      `json:"id"`
+	Message     *UUID      `json:"message,omitempty"`
+	Owner       string     `json:"parent,omitempty"`
+	Identity    string     `json:"identity,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Endpoint    JSONObject `json:"endpoint,omitempty"`
+	Created     *FFTime    `json:"created,omitempty"`
+}
+
+func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
+		return err
+	}
+	if n.Owner == "" {
+		return i18n.NewError(ctx, i18n.MsgOwnerMissing)
+	}
+	if existing {
+		if n.ID == nil {
+			return i18n.NewError(ctx, i18n.MsgNilID)
+		}
+	}
+	return nil
+}
+
+func (n *Node) Context() string {
+	return orgContext(n.Owner)
+}
+
+func (n *Node) SetBroadcastMessage(msgID *UUID) {
+	n.Message = msgID
+}

@@ -115,9 +115,6 @@ type PeristenceInterface interface {
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
 
-	// CheckDataAvailable - Check to see if all the data for this message is available
-	CheckDataAvailable(ctx context.Context, msg *fftypes.Message) (bool, error)
-
 	// UpsertData - Upsert a data record
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
@@ -126,7 +123,7 @@ type PeristenceInterface interface {
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetDataByID - Get a data record by ID
-	GetDataByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Data, err error)
+	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
 
 	// GetData - Get data
 	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
@@ -208,8 +205,8 @@ type PeristenceInterface interface {
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
-	// UpdateOperations - Update matching operations
-	UpdateOperations(ctx context.Context, filter Filter, update Update) (err error)
+	// UpdateOperation - Update matching operations
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
@@ -247,6 +244,36 @@ type PeristenceInterface interface {
 
 	// GetEvents - Get events
 	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
+
+	// UpsertOrganization - Upsert an organization
+	UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) (err error)
+
+	// UpdateOrganization - Update organization
+	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetOrganization- Get a organization by ID
+	GetOrganization(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByID- Get a organization by ID
+	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
+
+	// GetOrganizations - Get organizations
+	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
+
+	// UpsertNode - Upsert an organization
+	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
+
+	// UpdateONode - Update organization
+	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetNode - Get a organization by ID
+	GetNode(ctx context.Context, identity string) (node *fftypes.Node, err error)
+
+	// GetNodeByID- Get a organization by ID
+	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
+
+	// GetNodes - Get organizations
+	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
@@ -280,6 +307,7 @@ type Capabilities struct {
 // NamespaceQueryFactory filter fields for namespaces
 var NamespaceQueryFactory = &queryFields{
 	"id":          &UUIDField{},
+	"message":     &UUIDField{},
 	"type":        &StringField{},
 	"name":        &StringField{},
 	"description": &StringField{},
@@ -327,13 +355,12 @@ var TransactionQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"protocolid": &StringField{},
 	"status":     &StringField{},
-	"message":    &UUIDField{},
-	"batch":      &UUIDField{},
+	"reference":  &UUIDField{},
+	"protocolid": &StringField{},
 	"created":    &TimeField{},
-	"confirmed":  &TimeField{},
 	"sequence":   &Int64Field{},
+	"info":       &JSONField{},
 }
 
 // DataQueryFactory filter fields for data
@@ -350,6 +377,7 @@ var DataQueryFactory = &queryFields{
 // DatatypeQueryFactory filter fields for data definitions
 var DatatypeQueryFactory = &queryFields{
 	"id":        &UUIDField{},
+	"message":   &UUIDField{},
 	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
@@ -368,14 +396,13 @@ var OffsetQueryFactory = &queryFields{
 // OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"message":   &UUIDField{},
-	"data":      &UUIDField{},
+	"tx":        &UUIDField{},
 	"type":      &StringField{},
 	"recipient": &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
+	"info":      &JSONField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
@@ -413,4 +440,26 @@ var BlockedQueryFactory = &queryFields{
 	"group":     &UUIDField{},
 	"message":   &UUIDField{},
 	"created":   &TimeField{},
+}
+
+// OrganizationQueryFactory filter fields for organizations
+var OrganizationQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"message":     &UUIDField{},
+	"parent":      &StringField{},
+	"identity":    &StringField{},
+	"description": &StringField{},
+	"profile":     &JSONField{},
+	"created":     &TimeField{},
+}
+
+// NodeQueryFactory filter fields for nodes
+var NodeQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"message":     &UUIDField{},
+	"owner":       &StringField{},
+	"identity":    &StringField{},
+	"description": &StringField{},
+	"endpoint":    &JSONField{},
+	"created":     &TimeField{},
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
@@ -35,13 +34,13 @@ var getMsgOps = &oapispec.Route{
 		{Name: "msgid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.OperationQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"], r.Filter)
+		output, err = r.Or.GetMessageOperations(r.Ctx, r.PP["ns"], r.PP["msgid"])
 		return output, err
 	},
 }

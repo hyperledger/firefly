@@ -45,13 +45,16 @@ type Route struct {
 	JSONInputValue func() interface{}
 	// JSONInputMask are fields that aren't available for users to supply on input
 	JSONInputMask []string
+	// JSONInputSchema is a custom schema definition, for the case where the auto-gen + mask isn't good enough
+	JSONInputSchema string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONOutputCode is the success response code
 	JSONOutputCode int
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
 	JSONHandler func(r APIRequest) (output interface{}, err error)
-	// TODO: Handler for form content type, and/or esacpe valve custom handlers
+	// FormUploadHandler takes a single file upload, and returns a JSON object
+	FormUploadHandler func(r APIRequest) (output interface{}, err error)
 }
 
 // PathParam is a description of a path parameter
@@ -72,6 +75,8 @@ type PathParam struct {
 type QueryParam struct {
 	// Name is the name of the parameter, from the Gorilla path mux
 	Name string
+	// IsBool if this is a boolean query
+	IsBool bool
 	// Default is the value that will be used in the case no value is supplied
 	Default string
 	// Example is a field to fill in, in the helper UI

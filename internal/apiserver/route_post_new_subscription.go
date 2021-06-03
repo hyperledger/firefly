@@ -38,7 +38,7 @@ var postNewSubscription = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
 	JSONInputMask:   []string{"ID", "Namespace", "Created", "Ephemeral"},
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
-	JSONOutputCode:  http.StatusOK, // Sync operation
+	JSONOutputCode:  http.StatusCreated, // Sync operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.CreateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
 		return output, err

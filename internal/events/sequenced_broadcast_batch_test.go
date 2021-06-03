@@ -24,7 +24,9 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -48,7 +50,7 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 		PayloadRef: batch.BatchPaylodRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   batch.TransactionID,
 			},
 			Messages: []*fftypes.Message{},
@@ -66,8 +68,9 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mbi := &blockchainmocks.Plugin{}
 
-	err = em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err = em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -89,10 +92,11 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	cancel() // to avoid retry
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	mpi.AssertExpectations(t)
-	assert.Regexp(t, "FF10158", err.Error())
+	assert.Regexp(t, "FF10158", err)
 }
 
 func TestSequencedBroadcastBatchBadData(t *testing.T) {
@@ -108,8 +112,9 @@ func TestSequencedBroadcastBatchBadData(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
+	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(batch, "0x12345", "tx1", nil)
+	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 
@@ -117,6 +122,26 @@ func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	err := em.persistBatch(context.Background(), &fftypes.Batch{}, "0x12345", "tx1", nil)
+	assert.NoError(t, err)
+}
+
+func TestPersistBatchAuthorResolveFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batch := &fftypes.Batch{
+		ID:     fftypes.NewUUID(),
+		Author: "0x23456",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   fftypes.NewUUID(),
+			},
+		},
+	}
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
+	batch.Hash = batch.Payload.Hash()
+	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 }
 
@@ -128,11 +153,13 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 		Author: "0x23456",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	batch.Hash = batch.Payload.Hash()
 	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -146,12 +173,15 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 		Author: "0x12345",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
@@ -169,12 +199,15 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 		Author: "0x12345",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
@@ -191,12 +224,15 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 		Author: "0x12345",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -214,12 +250,15 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 		Author: "0x12345",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -240,12 +279,15 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 		Author: "0x12345",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -265,21 +307,24 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 		},
 	}
 	batch.Hash = batch.Payload.Hash()
 
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Batch:     batch.ID,
+			Reference: batch.ID,
 		},
 	}, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
@@ -298,7 +343,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 			Messages: []*fftypes.Message{nil},
@@ -307,14 +352,17 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	}
 	batch.Hash = batch.Payload.Hash()
 
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Batch:     batch.ID,
+			Reference: batch.ID,
 		},
 	}, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -333,7 +381,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
@@ -344,14 +392,17 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 	batch.Payload.Data[0].Hash = batch.Payload.Data[0].Value.Hash()
 	batch.Hash = batch.Payload.Hash()
 
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Batch:     batch.ID,
+			Reference: batch.ID,
 		},
 	}, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -370,11 +421,14 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypePin,
+				Type: fftypes.TransactionTypeBatchPin,
 				ID:   fftypes.NewUUID(),
 			},
 			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}},
+				{Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Author: "0x12345",
+				}},
 			},
 		},
 	}
@@ -382,14 +436,17 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
 	batch.Hash = batch.Payload.Hash()
 
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Batch:     batch.ID,
+			Reference: batch.ID,
 		},
 	}, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
@@ -399,6 +456,48 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batch := &fftypes.Batch{
+		ID:        fftypes.NewUUID(),
+		Author:    "0x12345",
+		Namespace: "ns1",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   fftypes.NewUUID(),
+			},
+			Messages: []*fftypes.Message{
+				{Header: fftypes.MessageHeader{
+					ID:     fftypes.NewUUID(),
+					Author: "0x9999999",
+				}},
+			},
+		},
+	}
+	batch.Payload.Messages[0].Header.DataHash = batch.Payload.Messages[0].Data.Hash()
+	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
+	batch.Hash = batch.Payload.Hash()
+
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
+		Subject: fftypes.TransactionSubject{
+			Type:      fftypes.TransactionTypeBatchPin,
+			Namespace: "ns1",
+			Author:    "0x12345",
+			Reference: batch.ID,
+		},
+	}, nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+
+	err := em.persistBatch(context.Background(), batch, "0x12345", "tx1", nil)
+	assert.NoError(t, err)
+}
 func TestPersistBatchDataBadHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

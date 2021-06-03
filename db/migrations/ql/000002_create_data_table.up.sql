@@ -6,7 +6,8 @@ CREATE TABLE data (
   datatype_version string    NOT NULL,
   hash             string    NOT NULL,
   created          int64     NOT NULL,
-  value            BLOB      NOT NULL
+  value            blob      NOT NULL,
+  blobstore        bool      NOT NULL
 );
 
 CREATE UNIQUE INDEX data_primary ON data(id);

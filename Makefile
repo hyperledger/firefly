@@ -9,7 +9,7 @@ GOGC=30
 
 all: build test
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... -cover -coverprofile=coverage.txt -covermode=atomic
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=10s
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -22,14 +22,19 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir pkg/database          --name Callbacks        --output mocks/databasemocks       --outpkg databasemocks
 		$(MOCKERY) --case underscore --dir pkg/publicstorage     --name Plugin           --output mocks/publicstoragemocks  --outpkg publicstoragemocks
 		$(MOCKERY) --case underscore --dir pkg/publicstorage     --name Callbacks        --output mocks/publicstoragemocks  --outpkg publicstoragemocks
-		$(MOCKERY) --case underscore --dir pkg/events    				 --name Plugin           --output mocks/eventsmocks 			  --outpkg eventsmocks
-		$(MOCKERY) --case underscore --dir pkg/events    				 --name Callbacks        --output mocks/eventsmocks 				--outpkg eventsmocks
+		$(MOCKERY) --case underscore --dir pkg/events            --name Plugin           --output mocks/eventsmocks         --outpkg eventsmocks
+		$(MOCKERY) --case underscore --dir pkg/events            --name Callbacks        --output mocks/eventsmocks         --outpkg eventsmocks
+		$(MOCKERY) --case underscore --dir pkg/identity          --name Plugin           --output mocks/identitymocks       --outpkg identitymocks
+		$(MOCKERY) --case underscore --dir pkg/identity          --name Callbacks        --output mocks/identitymocks       --outpkg identitymocks
+		$(MOCKERY) --case underscore --dir pkg/dataexchange      --name Plugin           --output mocks/dataexchangemocks   --outpkg dataexchangemocks
+		$(MOCKERY) --case underscore --dir pkg/dataexchange      --name Callbacks        --output mocks/dataexchangemocks   --outpkg dataexchangemocks
 		$(MOCKERY) --case underscore --dir internal/data         --name Manager          --output mocks/datamocks           --outpkg datamocks
 		$(MOCKERY) --case underscore --dir internal/batch        --name Manager          --output mocks/batchmocks          --outpkg batchmocks
 		$(MOCKERY) --case underscore --dir internal/broadcast    --name Manager          --output mocks/broadcastmocks      --outpkg broadcastmocks
 		$(MOCKERY) --case underscore --dir internal/events       --name EventManager     --output mocks/eventmocks          --outpkg eventmocks
-		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
+		$(MOCKERY) --case underscore --dir internal/networkmap   --name Manager          --output mocks/networkmapmocks     --outpkg networkmapmocks
 		$(MOCKERY) --case underscore --dir internal/wsclient     --name WSClient         --output mocks/wsmocks             --outpkg wsmocks
+		$(MOCKERY) --case underscore --dir internal/orchestrator --name Orchestrator     --output mocks/orchestratormocks   --outpkg orchestratormocks
 firefly-nocgo: ${GOFILES}		
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}

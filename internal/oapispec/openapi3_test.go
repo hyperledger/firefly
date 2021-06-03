@@ -51,14 +51,20 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 			JSONOutputCode:  http.StatusOK,
 		},
 		{
-			Name:            "op2",
-			Path:            "example2",
-			Method:          http.MethodGet,
-			PathParams:      nil,
-			QueryParams:     nil,
-			FilterFactory:   database.MessageQueryFactory,
-			Description:     i18n.MsgTBD,
-			JSONInputValue:  func() interface{} { return nil },
+			Name:           "op2",
+			Path:           "example2",
+			Method:         http.MethodGet,
+			PathParams:     nil,
+			QueryParams:    nil,
+			FilterFactory:  database.MessageQueryFactory,
+			Description:    i18n.MsgTBD,
+			JSONInputValue: func() interface{} { return nil },
+			JSONInputSchema: `{
+				"type": "object",
+				"properties": {
+					"id": "string"
+				}
+			}`,
 			JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
 			JSONOutputCode:  http.StatusOK,
 		},
@@ -72,11 +78,12 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 				{Name: "id", Description: i18n.MsgTBD},
 				{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
 			},
-			FilterFactory:   nil,
-			Description:     i18n.MsgTBD,
-			JSONInputValue:  func() interface{} { return &fftypes.Data{} },
-			JSONOutputValue: func() interface{} { return nil },
-			JSONOutputCode:  http.StatusNoContent,
+			FilterFactory:     nil,
+			Description:       i18n.MsgTBD,
+			JSONInputValue:    func() interface{} { return &fftypes.Data{} },
+			JSONOutputValue:   func() interface{} { return nil },
+			JSONOutputCode:    http.StatusNoContent,
+			FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
 		},
 		{
 			Name:   "op4",
@@ -109,6 +116,25 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 		{Name: "op1"}, {Name: "op1"},
 	}
 	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
+		_ = SwaggerGen(context.Background(), routes)
+	})
+}
+
+func TestBadCustomSchema(t *testing.T) {
+
+	config.Reset()
+	routes := []*Route{
+		{
+			Name:            "op1",
+			Path:            "namespaces/{ns}/example1/{id}",
+			Method:          http.MethodPost,
+			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputMask:   []string{"id"},
+			JSONOutputCode:  http.StatusOK,
+			JSONInputSchema: `!json`,
+		},
+	}
+	assert.PanicsWithValue(t, "invalid schema for *fftypes.Message: invalid character '!' looking for beginning of value", func() {
 		_ = SwaggerGen(context.Background(), routes)
 	})
 }

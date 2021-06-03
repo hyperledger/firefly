@@ -17,18 +17,20 @@
 package fftypes
 
 // EventType indicates what the event means, as well as what the Reference in the event refers to
-type EventType string
+type EventType = LowerCasedType
 
 const (
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
-	EventTypeMessageConfirmed EventType = "MessageConfirmed"
+	EventTypeMessageConfirmed EventType = "message_confirmed"
+	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
+	EventTypeMessageInvalid EventType = "message_invalid"
 	// EventTypeDataArrivedBroadcast indicates that some data has arrived, over a broadcast transport
-	EventTypeDataArrivedBroadcast EventType = "DataArrivedBroadcast"
+	EventTypeDataArrivedBroadcast EventType = "data_arrived_broadcast"
 	// EventTypeMessageSequencedBroadcast indicates that a deterministically sequenced message has arrived pinned to a blockchain
-	EventTypeMessageSequencedBroadcast EventType = "MessageSequencedBroadcast"
-	// EventTypeMessagesUnblocked is a special event to indidate a previously blocked context, has become unblocked
-	EventTypeMessagesUnblocked EventType = "MessagesUnblocked"
+	EventTypeMessageSequencedBroadcast EventType = "message_sequenced_broadcast"
+	// EventTypeMessageUnblocked is a special event to indidate a previously blocked context, has become unblocked
+	EventTypeMessageUnblocked EventType = "message_unblocked"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

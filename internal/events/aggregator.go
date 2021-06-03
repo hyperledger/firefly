@@ -21,6 +21,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -63,14 +64,16 @@ type aggregator struct {
 	ctx         context.Context
 	database    database.Plugin
 	broadcast   broadcast.Manager
+	data        data.Manager
 	eventPoller *eventPoller
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, dm data.Manager, en *eventNotifier) *aggregator {
 	ag := &aggregator{
 		ctx:       log.WithLogField(ctx, "role", "aggregator"),
 		database:  di,
 		broadcast: bm,
+		data:      dm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -202,6 +205,41 @@ func (ag *aggregator) checkUpdateContextBlocked(ctx context.Context, msg *fftype
 	return blocked, nil
 }
 
+func (ag *aggregator) handleCompleteMessage(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (err error) {
+	// Process system messgaes
+	valid := true
+	eventType := fftypes.EventTypeMessageConfirmed
+	if msg.Header.Namespace == fftypes.SystemNamespace {
+		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the system events they depend on.
+		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
+			// Should only return errors that are retryable
+			return err
+		}
+	} else if len(msg.Data) > 0 {
+		valid, err = ag.data.ValidateAll(ctx, data)
+		if err != nil {
+			return err
+		}
+		if !valid {
+			eventType = fftypes.EventTypeMessageInvalid
+		}
+	}
+
+	if valid {
+		// This message is now confirmed
+		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
+		err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Emit the appropriate event
+	completeEvent := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+	return ag.database.UpsertEvent(ctx, completeEvent, false)
+}
+
 func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Message, lookahead eventsByRef, event *fftypes.Event) (bool, error) {
 	l := log.L(ctx)
 
@@ -222,9 +260,9 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 	}
 
 	// Check this message is complete
-	complete, err := ag.database.CheckDataAvailable(ctx, msg)
+	data, complete, err := ag.data.GetMessageData(ctx, msg, true)
 	if err != nil {
-		return false, err // CheckDataAvailable should only return an error if there's a problem with persistence
+		return false, err // err only set on persistence errors
 	}
 
 	// Check if the context is currently blocked, or we will block it.
@@ -238,26 +276,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 
 	repoll := false
 
-	// Process system messgaes
-	if msg.Header.Namespace == fftypes.SystemNamespace {
-		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
-		// dispatched subsequent events before we have processed the system events they depend on.
-		if err = ag.broadcast.HandleSystemBroadcast(ctx, msg); err != nil {
-			// Should only return errors that are retryable
-			return false, err
-		}
-	}
-
-	// This message is now confirmed
-	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
-	err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
-	if err != nil {
-		return false, err
-	}
-
-	// Emit the confirmed event
-	confirmedEvent := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, msg.Header.Namespace, msg.Header.ID)
-	if err = ag.database.UpsertEvent(ctx, confirmedEvent, false); err != nil {
+	if err := ag.handleCompleteMessage(ctx, msg, data); err != nil {
 		return false, err
 	}
 
@@ -295,7 +314,7 @@ func (ag *aggregator) checkMessageComplete(ctx context.Context, msg *fftypes.Mes
 				l.Debugf("Not queuing unblocked event for %s, due to lookahead detection of upcoming event", unblockMsg.ID)
 			} else {
 				// Emit an event to cause the aggregator to process that message
-				unblockedEvent := fftypes.NewEvent(fftypes.EventTypeMessagesUnblocked, msg.Header.Namespace, unblockable[0].ID)
+				unblockedEvent := fftypes.NewEvent(fftypes.EventTypeMessageUnblocked, msg.Header.Namespace, unblockable[0].ID)
 				if err = ag.database.UpsertEvent(ctx, unblockedEvent, false); err != nil {
 					return false, err
 				}
