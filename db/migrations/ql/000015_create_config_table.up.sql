@@ -1,8 +1,8 @@
-CREATE TABLE blocked (
+CREATE TABLE config (
   id             string           NOT NULL,  
   key            string           NOT NULL,
   value          string           NOT NULL,
 );
 
-CREATE UNIQUE INDEX blocked_id ON blocked(id);
-CREATE UNIQUE INDEX blocked_key ON blocked(key);
+CREATE UNIQUE INDEX config_id ON config(id);
+CREATE UNIQUE INDEX config_key ON config(key);
