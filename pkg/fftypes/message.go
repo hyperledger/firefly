@@ -68,8 +68,8 @@ type Message struct {
 // will be broken out and stored separately during the call.
 type MessageInput struct {
 	Message
-	InputData  InputData  `json:"data"`
-	Recipients Recipients `json:"recipients"`
+	InputData  InputData        `json:"data"`
+	Recipients []RecipientInput `json:"recipients"`
 }
 
 // InputData is an array of data references or values

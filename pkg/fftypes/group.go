@@ -62,7 +62,7 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 		return err
 	}
 	if len(group.Recipients) == 0 {
-		return i18n.NewError(ctx, i18n.MsgGroupMustHaveReciepients)
+		return i18n.NewError(ctx, i18n.MsgGroupMustHaveRecipients)
 	}
 	dupCheck := make(map[string]bool)
 	for i, r := range group.Recipients {

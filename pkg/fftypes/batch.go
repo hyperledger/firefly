@@ -44,11 +44,11 @@ type BatchPayload struct {
 }
 
 // Value implements sql.Valuer
-func (ma BatchPayload) Value() (driver.Value, error) {
+func (ma *BatchPayload) Value() (driver.Value, error) {
 	return json.Marshal(&ma)
 }
 
-func (ma BatchPayload) Hash() *Bytes32 {
+func (ma *BatchPayload) Hash() *Bytes32 {
 	b, _ := json.Marshal(&ma)
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32
