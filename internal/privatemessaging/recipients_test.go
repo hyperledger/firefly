@@ -14,22 +14,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package privatemessaging
 
-import (
-	"context"
+import "testing"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
-)
+func TestResolveReceipientListNewGroup(t *testing.T) {
 
-func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error) {
-
-	// Validate the input data definition data
-	ns.ID = fftypes.NewUUID()
-	ns.Created = fftypes.Now()
-	ns.Type = fftypes.NamespaceTypeBroadcast
-	if err := ns.Validate(ctx, false); err != nil {
-		return nil, err
-	}
-	return bm.broadcastDefinitionAsNode(ctx, ns, ns.Name, fftypes.SystemTopicDefineNamespace)
 }

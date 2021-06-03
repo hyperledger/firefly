@@ -699,7 +699,7 @@ func TestCheckMessageCompleteSystemHandlerFail(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Context:   "context1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}
 	ev := &fftypes.Event{ID: fftypes.NewUUID(), Type: fftypes.EventTypeMessageSequencedBroadcast, Reference: msg.Header.ID}

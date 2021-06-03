@@ -25,10 +25,18 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) resolveReceipientList(ctx context.Context, in *fftypes.MessageInput) error {
-	group, isNew, err := pm.findOrCreateGroup(ctx, in)
+func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) error {
+	group, isNew, err := pm.findOrGenerateGroup(ctx, in)
+	if err != nil {
+		return err
+	}
 	log.L(ctx).Debug("Resolved group. New=%t %+v", isNew, group)
-	return err
+
+	// If the group is new, we need to do a group initialization, before we send the message itself
+	if isNew {
+		return pm.groupManager.GroupInit(ctx, sender, group)
+	}
+	return nil
 }
 
 func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (org *fftypes.Organization, err error) {
@@ -107,7 +115,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	return recipients, nil
 }
 
-func (pm *privateMessaging) findOrCreateGroup(ctx context.Context, in *fftypes.MessageInput) (group *fftypes.Group, isNew bool, err error) {
+func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInput) (group *fftypes.Group, isNew bool, err error) {
 	recipients, err := pm.getReceipients(ctx, in)
 	if err != nil {
 		return nil, false, err

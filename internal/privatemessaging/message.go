@@ -20,21 +20,30 @@ import (
 	"context"
 
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {
 		in.Header.Author = config.GetString(config.NodeIdentity)
 	}
-	in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	if in.Header.TX.Type == "" {
+		in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	}
+
+	sender, err := pm.identity.Resolve(ctx, in.Header.Author)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	}
+
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
 
-		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-		if err = pm.resolveReceipientList(ctx, in); err != nil {
+		// Resolve the recipient list into a group
+		if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
 			return err
 		}
 
@@ -45,7 +54,7 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 		}
 
 		// Seal the message
-		if err = in.Message.Seal(ctx); err != nil {
+		if err := in.Message.Seal(ctx); err != nil {
 			return err
 		}
 

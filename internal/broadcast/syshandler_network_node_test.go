@@ -57,7 +57,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -95,7 +95,7 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -131,7 +131,7 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -168,7 +168,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -204,7 +204,7 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -239,7 +239,7 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x99999",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -274,7 +274,7 @@ func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -307,7 +307,7 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -339,7 +339,7 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -369,7 +369,7 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -388,7 +388,7 @@ func TestHandleSystemBroadcastNodeUnmarshalFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastNode,
+			Topic:     fftypes.SystemTopicDefineNode,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

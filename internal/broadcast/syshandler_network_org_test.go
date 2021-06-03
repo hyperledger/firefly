@@ -59,7 +59,7 @@ func TestHandleSystemBroadcastOrgOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -97,7 +97,7 @@ func TestHandleSystemBroadcastOrgDupOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -134,7 +134,7 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -172,7 +172,7 @@ func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -207,7 +207,7 @@ func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -241,7 +241,7 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -275,7 +275,7 @@ func TestHandleSystemBroadcastOrgResolveFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -309,7 +309,7 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -342,7 +342,7 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -371,7 +371,7 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -390,7 +390,7 @@ func TestHandleSystemBroadcastUnmarshalFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
-			Topic:     fftypes.SystemTopicBroadcastOrganization,
+			Topic:     fftypes.SystemTopicDefineOrganization,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

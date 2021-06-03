@@ -47,7 +47,7 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 	mbi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -75,7 +75,7 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 	mbi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -90,7 +90,7 @@ func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{})
 	assert.False(t, valid)
@@ -110,7 +110,7 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -127,7 +127,7 @@ func TestHandleSystemBroadcastNSBadData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -152,7 +152,7 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 	mbi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -179,7 +179,7 @@ func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
 	mbi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Topic: fftypes.SystemTopicDefineNamespace,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

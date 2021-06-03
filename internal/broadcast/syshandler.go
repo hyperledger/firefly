@@ -28,13 +28,13 @@ func (bm *broadcastManager) HandleSystemBroadcast(ctx context.Context, msg *ffty
 	l := log.L(ctx)
 	l.Infof("Confirming system broadcast '%s' [%s]", msg.Header.Topic, msg.Header.ID)
 	switch msg.Header.Topic {
-	case fftypes.SystemTopicBroadcastDatatype:
+	case fftypes.SystemTopicDefineDatatype:
 		return bm.handleDatatypeBroadcast(ctx, msg, data)
-	case fftypes.SystemTopicBroadcastNamespace:
+	case fftypes.SystemTopicDefineNamespace:
 		return bm.handleNamespaceBroadcast(ctx, msg, data)
-	case fftypes.SystemTopicBroadcastOrganization:
+	case fftypes.SystemTopicDefineOrganization:
 		return bm.handleOrganizationBroadcast(ctx, msg, data)
-	case fftypes.SystemTopicBroadcastNode:
+	case fftypes.SystemTopicDefineNode:
 		return bm.handleNodeBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Topic, msg.Header.ID)
