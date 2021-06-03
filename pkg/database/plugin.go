@@ -323,11 +323,23 @@ type PeristenceInterface interface {
 
 	// DeleteNextPin - delete a next hash, using its local database ID
 	DeleteNextPin(ctx context.Context, sequence int64) (err error)
+	// UpsertConfigRecord - Upsert a config record
+	// Throws IDMismatch error if updating and ids don't match
+	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
+
+	// UpdateNamespace - Update config record
+	UpdateConfigRecord(ctx context.Context, key string, update Update) (err error)
+
+	// GetConfigRecord - Get an config record by key
+	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
+
+	// GetConfigRecords - Get config records
+	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
 //
-// If Capabilities returns ClusterEvents=true then these should be brodcast to every instance within
+// If Capabilities returns ClusterEvents=true then these should be broadcast to every instance within
 // a cluster that is connected to the database.
 //
 // If Capabilities returns ClusterEvents=false then these events can be simply coupled in-process to
@@ -542,4 +554,10 @@ var NextPinQueryFactory = &queryFields{
 	"identity": &StringField{},
 	"hash":     &StringField{},
 	"nonce":    &Int64Field{},
+}
+
+// ConfigRecordQueryFactory filter fields for config records
+var ConfigRecordQueryFactory = &queryFields{
+	"key":   &StringField{},
+	"value": &JSONField{},
 }
