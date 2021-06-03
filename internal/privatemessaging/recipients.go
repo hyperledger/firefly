@@ -30,7 +30,7 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 	if err != nil {
 		return err
 	}
-	log.L(ctx).Debug("Resolved group. New=%t %+v", isNew, group)
+	log.L(ctx).Debugf("Resolved group. New=%t %+v", isNew, group)
 
 	// If the group is new, we need to do a group initialization, before we send the message itself
 	if isNew {
@@ -124,7 +124,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	hash := recipients.Hash()
 	filter := fb.And(
 		fb.Eq("namespace", in.Header.Namespace),
-		fb.Eq("ledger", in.Header.TX.Ledger),
+		fb.Eq("ledger", in.Ledger),
 		fb.Eq("hahs", hash),
 	)
 	groups, err := pm.database.GetGroups(ctx, filter)
@@ -140,7 +140,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	group = &fftypes.Group{
 		ID:         fftypes.NewUUID(),
 		Namespace:  in.Header.Namespace,
-		Ledger:     in.Header.TX.Ledger,
+		Ledger:     in.Ledger,
 		Hash:       hash,
 		Recipients: recipients,
 		Created:    fftypes.Now(),

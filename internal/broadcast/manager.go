@@ -72,8 +72,10 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
-	ba.RegisterDispatcher(fftypes.MessageTypeBroadcast, bm.dispatchBatch, bo)
-	ba.RegisterDispatcher(fftypes.MessageTypeDefinition, bm.dispatchBatch, bo)
+	ba.RegisterDispatcher([]fftypes.MessageType{
+		fftypes.MessageTypeBroadcast,
+		fftypes.MessageTypeDefinition,
+	}, bm.dispatchBatch, bo)
 	return bm, nil
 }
 

@@ -61,7 +61,7 @@ func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (
 }
 
 type Manager interface {
-	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options)
+	RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -100,11 +100,14 @@ type dispatcher struct {
 	batchOptions Options
 }
 
-func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
-	bm.dispatchers[batchType] = &dispatcher{
+func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
+	dispatcher := &dispatcher{
 		handler:      handler,
 		batchOptions: batchOptions,
 		processors:   make(map[string]*batchProcessor),
+	}
+	for _, msgType := range msgTypes {
+		bm.dispatchers[msgType] = dispatcher
 	}
 }
 
