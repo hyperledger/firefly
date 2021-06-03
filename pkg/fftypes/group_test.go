@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -81,8 +82,8 @@ func TestGroupValidation(t *testing.T) {
 	}
 	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
 
-	orgID := NewUUID()
-	nodeID := NewUUID()
+	orgID := MustParseUUID("a53fb8cc-ab22-4eed-ad21-eb104eb85902")
+	nodeID := MustParseUUID("8b5c0d39-925f-4579-9c60-54f3e846ab99")
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
@@ -92,6 +93,14 @@ func TestGroupValidation(t *testing.T) {
 		},
 	}
 	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
+
+	group.Recipients = Recipients{
+		{Node: nodeID, Org: orgID},
+	}
+	b, _ := json.Marshal(&group.Recipients)
+	assert.Equal(t, `[{"org":"a53fb8cc-ab22-4eed-ad21-eb104eb85902","node":"8b5c0d39-925f-4579-9c60-54f3e846ab99"}]`, string(b))
+	group.Seal()
+	assert.Equal(t, "9445512b117f19a45ef650e80e173d0ff6ab30769d9f4ace4190b44e110c24bf", group.Hash.String())
 
 	var def Definition = group
 	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Context())

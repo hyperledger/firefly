@@ -45,6 +45,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
 			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
 		},
+		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
 	}
 	err := s.UpsertGroup(ctx, group, true)
@@ -69,6 +70,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
+		Hash:    fftypes.NewRandB32(),
 		Ledger:  fftypes.NewUUID(),
 	}
 
@@ -307,7 +309,7 @@ func TestGetGroupByIDLoadRecipientsFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.Now()))
+		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByID(context.Background(), groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -343,7 +345,7 @@ func TestGetGroupsLoadRecipientsFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.Now()))
+		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, err := s.GetGroups(context.Background(), f)

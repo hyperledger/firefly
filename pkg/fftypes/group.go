@@ -18,6 +18,8 @@ package fftypes
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -29,6 +31,7 @@ type Group struct {
 	Namespace   string     `json:"namespace,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Ledger      *UUID      `json:"ledger,omitempty"`
+	Hash        *Bytes32   `json:"hash,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Recipients  Recipients `json:"recipients"`
 }
@@ -43,6 +46,12 @@ type Recipient struct {
 type RecipientInput struct {
 	Org  string `json:"org,omitempty"`
 	Node string `json:"node,omitempty"`
+}
+
+func (r *Recipients) Hash() *Bytes32 {
+	b, _ := json.Marshal(&r)
+	hash := Bytes32(sha256.Sum256(b))
+	return &hash
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
@@ -75,6 +84,10 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 		}
 	}
 	return nil
+}
+
+func (group *Group) Seal() {
+	group.Hash = group.Recipients.Hash()
 }
 
 func (group *Group) Context() string {

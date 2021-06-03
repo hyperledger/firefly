@@ -34,6 +34,7 @@ var (
 		"namespace",
 		"description",
 		"ledger",
+		"hash",
 		"created",
 	}
 	groupFilterTypeMap = map[string]string{
@@ -72,6 +73,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 				Set("namespace", group.Namespace).
 				Set("description", group.Description).
 				Set("ledger", group.Ledger).
+				Set("hash", group.Hash).
 				Set("created", group.Created).
 				Where(sq.Eq{"id": group.ID}),
 		); err != nil {
@@ -87,6 +89,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 					group.Namespace,
 					group.Description,
 					group.Ledger,
+					group.Hash,
 					group.Created,
 				),
 		)
@@ -203,6 +206,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 		&group.Namespace,
 		&group.Description,
 		&group.Ledger,
+		&group.Hash,
 		&group.Created,
 	)
 	if err != nil {
