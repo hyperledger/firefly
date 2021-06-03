@@ -59,7 +59,10 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 		DisposeTimeout: config.GetDuration(config.PrivateBatchAgentTimeout),
 	}
 
-	ba.RegisterDispatcher(fftypes.MessageTypePrivate, pm.dispatchBatch, bo)
+	ba.RegisterDispatcher([]fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+	}, pm.dispatchBatch, bo)
 
 	return pm, nil
 }

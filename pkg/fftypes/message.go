@@ -34,7 +34,7 @@ const (
 	MessageTypeBroadcast MessageType = "broadcast"
 	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
 	MessageTypePrivate MessageType = "private"
-	// MessageTypeGroupInit is a speical private message that contains the definition of the group
+	// MessageTypeGroupInit is a special private message that contains the definition of the group
 	MessageTypeGroupInit MessageType = "groupinit"
 )
 
@@ -71,6 +71,7 @@ type Message struct {
 type MessageInput struct {
 	Message
 	InputData  InputData        `json:"data"`
+	Ledger     *UUID            `json:"ledger,omitempty"`
 	Recipients []RecipientInput `json:"recipients"`
 }
 

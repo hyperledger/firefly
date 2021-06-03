@@ -55,7 +55,7 @@ func TestE2EDispatch(t *testing.T) {
 	bmi, _ := NewBatchManager(ctx, mdi, mdm)
 	bm := bmi.(*batchManager)
 
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, Options{
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, Options{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -246,7 +246,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mdi, mdm)
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch) error {
 		return nil
 	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
 
@@ -283,7 +283,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mdi, mdm)
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch) error {
 		return nil
 	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
 
