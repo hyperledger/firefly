@@ -197,7 +197,7 @@ func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handl
 				defer part.Close()
 			case strings.HasPrefix(strings.ToLower(contentType), "application/json"):
 				if jsonInput != nil {
-					err = json.NewDecoder(req.Body).Decode(&jsonInput)
+					err = json.NewDecoder(req.Body).Decode(jsonInput)
 				}
 			default:
 				return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)
