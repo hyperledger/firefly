@@ -40,6 +40,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	organization := &fftypes.Organization{
 		ID:       fftypes.NewUUID(),
 		Message:  fftypes.NewUUID(),
+		Name:     "org1",
 		Identity: "0x12345",
 		Created:  fftypes.Now(),
 	}
@@ -47,7 +48,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same organization back
-	organizationRead, err := s.GetOrganization(ctx, organization.Identity)
+	organizationRead, err := s.GetOrganizationByIdentity(ctx, organization.Identity)
 	assert.NoError(t, err)
 	assert.NotNil(t, organizationRead)
 	organizationJson, _ := json.Marshal(&organization)
@@ -66,6 +67,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	organizationUpdated := &fftypes.Organization{
 		ID:          nil, // as long as we don't specify one we're fine
 		Message:     fftypes.NewUUID(),
+		Name:        "org1",
 		Parent:      "0x23456",
 		Identity:    "0x12345",
 		Description: "organization1",
@@ -76,7 +78,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the organization elements
-	organizationRead, err = s.GetOrganization(ctx, organization.Identity)
+	organizationRead, err = s.GetOrganizationByName(ctx, organization.Name)
 	assert.NoError(t, err)
 	organizationJson, _ = json.Marshal(&organizationUpdated)
 	organizationReadJson, _ = json.Marshal(&organizationRead)
@@ -165,7 +167,23 @@ func TestUpsertOrganizationFailCommit(t *testing.T) {
 func TestGetOrganizationByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOrganization(context.Background(), "id1")
+	_, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetOrganizationByNameSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetOrganizationByName(context.Background(), "org1")
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetOrganizationByIdentitySelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetOrganizationByIdentity(context.Background(), "id1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -173,7 +191,7 @@ func TestGetOrganizationByIDSelectFail(t *testing.T) {
 func TestGetOrganizationByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "organization", "identity"}))
-	msg, err := s.GetOrganization(context.Background(), "id1")
+	msg, err := s.GetOrganizationByID(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())

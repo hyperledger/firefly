@@ -28,6 +28,7 @@ type Group struct {
 	Message     *UUID      `json:"message,omitempty"`
 	Namespace   string     `json:"namespace,omitempty"`
 	Description string     `json:"description,omitempty"`
+	Ledger      *UUID      `json:"ledger,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Recipients  Recipients `json:"recipients"`
 }
@@ -35,8 +36,13 @@ type Group struct {
 type Recipients []*Recipient
 
 type Recipient struct {
-	Identity string `json:"identity"`
-	Node     *UUID  `json:"node"`
+	Org  *UUID `json:"org,omitempty"`
+	Node *UUID `json:"node,omitempty"`
+}
+
+type RecipientInput struct {
+	Org  string `json:"org,omitempty"`
+	Node string `json:"node,omitempty"`
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
@@ -51,13 +57,17 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 	}
 	dupCheck := make(map[string]bool)
 	for i, r := range group.Recipients {
-		if r.Identity == "" {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientIdenity, i)
+		if r.Org == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientOrg, i)
 		}
-		if dupCheck[r.Identity] {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientDuplicate, i)
+		if r.Node == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientNode, i)
 		}
-		dupCheck[r.Identity] = true
+		key := fmt.Sprintf("%s:%s", r.Org, r.Node)
+		if dupCheck[key] {
+			return i18n.NewError(ctx, i18n.MsgDuplicateRecipient, i)
+		}
+		dupCheck[key] = true
 	}
 	if existing {
 		if group.ID == nil {

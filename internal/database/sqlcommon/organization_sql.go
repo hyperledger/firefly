@@ -31,6 +31,7 @@ var (
 	organizationColumns = []string{
 		"id",
 		"message_id",
+		"name",
 		"parent",
 		"identity",
 		"description",
@@ -98,6 +99,7 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 				Values(
 					organization.ID,
 					organization.Message,
+					organization.Name,
 					organization.Parent,
 					organization.Identity,
 					organization.Description,
@@ -117,6 +119,7 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 	err := row.Scan(
 		&organization.ID,
 		&organization.Message,
+		&organization.Name,
 		&organization.Parent,
 		&organization.Identity,
 		&organization.Description,
@@ -154,7 +157,11 @@ func (s *SQLCommon) getOrganizationPred(ctx context.Context, desc string, pred i
 	return organization, nil
 }
 
-func (s *SQLCommon) GetOrganization(ctx context.Context, identity string) (message *fftypes.Organization, err error) {
+func (s *SQLCommon) GetOrganizationByName(ctx context.Context, name string) (message *fftypes.Organization, err error) {
+	return s.getOrganizationPred(ctx, name, sq.Eq{"name": name})
+}
+
+func (s *SQLCommon) GetOrganizationByIdentity(ctx context.Context, identity string) (message *fftypes.Organization, err error) {
 	return s.getOrganizationPred(ctx, identity, sq.Eq{"identity": identity})
 }
 

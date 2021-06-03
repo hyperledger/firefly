@@ -16,80 +16,67 @@
 
 package privatemessaging
 
-import (
-	"context"
-	"fmt"
-	"testing"
+// func TestBroadcastMessageOk(t *testing.T) {
+// 	bm, cancel := newTestBroadcast(t)
+// 	defer cancel()
+// 	mdi := bm.database.(*databasemocks.Plugin)
+// 	mdm := bm.data.(*datamocks.Manager)
+// 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 
-	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
-	"github.com/kaleido-io/firefly/mocks/databasemocks"
-	"github.com/kaleido-io/firefly/mocks/datamocks"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-)
+// 	ctx := context.Background()
+// 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+// 	rag.RunFn = func(a mock.Arguments) {
+// 		var fn = a[1].(func(context.Context) error)
+// 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+// 	}
+// 	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
+// 	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+// 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+// 	}, nil)
+// 	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
 
-func TestBroadcastMessageOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+// 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+// 		Message: fftypes.Message{
+// 			Header: fftypes.MessageHeader{
+// 				Author: "0x12345",
+// 			},
+// 		},
+// 		InputData: fftypes.InputData{
+// 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+// 		},
+// 	})
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, msg.Data[0].ID)
+// 	assert.NotNil(t, msg.Data[0].Hash)
+// 	assert.Equal(t, "ns1", msg.Header.Namespace)
 
-	ctx := context.Background()
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
-	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-	}, nil)
-	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
+// 	mdi.AssertExpectations(t)
+// 	mdm.AssertExpectations(t)
+// }
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Author: "0x12345",
-			},
-		},
-		InputData: fftypes.InputData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
-		},
-	})
-	assert.NoError(t, err)
-	assert.NotNil(t, msg.Data[0].ID)
-	assert.NotNil(t, msg.Data[0].Hash)
-	assert.Equal(t, "ns1", msg.Header.Namespace)
+// func TestBroadcastMessageBadInput(t *testing.T) {
+// 	bm, cancel := newTestBroadcast(t)
+// 	defer cancel()
+// 	mdi := bm.database.(*databasemocks.Plugin)
+// 	mdm := bm.data.(*datamocks.Manager)
+// 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
+// 	ctx := context.Background()
+// 	mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("0x12345", nil)
+// 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+// 	rag.RunFn = func(a mock.Arguments) {
+// 		var fn = a[1].(func(context.Context) error)
+// 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+// 	}
+// 	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-func TestBroadcastMessageBadInput(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+// 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+// 		InputData: fftypes.InputData{
+// 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+// 		},
+// 	})
+// 	assert.EqualError(t, err, "pop")
 
-	ctx := context.Background()
-	mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("0x12345", nil)
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		var fn = a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
-	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
-			{Value: fftypes.Byteable(`{"hello": "world"}`)},
-		},
-	})
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
+// 	mdi.AssertExpectations(t)
+// 	mdm.AssertExpectations(t)
+// }

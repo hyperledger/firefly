@@ -3,6 +3,7 @@ CREATE TABLE groups (
   message_id     string,
   namespace      string          NOT NULL,
   description    string          NOT NULL,
+  ledger         string,
   created        int64           NOT NULL
 );
 

@@ -142,50 +142,24 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 
 	}
 
-	if err = s.updateMessageDataRefs(ctx, tx, message); err != nil {
+	if err = s.updateMessageDataRefs(ctx, tx, message, existing); err != nil {
 		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) getMessageDataRefs(ctx context.Context, tx *txWrapper, msgID *fftypes.UUID) (fftypes.DataRefs, error) {
-	existingRefs, err := s.queryTx(ctx, tx,
-		sq.Select(
-			"data_id",
-			"data_hash",
-			"data_idx",
-		).
-			From("messages_data").
-			Where(sq.Eq{"message_id": msgID}).
-			OrderBy("data_idx"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer existingRefs.Close()
+func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, existing bool) error {
 
-	var dataIDs fftypes.DataRefs
-	for existingRefs.Next() {
-		var dataID fftypes.UUID
-		var dataHash fftypes.Bytes32
-		var dataIDx int
-		if err = existingRefs.Scan(&dataID, &dataHash, &dataIDx); err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "messages_data")
+	if existing {
+		if err := s.deleteTx(ctx, tx,
+			sq.Delete("messages_data").
+				Where(sq.And{
+					sq.Eq{"message_id": message.Header.ID},
+				}),
+		); err != nil {
+			return err
 		}
-		dataIDs = append(dataIDs, &fftypes.DataRef{
-			ID:   &dataID,
-			Hash: &dataHash,
-		})
-	}
-	return dataIDs, nil
-}
-
-func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message) error {
-
-	dataIDs, err := s.getMessageDataRefs(ctx, tx, message.Header.ID)
-	if err != nil {
-		return err
 	}
 
 	// Run through the ones in the message, finding ones that already exist, and ones that need to be created
@@ -196,59 +170,21 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 		if msgDataRef.Hash == nil {
 			return i18n.NewError(ctx, i18n.MsgMissingDataHashIndex, msgDataRefIDx)
 		}
-		var found = false
-		for dataRefIDx, dataID := range dataIDs {
-			if *dataID.ID == *msgDataRef.ID {
-				found = true
-				// Check the index is correct per the new list
-				if msgDataRefIDx != dataRefIDx {
-					if err = s.updateTx(ctx, tx,
-						sq.Update("messages_data").
-							Set("data_idx", msgDataRefIDx).
-							Where(sq.And{
-								sq.Eq{"message_id": message.Header.ID},
-								sq.Eq{"data_id": msgDataRef.ID},
-							}),
-					); err != nil {
-						return err
-					}
-				}
-				// Remove it from the list, so we can use this list as ones we need to delete
-				copy(dataIDs[dataRefIDx:], dataIDs[dataRefIDx+1:])
-				dataIDs = dataIDs[:len(dataIDs)-1]
-				break
-			}
-		}
-		if !found {
-			// Add the linkage
-			if _, err = s.insertTx(ctx, tx,
-				sq.Insert("messages_data").
-					Columns(
-						"message_id",
-						"data_id",
-						"data_hash",
-						"data_idx",
-					).
-					Values(
-						message.Header.ID,
-						msgDataRef.ID,
-						msgDataRef.Hash,
-						msgDataRefIDx,
-					),
-			); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Fun through the extra IDs that are no longer needed
-	for _, idToDelete := range dataIDs {
-		if err = s.deleteTx(ctx, tx,
-			sq.Delete("messages_data").
-				Where(sq.And{
-					sq.Eq{"message_id": message.Header.ID},
-					sq.Eq{"data_id": idToDelete.ID},
-				}),
+		// Add the linkage
+		if _, err := s.insertTx(ctx, tx,
+			sq.Insert("messages_data").
+				Columns(
+					"message_id",
+					"data_id",
+					"data_hash",
+					"data_idx",
+				).
+				Values(
+					message.Header.ID,
+					msgDataRef.ID,
+					msgDataRef.Hash,
+					msgDataRefIDx,
+				),
 		); err != nil {
 			return err
 		}

@@ -160,6 +160,8 @@ var (
 	NodeIdentity = rootKey("node.identity")
 	// NodeDescription is a description for the node
 	NodeDescription = rootKey("node.description")
+	// OrgName is the short name o the org
+	OrgName = rootKey("org.name")
 	// OrgIdentity is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgIdentity = rootKey("org.identity")
 	// OrgDescription is a description for the org

@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -37,14 +38,12 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new group
-	identity1 := "identity1"
-	identity2 := "identity2"
 	group := &fftypes.Group{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Recipients: fftypes.Recipients{
-			{Identity: identity1},
-			{Identity: identity2},
+			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
+			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
 		},
 		Created: fftypes.Now(),
 	}
@@ -60,17 +59,17 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 
 	// Update the group (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	identity3 := "identity3"
 	groupUpdated := &fftypes.Group{
 		ID:          group.ID,
 		Namespace:   "ns1",
 		Description: "my group",
 		Recipients: fftypes.Recipients{
-			{Identity: identity3},
-			{Identity: identity2},
+			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
+			group.Recipients[0],
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
+		Ledger:  fftypes.NewUUID(),
 	}
 
 	err = s.UpsertGroup(context.Background(), groupUpdated, true)
@@ -90,6 +89,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("namespace", groupUpdated.Namespace),
 		fb.Eq("description", groupUpdated.Description),
 		fb.Eq("message", groupUpdated.Message),
+		fb.Eq("ledger", groupUpdated.Ledger),
 		fb.Gt("created", "0"),
 	)
 	groups, err := s.GetGroups(ctx, filter)
@@ -168,16 +168,16 @@ func TestUpsertGroupFailUpdate(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertGroupFailLoadRecipients(t *testing.T) {
+func TestUpsertGroupFailUpdateRecipients(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(groupID.String()))
+	mock.ExpectExec("UPDATE .*").WillReturnResult(driver.ResultNoRows)
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertGroup(context.Background(), &fftypes.Group{ID: groupID}, true)
-	assert.Regexp(t, "FF10115", err)
+	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -187,35 +187,35 @@ func TestUpsertGroupFailCommit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertGroup(context.Background(), &fftypes.Group{ID: groupID}, true)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetRecipientsScanFail(t *testing.T) {
+func TestUpdateRecipientsMissingOrg(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("not the uuid you are looking for"))
-	_, err := s.getRecipients(context.Background(), &txWrapper{sqlTX: tx}, groupID)
-	assert.Regexp(t, "FF10121", err)
+	err := s.updateRecipients(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+		ID:         groupID,
+		Recipients: fftypes.Recipients{{Node: fftypes.NewUUID()}},
+	}, false)
+	assert.Regexp(t, "FF10220", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpdateRecipientsBlankIdentity(t *testing.T) {
+func TestUpdateRecipientsMissingNode(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "idx"}).AddRow("id1", 1))
 	err := s.updateRecipients(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
 		ID:         groupID,
-		Recipients: fftypes.Recipients{{Identity: ""}},
-	})
-	assert.Regexp(t, "FF10220", err)
+		Recipients: fftypes.Recipients{{Org: fftypes.NewUUID()}},
+	}, false)
+	assert.Regexp(t, "FF10221", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -224,11 +224,10 @@ func TestUpdateGroupDataDeleteFail(t *testing.T) {
 	groupID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "idx"}).AddRow("id1", 1))
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateRecipients(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
 		ID: groupID,
-	})
+	}, true)
 	assert.Regexp(t, "FF10118", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -238,34 +237,12 @@ func TestUpdateGroupDataAddFail(t *testing.T) {
 	groupID := fftypes.NewUUID()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateRecipients(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
 		ID:         groupID,
-		Recipients: fftypes.Recipients{{Identity: "id1"}},
-	})
+		Recipients: fftypes.Recipients{{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()}},
+	}, false)
 	assert.Regexp(t, "FF10116", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpdateGroupDataSwitchIDxFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	groupID := fftypes.NewUUID()
-	mock.ExpectBegin()
-	tx, _ := s.db.Begin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "idx"})).
-		WillReturnRows(sqlmock.NewRows(
-			[]string{"identity", "idx"},
-		).AddRow(
-			"id1", 0,
-		))
-	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateRecipients(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
-		ID:         groupID,
-		Recipients: fftypes.Recipients{{Identity: "id2"}, {Identity: "id1"}},
-	})
-	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -330,7 +307,7 @@ func TestGetGroupByIDLoadRecipientsFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(groupID.String(), nil, "ns1", "", fftypes.Now()))
+		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByID(context.Background(), groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -366,7 +343,7 @@ func TestGetGroupsLoadRecipientsFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(groupID.String(), nil, "ns1", "", fftypes.Now()))
+		AddRow(groupID.String(), nil, "ns1", "", fftypes.NewUUID(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, err := s.GetGroups(context.Background(), f)

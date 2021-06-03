@@ -47,7 +47,25 @@ func TestGroupValidation(t *testing.T) {
 		Namespace:   "ok",
 		Description: "ok",
 		Recipients: Recipients{
-			{Identity: "0x12345"},
+			{Node: NewUUID()},
+		},
+	}
+	assert.Regexp(t, "FF10220.*recipient", group.Validate(context.Background(), false))
+
+	group = &Group{
+		Namespace:   "ok",
+		Description: "ok",
+		Recipients: Recipients{
+			{Org: NewUUID()},
+		},
+	}
+	assert.Regexp(t, "FF10221.*recipient", group.Validate(context.Background(), false))
+
+	group = &Group{
+		Namespace:   "ok",
+		Description: "ok",
+		Recipients: Recipients{
+			{Org: NewUUID(), Node: NewUUID()},
 		},
 	}
 	assert.NoError(t, group.Validate(context.Background(), false))
@@ -63,15 +81,17 @@ func TestGroupValidation(t *testing.T) {
 	}
 	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
 
+	orgID := NewUUID()
+	nodeID := NewUUID()
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
 		Recipients: Recipients{
-			{Identity: "0x12345"},
-			{Identity: "0x12345"},
+			{Node: nodeID, Org: orgID},
+			{Node: nodeID, Org: orgID},
 		},
 	}
-	assert.Regexp(t, "FF10221", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
 
 	var def Definition = group
 	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Context())

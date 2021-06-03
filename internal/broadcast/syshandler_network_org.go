@@ -40,7 +40,7 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 	signingIdentity := org.Identity
 	if org.Parent != "" {
 		signingIdentity = org.Parent
-		parent, err := bm.database.GetOrganization(ctx, org.Parent)
+		parent, err := bm.database.GetOrganizationByIdentity(ctx, org.Parent)
 		if err != nil {
 			return false, err // We only return database errors
 		}
@@ -61,7 +61,13 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 		return false, nil
 	}
 
-	existing, err := bm.database.GetOrganization(ctx, org.Identity)
+	existing, err := bm.database.GetOrganizationByIdentity(ctx, org.Identity)
+	if err == nil && existing == nil {
+		existing, err = bm.database.GetOrganizationByName(ctx, org.Name)
+		if err == nil && existing == nil {
+			existing, err = bm.database.GetOrganizationByID(ctx, org.ID)
+		}
+	}
 	if err != nil {
 		return false, err // We only return database errors
 	}
