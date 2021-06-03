@@ -149,6 +149,11 @@ func valueString(f FieldSerialization) string {
 	switch tv := v.(type) {
 	case nil:
 		return "null"
+	case []byte:
+		if tv == nil {
+			return "null"
+		}
+		return fmt.Sprintf("'%s'", tv)
 	case int64:
 		return strconv.FormatInt(tv, 10)
 	default:

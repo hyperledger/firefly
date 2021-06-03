@@ -151,7 +151,7 @@ func ParseToDuration(durationString string) time.Duration {
 	}
 	ffd, err := ParseDurationString(durationString)
 	if err != nil {
-		log.L(context.Background()).Warn(err.Error())
+		log.L(context.Background()).Warn(err)
 	}
 	return time.Duration(ffd)
 }

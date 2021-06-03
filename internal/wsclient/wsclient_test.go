@@ -86,7 +86,7 @@ func TestWSClientBadURL(t *testing.T) {
 	utConfPrefix.Set(restclient.HTTPConfigURL, ":::")
 
 	_, err := New(context.Background(), utConfPrefix, nil)
-	assert.Regexp(t, "FF10162", err.Error())
+	assert.Regexp(t, "FF10162", err)
 }
 
 func TestHTTPToWSURLRemap(t *testing.T) {
@@ -131,7 +131,7 @@ func TestWSFailStartupHttp500(t *testing.T) {
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
 	err := w.Connect()
-	assert.Regexp(t, "FF10161", err.Error())
+	assert.Regexp(t, "FF10161", err)
 }
 
 func TestWSFailStartupConnect(t *testing.T) {
@@ -150,7 +150,7 @@ func TestWSFailStartupConnect(t *testing.T) {
 
 	w, _ := New(context.Background(), utConfPrefix, nil)
 	err := w.Connect()
-	assert.Regexp(t, "FF10161", err.Error())
+	assert.Regexp(t, "FF10161", err)
 }
 
 func TestWSSendClosed(t *testing.T) {
@@ -163,7 +163,7 @@ func TestWSSendClosed(t *testing.T) {
 	w.Close()
 
 	err = w.Send(context.Background(), []byte(`sent after close`))
-	assert.Regexp(t, "FF10160", err.Error())
+	assert.Regexp(t, "FF10160", err)
 }
 
 func TestWSSendCancelledContext(t *testing.T) {
@@ -176,7 +176,7 @@ func TestWSSendCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	err := w.Send(ctx, []byte(`sent after close`))
-	assert.Regexp(t, "FF10159", err.Error())
+	assert.Regexp(t, "FF10159", err)
 }
 
 func TestWSConnectClosed(t *testing.T) {
@@ -187,7 +187,7 @@ func TestWSConnectClosed(t *testing.T) {
 	}
 
 	err := w.connect(false)
-	assert.Regexp(t, "FF10160", err.Error())
+	assert.Regexp(t, "FF10160", err)
 }
 
 func TestWSReadLoopSendFailure(t *testing.T) {

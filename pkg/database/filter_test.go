@@ -80,7 +80,7 @@ func TestBuildMessageBadInFilterField(t *testing.T) {
 	_, err := fb.And(
 		fb.In("!wrong", []driver.Value{"a", "b", "c"}),
 	).Finalize()
-	assert.Regexp(t, "FF10148", err.Error())
+	assert.Regexp(t, "FF10148", err)
 }
 
 func TestBuildMessageBadInFilterValue(t *testing.T) {
@@ -88,7 +88,7 @@ func TestBuildMessageBadInFilterValue(t *testing.T) {
 	_, err := fb.And(
 		fb.In("sequence", []driver.Value{"!integer"}),
 	).Finalize()
-	assert.Regexp(t, "FF10149", err.Error())
+	assert.Regexp(t, "FF10149", err)
 }
 
 func TestBuildMessageUUIDConvert(t *testing.T) {
@@ -160,22 +160,34 @@ func TestBuildMessageStringConvert(t *testing.T) {
 	assert.Equal(t, "( namespace < '111' ) && ( namespace < '222' ) && ( namespace < '333' ) && ( namespace < '444' ) && ( namespace < '555' ) && ( namespace < '666' ) && ( namespace < '' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
 }
 
+func TestBuildMessageJSONConvert(t *testing.T) {
+	fb := TransactionQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.Eq("info", nil),
+		fb.Eq("info", `{}`),
+		fb.Eq("info", []byte(`{}`)),
+		fb.Eq("info", fftypes.JSONObject{"some": "value"}),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, `( info == null ) && ( info == '{}' ) && ( info == '{}' ) && ( info == '{"some":"value"}' )`, f.String())
+}
+
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*namespace", err.Error())
+	assert.Regexp(t, "FF10149.*namespace", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("sequence", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*sequence", err.Error())
+	assert.Regexp(t, "FF10149.*sequence", err)
 }
 
 func TestBuildMessageFailTimeConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("created", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*created", err.Error())
+	assert.Regexp(t, "FF10149.*created", err)
 }
 
 func TestQueryFactoryBadField(t *testing.T) {
@@ -212,4 +224,20 @@ func TestQueryFactoryGetFields(t *testing.T) {
 func TestQueryFactoryGetBuilder(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background()).Gt("sequence", 0)
 	assert.NotNil(t, fb.Builder())
+}
+
+func TestBuildMessageFailJSONConvert(t *testing.T) {
+	fb := TransactionQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("info", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*info", err)
+}
+
+func TestStringsForTypes(t *testing.T) {
+
+	assert.Equal(t, "test", (&stringField{s: "test"}).String())
+	assert.Equal(t, "037a025d-681d-4150-a413-05f368729c66", (&uuidField{fftypes.MustParseUUID("037a025d-681d-4150-a413-05f368729c66")}).String())
+	assert.Equal(t, "12345", (&int64Field{i: 12345}).String())
+	now := fftypes.Now()
+	assert.Equal(t, now.String(), (&timeField{t: now}).String())
+	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
 }

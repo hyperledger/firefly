@@ -22,18 +22,18 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type EventManager interface {
-	blockchain.Callbacks
-
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
@@ -41,22 +41,29 @@ type EventManager interface {
 	CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	Start() error
 	WaitStop()
+
+	// Bound blockchain callbacks
+	TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
+	SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 type eventManager struct {
-	ctx              context.Context
-	publicstorage    publicstorage.Plugin
-	database         database.Plugin
-	broadcast        broadcast.Manager
-	subManager       *subscriptionManager
-	retry            retry.Retry
-	aggregator       *aggregator
-	eventNotifier    *eventNotifier
-	defaultTransport string
+	ctx                  context.Context
+	publicstorage        publicstorage.Plugin
+	database             database.Plugin
+	identity             identity.Plugin
+	broadcast            broadcast.Manager
+	data                 data.Manager
+	subManager           *subscriptionManager
+	retry                retry.Retry
+	aggregator           *aggregator
+	eventNotifier        *eventNotifier
+	opCorrelationRetries int
+	defaultTransport     string
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, bm broadcast.Manager) (EventManager, error) {
-	if pi == nil || di == nil {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
+	if pi == nil || di == nil || ii == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	en := newEventNotifier(ctx)
@@ -64,15 +71,18 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
 		database:      di,
+		identity:      ii,
 		broadcast:     bm,
+		data:          dm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
-		defaultTransport: config.GetString(config.EventTransportsDefault),
-		eventNotifier:    en,
-		aggregator:       newAggregator(ctx, di, bm, en),
+		defaultTransport:     config.GetString(config.EventTransportsDefault),
+		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
+		eventNotifier:        en,
+		aggregator:           newAggregator(ctx, di, bm, dm, en),
 	}
 
 	var err error

@@ -192,7 +192,14 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 		Type:  "listen",
 		Topic: e.topic,
 	})
-	return w.Send(ctx, b)
+	err := w.Send(ctx, b)
+	if err == nil {
+		b, _ = json.Marshal(&ethWSCommandPayload{
+			Type: "listenreplies",
+		})
+		err = w.Send(ctx, b)
+	}
+	return err
 }
 
 func (e *Ethereum) ensureSusbscriptions(streamID string) error {
@@ -241,12 +248,12 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) error {
+func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sBlockNumber := msgJSON.GetString("blockNumber")
 	sTransactionIndex := msgJSON.GetString("transactionIndex")
 	sTransactionHash := msgJSON.GetString("transactionHash")
 	dataJSON := msgJSON.GetObject("data")
-	sAuthor := dataJSON.GetString("author")
+	authorAddress := dataJSON.GetString("author")
 	sTxnID := dataJSON.GetString("txnId")
 	sBatchID := dataJSON.GetString("batchId")
 	sPayloadRef := dataJSON.GetString("payloadRef")
@@ -254,7 +261,7 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
-		sAuthor == "" ||
+		authorAddress == "" ||
 		sTxnID == "" ||
 		sBatchID == "" ||
 		sPayloadRef == "" {
@@ -262,9 +269,9 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 		return nil // move on
 	}
 
-	author, err := e.VerifyIdentitySyntax(ctx, sAuthor)
+	authorAddress, err = e.validateEthAddress(ctx, authorAddress)
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad author (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 
@@ -300,20 +307,40 @@ func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftype
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.SequencedBroadcastBatch(batch, author, sTransactionHash, msgJSON)
+	return e.callbacks.SequencedBroadcastBatch(batch, authorAddress, sTransactionHash, msgJSON)
 }
 
-func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error {
-
+func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
 	l := log.L(ctx)
-	var msgsJSON []fftypes.JSONObject
-	err := json.Unmarshal(message, &msgsJSON)
-	if err != nil {
-		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(message))
+
+	headers := reply.GetObject("headers")
+	requestID := headers.GetString("requestId")
+	replyType := headers.GetString("type")
+	txHash := reply.GetString("transactionHash")
+	message := reply.GetString("errorMessage")
+	if requestID == "" || replyType == "" {
+		l.Errorf("Reply cannot be processed: %+v", reply)
 		return nil // Swallow this and move on
 	}
+	updateType := fftypes.OpStatusSucceeded
+	if replyType != "TransactionSuccess" {
+		updateType = fftypes.OpStatusFailed
+	}
+	l.Infof("Ethconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
+	return e.callbacks.TransactionUpdate(requestID, updateType, txHash, message, reply)
+}
 
-	for i, msgJSON := range msgsJSON {
+func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
+	l := log.L(ctx)
+
+	for i, msgI := range messages {
+		msgMap, ok := msgI.(map[string]interface{})
+		if !ok {
+			l.Errorf("Message cannot be parsed as JSON: %+v", msgI)
+			return nil // Swallow this and move on
+		}
+		msgJSON := fftypes.JSONObject(msgMap)
+
 		l1 := l.WithField("ethmsgidx", i)
 		ctx1 := log.WithLogger(ctx, l1)
 		signature := msgJSON.GetString("signature")
@@ -322,7 +349,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, message []byte) error
 
 		switch signature {
 		case broadcastBatchEventSignature:
-			if err = e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
+			if err := e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
 		default:
@@ -347,9 +374,24 @@ func (e *Ethereum) eventLoop() {
 				l.Debugf("Event loop exiting (receive channel closed)")
 				return
 			}
-			err := e.handleMessageBatch(ctx, msgBytes)
-			if err == nil {
-				err = e.wsconn.Send(ctx, ack)
+
+			var msgParsed interface{}
+			err := json.Unmarshal(msgBytes, &msgParsed)
+			if err != nil {
+				l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
+				continue // Swallow this and move on
+			}
+			switch msgTyped := msgParsed.(type) {
+			case []interface{}:
+				err = e.handleMessageBatch(ctx, msgTyped)
+				if err == nil {
+					err = e.wsconn.Send(ctx, ack)
+				}
+			case map[string]interface{}:
+				err = e.handleReceipt(ctx, fftypes.JSONObject(msgTyped))
+			default:
+				l.Errorf("Message unexpected: %+v", msgTyped)
+				continue
 			}
 
 			// Send the ack - only fails if shutting down
@@ -361,7 +403,12 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (string, error) {
+func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) (err error) {
+	identity.OnChain, err = e.validateEthAddress(ctx, identity.OnChain)
+	return
+}
+
+func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (string, error) {
 	identity = strings.TrimPrefix(strings.ToLower(identity), "0x")
 	if !addressVerify.MatchString(identity) {
 		return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
@@ -369,7 +416,7 @@ func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity string) (s
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethBroadcastBatchInput{
 		TransactionID: ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)),
@@ -379,7 +426,7 @@ func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity string, ba
 	path := fmt.Sprintf("%s/broadcastBatch", e.instancePath)
 	res, err := e.client.R().
 		SetContext(ctx).
-		SetQueryParam("kld-from", identity).
+		SetQueryParam("kld-from", identity.OnChain).
 		SetQueryParam("kld-sync", "false").
 		SetBody(input).
 		SetResult(tx).

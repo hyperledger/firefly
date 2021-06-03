@@ -22,20 +22,19 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
-type ValidatorType string
+type ValidatorType = LowerCasedType
 
 const (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
 	ValidatorTypeJSON ValidatorType = "json"
-	// ValidatorTypeBLOB is the validator type for binary blob data, that is passed through without any parsing or validation
-	ValidatorTypeBLOB ValidatorType = "blob"
-	// ValidatorTypeDatatype is the validator type for data definitions, which are a built in type that defines other types
-	ValidatorTypeDatatype ValidatorType = "datadef"
+	// ValidatorTypeSystemDefinition is the validator type for system definitions
+	ValidatorTypeSystemDefinition ValidatorType = "definition"
 )
 
 // Datatype is the structure defining a data definition, such as a JSON schema
 type Datatype struct {
 	ID        *UUID         `json:"id,omitempty"`
+	Message   *UUID         `json:"message,omitempty"`
 	Validator ValidatorType `json:"validator"`
 	Namespace string        `json:"namespace,omitempty"`
 	Name      string        `json:"name,omitempty"`
@@ -71,4 +70,12 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 		}
 	}
 	return nil
+}
+
+func (dt *Datatype) Context() string {
+	return namespaceContext(dt.Namespace)
+}
+
+func (dt *Datatype) SetBroadcastMessage(msgID *UUID) {
+	dt.Message = msgID
 }

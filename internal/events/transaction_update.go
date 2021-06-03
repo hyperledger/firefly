@@ -16,8 +16,48 @@
 
 package events
 
-import "github.com/kaleido-io/firefly/pkg/fftypes"
+import (
+	"fmt"
 
-func (em *eventManager) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error {
+	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+)
+
+func (em *eventManager) TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
+
+	// Find a matching operation, for this plugin, with the specified ID.
+	// We retry a few times, as there's an outside possibility of the event arriving before we're finished persisting the operation itself
+	var operations []*fftypes.Operation
+	fb := database.OperationQueryFactory.NewFilter(em.ctx)
+	filter := fb.And(
+		fb.Eq("backendid", txTrackingID),
+		fb.Eq("plugin", bi.Name()),
+	)
+	err := em.retry.Do(em.ctx, fmt.Sprintf("correlate tx %s", txTrackingID), func(attempt int) (retry bool, err error) {
+		operations, err = em.database.GetOperations(em.ctx, filter)
+		if err == nil && len(operations) == 0 {
+			err = i18n.NewError(em.ctx, i18n.Msg404NotFound)
+		}
+		return (err != nil && attempt <= em.opCorrelationRetries), err
+	})
+	if err != nil {
+		log.L(em.ctx).Warnf("Failed to correlate tracking ID '%s' with a submitted operation", txTrackingID)
+		return nil
+	}
+
+	update := database.OperationQueryFactory.NewUpdate(em.ctx).
+		Set("status", txState).
+		Set("backendid", protocolTxID).
+		Set("error", errorMessage).
+		Set("info", additionalInfo)
+	for _, op := range operations {
+		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

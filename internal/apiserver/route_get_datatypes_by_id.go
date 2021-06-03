@@ -27,11 +27,11 @@ import (
 
 var getDataDefByID = &oapispec.Route{
 	Name:   "getDataDefByID",
-	Path:   "namespaces/{ns}/datatypes/{dtypeid}",
+	Path:   "namespaces/{ns}/datatypes/{dtid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "dtypeid", Description: i18n.MsgTBD},
+		{Name: "dtid", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -40,7 +40,7 @@ var getDataDefByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtypeid"])
+		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
 		return output, err
 	},
 }

@@ -27,48 +27,17 @@ type fakePlugin struct{}
 func (f *fakePlugin) Name() string { return "fake" }
 
 func TestNewPendingMessageOp(t *testing.T) {
-	msg := &Message{
-		Header: MessageHeader{
-			ID:        NewUUID(),
-			Namespace: "ns1",
-		},
-	}
-	op := NewMessageOp(&fakePlugin{}, "testBackend", msg, OpTypePublicStorageBatchBroadcast, OpStatusPending, "recipient")
-	assert.Equal(t, Operation{
-		ID:        op.ID,
-		Plugin:    "fake",
-		BackendID: "testBackend",
-		Namespace: "ns1",
-		Message:   msg.Header.ID,
-		Data:      nil,
-		Type:      OpTypePublicStorageBatchBroadcast,
-		Recipient: "recipient",
-		Status:    OpStatusPending,
-		Created:   op.Created,
-	}, *op)
-}
 
-func TestMessageDataOp(t *testing.T) {
-	msg := &Message{
-		Header: MessageHeader{
-			ID:        NewUUID(),
-			Namespace: "ns1",
-		},
-		Data: DataRefs{
-			{ID: NewUUID(), Hash: NewRandB32()},
-		},
-	}
-	op := NewMessageDataOp(&fakePlugin{}, "testBackend", msg, 0, OpTypePublicStorageBatchBroadcast, OpStatusSucceeded, "recipient")
+	txID := NewUUID()
+	op := NewTXOperation(&fakePlugin{}, txID, "testBackend", OpTypePublicStorageBatchBroadcast, OpStatusPending, "recipient")
 	assert.Equal(t, Operation{
-		ID:        op.ID,
-		Plugin:    "fake",
-		BackendID: "testBackend",
-		Namespace: "ns1",
-		Message:   msg.Header.ID,
-		Data:      msg.Data[0].ID,
-		Type:      OpTypePublicStorageBatchBroadcast,
-		Recipient: "recipient",
-		Status:    OpStatusSucceeded,
-		Created:   op.Created,
+		ID:          op.ID,
+		Transaction: txID,
+		Plugin:      "fake",
+		BackendID:   "testBackend",
+		Type:        OpTypePublicStorageBatchBroadcast,
+		Recipient:   "recipient",
+		Status:      OpStatusPending,
+		Created:     op.Created,
 	}, *op)
 }

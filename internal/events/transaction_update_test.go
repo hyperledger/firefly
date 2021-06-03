@@ -17,12 +17,73 @@
 package events
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/kaleido-io/firefly/internal/retry"
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestTransactionUpdate(t *testing.T) {
-	em := &eventManager{}
-	em.TransactionUpdate("test", fftypes.TransactionStatusConfirmed, "test", "", nil)
+func TestTransactionUpdateRetryThenFound(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	em.retry = retry.Retry{
+		InitialDelay: 1 * time.Microsecond,
+		MaximumDelay: 1 * time.Microsecond,
+	}
+	em.opCorrelationRetries = 2
+
+	opID := fftypes.NewUUID()
+	mbi.On("Name").Return("ut")
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, fmt.Errorf("will retry")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil).Once() // retry again
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
+		{ID: opID},
+	}, nil)
+	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	assert.NoError(t, err)
+}
+
+func TestTransactionLookupNotFound(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	em.opCorrelationRetries = 0
+
+	mbi.On("Name").Return("ut")
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	assert.NoError(t, err) // swallowed after logging
+}
+
+func TestTransactionUpdateError(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+	em.opCorrelationRetries = 0
+
+	opID := fftypes.NewUUID()
+	mbi.On("Name").Return("ut")
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
+		{ID: opID},
+	}, nil)
+	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	assert.EqualError(t, err, "pop")
 }

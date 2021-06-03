@@ -25,15 +25,21 @@ import (
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
 )
 
 type Manager interface {
-	BroadcastMessage(ctx context.Context, msg *fftypes.Message) error
-	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error
+	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error)
+	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error)
+	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error)
+	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
+	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
+	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 	Start() error
 	WaitStop()
 }
@@ -41,19 +47,21 @@ type Manager interface {
 type broadcastManager struct {
 	ctx           context.Context
 	database      database.Plugin
+	identity      identity.Plugin
 	data          data.Manager
 	blockchain    blockchain.Plugin
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
 	if di == nil || bi == nil || ba == nil || pi == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
 		database:      di,
+		identity:      ii,
 		data:          dm,
 		blockchain:    bi,
 		publicstorage: pi,
@@ -67,6 +75,15 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, dm data.Manage
 	ba.RegisterDispatcher(fftypes.MessageTypeBroadcast, bm.dispatchBatch, bo)
 	ba.RegisterDispatcher(fftypes.MessageTypeDefinition, bm.dispatchBatch, bo)
 	return bm, nil
+}
+
+func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
+	nodeIdentity := config.GetString(config.NodeIdentity)
+	id, err := bm.identity.Resolve(ctx, nodeIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return id, nil
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
@@ -91,19 +108,38 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 }
 
 func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
+
+	id, err := bm.identity.Resolve(ctx, batch.Author)
+	if err == nil {
+		err = bm.blockchain.VerifyIdentitySyntax(ctx, id)
+	}
+	if err != nil {
+		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
+		op := fftypes.NewTXOperation(
+			bm.blockchain,
+			batch.Payload.TX.ID,
+			"",
+			fftypes.OpTypeBlockchainBatchPin,
+			fftypes.OpStatusFailed,
+			"")
+		op.Error = err.Error()
+		_ = bm.database.UpsertOperation(ctx, op, false)
+		return err
+	}
+
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypePin,
-			Namespace: batch.Namespace,
+			Type:      fftypes.TransactionTypeBatchPin,
 			Author:    batch.Author,
-			Batch:     batch.ID,
+			Namespace: batch.Namespace,
+			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
-		Status:  fftypes.TransactionStatusPending,
+		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err := bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
+	err = bm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
@@ -115,7 +151,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, batch.Author, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, id, &blockchain.BroadcastBatch{
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
@@ -124,38 +160,30 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		return err
 	}
 
-	// Store the operations for each message
-	for _, msg := range batch.Payload.Messages {
-
-		// The pending blockchain transaction
-		op := fftypes.NewMessageOp(
-			bm.blockchain,
-			blockchainTrackingID,
-			msg,
-			fftypes.OpTypeBlockchainBatchPin,
-			fftypes.OpStatusPending,
-			"")
-		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
-			return err
-		}
-
-		// The completed PublicStorage upload
-		op = fftypes.NewMessageOp(
-			bm.publicstorage,
-			publicstorageID,
-			msg,
-			fftypes.OpTypePublicStorageBatchBroadcast,
-			fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
-			"")
-		if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
-			return err
-		}
+	// The pending blockchain transaction
+	op := fftypes.NewTXOperation(
+		bm.blockchain,
+		batch.Payload.TX.ID,
+		blockchainTrackingID,
+		fftypes.OpTypeBlockchainBatchPin,
+		fftypes.OpStatusPending,
+		"")
+	if err := bm.database.UpsertOperation(ctx, op, false); err != nil {
+		return err
 	}
 
-	return nil
+	// The completed PublicStorage upload
+	op = fftypes.NewTXOperation(
+		bm.publicstorage,
+		batch.Payload.TX.ID,
+		publicstorageID,
+		fftypes.OpTypePublicStorageBatchBroadcast,
+		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
+		"")
+	return bm.database.UpsertOperation(ctx, op, false)
 }
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) (err error) {
+func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message) (err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {

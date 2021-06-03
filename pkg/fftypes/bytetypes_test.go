@@ -17,6 +17,7 @@
 package fftypes
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -113,4 +114,14 @@ func TestUUIDBytes(t *testing.T) {
 	u := NewUUID()
 	b := UUIDBytes(u)
 	assert.Equal(t, b[0:16], u[0:16])
+}
+
+func TestHashResult(t *testing.T) {
+	v := []byte(`abcdefghijklmnopqrstuvwxyz`)
+	hash := sha256.New()
+	_, err := hash.Write(v)
+	assert.NoError(t, err)
+	h1 := sha256.Sum256(v)
+	h2 := HashResult(hash)
+	assert.Equal(t, [32]byte(h1), [32]byte(*h2))
 }

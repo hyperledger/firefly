@@ -14,17 +14,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package orchestrator
+package fftypes
 
 import (
-	"github.com/kaleido-io/firefly/pkg/blockchain"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"database/sql/driver"
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func (or *orchestrator) TransactionUpdate(txTrackingID string, txState fftypes.TransactionStatus, protocolTxID, errorMessage string, additionalInfo map[string]interface{}) error {
-	return or.events.TransactionUpdate(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
-}
+func TestTypeStringCompareEtc(t *testing.T) {
 
-func (or *orchestrator) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
-	return or.events.SequencedBroadcastBatch(batch, author, protocolTxID, additionalInfo)
+	txtype1 := TransactionType("Batch_Pin")
+	assert.True(t, TransactionTypeBatchPin.Equals(txtype1))
+	assert.Equal(t, TransactionTypeBatchPin, txtype1.Lower())
+
+	var tdv driver.Valuer = txtype1
+	v, err := tdv.Value()
+	assert.Nil(t, err)
+	assert.Equal(t, "batch_pin", v)
+
+	var utStruct struct {
+		TXType TransactionType `json:"txType"`
+	}
+	err = json.Unmarshal([]byte(`{"txType": "Batch_PIN"}`), &utStruct)
+	assert.NoError(t, err)
+	assert.Equal(t, "batch_pin", string(utStruct.TXType))
+
 }

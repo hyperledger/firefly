@@ -17,7 +17,7 @@
 package fftypes
 
 // WSClientPayloadType actions go from client->server
-type WSClientPayloadType string
+type WSClientPayloadType = LowerCasedType
 
 const (
 	// WSClientActionStart is a request to the server to start delivering messages to the client
@@ -26,7 +26,7 @@ const (
 	WSClientActionAck WSClientPayloadType = "ack"
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
-	WSProtocolErrorEventType WSClientPayloadType = "ProtocolError"
+	WSProtocolErrorEventType WSClientPayloadType = "protocol_error"
 )
 
 // WSClientActionBase is the base fields of all client actions sent on the websocket

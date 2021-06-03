@@ -28,39 +28,29 @@ import (
 )
 
 func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return *id1 == *id2 })
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
 }
 
 func TestCreateSubscriptionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "!wrong").Return(fmt.Errorf("pop"))
 	_, err := or.CreateSubscription(or.ctx, "!wrong", &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			Name: "sub1",
 		},
 	})
-	assert.Regexp(t, "FF10131", err.Error())
-}
-
-func TestCreateSubscriptionNamespace(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
-			Name: "sub1",
-		},
-	})
-	assert.Regexp(t, "FF10187", err.Error())
+	assert.Regexp(t, "pop", err)
 }
 
 func TestCreateSubscriptionBadName(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			Name: "!sub1",
 		},
 	})
-	assert.Regexp(t, "FF10131", err.Error())
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestCreateSubscriptionOk(t *testing.T) {
@@ -70,8 +60,8 @@ func TestCreateSubscriptionOk(t *testing.T) {
 			Name: "sub1",
 		},
 	}
-	or.mdi.On("GetNamespace", mock.Anything, "ns1").Return(&fftypes.Namespace{}, nil)
-	or.mei.On("CreateDurableSubscription", mock.Anything, mock.Anything).Return(nil)
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
+	or.mem.On("CreateDurableSubscription", mock.Anything, mock.Anything).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, "ns1", sub)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
@@ -82,7 +72,7 @@ func TestDeleteSubscriptionBadUUID(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.DeleteSubscription(or.ctx, "ns2", "! a UUID")
-	assert.Regexp(t, "FF10142", err.Error())
+	assert.Regexp(t, "FF10142", err)
 }
 
 func TestDeleteSubscriptionLookupError(t *testing.T) {
@@ -103,7 +93,7 @@ func TestDeleteSubscriptionNSMismatch(t *testing.T) {
 	}
 	or.mdi.On("GetSubscriptionByID", mock.Anything, sub.ID).Return(sub, nil)
 	err := or.DeleteSubscription(or.ctx, "ns2", sub.ID.String())
-	assert.Regexp(t, "FF10109", err.Error())
+	assert.Regexp(t, "FF10109", err)
 }
 
 func TestDeleteSubscription(t *testing.T) {
@@ -116,7 +106,7 @@ func TestDeleteSubscription(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetSubscriptionByID", mock.Anything, uuidMatches(sub.ID)).Return(sub, nil)
-	or.mei.On("DeleteDurableSubscription", mock.Anything, sub).Return(nil)
+	or.mem.On("DeleteDurableSubscription", mock.Anything, sub).Return(nil)
 	err := or.DeleteSubscription(or.ctx, "ns1", sub.ID.String())
 	assert.NoError(t, err)
 }
@@ -142,5 +132,5 @@ func TestGetSGetSubscriptionsByID(t *testing.T) {
 func TestGetSubscriptionDefsByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetSubscriptionByID(context.Background(), "", "")
-	assert.Regexp(t, "FF10142", err.Error())
+	assert.Regexp(t, "FF10142", err)
 }

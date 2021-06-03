@@ -74,4 +74,8 @@ func TestDatatypeValidation(t *testing.T) {
 	dt.Hash = NewRandB32()
 	assert.Regexp(t, "FF10201", dt.Validate(context.Background(), true))
 
+	var def Definition = dt
+	assert.Equal(t, "ff-ns-ok", def.Context())
+	def.SetBroadcastMessage(NewUUID())
+	assert.NotNil(t, dt.Message)
 }

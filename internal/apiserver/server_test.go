@@ -78,7 +78,7 @@ func TestMissingCAFile(t *testing.T) {
 	config.Set(config.HTTPTLSCAFile, "badness")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
-	assert.Regexp(t, "FF10105", err.Error())
+	assert.Regexp(t, "FF10105", err)
 }
 
 func TestBadCAFile(t *testing.T) {
@@ -86,7 +86,7 @@ func TestBadCAFile(t *testing.T) {
 	config.Set(config.HTTPTLSCAFile, configDir+"/firefly.core.yaml")
 	r := mux.NewRouter()
 	_, err := createServer(context.Background(), r)
-	assert.Regexp(t, "FF10106", err.Error())
+	assert.Regexp(t, "FF10106", err)
 }
 
 func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
@@ -177,7 +177,7 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 
 func TestJSONHTTPServePOST201(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -203,7 +203,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -228,7 +228,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -253,7 +253,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -278,7 +278,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 
 func TestStatusCodeHintMapping(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -303,7 +303,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 
 func TestStatusInvalidContentType(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := jsonHandler(mo, &oapispec.Route{
+	handler := routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",

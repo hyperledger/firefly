@@ -42,5 +42,5 @@ func TestPostNewSubscription(t *testing.T) {
 		Return(&fftypes.Subscription{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+	assert.Equal(t, 201, res.Result().StatusCode)
 }

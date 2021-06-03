@@ -52,6 +52,6 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 
 	// Out of luck with anything else
 	err = sub2.Options.Scan(false)
-	assert.Regexp(t, "FF10125", err.Error())
+	assert.Regexp(t, "FF10125", err)
 
 }

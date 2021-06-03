@@ -309,7 +309,7 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
 		ID: eventUUID,
 	})
-	assert.Regexp(t, "FF10180", err.Error())
+	assert.Regexp(t, "FF10180", err)
 }
 
 func TestHandleStartFlippingAutoAck(t *testing.T) {
@@ -327,7 +327,7 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
 		AutoAck: &no,
 	})
-	assert.Regexp(t, "FF10179", err.Error())
+	assert.Regexp(t, "FF10179", err)
 }
 
 func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
@@ -343,7 +343,7 @@ func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
 		ID: eventUUID,
 	})
-	assert.Regexp(t, "FF10175", err.Error())
+	assert.Regexp(t, "FF10175", err)
 
 }
 
@@ -377,7 +377,7 @@ func TestHandleAckNoneInflight(t *testing.T) {
 		inflight:     []*fftypes.EventDeliveryResponse{},
 	}
 	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{})
-	assert.Regexp(t, "FF10175", err.Error())
+	assert.Regexp(t, "FF10175", err)
 }
 
 func TestProtocolErrorSwallowsSendError(t *testing.T) {
@@ -435,7 +435,7 @@ func TestConnectionDispatchAfterClose(t *testing.T) {
 		ctx: ctx,
 	}
 	err := wsc.dispatch(&fftypes.EventDelivery{})
-	assert.Regexp(t, "FF10160", err.Error())
+	assert.Regexp(t, "FF10160", err)
 }
 
 func TestWebsocketDispatchAfterClose(t *testing.T) {
@@ -444,7 +444,7 @@ func TestWebsocketDispatchAfterClose(t *testing.T) {
 		connections: make(map[string]*websocketConnection),
 	}
 	err := ws.DeliveryRequest("gone", &fftypes.EventDelivery{})
-	assert.Regexp(t, "FF10173", err.Error())
+	assert.Regexp(t, "FF10173", err)
 }
 
 func TestDispatchAutoAck(t *testing.T) {

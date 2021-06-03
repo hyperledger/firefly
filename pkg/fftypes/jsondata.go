@@ -58,8 +58,8 @@ func (jd JSONObject) GetStringOk(key string) (string, bool) {
 		if vString, ok := vInterace.(string); ok {
 			return vString, true
 		}
+		log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
 	}
-	log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
 	return "", false
 }
 

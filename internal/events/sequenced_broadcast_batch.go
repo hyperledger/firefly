@@ -33,7 +33,7 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
 	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author)
 	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author) }()
@@ -75,7 +75,7 @@ func (em *eventManager) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo map[string]interface{}) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
@@ -92,8 +92,13 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	}
 
 	// Verify the author matches
-	if batch.Author != author {
-		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s", batch.ID, batch.Author, author)
+	id, err := em.identity.Resolve(ctx, batch.Author)
+	if err != nil {
+		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
+		return nil // This is not retryable. skip this batch
+	}
+	if author != id.OnChain {
+		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
 		return nil // This is not retryable. skip this batch
 	}
 
@@ -101,7 +106,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err := em.database.UpsertBatch(ctx, batch, true, false)
+	err = em.database.UpsertBatch(ctx, batch, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
@@ -122,27 +127,26 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		tx = &fftypes.Transaction{
 			ID: batch.Payload.TX.ID,
 			Subject: fftypes.TransactionSubject{
-				Type:      fftypes.TransactionTypePin,
+				Type:      fftypes.TransactionTypeBatchPin,
 				Author:    author,
 				Namespace: batch.Namespace,
-				Batch:     batch.ID,
+				Reference: batch.ID,
 			},
 		}
 		tx.Hash = tx.Subject.Hash()
-	} else if tx.Subject.Type != fftypes.TransactionTypePin ||
+	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
 		tx.Subject.Author != author ||
 		tx.Subject.Namespace != batch.Namespace ||
-		tx.Subject.Batch == nil ||
-		*tx.Subject.Batch != *batch.ID {
+		tx.Subject.Reference == nil ||
+		*tx.Subject.Reference != *batch.ID {
 		l.Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batch.ID, tx.ID)
 		return nil // This is not retryable. skip this batch
 	}
 
 	// Set the updates on the transaction
-	tx.Confirmed = now
 	tx.ProtocolID = protocolTxID
 	tx.Info = additionalInfo
-	tx.Status = fftypes.TransactionStatusConfirmed
+	tx.Status = fftypes.OpStatusSucceeded
 
 	// Upsert the transaction, ensuring the hash does not change
 	err = em.database.UpsertTransaction(ctx, tx, true, false)
@@ -214,7 +218,12 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 
 	if msg == nil {
 		l.Errorf("null message entry %d in batch '%s'", i, batch.ID)
-		return nil // skip data entry
+		return nil // skip entry
+	}
+
+	if msg.Header.Author != batch.Author {
+		l.Errorf("Mismatched author '%s' on message entry %d in batch '%s'", msg.Header.Author, i, batch.ID)
+		return nil // skip entry
 	}
 
 	err := msg.Verify(ctx)

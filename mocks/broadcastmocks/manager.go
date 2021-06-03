@@ -14,32 +14,140 @@ type Manager struct {
 	mock.Mock
 }
 
-// BroadcastMessage provides a mock function with given fields: ctx, msg
-func (_m *Manager) BroadcastMessage(ctx context.Context, msg *fftypes.Message) error {
-	ret := _m.Called(ctx, msg)
+// BroadcastDatatype provides a mock function with given fields: ctx, ns, datatype
+func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, datatype)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
-		r0 = rf(ctx, msg)
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Datatype) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, datatype)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Datatype) error); ok {
+		r1 = rf(ctx, ns, datatype)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// HandleSystemBroadcast provides a mock function with given fields: ctx, msg
-func (_m *Manager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message) error {
-	ret := _m.Called(ctx, msg)
+// BroadcastDefinition provides a mock function with given fields: ctx, def, signingIdentity, contextNamespace, topic
+func (_m *Manager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace string, topic string) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, def, signingIdentity, contextNamespace, topic)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
-		r0 = rf(ctx, msg)
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.Definition, *fftypes.Identity, string, string) *fftypes.Message); ok {
+		r0 = rf(ctx, def, signingIdentity, contextNamespace, topic)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.Definition, *fftypes.Identity, string, string) error); ok {
+		r1 = rf(ctx, def, signingIdentity, contextNamespace, topic)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastMessage provides a mock function with given fields: ctx, ns, in
+func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+		r1 = rf(ctx, ns, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastNamespace provides a mock function with given fields: ctx, ns
+func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace) *fftypes.Message); ok {
+		r0 = rf(ctx, ns)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Namespace) error); ok {
+		r1 = rf(ctx, ns)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNodeSigningIdentity provides a mock function with given fields: ctx
+func (_m *Manager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.Identity
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Identity); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// HandleSystemBroadcast provides a mock function with given fields: ctx, msg, data
+func (_m *Manager) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (bool, error) {
+	ret := _m.Called(ctx, msg, data)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, []*fftypes.Data) bool); ok {
+		r0 = rf(ctx, msg, data)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, []*fftypes.Data) error); ok {
+		r1 = rf(ctx, msg, data)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Start provides a mock function with given fields:

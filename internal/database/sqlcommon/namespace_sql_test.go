@@ -39,6 +39,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// Create a new namespace entry
 	namespace := &fftypes.Namespace{
 		ID:      nil, // generated for us
+		Message: fftypes.NewUUID(),
 		Type:    fftypes.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
@@ -65,11 +66,11 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &fftypes.Namespace{
 		ID:          nil, // as long as we don't specify one we're fine
+		Message:     fftypes.NewUUID(),
 		Type:        fftypes.NamespaceTypeBroadcast,
 		Name:        "namespace1",
 		Description: "description1",
 		Created:     fftypes.Now(),
-		Confirmed:   fftypes.Now(),
 	}
 	err = s.UpsertNamespace(context.Background(), namespaceUpdated, true)
 	assert.NoError(t, err)
@@ -95,14 +96,14 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 
 	// Update
 	updateTime := fftypes.Now()
-	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("confirmed", updateTime)
+	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("created", updateTime)
 	err = s.UpdateNamespace(ctx, namespaceUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("name", namespaceUpdated.Name),
-		fb.Eq("confirmed", updateTime.String()),
+		fb.Eq("created", updateTime.String()),
 	)
 	namespaces, err := s.GetNamespaces(ctx, filter)
 	assert.NoError(t, err)
@@ -113,7 +114,7 @@ func TestUpsertNamespaceFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{}, true)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -123,7 +124,7 @@ func TestUpsertNamespaceFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -134,7 +135,7 @@ func TestUpsertNamespaceFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
-	assert.Regexp(t, "FF10116", err.Error())
+	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -146,7 +147,7 @@ func TestUpsertNamespaceFailUpdate(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -157,7 +158,7 @@ func TestUpsertNamespaceFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertNamespace(context.Background(), &fftypes.Namespace{Name: "name1"}, true)
-	assert.Regexp(t, "FF10119", err.Error())
+	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -165,7 +166,7 @@ func TestGetNamespaceByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetNamespace(context.Background(), "name1")
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -182,7 +183,7 @@ func TestGetNamespaceByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	_, err := s.GetNamespace(context.Background(), "name1")
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -191,7 +192,7 @@ func TestGetNamespaceQueryFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
-	assert.Regexp(t, "FF10115", err.Error())
+	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -199,7 +200,7 @@ func TestGetNamespaceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, err := s.GetNamespaces(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err.Error())
+	assert.Regexp(t, "FF10149.*type", err)
 }
 
 func TestGetNamespaceReadMessageFail(t *testing.T) {
@@ -207,7 +208,7 @@ func TestGetNamespaceReadMessageFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
 	_, err := s.GetNamespaces(context.Background(), f)
-	assert.Regexp(t, "FF10121", err.Error())
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -216,7 +217,7 @@ func TestNamespaceUpdateBeginFail(t *testing.T) {
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
 	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err.Error())
+	assert.Regexp(t, "FF10114", err)
 }
 
 func TestNamespaceUpdateBuildQueryFail(t *testing.T) {
@@ -224,7 +225,7 @@ func TestNamespaceUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*name", err.Error())
+	assert.Regexp(t, "FF10149.*name", err)
 }
 
 func TestNamespaceUpdateFail(t *testing.T) {
@@ -234,5 +235,5 @@ func TestNamespaceUpdateFail(t *testing.T) {
 	mock.ExpectRollback()
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err.Error())
+	assert.Regexp(t, "FF10117", err)
 }

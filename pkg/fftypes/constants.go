@@ -21,12 +21,15 @@ const (
 	// SystemNamespace is the system reserved namespace name
 	SystemNamespace = "ff-system"
 
-	// SystemContext is the system reserved context name
-	SystemContext = "ff-system"
-
 	// SystemTopicBroadcastDatatype is the topic for messages that broadcast data definitions
 	SystemTopicBroadcastDatatype = "ff-broadcast-datatype"
 
 	// SystemTopicBroadcastNamespace is the topic for messages that broadcast namespace definitions
 	SystemTopicBroadcastNamespace = "ff-broadcast-namespace"
+
+	// SystemTopicBroadcastOrganization is the topic for messages that broadcast organization definitions
+	SystemTopicBroadcastOrganization = "ff-broadcast-organization"
+
+	// SystemTopicBroadcastNode is the topic for messages that broadcast node definitions
+	SystemTopicBroadcastNode = "ff-broadcast-node"
 )

@@ -18,6 +18,7 @@ package batch
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"time"
 
@@ -43,14 +44,15 @@ type batchProcessorConf struct {
 	Options
 	namespace          string
 	author             string
-	persitence         database.Plugin
 	dispatch           DispatchHandler
 	processorQuiescing func()
 }
 
 type batchProcessor struct {
 	ctx         context.Context
+	database    database.Plugin
 	name        string
+	cancelCtx   func()
 	closed      bool
 	newWork     chan *batchWork
 	persistWork chan *batchWork
@@ -60,9 +62,13 @@ type batchProcessor struct {
 	conf        *batchProcessorConf
 }
 
-func newBatchProcessor(ctx context.Context, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
+func newBatchProcessor(ctx context.Context, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
+	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s", conf.namespace, conf.author))
+	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
-		ctx:         log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s", conf.namespace, conf.author)),
+		ctx:         pCtx,
+		cancelCtx:   cancelCtx,
+		database:    di,
 		name:        fmt.Sprintf("%s:%s", conf.namespace, conf.author),
 		newWork:     make(chan *batchWork),
 		persistWork: make(chan *batchWork, conf.BatchMaxSize),
@@ -155,6 +161,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	}
 	for _, w := range newWork {
 		if w.msg != nil {
+			w.msg.BatchID = batch.ID
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)
@@ -162,7 +169,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	if seal {
 		// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
 		batch.Payload.TX = fftypes.TransactionRef{
-			Type: fftypes.TransactionTypePin,
+			Type: fftypes.TransactionTypeBatchPin,
 			ID:   fftypes.NewUUID(),
 		}
 		batch.Hash = batch.Payload.Hash()
@@ -182,9 +189,27 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 	})
 }
 
-func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, seal bool) (err error) {
+func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (err error) {
 	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
-		err = bp.conf.persitence.UpsertBatch(bp.ctx, batch, true, seal /* we set the hash as it seals */)
+		err = bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
+			// Update all the messages in the batch with the batch ID
+			if len(newWork) > 0 {
+				msgIDs := make([]driver.Value, 0, len(newWork))
+				for _, w := range newWork {
+					if w.msg != nil {
+						msgIDs = append(msgIDs, w.msg.Header.ID)
+					}
+				}
+				filter := database.MessageQueryFactory.NewFilter(ctx).In("id", msgIDs)
+				update := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", batch.ID)
+				err = bp.database.UpdateMessages(ctx, filter, update)
+			}
+			if err == nil {
+				// Persist the batch itself
+				err = bp.database.UpsertBatch(ctx, batch, true, seal /* we set the hash as it seals */)
+			}
+			return err
+		})
 		if err != nil {
 			return !bp.closed, err
 		}
@@ -196,6 +221,7 @@ func (bp *batchProcessor) persistenceLoop() {
 	defer close(bp.batchSealed)
 	l := log.L(bp.ctx)
 	var currentBatch *fftypes.Batch
+	var batchSize = 0
 	for !bp.closed {
 		var seal bool
 		newWork := make([]*batchWork, 0, bp.conf.BatchMaxSize)
@@ -227,11 +253,13 @@ func (bp *batchProcessor) persistenceLoop() {
 				drained = true
 			}
 		}
+
+		batchSize += len(newWork)
 		currentBatch = bp.createOrAddToBatch(currentBatch, newWork, seal)
-		l.Debugf("Adding %d entries to batch %s. Seal=%t", len(newWork), currentBatch.ID, seal)
+		l.Debugf("Adding %d entries to batch %s. Size=%d Seal=%t", len(newWork), currentBatch.ID, batchSize, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		if err := bp.persistBatch(currentBatch, seal); err != nil {
+		if err := bp.persistBatch(currentBatch, newWork, seal); err != nil {
 			return
 		}
 
@@ -259,6 +287,7 @@ func (bp *batchProcessor) persistenceLoop() {
 
 			// Move onto the next batch
 			currentBatch = nil
+			batchSize = 0
 		}
 
 	}
@@ -266,6 +295,7 @@ func (bp *batchProcessor) persistenceLoop() {
 
 func (bp *batchProcessor) close() {
 	if !bp.closed {
+		bp.cancelCtx()
 		close(bp.newWork)
 		bp.closed = true
 	}

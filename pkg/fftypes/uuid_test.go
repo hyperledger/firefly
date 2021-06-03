@@ -15,6 +15,7 @@
 package fftypes
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,9 @@ func TestDatabaseSerialization(t *testing.T) {
 	assert.Nil(t, v)
 	assert.Equal(t, "", u.String())
 
-	u, err = ParseUUID("03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
+	u, err = ParseUUID(context.Background(), "!not an id")
+	assert.Regexp(t, "FF10142", err)
+	u, err = ParseUUID(context.Background(), "03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
 	assert.NoError(t, err)
 	v, err = u.Value()
 	assert.NoError(t, err)
