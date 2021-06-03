@@ -56,7 +56,7 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -86,7 +86,7 @@ func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastDatatype,
+			Topic: fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -117,7 +117,7 @@ func TestHandleSystemBroadcastBadSchema(t *testing.T) {
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -142,7 +142,7 @@ func TestHandleSystemBroadcastMissingData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastDatatype,
+			Topic: fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{})
 	assert.False(t, valid)
@@ -175,7 +175,7 @@ func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -212,7 +212,7 @@ func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -248,7 +248,7 @@ func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Topic:     fftypes.SystemTopicDefineDatatype,
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

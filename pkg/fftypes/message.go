@@ -34,6 +34,8 @@ const (
 	MessageTypeBroadcast MessageType = "broadcast"
 	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
 	MessageTypePrivate MessageType = "private"
+	// MessageTypeGroupInit is a speical private message that contains the definition of the group
+	MessageTypeGroupInit MessageType = "groupinit"
 )
 
 // MessageHeader contains all fields that contribute to the hash

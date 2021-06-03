@@ -14,33 +14,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package privatemessaging
 
 import (
 	"context"
 	"encoding/json"
 
+	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, contextNamespace, topic string) (msg *fftypes.Message, err error) {
-	signingIdentity, err := bm.GetNodeSigningIdentity(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return bm.BroadcastDefinition(ctx, def, signingIdentity, contextNamespace, topic)
+type groupManager struct {
+	database database.Plugin
+	data     data.Manager
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error) {
-
-	err = bm.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the broadcast message is nil on the sending side - only set on receiving side
-	def.SetBroadcastMessage(nil)
+func (gm *groupManager) GroupInit(ctx context.Context, signer *fftypes.Identity, group *fftypes.Group) (err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -49,27 +40,27 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 		Namespace: fftypes.SystemNamespace,
 		Created:   fftypes.Now(),
 	}
-	data.Value, err = json.Marshal(&def)
+	data.Value, err = json.Marshal(&group)
 	if err == nil {
 		err = data.Seal(ctx)
 	}
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
 	// Write as data to the local store
-	if err = bm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
-		return nil, err
+	if err = gm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
+		return err
 	}
 
-	// Create a broadcast message referring to the data
-	msg = &fftypes.Message{
+	// Create a private send message referring to the data
+	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
-			Type:      fftypes.MessageTypeDefinition,
-			Author:    signingIdentity.Identifier,
-			Topic:     topic,
-			Context:   def.Context(),
+			Type:      fftypes.MessageTypeGroupInit,
+			Author:    signer.Identifier,
+			Topic:     fftypes.SystemTopicDefineGroup,
+			Context:   group.Context(),
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 			},
@@ -79,10 +70,12 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 		},
 	}
 
-	// Broadcast the message
-	if err = bm.broadcastMessageCommon(ctx, msg); err != nil {
-		return nil, err
+	// Seal the message
+	if err := msg.Seal(ctx); err != nil {
+		return err
 	}
 
-	return msg, nil
+	// Store the message - this asynchronously triggers the next step in process
+	return gm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
+
 }

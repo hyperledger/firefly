@@ -21,15 +21,18 @@ const (
 	// SystemNamespace is the system reserved namespace name
 	SystemNamespace = "ff-system"
 
-	// SystemTopicBroadcastDatatype is the topic for messages that broadcast data definitions
-	SystemTopicBroadcastDatatype = "ff-broadcast-datatype"
+	// SystemTopicDefineDatatype is the topic for messages that broadcast data definitions
+	SystemTopicDefineDatatype = "ff-define-datatype"
 
-	// SystemTopicBroadcastNamespace is the topic for messages that broadcast namespace definitions
-	SystemTopicBroadcastNamespace = "ff-broadcast-namespace"
+	// SystemTopicDefineNamespace is the topic for messages that broadcast namespace definitions
+	SystemTopicDefineNamespace = "ff-define-namespace"
 
-	// SystemTopicBroadcastOrganization is the topic for messages that broadcast organization definitions
-	SystemTopicBroadcastOrganization = "ff-broadcast-organization"
+	// SystemTopicDefineOrganization is the topic for messages that broadcast organization definitions
+	SystemTopicDefineOrganization = "ff-define-organization"
 
-	// SystemTopicBroadcastNode is the topic for messages that broadcast node definitions
-	SystemTopicBroadcastNode = "ff-broadcast-node"
+	// SystemTopicDefineNode is the topic for messages that broadcast node definitions
+	SystemTopicDefineNode = "ff-define-node"
+
+	// SystemTopicDefineGroup is the topic for messages that send the definition of a group, to all parties in that group
+	SystemTopicDefineGroup = "ff-define-group"
 )

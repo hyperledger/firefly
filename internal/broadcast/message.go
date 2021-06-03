@@ -24,13 +24,16 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypeBroadcast
 	if in.Header.Author == "" {
 		in.Header.Author = config.GetString(config.NodeIdentity)
 	}
-	in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	if in.Header.TX.Type == "" {
+		in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	}
+
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
 		in.Message.Data, err = bm.data.ResolveInputData(ctx, ns, in.InputData)

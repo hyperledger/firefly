@@ -24,24 +24,33 @@ import (
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/kaleido-io/firefly/pkg/identity"
 )
 
 type PrivateMessaging interface {
 }
 
 type privateMessaging struct {
+	groupManager
+
 	ctx      context.Context
 	database database.Plugin
+	identity identity.Plugin
 	batch    batch.Manager
 	data     data.Manager
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ba batch.Manager, dm data.Manager) (PrivateMessaging, error) {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, ba batch.Manager, dm data.Manager) (PrivateMessaging, error) {
 	pm := &privateMessaging{
 		ctx:      ctx,
 		database: di,
+		identity: ii,
 		batch:    ba,
 		data:     dm,
+		groupManager: groupManager{
+			database: di,
+			data:     dm,
+		},
 	}
 
 	bo := batch.Options{
