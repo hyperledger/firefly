@@ -21,6 +21,7 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 - CLI / Developer experience - https://github.com/kaleido-io/firefly-cli
 - UI Explorer - https://github.com/kaleido-io/firefly-ui
 - Core (this repo) - https://github.com/kaleido-io/firefly
+- HTTP Data Exchange - https://github.com/kaleido-io/firefly-dataexchange-https
 - Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/kaleido-io/ethconnect
 - Corda connector: https://github.com/kaleido-io/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2 
 - Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
