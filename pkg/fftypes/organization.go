@@ -31,12 +31,16 @@ type Organization struct {
 	Message     *UUID      `json:"message,omitempty"`
 	Parent      string     `json:"parent,omitempty"`
 	Identity    string     `json:"identity,omitempty"`
+	Name        string     `json:"name,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Profile     JSONObject `json:"profile,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 }
 
 func (org *Organization) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, org.Name, "name"); err != nil {
+		return err
+	}
 	if err = ValidateLength(ctx, org.Description, "description", 4096); err != nil {
 		return err
 	}

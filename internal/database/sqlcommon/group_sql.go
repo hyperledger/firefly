@@ -33,6 +33,7 @@ var (
 		"message_id",
 		"namespace",
 		"description",
+		"ledger",
 		"created",
 	}
 	groupFilterTypeMap = map[string]string{
@@ -70,6 +71,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 				Set("message_id", group.Message).
 				Set("namespace", group.Namespace).
 				Set("description", group.Description).
+				Set("ledger", group.Ledger).
 				Set("created", group.Created).
 				Where(sq.Eq{"id": group.ID}),
 		); err != nil {
@@ -84,6 +86,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 					group.Message,
 					group.Namespace,
 					group.Description,
+					group.Ledger,
 					group.Created,
 				),
 		)
@@ -93,103 +96,48 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 
 	}
 
-	if err = s.updateRecipients(ctx, tx, group); err != nil {
+	if err = s.updateRecipients(ctx, tx, group, existing); err != nil {
 		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) getRecipients(ctx context.Context, tx *txWrapper, groupID *fftypes.UUID) (fftypes.Recipients, error) {
-	existingRecipients, err := s.queryTx(ctx, tx,
-		sq.Select(
-			"identity",
-			"idx",
-		).
-			From("recipients").
-			Where(sq.Eq{"group_id": groupID}).
-			OrderBy("idx"),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer existingRecipients.Close()
+func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *fftypes.Group, existing bool) error {
 
-	var recipients fftypes.Recipients
-	for existingRecipients.Next() {
-		var idx int
-		recipient := &fftypes.Recipient{}
-		if err = existingRecipients.Scan(&recipient.Identity, &idx); err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "recipients")
+	if existing {
+		if err := s.deleteTx(ctx, tx,
+			sq.Delete("recipients").
+				Where(sq.And{
+					sq.Eq{"group_id": group.ID},
+				}),
+		); err != nil {
+			return err
 		}
-		recipients = append(recipients, recipient)
-	}
-	return recipients, nil
-}
-
-func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *fftypes.Group) error {
-
-	existingRecipients, err := s.getRecipients(ctx, tx, group.ID)
-	if err != nil {
-		return err
 	}
 
 	// Run through the ones in the group, finding ones that already exist, and ones that need to be created
 	for requiredIdx, requiredRecipient := range group.Recipients {
-		if requiredRecipient == nil || requiredRecipient.Identity == "" {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientIdenity, requiredIdx)
+		if requiredRecipient == nil || requiredRecipient.Org == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientOrg, requiredIdx)
 		}
-		var found = false
-		for currentIdx, currentRecipient := range existingRecipients {
-			if currentRecipient.Identity == requiredRecipient.Identity {
-				found = true
-				// Check the index is correct per the new list
-				if currentIdx != requiredIdx {
-					if err = s.updateTx(ctx, tx,
-						sq.Update("recipients").
-							Set("idx", requiredIdx).
-							Where(sq.And{
-								sq.Eq{"group_id": group.ID},
-								sq.Eq{"identity": currentRecipient.Identity},
-							}),
-					); err != nil {
-						return err
-					}
-				}
-				// Remove it from the list, so we can use this list as ones we need to delete
-				copy(existingRecipients[currentIdx:], existingRecipients[currentIdx+1:])
-				existingRecipients = existingRecipients[:len(existingRecipients)-1]
-				break
-			}
+		if requiredRecipient.Node == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyRecipientNode, requiredIdx)
 		}
-		if !found {
-			// Add the linkage
-			if _, err = s.insertTx(ctx, tx,
-				sq.Insert("recipients").
-					Columns(
-						"group_id",
-						"identity",
-						"idx",
-					).
-					Values(
-						group.ID,
-						requiredRecipient.Identity,
-						requiredIdx,
-					),
-			); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Fun through the extra IDs that are no longer needed
-	for _, rToDelete := range existingRecipients {
-		if err = s.deleteTx(ctx, tx,
-			sq.Delete("recipients").
-				Where(sq.And{
-					sq.Eq{"group_id": group.ID},
-					sq.Eq{"identity": rToDelete.Identity},
-				}),
+		if _, err := s.insertTx(ctx, tx,
+			sq.Insert("recipients").
+				Columns(
+					"group_id",
+					"org",
+					"node",
+					"idx",
+				).
+				Values(
+					group.ID,
+					requiredRecipient.Org,
+					requiredRecipient.Node,
+					requiredIdx,
+				),
 		); err != nil {
 			return err
 		}
@@ -211,7 +159,8 @@ func (s *SQLCommon) loadRecipients(ctx context.Context, groups []*fftypes.Group)
 	recipients, err := s.query(ctx,
 		sq.Select(
 			"group_id",
-			"identity",
+			"org",
+			"node",
 			"idx",
 		).
 			From("recipients").
@@ -227,7 +176,7 @@ func (s *SQLCommon) loadRecipients(ctx context.Context, groups []*fftypes.Group)
 		var groupID fftypes.UUID
 		recipient := &fftypes.Recipient{}
 		var idx int
-		if err = recipients.Scan(&groupID, &recipient.Identity, &idx); err != nil {
+		if err = recipients.Scan(&groupID, &recipient.Org, &recipient.Node, &idx); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "recipients")
 		}
 		for _, g := range groups {
@@ -253,6 +202,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 		&group.Message,
 		&group.Namespace,
 		&group.Description,
+		&group.Ledger,
 		&group.Created,
 	)
 	if err != nil {

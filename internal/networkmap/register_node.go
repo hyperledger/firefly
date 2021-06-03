@@ -33,6 +33,9 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		Identity:    config.GetString(config.NodeIdentity),
 		Description: config.GetString(config.NodeDescription),
 	}
+	if node.Identity == "" {
+		node.Identity = config.GetString(config.OrgIdentity)
+	}
 	if node.Owner == "" || node.Identity == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}

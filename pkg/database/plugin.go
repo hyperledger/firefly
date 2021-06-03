@@ -251,10 +251,13 @@ type PeristenceInterface interface {
 	// UpdateOrganization - Update organization
 	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetOrganization- Get a organization by ID
-	GetOrganization(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+	// GetOrganizationByIdentity - Get a organization by identity
+	GetOrganizationByIdentity(ctx context.Context, identity string) (org *fftypes.Organization, err error)
 
-	// GetOrganizationByID- Get a organization by ID
+	// GetOrganizationByName - Get a organization by name
+	GetOrganizationByName(ctx context.Context, name string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByID - Get a organization by ID
 	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
 
 	// GetOrganizations - Get organizations
@@ -470,5 +473,6 @@ var GroupQueryFactory = &queryFields{
 	"message":     &UUIDField{},
 	"namespace":   &StringField{},
 	"description": &StringField{},
+	"ledger":      &UUIDField{},
 	"created":     &TimeField{},
 }

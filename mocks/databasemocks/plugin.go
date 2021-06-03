@@ -652,8 +652,31 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetOrganization provides a mock function with given fields: ctx, identity
-func (_m *Plugin) GetOrganization(ctx context.Context, identity string) (*fftypes.Organization, error) {
+// GetOrganizationByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Organization); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Organization)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganizationByIdentity provides a mock function with given fields: ctx, identity
+func (_m *Plugin) GetOrganizationByIdentity(ctx context.Context, identity string) (*fftypes.Organization, error) {
 	ret := _m.Called(ctx, identity)
 
 	var r0 *fftypes.Organization
@@ -675,13 +698,13 @@ func (_m *Plugin) GetOrganization(ctx context.Context, identity string) (*fftype
 	return r0, r1
 }
 
-// GetOrganizationByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Organization, error) {
-	ret := _m.Called(ctx, id)
+// GetOrganizationByName provides a mock function with given fields: ctx, name
+func (_m *Plugin) GetOrganizationByName(ctx context.Context, name string) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx, name)
 
 	var r0 *fftypes.Organization
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Organization); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Organization); ok {
+		r0 = rf(ctx, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Organization)
@@ -689,8 +712,8 @@ func (_m *Plugin) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (*f
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}

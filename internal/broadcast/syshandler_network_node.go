@@ -37,7 +37,7 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	owner, err := bm.database.GetOrganization(ctx, node.Owner)
+	owner, err := bm.database.GetOrganizationByIdentity(ctx, node.Owner)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -58,6 +58,9 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 	}
 
 	existing, err := bm.database.GetNode(ctx, node.Identity)
+	if err == nil && existing == nil {
+		existing, err = bm.database.GetNodeByID(ctx, node.ID)
+	}
 	if err != nil {
 		return false, err // We only return database errors
 	}

@@ -5,6 +5,7 @@ CREATE TABLE groups (
   message_id     UUID,
   namespace      VARCHAR(64)     NOT NULL,
   description    VARCHAR(4096)   NOT NULL,
+  ledger         UUID,
   created        BIGINT          NOT NULL
 );
 
