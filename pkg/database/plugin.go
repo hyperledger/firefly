@@ -335,6 +335,9 @@ type PeristenceInterface interface {
 
 	// GetConfigRecords - Get config records
 	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, err error)
+
+	// DeleteConfigRecord - Delete config record
+	DeleteConfigRecord(ctx context.Context, key string) (err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core

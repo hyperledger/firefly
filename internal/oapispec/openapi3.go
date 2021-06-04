@@ -30,6 +30,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 func getHost() string {
@@ -230,6 +231,9 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 }
 
 func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
+	if t == reflect.TypeOf(fftypes.Byteable{}) {
+		return reflect.TypeOf(fftypes.Byteable{})
+	}
 	fieldCount := t.NumField()
 	newFields := make([]reflect.StructField, fieldCount)
 	for i := 0; i < fieldCount; i++ {
