@@ -187,20 +187,20 @@ type PeristenceInterface interface {
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
-	// UpsertBlocked - Upsert an offset
-	UpsertBlocked(ctx context.Context, blocked *fftypes.Blocked, allowExisting bool) (err error)
+	// UpsertParked - Upsert an offset
+	UpsertParked(ctx context.Context, parked *fftypes.Parked, allowExisting bool) (err error)
 
-	// UpdateBlocked - Update offset
-	UpdateBlocked(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// UpdateParked - Update offset
+	UpdateParked(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetBlocked - Get an offset by name
-	GetBlockedByContext(ctx context.Context, ns, context string, groupID *fftypes.UUID) (message *fftypes.Blocked, err error)
+	// GetParked - Get an offset by name
+	GetParkedByContext(ctx context.Context, ns, context string, groupID *fftypes.UUID) (message *fftypes.Parked, err error)
 
-	// GetBlocked - Get offsets
-	GetBlocked(ctx context.Context, filter Filter) (offset []*fftypes.Blocked, err error)
+	// GetParked - Get offsets
+	GetParked(ctx context.Context, filter Filter) (offset []*fftypes.Parked, err error)
 
-	// DeleteBlocked - Delete an offset by name
-	DeleteBlocked(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeleteParked - Delete an offset by name
+	DeleteParked(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -337,8 +337,8 @@ var MessageQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
-	"topic":     &StringField{},
-	"context":   &StringField{},
+	"topics":    &FFNameArrayField{},
+	"tags":      &FFNameArrayField{},
 	"group":     &UUIDField{},
 	"created":   &TimeField{},
 	"confirmed": &TimeField{},
@@ -412,7 +412,7 @@ var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"tx":        &UUIDField{},
 	"type":      &StringField{},
-	"recipient": &StringField{},
+	"member":    &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
@@ -424,16 +424,16 @@ var OperationQueryFactory = &queryFields{
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":             &UUIDField{},
-	"namespace":      &StringField{},
-	"name":           &StringField{},
-	"transport":      &StringField{},
-	"events":         &StringField{},
-	"filter.topic":   &StringField{},
-	"filter.context": &StringField{},
-	"filter.group":   &StringField{},
-	"options":        &StringField{},
-	"created":        &TimeField{},
+	"id":            &UUIDField{},
+	"namespace":     &StringField{},
+	"name":          &StringField{},
+	"transport":     &StringField{},
+	"events":        &StringField{},
+	"filter.topics": &StringField{},
+	"filter.tags":   &StringField{},
+	"filter.group":  &StringField{},
+	"options":       &StringField{},
+	"created":       &TimeField{},
 }
 
 // EventQueryFactory filter fields for data events
@@ -446,14 +446,13 @@ var EventQueryFactory = &queryFields{
 	"created":   &TimeField{},
 }
 
-// BlockedQueryFactory filter fields for blocked contexts
-var BlockedQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"context":   &StringField{},
-	"group":     &UUIDField{},
-	"message":   &UUIDField{},
-	"created":   &TimeField{},
+// ParkedQueryFactory filter fields for parked contexts
+var ParkedQueryFactory = &queryFields{
+	"sequence": &Int64Field{},
+	"hash":     &StringField{},
+	"ledger":   &UUIDField{},
+	"batch":    &UUIDField{},
+	"created":  &TimeField{},
 }
 
 // OrganizationQueryFactory filter fields for organizations

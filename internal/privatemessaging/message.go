@@ -51,7 +51,7 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 }
 
 func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) (err error) {
-	// Resolve the recipient list into a group
+	// Resolve the member list into a group
 	if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ type BatchPayload struct {
 }
 
 // Value implements sql.Valuer
-func (ma *BatchPayload) Value() (driver.Value, error) {
+func (ma BatchPayload) Value() (driver.Value, error) {
 	return json.Marshal(&ma)
 }
 

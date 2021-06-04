@@ -47,14 +47,14 @@ type Named interface {
 }
 
 // NewTXOperation creates a new operation for a transaction
-func NewTXOperation(plugin Named, tx *UUID, backendID string, opType OpType, opStatus OpStatus, recipient string) *Operation {
+func NewTXOperation(plugin Named, tx *UUID, backendID string, opType OpType, opStatus OpStatus, member string) *Operation {
 	return &Operation{
 		ID:          NewUUID(),
 		Plugin:      plugin.Name(),
 		BackendID:   backendID,
 		Transaction: tx,
 		Type:        opType,
-		Recipient:   recipient,
+		Member:      member,
 		Status:      opStatus,
 		Created:     Now(),
 	}
@@ -65,7 +65,7 @@ type Operation struct {
 	ID          *UUID      `json:"id"`
 	Transaction *UUID      `json:"tx"`
 	Type        OpType     `json:"type"`
-	Recipient   string     `json:"recipient,omitempty"`
+	Member      string     `json:"member,omitempty"`
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`

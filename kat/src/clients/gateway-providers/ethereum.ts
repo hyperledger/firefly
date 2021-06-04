@@ -206,7 +206,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
 // Payment instance APIs
 
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
-  author: string, recipient: string, amount: number, descriptionHash: string, sync: boolean):
+  author: string, member: string, amount: number, descriptionHash: string, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
@@ -219,7 +219,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        recipient,
+        member,
         amount,
         descriptionHash
       }
@@ -231,7 +231,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
 };
 
 export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, author: string,
-  recipient: string, amount: number, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
+  member: string, amount: number, sync: boolean): Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponseEthereum> => {
   try {
     const response = await axios({
       method: 'post',
@@ -243,7 +243,7 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
       data: {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
         paymentDefinitionID: utils.uuidToHex(paymentDefinitionID),
-        recipient,
+        member,
         amount
       }
     });

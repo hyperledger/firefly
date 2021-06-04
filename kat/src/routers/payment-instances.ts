@@ -69,17 +69,17 @@ router.post('/', async (req, res, next) => {
     if (!utils.isAuthorValid(req.body.author, config.protocol)) {
       throw new RequestError('Missing or invalid payment author', 400);
     }
-    if (!utils.isAuthorValid(req.body.recipient, config.protocol)) {
-      throw new RequestError('Missing or invalid payment recipient', 400);
+    if (!utils.isAuthorValid(req.body.member, config.protocol)) {
+      throw new RequestError('Missing or invalid payment member', 400);
     }
-    if (req.body.author === req.body.recipient) {
-      throw new RequestError('Author and recipient cannot be the same', 400);
+    if (req.body.author === req.body.member) {
+      throw new RequestError('Author and member cannot be the same', 400);
     }
     if (!(Number.isInteger(req.body.amount) && req.body.amount > 0)) {
       throw new RequestError('Missing or invalid payment amount', 400);
     }
     const sync = req.query.sync === 'true';
-    const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.recipient, req.body.description, req.body.amount, req.body.participants, sync);
+    const paymentInstanceID = await paymentInstancesHandler.handleCreatePaymentInstanceRequest(req.body.author, req.body.paymentDefinitionID, req.body.member, req.body.description, req.body.amount, req.body.participants, sync);
     res.send({ status: sync? 'success' : 'submitted', paymentInstanceID });
   } catch (err) {
     next(err);

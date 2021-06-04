@@ -107,7 +107,7 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable) (err error) {
 	l := log.L(ctx)
 
-	// Write it to the dataexchange for each recipient
+	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i, len(nodes))
 

@@ -66,13 +66,13 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.Gte("created", "0"),
 		fb.Neq("created", "0"),
 		fb.Gt("sequence", 12345),
-		fb.Contains("context", "abc"),
-		fb.NotContains("context", "def"),
-		fb.IContains("context", "ghi"),
-		fb.NotIContains("context", "jkl"),
+		fb.Contains("tags", "abc"),
+		fb.NotContains("tags", "def"),
+		fb.IContains("tags", "ghi"),
+		fb.NotIContains("tags", "jkl"),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( context %= 'abc' ) && ( context %! 'def' ) && ( context ^= 'ghi' ) && ( context ^! 'jkl' )", f.String())
+	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( tags %= 'abc' ) && ( tags %! 'def' ) && ( tags ^= 'ghi' ) && ( tags ^! 'jkl' )", f.String())
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
@@ -172,6 +172,17 @@ func TestBuildMessageJSONConvert(t *testing.T) {
 	assert.Equal(t, `( info == null ) && ( info == '{}' ) && ( info == '{}' ) && ( info == '{"some":"value"}' )`, f.String())
 }
 
+func TestBuildFFNameArrayConvert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.Eq("tags", nil),
+		fb.Eq("tags", `test1`),
+		fb.Eq("tags", []byte(`test2`)),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, `( tags == '' ) && ( tags == 'test1' ) && ( tags == 'test2' )`, f.String())
+}
+
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
@@ -240,4 +251,5 @@ func TestStringsForTypes(t *testing.T) {
 	now := fftypes.Now()
 	assert.Equal(t, now.String(), (&timeField{t: now}).String())
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
+	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFNameArray{"t1", "t2"}}).String())
 }

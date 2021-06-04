@@ -239,3 +239,13 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *jsonField) String() string                       { return fmt.Sprintf("%s", f.b) }
 func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }
+
+type FFNameArrayField struct{}
+type ffNameArrayField struct{ na fftypes.FFNameArray }
+
+func (f *ffNameArrayField) Scan(src interface{}) (err error) {
+	return f.na.Scan(src)
+}
+func (f *ffNameArrayField) Value() (driver.Value, error)         { return f.na.String(), nil }
+func (f *ffNameArrayField) String() string                       { return f.na.String() }
+func (f *FFNameArrayField) getSerialization() FieldSerialization { return &ffNameArrayField{} }

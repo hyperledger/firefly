@@ -32,7 +32,7 @@ import (
 )
 
 func TestUpsertE2EWithDB(t *testing.T) {
-	log.SetLevel("debug")
+	log.SetLevel("trace")
 
 	s := newQLTestProvider(t)
 	defer s.Close()
@@ -54,8 +54,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Author:    "0x12345",
 			Created:   fftypes.Now(),
 			Namespace: "ns12345",
-			Topic:     "topic1",
-			Context:   "context1",
+			Topics:    []string{"test1"},
 			Group:     nil,
 			DataHash:  fftypes.NewRandB32(),
 			TX: fftypes.TransactionRef{
@@ -98,8 +97,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Author:    "0x12345",
 			Created:   fftypes.Now(),
 			Namespace: "ns12345",
-			Topic:     "topic1",
-			Context:   "context1",
+			Topics:    []string{"topic1", "topic2"},
+			Tags:      []string{"tag1", "tag2"},
 			Group:     gid,
 			DataHash:  fftypes.NewRandB32(),
 			TX: fftypes.TransactionRef{
@@ -139,7 +138,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Eq("namespace", msgUpdated.Header.Namespace),
 		fb.Eq("type", string(msgUpdated.Header.Type)),
 		fb.Eq("author", msgUpdated.Header.Author),
-		fb.Eq("topic", msgUpdated.Header.Topic),
+		fb.Eq("topics", msgUpdated.Header.Topics),
 		fb.Eq("group", msgUpdated.Header.Group),
 		fb.Eq("cid", msgUpdated.Header.CID),
 		fb.Gt("created", "0"),

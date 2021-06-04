@@ -14,12 +14,12 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// SequencedBroadcastBatch provides a mock function with given fields: batch, signingIdentity, protocolTxID, additionalInfo
-func (_m *Callbacks) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+// BatchPinComplete provides a mock function with given fields: batch, signingIdentity, protocolTxID, additionalInfo
+func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(batch, signingIdentity, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BroadcastBatch, string, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, string, string, fftypes.JSONObject) error); ok {
 		r0 = rf(batch, signingIdentity, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)

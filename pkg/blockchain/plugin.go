@@ -97,19 +97,22 @@ type BatchPin struct {
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload. Nil for private messages
 	BatchPaylodRef *fftypes.Bytes32
 
-	// SequenceHashes is an array of hashes that allow the FireFly runtimes to identify one of the messgages in the batch is the next message for a sequence that involves that node.
+	// SequenceHashes is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
+	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must
+	//
 	// - The primary subject of each hash is a "context"
 	// - The context is a function of:
 	//   - A single topic declared in a message - topics are just a string representing a sequence of events that must be processed in order
 	//   - A ledger - everone with access to this ledger will see these hashes (Fabric channel, Ethereum chain, EEA privacy group, Corda linear ID)
 	//   - A restricted group - if the mesage is private, these are the nodes that are elible to receive a copy of the private message+data
-	// - Each message might choose to include declare topics (and hence attach to multiple contexts)
+	// - Each message might choose to include multiple topics (and hence attach to multiple contexts)
 	//   - This allows multiple contexts to merge - very important in multi-party data matching scenarios
-	// - A batch contains many message, each with one or more topics
-	//   - The array of sequence hashes will cover every unique context
-	// - For private group communications, the context additionally has:
+	// - A batch contains many messages, each with one or more topics
+	//   - The array of sequence hashes will cover every unique context within the batch
+	// - For private group communications, the hash is augmented as follow:
 	//   - The hashes are salted with a UUID that is only passed off chain (the UUID of the Group).
 	//   - The hashes are made unique to the sender
-	//   - The hashes contain a sender specific nonce that is a monotomically increasing number for that sender
+	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
+	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
 	SequenceHashes []*fftypes.Bytes32
 }

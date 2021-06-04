@@ -6,8 +6,8 @@ CREATE TABLE subscriptions (
   name           VARCHAR(64)     NOT NULL,
   transport      VARCHAR(64)     NOT NULL,
   filter_events  VARCHAR(256)    NOT NULL,
-  filter_topic   VARCHAR(256)    NOT NULL,
-  filter_context VARCHAR(256)    NOT NULL,
+  filter_topics  VARCHAR(256)    NOT NULL,
+  filter_tags    VARCHAR(256)    NOT NULL,
   filter_group   VARCHAR(256)    NOT NULL,
   options        JSONB           NOT NULL,
   created        BIGINT          NOT NULL
