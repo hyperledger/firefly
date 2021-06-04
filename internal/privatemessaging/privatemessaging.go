@@ -33,11 +33,12 @@ type PrivateMessaging interface {
 type privateMessaging struct {
 	groupManager
 
-	ctx      context.Context
-	database database.Plugin
-	identity identity.Plugin
-	batch    batch.Manager
-	data     data.Manager
+	ctx          context.Context
+	database     database.Plugin
+	identity     identity.Plugin
+	batch        batch.Manager
+	data         data.Manager
+	nodeIdentity string
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, ba batch.Manager, dm data.Manager) (PrivateMessaging, error) {
@@ -51,6 +52,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 			database: di,
 			data:     dm,
 		},
+		nodeIdentity: config.GetString(config.NodeIdentity),
 	}
 
 	bo := batch.Options{

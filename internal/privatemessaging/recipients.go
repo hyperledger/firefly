@@ -73,12 +73,15 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 		for org != nil && node == nil {
 			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.ID)
 			nodes, err = pm.database.GetNodes(ctx, filter)
-			if err == nil && len(nodes) > 0 {
+			switch {
+			case err == nil && len(nodes) > 0:
 				// This org owns a node
 				node = nodes[0]
-			} else if err == nil && org.Parent != "" {
+			case err == nil && org.Parent != "":
 				// This org has a parent, maybe that org owns a node
 				org, err = pm.database.GetOrganizationByIdentity(ctx, org.Parent)
+			default:
+				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, nodeInput)
 			}
 		}
 	}
@@ -95,6 +98,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	if len(in.Recipients) == 0 {
 		return nil, i18n.NewError(ctx, i18n.MsgGroupMustHaveRecipients)
 	}
+	foundLocal := false
 	recipients = make(fftypes.Recipients, len(in.Recipients))
 	for i, rInput := range in.Recipients {
 		// Resolve the org
@@ -107,10 +111,14 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		if err != nil {
 			return nil, err
 		}
+		foundLocal = foundLocal || node.Identity == pm.nodeIdentity
 		recipients[i] = &fftypes.Recipient{
 			Org:  org.ID,
 			Node: node.ID,
 		}
+	}
+	if !foundLocal {
+		return nil, i18n.NewError(ctx, i18n.MsgOneRecipientLocal)
 	}
 	return recipients, nil
 }

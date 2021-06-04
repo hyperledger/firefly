@@ -16,67 +16,193 @@
 
 package privatemessaging
 
-// func TestBroadcastMessageOk(t *testing.T) {
-// 	bm, cancel := newTestBroadcast(t)
-// 	defer cancel()
-// 	mdi := bm.database.(*databasemocks.Plugin)
-// 	mdm := bm.data.(*datamocks.Manager)
-// 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+import (
+	"context"
+	"fmt"
+	"testing"
 
-// 	ctx := context.Background()
-// 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-// 	rag.RunFn = func(a mock.Arguments) {
-// 		var fn = a[1].(func(context.Context) error)
-// 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-// 	}
-// 	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
-// 	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
-// 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-// 	}, nil)
-// 	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
+	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/datamocks"
+	"github.com/kaleido-io/firefly/mocks/identitymocks"
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
 
-// 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-// 		Message: fftypes.Message{
-// 			Header: fftypes.MessageHeader{
-// 				Author: "0x12345",
-// 			},
-// 		},
-// 		InputData: fftypes.InputData{
-// 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
-// 		},
-// 	})
-// 	assert.NoError(t, err)
-// 	assert.NotNil(t, msg.Data[0].ID)
-// 	assert.NotNil(t, msg.Data[0].Hash)
-// 	assert.Equal(t, "ns1", msg.Header.Namespace)
+func TestSendMessageE2EOk(t *testing.T) {
 
-// 	mdi.AssertExpectations(t)
-// 	mdm.AssertExpectations(t)
-// }
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-// func TestBroadcastMessageBadInput(t *testing.T) {
-// 	bm, cancel := newTestBroadcast(t)
-// 	defer cancel()
-// 	mdi := bm.database.(*databasemocks.Plugin)
-// 	mdm := bm.data.(*datamocks.Manager)
-// 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "localnodeid").Return(&fftypes.Identity{
+		Identifier: "localnodeid",
+		OnChain:    "0x12345",
+	}, nil)
 
-// 	ctx := context.Background()
-// 	mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("0x12345", nil)
-// 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
-// 	rag.RunFn = func(a mock.Arguments) {
-// 		var fn = a[1].(func(context.Context) error)
-// 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-// 	}
-// 	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	dataID := fftypes.NewUUID()
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32()},
+	}, nil)
 
-// 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-// 		InputData: fftypes.InputData{
-// 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
-// 		},
-// 	})
-// 	assert.EqualError(t, err, "pop")
+	mdi := pm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		err := a[1].(func(context.Context) error)(a[0].(context.Context))
+		rag.ReturnArguments = mock.Arguments{err}
+	}
+	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+	}, nil).Once()
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Identity: "org1node"},
+	}, nil).Once()
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{ID: fftypes.NewUUID()},
+	}, nil).Once()
+	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
 
-// 	mdi.AssertExpectations(t)
-// 	mdm.AssertExpectations(t)
-// }
+	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, *dataID, *msg.Data[0].ID)
+
+}
+
+func TestSendMessageBadIdentity(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "localnodeid").Return(nil, fmt.Errorf("pop"))
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.Regexp(t, "FF10206.*pop", err)
+
+}
+
+func TestSendMessageFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "localnodeid").Return(&fftypes.Identity{
+		Identifier: "localnodeid",
+		OnChain:    "0x12345",
+	}, nil)
+
+	dataID := fftypes.NewUUID()
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32()},
+	}, nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestResolveAndSendBadRecipients(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+		InputData: fftypes.InputData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+	})
+	assert.Regexp(t, "FF10219", err)
+
+}
+
+func TestResolveAndSendBadInputData(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+	}, nil).Once()
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{ID: fftypes.NewUUID()},
+	}, nil).Once()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
+		Recipients: []fftypes.RecipientInput{
+			{Org: "localorg"},
+		},
+	})
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestResolveAndSendSealFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+	}, nil).Once()
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{ID: fftypes.NewUUID()},
+	}, nil).Once()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ /* missing */ },
+	}, nil)
+
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
+		Recipients: []fftypes.RecipientInput{
+			{Org: "localorg"},
+		},
+	})
+	assert.Regexp(t, "FF10144", err)
+
+}

@@ -51,6 +51,11 @@ func (h Byteable) Hash() *Bytes32 {
 	return &b32
 }
 
+func (h Byteable) String() string {
+	b, _ := h.MarshalJSON()
+	return string(b)
+}
+
 func (h Byteable) JSONObjectOk() (*JSONObject, bool) {
 	var jo *JSONObject
 	err := json.Unmarshal(h, &jo)
