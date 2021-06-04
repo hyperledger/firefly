@@ -117,15 +117,6 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		op := fftypes.NewTXOperation(
-			bm.blockchain,
-			batch.Payload.TX.ID,
-			"",
-			fftypes.OpTypeBlockchainBatchPin,
-			fftypes.OpStatusFailed,
-			"")
-		op.Error = err.Error()
-		_ = bm.database.UpsertOperation(ctx, op, false)
 		return err
 	}
 

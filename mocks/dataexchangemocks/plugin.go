@@ -93,6 +93,20 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
+// SendMessage provides a mock function with given fields: ctx, opID, node, payload
+func (_m *Plugin) SendMessage(ctx context.Context, opID *fftypes.UUID, node *fftypes.Node, payload fftypes.Byteable) error {
+	ret := _m.Called(ctx, opID, node, payload)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Node, fftypes.Byteable) error); ok {
+		r0 = rf(ctx, opID, node, payload)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Start provides a mock function with given fields:
 func (_m *Plugin) Start() error {
 	ret := _m.Called()

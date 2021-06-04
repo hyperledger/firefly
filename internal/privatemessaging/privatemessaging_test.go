@@ -22,7 +22,9 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
+	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -37,13 +39,15 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
+	mdx := &dataexchangemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
 	mba := &batchmocks.Manager{}
 	mdm := &datamocks.Manager{}
 
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mii, mba, mdm)
+	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm)
 	assert.NoError(t, err)
 
 	return pm.(*privateMessaging), cancel

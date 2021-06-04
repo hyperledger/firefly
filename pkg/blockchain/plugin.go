@@ -47,6 +47,10 @@ type Plugin interface {
 	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
 	SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *BroadcastBatch) (txTrackingID string, err error)
+
+	// SubmitPrivateBatch sequences a broadcast globally to all viewers of the blockchain
+	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
+	SubmitPrivateBatch(ctx context.Context, identity *fftypes.Identity, batch *PrivateBatch) (txTrackingID string, err error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -97,5 +101,20 @@ type BroadcastBatch struct {
 	BatchID *fftypes.UUID
 
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
+	BatchPaylodRef *fftypes.Bytes32
+}
+
+// BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
+// Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members
+// of the network (via a technology like IPFS).
+type PrivateBatch struct {
+
+	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events
+	TransactionID *fftypes.UUID
+
+	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
+	BatchID *fftypes.UUID
+
+	// GroupID is the firefly
 	BatchPaylodRef *fftypes.Bytes32
 }

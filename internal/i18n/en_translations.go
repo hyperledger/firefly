@@ -143,4 +143,5 @@ var (
 	MsgOrgNotFound                 = ffm("FF10223", "Org with name or identity '%s' not found")
 	MsgNodeNotFound                = ffm("FF10224", "Node with name or identity '%s' not found")
 	MsgOneRecipientLocal           = ffm("FF10225", "One recipient must be on the local node", 400)
+	MsgGroupNotFound               = ffm("FF10226", "Group '%s' not found", 404)
 )

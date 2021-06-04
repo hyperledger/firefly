@@ -46,6 +46,10 @@ type Plugin interface {
 
 	// UploadBLOB streams a blob to storage
 	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error
+
+	// SendMessage sends an in-line package of data to another network node.
+	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
+	SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (trackingID string, err error)
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
