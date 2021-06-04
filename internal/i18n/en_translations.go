@@ -142,4 +142,5 @@ var (
 	MsgDuplicateRecipient          = ffm("FF10222", "Recipient %d is a duplicate org+node combination")
 	MsgOrgNotFound                 = ffm("FF10223", "Org with name or identity '%s' not found")
 	MsgNodeNotFound                = ffm("FF10224", "Node with name or identity '%s' not found")
+	MsgOneRecipientLocal           = ffm("FF10225", "One recipient must be on the local node", 400)
 )

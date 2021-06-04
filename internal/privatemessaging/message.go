@@ -41,29 +41,32 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-
-		// Resolve the recipient list into a group
-		if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
-			return err
-		}
-
-		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-		in.Message.Data, err = pm.data.ResolveInputData(ctx, ns, in.InputData)
-		if err != nil {
-			return err
-		}
-
-		// Seal the message
-		if err := in.Message.Seal(ctx); err != nil {
-			return err
-		}
-
-		// Store the message - this asynchronously triggers the next step in process
-		return pm.database.UpsertMessage(ctx, &in.Message, false /* newly generated UUID in Seal */, false)
+		return pm.resolveAndSend(ctx, sender, in)
 	})
 	if err != nil {
 		return nil, err
 	}
 	// The broadcastMessage function modifies the input message to create all the refs
 	return &in.Message, err
+}
+
+func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) (err error) {
+	// Resolve the recipient list into a group
+	if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
+		return err
+	}
+
+	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+	in.Message.Data, err = pm.data.ResolveInputData(ctx, in.Header.Namespace, in.InputData)
+	if err != nil {
+		return err
+	}
+
+	// Seal the message
+	if err := in.Message.Seal(ctx); err != nil {
+		return err
+	}
+
+	// Store the message - this asynchronously triggers the next step in process
+	return pm.database.UpsertMessage(ctx, &in.Message, false /* newly generated UUID in Seal */, false)
 }

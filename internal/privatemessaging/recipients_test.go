@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
@@ -26,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestResolveReceipientListNewGroupE2E(t *testing.T) {
+func TestResolveRecipientListNewGroupE2E(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -36,7 +37,7 @@ func TestResolveReceipientListNewGroupE2E(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 	var dataID *fftypes.UUID
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: orgID}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeID}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeID, Identity: "localnodeid"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, true, false).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
@@ -67,5 +68,193 @@ func TestResolveReceipientListNewGroupE2E(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
 
+}
+
+func TestResolveRecipientListExistingGroup(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{ID: fftypes.NewUUID()},
+	}, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientListGetGroupsFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientListMissingLocalRecipient(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "anothernode"}}, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.Regexp(t, "FF10225", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientListNodeNotFound(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.Regexp(t, "FF10224", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientOrgNameNotFound(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(nil, nil)
+	mdi.On("GetOrganizationByIdentity", pm.ctx, "org1").Return(nil, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.Regexp(t, "FF10223", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientOrgIDNotFound(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByID", pm.ctx, mock.Anything).Return(nil, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: fftypes.NewUUID().String()},
+		},
+	})
+	assert.Regexp(t, "FF10223", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveRecipientNodeOwnedParentOrg(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	orgID := fftypes.NewUUID()
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Parent: "id-org2"}, nil)
+	mdi.On("GetOrganizationByIdentity", pm.ctx, "id-org2").Return(&fftypes.Organization{ID: orgID}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil).Once()
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{ID: fftypes.NewUUID()}}, nil)
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Recipients: []fftypes.RecipientInput{
+			{Org: "org1"},
+		},
+	})
+	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveOrgFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := pm.resolveOrg(pm.ctx, "org1")
+	assert.Regexp(t, "pop", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveNodeFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetNode", pm.ctx, "id-node1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := pm.resolveNode(pm.ctx, &fftypes.Organization{}, "id-node1")
+	assert.Regexp(t, "pop", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveNodeByIDNoResult(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetNodeByID", pm.ctx, mock.Anything).Return(nil, nil)
+
+	_, err := pm.resolveNode(pm.ctx, &fftypes.Organization{}, fftypes.NewUUID().String())
+	assert.Regexp(t, "FF10224", err)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestGetReceipientstEmptyList(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	_, err := pm.getReceipients(pm.ctx, &fftypes.MessageInput{})
+	assert.Regexp(t, "FF10219", err)
 }

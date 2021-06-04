@@ -71,11 +71,11 @@ func (gm *groupManager) GroupInit(ctx context.Context, signer *fftypes.Identity,
 	}
 
 	// Seal the message
-	if err := msg.Seal(ctx); err != nil {
-		return err
+	err = msg.Seal(ctx)
+	if err == nil {
+		// Store the message - this asynchronously triggers the next step in process
+		err = gm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
 	}
-
-	// Store the message - this asynchronously triggers the next step in process
-	return gm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
+	return err
 
 }

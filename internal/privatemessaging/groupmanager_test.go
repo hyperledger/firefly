@@ -17,34 +17,32 @@
 package privatemessaging
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
-	"github.com/kaleido-io/firefly/mocks/datamocks"
-	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
-	config.Reset()
-	config.Set(config.NodeIdentity, "localnodeid")
-	config.Set(config.OrgIdentity, "localorg")
+func TestGroupInitSealFail(t *testing.T) {
 
-	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
-	mba := &batchmocks.Manager{}
-	mdm := &datamocks.Manager{}
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
 
-	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
+	err := pm.GroupInit(pm.ctx, &fftypes.Identity{}, nil)
+	assert.Regexp(t, "FF10137", err)
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mii, mba, mdm)
-	assert.NoError(t, err)
+func TestGroupInitWriteFail(t *testing.T) {
 
-	return pm.(*privateMessaging), cancel
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+
+	err := pm.GroupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	assert.Regexp(t, "pop", err)
 }
