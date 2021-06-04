@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE recipients (
+CREATE TABLE members (
   seq            SERIAL          PRIMARY KEY,
   group_id       UUID            NOT NULL REFERENCES groups(id),
   idx            INT             NOT NULL,
@@ -7,6 +7,6 @@ CREATE TABLE recipients (
   node           UUID            NOT NULL
 );
 
-CREATE INDEX recipients_group ON recipients(group_id);
+CREATE INDEX members_group ON members(group_id);
 
 COMMIT;

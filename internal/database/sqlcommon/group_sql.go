@@ -99,18 +99,18 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 
 	}
 
-	if err = s.updateRecipients(ctx, tx, group, existing); err != nil {
+	if err = s.updateMembers(ctx, tx, group, existing); err != nil {
 		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *fftypes.Group, existing bool) error {
+func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fftypes.Group, existing bool) error {
 
 	if existing {
 		if err := s.deleteTx(ctx, tx,
-			sq.Delete("recipients").
+			sq.Delete("members").
 				Where(sq.And{
 					sq.Eq{"group_id": group.ID},
 				}),
@@ -120,15 +120,15 @@ func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *
 	}
 
 	// Run through the ones in the group, finding ones that already exist, and ones that need to be created
-	for requiredIdx, requiredRecipient := range group.Recipients {
-		if requiredRecipient == nil || requiredRecipient.Org == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientOrg, requiredIdx)
+	for requiredIdx, requiredMember := range group.Members {
+		if requiredMember == nil || requiredMember.Org == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberOrg, requiredIdx)
 		}
-		if requiredRecipient.Node == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientNode, requiredIdx)
+		if requiredMember.Node == nil {
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberNode, requiredIdx)
 		}
 		if _, err := s.insertTx(ctx, tx,
-			sq.Insert("recipients").
+			sq.Insert("members").
 				Columns(
 					"group_id",
 					"org",
@@ -137,8 +137,8 @@ func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *
 				).
 				Values(
 					group.ID,
-					requiredRecipient.Org,
-					requiredRecipient.Node,
+					requiredMember.Org,
+					requiredMember.Node,
 					requiredIdx,
 				),
 		); err != nil {
@@ -150,7 +150,7 @@ func (s *SQLCommon) updateRecipients(ctx context.Context, tx *txWrapper, group *
 
 }
 
-func (s *SQLCommon) loadRecipients(ctx context.Context, groups []*fftypes.Group) error {
+func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) error {
 
 	groupIDs := make([]string, len(groups))
 	for i, m := range groups {
@@ -159,39 +159,39 @@ func (s *SQLCommon) loadRecipients(ctx context.Context, groups []*fftypes.Group)
 		}
 	}
 
-	recipients, err := s.query(ctx,
+	members, err := s.query(ctx,
 		sq.Select(
 			"group_id",
 			"org",
 			"node",
 			"idx",
 		).
-			From("recipients").
+			From("members").
 			Where(sq.Eq{"group_id": groupIDs}).
 			OrderBy("idx"),
 	)
 	if err != nil {
 		return err
 	}
-	defer recipients.Close()
+	defer members.Close()
 
-	for recipients.Next() {
+	for members.Next() {
 		var groupID fftypes.UUID
-		recipient := &fftypes.Recipient{}
+		member := &fftypes.Member{}
 		var idx int
-		if err = recipients.Scan(&groupID, &recipient.Org, &recipient.Node, &idx); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "recipients")
+		if err = members.Scan(&groupID, &member.Org, &member.Node, &idx); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "members")
 		}
 		for _, g := range groups {
 			if *g.ID == groupID {
-				g.Recipients = append(g.Recipients, recipient)
+				g.Members = append(g.Members, member)
 			}
 		}
 	}
 	// Ensure we return an empty array if no entries, and a consistent order for the data
 	for _, g := range groups {
-		if g.Recipients == nil {
-			g.Recipients = fftypes.Recipients{}
+		if g.Members == nil {
+			g.Members = fftypes.Members{}
 		}
 	}
 
@@ -238,7 +238,7 @@ func (s *SQLCommon) GetGroupByID(ctx context.Context, id *fftypes.UUID) (group *
 	}
 
 	rows.Close()
-	if err = s.loadRecipients(ctx, []*fftypes.Group{group}); err != nil {
+	if err = s.loadMembers(ctx, []*fftypes.Group{group}); err != nil {
 		return nil, err
 	}
 
@@ -263,7 +263,7 @@ func (s *SQLCommon) getGroupsQuery(ctx context.Context, query sq.SelectBuilder) 
 
 	rows.Close()
 	if len(groups) > 0 {
-		if err = s.loadRecipients(ctx, groups); err != nil {
+		if err = s.loadMembers(ctx, groups); err != nil {
 			return nil, err
 		}
 	}

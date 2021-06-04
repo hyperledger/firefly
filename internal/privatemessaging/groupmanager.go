@@ -113,9 +113,9 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupID *fftypes.UUID
 
 	// We de-duplicate nodes in the case that the payload needs to be received by multiple org identities
 	// that share a single node.
-	nodes := make([]*fftypes.Node, 0, len(group.Recipients))
+	nodes := make([]*fftypes.Node, 0, len(group.Members))
 	knownIDs := make(map[fftypes.UUID]bool)
-	for _, r := range group.Recipients {
+	for _, r := range group.Members {
 		node, err := gm.database.GetNodeByID(ctx, r.Node)
 		if err != nil {
 			return nil, err

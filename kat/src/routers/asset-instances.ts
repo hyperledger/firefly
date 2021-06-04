@@ -119,10 +119,10 @@ router.put('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
         res.send({ status: sync ? 'success' : 'submitted' });
         break;
       case 'push':
-        if (!req.body.recipientAddress) {
-          throw new RequestError('Missing recipient address', 400);
+        if (!req.body.memberAddress) {
+          throw new RequestError('Missing member address', 400);
         }
-        await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.recipientAddress);
+        await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.memberAddress);
         res.send({ status: 'success' });
         break;
       default:
@@ -147,10 +147,10 @@ router.patch('/:assetDefinitionID/:assetInstanceID', async (req, res, next) => {
 
 router.post('/:assetDefinitionID/:assetInstanceID/push', async (req, res, next) => {
   try {
-    if (!req.body.recipientAddress) {
-      throw new RequestError('Missing recipient address', 400);
+    if (!req.body.memberAddress) {
+      throw new RequestError('Missing member address', 400);
     }
-    await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.recipientAddress);
+    await assetInstancesHandler.handlePushPrivateAssetInstanceRequest(req.params.assetDefinitionID, req.params.assetInstanceID, req.body.memberAddress);
     res.send({ status: 'success' });
   } catch (err) {
     next(err);

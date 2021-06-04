@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestResolveRecipientListNewGroupE2E(t *testing.T) {
+func TestResolveMemberListNewGroupE2E(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -47,9 +47,9 @@ func TestResolveRecipientListNewGroupE2E(t *testing.T) {
 		var group fftypes.Group
 		err := json.Unmarshal(data.Value, &group)
 		assert.NoError(t, err)
-		assert.Len(t, group.Recipients, 1)
-		assert.Equal(t, *orgID, *group.Recipients[0].Org)
-		assert.Equal(t, *nodeID, *group.Recipients[0].Node)
+		assert.Len(t, group.Members, 1)
+		assert.Equal(t, *orgID, *group.Members[0].Org)
+		assert.Equal(t, *nodeID, *group.Members[0].Node)
 		assert.Nil(t, group.Ledger)
 		dataID = data.ID
 	}
@@ -63,7 +63,7 @@ func TestResolveRecipientListNewGroupE2E(t *testing.T) {
 	}
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -72,7 +72,7 @@ func TestResolveRecipientListNewGroupE2E(t *testing.T) {
 
 }
 
-func TestResolveRecipientListExistingGroup(t *testing.T) {
+func TestResolveMemberListExistingGroup(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -85,7 +85,7 @@ func TestResolveRecipientListExistingGroup(t *testing.T) {
 	}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -94,7 +94,7 @@ func TestResolveRecipientListExistingGroup(t *testing.T) {
 
 }
 
-func TestResolveRecipientListGetGroupsFail(t *testing.T) {
+func TestResolveMemberListGetGroupsFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -105,7 +105,7 @@ func TestResolveRecipientListGetGroupsFail(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -114,7 +114,7 @@ func TestResolveRecipientListGetGroupsFail(t *testing.T) {
 
 }
 
-func TestResolveRecipientListMissingLocalRecipient(t *testing.T) {
+func TestResolveMemberListMissingLocalMember(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -124,7 +124,7 @@ func TestResolveRecipientListMissingLocalRecipient(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "anothernode"}}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -133,7 +133,7 @@ func TestResolveRecipientListMissingLocalRecipient(t *testing.T) {
 
 }
 
-func TestResolveRecipientListNodeNotFound(t *testing.T) {
+func TestResolveMemberListNodeNotFound(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -143,7 +143,7 @@ func TestResolveRecipientListNodeNotFound(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -152,7 +152,7 @@ func TestResolveRecipientListNodeNotFound(t *testing.T) {
 
 }
 
-func TestResolveRecipientOrgNameNotFound(t *testing.T) {
+func TestResolveMemberOrgNameNotFound(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -162,7 +162,7 @@ func TestResolveRecipientOrgNameNotFound(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", pm.ctx, "org1").Return(nil, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -171,7 +171,7 @@ func TestResolveRecipientOrgNameNotFound(t *testing.T) {
 
 }
 
-func TestResolveRecipientOrgIDNotFound(t *testing.T) {
+func TestResolveMemberOrgIDNotFound(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -180,7 +180,7 @@ func TestResolveRecipientOrgIDNotFound(t *testing.T) {
 	mdi.On("GetOrganizationByID", pm.ctx, mock.Anything).Return(nil, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: fftypes.NewUUID().String()},
 		},
 	})
@@ -189,7 +189,7 @@ func TestResolveRecipientOrgIDNotFound(t *testing.T) {
 
 }
 
-func TestResolveRecipientNodeOwnedParentOrg(t *testing.T) {
+func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -203,7 +203,7 @@ func TestResolveRecipientNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{ID: fftypes.NewUUID()}}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})

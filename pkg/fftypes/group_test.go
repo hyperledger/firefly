@@ -42,30 +42,30 @@ func TestGroupValidation(t *testing.T) {
 		Namespace:   "ok",
 		Description: "ok",
 	}
-	assert.Regexp(t, "FF10219.*recipient", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10219.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
-		Recipients: Recipients{
+		Members: Members{
 			{Node: NewUUID()},
 		},
 	}
-	assert.Regexp(t, "FF10220.*recipient", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10220.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
-		Recipients: Recipients{
+		Members: Members{
 			{Org: NewUUID()},
 		},
 	}
-	assert.Regexp(t, "FF10221.*recipient", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF10221.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
-		Recipients: Recipients{
+		Members: Members{
 			{Org: NewUUID(), Node: NewUUID()},
 		},
 	}
@@ -76,7 +76,7 @@ func TestGroupValidation(t *testing.T) {
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
-		Recipients: Recipients{
+		Members: Members{
 			{ /* blank */ },
 		},
 	}
@@ -87,17 +87,17 @@ func TestGroupValidation(t *testing.T) {
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
-		Recipients: Recipients{
+		Members: Members{
 			{Node: nodeID, Org: orgID},
 			{Node: nodeID, Org: orgID},
 		},
 	}
 	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
 
-	group.Recipients = Recipients{
+	group.Members = Members{
 		{Node: nodeID, Org: orgID},
 	}
-	b, _ := json.Marshal(&group.Recipients)
+	b, _ := json.Marshal(&group.Members)
 	assert.Equal(t, `[{"org":"a53fb8cc-ab22-4eed-ad21-eb104eb85902","node":"8b5c0d39-925f-4579-9c60-54f3e846ab99"}]`, string(b))
 	group.Seal()
 	assert.Equal(t, "9445512b117f19a45ef650e80e173d0ff6ab30769d9f4ace4190b44e110c24bf", group.Hash.String())

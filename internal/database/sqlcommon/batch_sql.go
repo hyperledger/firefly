@@ -33,7 +33,7 @@ var (
 		"btype",
 		"namespace",
 		"author",
-		"group",
+		"group_id",
 		"created",
 		"hash",
 		"payload",
@@ -91,7 +91,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
-				Set("group", batch.Group).
+				Set("group_id", batch.Group).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("payload", batch.Payload).

@@ -26,29 +26,29 @@ import (
 )
 
 type Group struct {
-	ID          *UUID      `json:"id"`
-	Message     *UUID      `json:"message,omitempty"`
-	Namespace   string     `json:"namespace,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Ledger      *UUID      `json:"ledger,omitempty"`
-	Hash        *Bytes32   `json:"hash,omitempty"`
-	Created     *FFTime    `json:"created,omitempty"`
-	Recipients  Recipients `json:"recipients"`
+	ID          *UUID    `json:"id"`
+	Message     *UUID    `json:"message,omitempty"`
+	Namespace   string   `json:"namespace,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Ledger      *UUID    `json:"ledger,omitempty"`
+	Hash        *Bytes32 `json:"hash,omitempty"`
+	Created     *FFTime  `json:"created,omitempty"`
+	Members     Members  `json:"members"`
 }
 
-type Recipients []*Recipient
+type Members []*Member
 
-type Recipient struct {
+type Member struct {
 	Org  *UUID `json:"org,omitempty"`
 	Node *UUID `json:"node,omitempty"`
 }
 
-type RecipientInput struct {
+type MemberInput struct {
 	Org  string `json:"org,omitempty"`
 	Node string `json:"node,omitempty"`
 }
 
-func (r *Recipients) Hash() *Bytes32 {
+func (r *Members) Hash() *Bytes32 {
 	b, _ := json.Marshal(&r)
 	hash := Bytes32(sha256.Sum256(b))
 	return &hash
@@ -61,20 +61,20 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 	if err = ValidateLength(ctx, group.Description, "description", 4096); err != nil {
 		return err
 	}
-	if len(group.Recipients) == 0 {
-		return i18n.NewError(ctx, i18n.MsgGroupMustHaveRecipients)
+	if len(group.Members) == 0 {
+		return i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)
 	}
 	dupCheck := make(map[string]bool)
-	for i, r := range group.Recipients {
+	for i, r := range group.Members {
 		if r.Org == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientOrg, i)
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberOrg, i)
 		}
 		if r.Node == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyRecipientNode, i)
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberNode, i)
 		}
 		key := fmt.Sprintf("%s:%s", r.Org, r.Node)
 		if dupCheck[key] {
-			return i18n.NewError(ctx, i18n.MsgDuplicateRecipient, i)
+			return i18n.NewError(ctx, i18n.MsgDuplicateMember, i)
 		}
 		dupCheck[key] = true
 	}
@@ -87,7 +87,7 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (group *Group) Seal() {
-	group.Hash = group.Recipients.Hash()
+	group.Hash = group.Members.Hash()
 }
 
 func (group *Group) Context() string {

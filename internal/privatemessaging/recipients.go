@@ -94,13 +94,13 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	return node, nil
 }
 
-func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (recipients fftypes.Recipients, err error) {
-	if len(in.Recipients) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgGroupMustHaveRecipients)
+func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (members fftypes.Members, err error) {
+	if len(in.Members) == 0 {
+		return nil, i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)
 	}
 	foundLocal := false
-	recipients = make(fftypes.Recipients, len(in.Recipients))
-	for i, rInput := range in.Recipients {
+	members = make(fftypes.Members, len(in.Members))
+	for i, rInput := range in.Members {
 		// Resolve the org
 		org, err := pm.resolveOrg(ctx, rInput.Org)
 		if err != nil {
@@ -112,24 +112,24 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 			return nil, err
 		}
 		foundLocal = foundLocal || node.Identity == pm.nodeIdentity
-		recipients[i] = &fftypes.Recipient{
+		members[i] = &fftypes.Member{
 			Org:  org.ID,
 			Node: node.ID,
 		}
 	}
 	if !foundLocal {
-		return nil, i18n.NewError(ctx, i18n.MsgOneRecipientLocal)
+		return nil, i18n.NewError(ctx, i18n.MsgOneMemberLocal)
 	}
-	return recipients, nil
+	return members, nil
 }
 
 func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInput) (group *fftypes.Group, isNew bool, err error) {
-	recipients, err := pm.getReceipients(ctx, in)
+	members, err := pm.getReceipients(ctx, in)
 	if err != nil {
 		return nil, false, err
 	}
 	fb := database.GroupQueryFactory.NewFilterLimit(ctx, 1)
-	hash := recipients.Hash()
+	hash := members.Hash()
 	filter := fb.And(
 		fb.Eq("namespace", in.Header.Namespace),
 		fb.Eq("ledger", in.Ledger),
@@ -146,12 +146,12 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	// Generate a new group on the fly here.
 	// It will need to be sent to the group ahead of the message the user is trying to send.
 	group = &fftypes.Group{
-		ID:         fftypes.NewUUID(),
-		Namespace:  in.Header.Namespace,
-		Ledger:     in.Ledger,
-		Hash:       hash,
-		Recipients: recipients,
-		Created:    fftypes.Now(),
+		ID:        fftypes.NewUUID(),
+		Namespace: in.Header.Namespace,
+		Ledger:    in.Ledger,
+		Hash:      hash,
+		Members:   members,
+		Created:   fftypes.Now(),
 	}
 	return group, true, nil
 }

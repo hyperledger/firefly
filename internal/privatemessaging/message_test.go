@@ -73,7 +73,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -94,7 +94,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -125,7 +125,7 @@ func TestSendMessageFail(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "org1"},
 		},
 	})
@@ -133,7 +133,7 @@ func TestSendMessageFail(t *testing.T) {
 
 }
 
-func TestResolveAndSendBadRecipients(t *testing.T) {
+func TestResolveAndSendBadMembers(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -168,7 +168,7 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 
 	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "localorg"},
 		},
 	})
@@ -199,7 +199,7 @@ func TestResolveAndSendSealFail(t *testing.T) {
 
 	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Recipients: []fftypes.RecipientInput{
+		Members: []fftypes.MemberInput{
 			{Org: "localorg"},
 		},
 	})

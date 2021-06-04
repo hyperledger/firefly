@@ -24,6 +24,11 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+const (
+	// DefaultTopic will be set as the topic of any messages set without a topic
+	DefaultTopic = "default"
+)
+
 // MessageType is the fundamental type of a message
 type MessageType = LowerCasedType
 
@@ -48,9 +53,9 @@ type MessageHeader struct {
 	Author    string         `json:"author,omitempty"`
 	Created   *FFTime        `json:"created,omitempty"`
 	Namespace string         `json:"namespace,omitempty"`
-	Topic     string         `json:"topic,omitempty"`
-	Context   string         `json:"context,omitempty"`
 	Group     *UUID          `json:"group,omitempty"`
+	Topics    FFNameArray    `json:"topic,omitempty"`
+	Tags      FFNameArray    `json:"tags,omitempty"`
 	DataHash  *Bytes32       `json:"datahash,omitempty"`
 }
 
@@ -61,18 +66,23 @@ type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *UUID         `json:"batchID,omitempty"`
-	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
+	Sequence  int64         `json:"_"` // Local database sequence used internally for batch assembly
 }
 
 // MessageInput allows API users to submit values in-line in the payload submitted, which
 // will be broken out and stored separately during the call.
 type MessageInput struct {
 	Message
-	InputData  InputData        `json:"data"`
-	Ledger     *UUID            `json:"ledger,omitempty"`
-	Recipients []RecipientInput `json:"recipients"`
+	InputData InputData  `json:"data"`
+	Group     InputGroup `json:"group"`
+}
+
+// InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
+type InputGroup struct {
+	Ledger  *UUID         `json:"ledger,omitempty"`
+	Members []MemberInput `json:"members"`
 }
 
 // InputData is an array of data references or values
@@ -102,6 +112,9 @@ func (h *MessageHeader) Hash() *Bytes32 {
 }
 
 func (m *Message) Seal(ctx context.Context) (err error) {
+	if len(m.Header.Topics) == 0 {
+		m.Header.Topics = []string{DefaultTopic}
+	}
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -136,6 +149,12 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 }
 
 func (m *Message) Verify(ctx context.Context) error {
+	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
+		return err
+	}
+	if err := m.Header.Tags.Validate(ctx, "header.tags"); err != nil {
+		return err
+	}
 	err := m.DupDataCheck(ctx)
 	if err != nil {
 		return err
