@@ -34,7 +34,7 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 
 	// If the group is new, we need to do a group initialization, before we send the message itself
 	if isNew {
-		return pm.groupManager.GroupInit(ctx, sender, group)
+		return pm.groupManager.groupInit(ctx, sender, group)
 	}
 	return nil
 }

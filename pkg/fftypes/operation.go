@@ -25,7 +25,9 @@ const (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
 	OpTypeBlockchainBatchPin OpType = "blockchain_batch_pin"
 	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
-	OpTypePublicStorageBatchBroadcast OpType = "public_storage_batch_broadcast"
+	OpTypePublicStorageBatchBroadcast OpType = "publicstorage_batch_broadcast"
+	// OpTypeDataExchangeBatchSend is a private send
+	OpTypeDataExchangeBatchSend OpType = "dataexchange_batch_send"
 )
 
 // OpStatus is the current status of an operation

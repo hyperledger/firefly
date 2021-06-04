@@ -31,7 +31,7 @@ func TestGroupInitSealFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.GroupInit(pm.ctx, &fftypes.Identity{}, nil)
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, nil)
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -43,6 +43,6 @@ func TestGroupInitWriteFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := pm.GroupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
 	assert.Regexp(t, "pop", err)
 }

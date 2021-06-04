@@ -120,6 +120,10 @@ var (
 	EventDispatcherRetryInitDelay = rootKey("event.dispatcher.retry.initDelay")
 	// EventDispatcherRetryMaxDelay he maximum delay to use for retry of data base operations
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
+	// GroupCacheSize cache size for private group addresses
+	GroupCacheSize = rootKey("group.cache.size")
+	// GroupCacheTTL cache time-to-live for private group addresses
+	GroupCacheTTL = rootKey("group.cache.ttl")
 	// HttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
 	HTTPAddress = rootKey("http.address")
 	// HttpPort the local port to listen on for HTTP/Websocket connections
@@ -255,6 +259,8 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
+	viper.SetDefault(string(GroupCacheSize), "1Mb")
+	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(HTTPAddress), "127.0.0.1")
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")
