@@ -1,7 +1,7 @@
 VGO=go
 BINARY_NAME=firefly
 GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
-MOCKERY=mockery
+MOCKERY=$(shell go list -f '{{.Target}}' github.com/vektra/mockery/cmd/mockery)
 # Expect that FireFly compiles with CGO disabled
 CGO_ENABLED=0
 GOGC=30
