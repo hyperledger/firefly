@@ -29,11 +29,11 @@ import (
 
 var (
 	configRecordColumns = []string{
-		"key",
-		"value",
+		"config_key",
+		"config_value",
 	}
 	configRecordFilterTypeMap = map[string]string{
-		"key": "string",
+		"config_key": "string",
 	}
 )
 
@@ -48,22 +48,23 @@ func (s *SQLCommon) UpsertConfigRecord(ctx context.Context, configRecord *fftype
 	if allowExisting {
 		// Do a select within the transaction to determine if the key already exists
 		configRows, err := s.queryTx(ctx, tx,
-			sq.Select("key").
+			sq.Select("config_key").
 				From("config").
-				Where(sq.Eq{"key": configRecord.Key}),
+				Where(sq.Eq{"config_key": configRecord.Key}),
 		)
 		if err != nil {
 			return err
 		}
 		existing = configRows.Next()
+		configRows.Close()
 	}
 
 	if existing {
 		// Update the config record
 		if err = s.updateTx(ctx, tx,
 			sq.Update("config").
-				Set("value", configRecord.Value).
-				Where(sq.Eq{"key": configRecord.Key}),
+				Set("config_value", configRecord.Value).
+				Where(sq.Eq{"config_key": configRecord.Key}),
 		); err != nil {
 			return err
 		}
@@ -96,11 +97,10 @@ func (s *SQLCommon) configRecordResult(ctx context.Context, row *sql.Rows) (*fft
 }
 
 func (s *SQLCommon) GetConfigRecord(ctx context.Context, key string) (result *fftypes.ConfigRecord, err error) {
-
 	rows, err := s.query(ctx,
 		sq.Select(configRecordColumns...).
 			From("config").
-			Where(sq.Eq{"key": key}),
+			Where(sq.Eq{"config_key": key}),
 	)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,6 @@ func (s *SQLCommon) GetConfigRecord(ctx context.Context, key string) (result *ff
 }
 
 func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter) (result []*fftypes.ConfigRecord, err error) {
-
 	query, err := s.filterSelect(ctx, "", sq.Select(configRecordColumns...).From("config"), filter, configRecordFilterTypeMap)
 	if err != nil {
 		return nil, err
@@ -147,7 +146,6 @@ func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter
 }
 
 func (s *SQLCommon) UpdateConfigRecord(ctx context.Context, key string, update database.Update) (err error) {
-
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -158,9 +156,26 @@ func (s *SQLCommon) UpdateConfigRecord(ctx context.Context, key string, update d
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"key": key})
+	query = query.Where(sq.Eq{"config_key": key})
 
 	err = s.updateTx(ctx, tx, query)
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeleteConfigRecord(ctx context.Context, key string) (err error) {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("config").Where(sq.Eq{
+		"config_key": key,
+	}))
 	if err != nil {
 		return err
 	}

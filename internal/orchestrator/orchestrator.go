@@ -95,6 +95,7 @@ type Orchestrator interface {
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
 	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error)
 	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)
+	DeleteConfigRecord(ctx context.Context, key string) (err error)
 }
 
 type orchestrator struct {

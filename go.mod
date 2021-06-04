@@ -71,6 +71,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tommy-muehle/go-mnd v1.1.1 // indirect
 	github.com/ugorji/go v1.1.4 // indirect
+	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect

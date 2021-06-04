@@ -35,6 +35,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// This is a test
 var sigs = make(chan os.Signal, 1)
 
 var rootCmd = &cobra.Command{

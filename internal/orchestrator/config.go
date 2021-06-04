@@ -41,3 +41,7 @@ func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value f
 	}
 	return value, nil
 }
+
+func (or *orchestrator) DeleteConfigRecord(ctx context.Context, key string) (err error) {
+	return or.database.DeleteConfigRecord(ctx, key)
+}
