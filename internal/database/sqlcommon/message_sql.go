@@ -37,7 +37,7 @@ var (
 		"created",
 		"namespace",
 		"topics",
-		"tags",
+		"tag",
 		"group_id",
 		"datahash",
 		"hash",
@@ -98,7 +98,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				Set("created", message.Header.Created).
 				Set("namespace", message.Header.Namespace).
 				Set("topics", message.Header.Topics).
-				Set("tags", message.Header.Tags).
+				Set("tag", message.Header.Tag).
 				Set("group_id", message.Header.Group).
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
@@ -122,7 +122,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 					message.Header.Created,
 					message.Header.Namespace,
 					message.Header.Topics,
-					message.Header.Tags,
+					message.Header.Tag,
 					message.Header.Group,
 					message.Header.DataHash,
 					message.Hash,
@@ -261,7 +261,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.Created,
 		&msg.Header.Namespace,
 		&msg.Header.Topics,
-		&msg.Header.Tags,
+		&msg.Header.Tag,
 		&msg.Header.Group,
 		&msg.Header.DataHash,
 		&msg.Hash,

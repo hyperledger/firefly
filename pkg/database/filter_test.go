@@ -66,13 +66,13 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.Gte("created", "0"),
 		fb.Neq("created", "0"),
 		fb.Gt("sequence", 12345),
-		fb.Contains("tags", "abc"),
-		fb.NotContains("tags", "def"),
-		fb.IContains("tags", "ghi"),
-		fb.NotIContains("tags", "jkl"),
+		fb.Contains("topics", "abc"),
+		fb.NotContains("topics", "def"),
+		fb.IContains("topics", "ghi"),
+		fb.NotIContains("topics", "jkl"),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( tags %= 'abc' ) && ( tags %! 'def' ) && ( tags ^= 'ghi' ) && ( tags ^! 'jkl' )", f.String())
+	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( topics %= 'abc' ) && ( topics %! 'def' ) && ( topics ^= 'ghi' ) && ( topics ^! 'jkl' )", f.String())
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
@@ -175,12 +175,12 @@ func TestBuildMessageJSONConvert(t *testing.T) {
 func TestBuildFFNameArrayConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
-		fb.Eq("tags", nil),
-		fb.Eq("tags", `test1`),
-		fb.Eq("tags", []byte(`test2`)),
+		fb.Eq("topics", nil),
+		fb.Eq("topics", `test1`),
+		fb.Eq("topics", []byte(`test2`)),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, `( tags == '' ) && ( tags == 'test1' ) && ( tags == 'test2' )`, f.String())
+	assert.Equal(t, `( topics == '' ) && ( topics == 'test1' ) && ( topics == 'test2' )`, f.String())
 }
 
 func TestBuildMessageFailStringConvert(t *testing.T) {

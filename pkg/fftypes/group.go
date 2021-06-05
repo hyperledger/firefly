@@ -90,7 +90,7 @@ func (group *Group) Seal() {
 	group.Hash = group.Members.Hash()
 }
 
-func (group *Group) Context() string {
+func (group *Group) Topic() string {
 	return fmt.Sprintf("ff-grp-%s", group.ID)
 }
 

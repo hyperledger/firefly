@@ -44,5 +44,5 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	if err != nil {
 		return nil, err
 	}
-	return bm.broadcastDefinitionAsNode(ctx, datatype, datatype.Namespace, fftypes.SystemTopicDefineDatatype)
+	return bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype)
 }

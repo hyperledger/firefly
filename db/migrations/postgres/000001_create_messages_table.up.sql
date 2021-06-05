@@ -10,7 +10,7 @@ CREATE TABLE messages (
   created     BIGINT          NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   topics      VARCHAR(1024)   NOT NULL,
-  tags        VARCHAR(1024)   NOT NULL,
+  tag         VARCHAR(64)     NOT NULL,
   group_id    UUID,
   datahash    CHAR(64)        NOT NULL,
   hash        CHAR(64)        NOT NULL,

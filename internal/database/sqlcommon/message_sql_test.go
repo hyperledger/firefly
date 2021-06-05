@@ -98,7 +98,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Created:   fftypes.Now(),
 			Namespace: "ns12345",
 			Topics:    []string{"topic1", "topic2"},
-			Tags:      []string{"tag1", "tag2"},
+			Tag:       "tag1",
 			Group:     gid,
 			DataHash:  fftypes.NewRandB32(),
 			TX: fftypes.TransactionRef{

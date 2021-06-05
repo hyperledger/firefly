@@ -36,7 +36,7 @@ var (
 		"transport",
 		"filter_events",
 		"filter_topics",
-		"filter_tags",
+		"filter_tag",
 		"filter_group",
 		"options",
 		"created",
@@ -44,7 +44,7 @@ var (
 	subscriptionFilterTypeMap = map[string]string{
 		"filter.events": "filter_events",
 		"filter.topics": "filter_topics",
-		"filter.tags":   "filter_tags",
+		"filter.tag":    "filter_tag",
 		"filter.group":  "filter_group",
 	}
 )
@@ -96,7 +96,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 				Set("transport", subscription.Transport).
 				Set("filter_events", subscription.Filter.Events).
 				Set("filter_topics", subscription.Filter.Topics).
-				Set("filter_tags", subscription.Filter.Tags).
+				Set("filter_tag", subscription.Filter.Tag).
 				Set("filter_group", subscription.Filter.Group).
 				Set("options", subscription.Options).
 				Set("created", subscription.Created).
@@ -122,7 +122,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.Transport,
 					subscription.Filter.Events,
 					subscription.Filter.Topics,
-					subscription.Filter.Tags,
+					subscription.Filter.Tag,
 					subscription.Filter.Group,
 					subscription.Options,
 					subscription.Created,
@@ -149,7 +149,7 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.Transport,
 		&subscription.Filter.Events,
 		&subscription.Filter.Topics,
-		&subscription.Filter.Tags,
+		&subscription.Filter.Tag,
 		&subscription.Filter.Group,
 		&subscription.Options,
 		&subscription.Created,

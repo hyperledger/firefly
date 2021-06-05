@@ -75,10 +75,10 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 		fb.Gte("created", "0"),
 		fb.Neq("created", "0"),
 		fb.Gt("sequence", 12345),
-		fb.Contains("tags", "abc"),
-		fb.NotContains("tags", "def"),
-		fb.IContains("tags", "ghi"),
-		fb.NotIContains("tags", "jkl"),
+		fb.Contains("topics", "abc"),
+		fb.NotContains("topics", "def"),
+		fb.IContains("topics", "ghi"),
+		fb.NotIContains("topics", "jkl"),
 	)
 
 	sel := squirrel.Select("*").From("mytable AS mt")
@@ -87,7 +87,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 
 	sqlFilter, _, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.created NOT IN (?,?,?) AND mt.id = ? AND mt.id IN (?) AND mt.id IS NOT NULL AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.tags LIKE ? AND mt.tags NOT LIKE ? AND mt.tags ILIKE ? AND mt.tags NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable AS mt WHERE (mt.created IN (?,?,?) AND mt.created NOT IN (?,?,?) AND mt.id = ? AND mt.id IN (?) AND mt.id IS NOT NULL AND mt.created < ? AND mt.created <= ? AND mt.created >= ? AND mt.created <> ? AND mt.seq > ? AND mt.topics LIKE ? AND mt.topics NOT LIKE ? AND mt.topics ILIKE ? AND mt.topics NOT ILIKE ?) ORDER BY mt.seq DESC", sqlFilter)
 }
 
 func TestSQLQueryFactoryFinalizeFail(t *testing.T) {

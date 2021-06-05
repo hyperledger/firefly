@@ -61,12 +61,12 @@ func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func namespaceContext(ns string) string {
+func namespaceTopic(ns string) string {
 	return fmt.Sprintf("ff-ns-%s", ns)
 }
 
-func (ns *Namespace) Context() string {
-	return namespaceContext(ns.Name)
+func (ns *Namespace) Topic() string {
+	return namespaceTopic(ns.Name)
 }
 
 func (ns *Namespace) SetBroadcastMessage(msgID *UUID) {

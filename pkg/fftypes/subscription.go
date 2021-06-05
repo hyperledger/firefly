@@ -28,7 +28,7 @@ import (
 type SubscriptionFilter struct {
 	Events string `json:"events,omitempty"`
 	Topics string `json:"topics,omitempty"`
-	Tags   string `json:"tags,omitempty"`
+	Tag    string `json:"tag,omitempty"`
 	Group  string `json:"group,omitempty"`
 }
 

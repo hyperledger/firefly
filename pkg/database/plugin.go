@@ -187,20 +187,14 @@ type PeristenceInterface interface {
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
-	// UpsertParked - Upsert an offset
-	UpsertParked(ctx context.Context, parked *fftypes.Parked, allowExisting bool) (err error)
+	// InsertParked - Insert a parked sequence
+	InsertParked(ctx context.Context, parked *fftypes.Parked) (err error)
 
-	// UpdateParked - Update offset
-	UpdateParked(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetParked - Get an offset by name
-	GetParkedByContext(ctx context.Context, ns, context string, groupID *fftypes.UUID) (message *fftypes.Parked, err error)
-
-	// GetParked - Get offsets
+	// GetParked - Get parked sequences
 	GetParked(ctx context.Context, filter Filter) (offset []*fftypes.Parked, err error)
 
-	// DeleteParked - Delete an offset by name
-	DeleteParked(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeleteParked - Delete an parked sequence by name
+	DeleteParked(ctx context.Context, sequence int64) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -338,7 +332,7 @@ var MessageQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"topics":    &FFNameArrayField{},
-	"tags":      &FFNameArrayField{},
+	"tag":       &StringField{},
 	"group":     &UUIDField{},
 	"created":   &TimeField{},
 	"confirmed": &TimeField{},
@@ -430,7 +424,7 @@ var SubscriptionQueryFactory = &queryFields{
 	"transport":     &StringField{},
 	"events":        &StringField{},
 	"filter.topics": &StringField{},
-	"filter.tags":   &StringField{},
+	"filter.tag":    &StringField{},
 	"filter.group":  &StringField{},
 	"options":       &StringField{},
 	"created":       &TimeField{},

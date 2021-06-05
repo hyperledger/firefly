@@ -52,7 +52,7 @@ func (org *Organization) Validate(ctx context.Context, existing bool) (err error
 	return nil
 }
 
-func orgContext(orgIdentity string) string {
+func orgTopic(orgIdentity string) string {
 	buf := strings.Builder{}
 	for _, r := range orgIdentity {
 		if buf.Len() > 64 {
@@ -67,8 +67,8 @@ func orgContext(orgIdentity string) string {
 	return fmt.Sprintf("ff-org-%s", buf.String())
 }
 
-func (org *Organization) Context() string {
-	return orgContext(org.Identity)
+func (org *Organization) Topic() string {
+	return orgTopic(org.Identity)
 }
 
 func (org *Organization) SetBroadcastMessage(msgID *UUID) {

@@ -63,7 +63,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeGroupInit,
 			Author:    signer.Identifier,
-			Topic:     fftypes.SystemTopicDefineGroup,
+			Topic:     fftypes.SystemTagDefineGroup,
 			Context:   group.Context(),
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,

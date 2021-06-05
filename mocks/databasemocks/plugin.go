@@ -49,13 +49,13 @@ func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns
 	return r0
 }
 
-// DeleteParked provides a mock function with given fields: ctx, id
-func (_m *Plugin) DeleteParked(ctx context.Context, id *fftypes.UUID) error {
-	ret := _m.Called(ctx, id)
+// DeleteParked provides a mock function with given fields: ctx, sequence
+func (_m *Plugin) DeleteParked(ctx context.Context, sequence int64) error {
+	ret := _m.Called(ctx, sequence)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, sequence)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -767,29 +767,6 @@ func (_m *Plugin) GetParked(ctx context.Context, filter database.Filter) ([]*fft
 	return r0, r1
 }
 
-// GetParkedByContext provides a mock function with given fields: ctx, ns, _a2, groupID
-func (_m *Plugin) GetParkedByContext(ctx context.Context, ns string, _a2 string, groupID *fftypes.UUID) (*fftypes.Parked, error) {
-	ret := _m.Called(ctx, ns, _a2, groupID)
-
-	var r0 *fftypes.Parked
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.UUID) *fftypes.Parked); ok {
-		r0 = rf(ctx, ns, _a2, groupID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Parked)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, ns, _a2, groupID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetSubscriptionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Subscription, error) {
 	ret := _m.Called(ctx, id)
@@ -922,6 +899,20 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks data
 // InitPrefix provides a mock function with given fields: prefix
 func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
+}
+
+// InsertParked provides a mock function with given fields: ctx, parked
+func (_m *Plugin) InsertParked(ctx context.Context, parked *fftypes.Parked) error {
+	ret := _m.Called(ctx, parked)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Parked) error); ok {
+		r0 = rf(ctx, parked)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Name provides a mock function with given fields:
@@ -1120,20 +1111,6 @@ func (_m *Plugin) UpdateOrganization(ctx context.Context, id *fftypes.UUID, upda
 	return r0
 }
 
-// UpdateParked provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateParked(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateSubscription provides a mock function with given fields: ctx, ns, name, update
 func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string, update database.Update) error {
 	ret := _m.Called(ctx, ns, name, update)
@@ -1309,20 +1286,6 @@ func (_m *Plugin) UpsertOrganization(ctx context.Context, data *fftypes.Organiza
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertParked provides a mock function with given fields: ctx, parked, allowExisting
-func (_m *Plugin) UpsertParked(ctx context.Context, parked *fftypes.Parked, allowExisting bool) error {
-	ret := _m.Called(ctx, parked, allowExisting)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Parked, bool) error); ok {
-		r0 = rf(ctx, parked, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}
