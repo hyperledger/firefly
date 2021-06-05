@@ -137,7 +137,7 @@ var (
 	MsgBlobStreamingFailed         = ffm("FF10217", "Blob streaming terminated with error", 500)
 	MsgMultiPartFormReadError      = ffm("FF10218", "Error reading multi-part form input", 400)
 	MsgGroupMustHaveMembers        = ffm("FF10219", "Group must have at least one member", 400)
-	MsgEmptyMemberOrg              = ffm("FF10220", "Org is blank in member %d")
+	MsgEmptyMemberIdentity         = ffm("FF10220", "Identity is blank in member %d")
 	MsgEmptyMemberNode             = ffm("FF10221", "Node is blank in member %d")
 	MsgDuplicateMember             = ffm("FF10222", "Member %d is a duplicate org+node combination")
 	MsgOrgNotFound                 = ffm("FF10223", "Org with name or identity '%s' not found")

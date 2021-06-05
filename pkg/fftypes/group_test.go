@@ -57,7 +57,7 @@ func TestGroupValidation(t *testing.T) {
 		Namespace:   "ok",
 		Description: "ok",
 		Members: Members{
-			{Org: NewUUID()},
+			{Identity: "0x12345"},
 		},
 	}
 	assert.Regexp(t, "FF10221.*member", group.Validate(context.Background(), false))
@@ -66,7 +66,16 @@ func TestGroupValidation(t *testing.T) {
 		Namespace:   "ok",
 		Description: "ok",
 		Members: Members{
-			{Org: NewUUID(), Node: NewUUID()},
+			{Identity: string(make([]byte, 1025)), Node: NewUUID()},
+		},
+	}
+	assert.Regexp(t, "FF10188.*identity", group.Validate(context.Background(), false))
+
+	group = &Group{
+		Namespace:   "ok",
+		Description: "ok",
+		Members: Members{
+			{Identity: "0x12345", Node: NewUUID()},
 		},
 	}
 	assert.NoError(t, group.Validate(context.Background(), false))
@@ -82,25 +91,24 @@ func TestGroupValidation(t *testing.T) {
 	}
 	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
 
-	orgID := MustParseUUID("a53fb8cc-ab22-4eed-ad21-eb104eb85902")
 	nodeID := MustParseUUID("8b5c0d39-925f-4579-9c60-54f3e846ab99")
 	group = &Group{
 		Namespace:   "ok",
 		Description: "ok",
 		Members: Members{
-			{Node: nodeID, Org: orgID},
-			{Node: nodeID, Org: orgID},
+			{Node: nodeID, Identity: "0x12345"},
+			{Node: nodeID, Identity: "0x12345"},
 		},
 	}
 	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
 
 	group.Members = Members{
-		{Node: nodeID, Org: orgID},
+		{Node: nodeID, Identity: "0x12345"},
 	}
 	b, _ := json.Marshal(&group.Members)
-	assert.Equal(t, `[{"org":"a53fb8cc-ab22-4eed-ad21-eb104eb85902","node":"8b5c0d39-925f-4579-9c60-54f3e846ab99"}]`, string(b))
+	assert.Equal(t, `[{"identity":"0x12345","node":"8b5c0d39-925f-4579-9c60-54f3e846ab99"}]`, string(b))
 	group.Seal()
-	assert.Equal(t, "9445512b117f19a45ef650e80e173d0ff6ab30769d9f4ace4190b44e110c24bf", group.Hash.String())
+	assert.Equal(t, "2e58f0625e43d80b1745340151652424e7fc6cb5411490fd5d2fd2301d42c72c", group.Hash.String())
 
 	var def Definition = group
 	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Topic())

@@ -39,13 +39,14 @@ type Group struct {
 type Members []*Member
 
 type Member struct {
-	Org  *UUID `json:"org,omitempty"`
-	Node *UUID `json:"node,omitempty"`
+	Identity string `json:"identity,omitempty"`
+	Node     *UUID  `json:"node,omitempty"`
 }
 
 type MemberInput struct {
-	Org  string `json:"org,omitempty"`
-	Node string `json:"node,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Identity string `json:"identity,omitempty"`
+	Node     string `json:"node,omitempty"`
 }
 
 func (r *Members) Hash() *Bytes32 {
@@ -66,13 +67,16 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 	}
 	dupCheck := make(map[string]bool)
 	for i, r := range group.Members {
-		if r.Org == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyMemberOrg, i)
+		if r.Identity == "" {
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberIdentity, i)
+		}
+		if err = ValidateLength(ctx, r.Identity, "identity", 1024); err != nil {
+			return err
 		}
 		if r.Node == nil {
 			return i18n.NewError(ctx, i18n.MsgEmptyMemberNode, i)
 		}
-		key := fmt.Sprintf("%s:%s", r.Org, r.Node)
+		key := fmt.Sprintf("%s:%s", r.Node, r.Identity)
 		if dupCheck[key] {
 			return i18n.NewError(ctx, i18n.MsgDuplicateMember, i)
 		}

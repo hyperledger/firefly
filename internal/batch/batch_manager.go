@@ -85,7 +85,7 @@ type batchManager struct {
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch) error
+type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
 
 type Options struct {
 	BatchMaxSize   uint

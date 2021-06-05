@@ -179,9 +179,22 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 }
 
 func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
+	// Calculate the sequence hashes
+	dupCheck := make(map[fftypes.Bytes32]bool)
+	sequenceHashes := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
+	for _, m := range batch.Payload.Messages {
+		for _, t := range m.Header.Topics {
+			if batch.Group != nil {
+				// TODO: Create group contexts
+			} else {
+
+			}
+		}
+	}
+
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
 	_ = bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
-		err = bp.conf.dispatch(bp.ctx, batch)
+		err = bp.conf.dispatch(bp.ctx, batch, sequenceHashes)
 		if err != nil {
 			return !bp.closed, err
 		}

@@ -85,7 +85,10 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 }
 
 // Value implements sql.Valuer
-func (b32 Bytes32) Value() (driver.Value, error) {
+func (b32 *Bytes32) Value() (driver.Value, error) {
+	if b32 == nil {
+		return nil, nil
+	}
 	return b32.String(), nil
 }
 

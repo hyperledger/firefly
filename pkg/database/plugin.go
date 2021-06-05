@@ -281,8 +281,38 @@ type PeristenceInterface interface {
 	// GetGroupByID - Get a group by ID
 	GetGroupByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Group, err error)
 
-	// getGroups - Get groups
+	// GetGroups - Get groups
 	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
+
+	// UpsertContextNextNonce - Upsert a context, assigning zero if not found, or the next nonce if it is
+	UpsertContextNextNonce(ctx context.Context, context *fftypes.Context) (err error)
+
+	// GetContext - Get a context by hash
+	GetContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Context, err error)
+
+	// GetContexts - Get contexts
+	GetContexts(ctx context.Context, filter Filter) (node []*fftypes.Context, err error)
+
+	// DeleteContext - Delete context by hash
+	DeleteContext(ctx context.Context, hash *fftypes.Bytes32) (err error)
+
+	// InsertNextHash - insert a nexthash
+	InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) (err error)
+
+	// GetNextHashByContextAndIdentity - lookup nexthash by context+identity
+	GetNextHashByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextHash, err error)
+
+	// GetNextHashByHash - lookup nexthash by its hash
+	GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextHash, err error)
+
+	// GetNextHashes - get nexthashes
+	GetNextHashes(ctx context.Context, filter Filter) (message []*fftypes.NextHash, err error)
+
+	// UpdateNextHash - update a next hash using its local database ID
+	UpdateNextHash(ctx context.Context, sequence int64, update Update) (err error)
+
+	// DeleteNextHash - delete a next hash, using its local database ID
+	DeleteNextHash(ctx context.Context, sequence int64) (err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
@@ -479,4 +509,20 @@ var GroupQueryFactory = &queryFields{
 	"description": &StringField{},
 	"ledger":      &UUIDField{},
 	"created":     &TimeField{},
+}
+
+// ContextQueryFactory filter fields for nodes
+var ContextQueryFactory = &queryFields{
+	"hash":  &StringField{},
+	"nonce": &Int64Field{},
+	"group": &UUIDField{},
+	"topic": &StringField{},
+}
+
+// NextHashQueryFactory filter fields for nodes
+var NextHashQueryFactory = &queryFields{
+	"context":  &StringField{},
+	"identity": &StringField{},
+	"hash":     &StringField{},
+	"nonce":    &Int64Field{},
 }
