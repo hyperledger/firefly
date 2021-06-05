@@ -152,8 +152,10 @@ func (m *Message) Verify(ctx context.Context) error {
 	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
 		return err
 	}
-	if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
-		return err
+	if m.Header.Tag != "" {
+		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
+			return err
+		}
 	}
 	err := m.DupDataCheck(ctx)
 	if err != nil {

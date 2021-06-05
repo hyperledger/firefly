@@ -95,6 +95,22 @@ func ToJSONObjectArray(unknown interface{}) (JSONObjectArray, bool) {
 	return joa, ok
 }
 
+func ToStringArray(unknown interface{}) ([]string, bool) {
+	vArray, ok := unknown.([]interface{})
+	joa := make([]string, len(vArray))
+	if !ok {
+		joa, ok = unknown.([]string) // Case that we're passed a []string directly
+	}
+	for i, joi := range vArray {
+		jo, childOK := joi.(string)
+		if childOK {
+			joa[i] = jo
+		}
+		ok = ok && childOK
+	}
+	return joa, ok
+}
+
 func (jd JSONObject) GetObjectArray(key string) JSONObjectArray {
 	oa, _ := jd.GetObjectArrayOk(key)
 	return oa
@@ -107,6 +123,20 @@ func (jd JSONObject) GetObjectArrayOk(key string) (JSONObjectArray, bool) {
 	}
 	log.L(context.Background()).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
 	return JSONObjectArray{}, false // Ensures a non-nil return
+}
+
+func (jd JSONObject) GetStringArray(key string) []string {
+	sa, _ := jd.GetStringArrayOk(key)
+	return sa
+}
+
+func (jd JSONObject) GetStringArrayOk(key string) ([]string, bool) {
+	vInterace, ok := jd[key]
+	if ok && vInterace != nil {
+		return ToStringArray(vInterace)
+	}
+	log.L(context.Background()).Errorf("Invalid string array value '%+v' for key '%s'", vInterace, key)
+	return []string{}, false // Ensures a non-nil return
 }
 
 // Value implements sql.Valuer
