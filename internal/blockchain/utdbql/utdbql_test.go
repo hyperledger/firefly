@@ -79,7 +79,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
-	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	sbb := me.On("BatchPinComplete", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	sbb.RunFn = func(a mock.Arguments) {
 		sbbEv <- true
 	}
@@ -99,7 +99,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 
 	u.Start()
 
-	trackingID, err := u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
+	trackingID, err := u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
@@ -119,7 +119,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 	me := &blockchainmocks.Callbacks{}
 
 	sbbEv := make(chan bool, 1)
-	sbb := me.On("SequencedBroadcastBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("Pop"))
+	sbb := me.On("BatchPinComplete", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("Pop"))
 	sbb.RunFn = func(a mock.Arguments) {
 		sbbEv <- true
 	}
@@ -135,10 +135,13 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 
 	u.Start()
 
-	trackingID, err := u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
+	trackingID, err := u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		SequenceHashes: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+		},
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, trackingID)
@@ -159,10 +162,13 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	assert.NoError(t, err)
 	u.Close()
 
-	_, err = u.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: "id1"}, &blockchain.BroadcastBatch{
+	_, err = u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		SequenceHashes: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+		},
 	})
 	assert.Error(t, err)
 
@@ -197,7 +203,7 @@ func TestVerifyDispatchEventBadData(t *testing.T) {
 	defer u.Close()
 
 	u.dispatchEvent(&utEvent{
-		txType: utDBQLEventTypeBroadcastBatch,
+		txType: utDBQLEventTypeBatchPinComplete,
 		data:   []byte(`!json`),
 	}) // Just confirming it handles it
 }
