@@ -103,6 +103,11 @@ func TestValueBytes32(t *testing.T) {
 	b32 := NewRandB32()
 	s, _ := b32.Value()
 	assert.Equal(t, b32.String(), s)
+
+	b32 = nil
+	s, _ = b32.Value()
+	assert.Nil(t, s)
+
 }
 
 func TestValueBytes32Nil(t *testing.T) {

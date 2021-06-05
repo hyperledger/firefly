@@ -42,8 +42,8 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Members: fftypes.Members{
-			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
-			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
+			{Identity: "0x12345", Node: fftypes.NewUUID()},
+			{Identity: "0x23456", Node: fftypes.NewUUID()},
 		},
 		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
@@ -65,7 +65,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		Namespace:   "ns1",
 		Description: "my group",
 		Members: fftypes.Members{
-			{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()},
+			{Identity: "0x12345", Node: fftypes.NewUUID()},
 			group.Members[0],
 		},
 		Created: fftypes.Now(),
@@ -215,7 +215,7 @@ func TestUpdateMembersMissingNode(t *testing.T) {
 	tx, _ := s.db.Begin()
 	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
 		ID:      groupID,
-		Members: fftypes.Members{{Org: fftypes.NewUUID()}},
+		Members: fftypes.Members{{Identity: "0x12345"}},
 	}, false)
 	assert.Regexp(t, "FF10221", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -242,7 +242,7 @@ func TestUpdateGroupDataAddFail(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
 		ID:      groupID,
-		Members: fftypes.Members{{Org: fftypes.NewUUID(), Node: fftypes.NewUUID()}},
+		Members: fftypes.Members{{Identity: "0x12345", Node: fftypes.NewUUID()}},
 	}, false)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

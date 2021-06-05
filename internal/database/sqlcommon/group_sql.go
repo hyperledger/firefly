@@ -121,8 +121,8 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 
 	// Run through the ones in the group, finding ones that already exist, and ones that need to be created
 	for requiredIdx, requiredMember := range group.Members {
-		if requiredMember == nil || requiredMember.Org == nil {
-			return i18n.NewError(ctx, i18n.MsgEmptyMemberOrg, requiredIdx)
+		if requiredMember == nil || requiredMember.Identity == "" {
+			return i18n.NewError(ctx, i18n.MsgEmptyMemberIdentity, requiredIdx)
 		}
 		if requiredMember.Node == nil {
 			return i18n.NewError(ctx, i18n.MsgEmptyMemberNode, requiredIdx)
@@ -131,13 +131,13 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 			sq.Insert("members").
 				Columns(
 					"group_id",
-					"org",
-					"node",
+					"identity",
+					"node_id",
 					"idx",
 				).
 				Values(
 					group.ID,
-					requiredMember.Org,
+					requiredMember.Identity,
 					requiredMember.Node,
 					requiredIdx,
 				),
@@ -162,8 +162,8 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 	members, err := s.query(ctx,
 		sq.Select(
 			"group_id",
-			"org",
-			"node",
+			"identity",
+			"node_id",
 			"idx",
 		).
 			From("members").
@@ -179,7 +179,7 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 		var groupID fftypes.UUID
 		member := &fftypes.Member{}
 		var idx int
-		if err = members.Scan(&groupID, &member.Org, &member.Node, &idx); err != nil {
+		if err = members.Scan(&groupID, &member.Identity, &member.Node, &idx); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "members")
 		}
 		for _, g := range groups {

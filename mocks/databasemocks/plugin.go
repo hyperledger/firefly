@@ -35,6 +35,34 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
+// DeleteContext provides a mock function with given fields: ctx, hash
+func (_m *Plugin) DeleteContext(ctx context.Context, hash *fftypes.Bytes32) error {
+	ret := _m.Called(ctx, hash)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteNextHash provides a mock function with given fields: ctx, sequence
+func (_m *Plugin) DeleteNextHash(ctx context.Context, sequence int64) error {
+	ret := _m.Called(ctx, sequence)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, sequence)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteOffset provides a mock function with given fields: ctx, t, ns, name
 func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) error {
 	ret := _m.Called(ctx, t, ns, name)
@@ -110,6 +138,52 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*ff
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContext provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetContext(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Context, error) {
+	ret := _m.Called(ctx, hash)
+
+	var r0 *fftypes.Context
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Context); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Context)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetContexts provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetContexts(ctx context.Context, filter database.Filter) ([]*fftypes.Context, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Context
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Context); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Context)
 		}
 	}
 
@@ -478,6 +552,75 @@ func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Namespace)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNextHashByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
+func (_m *Plugin) GetNextHashByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*fftypes.NextHash, error) {
+	ret := _m.Called(ctx, _a1, identity)
+
+	var r0 *fftypes.NextHash
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *fftypes.NextHash); ok {
+		r0 = rf(ctx, _a1, identity)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.NextHash)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32, string) error); ok {
+		r1 = rf(ctx, _a1, identity)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNextHashByHash provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.NextHash, error) {
+	ret := _m.Called(ctx, hash)
+
+	var r0 *fftypes.NextHash
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.NextHash); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.NextHash)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNextHashes provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNextHashes(ctx context.Context, filter database.Filter) ([]*fftypes.NextHash, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.NextHash
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.NextHash); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.NextHash)
 		}
 	}
 
@@ -901,6 +1044,20 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
+// InsertNextHash provides a mock function with given fields: ctx, nexthash
+func (_m *Plugin) InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) error {
+	ret := _m.Called(ctx, nexthash)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextHash) error); ok {
+		r0 = rf(ctx, nexthash)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertParked provides a mock function with given fields: ctx, parked
 func (_m *Plugin) InsertParked(ctx context.Context, parked *fftypes.Parked) error {
 	ret := _m.Called(ctx, parked)
@@ -1055,6 +1212,20 @@ func (_m *Plugin) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update 
 	return r0
 }
 
+// UpdateNextHash provides a mock function with given fields: ctx, sequence, update
+func (_m *Plugin) UpdateNextHash(ctx context.Context, sequence int64, update database.Update) error {
+	ret := _m.Called(ctx, sequence, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64, database.Update) error); ok {
+		r0 = rf(ctx, sequence, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateNode provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateNode(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
@@ -1146,6 +1317,20 @@ func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExi
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertContextNextNonce provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) UpsertContextNextNonce(ctx context.Context, _a1 *fftypes.Context) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Context) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
