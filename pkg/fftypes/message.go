@@ -55,7 +55,7 @@ type MessageHeader struct {
 	Namespace string         `json:"namespace,omitempty"`
 	Group     *UUID          `json:"group,omitempty"`
 	Topics    FFNameArray    `json:"topic,omitempty"`
-	Tags      FFNameArray    `json:"tags,omitempty"`
+	Tag       string         `json:"tag,omitempty"`
 	DataHash  *Bytes32       `json:"datahash,omitempty"`
 }
 
@@ -152,7 +152,7 @@ func (m *Message) Verify(ctx context.Context) error {
 	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
 		return err
 	}
-	if err := m.Header.Tags.Validate(ctx, "header.tags"); err != nil {
+	if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
 		return err
 	}
 	err := m.DupDataCheck(ctx)

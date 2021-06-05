@@ -80,7 +80,7 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 				Events: query.Get("filter.events"),
 				Topics: query.Get("filter.topics"),
 				Group:  query.Get("filter.group"),
-				Tags:   query.Get("filter.tags"),
+				Tag:    query.Get("filter.tag"),
 			},
 		})
 		if err != nil {

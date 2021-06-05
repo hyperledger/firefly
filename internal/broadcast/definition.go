@@ -24,15 +24,15 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, contextNamespace, topic string) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag) (msg *fftypes.Message, err error) {
 	signingIdentity, err := bm.GetNodeSigningIdentity(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return bm.BroadcastDefinition(ctx, def, signingIdentity, contextNamespace, topic)
+	return bm.BroadcastDefinition(ctx, def, signingIdentity, tag)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag) (msg *fftypes.Message, err error) {
 
 	err = bm.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
 	if err != nil {
@@ -68,8 +68,8 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeDefinition,
 			Author:    signingIdentity.Identifier,
-			Topic:     topic,
-			Context:   def.Context(),
+			Topics:    fftypes.FFNameArray{def.Topic()},
+			Tag:       string(tag),
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
 			},

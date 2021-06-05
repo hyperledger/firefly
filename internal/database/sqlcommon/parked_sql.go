@@ -46,7 +46,7 @@ func (s *SQLCommon) InsertParked(ctx context.Context, parked *fftypes.Parked) (e
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, tx,
+	sequence, err := s.insertTx(ctx, tx,
 		sq.Insert("parked").
 			Columns(parkedColumns...).
 			Values(
@@ -55,9 +55,11 @@ func (s *SQLCommon) InsertParked(ctx context.Context, parked *fftypes.Parked) (e
 				parked.Batch,
 				parked.Created,
 			),
-	); err != nil {
+	)
+	if err != nil {
 		return err
 	}
+	parked.Sequence = sequence
 
 	return s.commitTx(ctx, tx, autoCommit)
 }

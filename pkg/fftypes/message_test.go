@@ -47,11 +47,11 @@ func TestVerifyEmptyTopicString(t *testing.T) {
 func TestVerifyBadTagString(t *testing.T) {
 	msg := Message{
 		Header: MessageHeader{
-			Tags: []string{"a,b,c,d"},
+			Tag: "!wrong",
 		},
 	}
 	err := msg.Verify(context.Background())
-	assert.Regexp(t, `FF10131.*header.tags\[0\]`, err)
+	assert.Regexp(t, `FF10131.*header.tag`, err)
 }
 
 func TestSealNilDataID(t *testing.T) {
@@ -143,7 +143,7 @@ func TestSealKnownMessage(t *testing.T) {
 			Author:    "0x12345",
 			Namespace: "ns1",
 			Topics:    []string{"topic1", "topic2"},
-			Tags:      []string{"tag1", "tag2"},
+			Tag:       "tag1",
 			Created:   UnixTime(1620104103123456789),
 			Group:     gid,
 		},
@@ -165,10 +165,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"batch_pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","topic":["topic1","topic2"],"tags":["tag1","tag2"],"datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","tx":{"type":"batch_pin","id":"87dbc29b-16e1-4578-bf24-0d3ac3b33ef1"},"author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","topic":["topic1","topic2"],"tag":"tag1","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `c67128696753a64a461538dbcff2306175ac413dae8d384f2075cd9c720c9330`, msgHash.String())
+	assert.Equal(t, `574974e0c28193260e1ebb1dd7d2d58b601984906685210b35105183799aec54`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good

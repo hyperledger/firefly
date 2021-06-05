@@ -103,7 +103,7 @@ func TestGroupValidation(t *testing.T) {
 	assert.Equal(t, "9445512b117f19a45ef650e80e173d0ff6ab30769d9f4ace4190b44e110c24bf", group.Hash.String())
 
 	var def Definition = group
-	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Context())
+	assert.Equal(t, fmt.Sprintf("ff-grp-%s", group.ID), def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, group.Message)
 }

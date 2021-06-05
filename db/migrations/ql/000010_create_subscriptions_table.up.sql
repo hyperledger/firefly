@@ -5,7 +5,7 @@ CREATE TABLE subscriptions (
   transport      string          NOT NULL,
   filter_events  string          NOT NULL,
   filter_topics  string          NOT NULL,
-  filter_tags    string          NOT NULL,
+  filter_tag     string          NOT NULL,
   filter_group   string          NOT NULL,
   options        blob            NOT NULL,
   created        int64           NOT NULL

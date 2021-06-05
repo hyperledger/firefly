@@ -29,7 +29,7 @@ func TestHandleSystemBroadcastUnknown(t *testing.T) {
 	defer cancel()
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: "uknown",
+			Tag: "uknown",
 		},
 	}, []*fftypes.Data{})
 	assert.False(t, valid)
@@ -41,7 +41,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 	defer cancel()
 	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: "uknown",
+			Tag: "uknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
@@ -52,7 +52,7 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 	defer cancel()
 	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: "uknown",
+			Tag: "uknown",
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
