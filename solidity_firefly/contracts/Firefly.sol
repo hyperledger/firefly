@@ -7,14 +7,15 @@ contract Firefly {
     event BatchPin (
         address author,
         uint timestamp,
+        string namespace,
         bytes32 uuids,
         bytes32 batchHash,
         bytes32 payloadRef,
-        bytes32[] pins
+        bytes32[] contexts
     );
 
-    function pinBatch(bytes32 uuids, bytes32 batchHash, bytes32 payloadRef, bytes32[] memory pins) public {
-        emit BatchPin(msg.sender, block.timestamp, uuids, batchHash, payloadRef, pins);
+    function pinBatch(string namespace, bytes32 uuids, bytes32 batchHash, bytes32 payloadRef, bytes32[] memory contexts) public {
+        emit BatchPin(msg.sender, block.timestamp, namespace, uuids, batchHash, payloadRef, contexts);
     }
 
 }

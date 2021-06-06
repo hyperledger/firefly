@@ -122,7 +122,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 				ReadAhead: &five,
 			},
 		},
-		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeDataArrivedBroadcast)),
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypesBatchPinned)),
 	}
 
 	mdi := &databasemocks.Plugin{}
@@ -181,9 +181,8 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go func() {
 		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
 			{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageUnblocked},
-			{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeDataArrivedBroadcast}, // match
-			{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed},     // match
+			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypesBatchPinned},
+			{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed}, // match
 		})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
@@ -359,26 +358,26 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			Event: fftypes.Event{
 				ID:   id1,
-				Type: fftypes.EventTypeDataArrivedBroadcast,
+				Type: fftypes.EventTypesBatchPinned,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic1",
-					Context: "context1",
-					Group:   nil,
+					Topics: fftypes.FFNameArray{"topic1"},
+					Tag:    "tag1",
+					Group:  nil,
 				},
 			},
 		},
 		{
 			Event: fftypes.Event{
 				ID:   id2,
-				Type: fftypes.EventTypeDataArrivedBroadcast,
+				Type: fftypes.EventTypesBatchPinned,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic1",
-					Context: "context2",
-					Group:   id1,
+					Topics: fftypes.FFNameArray{"topic1"},
+					Tag:    "tag2",
+					Group:  id1,
 				},
 			},
 		},
@@ -389,17 +388,17 @@ func TestFilterEventsMatch(t *testing.T) {
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic2",
-					Context: "context1",
-					Group:   nil,
+					Topics: fftypes.FFNameArray{"topic2"},
+					Tag:    "tag1",
+					Group:  nil,
 				},
 			},
 		},
 	})
 
-	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeDataArrivedBroadcast))
-	ed.subscription.topicFilter = regexp.MustCompile(".*")
-	ed.subscription.contextFilter = regexp.MustCompile(".*")
+	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypesBatchPinned))
+	ed.subscription.topicsFilter = regexp.MustCompile(".*")
+	ed.subscription.tagFilter = regexp.MustCompile(".*")
 	ed.subscription.groupFilter = regexp.MustCompile(".*")
 	matched := ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
@@ -408,8 +407,8 @@ func TestFilterEventsMatch(t *testing.T) {
 	// id three has the wrong event type
 
 	ed.subscription.eventMatcher = nil
-	ed.subscription.topicFilter = nil
-	ed.subscription.contextFilter = nil
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = nil
 	ed.subscription.groupFilter = nil
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 3, len(matched))
@@ -417,19 +416,19 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[1].ID)
 	assert.Equal(t, *id3, *matched[2].ID)
 
-	ed.subscription.topicFilter = regexp.MustCompile("topic1")
+	ed.subscription.topicsFilter = regexp.MustCompile("topic1")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 
-	ed.subscription.topicFilter = nil
-	ed.subscription.contextFilter = regexp.MustCompile("context2")
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = regexp.MustCompile("context2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
-	ed.subscription.topicFilter = nil
+	ed.subscription.topicsFilter = nil
 	ed.subscription.groupFilter = regexp.MustCompile(id1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
@@ -633,8 +632,8 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 func TestBufferedFinalAckFail(t *testing.T) {
 
 	sub := &subscription{
-		definition:  &fftypes.Subscription{},
-		topicFilter: regexp.MustCompile("never matches"),
+		definition:   &fftypes.Subscription{},
+		topicsFilter: regexp.MustCompile("never matches"),
 	}
 	mei := &eventsmocks.Plugin{}
 	mdi := &databasemocks.Plugin{}

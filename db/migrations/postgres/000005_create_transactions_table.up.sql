@@ -5,7 +5,7 @@ CREATE TABLE transactions (
   ttype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   ref         UUID,
-  author      VARCHAR(1024)   NOT NULL,
+  signer      VARCHAR(1024)   NOT NULL,
   hash        CHAR(64)        NOT NULL,
   created     BIGINT          NOT NULL,
   protocol_id VARCHAR(256),

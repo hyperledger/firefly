@@ -25,12 +25,10 @@ const (
 	EventTypeMessageConfirmed EventType = "message_confirmed"
 	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
 	EventTypeMessageInvalid EventType = "message_invalid"
-	// EventTypeDataArrivedBroadcast indicates that some data has arrived, over a broadcast transport
-	EventTypeDataArrivedBroadcast EventType = "data_arrived_broadcast"
-	// EventTypeMessageSequencedBroadcast indicates that a deterministically sequenced message has arrived pinned to a blockchain
-	EventTypeMessageSequencedBroadcast EventType = "message_sequenced_broadcast"
-	// EventTypeMessageUnblocked is a special event to indidate a previously blocked context, has become unblocked
-	EventTypeMessageUnblocked EventType = "message_unblocked"
+	// EventTypesBatchPinned indicates that a batch has been pinned
+	EventTypesBatchPinned EventType = "batch_pinned"
+	// EventTypesBatchReceived indicates that a batch has received off-chain
+	EventTypesBatchReceived EventType = "batch_received"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

@@ -33,30 +33,127 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
 	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
 	defer func() {
 		log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
 	}()
-
 	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
-	var batchID fftypes.UUID
-	copy(batchID[:], batch.BatchID[0:16])
 
+	if batchPin.BatchPaylodRef != nil {
+		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
+	}
+	return em.handlePrivatePinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
+}
+
+func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	// Here we simple record all the pins as parked, and emit an event for the aggregator
+	// to check whether the messages in the batch have been written.
+	return em.retry.Do(em.ctx, "persist pins", func(attempt int) (bool, error) {
+		// We process the batch into the DB as a single transaction (if transactions are supported), both for
+		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
+		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
+			if err == nil {
+				err = em.persistPins(ctx, batchPin)
+				if err == nil {
+					err = em.emitPinnedEvent(ctx, batchPin)
+				}
+			}
+			return err
+		})
+		return err != nil, err // retry indefinitely (until context closes)
+	})
+}
+
+func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	// Get any existing record for the batch transaction record
+	tx, err := em.database.GetTransactionByID(ctx, batchPin.TransactionID)
+	if err != nil {
+		return err // a peristence failure here is considered retryable (so returned)
+	}
+	if err := fftypes.ValidateFFNameField(ctx, batchPin.Namespace, "namespace"); err != nil {
+		log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' invalid namespace '%s': %a", batchPin.BatchID, batchPin.TransactionID, batchPin.Namespace, err)
+		return nil // This is not retryable. skip this batch
+	}
+	if tx == nil {
+		// We're the first to write the transaction record on this node
+		tx = &fftypes.Transaction{
+			ID: batchPin.TransactionID,
+			Subject: fftypes.TransactionSubject{
+				Namespace: batchPin.Namespace,
+				Type:      fftypes.TransactionTypeBatchPin,
+				Signer:    signingIdentity,
+				Reference: batchPin.TransactionID,
+			},
+		}
+		tx.Hash = tx.Subject.Hash()
+	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
+		tx.Subject.Signer != signingIdentity ||
+		tx.Subject.Reference == nil ||
+		*tx.Subject.Reference != *batchPin.BatchID ||
+		tx.Subject.Namespace != batchPin.Namespace {
+		log.L(ctx).Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batchPin.BatchID, tx.ID)
+		return nil // This is not retryable. skip this batch
+	}
+
+	// Set the updates on the transaction
+	tx.ProtocolID = protocolTxID
+	tx.Info = additionalInfo
+	tx.Status = fftypes.OpStatusSucceeded
+
+	// Upsert the transaction, ensuring the hash does not change
+	err = em.database.UpsertTransaction(ctx, tx, true, false)
+	if err != nil {
+		if err == database.HashMismatch {
+			log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batchPin.BatchID, tx.Hash)
+			return nil // This is not retryable. skip this batch
+		}
+		log.L(ctx).Errorf("Failed to insert transaction for batch '%s': %s", batchPin.BatchID, err)
+		return err // a peristence failure here is considered retryable (so returned)
+	}
+
+	return nil
+}
+
+func (em *eventManager) persistCon(ctx context.Context, batchPin *blockchain.BatchPin) error {
+	for _, pin := range batchPin.Pins {
+		if err := em.database.InsertParked(ctx, &fftypes.Parked{
+			Pin:     pin,
+			Batch:   batchPin.BatchID,
+			Created: fftypes.Now(),
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (em *eventManager) emitPinnedEvent(ctx context.Context, batchPin *blockchain.BatchPin) error {
+	// Persist a batch pinned even
+	event := fftypes.NewEvent(fftypes.EventTypesBatchPinned, batchPin.Namespace, batchPin.BatchID)
+	if err := em.database.UpsertEvent(ctx, event, false); err != nil {
+		log.L(ctx).Errorf("Failed to insert %s event for batch '%s': %s", event.Type, batchPin.BatchID, err)
+		return err // a peristence failure here is considered retryable (so returned)
+	}
+	return nil
+}
+
+func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	var body io.ReadCloser
 	if err := em.retry.Do(em.ctx, "retrieve data", func(attempt int) (retry bool, err error) {
-		body, err = em.publicstorage.RetrieveData(em.ctx, batch.BatchPaylodRef)
+		body, err = em.publicstorage.RetrieveData(em.ctx, batchPin.BatchPaylodRef)
 		return err != nil, err // retry indefinitely (until context closes)
 	}); err != nil {
 		return err
 	}
 	defer body.Close()
 
-	var batchData *fftypes.Batch
-	err := json.NewDecoder(body).Decode(&batchData)
+	var batch *fftypes.Batch
+	err := json.NewDecoder(body).Decode(&batch)
 	if err != nil {
-		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchID, protocolTxID)
+		log.L(em.ctx).Errorf("Failed to parse payload referred in batch ID '%s' from transaction '%s'", batchPin.BatchID, protocolTxID)
 		return nil // log and swallow unprocessable data
 	}
 	body.Close()
@@ -69,7 +166,15 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			return em.persistBatch(ctx, batchData, signingIdentity, protocolTxID, additionalInfo)
+			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
+			if err == nil {
+				err = em.persistBatch(ctx, batch, signingIdentity, protocolTxID, additionalInfo)
+				if err == nil {
+					err = em.emitPinnedEvent(ctx, batchPin)
+				}
+				return err
+			}
+			return err
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
@@ -118,49 +223,6 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return err // a peristence failure here is considered retryable (so returned)
 	}
 
-	// Get any existing record for the batch transaction record
-	tx, err := em.database.GetTransactionByID(ctx, batch.Payload.TX.ID)
-	if err != nil {
-		l.Errorf("Failed to query transaction '%s': %s", batch.Payload.TX.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
-	}
-	if tx == nil {
-		// We're the first to write the transaction record on this node
-		tx = &fftypes.Transaction{
-			ID: batch.Payload.TX.ID,
-			Subject: fftypes.TransactionSubject{
-				Type:      fftypes.TransactionTypeBatchPin,
-				Author:    author,
-				Namespace: batch.Namespace,
-				Reference: batch.ID,
-			},
-		}
-		tx.Hash = tx.Subject.Hash()
-	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
-		tx.Subject.Author != author ||
-		tx.Subject.Namespace != batch.Namespace ||
-		tx.Subject.Reference == nil ||
-		*tx.Subject.Reference != *batch.ID {
-		l.Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batch.ID, tx.ID)
-		return nil // This is not retryable. skip this batch
-	}
-
-	// Set the updates on the transaction
-	tx.ProtocolID = protocolTxID
-	tx.Info = additionalInfo
-	tx.Status = fftypes.OpStatusSucceeded
-
-	// Upsert the transaction, ensuring the hash does not change
-	err = em.database.UpsertTransaction(ctx, tx, true, false)
-	if err != nil {
-		if err == database.HashMismatch {
-			l.Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batch.ID, tx.Hash)
-			return nil // This is not retryable. skip this batch
-		}
-		l.Errorf("Failed to insert transaction for batch '%s': %s", batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
-	}
-
 	// Insert the data entries
 	for i, data := range batch.Payload.Data {
 		if err = em.persistBatchData(ctx, batch, i, data); err != nil {
@@ -204,13 +266,6 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 		return err // a peristence failure here is considered retryable (so returned)
 	}
 
-	// Persist a data arrival event
-	event := fftypes.NewEvent(fftypes.EventTypeDataArrivedBroadcast, data.Namespace, data.ID)
-	if err := em.database.UpsertEvent(ctx, event, false); err != nil {
-		l.Errorf("Failed to insert %s event for data %d in batch '%s': %s", event.Type, i, batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
-	}
-
 	return nil
 }
 
@@ -242,13 +297,6 @@ func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context
 			return nil // This is not retryable. skip this data entry
 		}
 		l.Errorf("Failed to insert message entry %d in batch '%s': %s", i, batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
-	}
-
-	// Persist a message broadcast event
-	event := fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, msg.Header.Namespace, msg.Header.ID)
-	if err = em.database.UpsertEvent(ctx, event, false); err != nil {
-		l.Errorf("Failed to insert %s event for message %d in batch '%s': %s", event.Type, i, batch.ID, err)
 		return err // a peristence failure here is considered retryable (so returned)
 	}
 

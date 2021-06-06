@@ -36,9 +36,9 @@ type subscription struct {
 
 	dispatcherElection chan bool
 	eventMatcher       *regexp.Regexp
-	topicFilter        *regexp.Regexp
 	groupFilter        *regexp.Regexp
-	contextFilter      *regexp.Regexp
+	tagFilter          *regexp.Regexp
+	topicsFilter       *regexp.Regexp
 }
 
 type connection struct {
@@ -237,11 +237,11 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
-	var topicFilter *regexp.Regexp
-	if filter.Topic != "" {
-		topicFilter, err = regexp.Compile(filter.Topic)
+	var tagFilter *regexp.Regexp
+	if filter.Tag != "" {
+		tagFilter, err = regexp.Compile(filter.Tag)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topic", filter.Topic)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.tag", filter.Tag)
 		}
 	}
 
@@ -253,11 +253,11 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
-	var contextFilter *regexp.Regexp
-	if filter.Context != "" {
-		contextFilter, err = regexp.Compile(filter.Context)
+	var topicsFilter *regexp.Regexp
+	if filter.Topics != "" {
+		topicsFilter, err = regexp.Compile(filter.Topics)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.context", filter.Context)
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.topics", filter.Topics)
 		}
 	}
 
@@ -265,9 +265,9 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
 		eventMatcher:       eventFilter,
-		topicFilter:        topicFilter,
 		groupFilter:        groupFilter,
-		contextFilter:      contextFilter,
+		tagFilter:          tagFilter,
+		topicsFilter:       topicsFilter,
 	}
 	return sub, err
 }

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -249,3 +250,35 @@ func (f *ffNameArrayField) Scan(src interface{}) (err error) {
 func (f *ffNameArrayField) Value() (driver.Value, error)         { return f.na.String(), nil }
 func (f *ffNameArrayField) String() string                       { return f.na.String() }
 func (f *FFNameArrayField) getSerialization() FieldSerialization { return &ffNameArrayField{} }
+
+type BoolField struct{}
+type boolField struct{ b bool }
+
+func (f *boolField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case int:
+		f.b = tv != 0
+	case int32:
+		f.b = tv != 0
+	case int64:
+		f.b = tv != 0
+	case uint:
+		f.b = tv != 0
+	case uint32:
+		f.b = tv != 0
+	case uint64:
+		f.b = tv != 0
+	case bool:
+		f.b = tv
+	case string:
+		f.b = strings.EqualFold(tv, "true")
+	case nil:
+		f.b = false
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
+	}
+	return nil
+}
+func (f *boolField) Value() (driver.Value, error)         { return f.b, nil }
+func (f *boolField) String() string                       { return fmt.Sprintf("%t", f.b) }
+func (f *BoolField) getSerialization() FieldSerialization { return &boolField{} }

@@ -187,14 +187,14 @@ type PeristenceInterface interface {
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
-	// InsertParked - Insert a parked sequence
-	InsertParked(ctx context.Context, parked *fftypes.Parked) (err error)
+	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash sequence already exists
+	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 
-	// GetParked - Get parked sequences
-	GetParked(ctx context.Context, filter Filter) (offset []*fftypes.Parked, err error)
+	// GetPins - Get parked sequences
+	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
 
-	// DeleteParked - Delete an parked sequence by name
-	DeleteParked(ctx context.Context, sequence int64) (err error)
+	// DeletePin - Delete an parked sequence by name
+	DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch *fftypes.UUID) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -391,9 +391,8 @@ var BatchQueryFactory = &queryFields{
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
 	"id":         &UUIDField{},
-	"namespace":  &StringField{},
 	"type":       &StringField{},
-	"author":     &StringField{},
+	"signer":     &StringField{},
 	"status":     &StringField{},
 	"reference":  &UUIDField{},
 	"protocolid": &StringField{},
@@ -471,11 +470,11 @@ var EventQueryFactory = &queryFields{
 	"created":   &TimeField{},
 }
 
-// ParkedQueryFactory filter fields for parked contexts
-var ParkedQueryFactory = &queryFields{
+// PinQueryFactory filter fields for parked contexts
+var PinQueryFactory = &queryFields{
 	"sequence": &Int64Field{},
-	"pin":      &StringField{},
-	"ledger":   &UUIDField{},
+	"masked":   &BoolField{},
+	"hash":     &StringField{},
 	"batch":    &UUIDField{},
 	"created":  &TimeField{},
 }

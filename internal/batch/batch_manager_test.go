@@ -53,16 +53,16 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		assert.Len(t, s, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
-			"746f70696331" + "30783132333435" + "0000000000003039",
-		/*|  topic1   |    |author'0x12345'|  |i64 nonce (12345) */
+			"746f70696331",
+		/*|  topic1   | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
-			"746f70696332" + "30783132333435" + "000000000000303a",
-		/*|   topic2  |    |author'0x12345'|  |i64 nonce (12346) */
+			"746f70696332",
+		/*|   topic2  | */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
@@ -86,7 +86,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Type:      fftypes.MessageTypeBroadcast,
 			ID:        fftypes.NewUUID(),
-			Topics:    []string{"topic1", "topic2"},
+			Topics:    []string{"topic1", "topic2", "topic2" /* duplicate removal */},
 			Namespace: "ns1",
 			Author:    "0x12345",
 		},
@@ -115,12 +115,6 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
-	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
-	nextNonce := int64(12345)
-	ugcn.RunFn = func(a mock.Arguments) {
-		a[1].(*fftypes.Nonce).Nonce = nextNonce
-		nextNonce++
-	}
 
 	err := bm.Start()
 	assert.NoError(t, err)

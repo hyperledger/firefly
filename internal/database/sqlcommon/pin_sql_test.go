@@ -28,108 +28,116 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParkedsE2EWithDB(t *testing.T) {
+func TestPinsE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 
 	s := newQLTestProvider(t)
 	defer s.Close()
 	ctx := context.Background()
 
-	// Create a new parked entry
-	parked := &fftypes.Parked{
-		Pin:     fftypes.NewRandB32(),
+	// Create a new pin entry
+	pin := &fftypes.Pin{
+		Masked:  true,
+		Hash:    fftypes.NewRandB32(),
 		Batch:   fftypes.NewUUID(),
 		Created: fftypes.Now(),
 	}
-	err := s.InsertParked(ctx, parked)
+	err := s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
 
-	// Query back the parked
-	fb := database.ParkedQueryFactory.NewFilter(ctx)
+	// Query back the pin
+	fb := database.PinQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("pin", parked.Pin),
-		fb.Eq("ledger", parked.Ledger),
-		fb.Eq("batch", parked.Batch),
+		fb.Eq("masked", pin.Masked),
+		fb.Eq("hash", pin.Hash),
+		fb.Eq("batch", pin.Batch),
 		fb.Gt("created", 0),
 	)
-	parkedRes, err := s.GetParked(ctx, filter)
+	pinRes, err := s.GetPins(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(parkedRes))
+	assert.Equal(t, 1, len(pinRes))
+
+	// Double insert, checking no error
+	err = s.UpsertPin(ctx, pin)
+	assert.NoError(t, err)
+	pinRes, err = s.GetPins(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(pinRes)) // we didn't add twice
 
 	// Test delete
-	err = s.DeleteParked(ctx, parkedRes[0].Sequence)
+	err = s.DeletePin(ctx, pin.Hash, pin.Batch)
 	assert.NoError(t, err)
-	p, err := s.GetParked(ctx, filter)
+	p, err := s.GetPins(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(p))
 
 }
 
-func TestInsertParkedFailBegin(t *testing.T) {
+func TestUpsertPinFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertParked(context.Background(), &fftypes.Parked{})
+	err := s.UpsertPin(context.Background(), &fftypes.Pin{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestInsertParkedFailInsert(t *testing.T) {
+func TestUpsertPinFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.InsertParked(context.Background(), &fftypes.Parked{Sequence: 12345})
+	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestInsertParkedFailCommit(t *testing.T) {
+func TestUpsertPinFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertParked(context.Background(), &fftypes.Parked{Sequence: 12345})
+	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetParkedQueryFail(t *testing.T) {
+func TestGetPinQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", "")
-	_, err := s.GetParked(context.Background(), f)
+	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", "")
+	_, err := s.GetPins(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetParkedBuildQueryFail(t *testing.T) {
+func TestGetPinBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", map[bool]bool{true: false})
-	_, err := s.GetParked(context.Background(), f)
+	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
+	_, err := s.GetPins(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
-func TestGetParkedReadMessageFail(t *testing.T) {
+func TestGetPinReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"pin"}).AddRow("only one"))
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", "")
-	_, err := s.GetParked(context.Background(), f)
+	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", "")
+	_, err := s.GetPins(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestParkedDeleteBeginFail(t *testing.T) {
+func TestPinDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteParked(context.Background(), 12345)
+	err := s.DeletePin(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestParkedDeleteFail(t *testing.T) {
+func TestPinDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.DeleteParked(context.Background(), 12345)
+	err := s.DeletePin(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)
 }

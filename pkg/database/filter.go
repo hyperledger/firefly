@@ -156,6 +156,8 @@ func valueString(f FieldSerialization) string {
 		return fmt.Sprintf("'%s'", tv)
 	case int64:
 		return strconv.FormatInt(tv, 10)
+	case bool:
+		return fmt.Sprintf("%t", tv)
 	default:
 		return fmt.Sprintf("'%s'", tv)
 	}

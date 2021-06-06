@@ -18,3 +18,4 @@ CREATE TABLE messages (
 
 CREATE UNIQUE INDEX messages_primary ON messages(id);
 CREATE INDEX messages_created ON messages(created);
+CREATE INDEX messages_batch ON messages(batch_id);

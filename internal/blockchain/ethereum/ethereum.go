@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	broadcastBatchEventSignature = "BatchPin(address,uint256,bytes32,bytes32,bytes32,bytes32[])"
+	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"
 )
 
 type Ethereum struct {
@@ -80,10 +80,11 @@ type asyncTXSubmission struct {
 }
 
 type ethBatchPinInput struct {
+	Namespace  string   `json:"namespace"`
 	UUIDs      string   `json:"uuids"`
 	BatchHash  string   `json:"batchHash"`
 	PayloadRef string   `json:"payloadRef"`
-	Pins       []string `json:"pins"`
+	Contexts   []string `json:"contexts"`
 }
 
 type ethWSCommandPayload struct {
@@ -92,7 +93,7 @@ type ethWSCommandPayload struct {
 }
 
 var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch broadcast",
+	"BatchPin": "Batch pin",
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
@@ -255,10 +256,11 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	sTransactionHash := msgJSON.GetString("transactionHash")
 	dataJSON := msgJSON.GetObject("data")
 	authorAddress := dataJSON.GetString("author")
+	ns := dataJSON.GetString("namespace")
 	sUUIDs := dataJSON.GetString("uuids")
 	sBatchHash := dataJSON.GetString("batchHash")
 	sPayloadRef := dataJSON.GetString("payloadRef")
-	sPins := dataJSON.GetStringArray("pins")
+	sContexts := dataJSON.GetStringArray("contexts")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -301,23 +303,24 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		return nil // move on
 	}
 
-	pins := make([]*fftypes.Bytes32, len(sPins))
-	for i, sHash := range sPins {
+	contexts := make([]*fftypes.Bytes32, len(sContexts))
+	for i, sHash := range sContexts {
 		var hash fftypes.Bytes32
 		err = hash.UnmarshalText([]byte(sHash))
 		if err != nil {
 			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %+v", i, err, msgJSON)
 			return nil // move on
 		}
-		pins[i] = &hash
+		contexts[i] = &hash
 	}
 
 	batch := &blockchain.BatchPin{
+		Namespace:      ns,
 		TransactionID:  &txnID,
 		BatchID:        &batchID,
 		BatchHash:      &batchHash,
 		BatchPaylodRef: &payloadRef,
-		Pins:           pins,
+		Contexts:       contexts,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -432,18 +435,19 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
-	ethHashes := make([]string, len(batch.Pins))
-	for i, v := range batch.Pins {
+	ethHashes := make([]string, len(batch.Contexts))
+	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
 	}
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 	input := &ethBatchPinInput{
+		Namespace:  batch.Namespace,
 		UUIDs:      ethHexFormatB32(&uuids),
 		BatchHash:  ethHexFormatB32(batch.BatchHash),
 		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
-		Pins:       ethHashes,
+		Contexts:   ethHashes,
 	}
 	path := fmt.Sprintf("%s/pinBatch", e.instancePath)
 	res, err := e.client.R().

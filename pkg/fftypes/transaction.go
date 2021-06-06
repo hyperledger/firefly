@@ -38,7 +38,7 @@ type TransactionRef struct {
 
 // TransactionSubject is the hashable reason for the transaction was performed
 type TransactionSubject struct {
-	Author    string          `json:"author"`
+	Signer    string          `json:"signer"` // on-chain signing identity
 	Namespace string          `json:"namespace,omitempty"`
 	Type      TransactionType `json:"type"`
 	Reference *UUID           `json:"reference,omitempty"`

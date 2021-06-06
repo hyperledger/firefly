@@ -41,7 +41,8 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Author:    "0x12345",
+			Namespace: "ns1",
+			Signer:    "0x12345",
 			Reference: fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
@@ -67,8 +68,8 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Namespace: "ns2",
-			Author:    "0x12345",
+			Namespace: "ns1",
+			Signer:    "0x12345",
 			Reference: fftypes.NewUUID(),
 		},
 		Created:    fftypes.Now(),
@@ -100,7 +101,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("id", transactionUpdated.ID.String()),
 		fb.Eq("protocolid", transactionUpdated.ProtocolID),
-		fb.Eq("author", transactionUpdated.Subject.Author),
+		fb.Eq("signer", transactionUpdated.Subject.Signer),
 		fb.Gt("created", "0"),
 	)
 	transactions, err := s.GetTransactions(ctx, filter)

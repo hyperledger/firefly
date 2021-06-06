@@ -130,16 +130,13 @@ func (ag *aggregator) processEvents(ctx context.Context, events []*fftypes.Event
 func (ag *aggregator) processEvent(ctx context.Context, batchRefs eventsByRef, event *fftypes.Event) (bool, error) {
 	l := log.L(ctx)
 	switch event.Type {
-	case fftypes.EventTypeDataArrivedBroadcast:
-		return ag.processDataArrived(ctx, event.Namespace, batchRefs, event)
-	case fftypes.EventTypeMessageSequencedBroadcast:
-		msg, err := ag.database.GetMessageByID(ctx, event.Reference)
+	case fftypes.EventTypesBatchPinned:
+		filter := database.MessageQueryFactory.NewFilter(ctx).Eq("batch", event.Reference).Sort("sequence")
+		msgs, err := ag.database.GetMessages(ctx, filter)
 		if err != nil {
 			return false, err
 		}
-		if msg != nil && msg.Confirmed == nil {
-			return ag.checkMessageComplete(ctx, msg, batchRefs, event)
-		}
+		return ag.processParked(ctx, msgs, batchRefs, event)
 	default:
 		// Other events do not need aggregation.
 		// Note this MUST include all events that are generated via aggregation, or we would infinite loop

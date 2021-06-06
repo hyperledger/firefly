@@ -35,20 +35,6 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
-// DeleteNonce provides a mock function with given fields: ctx, hash
-func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
-	ret := _m.Called(ctx, hash)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) error); ok {
-		r0 = rf(ctx, hash)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteNextPin provides a mock function with given fields: ctx, sequence
 func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
 	ret := _m.Called(ctx, sequence)
@@ -56,6 +42,20 @@ func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
 		r0 = rf(ctx, sequence)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteNonce provides a mock function with given fields: ctx, hash
+func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
+	ret := _m.Called(ctx, hash)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r0 = rf(ctx, hash)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -77,13 +77,13 @@ func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns
 	return r0
 }
 
-// DeleteParked provides a mock function with given fields: ctx, sequence
-func (_m *Plugin) DeleteParked(ctx context.Context, sequence int64) error {
-	ret := _m.Called(ctx, sequence)
+// DeletePin provides a mock function with given fields: ctx, hash, batch
+func (_m *Plugin) DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch *fftypes.UUID) error {
+	ret := _m.Called(ctx, hash, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
-		r0 = rf(ctx, sequence)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, hash, batch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -351,52 +351,6 @@ func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNonce provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Nonce, error) {
-	ret := _m.Called(ctx, hash)
-
-	var r0 *fftypes.Nonce
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Nonce); ok {
-		r0 = rf(ctx, hash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Nonce)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
-		r1 = rf(ctx, hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNonces provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fftypes.Nonce, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.Nonce
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Nonce); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Nonce)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
-		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -703,6 +657,52 @@ func (_m *Plugin) GetNodes(ctx context.Context, filter database.Filter) ([]*ffty
 	return r0, r1
 }
 
+// GetNonce provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Nonce, error) {
+	ret := _m.Called(ctx, hash)
+
+	var r0 *fftypes.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Nonce); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Nonce)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNonces provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fftypes.Nonce, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Nonce); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Nonce)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOffset provides a mock function with given fields: ctx, t, ns, name
 func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) (*fftypes.Offset, error) {
 	ret := _m.Called(ctx, t, ns, name)
@@ -887,16 +887,16 @@ func (_m *Plugin) GetOrganizations(ctx context.Context, filter database.Filter) 
 	return r0, r1
 }
 
-// GetParked provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetParked(ctx context.Context, filter database.Filter) ([]*fftypes.Parked, error) {
+// GetPins provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*fftypes.Pin, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Parked
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Parked); ok {
+	var r0 []*fftypes.Pin
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Pin); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Parked)
+			r0 = ret.Get(0).([]*fftypes.Pin)
 		}
 	}
 
@@ -1051,20 +1051,6 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextPin) error); ok {
 		r0 = rf(ctx, nextpin)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// InsertParked provides a mock function with given fields: ctx, parked
-func (_m *Plugin) InsertParked(ctx context.Context, parked *fftypes.Parked) error {
-	ret := _m.Called(ctx, parked)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Parked) error); ok {
-		r0 = rf(ctx, parked)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1380,20 +1366,6 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExi
 	return r0
 }
 
-// UpsertNonceNext provides a mock function with given fields: ctx, _a1
-func (_m *Plugin) UpsertNonceNext(ctx context.Context, _a1 *fftypes.Nonce) error {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpsertMessage provides a mock function with given fields: ctx, message, allowExisting, allowHashUpdate
 func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting bool, allowHashUpdate bool) error {
 	ret := _m.Called(ctx, message, allowExisting, allowHashUpdate)
@@ -1436,6 +1408,20 @@ func (_m *Plugin) UpsertNode(ctx context.Context, data *fftypes.Node, allowExist
 	return r0
 }
 
+// UpsertNonceNext provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) UpsertNonceNext(ctx context.Context, _a1 *fftypes.Nonce) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertOffset provides a mock function with given fields: ctx, data, allowExisting
 func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) error {
 	ret := _m.Called(ctx, data, allowExisting)
@@ -1471,6 +1457,20 @@ func (_m *Plugin) UpsertOrganization(ctx context.Context, data *fftypes.Organiza
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertPin provides a mock function with given fields: ctx, parked
+func (_m *Plugin) UpsertPin(ctx context.Context, parked *fftypes.Pin) error {
+	ret := _m.Called(ctx, parked)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Pin) error); ok {
+		r0 = rf(ctx, parked)
 	} else {
 		r0 = ret.Error(0)
 	}
