@@ -18,20 +18,16 @@ package fftypes
 
 import (
 	"context"
-	"strings"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFFNameArrayVerifyTooLong(t *testing.T) {
-	var longStr strings.Builder
-	for i := 0; i < 64; i++ {
-		longStr.WriteRune(rune('a' + (i % 26)))
-	}
 	na := make(FFNameArray, 16)
 	for i := 0; i < 16; i++ {
-		na[i] = longStr.String()
+		na[i] = fmt.Sprintf("item_%d", i)
 	}
 	err := na.Validate(context.Background(), "field1")
 	assert.Regexp(t, `FF10227.*field1`, err)

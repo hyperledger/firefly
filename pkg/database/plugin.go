@@ -365,10 +365,11 @@ var MessageQueryFactory = &queryFields{
 	"tag":       &StringField{},
 	"group":     &UUIDField{},
 	"created":   &TimeField{},
+	"hash":      &StringField{},
+	"pins":      &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
-	"tx.id":     &UUIDField{},
 	"batch":     &UUIDField{},
 }
 
@@ -473,7 +474,7 @@ var EventQueryFactory = &queryFields{
 // ParkedQueryFactory filter fields for parked contexts
 var ParkedQueryFactory = &queryFields{
 	"sequence": &Int64Field{},
-	"hash":     &StringField{},
+	"pin":      &StringField{},
 	"ledger":   &UUIDField{},
 	"batch":    &UUIDField{},
 	"created":  &TimeField{},

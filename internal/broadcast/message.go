@@ -29,8 +29,8 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 	if in.Header.Author == "" {
 		in.Header.Author = config.GetString(config.NodeIdentity)
 	}
-	if in.Header.TX.Type == "" {
-		in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	if in.Header.TxType == "" {
+		in.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin

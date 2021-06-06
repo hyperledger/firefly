@@ -14,9 +14,9 @@ CREATE TABLE messages (
   group_id    UUID,
   datahash    CHAR(64)        NOT NULL,
   hash        CHAR(64)        NOT NULL,
+  pins        VARCHAR(1024)   NOT NULL,
   confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
-  tx_id       UUID,
   batch_id    UUID
 );
 

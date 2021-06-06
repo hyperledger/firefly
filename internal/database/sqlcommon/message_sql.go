@@ -41,15 +41,14 @@ var (
 		"group_id",
 		"datahash",
 		"hash",
+		"pins",
 		"confirmed",
 		"tx_type",
-		"tx_id",
 		"batch_id",
 	}
 	msgFilterTypeMap = map[string]string{
 		"type":    "mtype",
-		"tx.type": "tx_type",
-		"tx.id":   "tx_id",
+		"txntype": "tx_type",
 		"batch":   "batch_id",
 		"group":   "group_id",
 	}
@@ -102,9 +101,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				Set("group_id", message.Header.Group).
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
+				Set("pins", message.Pins).
 				Set("confirmed", message.Confirmed).
-				Set("tx_type", message.Header.TX.Type).
-				Set("tx_id", message.Header.TX.ID).
+				Set("tx_type", message.Header.TxType).
 				Set("batch_id", message.BatchID).
 				Where(sq.Eq{"id": message.Header.ID}),
 		); err != nil {
@@ -126,9 +125,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 					message.Header.Group,
 					message.Header.DataHash,
 					message.Hash,
+					message.Pins,
 					message.Confirmed,
-					message.Header.TX.Type,
-					message.Header.TX.ID,
+					message.Header.TxType,
 					message.BatchID,
 				),
 		)
@@ -265,9 +264,9 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.Group,
 		&msg.Header.DataHash,
 		&msg.Hash,
+		&msg.Pins,
 		&msg.Confirmed,
-		&msg.Header.TX.Type,
-		&msg.Header.TX.ID,
+		&msg.Header.TxType,
 		&msg.BatchID,
 		// Must be added to the list of columns in all selects
 		&msg.Sequence,

@@ -10,9 +10,9 @@ CREATE TABLE messages (
   group_id    string,
   datahash    string  NOT NULL,
   hash        string  NOT NULL,
+  pins        string  NOT NULL,
   confirmed   int64,
   tx_type     string  NOT NULL,
-  tx_id       string,
   batch_id    string
 );
 

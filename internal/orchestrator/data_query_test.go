@@ -192,9 +192,7 @@ func TestGetMessageTransactionOk(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		BatchID: batchID,
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, uuidMatches(batchID)).Return(&fftypes.Batch{
@@ -222,9 +220,7 @@ func TestGetMessageTransactionOperations(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		BatchID: batchID,
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, uuidMatches(batchID)).Return(&fftypes.Batch{
@@ -258,9 +254,7 @@ func TestGetMessageTransactionNoBatchTX(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		BatchID: batchID,
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, uuidMatches(batchID)).Return(&fftypes.Batch{}, nil)
@@ -275,9 +269,7 @@ func TestGetMessageTransactionNoBatch(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		BatchID: batchID,
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, uuidMatches(batchID)).Return(nil, nil)
@@ -292,9 +284,7 @@ func TestGetMessageTransactionBatchLookupErr(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		BatchID: batchID,
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, uuidMatches(batchID)).Return(nil, fmt.Errorf("pop"))
@@ -307,9 +297,7 @@ func TestGetMessageTransactionNoBatchID(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	or.mdi.On("GetMessageByID", mock.Anything, uuidMatches(msgID)).Return(&fftypes.Message{
 		Header: fftypes.MessageHeader{
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType: fftypes.TransactionTypeBatchPin,
 		},
 	}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
