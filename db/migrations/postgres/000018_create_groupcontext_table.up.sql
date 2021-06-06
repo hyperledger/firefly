@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE contexts (
+CREATE TABLE groupcontexts (
   seq            SERIAL          PRIMARY KEY,
   hash           CHAR(64)        NOT NULL,
   nonce          BIGINT          NOT NULL,
@@ -7,6 +7,7 @@ CREATE TABLE contexts (
   topic          VARCHAR(64)     NOT NULL
 );
 
-CREATE INDEX contexts_hash ON contexts(hash);
+CREATE INDEX groupcontexts_hash ON groupcontexts(hash);
+CREATE INDEX groupcontexts_group ON groupcontexts(group_id);
 
 COMMIT;

@@ -284,17 +284,17 @@ type PeristenceInterface interface {
 	// GetGroups - Get groups
 	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
 
-	// UpsertContextNextNonce - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertContextNextNonce(ctx context.Context, context *fftypes.Context) (err error)
+	// UpsertGroupContextNextNonce - Upsert a context, assigning zero if not found, or the next nonce if it is
+	UpsertGroupContextNextNonce(ctx context.Context, context *fftypes.GroupContext) (err error)
 
-	// GetContext - Get a context by hash
-	GetContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Context, err error)
+	// GetGroupContext - Get a context by hash
+	GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.GroupContext, err error)
 
-	// GetContexts - Get contexts
-	GetContexts(ctx context.Context, filter Filter) (node []*fftypes.Context, err error)
+	// GetGroupContexts - Get contexts
+	GetGroupContexts(ctx context.Context, filter Filter) (node []*fftypes.GroupContext, err error)
 
-	// DeleteContext - Delete context by hash
-	DeleteContext(ctx context.Context, hash *fftypes.Bytes32) (err error)
+	// DeleteGroupContext - Delete context by hash
+	DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) (err error)
 
 	// InsertNextHash - insert a nexthash
 	InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) (err error)
@@ -369,7 +369,7 @@ var MessageQueryFactory = &queryFields{
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
 	"tx.id":     &UUIDField{},
-	"batchid":   &UUIDField{},
+	"batch":     &UUIDField{},
 }
 
 // BatchQueryFactory filter fields for batches
@@ -511,8 +511,8 @@ var GroupQueryFactory = &queryFields{
 	"created":     &TimeField{},
 }
 
-// ContextQueryFactory filter fields for nodes
-var ContextQueryFactory = &queryFields{
+// GroupContextQueryFactory filter fields for nodes
+var GroupContextQueryFactory = &queryFields{
 	"hash":  &StringField{},
 	"nonce": &Int64Field{},
 	"group": &UUIDField{},

@@ -50,7 +50,7 @@ var (
 		"type":    "mtype",
 		"tx.type": "tx_type",
 		"tx.id":   "tx_id",
-		"batchid": "batch_id",
+		"batch":   "batch_id",
 		"group":   "group_id",
 	}
 )
