@@ -160,6 +160,27 @@ func TestBuildMessageStringConvert(t *testing.T) {
 	assert.Equal(t, "( namespace < '111' ) && ( namespace < '222' ) && ( namespace < '333' ) && ( namespace < '444' ) && ( namespace < '555' ) && ( namespace < '666' ) && ( namespace < '' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace < '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
 }
 
+func TestBuildMessageBoolConvert(t *testing.T) {
+	fb := PinQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.Eq("masked", false),
+		fb.Eq("masked", true),
+		fb.Eq("masked", "false"),
+		fb.Eq("masked", "true"),
+		fb.Eq("masked", "True"),
+		fb.Eq("masked", ""),
+		fb.Eq("masked", int(111)),
+		fb.Eq("masked", int32(222)),
+		fb.Eq("masked", int64(333)),
+		fb.Eq("masked", uint(444)),
+		fb.Eq("masked", uint32(555)),
+		fb.Eq("masked", uint64(666)),
+		fb.Eq("masked", nil),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, "( masked == false ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == false )", f.String())
+}
+
 func TestBuildMessageJSONConvert(t *testing.T) {
 	fb := TransactionQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
@@ -187,6 +208,12 @@ func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*namespace", err)
+}
+
+func TestBuildMessageFailBoolConvert(t *testing.T) {
+	fb := PinQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("masked", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*masked", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
@@ -252,4 +279,5 @@ func TestStringsForTypes(t *testing.T) {
 	assert.Equal(t, now.String(), (&timeField{t: now}).String())
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
 	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFNameArray{"t1", "t2"}}).String())
+	assert.Equal(t, "true", (&boolField{b: true}).String())
 }

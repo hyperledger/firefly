@@ -231,7 +231,7 @@ func TestCalcPinsFail(t *testing.T) {
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	gid := fftypes.NewUUID()
-	_, err := bp.calcPins(bp.ctx, &fftypes.Batch{
+	_, err := bp.maskContexts(bp.ctx, &fftypes.Batch{
 		Group: gid,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{

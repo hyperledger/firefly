@@ -190,21 +190,30 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 			continue
 		}
 		msg := event.Message
-		topic := ""
+		tag := ""
 		group := ""
-		context := ""
+		var topics []string
 		if msg != nil {
-			topic = msg.Header.Topic
-			context = msg.Header.Context
+			tag = msg.Header.Tag
+			topics = msg.Header.Topics
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
 			}
 		}
-		if filter.topicFilter != nil && !filter.topicFilter.MatchString(topic) {
+		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
 			continue
 		}
-		if filter.contextFilter != nil && !filter.contextFilter.MatchString(context) {
-			continue
+		if filter.topicsFilter != nil {
+			topicsMatch := false
+			for _, topic := range topics {
+				if filter.topicsFilter.MatchString(topic) {
+					topicsMatch = true
+					break
+				}
+			}
+			if !topicsMatch {
+				continue
+			}
 		}
 		if filter.groupFilter != nil && !filter.groupFilter.MatchString(group) {
 			continue

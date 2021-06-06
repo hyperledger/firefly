@@ -132,7 +132,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	be := &boundCallbacks{sm: sm, ei: mei}
 
 	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{
-		Topic: "[[[[[ !wrong",
+		Topics: "[[[[[ !wrong",
 	}, fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10171", err)
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
@@ -195,10 +195,10 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 			Filter: fftypes.SubscriptionFilter{
-				Events:  ".*",
-				Topic:   ".*",
-				Context: ".*",
-				Group:   ".*",
+				Events: ".*",
+				Topics: ".*",
+				Tag:    ".*",
+				Group:  ".*",
 			}},
 	}, nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
@@ -237,7 +237,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Topic: "[[[[! badness",
+			Topics: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
@@ -251,7 +251,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Context: "[[[[! badness",
+			Tag: "[[[[! badness",
 		},
 		Transport: "ut",
 	})

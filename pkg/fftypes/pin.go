@@ -16,8 +16,8 @@
 
 package fftypes
 
-// Parked represents a ledger-pinning event that has been
-// detected from the blockchain, but cannot be processed immediately.
+// Pin represents a ledger-pinning event that has been
+// detected from the blockchain, in the sequence that it was detected.
 //
 // A batch contains many messages, and each of those messages can be on a different
 // topic (or topics)
@@ -36,10 +36,10 @@ package fftypes
 // before receiving the blob data - we have to upgrade a batch-park, to a pin-park.
 // This is because the sequence must be in the order the pins arrive.
 //
-type Parked struct {
+type Pin struct {
 	Sequence int64    `json:"sequence,omitempty"`
-	Pin      *Bytes32 `json:"pin,omitempty"`
-	Ledger   *UUID    `json:"ledger,omitempty"`
+	Masked   bool     `json:"masked,omitempty"`
+	Hash     *Bytes32 `json:"hash,omitempty"`
 	Batch    *UUID    `json:"batch,omitempty"`
 	Created  *FFTime  `json:"created,omitempty"`
 }

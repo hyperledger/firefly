@@ -109,7 +109,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	})
 }
 
-func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32, publicstorageID string) error {
 
 	id, err := bm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
@@ -124,8 +124,8 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Author:    batch.Author,
 			Namespace: batch.Namespace,
+			Signer:    id.OnChain, // The transaction records on the on-chain identity
 			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
@@ -148,7 +148,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
-		Pins:           pins,
+		Contexts:       contexts,
 	})
 	if err != nil {
 		return err

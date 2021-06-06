@@ -33,7 +33,7 @@ var (
 		"ttype",
 		"namespace",
 		"ref",
-		"author",
+		"signer",
 		"hash",
 		"created",
 		"protocol_id",
@@ -87,7 +87,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Set("ttype", string(transaction.Subject.Type)).
 				Set("namespace", transaction.Subject.Namespace).
 				Set("ref", transaction.Subject.Reference).
-				Set("author", transaction.Subject.Author).
+				Set("signer", transaction.Subject.Signer).
 				Set("hash", transaction.Hash).
 				Set("created", transaction.Created).
 				Set("protocol_id", transaction.ProtocolID).
@@ -107,7 +107,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					string(transaction.Subject.Type),
 					transaction.Subject.Namespace,
 					transaction.Subject.Reference,
-					transaction.Subject.Author,
+					transaction.Subject.Signer,
 					transaction.Hash,
 					transaction.Created,
 					transaction.ProtocolID,
@@ -129,7 +129,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.Subject.Type,
 		&transaction.Subject.Namespace,
 		&transaction.Subject.Reference,
-		&transaction.Subject.Author,
+		&transaction.Subject.Signer,
 		&transaction.Hash,
 		&transaction.Created,
 		&transaction.ProtocolID,

@@ -88,6 +88,9 @@ type TransactionStatus = fftypes.OpStatus
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
 type BatchPin struct {
 
+	// Namespace goes in the clear on the chain
+	Namespace string
+
 	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
 	TransactionID *fftypes.UUID
 
@@ -100,7 +103,7 @@ type BatchPin struct {
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload. Nil for private messages
 	BatchPaylodRef *fftypes.Bytes32
 
-	// Pins is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
+	// Contexts is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
 	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must
 	//
 	// - The primary subject of each hash is a "context"
@@ -117,5 +120,5 @@ type BatchPin struct {
 	//   - The hashes are made unique to the sender
 	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
 	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
-	Pins []*fftypes.Bytes32
+	Contexts []*fftypes.Bytes32
 }

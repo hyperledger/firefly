@@ -26,8 +26,7 @@ func TestTransactionHash(t *testing.T) {
 	batchid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
 	tx := &Transaction{}
 	tx.Subject = TransactionSubject{
-		Author:    "0x12345",
-		Namespace: "ns1",
+		Signer:    "0x12345",
 		Type:      TransactionTypeBatchPin,
 		Reference: batchid,
 	}

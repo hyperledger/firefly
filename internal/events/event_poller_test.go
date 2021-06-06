@@ -225,7 +225,7 @@ func TestProcessEventsFail(t *testing.T) {
 	})
 	defer cancel()
 	_, err := ep.conf.newEventsHandler([]*fftypes.Event{
-		fftypes.NewEvent(fftypes.EventTypeMessageSequencedBroadcast, "ns1", fftypes.NewUUID()),
+		fftypes.NewEvent(fftypes.EventTypesBatchPinned, "ns1", fftypes.NewUUID()),
 	})
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)

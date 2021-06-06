@@ -39,10 +39,11 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	batch := &blockchain.BroadcastBatch{
+	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		Pins:           []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchData := &fftypes.Batch{
 		ID:         batch.BatchID,
@@ -70,7 +71,7 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
+	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 
 	// Call through to persistBatch - the hash of our batch will be invalid,
@@ -83,10 +84,11 @@ func TestSequencedBroadcastBatchOk(t *testing.T) {
 func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
-	batch := &blockchain.BroadcastBatch{
+	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		Pins:           []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
 	cancel() // to avoid retry
@@ -94,7 +96,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	mpi.AssertExpectations(t)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -103,10 +105,11 @@ func TestSequencedBroadcastBatchBadData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	batch := &blockchain.BroadcastBatch{
+	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		Pins:           []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
 
@@ -114,7 +117,7 @@ func TestSequencedBroadcastBatchBadData(t *testing.T) {
 	mpi.On("RetrieveData", mock.Anything, mock.Anything).Return(batchReadCloser, nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.SequencedBroadcastBatch(mbi, batch, "0x12345", "tx1", nil)
+	err := em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err) // We do not return a blocking error in the case of bad data stored in IPFS
 }
 
@@ -323,7 +326,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Signer:    "0x12345",
 			Reference: batch.ID,
 		},
 	}, nil)
@@ -361,7 +364,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Signer:    "0x12345",
 			Reference: batch.ID,
 		},
 	}, nil)
@@ -401,7 +404,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Signer:    "0x12345",
 			Reference: batch.ID,
 		},
 	}, nil)
@@ -445,7 +448,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Signer:    "0x12345",
 			Reference: batch.ID,
 		},
 	}, nil)
@@ -489,7 +492,7 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Signer:    "0x12345",
 			Reference: batch.ID,
 		},
 	}, nil)

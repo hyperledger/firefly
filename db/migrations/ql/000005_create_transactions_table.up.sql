@@ -3,7 +3,7 @@ CREATE TABLE transactions (
   ttype       string   NOT NULL,
   namespace   string   NOT NULL,
   ref         string,
-  author      string   NOT NULL,
+  signer      string   NOT NULL,
   hash        string   NOT NULL,
   created     int64    NOT NULL,
   protocol_id string,

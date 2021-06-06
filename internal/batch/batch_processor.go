@@ -183,19 +183,24 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	return batch
 }
 
-func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topic string) (*fftypes.Bytes32, error) {
+func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (contextHash *fftypes.Bytes32, pin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
 
-	// For private groups, we need to make the topic specific to the group (which is
-	// a salt for the hash as it is not on chain)
-	if msg.Header.Group != nil {
-		hashBuilder.Write((*msg.Header.Group)[:])
+	// For broadcast we do not need to mask the context, which is just the hash
+	// of the topic. There would be no way to unmask it if we did, because we don't have
+	// the full list of senders to know what their next hashes should be.
+	if msg.Header.Group == nil {
+		return fftypes.HashResult(hashBuilder), nil, nil
 	}
 
+	// For private groups, we need to make the topic specific to the group (which is
+	// a salt for the hash as it is not on chain)
+	hashBuilder.Write((*msg.Header.Group)[:])
+
 	// The combination of the topic and group is the context
-	contextHash := fftypes.HashResult(hashBuilder)
+	contextHash = fftypes.HashResult(hashBuilder)
 
 	// Get the next nonce for this context - we're the authority in the nextwork on this,
 	// as we are the sender.
@@ -204,9 +209,9 @@ func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topi
 		Group:   msg.Header.Group,
 		Topic:   topic,
 	}
-	err := bp.database.UpsertNonceNext(ctx, gc)
+	err = bp.database.UpsertNonceNext(ctx, gc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Now combine our sending identity, and this nonce, to produce the hash that should
@@ -215,24 +220,34 @@ func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topi
 	nonceBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
 	hashBuilder.Write(nonceBytes)
-	return fftypes.HashResult(hashBuilder), err
+
+	return contextHash, fftypes.HashResult(hashBuilder), err
 }
 
-func (bp *batchProcessor) calcPins(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
+func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
-	pins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
+	dupCheck := make(map[fftypes.Bytes32]bool)
+	contextsOrPins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
 	for _, msg := range batch.Payload.Messages {
 		for _, topic := range msg.Header.Topics {
-			pin, err := bp.getPin(ctx, msg, topic)
+			contextHash, pin, err := bp.maskContext(ctx, msg, topic)
 			if err != nil {
 				return nil, err
 			}
-			if pin != nil {
-				pins = append(pins, pin)
+			if pin == nil {
+				// Outside of a group we have the unmasked context in the transaction, so can de-dup
+				if !dupCheck[*pin] {
+					contextsOrPins = append(contextsOrPins, contextHash)
+					dupCheck[*pin] = true
+				}
+			} else {
+				// For private group, each pin will be masked so it is different and only decodable
+				// by those who know who's in the group.
+				contextsOrPins = append(contextsOrPins, pin)
 			}
 		}
 	}
-	return pins, nil
+	return contextsOrPins, nil
 }
 
 func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.Bytes32) {
@@ -246,7 +261,7 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, pins []*fftypes.By
 	})
 }
 
-func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (pins []*fftypes.Bytes32, err error) {
+func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (contexts []*fftypes.Bytes32, err error) {
 	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		err = bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
@@ -264,7 +279,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 				err = bp.database.UpdateMessages(ctx, filter, update)
 			}
 			if err == nil && seal {
-				pins, err = bp.calcPins(bp.ctx, batch)
+				contexts, err = bp.maskContexts(bp.ctx, batch)
 			}
 			if err == nil {
 				// Persist the batch itself
@@ -277,7 +292,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 		}
 		return false, nil
 	})
-	return pins, err
+	return contexts, err
 }
 
 func (bp *batchProcessor) persistenceLoop() {
@@ -322,7 +337,7 @@ func (bp *batchProcessor) persistenceLoop() {
 		l.Debugf("Adding %d entries to batch %s. Size=%d Seal=%t", len(newWork), currentBatch.ID, batchSize, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		pins, err := bp.persistBatch(currentBatch, newWork, seal)
+		contexts, err := bp.persistBatch(currentBatch, newWork, seal)
 		if err != nil {
 			return
 		}
@@ -347,7 +362,7 @@ func (bp *batchProcessor) persistenceLoop() {
 
 			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
 			// will break out of the retry in the case that we close
-			bp.dispatchBatch(currentBatch, pins)
+			bp.dispatchBatch(currentBatch, contexts)
 
 			// Move onto the next batch
 			currentBatch = nil
