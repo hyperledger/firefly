@@ -284,35 +284,35 @@ type PeristenceInterface interface {
 	// GetGroups - Get groups
 	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
 
-	// UpsertGroupContextNextNonce - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertGroupContextNextNonce(ctx context.Context, context *fftypes.GroupContext) (err error)
+	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
+	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
 
-	// GetGroupContext - Get a context by hash
-	GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.GroupContext, err error)
+	// GetNonce - Get a context by hash
+	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
 
-	// GetGroupContexts - Get contexts
-	GetGroupContexts(ctx context.Context, filter Filter) (node []*fftypes.GroupContext, err error)
+	// GetNonces - Get contexts
+	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, err error)
 
-	// DeleteGroupContext - Delete context by hash
-	DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) (err error)
+	// DeleteNonce - Delete context by hash
+	DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err error)
 
-	// InsertNextHash - insert a nexthash
-	InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) (err error)
+	// InsertNextPin - insert a nextpin
+	InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error)
 
-	// GetNextHashByContextAndIdentity - lookup nexthash by context+identity
-	GetNextHashByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextHash, err error)
+	// GetNextPinByContextAndIdentity - lookup nextpin by context+identity
+	GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error)
 
-	// GetNextHashByHash - lookup nexthash by its hash
-	GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextHash, err error)
+	// GetNextPinByHash - lookup nextpin by its hash
+	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error)
 
-	// GetNextHashes - get nexthashes
-	GetNextHashes(ctx context.Context, filter Filter) (message []*fftypes.NextHash, err error)
+	// GetNextPins - get nextpins
+	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, err error)
 
-	// UpdateNextHash - update a next hash using its local database ID
-	UpdateNextHash(ctx context.Context, sequence int64, update Update) (err error)
+	// UpdateNextPin - update a next hash using its local database ID
+	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
 
-	// DeleteNextHash - delete a next hash, using its local database ID
-	DeleteNextHash(ctx context.Context, sequence int64) (err error)
+	// DeleteNextPin - delete a next hash, using its local database ID
+	DeleteNextPin(ctx context.Context, sequence int64) (err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
@@ -512,16 +512,16 @@ var GroupQueryFactory = &queryFields{
 	"created":     &TimeField{},
 }
 
-// GroupContextQueryFactory filter fields for nodes
-var GroupContextQueryFactory = &queryFields{
-	"hash":  &StringField{},
-	"nonce": &Int64Field{},
-	"group": &UUIDField{},
-	"topic": &StringField{},
+// NonceQueryFactory filter fields for nodes
+var NonceQueryFactory = &queryFields{
+	"context": &StringField{},
+	"nonce":   &Int64Field{},
+	"group":   &UUIDField{},
+	"topic":   &StringField{},
 }
 
-// NextHashQueryFactory filter fields for nodes
-var NextHashQueryFactory = &queryFields{
+// NextPinQueryFactory filter fields for nodes
+var NextPinQueryFactory = &queryFields{
 	"context":  &StringField{},
 	"identity": &StringField{},
 	"hash":     &StringField{},

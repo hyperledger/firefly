@@ -16,7 +16,7 @@
 
 package fftypes
 
-type NextHash struct {
+type NextPin struct {
 	Context  *Bytes32 `json:"context"`
 	Identity string   `json:"identity"`
 	Hash     *Bytes32 `json:"hash"`

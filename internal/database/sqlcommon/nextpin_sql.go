@@ -29,16 +29,16 @@ import (
 )
 
 var (
-	nexthashColumns = []string{
+	nextpinColumns = []string{
 		"context",
 		"identity",
 		"hash",
 		"nonce",
 	}
-	nexthashFilterTypeMap = map[string]string{}
+	nextpinFilterTypeMap = map[string]string{}
 )
 
-func (s *SQLCommon) InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) (err error) {
+func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -46,44 +46,44 @@ func (s *SQLCommon) InsertNextHash(ctx context.Context, nexthash *fftypes.NextHa
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	sequence, err := s.insertTx(ctx, tx,
-		sq.Insert("nexthashes").
-			Columns(nexthashColumns...).
+		sq.Insert("nextpins").
+			Columns(nextpinColumns...).
 			Values(
-				nexthash.Context,
-				nexthash.Identity,
-				nexthash.Hash,
-				nexthash.Nonce,
+				nextpin.Context,
+				nextpin.Identity,
+				nextpin.Hash,
+				nextpin.Nonce,
 			),
 	)
 	if err != nil {
 		return err
 	}
-	nexthash.Sequence = sequence
+	nextpin.Sequence = sequence
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) nexthashResult(ctx context.Context, row *sql.Rows) (*fftypes.NextHash, error) {
-	nexthash := fftypes.NextHash{}
+func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.NextPin, error) {
+	nextpin := fftypes.NextPin{}
 	err := row.Scan(
-		&nexthash.Context,
-		&nexthash.Identity,
-		&nexthash.Hash,
-		&nexthash.Nonce,
-		&nexthash.Sequence,
+		&nextpin.Context,
+		&nextpin.Identity,
+		&nextpin.Hash,
+		&nextpin.Nonce,
+		&nextpin.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "nexthashes")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "nextpins")
 	}
-	return &nexthash, nil
+	return &nextpin, nil
 }
 
-func (s *SQLCommon) getNextHashPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.NextHash, err error) {
-	cols := append([]string{}, nexthashColumns...)
+func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.NextPin, err error) {
+	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
-			From("nexthashes").
+			From("nextpins").
 			Where(pred),
 	)
 	if err != nil {
@@ -92,36 +92,36 @@ func (s *SQLCommon) getNextHashPred(ctx context.Context, desc string, pred inter
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("NextHash '%s' not found", desc)
+		log.L(ctx).Debugf("NextPin '%s' not found", desc)
 		return nil, nil
 	}
 
-	nexthash, err := s.nexthashResult(ctx, rows)
+	nextpin, err := s.nextpinResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return nexthash, nil
+	return nextpin, nil
 }
 
-func (s *SQLCommon) GetNextHashByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextHash, err error) {
-	return s.getNextHashPred(ctx, fmt.Sprintf("%s:%s", context, identity), sq.Eq{
+func (s *SQLCommon) GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error) {
+	return s.getNextPinPred(ctx, fmt.Sprintf("%s:%s", context, identity), sq.Eq{
 		"context":  context,
 		"identity": identity,
 	})
 }
 
-func (s *SQLCommon) GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextHash, err error) {
-	return s.getNextHashPred(ctx, hash.String(), sq.Eq{
+func (s *SQLCommon) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error) {
+	return s.getNextPinPred(ctx, hash.String(), sq.Eq{
 		"hash": hash,
 	})
 }
 
-func (s *SQLCommon) GetNextHashes(ctx context.Context, filter database.Filter) (message []*fftypes.NextHash, err error) {
+func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (message []*fftypes.NextPin, err error) {
 
-	cols := append([]string{}, nexthashColumns...)
+	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("nexthashes"), filter, nexthashFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("nextpins"), filter, nextpinFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -132,20 +132,20 @@ func (s *SQLCommon) GetNextHashes(ctx context.Context, filter database.Filter) (
 	}
 	defer rows.Close()
 
-	nexthash := []*fftypes.NextHash{}
+	nextpin := []*fftypes.NextPin{}
 	for rows.Next() {
-		d, err := s.nexthashResult(ctx, rows)
+		d, err := s.nextpinResult(ctx, rows)
 		if err != nil {
 			return nil, err
 		}
-		nexthash = append(nexthash, d)
+		nextpin = append(nextpin, d)
 	}
 
-	return nexthash, err
+	return nextpin, err
 
 }
 
-func (s *SQLCommon) UpdateNextHash(ctx context.Context, sequence int64, update database.Update) (err error) {
+func (s *SQLCommon) UpdateNextPin(ctx context.Context, sequence int64, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -153,7 +153,7 @@ func (s *SQLCommon) UpdateNextHash(ctx context.Context, sequence int64, update d
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("nexthashes"), update, nodeFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("nextpins"), update, nodeFilterTypeMap)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (s *SQLCommon) UpdateNextHash(ctx context.Context, sequence int64, update d
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) DeleteNextHash(ctx context.Context, sequence int64) (err error) {
+func (s *SQLCommon) DeleteNextPin(ctx context.Context, sequence int64) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -175,7 +175,7 @@ func (s *SQLCommon) DeleteNextHash(ctx context.Context, sequence int64) (err err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("nexthashes").Where(sq.Eq{
+	err = s.deleteTx(ctx, tx, sq.Delete("nextpins").Where(sq.Eq{
 		s.provider.SequenceField(""): sequence,
 	}))
 	if err != nil {

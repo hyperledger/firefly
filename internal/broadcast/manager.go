@@ -88,7 +88,7 @@ func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftype
 	return id, nil
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, sequenceHashes []*fftypes.Bytes32) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -105,11 +105,11 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return bm.submitTXAndUpdateDB(ctx, batch, sequenceHashes, publicstorageID)
+		return bm.submitTXAndUpdateDB(ctx, batch, pins, publicstorageID)
 	})
 }
 
-func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, sequenceHashes []*fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32, publicstorageID string) error {
 
 	id, err := bm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
@@ -148,7 +148,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
-		SequenceHashes: sequenceHashes,
+		Pins:           pins,
 	})
 	if err != nil {
 		return err

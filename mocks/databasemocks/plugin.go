@@ -35,8 +35,8 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
-// DeleteGroupContext provides a mock function with given fields: ctx, hash
-func (_m *Plugin) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) error {
+// DeleteNonce provides a mock function with given fields: ctx, hash
+func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error {
 	ret := _m.Called(ctx, hash)
 
 	var r0 error
@@ -49,8 +49,8 @@ func (_m *Plugin) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32)
 	return r0
 }
 
-// DeleteNextHash provides a mock function with given fields: ctx, sequence
-func (_m *Plugin) DeleteNextHash(ctx context.Context, sequence int64) error {
+// DeleteNextPin provides a mock function with given fields: ctx, sequence
+func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
 	ret := _m.Called(ctx, sequence)
 
 	var r0 error
@@ -358,16 +358,16 @@ func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	return r0, r1
 }
 
-// GetGroupContext provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.GroupContext, error) {
+// GetNonce provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Nonce, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.GroupContext
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.GroupContext); ok {
+	var r0 *fftypes.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Nonce); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.GroupContext)
+			r0 = ret.Get(0).(*fftypes.Nonce)
 		}
 	}
 
@@ -381,16 +381,16 @@ func (_m *Plugin) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (*
 	return r0, r1
 }
 
-// GetGroupContexts provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetGroupContexts(ctx context.Context, filter database.Filter) ([]*fftypes.GroupContext, error) {
+// GetNonces provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fftypes.Nonce, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.GroupContext
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.GroupContext); ok {
+	var r0 []*fftypes.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Nonce); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.GroupContext)
+			r0 = ret.Get(0).([]*fftypes.Nonce)
 		}
 	}
 
@@ -565,16 +565,16 @@ func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetNextHashByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
-func (_m *Plugin) GetNextHashByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*fftypes.NextHash, error) {
+// GetNextPinByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
+func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*fftypes.NextPin, error) {
 	ret := _m.Called(ctx, _a1, identity)
 
-	var r0 *fftypes.NextHash
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *fftypes.NextHash); ok {
+	var r0 *fftypes.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *fftypes.NextPin); ok {
 		r0 = rf(ctx, _a1, identity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.NextHash)
+			r0 = ret.Get(0).(*fftypes.NextPin)
 		}
 	}
 
@@ -588,16 +588,16 @@ func (_m *Plugin) GetNextHashByContextAndIdentity(ctx context.Context, _a1 *ffty
 	return r0, r1
 }
 
-// GetNextHashByHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.NextHash, error) {
+// GetNextPinByHash provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.NextPin, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.NextHash
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.NextHash); ok {
+	var r0 *fftypes.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.NextPin); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.NextHash)
+			r0 = ret.Get(0).(*fftypes.NextPin)
 		}
 	}
 
@@ -611,16 +611,16 @@ func (_m *Plugin) GetNextHashByHash(ctx context.Context, hash *fftypes.Bytes32) 
 	return r0, r1
 }
 
-// GetNextHashes provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNextHashes(ctx context.Context, filter database.Filter) ([]*fftypes.NextHash, error) {
+// GetNextPins provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*fftypes.NextPin, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.NextHash
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.NextHash); ok {
+	var r0 []*fftypes.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.NextPin); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.NextHash)
+			r0 = ret.Get(0).([]*fftypes.NextPin)
 		}
 	}
 
@@ -1044,13 +1044,13 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
-// InsertNextHash provides a mock function with given fields: ctx, nexthash
-func (_m *Plugin) InsertNextHash(ctx context.Context, nexthash *fftypes.NextHash) error {
-	ret := _m.Called(ctx, nexthash)
+// InsertNextPin provides a mock function with given fields: ctx, nextpin
+func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) error {
+	ret := _m.Called(ctx, nextpin)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextHash) error); ok {
-		r0 = rf(ctx, nexthash)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextPin) error); ok {
+		r0 = rf(ctx, nextpin)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1212,8 +1212,8 @@ func (_m *Plugin) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update 
 	return r0
 }
 
-// UpdateNextHash provides a mock function with given fields: ctx, sequence, update
-func (_m *Plugin) UpdateNextHash(ctx context.Context, sequence int64, update database.Update) error {
+// UpdateNextPin provides a mock function with given fields: ctx, sequence, update
+func (_m *Plugin) UpdateNextPin(ctx context.Context, sequence int64, update database.Update) error {
 	ret := _m.Called(ctx, sequence, update)
 
 	var r0 error
@@ -1380,12 +1380,12 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExi
 	return r0
 }
 
-// UpsertGroupContextNextNonce provides a mock function with given fields: ctx, _a1
-func (_m *Plugin) UpsertGroupContextNextNonce(ctx context.Context, _a1 *fftypes.GroupContext) error {
+// UpsertNonceNext provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) UpsertNonceNext(ctx context.Context, _a1 *fftypes.Nonce) error {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.GroupContext) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
