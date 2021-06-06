@@ -102,7 +102,11 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	trackingID, err := u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
+		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		SequenceHashes: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+		},
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, trackingID)
@@ -138,6 +142,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 	trackingID, err := u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
+		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 		SequenceHashes: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
@@ -165,6 +170,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 	_, err = u.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: "id1"}, &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
+		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
 		SequenceHashes: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),

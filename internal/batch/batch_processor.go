@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql/driver"
+	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -45,6 +46,7 @@ type batchProcessorConf struct {
 	Options
 	namespace          string
 	author             string
+	group              *fftypes.UUID
 	dispatch           DispatchHandler
 	processorQuiescing func()
 }
@@ -156,6 +158,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 			ID:        batchID,
 			Namespace: bp.conf.namespace,
 			Author:    bp.conf.author,
+			Group:     bp.conf.group,
 			Payload:   fftypes.BatchPayload{},
 			Created:   fftypes.Now(),
 		}
@@ -181,6 +184,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 }
 
 func (bp *batchProcessor) getSequenceHash(ctx context.Context, msg *fftypes.Message, topic string, dupCheck map[fftypes.Bytes32]bool) (*fftypes.Bytes32, error) {
+
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
 
@@ -191,6 +195,7 @@ func (bp *batchProcessor) getSequenceHash(ctx context.Context, msg *fftypes.Mess
 			// Do not add multiple times, to minimize on-chain data
 			return nil, nil
 		}
+		dupCheck[*broadcastContext] = true
 		return broadcastContext, nil
 	}
 
@@ -202,6 +207,7 @@ func (bp *batchProcessor) getSequenceHash(ctx context.Context, msg *fftypes.Mess
 		// Do not increment the nonce multiple times per batch, and minimize on-chain data
 		return nil, nil
 	}
+	dupCheck[*contextHash] = true
 
 	// We also need to make sure it is unique to each message, so we don't leak the
 	// metadata that a set of transactions are all working against the same topic.
@@ -220,7 +226,10 @@ func (bp *batchProcessor) getSequenceHash(ctx context.Context, msg *fftypes.Mess
 	// Now combine our sending identity, and this nonce, to produce the hash that should
 	// be expected by all members of the group as the next nonce from us on this topic.
 	hashBuilder.Write([]byte(msg.Header.Author))
-	return gc.Hash, err
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
+	hashBuilder.Write(nonceBytes)
+	return fftypes.HashResult(hashBuilder), err
 }
 
 func (bp *batchProcessor) calcSequenceHashes(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
@@ -234,7 +243,6 @@ func (bp *batchProcessor) calcSequenceHashes(ctx context.Context, batch *fftypes
 				return nil, err
 			}
 			if sequenceHash != nil {
-				dupCheck[*sequenceHash] = true
 				sequenceHashes = append(sequenceHashes, sequenceHash)
 			}
 		}
