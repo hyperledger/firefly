@@ -29,185 +29,185 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestContextsE2EWithDB(t *testing.T) {
+func TestGroupContextsE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 
 	s := newQLTestProvider(t)
 	defer s.Close()
 	ctx := context.Background()
 
-	// Create a new context entry
-	contextZero := &fftypes.Context{
+	// Create a new groupcontext entry
+	groupcontextZero := &fftypes.GroupContext{
 		Hash:  fftypes.NewRandB32(),
 		Group: fftypes.NewUUID(),
 		Topic: "topic12345",
 	}
-	err := s.UpsertContextNextNonce(ctx, contextZero)
+	err := s.UpsertGroupContextNextNonce(ctx, groupcontextZero)
 	assert.NoError(t, err)
 
-	// Check we get the exact same context back
-	contextRead, err := s.GetContext(ctx, contextZero.Hash)
+	// Check we get the exact same groupcontext back
+	groupcontextRead, err := s.GetGroupContext(ctx, groupcontextZero.Hash)
 	assert.NoError(t, err)
-	assert.NotNil(t, contextRead)
-	contextJson, _ := json.Marshal(&contextZero)
-	contextReadJson, _ := json.Marshal(&contextRead)
-	assert.Equal(t, string(contextJson), string(contextReadJson))
+	assert.NotNil(t, groupcontextRead)
+	groupcontextJson, _ := json.Marshal(&groupcontextZero)
+	groupcontextReadJson, _ := json.Marshal(&groupcontextRead)
+	assert.Equal(t, string(groupcontextJson), string(groupcontextReadJson))
 
-	// Update the context (this is testing what's possible at the database layer,
+	// Update the groupcontext (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	var contextUpdated fftypes.Context
-	contextUpdated = *contextZero
+	var groupcontextUpdated fftypes.GroupContext
+	groupcontextUpdated = *groupcontextZero
 
 	// Increment a couple of times
-	err = s.UpsertContextNextNonce(context.Background(), &contextUpdated)
+	err = s.UpsertGroupContextNextNonce(context.Background(), &groupcontextUpdated)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), contextUpdated.Nonce)
-	err = s.UpsertContextNextNonce(context.Background(), &contextUpdated)
+	assert.Equal(t, int64(1), groupcontextUpdated.Nonce)
+	err = s.UpsertGroupContextNextNonce(context.Background(), &groupcontextUpdated)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(2), contextUpdated.Nonce)
+	assert.Equal(t, int64(2), groupcontextUpdated.Nonce)
 
 	// Check we get the exact same data back
-	contextRead, err = s.GetContext(ctx, contextUpdated.Hash)
+	groupcontextRead, err = s.GetGroupContext(ctx, groupcontextUpdated.Hash)
 	assert.NoError(t, err)
-	contextJson, _ = json.Marshal(&contextUpdated)
-	contextReadJson, _ = json.Marshal(&contextRead)
-	assert.Equal(t, string(contextJson), string(contextReadJson))
+	groupcontextJson, _ = json.Marshal(&groupcontextUpdated)
+	groupcontextReadJson, _ = json.Marshal(&groupcontextRead)
+	assert.Equal(t, string(groupcontextJson), string(groupcontextReadJson))
 
-	// Query back the context
-	fb := database.ContextQueryFactory.NewFilter(ctx)
+	// Query back the groupcontext
+	fb := database.GroupContextQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("hash", contextUpdated.Hash),
-		fb.Eq("nonce", contextUpdated.Nonce),
-		fb.Eq("group", contextUpdated.Group),
-		fb.Eq("topic", contextUpdated.Topic),
+		fb.Eq("hash", groupcontextUpdated.Hash),
+		fb.Eq("nonce", groupcontextUpdated.Nonce),
+		fb.Eq("group", groupcontextUpdated.Group),
+		fb.Eq("topic", groupcontextUpdated.Topic),
 	)
-	contextRes, err := s.GetContexts(ctx, filter)
+	groupcontextRes, err := s.GetGroupContexts(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(contextRes))
-	contextReadJson, _ = json.Marshal(contextRes[0])
-	assert.Equal(t, string(contextJson), string(contextReadJson))
+	assert.Equal(t, 1, len(groupcontextRes))
+	groupcontextReadJson, _ = json.Marshal(groupcontextRes[0])
+	assert.Equal(t, string(groupcontextJson), string(groupcontextReadJson))
 
 	// Test delete
-	err = s.DeleteContext(ctx, contextUpdated.Hash)
+	err = s.DeleteGroupContext(ctx, groupcontextUpdated.Hash)
 	assert.NoError(t, err)
-	contexts, err := s.GetContexts(ctx, filter)
+	groupcontexts, err := s.GetGroupContexts(ctx, filter)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(contexts))
+	assert.Equal(t, 0, len(groupcontexts))
 
 }
 
-func TestUpsertContextFailBegin(t *testing.T) {
+func TestUpsertGroupContextFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContextNextNonce(context.Background(), &fftypes.Context{})
+	err := s.UpsertGroupContextNextNonce(context.Background(), &fftypes.GroupContext{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContextFailSelect(t *testing.T) {
+func TestUpsertGroupContextFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContextNextNonce(context.Background(), &fftypes.Context{Hash: fftypes.NewRandB32()})
+	err := s.UpsertGroupContextNextNonce(context.Background(), &fftypes.GroupContext{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContextFailInsert(t *testing.T) {
+func TestUpsertGroupContextFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContextNextNonce(context.Background(), &fftypes.Context{Hash: fftypes.NewRandB32()})
+	err := s.UpsertGroupContextNextNonce(context.Background(), &fftypes.GroupContext{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContextFailScan(t *testing.T) {
+func TestUpsertGroupContextFailScan(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}).AddRow())
 	mock.ExpectRollback()
-	err := s.UpsertContextNextNonce(context.Background(), &fftypes.Context{Hash: fftypes.NewRandB32()})
+	err := s.UpsertGroupContextNextNonce(context.Background(), &fftypes.GroupContext{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertContextFailUpdate(t *testing.T) {
+func TestUpsertGroupContextFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"nonce", "sequence"}).AddRow(int64(12345), int64(11111)))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContextNextNonce(context.Background(), &fftypes.Context{Hash: fftypes.NewRandB32()})
+	err := s.UpsertGroupContextNextNonce(context.Background(), &fftypes.GroupContext{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContextSelectFail(t *testing.T) {
+func TestGetGroupContextSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetContext(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetGroupContext(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContextNotFound(t *testing.T) {
+func TestGetGroupContextNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash", "nonce", "group_id", "topic"}))
-	msg, err := s.GetContext(context.Background(), fftypes.NewRandB32())
+	msg, err := s.GetGroupContext(context.Background(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContextScanFail(t *testing.T) {
+func TestGetGroupContextScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	_, err := s.GetContext(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetGroupContext(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContextQueryFail(t *testing.T) {
+func TestGetGroupContextQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.ContextQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, err := s.GetContexts(context.Background(), f)
+	f := database.GroupContextQueryFactory.NewFilter(context.Background()).Eq("hash", "")
+	_, err := s.GetGroupContexts(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetContextBuildQueryFail(t *testing.T) {
+func TestGetGroupContextBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.ContextQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	_, err := s.GetContexts(context.Background(), f)
+	f := database.GroupContextQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
+	_, err := s.GetGroupContexts(context.Background(), f)
 	assert.Regexp(t, "FF10149.*hash", err)
 }
 
-func TestGetContextReadMessageFail(t *testing.T) {
+func TestGetGroupContextReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	f := database.ContextQueryFactory.NewFilter(context.Background()).Eq("topic", "")
-	_, err := s.GetContexts(context.Background(), f)
+	f := database.GroupContextQueryFactory.NewFilter(context.Background()).Eq("topic", "")
+	_, err := s.GetGroupContexts(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestContextDeleteBeginFail(t *testing.T) {
+func TestGroupContextDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteContext(context.Background(), fftypes.NewRandB32())
+	err := s.DeleteGroupContext(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestContextDeleteFail(t *testing.T) {
+func TestGroupContextDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.DeleteContext(context.Background(), fftypes.NewRandB32())
+	err := s.DeleteGroupContext(context.Background(), fftypes.NewRandB32())
 	assert.Regexp(t, "FF10118", err)
 }

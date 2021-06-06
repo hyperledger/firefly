@@ -16,10 +16,10 @@
 
 package fftypes
 
-// Context is this local node's state record for a context. It records the
-// node's latest allocated sequence number for the context.
+// GroupContext is this local node's state record for the context of a group+topic combination.
+// It records the node's latest allocated sequence number for the context.
 // A context is a hash of a GroupID and a topic, concattenated together
-type Context struct {
+type GroupContext struct {
 	Hash  *Bytes32 `json:"hash"`
 	Nonce int64    `json:"nonce"`
 	Group *UUID    `json:"group"`

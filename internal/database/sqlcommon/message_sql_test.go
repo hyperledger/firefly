@@ -179,7 +179,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	bid2 := fftypes.NewUUID()
 	up := database.MessageQueryFactory.NewUpdate(ctx).
 		Set("group", gid2).
-		Set("batchid", bid2)
+		Set("batch", bid2)
 	err = s.UpdateMessage(ctx, msgID, up)
 	assert.NoError(t, err)
 

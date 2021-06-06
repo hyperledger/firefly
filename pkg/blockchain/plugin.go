@@ -94,6 +94,9 @@ type BatchPin struct {
 	// BatchID is the id of the batch - not strictly required, but writing this in plain text to the blockchain makes for easy human correlation on-chain/off-chain (it's a UUID so no leakage)
 	BatchID *fftypes.UUID
 
+	// BatchHash is the SHA256 hash of the batch
+	BatchHash *fftypes.Bytes32
+
 	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload. Nil for private messages
 	BatchPaylodRef *fftypes.Bytes32
 

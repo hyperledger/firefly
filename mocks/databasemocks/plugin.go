@@ -35,8 +35,8 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
-// DeleteContext provides a mock function with given fields: ctx, hash
-func (_m *Plugin) DeleteContext(ctx context.Context, hash *fftypes.Bytes32) error {
+// DeleteGroupContext provides a mock function with given fields: ctx, hash
+func (_m *Plugin) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) error {
 	ret := _m.Called(ctx, hash)
 
 	var r0 error
@@ -138,52 +138,6 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*ff
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Batch)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContext provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetContext(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Context, error) {
-	ret := _m.Called(ctx, hash)
-
-	var r0 *fftypes.Context
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Context); ok {
-		r0 = rf(ctx, hash)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Context)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
-		r1 = rf(ctx, hash)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContexts provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContexts(ctx context.Context, filter database.Filter) ([]*fftypes.Context, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.Context
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Context); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Context)
 		}
 	}
 
@@ -397,6 +351,52 @@ func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetGroupContext provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.GroupContext, error) {
+	ret := _m.Called(ctx, hash)
+
+	var r0 *fftypes.GroupContext
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.GroupContext); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.GroupContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetGroupContexts provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetGroupContexts(ctx context.Context, filter database.Filter) ([]*fftypes.GroupContext, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.GroupContext
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.GroupContext); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.GroupContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1324,20 +1324,6 @@ func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExi
 	return r0
 }
 
-// UpsertContextNextNonce provides a mock function with given fields: ctx, _a1
-func (_m *Plugin) UpsertContextNextNonce(ctx context.Context, _a1 *fftypes.Context) error {
-	ret := _m.Called(ctx, _a1)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Context) error); ok {
-		r0 = rf(ctx, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpsertData provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
 func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, allowExisting bool, allowHashUpdate bool) error {
 	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
@@ -1387,6 +1373,20 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, allowExi
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertGroupContextNextNonce provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) UpsertGroupContextNextNonce(ctx context.Context, _a1 *fftypes.GroupContext) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.GroupContext) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}

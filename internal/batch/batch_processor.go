@@ -18,6 +18,7 @@ package batch
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -162,6 +163,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	for _, w := range newWork {
 		if w.msg != nil {
 			w.msg.BatchID = batch.ID
+			w.msg.Header.Group = batch.Group
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)
@@ -178,20 +180,69 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	return batch
 }
 
-func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
+func (bp *batchProcessor) getSequenceHash(ctx context.Context, msg *fftypes.Message, topic string, dupCheck map[fftypes.Bytes32]bool) (*fftypes.Bytes32, error) {
+	hashBuilder := sha256.New()
+	hashBuilder.Write([]byte(topic))
+
+	// For broadcast, the sequence hash is simply the topic hash.
+	if msg.Header.Group == nil {
+		broadcastContext := fftypes.HashResult(hashBuilder)
+		if dupCheck[*broadcastContext] {
+			// Do not add multiple times, to minimize on-chain data
+			return nil, nil
+		}
+		return broadcastContext, nil
+	}
+
+	// For private groups, we need to make the topic specific to the group (which is
+	// a salt for the hash as it is not on chain)
+	hashBuilder.Write((*msg.Header.Group)[:])
+	contextHash := fftypes.HashResult(hashBuilder)
+	if dupCheck[*contextHash] {
+		// Do not increment the nonce multiple times per batch, and minimize on-chain data
+		return nil, nil
+	}
+
+	// We also need to make sure it is unique to each message, so we don't leak the
+	// metadata that a set of transactions are all working against the same topic.
+	// So we have to keep track of all the contexts that we're performing private
+	// messaging on, to know the next nonce to calculate.
+	gc := &fftypes.GroupContext{
+		Hash:  contextHash,
+		Group: msg.Header.Group,
+		Topic: topic,
+	}
+	err := bp.database.UpsertGroupContextNextNonce(ctx, gc)
+	if err != nil {
+		return nil, err
+	}
+
+	// Now combine our sending identity, and this nonce, to produce the hash that should
+	// be expected by all members of the group as the next nonce from us on this topic.
+	hashBuilder.Write([]byte(msg.Header.Author))
+	return gc.Hash, err
+}
+
+func (bp *batchProcessor) calcSequenceHashes(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
 	dupCheck := make(map[fftypes.Bytes32]bool)
 	sequenceHashes := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
-	for _, m := range batch.Payload.Messages {
-		for _, t := range m.Header.Topics {
-			if batch.Group != nil {
-				// TODO: Create group contexts
-			} else {
-
+	for _, msg := range batch.Payload.Messages {
+		for _, topic := range msg.Header.Topics {
+			sequenceHash, err := bp.getSequenceHash(ctx, msg, topic, dupCheck)
+			if err != nil {
+				return nil, err
+			}
+			if sequenceHash != nil {
+				dupCheck[*sequenceHash] = true
+				sequenceHashes = append(sequenceHashes, sequenceHash)
 			}
 		}
 	}
+	return sequenceHashes, nil
+}
 
+func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch, sequenceHashes []*fftypes.Bytes32) {
 	// Call the dispatcher to do the heavy lifting - will only exit if we're closed
 	_ = bp.retry.Do(bp.ctx, "batch dispatch", func(attempt int) (retry bool, err error) {
 		err = bp.conf.dispatch(bp.ctx, batch, sequenceHashes)
@@ -202,8 +253,8 @@ func (bp *batchProcessor) dispatchBatch(batch *fftypes.Batch) {
 	})
 }
 
-func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (err error) {
-	return bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
+func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) (sequenceHashes []*fftypes.Bytes32, err error) {
+	err = bp.retry.Do(bp.ctx, "batch persist", func(attempt int) (retry bool, err error) {
 		err = bp.database.RunAsGroup(bp.ctx, func(ctx context.Context) (err error) {
 			// Update all the messages in the batch with the batch ID
 			if len(newWork) > 0 {
@@ -214,8 +265,13 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 					}
 				}
 				filter := database.MessageQueryFactory.NewFilter(ctx).In("id", msgIDs)
-				update := database.MessageQueryFactory.NewUpdate(ctx).Set("batchid", batch.ID)
+				update := database.MessageQueryFactory.NewUpdate(ctx).
+					Set("batch", batch.ID).
+					Set("group", batch.ID)
 				err = bp.database.UpdateMessages(ctx, filter, update)
+			}
+			if err == nil && seal {
+				sequenceHashes, err = bp.calcSequenceHashes(bp.ctx, batch)
 			}
 			if err == nil {
 				// Persist the batch itself
@@ -228,6 +284,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 		}
 		return false, nil
 	})
+	return sequenceHashes, err
 }
 
 func (bp *batchProcessor) persistenceLoop() {
@@ -272,7 +329,8 @@ func (bp *batchProcessor) persistenceLoop() {
 		l.Debugf("Adding %d entries to batch %s. Size=%d Seal=%t", len(newWork), currentBatch.ID, batchSize, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
-		if err := bp.persistBatch(currentBatch, newWork, seal); err != nil {
+		sequenceHashes, err := bp.persistBatch(currentBatch, newWork, seal)
+		if err != nil {
 			return
 		}
 
@@ -296,7 +354,7 @@ func (bp *batchProcessor) persistenceLoop() {
 
 			// Synchronously dispatch the batch. Must be last thing we do in the loop, as we
 			// will break out of the retry in the case that we close
-			bp.dispatchBatch(currentBatch)
+			bp.dispatchBatch(currentBatch, sequenceHashes)
 
 			// Move onto the next batch
 			currentBatch = nil

@@ -28,18 +28,18 @@ import (
 )
 
 var (
-	contextColumns = []string{
+	groupcontextColumns = []string{
 		"hash",
 		"nonce",
 		"group_id",
 		"topic",
 	}
-	contextFilterTypeMap = map[string]string{
+	groupcontextFilterTypeMap = map[string]string{
 		"group": "group_id",
 	}
 )
 
-func (s *SQLCommon) UpsertContextNextNonce(ctx context.Context, context *fftypes.Context) (err error) {
+func (s *SQLCommon) UpsertGroupContextNextNonce(ctx context.Context, groupcontext *fftypes.GroupContext) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -48,47 +48,47 @@ func (s *SQLCommon) UpsertContextNextNonce(ctx context.Context, context *fftypes
 
 	existing := false
 	// Do a select within the transaction to detemine if the UUID already exists
-	contextRows, err := s.queryTx(ctx, tx,
+	groupcontextRows, err := s.queryTx(ctx, tx,
 		sq.Select("nonce", s.provider.SequenceField("")).
-			From("contexts").
+			From("groupcontexts").
 			Where(
-				sq.Eq{"hash": context.Hash}),
+				sq.Eq{"hash": groupcontext.Hash}),
 	)
 	if err != nil {
 		return err
 	}
-	existing = contextRows.Next()
+	existing = groupcontextRows.Next()
 
 	if existing {
 		var existingNonce, sequence int64
-		err := contextRows.Scan(&existingNonce, &sequence)
+		err := groupcontextRows.Scan(&existingNonce, &sequence)
 		if err != nil {
-			contextRows.Close()
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contexts")
+			groupcontextRows.Close()
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groupcontexts")
 		}
-		context.Nonce = existingNonce + 1
-		contextRows.Close()
+		groupcontext.Nonce = existingNonce + 1
+		groupcontextRows.Close()
 
-		// Update the context
+		// Update the groupcontext
 		if err = s.updateTx(ctx, tx,
-			sq.Update("contexts").
-				Set("nonce", context.Nonce).
+			sq.Update("groupcontexts").
+				Set("nonce", groupcontext.Nonce).
 				Where(sq.Eq{s.provider.SequenceField(""): sequence}),
 		); err != nil {
 			return err
 		}
 	} else {
-		contextRows.Close()
+		groupcontextRows.Close()
 
-		context.Nonce = 0
+		groupcontext.Nonce = 0
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contexts").
-				Columns(contextColumns...).
+			sq.Insert("groupcontexts").
+				Columns(groupcontextColumns...).
 				Values(
-					context.Hash,
-					context.Nonce,
-					context.Group,
-					context.Topic,
+					groupcontext.Hash,
+					groupcontext.Nonce,
+					groupcontext.Group,
+					groupcontext.Topic,
 				),
 		); err != nil {
 			return err
@@ -98,25 +98,25 @@ func (s *SQLCommon) UpsertContextNextNonce(ctx context.Context, context *fftypes
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contextResult(ctx context.Context, row *sql.Rows) (*fftypes.Context, error) {
-	context := fftypes.Context{}
+func (s *SQLCommon) groupcontextResult(ctx context.Context, row *sql.Rows) (*fftypes.GroupContext, error) {
+	groupcontext := fftypes.GroupContext{}
 	err := row.Scan(
-		&context.Hash,
-		&context.Nonce,
-		&context.Group,
-		&context.Topic,
+		&groupcontext.Hash,
+		&groupcontext.Nonce,
+		&groupcontext.Group,
+		&groupcontext.Topic,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contexts")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groupcontexts")
 	}
-	return &context, nil
+	return &groupcontext, nil
 }
 
-func (s *SQLCommon) GetContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Context, err error) {
+func (s *SQLCommon) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.GroupContext, err error) {
 
 	rows, err := s.query(ctx,
-		sq.Select(contextColumns...).
-			From("contexts").
+		sq.Select(groupcontextColumns...).
+			From("groupcontexts").
 			Where(sq.Eq{"hash": hash}),
 	)
 	if err != nil {
@@ -125,21 +125,21 @@ func (s *SQLCommon) GetContext(ctx context.Context, hash *fftypes.Bytes32) (mess
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Context '%s' not found", hash)
+		log.L(ctx).Debugf("GroupContext '%s' not found", hash)
 		return nil, nil
 	}
 
-	context, err := s.contextResult(ctx, rows)
+	groupcontext, err := s.groupcontextResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return context, nil
+	return groupcontext, nil
 }
 
-func (s *SQLCommon) GetContexts(ctx context.Context, filter database.Filter) (message []*fftypes.Context, err error) {
+func (s *SQLCommon) GetGroupContexts(ctx context.Context, filter database.Filter) (message []*fftypes.GroupContext, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(contextColumns...).From("contexts"), filter, contextFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(groupcontextColumns...).From("groupcontexts"), filter, groupcontextFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -150,20 +150,20 @@ func (s *SQLCommon) GetContexts(ctx context.Context, filter database.Filter) (me
 	}
 	defer rows.Close()
 
-	context := []*fftypes.Context{}
+	groupcontext := []*fftypes.GroupContext{}
 	for rows.Next() {
-		d, err := s.contextResult(ctx, rows)
+		d, err := s.groupcontextResult(ctx, rows)
 		if err != nil {
 			return nil, err
 		}
-		context = append(context, d)
+		groupcontext = append(groupcontext, d)
 	}
 
-	return context, err
+	return groupcontext, err
 
 }
 
-func (s *SQLCommon) DeleteContext(ctx context.Context, hash *fftypes.Bytes32) (err error) {
+func (s *SQLCommon) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -171,7 +171,7 @@ func (s *SQLCommon) DeleteContext(ctx context.Context, hash *fftypes.Bytes32) (e
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("contexts").Where(sq.Eq{
+	err = s.deleteTx(ctx, tx, sq.Delete("groupcontexts").Where(sq.Eq{
 		"hash": hash,
 	}))
 	if err != nil {
