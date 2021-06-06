@@ -83,5 +83,5 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, org, signingIdentity, org.Context(), fftypes.SystemTagDefineOrganization)
+	return nm.broadcast.BroadcastDefinition(ctx, org, signingIdentity, fftypes.SystemTagDefineOrganization)
 }
