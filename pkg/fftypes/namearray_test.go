@@ -33,6 +33,12 @@ func TestFFNameArrayVerifyTooLong(t *testing.T) {
 	assert.Regexp(t, `FF10227.*field1`, err)
 }
 
+func TestFFNameArrayVerifyDuplicate(t *testing.T) {
+	na := FFNameArray{"value1", "value2", "value1"}
+	err := na.Validate(context.Background(), "field1")
+	assert.Regexp(t, `FF10228.*field1`, err)
+}
+
 func TestFFNameArrayVerifyBadName(t *testing.T) {
 	na := FFNameArray{"!valid"}
 	err := na.Validate(context.Background(), "field1")

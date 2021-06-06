@@ -183,7 +183,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	return batch
 }
 
-func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topic string, dupCheck map[fftypes.Bytes32]bool) (*fftypes.Bytes32, error) {
+func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topic string) (*fftypes.Bytes32, error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -196,11 +196,6 @@ func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topi
 
 	// The combination of the topic and group is the context
 	contextHash := fftypes.HashResult(hashBuilder)
-	if dupCheck[*contextHash] {
-		// Do not increment the nonce multiple times per batch, and minimize on-chain data
-		return nil, nil
-	}
-	dupCheck[*contextHash] = true
 
 	// Get the next nonce for this context - we're the authority in the nextwork on this,
 	// as we are the sender.
@@ -225,11 +220,10 @@ func (bp *batchProcessor) getPin(ctx context.Context, msg *fftypes.Message, topi
 
 func (bp *batchProcessor) calcPins(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
-	dupCheck := make(map[fftypes.Bytes32]bool)
 	pins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
 	for _, msg := range batch.Payload.Messages {
 		for _, topic := range msg.Header.Topics {
-			pin, err := bp.getPin(ctx, msg, topic, dupCheck)
+			pin, err := bp.getPin(ctx, msg, topic)
 			if err != nil {
 				return nil, err
 			}
