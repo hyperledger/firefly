@@ -144,5 +144,5 @@ var (
 	MsgNodeNotFound                = ffm("FF10224", "Node with name or identity '%s' not found")
 	MsgOneMemberLocal              = ffm("FF10225", "One member must be on the local node", 400)
 	MsgGroupNotFound               = ffm("FF10226", "Group '%s' not found", 404)
-	MsgCombinedLengthTooLong       = ffm("FF10227", "Combined length of all %s must be less than %d", 400)
+	MsgTooManyItems                = ffm("FF10227", "Maximum number of %s items is %d (supplied=%d)", 400)
 )

@@ -43,11 +43,11 @@ var (
 		"tx_id",
 	}
 	batchFilterTypeMap = map[string]string{
-		"type":       "btype",
-		"payloadref": "payload_ref",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
-		"group":      "group_id",
+		"type":             "btype",
+		"payloadref":       "payload_ref",
+		"transaction.type": "tx_type",
+		"transaction.id":   "tx_id",
+		"group":            "group_id",
 	}
 )
 

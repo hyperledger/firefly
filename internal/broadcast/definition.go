@@ -70,9 +70,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 			Author:    signingIdentity.Identifier,
 			Topics:    fftypes.FFNameArray{def.Topic()},
 			Tag:       string(tag),
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-			},
+			TxType:    fftypes.TransactionTypeBatchPin,
 		},
 		Data: fftypes.DataRefs{
 			{ID: data.ID, Hash: data.Hash},

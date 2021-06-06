@@ -28,7 +28,7 @@ import (
 
 var (
 	parkedColumns = []string{
-		"hash",
+		"pin",
 		"ledger_id",
 		"batch_id",
 		"created",
@@ -50,7 +50,7 @@ func (s *SQLCommon) InsertParked(ctx context.Context, parked *fftypes.Parked) (e
 		sq.Insert("parked").
 			Columns(parkedColumns...).
 			Values(
-				parked.Hash,
+				parked.Pin,
 				parked.Ledger,
 				parked.Batch,
 				parked.Created,
@@ -67,7 +67,7 @@ func (s *SQLCommon) InsertParked(ctx context.Context, parked *fftypes.Parked) (e
 func (s *SQLCommon) parkedResult(ctx context.Context, row *sql.Rows) (*fftypes.Parked, error) {
 	parked := fftypes.Parked{}
 	err := row.Scan(
-		&parked.Hash,
+		&parked.Pin,
 		&parked.Ledger,
 		&parked.Batch,
 		&parked.Created,

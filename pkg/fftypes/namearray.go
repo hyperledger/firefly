@@ -75,10 +75,8 @@ func (na FFNameArray) Validate(ctx context.Context, fieldName string) error {
 			return err
 		}
 	}
-	if len(na) > 0 {
-		if len(strings.Join(na, ",")) > 1024 {
-			return i18n.NewError(ctx, i18n.MsgCombinedLengthTooLong, fieldName, 1024)
-		}
+	if len(na) > 15 {
+		return i18n.NewError(ctx, i18n.MsgTooManyItems, fieldName, 15, len(na))
 	}
 	return nil
 }

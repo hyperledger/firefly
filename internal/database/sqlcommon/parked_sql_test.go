@@ -37,7 +37,7 @@ func TestParkedsE2EWithDB(t *testing.T) {
 
 	// Create a new parked entry
 	parked := &fftypes.Parked{
-		Hash:    fftypes.NewRandB32(),
+		Pin:     fftypes.NewRandB32(),
 		Batch:   fftypes.NewUUID(),
 		Created: fftypes.Now(),
 	}
@@ -47,7 +47,7 @@ func TestParkedsE2EWithDB(t *testing.T) {
 	// Query back the parked
 	fb := database.ParkedQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("hash", parked.Hash),
+		fb.Eq("pin", parked.Pin),
 		fb.Eq("ledger", parked.Ledger),
 		fb.Eq("batch", parked.Batch),
 		fb.Gt("created", 0),
@@ -96,7 +96,7 @@ func TestInsertParkedFailCommit(t *testing.T) {
 func TestGetParkedQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("hash", "")
+	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", "")
 	_, err := s.GetParked(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -104,15 +104,15 @@ func TestGetParkedQueryFail(t *testing.T) {
 
 func TestGetParkedBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
+	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", map[bool]bool{true: false})
 	_, err := s.GetParked(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
 func TestGetParkedReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("hash", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"pin"}).AddRow("only one"))
+	f := database.ParkedQueryFactory.NewFilter(context.Background()).Eq("pin", "")
 	_, err := s.GetParked(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

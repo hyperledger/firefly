@@ -57,9 +57,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Topics:    []string{"test1"},
 			Group:     nil,
 			DataHash:  fftypes.NewRandB32(),
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeNone,
-			},
+			TxType:    fftypes.TransactionTypeNone,
 		},
 		Hash:      fftypes.NewRandB32(),
 		Confirmed: nil,
@@ -88,7 +86,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	cid := fftypes.NewUUID()
 	gid := fftypes.NewUUID()
 	bid := fftypes.NewUUID()
-	txid := fftypes.NewUUID()
 	msgUpdated := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        msgID,
@@ -101,12 +98,10 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			Tag:       "tag1",
 			Group:     gid,
 			DataHash:  fftypes.NewRandB32(),
-			TX: fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   txid,
-			},
+			TxType:    fftypes.TransactionTypeBatchPin,
 		},
 		Hash:      fftypes.NewRandB32(),
+		Pins:      []string{fftypes.NewRandB32().String(), fftypes.NewRandB32().String()},
 		Confirmed: fftypes.Now(),
 		BatchID:   bid,
 		Data: []*fftypes.DataRef{
@@ -391,7 +386,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
+		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
 	assert.Regexp(t, "FF10115", err)
@@ -438,7 +433,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), 0, "pin", nil, nil, 0))
+		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, err := s.GetMessages(context.Background(), f)

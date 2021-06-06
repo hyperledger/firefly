@@ -46,17 +46,17 @@ const (
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID        *UUID          `json:"id,omitempty"`
-	CID       *UUID          `json:"cid,omitempty"`
-	Type      MessageType    `json:"type"`
-	TX        TransactionRef `json:"tx,omitempty"`
-	Author    string         `json:"author,omitempty"`
-	Created   *FFTime        `json:"created,omitempty"`
-	Namespace string         `json:"namespace,omitempty"`
-	Group     *UUID          `json:"group,omitempty"`
-	Topics    FFNameArray    `json:"topic,omitempty"`
-	Tag       string         `json:"tag,omitempty"`
-	DataHash  *Bytes32       `json:"datahash,omitempty"`
+	ID        *UUID           `json:"id,omitempty"`
+	CID       *UUID           `json:"cid,omitempty"`
+	Type      MessageType     `json:"type"`
+	TxType    TransactionType `json:"txtype,omitempty"`
+	Author    string          `json:"author,omitempty"`
+	Created   *FFTime         `json:"created,omitempty"`
+	Namespace string          `json:"namespace,omitempty"`
+	Group     *UUID           `json:"group,omitempty"`
+	Topics    FFNameArray     `json:"topic,omitempty"`
+	Tag       string          `json:"tag,omitempty"`
+	DataHash  *Bytes32        `json:"datahash,omitempty"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -68,6 +68,7 @@ type Message struct {
 	BatchID   *UUID         `json:"batchID,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
+	Pins      FFNameArray   `json:"pins,omitempty"`
 	Sequence  int64         `json:"_"` // Local database sequence used internally for batch assembly
 }
 
