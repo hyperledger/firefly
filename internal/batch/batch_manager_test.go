@@ -86,7 +86,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Type:      fftypes.MessageTypeBroadcast,
 			ID:        fftypes.NewUUID(),
-			Topics:    []string{"topic1", "topic2", "topic2" /* dup checking */},
+			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
 			Author:    "0x12345",
 		},
@@ -195,7 +195,7 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Type:      fftypes.MessageTypePrivate,
 			ID:        fftypes.NewUUID(),
-			Topics:    []string{"topic1", "topic2", "topic2" /* dup checking */},
+			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
 			Author:    "0x12345",
 			Group:     groupID,

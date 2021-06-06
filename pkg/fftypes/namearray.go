@@ -70,7 +70,12 @@ func (na FFNameArray) String() string {
 }
 
 func (na FFNameArray) Validate(ctx context.Context, fieldName string) error {
+	dupCheck := make(map[string]bool)
 	for i, n := range na {
+		if dupCheck[n] {
+			return i18n.NewError(ctx, i18n.MsgDuplicateArrayEntry, fieldName, i, n)
+		}
+		dupCheck[n] = true
 		if err := ValidateFFNameField(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
 			return err
 		}
