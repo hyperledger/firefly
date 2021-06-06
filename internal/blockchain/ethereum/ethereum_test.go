@@ -329,7 +329,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		BatchID:        fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
 		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
-		SequenceHashes: []*fftypes.Bytes32{
+		Pins: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 			fftypes.NewRandB32(),
 		},
@@ -366,7 +366,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
-		SequenceHashes: []*fftypes.Bytes32{
+		Pins: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 			fftypes.NewRandB32(),
 		},
@@ -409,7 +409,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
       "batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"sequenceHashes": [
+			"pins": [
 				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
 				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
 			],
@@ -430,7 +430,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
       "batchHash": "0x20e6ef9b9c4df7fdb77a7de1e00347f4b02d996f2e56a7db361038be7b32a154",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488",
-			"sequenceHashes": [
+			"pins": [
 				"0x8a63eb509713b0cf9250a8eee24ee2dfc4b37225e3ad5c29c95127699d382f85"
 			]
     },
@@ -449,7 +449,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
       "batchHash": "0x892b31099b8476c0692a5f2982ea23a0614949eacf292a64a358aa73ecd404b4",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488",
-			"sequenceHashes": [
+			"pins": [
 				"0xdab67320f1a0d0f1da572975e3a9ab6ef0fed315771c99fea0bfb54886c1aa94"
 			]
     },
@@ -479,9 +479,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "eda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae", b.BatchPaylodRef.String())
 	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
 	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
-	assert.Len(t, b.SequenceHashes, 2)
-	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.SequenceHashes[0].String())
-	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.SequenceHashes[1].String())
+	assert.Len(t, b.Pins, 2)
+	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Pins[0].String())
+	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Pins[1].String())
 
 }
 
@@ -545,7 +545,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 			"uuids": "!good",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"sequenceHashes": [
+			"pins": [
 				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
 				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
 			],
@@ -573,7 +573,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"sequenceHashes": [
+			"pins": [
 				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
 				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
 			],
@@ -601,7 +601,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "!good",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"sequenceHashes": [
+			"pins": [
 				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
 				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
 			],
@@ -629,7 +629,7 @@ func TestHandleMessageBatchPinBadPayloadRef(t *testing.T) {
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "!good",
-			"sequenceHashes": [
+			"pins": [
 				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
 				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
 			],
@@ -644,7 +644,7 @@ func TestHandleMessageBatchPinBadPayloadRef(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchPinBadSequenceHash(t *testing.T) {
+func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
@@ -657,7 +657,7 @@ func TestHandleMessageBatchPinBadSequenceHash(t *testing.T) {
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
-			"sequenceHashes": [
+			"pins": [
 				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
 				"!good"
 			],

@@ -28,18 +28,18 @@ import (
 )
 
 var (
-	groupcontextColumns = []string{
-		"hash",
+	nonceColumns = []string{
+		"context",
 		"nonce",
 		"group_id",
 		"topic",
 	}
-	groupcontextFilterTypeMap = map[string]string{
+	nonceFilterTypeMap = map[string]string{
 		"group": "group_id",
 	}
 )
 
-func (s *SQLCommon) UpsertGroupContextNextNonce(ctx context.Context, groupcontext *fftypes.GroupContext) (err error) {
+func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -48,47 +48,47 @@ func (s *SQLCommon) UpsertGroupContextNextNonce(ctx context.Context, groupcontex
 
 	existing := false
 	// Do a select within the transaction to detemine if the UUID already exists
-	groupcontextRows, err := s.queryTx(ctx, tx,
+	nonceRows, err := s.queryTx(ctx, tx,
 		sq.Select("nonce", s.provider.SequenceField("")).
-			From("groupcontexts").
+			From("nonces").
 			Where(
-				sq.Eq{"hash": groupcontext.Hash}),
+				sq.Eq{"context": nonce.Context}),
 	)
 	if err != nil {
 		return err
 	}
-	existing = groupcontextRows.Next()
+	existing = nonceRows.Next()
 
 	if existing {
 		var existingNonce, sequence int64
-		err := groupcontextRows.Scan(&existingNonce, &sequence)
+		err := nonceRows.Scan(&existingNonce, &sequence)
 		if err != nil {
-			groupcontextRows.Close()
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groupcontexts")
+			nonceRows.Close()
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "nonces")
 		}
-		groupcontext.Nonce = existingNonce + 1
-		groupcontextRows.Close()
+		nonce.Nonce = existingNonce + 1
+		nonceRows.Close()
 
-		// Update the groupcontext
+		// Update the nonce
 		if err = s.updateTx(ctx, tx,
-			sq.Update("groupcontexts").
-				Set("nonce", groupcontext.Nonce).
+			sq.Update("nonces").
+				Set("nonce", nonce.Nonce).
 				Where(sq.Eq{s.provider.SequenceField(""): sequence}),
 		); err != nil {
 			return err
 		}
 	} else {
-		groupcontextRows.Close()
+		nonceRows.Close()
 
-		groupcontext.Nonce = 0
+		nonce.Nonce = 0
 		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("groupcontexts").
-				Columns(groupcontextColumns...).
+			sq.Insert("nonces").
+				Columns(nonceColumns...).
 				Values(
-					groupcontext.Hash,
-					groupcontext.Nonce,
-					groupcontext.Group,
-					groupcontext.Topic,
+					nonce.Context,
+					nonce.Nonce,
+					nonce.Group,
+					nonce.Topic,
 				),
 		); err != nil {
 			return err
@@ -98,26 +98,26 @@ func (s *SQLCommon) UpsertGroupContextNextNonce(ctx context.Context, groupcontex
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) groupcontextResult(ctx context.Context, row *sql.Rows) (*fftypes.GroupContext, error) {
-	groupcontext := fftypes.GroupContext{}
+func (s *SQLCommon) nonceResult(ctx context.Context, row *sql.Rows) (*fftypes.Nonce, error) {
+	nonce := fftypes.Nonce{}
 	err := row.Scan(
-		&groupcontext.Hash,
-		&groupcontext.Nonce,
-		&groupcontext.Group,
-		&groupcontext.Topic,
+		&nonce.Context,
+		&nonce.Nonce,
+		&nonce.Group,
+		&nonce.Topic,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groupcontexts")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "nonces")
 	}
-	return &groupcontext, nil
+	return &nonce, nil
 }
 
-func (s *SQLCommon) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.GroupContext, err error) {
+func (s *SQLCommon) GetNonce(ctx context.Context, context *fftypes.Bytes32) (message *fftypes.Nonce, err error) {
 
 	rows, err := s.query(ctx,
-		sq.Select(groupcontextColumns...).
-			From("groupcontexts").
-			Where(sq.Eq{"hash": hash}),
+		sq.Select(nonceColumns...).
+			From("nonces").
+			Where(sq.Eq{"context": context}),
 	)
 	if err != nil {
 		return nil, err
@@ -125,21 +125,21 @@ func (s *SQLCommon) GetGroupContext(ctx context.Context, hash *fftypes.Bytes32) 
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("GroupContext '%s' not found", hash)
+		log.L(ctx).Debugf("Nonce '%s' not found", context)
 		return nil, nil
 	}
 
-	groupcontext, err := s.groupcontextResult(ctx, rows)
+	nonce, err := s.nonceResult(ctx, rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return groupcontext, nil
+	return nonce, nil
 }
 
-func (s *SQLCommon) GetGroupContexts(ctx context.Context, filter database.Filter) (message []*fftypes.GroupContext, err error) {
+func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (message []*fftypes.Nonce, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(groupcontextColumns...).From("groupcontexts"), filter, groupcontextFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -150,20 +150,20 @@ func (s *SQLCommon) GetGroupContexts(ctx context.Context, filter database.Filter
 	}
 	defer rows.Close()
 
-	groupcontext := []*fftypes.GroupContext{}
+	nonce := []*fftypes.Nonce{}
 	for rows.Next() {
-		d, err := s.groupcontextResult(ctx, rows)
+		d, err := s.nonceResult(ctx, rows)
 		if err != nil {
 			return nil, err
 		}
-		groupcontext = append(groupcontext, d)
+		nonce = append(nonce, d)
 	}
 
-	return groupcontext, err
+	return nonce, err
 
 }
 
-func (s *SQLCommon) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes32) (err error) {
+func (s *SQLCommon) DeleteNonce(ctx context.Context, context *fftypes.Bytes32) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -171,8 +171,8 @@ func (s *SQLCommon) DeleteGroupContext(ctx context.Context, hash *fftypes.Bytes3
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("groupcontexts").Where(sq.Eq{
-		"hash": hash,
+	err = s.deleteTx(ctx, tx, sq.Delete("nonces").Where(sq.Eq{
+		"context": context,
 	}))
 	if err != nil {
 		return err

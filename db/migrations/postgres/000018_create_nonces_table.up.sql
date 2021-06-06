@@ -1,13 +1,13 @@
 BEGIN;
-CREATE TABLE groupcontexts (
+CREATE TABLE nonces (
   seq            SERIAL          PRIMARY KEY,
-  hash           CHAR(64)        NOT NULL,
+  context        CHAR(64)        NOT NULL,
   nonce          BIGINT          NOT NULL,
   group_id       UUID            NOT NULL,
   topic          VARCHAR(64)     NOT NULL
 );
 
-CREATE INDEX groupcontexts_hash ON groupcontexts(hash);
-CREATE INDEX groupcontexts_group ON groupcontexts(group_id);
+CREATE INDEX nonces_context ON nonces(context);
+CREATE INDEX nonces_group ON nonces(group_id);
 
 COMMIT;

@@ -50,13 +50,23 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		if !ok {
 			return nil
 		}
-		// As this is a broadcast, it should just be a hash of the topics
+		assert.Len(t, s, 2)
 		h := sha256.New()
-		h.Write([]byte("topic1"))
+		nonceBytes, _ := hex.DecodeString(
+			"746f70696331" + "30783132333435" + "0000000000003039",
+		/*|  topic1   |    |author'0x12345'|  |i64 nonce (12345) */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+
 		h = sha256.New()
-		h.Write([]byte("topic2"))
+		nonceBytes, _ = hex.DecodeString(
+			"746f70696332" + "30783132333435" + "000000000000303a",
+		/*|   topic2  |    |author'0x12345'|  |i64 nonce (12346) */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
+
 		waitForDispatch <- b
 		return nil
 	}
@@ -105,6 +115,12 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
+	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
+	nextNonce := int64(12345)
+	ugcn.RunFn = func(a mock.Arguments) {
+		a[1].(*fftypes.Nonce).Nonce = nextNonce
+		nextNonce++
+	}
 
 	err := bm.Start()
 	assert.NoError(t, err)
@@ -143,11 +159,11 @@ func TestE2EDispatchPrivate(t *testing.T) {
 			return nil
 		}
 		assert.Len(t, s, 2)
-		// As this is a private send, so we add the group, our identity, and a nonce to the hash
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
 			"746f70696331" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "0000000000003039",
-			/* - topic1 -|   | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12345) */
+		/*|  topic1   |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12345) */
+		/*|               context                          |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
@@ -155,7 +171,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
 			"746f70696332" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "000000000000303a",
-			/* - topic2 -|   | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12346) */
+		/*|   topic2  |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12346) */
+		/*|               context                          |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
@@ -208,10 +225,10 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
-	ugcn := mdi.On("UpsertGroupContextNextNonce", mock.Anything, mock.Anything).Return(nil)
+	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
 	nextNonce := int64(12345)
 	ugcn.RunFn = func(a mock.Arguments) {
-		a[1].(*fftypes.GroupContext).Nonce = nextNonce
+		a[1].(*fftypes.Nonce).Nonce = nextNonce
 		nextNonce++
 	}
 

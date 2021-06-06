@@ -1,5 +1,5 @@
 BEGIN;
-CREATE TABLE nexthashes (
+CREATE TABLE nextpins (
   seq            SERIAL          PRIMARY KEY,
   context        CHAR(64)        NOT NULL,
   identity       VARCHAR(1024)   NOT NULL,
@@ -7,6 +7,6 @@ CREATE TABLE nexthashes (
   nonce          BIGINT          NOT NULL
 );
 
-CREATE INDEX nexthashes_hash ON nexthashes(hash);
+CREATE INDEX nextpins_hash ON nextpins(hash);
 
 COMMIT;

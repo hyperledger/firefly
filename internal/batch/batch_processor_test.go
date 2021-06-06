@@ -222,16 +222,16 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 
 }
 
-func TestCalcSequenceHashesFail(t *testing.T) {
+func TestCalcPinsFail(t *testing.T) {
 	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	})
 	defer bp.close()
 	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroupContextNextNonce", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	gid := fftypes.NewUUID()
-	_, err := bp.calcSequenceHashes(bp.ctx, &fftypes.Batch{
+	_, err := bp.calcPins(bp.ctx, &fftypes.Batch{
 		Group: gid,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
