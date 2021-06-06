@@ -25,7 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/likexian/gokit/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -63,7 +63,7 @@ func TestUnfilledBatch(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
@@ -114,7 +114,7 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 	wg.Add(2)
 
 	dispatched := []*fftypes.Batch{}
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		dispatched = append(dispatched, b)
 		wg.Done()
 		return nil
@@ -176,11 +176,11 @@ func TestFilledBatchSlowPersistence(t *testing.T) {
 }
 
 func TestCloseToUnblockDispatch(t *testing.T) {
-	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return fmt.Errorf("pop")
 	})
 	bp.close()
-	bp.dispatchBatch(&fftypes.Batch{})
+	bp.dispatchBatch(&fftypes.Batch{}, []*fftypes.Bytes32{})
 }
 
 func TestCloseToUnblockUpsertBatch(t *testing.T) {
@@ -188,7 +188,7 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch) error {
+	mdi, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	})
 	bp.retry.MaximumDelay = 1 * time.Microsecond
@@ -220,4 +220,27 @@ func TestCloseToUnblockUpsertBatch(t *testing.T) {
 	bp.close()
 	bp.waitClosed()
 
+}
+
+func TestCalcSequenceHashesFail(t *testing.T) {
+	_, bp := newTestBatchProcessor(func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		return nil
+	})
+	defer bp.close()
+	mdi := bp.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroupContextNextNonce", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	gid := fftypes.NewUUID()
+	_, err := bp.calcSequenceHashes(bp.ctx, &fftypes.Batch{
+		Group: gid,
+		Payload: fftypes.BatchPayload{
+			Messages: []*fftypes.Message{
+				{Header: fftypes.MessageHeader{
+					Group:  gid,
+					Topics: fftypes.FFNameArray{"topic1"},
+				}},
+			},
+		},
+	})
+	assert.Regexp(t, "pop", err)
 }

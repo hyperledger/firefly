@@ -153,13 +153,13 @@ func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
 	dispatcher.mux.Unlock()
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.UUID, namespace, author string) (*batchProcessor, error) {
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
 	}
 	dispatcher.mux.Lock()
-	key := fmt.Sprintf("%s/%s", namespace, author)
+	key := fmt.Sprintf("%s/%s/%v", namespace, author, group)
 	processor, ok := dispatcher.processors[key]
 	if !ok {
 		processor = newBatchProcessor(
@@ -169,6 +169,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 				Options:   dispatcher.batchOptions,
 				namespace: namespace,
 				author:    author,
+				group:     group,
 				dispatch:  dispatcher.handler,
 				processorQuiescing: func() {
 					bm.removeProcessor(dispatcher, key)
@@ -341,7 +342,7 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 
 func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
+	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
 		return err
 	}
