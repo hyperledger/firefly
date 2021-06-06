@@ -37,7 +37,7 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 		return false, nil
 	}
 
-	if err = bm.data.CheckDatatype(ctx, msg.Header.Namespace, &dt); err != nil {
+	if err = bm.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 		return false, nil
 	}

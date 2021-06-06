@@ -88,7 +88,7 @@ func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftype
 	return id, nil
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, sequenceHashes []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -105,11 +105,11 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return bm.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, publicstorageID)
+		return bm.submitTXAndUpdateDB(ctx, batch, sequenceHashes, publicstorageID)
 	})
 }
 
-func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, sequenceHashes []*fftypes.Bytes32, publicstorageID string) error {
 
 	id, err := bm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
@@ -138,16 +138,17 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 
 	// Update the batch to store the payloadRef
-	err = bm.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef))
+	err = bm.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", batch.PayloadRef))
 	if err != nil {
 		return err
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, id, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := bm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
+		SequenceHashes: sequenceHashes,
 	})
 	if err != nil {
 		return err

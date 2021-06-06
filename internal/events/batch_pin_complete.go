@@ -33,10 +33,12 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
-	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author)
-	defer func() { log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, author) }()
+	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
+	defer func() {
+		log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
+	}()
 
 	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
 	var batchID fftypes.UUID
@@ -67,7 +69,7 @@ func (em *eventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blo
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			return em.persistBatch(ctx, batchData, author, protocolTxID, additionalInfo)
+			return em.persistBatch(ctx, batchData, signingIdentity, protocolTxID, additionalInfo)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})

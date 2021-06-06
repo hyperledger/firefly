@@ -63,5 +63,5 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, node.Context(), fftypes.SystemTagDefineNode)
+	return nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode)
 }
