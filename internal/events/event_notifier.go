@@ -26,34 +26,39 @@ import (
 
 type eventNotifier struct {
 	ctx            context.Context
+	desc           string
 	newEvents      chan int64
 	latestSequence int64
 	cond           *sync.Cond
 	closed         bool
 }
 
-func newEventNotifier(ctx context.Context) *eventNotifier {
+func newEventNotifier(ctx context.Context, desc string) *eventNotifier {
 	mux := &sync.Mutex{}
 	en := &eventNotifier{
 		ctx:            ctx,
 		newEvents:      make(chan int64),
 		latestSequence: -1,
 		cond:           sync.NewCond(mux),
+		desc:           desc,
 	}
 	go en.newEventLoop()
 	return en
 }
 
 func (en *eventNotifier) waitNext(lastSequence int64) error {
+	var seq int64
 	en.cond.L.Lock()
 	closed := en.closed
 	for en.latestSequence <= lastSequence && !en.closed {
 		en.cond.Wait()
 	}
+	seq = en.latestSequence
 	en.cond.L.Unlock()
 	if closed {
 		return i18n.NewError(en.ctx, i18n.MsgEventListenerClosing)
 	}
+	log.L(en.ctx).Tracef("Detected new %s (%d)", en.desc, seq)
 	return nil
 }
 
@@ -77,7 +82,7 @@ func (en *eventNotifier) newEventLoop() {
 				l.Debugf("New event notifier loop ending (closed channel)")
 				return
 			}
-			log.L(en.ctx).Tracef("Notifying %d", seq)
+			log.L(en.ctx).Tracef("Notifying new %s %d", en.desc, seq)
 			en.cond.L.Lock()
 			en.latestSequence = seq
 			en.cond.Broadcast()

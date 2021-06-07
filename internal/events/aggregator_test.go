@@ -42,7 +42,7 @@ func newTestAggregator() (*aggregator, func()) {
 	mdm := &datamocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, mbm, mpm, mdm, newEventNotifier(ctx))
+	ag := newAggregator(ctx, mdi, mbm, mpm, mdm, newEventNotifier(ctx, "ut"))
 	return ag, cancel
 }
 

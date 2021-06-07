@@ -63,7 +63,7 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 	)
 	if err == nil {
 		s.postCommitEvent(tx, func() {
-			s.callbacks.EventCreated(pin.Sequence)
+			s.callbacks.PinCreated(pin.Sequence)
 		})
 	} else {
 		// Check it's not just that it already exsits (edge case, so we optimize for insert)

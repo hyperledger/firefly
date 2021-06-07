@@ -39,7 +39,7 @@ func newTestSubManager(t *testing.T, mdi *databasemocks.Plugin, mei *eventsmocks
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, newEventNotifier(ctx))
+	sm, err := newSubscriptionManager(ctx, mdi, newEventNotifier(ctx, "ut"))
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -143,7 +143,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	config.Reset()
 	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
-	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background()))
+	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background(), "ut"))
 	assert.Regexp(t, "FF10172", err)
 }
 
