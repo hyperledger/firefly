@@ -202,6 +202,44 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertEvent", pm.ctx, mock.Anything, false).Return(nil)
+
+	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     groupID,
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, *groupID, *group.ID)
+
+}
+
+func TestResolveInitGroupNewEventFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	groupID := fftypes.NewUUID()
+	group := &fftypes.Group{
+		ID:        groupID,
+		Namespace: "ns1",
+		Members: fftypes.Members{
+			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		},
+	}
+	assert.NoError(t, group.Validate(pm.ctx, true))
+	b, _ := json.Marshal(&group)
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+	}, true, nil)
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("UpsertEvent", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -212,7 +250,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 			Author:    "author1",
 		},
 	})
-	assert.NoError(t, err)
+	assert.EqualError(t, err, "pop")
 
 }
 

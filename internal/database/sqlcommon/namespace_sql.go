@@ -202,3 +202,21 @@ func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, updat
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
+
+func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.deleteTx(ctx, tx, sq.Delete("namespaces").Where(sq.Eq{
+		"id": id,
+	}))
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}

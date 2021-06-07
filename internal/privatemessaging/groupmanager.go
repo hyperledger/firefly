@@ -171,6 +171,10 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 		if err != nil {
 			return nil, err
 		}
+		event := fftypes.NewEvent(fftypes.EventTypeGroupConfirmed, newGroup.Namespace, newGroup.ID)
+		if err = gm.database.UpsertEvent(ctx, event, false); err != nil {
+			return nil, err
+		}
 		return &newGroup, nil
 	}
 
