@@ -37,10 +37,12 @@ func TestPinsE2EWithDB(t *testing.T) {
 
 	// Create a new pin entry
 	pin := &fftypes.Pin{
-		Masked:  true,
-		Hash:    fftypes.NewRandB32(),
-		Batch:   fftypes.NewUUID(),
-		Created: fftypes.Now(),
+		Masked:     true,
+		Hash:       fftypes.NewRandB32(),
+		Batch:      fftypes.NewUUID(),
+		Index:      10,
+		Created:    fftypes.Now(),
+		Dispatched: false,
 	}
 	err := s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
@@ -57,15 +59,23 @@ func TestPinsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pinRes))
 
-	// Double insert, checking no error
+	// Set it dispatched
+	err = s.SetPinsDispatched(ctx, []int64{pin.Sequence})
+	assert.NoError(t, err)
+
+	// Double insert, checking no error and we keep the dispatched flag
+	existingSequence := pin.Sequence
+	pin.Sequence = 99999
 	err = s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
 	pinRes, err = s.GetPins(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pinRes)) // we didn't add twice
+	assert.Equal(t, existingSequence, pin.Sequence)
+	assert.True(t, pin.Dispatched)
 
 	// Test delete
-	err = s.DeletePin(ctx, pin.Hash, pin.Batch)
+	err = s.DeletePin(ctx, pin.Sequence)
 	assert.NoError(t, err)
 	p, err := s.GetPins(ctx, filter)
 	assert.NoError(t, err)
@@ -88,6 +98,17 @@ func TestUpsertPinFailInsert(t *testing.T) {
 	mock.ExpectRollback()
 	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpsertPinFailExistingSequenceScan(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(mock.NewRows([]string{"only one"}).AddRow(true))
+	mock.ExpectRollback()
+	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
+	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -126,10 +147,26 @@ func TestGetPinReadMessageFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestSetPinsDispatchedBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.SetPinsDispatched(context.Background(), []int64{12345})
+	assert.Regexp(t, "FF10114", err)
+}
+
+func TestSetPinsDispatchedUpdateFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.SetPinsDispatched(context.Background(), []int64{12345})
+	assert.Regexp(t, "FF10117", err)
+}
+
 func TestPinDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeletePin(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
+	err := s.DeletePin(context.Background(), 12345)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -138,6 +175,6 @@ func TestPinDeleteFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.DeletePin(context.Background(), fftypes.NewRandB32(), fftypes.NewUUID())
+	err := s.DeletePin(context.Background(), 12345)
 	assert.Regexp(t, "FF10118", err)
 }

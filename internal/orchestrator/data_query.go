@@ -186,7 +186,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		return nil, err
 	}
 	var txID *fftypes.UUID
-	if msg.Header.TX.Type == fftypes.TransactionTypeBatchPin {
+	if msg.Header.TxType == fftypes.TransactionTypeBatchPin {
 		if msg.BatchID == nil {
 			return nil, i18n.NewError(ctx, i18n.MsgBatchNotSet)
 		}

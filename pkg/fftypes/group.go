@@ -95,7 +95,7 @@ func (group *Group) Seal() {
 }
 
 func (group *Group) Topic() string {
-	return fmt.Sprintf("ff-grp-%s", group.ID)
+	return fmt.Sprintf("ff_grp_%s", group.ID)
 }
 
 func (group *Group) SetBroadcastMessage(msgID *UUID) {

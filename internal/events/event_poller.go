@@ -40,7 +40,7 @@ type eventPoller struct {
 	conf          *eventPollerConf
 }
 
-type newEventsHandler func(events []*fftypes.Event) (bool, error)
+type newEventsHandler func(events []fftypes.LocallySequenced) (bool, error)
 
 type eventPollerConf struct {
 	ephemeral                  bool
@@ -48,6 +48,7 @@ type eventPollerConf struct {
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
 	firstEvent                 *fftypes.SubOptsFirstEvent
+	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
 	limitNamespace             string
 	newEventsHandler           newEventsHandler
 	offsetName                 string
@@ -147,8 +148,8 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 	return nil
 }
 
-func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
-	var msgs []*fftypes.Event
+func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
+	var items []fftypes.LocallySequenced
 	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
@@ -156,13 +157,13 @@ func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
 		if ep.conf.limitNamespace != "" {
 			filter = fb.And(filter, fb.Eq("namespace", ep.conf.limitNamespace))
 		}
-		msgs, err = ep.database.GetEvents(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
+		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}
 		return false, nil
 	})
-	return msgs, err
+	return items, err
 }
 
 func (ep *eventPoller) eventLoop() {
@@ -200,7 +201,7 @@ func (ep *eventPoller) eventLoop() {
 	}
 }
 
-func (ep *eventPoller) dispatchEventsRetry(events []*fftypes.Event) (repoll bool, err error) {
+func (ep *eventPoller) dispatchEventsRetry(events []fftypes.LocallySequenced) (repoll bool, err error) {
 	err = ep.conf.retry.Do(ep.ctx, "process events", func(attempt int) (retry bool, err error) {
 		repoll, err = ep.conf.newEventsHandler(events)
 		return err != nil, err // always retry (retry will end on cancelled context)

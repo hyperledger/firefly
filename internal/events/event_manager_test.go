@@ -57,7 +57,7 @@ func TestStartStop(t *testing.T) {
 		Name:      aggregatorOffsetName,
 		Current:   12345,
 	}, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
@@ -93,7 +93,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 		Name:      aggregatorOffsetName,
 		Current:   12345,
 	}, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
 
 	getSubCallReady := make(chan bool, 1)
@@ -213,7 +213,7 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := em.CreateDurableSubscription(em.ctx, sub)
 	assert.EqualError(t, err, "pop")
 }

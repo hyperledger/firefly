@@ -30,8 +30,8 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	if in.Header.Author == "" {
 		in.Header.Author = config.GetString(config.NodeIdentity)
 	}
-	if in.Header.TX.Type == "" {
-		in.Header.TX.Type = fftypes.TransactionTypeBatchPin
+	if in.Header.TxType == "" {
+		in.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
 	sender, err := pm.identity.Resolve(ctx, in.Header.Author)

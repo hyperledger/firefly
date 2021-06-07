@@ -187,14 +187,17 @@ type PeristenceInterface interface {
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
-	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash sequence already exists
+	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
 	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 
-	// GetPins - Get parked sequences
+	// GetPins - Get pins
 	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
 
-	// DeletePin - Delete an parked sequence by name
-	DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch *fftypes.UUID) (err error)
+	// SetPinsDispatched - Set the dispatched flag to true on the specified pins
+	SetPinsDispatched(ctx context.Context, sequences []int64) (err error)
+
+	// DeletePin - Delete a pin
+	DeletePin(ctx context.Context, sequence int64) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -472,11 +475,13 @@ var EventQueryFactory = &queryFields{
 
 // PinQueryFactory filter fields for parked contexts
 var PinQueryFactory = &queryFields{
-	"sequence": &Int64Field{},
-	"masked":   &BoolField{},
-	"hash":     &StringField{},
-	"batch":    &UUIDField{},
-	"created":  &TimeField{},
+	"sequence":   &Int64Field{},
+	"masked":     &BoolField{},
+	"hash":       &StringField{},
+	"batch":      &UUIDField{},
+	"index":      &Int64Field{},
+	"dispatched": &BoolField{},
+	"created":    &TimeField{},
 }
 
 // OrganizationQueryFactory filter fields for organizations

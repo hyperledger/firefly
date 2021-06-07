@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	msgBatchOffsetName = "ff-msgbatch"
+	msgBatchOffsetName = "ff_msgbatch"
 )
 
 func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (Manager, error) {

@@ -255,7 +255,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*context", err)
+	assert.Regexp(t, "FF10171.*tag", err)
 }
 
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {

@@ -24,6 +24,7 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -45,6 +46,14 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		offsetType:       fftypes.OffsetTypeSubscription,
 		offsetNamespace:  "unit",
 		offsetName:       "test",
+		getItems: func(c context.Context, f database.Filter) ([]fftypes.LocallySequenced, error) {
+			events, err := mdi.GetEvents(c, f)
+			ls := make([]fftypes.LocallySequenced, len(events))
+			for i, e := range events {
+				ls[i] = e
+			}
+			return ls, err
+		},
 	})
 	return ep, cancel
 }
@@ -191,8 +200,8 @@ func TestReadPageExit(t *testing.T) {
 
 func TestReadPageSingleCommitEvent(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	processEventCalled := make(chan *fftypes.Event, 1)
-	ep, cancel := newTestEventPoller(t, mdi, func(events []*fftypes.Event) (bool, error) {
+	processEventCalled := make(chan fftypes.LocallySequenced, 1)
+	ep, cancel := newTestEventPoller(t, mdi, func(events []fftypes.LocallySequenced) (bool, error) {
 		processEventCalled <- events[0]
 		return false, nil
 	})
@@ -203,13 +212,13 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 	ep.eventLoop()
 
 	event := <-processEventCalled
-	assert.Equal(t, *ev1.ID, *event.ID)
+	assert.Equal(t, *ev1.ID, *event.(*fftypes.Event).ID)
 	mdi.AssertExpectations(t)
 }
 
 func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, func(events []*fftypes.Event) (bool, error) { return false, fmt.Errorf("pop") })
+	ep, cancel := newTestEventPoller(t, mdi, func(events []fftypes.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") })
 	cancel()
 	ev1 := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID())
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{ev1}, nil).Once()
@@ -220,12 +229,12 @@ func TestReadPageProcessEventsRetryExit(t *testing.T) {
 
 func TestProcessEventsFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
-	ep, cancel := newTestEventPoller(t, mdi, func(events []*fftypes.Event) (bool, error) {
+	ep, cancel := newTestEventPoller(t, mdi, func(events []fftypes.LocallySequenced) (bool, error) {
 		return false, fmt.Errorf("pop")
 	})
 	defer cancel()
-	_, err := ep.conf.newEventsHandler([]*fftypes.Event{
-		fftypes.NewEvent(fftypes.EventTypesBatchPinned, "ns1", fftypes.NewUUID()),
+	_, err := ep.conf.newEventsHandler([]fftypes.LocallySequenced{
+		fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID()),
 	})
 	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)

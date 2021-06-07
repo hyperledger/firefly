@@ -358,13 +358,13 @@ func TestGetMessageEventsOk(t *testing.T) {
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
 	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
-	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
+	f := fb.And(fb.Eq("type", fftypes.EventTypeMessageConfirmed))
 	_, err := or.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 	calculatedFilter, err := or.mdi.Calls[1].Arguments[1].(database.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
-		`( type == 'data_arrived_broadcast' ) && ( reference IN ['%s','%s','%s'] )`,
+		`( type == 'message_confirmed' ) && ( reference IN ['%s','%s','%s'] )`,
 		msg.Header.ID, msg.Data[0].ID, msg.Data[1].ID,
 	), calculatedFilter.String())
 	assert.NoError(t, err)
@@ -373,7 +373,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 func TestGetMessageEventsBadMsgID(t *testing.T) {
 	or := newTestOrchestrator()
 	fb := database.EventQueryFactory.NewFilter(context.Background())
-	f := fb.And(fb.Eq("type", fftypes.EventTypeDataArrivedBroadcast))
+	f := fb.And(fb.Eq("type", fftypes.EventTypeMessageConfirmed))
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, err := or.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.Regexp(t, "FF10109", err)

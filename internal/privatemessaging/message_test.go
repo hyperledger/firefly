@@ -73,8 +73,10 @@ func TestSendMessageE2EOk(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Members: []fftypes.MemberInput{
-			{Org: "org1"},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -94,8 +96,10 @@ func TestSendMessageBadIdentity(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Members: []fftypes.MemberInput{
-			{Org: "org1"},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
 		},
 	})
 	assert.Regexp(t, "FF10206.*pop", err)
@@ -125,8 +129,10 @@ func TestSendMessageFail(t *testing.T) {
 		InputData: fftypes.InputData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
-		Members: []fftypes.MemberInput{
-			{Org: "org1"},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -168,8 +174,10 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 
 	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Members: []fftypes.MemberInput{
-			{Org: "localorg"},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "localorg"},
+			},
 		},
 	})
 	assert.Regexp(t, "pop", err)
@@ -199,8 +207,10 @@ func TestResolveAndSendSealFail(t *testing.T) {
 
 	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Members: []fftypes.MemberInput{
-			{Org: "localorg"},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "localorg"},
+			},
 		},
 	})
 	assert.Regexp(t, "FF10144", err)

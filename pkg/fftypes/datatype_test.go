@@ -75,7 +75,7 @@ func TestDatatypeValidation(t *testing.T) {
 	assert.Regexp(t, "FF10201", dt.Validate(context.Background(), true))
 
 	var def Definition = dt
-	assert.Equal(t, "ff-ns-ok", def.Topic())
+	assert.Equal(t, "ff_ns_ok", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, dt.Message)
 }

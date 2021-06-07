@@ -27,7 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-// SequencedBroadcastBatch is called in-line with a particular ledger's stream of events, so while we
+// BatchPinComplete is called in-line with a particular ledger's stream of events, so while we
 // block here this blockchain event remains un-acknowledged, and no further events will arrive from this
 // particular ledger.
 //
@@ -35,11 +35,11 @@ import (
 // sequence, and also persist all the data.
 func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
-	log.L(em.ctx).Infof("-> SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
+	log.L(em.ctx).Infof("-> BatchPinComplete txn=%s author=%s", protocolTxID, signingIdentity)
 	defer func() {
-		log.L(em.ctx).Infof("<- SequencedBroadcastBatch txn=%s author=%s", protocolTxID, signingIdentity)
+		log.L(em.ctx).Infof("<- BatchPinComplete txn=%s author=%s", protocolTxID, signingIdentity)
 	}()
-	log.L(em.ctx).Tracef("SequencedBroadcastBatch info: %+v", additionalInfo)
+	log.L(em.ctx).Tracef("BatchPinComplete info: %+v", additionalInfo)
 
 	if batchPin.BatchPaylodRef != nil {
 		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
@@ -50,16 +50,13 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	// Here we simple record all the pins as parked, and emit an event for the aggregator
 	// to check whether the messages in the batch have been written.
-	return em.retry.Do(em.ctx, "persist pins", func(attempt int) (bool, error) {
+	return em.retry.Do(em.ctx, "persist private batch pins", func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
 			if err == nil {
-				err = em.persistPins(ctx, batchPin)
-				if err == nil {
-					err = em.emitPinnedEvent(ctx, batchPin)
-				}
+				err = em.persistContexts(ctx, batchPin, true)
 			}
 			return err
 		})
@@ -117,25 +114,16 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 	return nil
 }
 
-func (em *eventManager) persistCon(ctx context.Context, batchPin *blockchain.BatchPin) error {
-	for _, pin := range batchPin.Pins {
-		if err := em.database.InsertParked(ctx, &fftypes.Parked{
-			Pin:     pin,
+func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, private bool) error {
+	for _, hash := range batchPin.Contexts {
+		if err := em.database.UpsertPin(ctx, &fftypes.Pin{
+			Masked:  private,
+			Hash:    hash,
 			Batch:   batchPin.BatchID,
 			Created: fftypes.Now(),
 		}); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (em *eventManager) emitPinnedEvent(ctx context.Context, batchPin *blockchain.BatchPin) error {
-	// Persist a batch pinned even
-	event := fftypes.NewEvent(fftypes.EventTypesBatchPinned, batchPin.Namespace, batchPin.BatchID)
-	if err := em.database.UpsertEvent(ctx, event, false); err != nil {
-		log.L(ctx).Errorf("Failed to insert %s event for batch '%s': %s", event.Type, batchPin.BatchID, err)
-		return err // a peristence failure here is considered retryable (so returned)
 	}
 	return nil
 }
@@ -168,9 +156,9 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
 			if err == nil {
-				err = em.persistBatch(ctx, batch, signingIdentity, protocolTxID, additionalInfo)
+				err = em.persistBatch(ctx, batch, signingIdentity)
 				if err == nil {
-					err = em.emitPinnedEvent(ctx, batchPin)
+					err = em.persistContexts(ctx, batchPin, false)
 				}
 				return err
 			}
@@ -182,7 +170,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
