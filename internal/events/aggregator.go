@@ -70,6 +70,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		offsetName:       aggregatorOffsetName,
 		newEventsHandler: ag.processPinsDBGroup,
 		getItems:         ag.getPins,
+		queryFactory:     database.PinQueryFactory,
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("dispatched", false))
 		},

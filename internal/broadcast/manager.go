@@ -145,8 +145,10 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 
 	// Write the batch pin to the blockchain
 	blockchainTrackingID, err := bm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
+		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
+		BatchHash:      batch.Hash,
 		BatchPaylodRef: batch.PayloadRef,
 		Contexts:       contexts,
 	})

@@ -152,7 +152,8 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	offsetUpdates := make(chan int64)
 	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		f, _ := a.Get(2).(database.Update).Finalize()
+		f, err := a.Get(2).(database.Update).Finalize()
+		assert.NoError(t, err)
 		v, _ := f.SetOperations[0].Value.Value()
 		offsetUpdates <- v.(int64)
 	}
