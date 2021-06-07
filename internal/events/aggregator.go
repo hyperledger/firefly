@@ -148,6 +148,17 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin) (err
 	return err
 }
 
+func (ag *aggregator) calcHash(topic string, groupID *fftypes.UUID, identity string, nonce int64) *fftypes.Bytes32 {
+	h := sha256.New()
+	h.Write([]byte(topic))
+	h.Write((*groupID)[:])
+	h.Write([]byte(identity))
+	nonceBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(nonceBytes, uint64(nonce))
+	h.Write(nonceBytes)
+	return fftypes.HashResult(h)
+}
+
 func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, masked bool, pinnedSequence int64, msg *fftypes.Message) (err error) {
 	l := log.L(ctx)
 
@@ -207,14 +218,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	if masked {
 		for i, nextPin := range nextPins {
 			nextPin.Nonce++
-			h := sha256.New()
-			h.Write([]byte(msg.Header.Topics[i]))
-			h.Write((*msg.Header.Group)[:])
-			h.Write([]byte(nextPin.Identity))
-			nonceBytes := make([]byte, 8)
-			binary.BigEndian.PutUint64(nonceBytes, uint64(nextPin.Nonce))
-			h.Write(nonceBytes)
-			nextPin.Hash = fftypes.HashResult(h)
+			nextPin.Hash = ag.calcHash(msg.Header.Topics[i], msg.Header.Group, nextPin.Identity, nextPin.Nonce)
 			if err = ag.database.UpdateNextPin(ctx, nextPin.Sequence, database.NextPinQueryFactory.NewUpdate(ctx).
 				Set("nonce", nextPin.Nonce).
 				Set("hash", nextPin.Hash),
@@ -243,7 +247,7 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *ffty
 	if err != nil {
 		return nil, err
 	}
-	l.Debugf("Group=%s Topic='%s' NextPins=%v Sequence=%s Pin=%s NextPins=%v", groupID, topic, nextPins, pinnedSequence, pin, nextPins)
+	l.Debugf("Group=%s Topic='%s' NextPins=%v Sequence=%d Pin=%s NextPins=%v", groupID, topic, nextPins, pinnedSequence, pin, nextPins)
 
 	if len(nextPins) == 0 {
 		// If this is the first time we've seen the context, then this message is read as long as it is
@@ -255,13 +259,13 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *ffty
 	// This message must be the next hash for the author
 	var nextPin *fftypes.NextPin
 	for _, np := range nextPins {
-		if *nextPin.Hash == *pin {
+		if *np.Hash == *pin {
 			nextPin = np
 			break
 		}
 	}
 	if nextPin == nil || nextPin.Identity != author {
-		l.Debug("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", groupID, topic, contextUnmasked, pin, nextPin)
+		l.Debugf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", groupID, topic, contextUnmasked, pin, nextPin)
 		return nil, nil
 	}
 	if err != nil {
@@ -285,17 +289,11 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.U
 	}
 
 	// Find the list of zerohashes for this context, and match this pin to one of them
-	zeroNonce := make([]byte, 8)
 	zeroHashes := make([]driver.Value, len(group.Members))
 	var nextPin *fftypes.NextPin
 	nextPins := make([]*fftypes.NextPin, len(group.Members))
 	for i, member := range group.Members {
-		h := sha256.New()
-		h.Write([]byte(topic))
-		h.Write((*groupID)[:])
-		h.Write([]byte(member.Identity))
-		h.Write(zeroNonce)
-		zeroHash := fftypes.HashResult(h)
+		zeroHash := ag.calcHash(topic, groupID, member.Identity, 0)
 		np := &fftypes.NextPin{
 			Context:  contextUnmasked,
 			Identity: member.Identity,
