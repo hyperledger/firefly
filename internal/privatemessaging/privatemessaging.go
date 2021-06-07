@@ -143,11 +143,16 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 
 	}
 
+	return pm.writeTransaction(ctx, id, batch, contexts)
+}
+
+func (pm *privateMessaging) writeTransaction(ctx context.Context, signingID *fftypes.Identity, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Signer:    id.OnChain,
+			Signer:    signingID.OnChain,
 			Namespace: batch.Namespace,
 			Reference: batch.ID,
 		},
@@ -155,13 +160,13 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = pm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
+	err := pm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := pm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
+	blockchainTrackingID, err := pm.blockchain.SubmitBatchPin(ctx, nil, signingID, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,

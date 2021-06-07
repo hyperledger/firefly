@@ -221,6 +221,21 @@ func TestResolveOrgFail(t *testing.T) {
 
 }
 
+func TestResolveOrgByIDFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	orgID := fftypes.NewUUID()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByID", pm.ctx, uuidMatches(orgID)).Return(&fftypes.Organization{ID: orgID}, nil)
+
+	org, err := pm.resolveOrg(pm.ctx, orgID.String())
+	assert.NoError(t, err)
+	assert.Equal(t, *orgID, *org.ID)
+
+}
+
 func TestResolveNodeFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -247,7 +262,21 @@ func TestResolveNodeByIDNoResult(t *testing.T) {
 
 }
 
-func TestGetReceipientstEmptyList(t *testing.T) {
+func TestResolveReceipientListExisting(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Group: fftypes.NewUUID(),
+			},
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestResolveReceipientListEmptyList(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
