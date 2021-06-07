@@ -38,6 +38,8 @@ const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"
 )
 
+var zeroBytes32 = fftypes.Bytes32{}
+
 type Ethereum struct {
 	ctx          context.Context
 	topic        string
@@ -247,6 +249,9 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 }
 
 func ethHexFormatB32(b *fftypes.Bytes32) string {
+	if b == nil {
+		return "0x0000000000000000000000000000000000000000000000000000000000000000"
+	}
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
@@ -302,6 +307,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		log.L(ctx).Errorf("BatchPin event is not valid - bad payloadRef (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
+	payloadRefOrNil := &payloadRef
+	if *payloadRefOrNil == zeroBytes32 {
+		payloadRefOrNil = nil
+	}
 
 	contexts := make([]*fftypes.Bytes32, len(sContexts))
 	for i, sHash := range sContexts {
@@ -319,7 +328,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		TransactionID:  &txnID,
 		BatchID:        &batchID,
 		BatchHash:      &batchHash,
-		BatchPaylodRef: &payloadRef,
+		BatchPaylodRef: payloadRefOrNil,
 		Contexts:       contexts,
 	}
 
