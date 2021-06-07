@@ -31,6 +31,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/mocks/networkmapmocks"
+	"github.com/kaleido-io/firefly/mocks/privatemessagingmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -49,6 +50,7 @@ type testOrchestrator struct {
 	mem *eventmocks.EventManager
 	mnm *networkmapmocks.Manager
 	mps *publicstoragemocks.Plugin
+	mpm *privatemessagingmocks.Manager
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
 	mdx *dataexchangemocks.Plugin
@@ -66,6 +68,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mem: &eventmocks.EventManager{},
 		mnm: &networkmapmocks.Manager{},
 		mps: &publicstoragemocks.Plugin{},
+		mpm: &privatemessagingmocks.Manager{},
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
 		mdx: &dataexchangemocks.Plugin{},
@@ -77,6 +80,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
 	tor.orchestrator.publicstorage = tor.mps
+	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
@@ -192,6 +196,14 @@ func TestBadPDataExchangeInitFail(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := or.Init(context.Background())
 	assert.EqualError(t, err, "pop")
+}
+
+func TestInitMessagingomponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.messaging = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestInitEventsComponentFail(t *testing.T) {

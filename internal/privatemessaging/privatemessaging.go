@@ -33,7 +33,8 @@ import (
 	"github.com/karlseguin/ccache"
 )
 
-type PrivateMessaging interface {
+type Manager interface {
+	GroupManager
 }
 
 type privateMessaging struct {
@@ -49,7 +50,11 @@ type privateMessaging struct {
 	nodeIdentity string
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager) (PrivateMessaging, error) {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager) (Manager, error) {
+	if di == nil || ii == nil || dx == nil || bi == nil || ba == nil || dm == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+	}
+
 	pm := &privateMessaging{
 		ctx:        ctx,
 		database:   di,
@@ -100,16 +105,25 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAdnSubmitBatch(ctx, batch, nodes, payload, contexts)
+		return pm.sendAndSubmitBatch(ctx, batch, nodes, payload, contexts)
 	})
 }
 
-func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
+func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
 	l := log.L(ctx)
+
+	id, err := pm.identity.Resolve(ctx, batch.Author)
+	if err == nil {
+		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
+	}
+	if err != nil {
+		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
+		return err
+	}
 
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
-		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i, len(nodes))
+		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
 		trackingID, err := pm.exchange.SendMessage(ctx, node, payload)
 		if err != nil {
@@ -120,23 +134,13 @@ func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftyp
 			pm.exchange,
 			batch.Payload.TX.ID,
 			trackingID,
-			fftypes.OpTypeBlockchainBatchPin,
+			fftypes.OpTypeDataExchangeBatchSend,
 			fftypes.OpStatusPending,
 			node.ID.String())
-		op.BackendID = op.ID.String()
 		if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
 			return err
 		}
 
-	}
-
-	id, err := pm.identity.Resolve(ctx, batch.Author)
-	if err == nil {
-		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		return err
 	}
 
 	tx := &fftypes.Transaction{
@@ -158,9 +162,11 @@ func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftyp
 
 	// Write the batch pin to the blockchain
 	blockchainTrackingID, err := pm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
+		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
+		BatchHash:      batch.Hash,
 		Contexts:       contexts,
 	})
 	if err != nil {
