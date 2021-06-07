@@ -87,6 +87,9 @@ type PeristenceInterface interface {
 	// UpdateNamespace - Update namespace
 	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
+	// DeleteNamespace - Delete namespace
+	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
+
 	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 

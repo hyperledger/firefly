@@ -40,13 +40,25 @@ func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *f
 	if err != nil {
 		return false, err // We only return database errors
 	}
-	if existing != nil && existing.Type != fftypes.NamespaceTypeLocal {
-		l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
-		return false, nil
+	if existing != nil {
+		if existing.Type != fftypes.NamespaceTypeLocal {
+			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
+			return false, nil
+		}
+		// Remove the local definition
+		if err = bm.database.DeleteNamespace(ctx, existing.ID); err != nil {
+			return false, err
+		}
 	}
 
-	if err = bm.database.UpsertNamespace(ctx, &ns, true); err != nil {
+	if err = bm.database.UpsertNamespace(ctx, &ns, false); err != nil {
 		return false, err
 	}
+
+	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
+	if err = bm.database.UpsertEvent(ctx, event, false); err != nil {
+		return false, err
+	}
+
 	return true, nil
 }

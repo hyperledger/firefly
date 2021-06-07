@@ -35,6 +35,20 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
+// DeleteNamespace provides a mock function with given fields: ctx, id
+func (_m *Plugin) DeleteNamespace(ctx context.Context, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, id)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteNextPin provides a mock function with given fields: ctx, sequence
 func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
 	ret := _m.Called(ctx, sequence)

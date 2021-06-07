@@ -25,6 +25,12 @@ const (
 	EventTypeMessageConfirmed EventType = "message_confirmed"
 	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
 	EventTypeMessageInvalid EventType = "message_invalid"
+	// EventTypeNamespaceConfirmed occurs when a new namespace is ready for use (on the namespace itself)
+	EventTypeNamespaceConfirmed EventType = "namespace_confirmed"
+	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)
+	EventTypeDatatypeConfirmed EventType = "datatype_confirmed"
+	// EventTypeGroupConfirmed occurs when a new group is ready to use (on the namespace of the group, on all group participants)
+	EventTypeGroupConfirmed EventType = "group_confirmed"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
