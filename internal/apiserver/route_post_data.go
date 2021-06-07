@@ -36,7 +36,7 @@ var postData = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Data{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Created", "Blob"},
+	JSONInputMask:   []string{"ID", "Namespace", "Created", "Blob", "Blobstore", "Hash"},
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCode:  http.StatusCreated, // Sync operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
