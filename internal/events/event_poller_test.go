@@ -46,6 +46,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		offsetType:       fftypes.OffsetTypeSubscription,
 		offsetNamespace:  "unit",
 		offsetName:       "test",
+		queryFactory:     database.EventQueryFactory,
 		getItems: func(c context.Context, f database.Filter) ([]fftypes.LocallySequenced, error) {
 			events, err := mdi.GetEvents(c, f)
 			ls := make([]fftypes.LocallySequenced, len(events))

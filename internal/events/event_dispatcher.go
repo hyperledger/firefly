@@ -91,6 +91,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
 		},
+		queryFactory:     database.EventQueryFactory,
 		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
