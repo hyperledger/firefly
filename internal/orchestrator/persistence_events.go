@@ -22,6 +22,10 @@ func (or *orchestrator) MessageCreated(sequence int64) {
 	or.batch.NewMessages() <- sequence
 }
 
+func (or *orchestrator) PinCreated(sequence int64) {
+	or.events.NewPins() <- sequence
+}
+
 func (or *orchestrator) EventCreated(sequence int64) {
 	or.events.NewEvents() <- sequence
 }
