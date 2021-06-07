@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/internal/config"
@@ -37,6 +38,8 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	config.Reset()
 	config.Set(config.NodeIdentity, "localnodeid")
 	config.Set(config.OrgIdentity, "localorg")
+	config.Set(config.GroupCacheTTL, "1m")
+	config.Set(config.GroupCacheSize, "1m")
 
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
@@ -151,4 +154,127 @@ func TestDispatchBatch(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+}
+
+func TestNewPrivateMessagingMissingDeps(t *testing.T) {
+	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil)
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestDispatchBatchBadData(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+		Payload: fftypes.BatchPayload{
+			Data: []*fftypes.Data{
+				{Value: fftypes.Byteable(`{!json}`)},
+			},
+		},
+	}, []*fftypes.Bytes32{})
+	assert.Regexp(t, "FF10137", err)
+}
+
+func TestDispatchErrorFindingGroup(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestSendAndSubmitBatchBadID(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "badauthor").Return(&fftypes.Identity{OnChain: "!badaddress"}, nil)
+
+	mbi := pm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("VerifyIdentitySyntax", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+		Author: "badauthor",
+	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestSendImmediateFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+
+	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+		Author: "org1",
+	}, []*fftypes.Node{
+		{Endpoint: fftypes.JSONObject{"some": "data"}},
+	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestSendSubmitUpsertOperationFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+		Author: "org1",
+	}, []*fftypes.Node{
+		{Endpoint: fftypes.JSONObject{"some": "data"}},
+	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestWriteTransactionUpsertFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+
+	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
+
+	mbi := pm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+
+	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestWriteTransactionUpsertOpFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
+
+	mbi := pm.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("tracking1", nil)
+
+	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
 }
