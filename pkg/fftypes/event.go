@@ -25,10 +25,6 @@ const (
 	EventTypeMessageConfirmed EventType = "message_confirmed"
 	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
 	EventTypeMessageInvalid EventType = "message_invalid"
-	// EventTypesBatchPinned indicates that a batch has been pinned
-	EventTypesBatchPinned EventType = "batch_pinned"
-	// EventTypesBatchReceived indicates that a batch has received off-chain
-	EventTypesBatchReceived EventType = "batch_received"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
@@ -67,4 +63,8 @@ func NewEvent(t EventType, ns string, ref *UUID) *Event {
 		Reference: ref,
 		Created:   Now(),
 	}
+}
+
+func (e *Event) LocalSequence() int64 {
+	return e.Sequence
 }

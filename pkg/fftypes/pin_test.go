@@ -22,16 +22,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewEvent(t *testing.T) {
+func TestNewPint(t *testing.T) {
 
-	u := NewUUID()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
-	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
-	assert.Equal(t, "ns1", e.Namespace)
-	assert.Equal(t, *u, *e.Reference)
-
-	e.Sequence = 12345
-	var ls LocallySequenced = e
+	p := &Pin{Sequence: 12345}
+	var ls LocallySequenced = p
 	assert.Equal(t, int64(12345), ls.LocalSequence())
 
 }

@@ -27,8 +27,9 @@ func TestTransactionHash(t *testing.T) {
 	tx := &Transaction{}
 	tx.Subject = TransactionSubject{
 		Signer:    "0x12345",
+		Namespace: "ns1",
 		Type:      TransactionTypeBatchPin,
 		Reference: batchid,
 	}
-	assert.Equal(t, "43ee7fc01a0bf867c2fb55858174d4597079fb85942f74ab7b6bc785382e35f1", tx.Subject.Hash().String())
+	assert.Equal(t, "0b4ba7041c826cd01a4eaffc22144f219164e21c58b04e7c76bbd58d1f72a1d3", tx.Subject.Hash().String())
 }

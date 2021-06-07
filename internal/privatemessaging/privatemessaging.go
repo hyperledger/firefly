@@ -85,7 +85,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 	return pm, nil
 }
 
-func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -100,11 +100,11 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.sendAdnSubmitBatch(ctx, batch, nodes, payload)
+		return pm.sendAdnSubmitBatch(ctx, batch, nodes, payload, contexts)
 	})
 }
 
-func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable) (err error) {
+func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
 	l := log.L(ctx)
 
 	// Write it to the dataexchange for each member
@@ -143,7 +143,7 @@ func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftyp
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Author:    batch.Author,
+			Signer:    id.OnChain,
 			Namespace: batch.Namespace,
 			Reference: batch.ID,
 		},
@@ -157,10 +157,11 @@ func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftyp
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := pm.blockchain.SubmitBroadcastBatch(ctx, id, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := pm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
 		BatchPaylodRef: batch.PayloadRef,
+		Contexts:       contexts,
 	})
 	if err != nil {
 		return err
@@ -178,13 +179,5 @@ func (pm *privateMessaging) sendAdnSubmitBatch(ctx context.Context, batch *fftyp
 		return err
 	}
 
-	// The completed PublicStorage upload
-	op = fftypes.NewTXOperation(
-		pm.publicstorage,
-		batch.Payload.TX.ID,
-		publicstorageID,
-		fftypes.OpTypePublicStorageBatchBroadcast,
-		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
-		"")
 	return pm.database.UpsertOperation(ctx, op, false)
 }

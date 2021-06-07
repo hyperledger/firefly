@@ -16,22 +16,6 @@
 
 package fftypes
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestNewEvent(t *testing.T) {
-
-	u := NewUUID()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
-	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
-	assert.Equal(t, "ns1", e.Namespace)
-	assert.Equal(t, *u, *e.Reference)
-
-	e.Sequence = 12345
-	var ls LocallySequenced = e
-	assert.Equal(t, int64(12345), ls.LocalSequence())
-
+type LocallySequenced interface {
+	LocalSequence() int64
 }

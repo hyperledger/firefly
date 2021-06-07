@@ -77,13 +77,13 @@ func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns
 	return r0
 }
 
-// DeletePin provides a mock function with given fields: ctx, hash, batch
-func (_m *Plugin) DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch *fftypes.UUID) error {
-	ret := _m.Called(ctx, hash, batch)
+// DeletePin provides a mock function with given fields: ctx, sequence
+func (_m *Plugin) DeletePin(ctx context.Context, sequence int64) error {
+	ret := _m.Called(ctx, sequence)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, hash, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, sequence)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1079,6 +1079,20 @@ func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, func(context.Context) error) error); ok {
 		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SetPinsDispatched provides a mock function with given fields: ctx, sequences
+func (_m *Plugin) SetPinsDispatched(ctx context.Context, sequences []int64) error {
+	ret := _m.Called(ctx, sequences)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int64) error); ok {
+		r0 = rf(ctx, sequences)
 	} else {
 		r0 = ret.Error(0)
 	}

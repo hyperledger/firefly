@@ -26,6 +26,12 @@ import (
 )
 
 func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) error {
+	if in.Header.Group != nil {
+		return nil // validity of existing group checked later
+	}
+	if in.Group == nil || len(in.Group.Members) == 0 {
+		return i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)
+	}
 	group, isNew, err := pm.findOrGenerateGroup(ctx, in)
 	if err != nil {
 		return err
@@ -95,14 +101,11 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 }
 
 func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (members fftypes.Members, err error) {
-	if len(in.Members) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)
-	}
 	foundLocal := false
-	members = make(fftypes.Members, len(in.Members))
-	for i, rInput := range in.Members {
+	members = make(fftypes.Members, len(in.Group.Members))
+	for i, rInput := range in.Group.Members {
 		// Resolve the org
-		org, err := pm.resolveOrg(ctx, rInput.Org)
+		org, err := pm.resolveOrg(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -113,8 +116,8 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		}
 		foundLocal = foundLocal || node.Identity == pm.nodeIdentity
 		members[i] = &fftypes.Member{
-			Org:  org.ID,
-			Node: node.ID,
+			Identity: org.Identity,
+			Node:     node.ID,
 		}
 	}
 	if !foundLocal {
@@ -132,7 +135,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	hash := members.Hash()
 	filter := fb.And(
 		fb.Eq("namespace", in.Header.Namespace),
-		fb.Eq("ledger", in.Ledger),
+		fb.Eq("ledger", in.Group.Ledger),
 		fb.Eq("hahs", hash),
 	)
 	groups, err := pm.database.GetGroups(ctx, filter)
@@ -148,7 +151,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	group = &fftypes.Group{
 		ID:        fftypes.NewUUID(),
 		Namespace: in.Header.Namespace,
-		Ledger:    in.Ledger,
+		Ledger:    in.Group.Ledger,
 		Hash:      hash,
 		Members:   members,
 		Created:   fftypes.Now(),

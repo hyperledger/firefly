@@ -89,6 +89,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		offsetType:       fftypes.OffsetTypeSubscription,
 		offsetNamespace:  sub.definition.Namespace,
 		offsetName:       sub.definition.Name,
+		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
 		firstEvent:       sub.definition.Options.FirstEvent,
@@ -129,10 +130,20 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.subscription.dispatcherElection
 }
 
-func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.EventDelivery, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+	events, err := ed.database.GetEvents(ctx, filter)
+	ls := make([]fftypes.LocallySequenced, len(events))
+	for i, e := range events {
+		ls[i] = e
+	}
+	return ls, err
+}
+
+func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
 	// We need all the messages that match event references
 	refIDs := make([]driver.Value, len(events))
-	for i, e := range events {
+	for i, ls := range events {
+		e := ls.(*fftypes.Event)
 		if e.Reference != nil {
 			refIDs[i] = *e.Reference
 		}
@@ -159,7 +170,8 @@ func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.Eve
 	}
 
 	enriched := make([]*fftypes.EventDelivery, len(events))
-	for i, e := range events {
+	for i, ls := range events {
+		e := ls.(*fftypes.Event)
 		enriched[i] = &fftypes.EventDelivery{
 			Event:        *e,
 			Subscription: ed.subscription.definition.SubscriptionRef,
@@ -223,7 +235,7 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 	return matchingEvents
 }
 
-func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, error) {
+func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (bool, error) {
 	// At this point, the page of messages we've been given are loaded from the DB into memory,
 	// but we can only make them in-flight and push them to the client up to the maximum
 	// readahead (which is likely lower than our page size - 1 by default)
@@ -231,7 +243,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 	if len(events) == 0 {
 		return false, nil
 	}
-	highestOffset := events[len(events)-1].Sequence
+	highestOffset := events[len(events)-1].LocalSequence()
 	var lastAck int64
 	var nacks int
 

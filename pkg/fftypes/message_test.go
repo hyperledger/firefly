@@ -170,4 +170,8 @@ func TestSealKnownMessage(t *testing.T) {
 	// Verify also returns good
 	err = msg.Verify(context.Background())
 	assert.NoError(t, err)
+
+	msg.Sequence = 12345
+	var ls LocallySequenced = &msg
+	assert.Equal(t, int64(12345), ls.LocalSequence())
 }

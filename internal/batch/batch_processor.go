@@ -183,7 +183,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	return batch
 }
 
-func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (contextHash *fftypes.Bytes32, pin *fftypes.Bytes32, err error) {
+func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message, topic string) (contextOrPin *fftypes.Bytes32, err error) {
 
 	hashBuilder := sha256.New()
 	hashBuilder.Write([]byte(topic))
@@ -192,7 +192,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	// of the topic. There would be no way to unmask it if we did, because we don't have
 	// the full list of senders to know what their next hashes should be.
 	if msg.Header.Group == nil {
-		return fftypes.HashResult(hashBuilder), nil, nil
+		return fftypes.HashResult(hashBuilder), nil
 	}
 
 	// For private groups, we need to make the topic specific to the group (which is
@@ -200,7 +200,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	hashBuilder.Write((*msg.Header.Group)[:])
 
 	// The combination of the topic and group is the context
-	contextHash = fftypes.HashResult(hashBuilder)
+	contextHash := fftypes.HashResult(hashBuilder)
 
 	// Get the next nonce for this context - we're the authority in the nextwork on this,
 	// as we are the sender.
@@ -211,7 +211,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	}
 	err = bp.database.UpsertNonceNext(ctx, gc)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Now combine our sending identity, and this nonce, to produce the hash that should
@@ -221,30 +221,19 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))
 	hashBuilder.Write(nonceBytes)
 
-	return contextHash, fftypes.HashResult(hashBuilder), err
+	return fftypes.HashResult(hashBuilder), err
 }
 
 func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch) ([]*fftypes.Bytes32, error) {
 	// Calculate the sequence hashes
-	dupCheck := make(map[fftypes.Bytes32]bool)
 	contextsOrPins := make([]*fftypes.Bytes32, 0, len(batch.Payload.Messages))
 	for _, msg := range batch.Payload.Messages {
 		for _, topic := range msg.Header.Topics {
-			contextHash, pin, err := bp.maskContext(ctx, msg, topic)
+			contextOrPin, err := bp.maskContext(ctx, msg, topic)
 			if err != nil {
 				return nil, err
 			}
-			if pin == nil {
-				// Outside of a group we have the unmasked context in the transaction, so can de-dup
-				if !dupCheck[*pin] {
-					contextsOrPins = append(contextsOrPins, contextHash)
-					dupCheck[*pin] = true
-				}
-			} else {
-				// For private group, each pin will be masked so it is different and only decodable
-				// by those who know who's in the group.
-				contextsOrPins = append(contextsOrPins, pin)
-			}
+			contextsOrPins = append(contextsOrPins, contextOrPin)
 		}
 	}
 	return contextsOrPins, nil

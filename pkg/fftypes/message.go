@@ -76,8 +76,8 @@ type Message struct {
 // will be broken out and stored separately during the call.
 type MessageInput struct {
 	Message
-	InputData InputData  `json:"data"`
-	Group     InputGroup `json:"group"`
+	InputData InputData   `json:"data"`
+	Group     *InputGroup `json:"group,omitempty"`
 }
 
 // InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
@@ -171,4 +171,8 @@ func (m *Message) Verify(ctx context.Context) error {
 		return i18n.NewError(ctx, i18n.MsgVerifyFailedInvalidHashes, m.Hash.String(), headerHash.String(), m.Header.DataHash.String(), dataHash.String())
 	}
 	return nil
+}
+
+func (m *Message) LocalSequence() int64 {
+	return m.Sequence
 }

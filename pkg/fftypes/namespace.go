@@ -62,7 +62,7 @@ func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func namespaceTopic(ns string) string {
-	return fmt.Sprintf("ff-ns-%s", ns)
+	return fmt.Sprintf("ff_ns_%s", ns)
 }
 
 func (ns *Namespace) Topic() string {

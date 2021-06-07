@@ -32,10 +32,13 @@ var (
 		"masked",
 		"hash",
 		"batch_id",
+		"idx",
+		"dispatched",
 		"created",
 	}
 	pinFilterTypeMap = map[string]string{
 		"batch": "batch_id",
+		"index": "idx",
 	}
 )
 
@@ -46,33 +49,41 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, tx,
+	pin.Sequence, err = s.insertTx(ctx, tx,
 		sq.Insert("pins").
 			Columns(pinColumns...).
 			Values(
 				pin.Masked,
 				pin.Hash,
 				pin.Batch,
+				pin.Index,
+				pin.Dispatched,
 				pin.Created,
 			),
-	); err != nil {
+	)
+	if err != nil {
 		// Check it's not just that it already exsits (edge case, so we optimize for insert)
 		pinRows, queryErr := s.queryTx(ctx, tx,
-			sq.Select("masked").
+			sq.Select("masked", s.provider.SequenceField(""), "dispatched").
 				From("pins").
 				Where(sq.Eq{
 					"hash":     pin.Hash,
 					"batch_id": pin.Batch,
+					"idx":      pin.Index,
 				}),
 		)
 		existing := false
 		if queryErr == nil {
+			defer pinRows.Close()
 			existing = pinRows.Next()
-			pinRows.Close()
 		}
 		if !existing {
 			// Something else went wrong - return the original error
 			return err
+		}
+		err := pinRows.Scan(&pin.Masked, &pin.Sequence, &pin.Dispatched)
+		if err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "pins")
 		}
 		log.L(ctx).Debugf("Pin already existed")
 		return nil
@@ -87,7 +98,10 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 		&pin.Masked,
 		&pin.Hash,
 		&pin.Batch,
+		&pin.Index,
+		&pin.Dispatched,
 		&pin.Created,
+		&pin.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "pins")
@@ -97,7 +111,9 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 
 func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (message []*fftypes.Pin, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(pinColumns...).From("pins"), filter, pinFilterTypeMap)
+	cols := append([]string{}, pinColumns...)
+	cols = append(cols, s.provider.SequenceField(""))
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("pins"), filter, pinFilterTypeMap)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +137,28 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch *fftypes.UUID) (err error) {
+func (s *SQLCommon) SetPinsDispatched(ctx context.Context, sequences []int64) (err error) {
+
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	err = s.updateTx(ctx, tx, sq.
+		Update("pins").
+		Set("dispatched", true).
+		Where(sq.Eq{
+			s.provider.SequenceField(""): sequences,
+		}))
+	if err != nil {
+		return err
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -130,8 +167,7 @@ func (s *SQLCommon) DeletePin(ctx context.Context, hash *fftypes.Bytes32, batch 
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	err = s.deleteTx(ctx, tx, sq.Delete("pins").Where(sq.Eq{
-		"hash":     hash,
-		"batch_id": batch,
+		s.provider.SequenceField(""): sequence,
 	}))
 	if err != nil {
 		return err

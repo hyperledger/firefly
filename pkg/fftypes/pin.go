@@ -37,9 +37,15 @@ package fftypes
 // This is because the sequence must be in the order the pins arrive.
 //
 type Pin struct {
-	Sequence int64    `json:"sequence,omitempty"`
-	Masked   bool     `json:"masked,omitempty"`
-	Hash     *Bytes32 `json:"hash,omitempty"`
-	Batch    *UUID    `json:"batch,omitempty"`
-	Created  *FFTime  `json:"created,omitempty"`
+	Sequence   int64    `json:"sequence,omitempty"`
+	Masked     bool     `json:"masked,omitempty"`
+	Hash       *Bytes32 `json:"hash,omitempty"`
+	Batch      *UUID    `json:"batch,omitempty"`
+	Index      int32    `json:"index,omitempty"`
+	Dispatched bool     `json:"dispatched,omitempty"`
+	Created    *FFTime  `json:"created,omitempty"`
+}
+
+func (p *Pin) LocalSequence() int64 {
+	return p.Sequence
 }

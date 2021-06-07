@@ -487,6 +487,8 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
 
+	em.AssertExpectations(t)
+
 }
 
 func TestHandleMessageBatchPinExit(t *testing.T) {

@@ -17,6 +17,20 @@ type EventManager struct {
 	mock.Mock
 }
 
+// BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity, protocolTxID, additionalInfo
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(bi, batch, signingIdentity, protocolTxID, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(bi, batch, signingIdentity, protocolTxID, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateDurableSubscription provides a mock function with given fields: ctx, subDef
 func (_m *EventManager) CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) error {
 	ret := _m.Called(ctx, subDef)
@@ -88,20 +102,6 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chan<- *fftypes.UUID)
 		}
-	}
-
-	return r0
-}
-
-// SequencedBroadcastBatch provides a mock function with given fields: bi, batch, author, protocolTxID, additionalInfo
-func (_m *EventManager) SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(bi, batch, author, protocolTxID, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BroadcastBatch, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(bi, batch, author, protocolTxID, additionalInfo)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0

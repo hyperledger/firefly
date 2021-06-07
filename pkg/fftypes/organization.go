@@ -64,7 +64,7 @@ func orgTopic(orgIdentity string) string {
 			buf.WriteRune('_')
 		}
 	}
-	return fmt.Sprintf("ff-org-%s", buf.String())
+	return fmt.Sprintf("ff_org_%s", buf.String())
 }
 
 func (org *Organization) Topic() string {
