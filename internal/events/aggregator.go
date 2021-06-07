@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
+	"encoding/json"
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
@@ -185,7 +186,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 				log.L(ctx).Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, batch.ID, i, pinStr)
 				return nil
 			}
-			nextPin, err := ag.checkMaskedContextReady(ctx, msg.Header.Group, msg.Header.Author, msg.Header.Topics[i], pinnedSequence, &pin)
+			nextPin, err := ag.checkMaskedContextReady(ctx, msg, msg.Header.Topics[i], pinnedSequence, &pin)
 			if err != nil || nextPin == nil {
 				return err
 			}
@@ -239,7 +240,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 	return ag.database.SetPinDispatched(ctx, pinnedSequence)
 }
 
-func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *fftypes.UUID, author, topic string, pinnedSequence int64, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
+func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -247,20 +248,20 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *ffty
 	// - there are no undispatched messages on this context earlier in the stream
 	h := sha256.New()
 	h.Write([]byte(topic))
-	h.Write((*groupID)[:])
+	h.Write((*msg.Header.Group)[:])
 	contextUnmasked := fftypes.HashResult(h)
 	filter := database.NextPinQueryFactory.NewFilter(ctx).Eq("context", contextUnmasked)
 	nextPins, err := ag.database.GetNextPins(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	l.Debugf("Group=%s Topic='%s' NextPins=%v Sequence=%d Pin=%s NextPins=%v", groupID, topic, nextPins, pinnedSequence, pin, nextPins)
+	l.Debugf("Group=%s Topic='%s' NextPins=%v Sequence=%d Pin=%s NextPins=%v", msg.Header.Group, topic, nextPins, pinnedSequence, pin, nextPins)
 
 	if len(nextPins) == 0 {
 		// If this is the first time we've seen the context, then this message is read as long as it is
 		// the first (nonce=0) message on the context, for one of the members, and there aren't any earlier
 		// messages that are nonce=0.
-		return ag.attemptContextInit(ctx, groupID, author, topic, pinnedSequence, contextUnmasked, pin)
+		return ag.attemptContextInit(ctx, msg, topic, pinnedSequence, contextUnmasked, pin)
 	}
 
 	// This message must be the next hash for the author
@@ -271,24 +272,63 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *ffty
 			break
 		}
 	}
-	if nextPin == nil || nextPin.Identity != author {
-		l.Debugf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", groupID, topic, contextUnmasked, pin, nextPin)
+	if nextPin == nil || nextPin.Identity != msg.Header.Author {
+		l.Debugf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
 		return nil, nil
 	}
 	return nextPin, nil
 }
 
-func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.UUID, author, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
-	l := log.L(ctx)
+func (ag *aggregator) resolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
+	if msg.Header.Namespace == fftypes.SystemNamespace && msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
+		// Store the new group
+		data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
+		if err != nil || !foundAll || len(data) == 0 {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
+			return nil, err
+		}
+		var newGroup fftypes.Group
+		err = json.Unmarshal(data[0].Value, &newGroup)
+		if err != nil {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
+			return nil, nil
+		}
+		err = newGroup.Validate(ctx, true)
+		if err != nil {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
+			return nil, nil
+		}
+		if !newGroup.ID.Equals(msg.Header.Group) {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: bad id '%s'", msg.Header.Group, msg.Header.ID, newGroup.ID)
+			return nil, nil
+		}
+		newGroup.Message = msg.Header.ID
+		err = ag.database.UpsertGroup(ctx, &newGroup, true)
+		if err != nil {
+			return nil, err
+		}
+		return &newGroup, nil
+	}
 
-	// Get the group
-	group, err := ag.database.GetGroupByID(ctx, groupID)
+	// Get the existing group
+	group, err := ag.database.GetGroupByID(ctx, msg.Header.Group)
 	if err != nil {
-		return nil, err
+		return group, err
 	}
 	if group == nil {
-		l.Warnf("Group %s not found - unable to process topic=%s context=%s pin=%s", groupID, topic, contextUnmasked, pin)
+		log.L(ctx).Warnf("Group %s not found", msg.Header.Group)
 		return nil, nil
+	}
+	return group, nil
+}
+
+func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
+	l := log.L(ctx)
+
+	// It might be the system topic/context initializing the group
+	group, err := ag.resolveInitGroup(ctx, msg)
+	if err != nil || group == nil {
+		return nil, err
 	}
 
 	// Find the list of zerohashes for this context, and match this pin to one of them
@@ -296,7 +336,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.U
 	var nextPin *fftypes.NextPin
 	nextPins := make([]*fftypes.NextPin, len(group.Members))
 	for i, member := range group.Members {
-		zeroHash := ag.calcHash(topic, groupID, member.Identity, 0)
+		zeroHash := ag.calcHash(topic, msg.Header.Group, member.Identity, 0)
 		np := &fftypes.NextPin{
 			Context:  contextUnmasked,
 			Identity: member.Identity,
@@ -304,8 +344,8 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.U
 			Nonce:    0,
 		}
 		if *pin == *zeroHash {
-			if member.Identity != author {
-				l.Warnf("Author mismatch for zerohash on context: group=%s topic=%s context=%s pin=%s", groupID, topic, contextUnmasked, pin)
+			if member.Identity != msg.Header.Author {
+				l.Warnf("Author mismatch for zerohash on context: group=%s topic=%s context=%s pin=%s", msg.Header.Group, topic, contextUnmasked, pin)
 				return nil, nil
 			}
 			nextPin = np
@@ -313,9 +353,9 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.U
 		zeroHashes[i] = zeroHash
 		nextPins[i] = np
 	}
-	l.Debugf("Group=%s topic=%s context=%s zeroHashes=%v", groupID, topic, contextUnmasked, zeroHashes)
+	l.Debugf("Group=%s topic=%s context=%s zeroHashes=%v", msg.Header.Group, topic, contextUnmasked, zeroHashes)
 	if nextPin == nil {
-		l.Warnf("No match for zerohash on context: group=%s topic=%s context=%s pin=%s", groupID, topic, contextUnmasked, pin)
+		l.Warnf("No match for zerohash on context: group=%s topic=%s context=%s pin=%s", msg.Header.Group, topic, contextUnmasked, pin)
 		return nil, nil
 	}
 
@@ -331,7 +371,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, groupID *fftypes.U
 		return nil, err
 	}
 	if len(earlier) > 0 {
-		l.Debugf("Group=%s topic=%s context=%s earlier=%v", groupID, topic, contextUnmasked, earlier)
+		l.Debugf("Group=%s topic=%s context=%s earlier=%v", msg.Header.Group, topic, contextUnmasked, earlier)
 		return nil, nil
 	}
 
@@ -354,12 +394,29 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	}
 
 	// We're going to dispatch it at this point, but we need to validate the data first
+	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
-	valid, err := ag.data.ValidateAll(ctx, data)
-	if err != nil {
-		return false, err
+	if msg.Header.Namespace == fftypes.SystemNamespace {
+		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
+		// dispatched subsequent events before we have processed the system events they depend on.
+		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
+			// Should only return errors that are retryable
+			return false, err
+		}
+	} else if len(msg.Data) > 0 {
+		valid, err = ag.data.ValidateAll(ctx, data)
+		if err != nil {
+			return false, err
+		}
 	}
-	if !valid {
+	if valid {
+		// This message is now confirmed
+		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
+		err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
+		if err != nil {
+			return false, err
+		}
+	} else {
 		// An message with invalid (but complete) data is still considered dispatched.
 		// However, we drive a different event to the applications.
 		eventType = fftypes.EventTypeMessageInvalid
