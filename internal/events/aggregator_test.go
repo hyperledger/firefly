@@ -19,6 +19,7 @@ package events
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -80,6 +81,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 						Author: member2,
 					},
 					Pins: []string{member2NonceZero.String()},
+					Data: fftypes.DataRefs{
+						{ID: fftypes.NewUUID()},
+					},
 				},
 			},
 		},
@@ -129,6 +133,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	// Update the message
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -184,6 +190,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 						Author: member2,
 					},
 					Pins: []string{member2Nonce500.String()},
+					Data: fftypes.DataRefs{
+						{ID: fftypes.NewUUID()},
+					},
 				},
 			},
 		},
@@ -215,6 +224,8 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	// Update the message
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -262,6 +273,9 @@ func TestAggregationBroadcast(t *testing.T) {
 						Topics: []string{topic},
 						Author: member1,
 					},
+					Data: fftypes.DataRefs{
+						{ID: fftypes.NewUUID()},
+					},
 				},
 			},
 		},
@@ -277,6 +291,8 @@ func TestAggregationBroadcast(t *testing.T) {
 	}), false).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
+	// Update the message
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -545,6 +561,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
@@ -569,7 +586,13 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 		{Context: fftypes.NewRandB32(), Hash: pin},
 	}, nil)
 
-	_, err := ag.checkMaskedContextReady(ag.ctx, fftypes.NewUUID(), "author1", "topic1", 12345, fftypes.NewRandB32())
+	_, err := ag.checkMaskedContextReady(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  fftypes.NewUUID(),
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32())
 	assert.NoError(t, err)
 
 }
@@ -581,7 +604,13 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := ag.attemptContextInit(ag.ctx, fftypes.NewUUID(), "author1", "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
+	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  fftypes.NewUUID(),
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.EqualError(t, err, "pop")
 
 }
@@ -593,7 +622,13 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(nil, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, fftypes.NewUUID(), "author1", "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
+	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  fftypes.NewUUID(),
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
 }
@@ -611,7 +646,13 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 		},
 	}, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, groupID, "author1", "topic1", 12345, fftypes.NewRandB32(), zeroHash)
+	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  groupID,
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
 
 }
@@ -628,7 +669,13 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 		},
 	}, nil)
 
-	_, err := ag.attemptContextInit(ag.ctx, groupID, "author1", "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
+	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  groupID,
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
 }
@@ -647,7 +694,13 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := ag.attemptContextInit(ag.ctx, groupID, "author1", "topic1", 12345, fftypes.NewRandB32(), zeroHash)
+	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  groupID,
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -668,7 +721,13 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 		{Sequence: 12345},
 	}, nil)
 
-	np, err := ag.attemptContextInit(ag.ctx, groupID, "author1", "topic1", 12345, fftypes.NewRandB32(), zeroHash)
+	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  groupID,
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
 	assert.Nil(t, np)
 
@@ -689,7 +748,13 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("InsertNextPin", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	np, err := ag.attemptContextInit(ag.ctx, groupID, "author1", "topic1", 12345, fftypes.NewRandB32(), zeroHash)
+	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:     fftypes.NewUUID(),
+			Group:  groupID,
+			Author: "author1",
+		},
+	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.Nil(t, np)
 	assert.EqualError(t, err, "pop")
 
@@ -719,6 +784,58 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mbm := ag.broadcast.(*broadcastmocks.Manager)
+	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestAttemptMessageDispatchFailValidateSystemFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mbm := ag.broadcast.(*broadcastmocks.Manager)
+	mbm.On("HandleSystemBroadcast", mock.Anything, mock.Anything, mock.Anything).Return(false, fmt.Errorf("pop"))
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+		},
+		Data: fftypes.DataRefs{
+			{ID: fftypes.NewUUID()},
+		},
 	})
 	assert.EqualError(t, err, "pop")
 
@@ -732,11 +849,195 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 	})
 	assert.EqualError(t, err, "pop")
+
+}
+
+func TestAttemptMessageUpdateMessageFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestResolveInitGroupMissingData(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     fftypes.NewUUID(),
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestResolveInitGroupBadData(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`!json`)},
+	}, true, nil)
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     fftypes.NewUUID(),
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestResolveInitGroupBadValidation(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`{}`)},
+	}, true, nil)
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     fftypes.NewUUID(),
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestResolveInitGroupBadGroupID(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	group := &fftypes.Group{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Members: fftypes.Members{
+			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		},
+	}
+	assert.NoError(t, group.Validate(ag.ctx, true))
+	b, _ := json.Marshal(&group)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+	}, true, nil)
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     fftypes.NewUUID(),
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
+func TestResolveInitGroupUpsertFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	groupID := fftypes.NewUUID()
+	group := &fftypes.Group{
+		ID:        groupID,
+		Namespace: "ns1",
+		Members: fftypes.Members{
+			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		},
+	}
+	assert.NoError(t, group.Validate(ag.ctx, true))
+	b, _ := json.Marshal(&group)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+	}, true, nil)
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", ag.ctx, mock.Anything, true).Return(fmt.Errorf("pop"))
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     groupID,
+			Author:    "author1",
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestResolveInitGroupNewOk(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	groupID := fftypes.NewUUID()
+	group := &fftypes.Group{
+		ID:        groupID,
+		Namespace: "ns1",
+		Members: fftypes.Members{
+			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		},
+	}
+	assert.NoError(t, group.Validate(ag.ctx, true))
+	b, _ := json.Marshal(&group)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
+	}, true, nil)
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", ag.ctx, mock.Anything, true).Return(nil)
+
+	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:        fftypes.NewUUID(),
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineGroup),
+			Group:     groupID,
+			Author:    "author1",
+		},
+	})
+	assert.NoError(t, err)
 
 }
