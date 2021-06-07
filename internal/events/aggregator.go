@@ -65,7 +65,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		offsetType:       fftypes.OffsetTypeAggregator,
 		offsetNamespace:  fftypes.SystemNamespace,
 		offsetName:       aggregatorOffsetName,
-		newEventsHandler: ag.processPinsRetryAndGroup,
+		newEventsHandler: ag.processPinsDBGroup,
 		getItems:         ag.getPins,
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("dispatched", false))
@@ -78,7 +78,7 @@ func (ag *aggregator) start() error {
 	return ag.eventPoller.start()
 }
 
-func (ag *aggregator) processPinsRetryAndGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
+func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
 	pins := make([]*fftypes.Pin, len(items))
 	for i, item := range items {
 		pins[i] = item.(*fftypes.Pin)
@@ -121,13 +121,20 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin) (err
 			}
 		}
 
-		if pin.Index >= int64(len(batch.Payload.Messages)) {
-			l.Errorf("Batch %s does not have index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
-			continue
+		// Extract the message from the batch - where the index is of a topic within a message
+		var msg *fftypes.Message
+		var i int64 = -1
+		for iM := 0; i < pin.Index && iM < len(batch.Payload.Messages); iM++ {
+			msg = batch.Payload.Messages[iM]
+			for iT := 0; i < pin.Index && iT < len(msg.Header.Topics); iT++ {
+				i++
+			}
 		}
 
-		// Extract the message from the batch
-		msg := batch.Payload.Messages[pin.Index]
+		if i < pin.Index {
+			l.Errorf("Batch %s does not have message-topic index %d - pin %s is invalid", pin.Batch, pin.Index, pin.Hash)
+			continue
+		}
 		l.Tracef("Batch %s message %d: %+v", batch.ID, pin.Index, msg)
 		if msg == nil || msg.Header.ID == nil {
 			l.Errorf("null message entry %d in batch '%s'", pin.Index, batch.ID)
@@ -268,10 +275,6 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, groupID *ffty
 		l.Debugf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", groupID, topic, contextUnmasked, pin, nextPin)
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-
 	return nextPin, nil
 }
 
