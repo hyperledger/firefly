@@ -49,48 +49,49 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	pin.Sequence, err = s.insertTx(ctx, tx,
-		sq.Insert("pins").
-			Columns(pinColumns...).
-			Values(
-				pin.Masked,
-				pin.Hash,
-				pin.Batch,
-				pin.Index,
-				pin.Dispatched,
-				pin.Created,
-			),
-	)
-	if err == nil {
-		s.postCommitEvent(tx, func() {
-			s.callbacks.PinCreated(pin.Sequence)
-		})
-	} else {
-		// Check it's not just that it already exsits (edge case, so we optimize for insert)
-		pinRows, queryErr := s.queryTx(ctx, tx,
-			sq.Select("masked", s.provider.SequenceField(""), "dispatched").
-				From("pins").
-				Where(sq.Eq{
-					"hash":     pin.Hash,
-					"batch_id": pin.Batch,
-					"idx":      pin.Index,
-				}),
-		)
-		existing := false
-		if queryErr == nil {
-			defer pinRows.Close()
-			existing = pinRows.Next()
-		}
-		if !existing {
-			// Something else went wrong - return the original error
-			return err
-		}
-		err := pinRows.Scan(&pin.Masked, &pin.Sequence, &pin.Dispatched)
+	// Do a select within the transaction to detemine if the UUID already exists
+	pinRows, err := s.queryTx(ctx, tx,
+		sq.Select(s.provider.SequenceField(""), "masked", "dispatched").
+			From("pins").
+			Where(sq.Eq{
+				"hash":     pin.Hash,
+				"batch_id": pin.Batch,
+				"idx":      pin.Index,
+			}))
+	if err != nil {
+		return err
+	}
+	existing := pinRows.Next()
+
+	if existing {
+		err := pinRows.Scan(&pin.Sequence, &pin.Masked, &pin.Dispatched)
+		pinRows.Close()
 		if err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "pins")
 		}
-		log.L(ctx).Debugf("Pin already existed")
-		return nil
+		// Pin's can only go from undispatched, to dispatched - so no update here.
+		log.L(ctx).Debugf("Existing pin returned at sequence %d", pin.Sequence)
+	} else {
+		pinRows.Close()
+		if pin.Sequence, err = s.insertTx(ctx, tx,
+			sq.Insert("pins").
+				Columns(pinColumns...).
+				Values(
+					pin.Masked,
+					pin.Hash,
+					pin.Batch,
+					pin.Index,
+					pin.Dispatched,
+					pin.Created,
+				),
+		); err != nil {
+			return err
+		}
+
+		s.postCommitEvent(tx, func() {
+			s.callbacks.PinCreated(pin.Sequence)
+		})
+
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
