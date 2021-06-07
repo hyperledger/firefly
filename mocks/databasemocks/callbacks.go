@@ -22,6 +22,11 @@ func (_m *Callbacks) MessageCreated(sequence int64) {
 	_m.Called(sequence)
 }
 
+// PinCreated provides a mock function with given fields: sequence
+func (_m *Callbacks) PinCreated(sequence int64) {
+	_m.Called(sequence)
+}
+
 // SubscriptionCreated provides a mock function with given fields: id
 func (_m *Callbacks) SubscriptionCreated(id *fftypes.UUID) {
 	_m.Called(id)

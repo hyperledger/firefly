@@ -215,14 +215,19 @@ func (ep *eventPoller) dispatchEventsRetry(events []fftypes.LocallySequenced) (r
 // - which might be our own eventLoop
 func (ep *eventPoller) newEventNotifications() {
 	defer close(ep.shoulderTaps)
+	var lastNotified int64
 	for {
 		latestSequence := ep.getPollingOffset()
+		if latestSequence <= lastNotified {
+			latestSequence = lastNotified + 1
+		}
 		err := ep.eventNotifier.waitNext(latestSequence)
 		if err != nil {
 			log.L(ep.ctx).Debugf("event notifier closing")
 			return
 		}
 		ep.shoulderTap()
+		lastNotified = latestSequence
 	}
 }
 

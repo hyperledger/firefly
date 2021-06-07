@@ -91,6 +91,22 @@ func (_m *EventManager) NewEvents() chan<- int64 {
 	return r0
 }
 
+// NewPins provides a mock function with given fields:
+func (_m *EventManager) NewPins() chan<- int64 {
+	ret := _m.Called()
+
+	var r0 chan<- int64
+	if rf, ok := ret.Get(0).(func() chan<- int64); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan<- int64)
+		}
+	}
+
+	return r0
+}
+
 // NewSubscriptions provides a mock function with given fields:
 func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	ret := _m.Called()

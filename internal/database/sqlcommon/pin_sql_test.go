@@ -26,6 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestPinsE2EWithDB(t *testing.T) {
@@ -34,6 +35,8 @@ func TestPinsE2EWithDB(t *testing.T) {
 	s := newQLTestProvider(t)
 	defer s.Close()
 	ctx := context.Background()
+
+	s.callbacks.On("EventCreated", mock.Anything).Return()
 
 	// Create a new pin entry
 	pin := &fftypes.Pin{

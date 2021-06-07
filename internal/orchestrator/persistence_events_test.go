@@ -35,6 +35,17 @@ func TestMessageCreated(t *testing.T) {
 	mb.AssertExpectations(t)
 }
 
+func TestPinCreated(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		events: mem,
+	}
+	c := make(chan int64, 1)
+	mem.On("NewPins").Return((chan<- int64)(c))
+	o.PinCreated(12345)
+	mem.AssertExpectations(t)
+}
+
 func TestEventCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{

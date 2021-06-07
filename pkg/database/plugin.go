@@ -336,6 +336,7 @@ type PeristenceInterface interface {
 //
 type Callbacks interface {
 	MessageCreated(sequence int64)
+	PinCreated(sequence int64)
 	EventCreated(sequence int64)
 	SubscriptionCreated(id *fftypes.UUID)
 	SubscriptionDeleted(id *fftypes.UUID)

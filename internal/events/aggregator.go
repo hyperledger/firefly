@@ -43,6 +43,7 @@ type aggregator struct {
 	messaging   privatemessaging.Manager
 	data        data.Manager
 	eventPoller *eventPoller
+	newPins     chan int64
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager, en *eventNotifier) *aggregator {
@@ -52,6 +53,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		broadcast: bm,
 		messaging: pm,
 		data:      dm,
+		newPins:   make(chan int64),
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{

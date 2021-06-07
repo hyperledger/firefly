@@ -35,6 +35,7 @@ import (
 )
 
 type EventManager interface {
+	NewPins() chan<- int64
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
@@ -59,7 +60,8 @@ type eventManager struct {
 	subManager           *subscriptionManager
 	retry                retry.Retry
 	aggregator           *aggregator
-	eventNotifier        *eventNotifier
+	newEventNotifier     *eventNotifier
+	newPinNotifier       *eventNotifier
 	opCorrelationRetries int
 	defaultTransport     string
 }
@@ -68,7 +70,8 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	if pi == nil || di == nil || ii == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	en := newEventNotifier(ctx)
+	newPinNotifier := newEventNotifier(ctx)
+	newEventNotifier := newEventNotifier(ctx)
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
@@ -84,12 +87,13 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		},
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
-		eventNotifier:        en,
-		aggregator:           newAggregator(ctx, di, bm, pm, dm, en),
+		newEventNotifier:     newEventNotifier,
+		newPinNotifier:       newPinNotifier,
+		aggregator:           newAggregator(ctx, di, bm, pm, dm, newPinNotifier),
 	}
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, en); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, newEventNotifier); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +109,11 @@ func (em *eventManager) Start() (err error) {
 }
 
 func (em *eventManager) NewEvents() chan<- int64 {
-	return em.eventNotifier.newEvents
+	return em.newEventNotifier.newEvents
+}
+
+func (em *eventManager) NewPins() chan<- int64 {
+	return em.newPinNotifier.newEvents
 }
 
 func (em *eventManager) NewSubscriptions() chan<- *fftypes.UUID {
