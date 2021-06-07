@@ -48,8 +48,8 @@ type eventPollerConf struct {
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
 	firstEvent                 *fftypes.SubOptsFirstEvent
+	addCriteria                func(database.AndFilter) database.AndFilter
 	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
-	limitNamespace             string
 	newEventsHandler           newEventsHandler
 	offsetName                 string
 	offsetNamespace            string
@@ -153,10 +153,10 @@ func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
 	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
-		filter := fb.Gt("sequence", pollingOffset)
-		if ep.conf.limitNamespace != "" {
-			filter = fb.And(filter, fb.Eq("namespace", ep.conf.limitNamespace))
-		}
+		filter := fb.And(
+			fb.Gt("sequence", pollingOffset),
+		)
+		filter = ep.conf.addCriteria(filter)
 		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
