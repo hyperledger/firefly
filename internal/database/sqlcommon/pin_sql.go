@@ -137,7 +137,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) SetPinsDispatched(ctx context.Context, sequences []int64) (err error) {
+func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *SQLCommon) SetPinsDispatched(ctx context.Context, sequences []int64) (e
 		Update("pins").
 		Set("dispatched", true).
 		Where(sq.Eq{
-			s.provider.SequenceField(""): sequences,
+			s.provider.SequenceField(""): sequence,
 		}))
 	if err != nil {
 		return err

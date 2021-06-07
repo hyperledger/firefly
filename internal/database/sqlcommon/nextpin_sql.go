@@ -84,7 +84,8 @@ func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interf
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("nextpins").
-			Where(pred),
+			Where(pred).
+			Limit(1),
 	)
 	if err != nil {
 		return nil, err

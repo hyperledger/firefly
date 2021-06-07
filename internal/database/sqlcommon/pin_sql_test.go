@@ -60,7 +60,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(pinRes))
 
 	// Set it dispatched
-	err = s.SetPinsDispatched(ctx, []int64{pin.Sequence})
+	err = s.SetPinDispatched(ctx, pin.Sequence)
 	assert.NoError(t, err)
 
 	// Double insert, checking no error and we keep the dispatched flag
@@ -150,7 +150,7 @@ func TestGetPinReadMessageFail(t *testing.T) {
 func TestSetPinsDispatchedBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.SetPinsDispatched(context.Background(), []int64{12345})
+	err := s.SetPinDispatched(context.Background(), 12345)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -159,7 +159,7 @@ func TestSetPinsDispatchedUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.SetPinsDispatched(context.Background(), []int64{12345})
+	err := s.SetPinDispatched(context.Background(), 12345)
 	assert.Regexp(t, "FF10117", err)
 }
 

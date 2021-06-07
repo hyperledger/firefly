@@ -193,8 +193,8 @@ type PeristenceInterface interface {
 	// GetPins - Get pins
 	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
 
-	// SetPinsDispatched - Set the dispatched flag to true on the specified pins
-	SetPinsDispatched(ctx context.Context, sequences []int64) (err error)
+	// SetPinDispatched - Set the dispatched flag to true on the specified pins
+	SetPinDispatched(ctx context.Context, sequence int64) (err error)
 
 	// DeletePin - Delete a pin
 	DeletePin(ctx context.Context, sequence int64) (err error)

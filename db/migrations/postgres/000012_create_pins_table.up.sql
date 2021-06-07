@@ -10,5 +10,6 @@ CREATE TABLE pins (
 );
 
 CREATE UNIQUE INDEX pins_pin ON pins(hash, batch_id, idx);
+CREATE INDEX pins_dispatched ON pins(dispatched);
 
 COMMIT;

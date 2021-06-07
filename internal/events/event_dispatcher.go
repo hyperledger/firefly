@@ -76,7 +76,6 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 	}
 
 	pollerConf := &eventPollerConf{
-		limitNamespace:             sub.definition.Namespace,
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
 		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
@@ -86,9 +85,12 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
 		},
-		offsetType:       fftypes.OffsetTypeSubscription,
-		offsetNamespace:  sub.definition.Namespace,
-		offsetName:       sub.definition.Name,
+		offsetType:      fftypes.OffsetTypeSubscription,
+		offsetNamespace: sub.definition.Namespace,
+		offsetName:      sub.definition.Name,
+		addCriteria: func(af database.AndFilter) database.AndFilter {
+			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
+		},
 		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,

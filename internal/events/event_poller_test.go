@@ -54,6 +54,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 			}
 			return ls, err
 		},
+		addCriteria: func(af database.AndFilter) database.AndFilter { return af },
 	})
 	return ep, cancel
 }
