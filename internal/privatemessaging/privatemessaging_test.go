@@ -27,6 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
+	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,5 +51,104 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm)
 	assert.NoError(t, err)
 
+	// Default mocks to save boilerplate in the tests
+	mdx.On("Name").Return("utdx").Maybe()
+	mbi.On("Name").Return("utblk").Maybe()
+	mii.On("Resolve", ctx, "org1").Return(&fftypes.Identity{
+		Identifier: "org1", OnChain: "0x12345",
+	}, nil).Maybe()
+	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x12345" })).Return(nil).Maybe()
+	mii.On("Resolve", ctx, "org1").Return(&fftypes.Identity{
+		Identifier: "org1", OnChain: "0x23456",
+	}, nil).Maybe()
+	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x23456" })).Return(nil).Maybe()
+
 	return pm.(*privateMessaging), cancel
+}
+
+func uuidMatches(id1 *fftypes.UUID) interface{} {
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
+}
+
+func TestDispatchBatch(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	batchID := fftypes.NewUUID()
+	groupID := fftypes.NewUUID()
+	pin1 := fftypes.NewRandB32()
+	pin2 := fftypes.NewRandB32()
+	node1 := fftypes.NewUUID()
+	node2 := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
+	batchHash := fftypes.NewRandB32()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mbi := pm.blockchain.(*blockchainmocks.Plugin)
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
+	mdi.On("GetGroupByID", pm.ctx, groupID).Return(&fftypes.Group{
+		ID: groupID,
+		Members: fftypes.Members{
+			{Identity: "org1", Node: node1},
+			{Identity: "org2", Node: node2},
+		},
+	}, nil)
+	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
+		ID:       node1,
+		Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+	}, nil).Once()
+	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node2)).Return(&fftypes.Node{
+		ID:       node2,
+		Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
+	}, nil).Once()
+
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil).Once()
+	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tracking1" && op.Type == fftypes.OpTypeDataExchangeBatchSend
+	}), false).Return(nil, nil)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking2", nil).Once()
+	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tracking2" && op.Type == fftypes.OpTypeDataExchangeBatchSend
+	}), false).Return(nil, nil)
+
+	mdi.On("UpsertTransaction", pm.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeBatchPin && tx.ID.Equals(txID)
+	}), true, false).Return(nil, nil)
+	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.MatchedBy(func(bp *blockchain.BatchPin) bool {
+		assert.Equal(t, txID, bp.TransactionID)
+		assert.Equal(t, batchID, bp.BatchID)
+		assert.Equal(t, batchHash, bp.BatchHash)
+		assert.Equal(t, "ns1", bp.Namespace)
+		assert.Equal(t, []*fftypes.Bytes32{pin1, pin2}, bp.Contexts)
+		return true
+	})).Return("tracking3", nil)
+	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tracking3" && op.Type == fftypes.OpTypeBlockchainBatchPin
+	}), false).Return(nil, nil)
+
+	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
+		ID:        batchID,
+		Author:    "org1",
+		Group:     groupID,
+		Namespace: "ns1",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID: txID,
+			},
+		},
+		Hash: batchHash,
+	}, []*fftypes.Bytes32{pin1, pin2})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
 }

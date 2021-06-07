@@ -23,10 +23,17 @@ import (
 
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/karlseguin/ccache"
 )
+
+type GroupManager interface {
+	GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error)
+	GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error)
+	ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error)
+}
 
 type groupManager struct {
 	database      database.Plugin
@@ -129,4 +136,52 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupID *fftypes.UUID
 
 	gm.groupCache.Set(groupID.String(), nodes, gm.groupCacheTTL)
 	return nodes, nil
+}
+
+// ResolveInitGroup is called when a message comes in as the first private message on a particular context.
+// If the message is a group creation request, then it is validated and the group is created.
+// Otherwise, the existing group must exist.
+//
+// Errors are only returned for database issues. For validation issues, a nil group is returned without an error.
+func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
+	if msg.Header.Namespace == fftypes.SystemNamespace && msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
+		// Store the new group
+		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
+		if err != nil || !foundAll || len(data) == 0 {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
+			return nil, err
+		}
+		var newGroup fftypes.Group
+		err = json.Unmarshal(data[0].Value, &newGroup)
+		if err != nil {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
+			return nil, nil
+		}
+		err = newGroup.Validate(ctx, true)
+		if err != nil {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
+			return nil, nil
+		}
+		if !newGroup.ID.Equals(msg.Header.Group) {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: bad id '%s'", msg.Header.Group, msg.Header.ID, newGroup.ID)
+			return nil, nil
+		}
+		newGroup.Message = msg.Header.ID
+		err = gm.database.UpsertGroup(ctx, &newGroup, true)
+		if err != nil {
+			return nil, err
+		}
+		return &newGroup, nil
+	}
+
+	// Get the existing group
+	group, err := gm.database.GetGroupByID(ctx, msg.Header.Group)
+	if err != nil {
+		return group, err
+	}
+	if group == nil {
+		log.L(ctx).Warnf("Group %s not found", msg.Header.Group)
+		return nil, nil
+	}
+	return group, nil
 }

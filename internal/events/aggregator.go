@@ -21,12 +21,12 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
-	"encoding/json"
 
 	"github.com/kaleido-io/firefly/internal/broadcast"
 	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/privatemessaging"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -40,15 +40,17 @@ type aggregator struct {
 	ctx         context.Context
 	database    database.Plugin
 	broadcast   broadcast.Manager
+	messaging   privatemessaging.Manager
 	data        data.Manager
 	eventPoller *eventPoller
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, dm data.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager, en *eventNotifier) *aggregator {
 	ag := &aggregator{
 		ctx:       log.WithLogField(ctx, "role", "aggregator"),
 		database:  di,
 		broadcast: bm,
+		messaging: pm,
 		data:      dm,
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
@@ -279,54 +281,11 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.
 	return nextPin, nil
 }
 
-func (ag *aggregator) resolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	if msg.Header.Namespace == fftypes.SystemNamespace && msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
-		// Store the new group
-		data, foundAll, err := ag.data.GetMessageData(ctx, msg, true)
-		if err != nil || !foundAll || len(data) == 0 {
-			log.L(ctx).Warnf("Group %s definition in message %s invalid: missing data", msg.Header.Group, msg.Header.ID)
-			return nil, err
-		}
-		var newGroup fftypes.Group
-		err = json.Unmarshal(data[0].Value, &newGroup)
-		if err != nil {
-			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
-			return nil, nil
-		}
-		err = newGroup.Validate(ctx, true)
-		if err != nil {
-			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
-			return nil, nil
-		}
-		if !newGroup.ID.Equals(msg.Header.Group) {
-			log.L(ctx).Warnf("Group %s definition in message %s invalid: bad id '%s'", msg.Header.Group, msg.Header.ID, newGroup.ID)
-			return nil, nil
-		}
-		newGroup.Message = msg.Header.ID
-		err = ag.database.UpsertGroup(ctx, &newGroup, true)
-		if err != nil {
-			return nil, err
-		}
-		return &newGroup, nil
-	}
-
-	// Get the existing group
-	group, err := ag.database.GetGroupByID(ctx, msg.Header.Group)
-	if err != nil {
-		return group, err
-	}
-	if group == nil {
-		log.L(ctx).Warnf("Group %s not found", msg.Header.Group)
-		return nil, nil
-	}
-	return group, nil
-}
-
 func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*fftypes.NextPin, error) {
 	l := log.L(ctx)
 
 	// It might be the system topic/context initializing the group
-	group, err := ag.resolveInitGroup(ctx, msg)
+	group, err := ag.messaging.ResolveInitGroup(ctx, msg)
 	if err != nil || group == nil {
 		return nil, err
 	}

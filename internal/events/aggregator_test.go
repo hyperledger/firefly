@@ -19,13 +19,13 @@ package events
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
+	"github.com/kaleido-io/firefly/mocks/privatemessagingmocks"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -40,8 +40,9 @@ func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mdm := &datamocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, mbm, mdm, newEventNotifier(ctx))
+	ag := newAggregator(ctx, mdi, mbm, mpm, mdm, newEventNotifier(ctx))
 	return ag, cancel
 }
 
@@ -67,6 +68,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
@@ -91,7 +93,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Look for existing nextpins - none found, first on context
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil).Once()
 	// Get the group members
-	mdi.On("GetGroupByID", ag.ctx, uuidMatches(groupID)).Return(&fftypes.Group{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		ID: groupID,
 		Members: fftypes.Members{
 			{Identity: member1},
@@ -601,8 +603,8 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -619,8 +621,8 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(nil, nil)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -639,8 +641,8 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 
 	groupID := fftypes.NewUUID()
 	zeroHash := ag.calcHash("topic1", groupID, "author2", 0)
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		Members: fftypes.Members{
 			{Identity: "author2"},
 		},
@@ -662,8 +664,8 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewUUID()
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		Members: fftypes.Members{
 			{Identity: "author2"},
 		},
@@ -686,8 +688,9 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 
 	groupID := fftypes.NewUUID()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		Members: fftypes.Members{
 			{Identity: "author1"},
 		},
@@ -712,7 +715,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	groupID := fftypes.NewUUID()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		Members: fftypes.Members{
 			{Identity: "author1"},
 		},
@@ -740,7 +744,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	groupID := fftypes.NewUUID()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		Members: fftypes.Members{
 			{Identity: "author1"},
 		},
@@ -873,171 +878,5 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
 	})
 	assert.EqualError(t, err, "pop")
-
-}
-
-func TestResolveInitGroupMissingData(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, false, nil)
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
-			Author:    "author1",
-		},
-	})
-	assert.NoError(t, err)
-
-}
-
-func TestResolveInitGroupBadData(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`!json`)},
-	}, true, nil)
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
-			Author:    "author1",
-		},
-	})
-	assert.NoError(t, err)
-
-}
-
-func TestResolveInitGroupBadValidation(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`{}`)},
-	}, true, nil)
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
-			Author:    "author1",
-		},
-	})
-	assert.NoError(t, err)
-
-}
-
-func TestResolveInitGroupBadGroupID(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	group := &fftypes.Group{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
-		},
-	}
-	assert.NoError(t, group.Validate(ag.ctx, true))
-	b, _ := json.Marshal(&group)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
-	}, true, nil)
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
-			Author:    "author1",
-		},
-	})
-	assert.NoError(t, err)
-
-}
-
-func TestResolveInitGroupUpsertFail(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	groupID := fftypes.NewUUID()
-	group := &fftypes.Group{
-		ID:        groupID,
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
-		},
-	}
-	assert.NoError(t, group.Validate(ag.ctx, true))
-	b, _ := json.Marshal(&group)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
-	}, true, nil)
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", ag.ctx, mock.Anything, true).Return(fmt.Errorf("pop"))
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     groupID,
-			Author:    "author1",
-		},
-	})
-	assert.EqualError(t, err, "pop")
-
-}
-
-func TestResolveInitGroupNewOk(t *testing.T) {
-	ag, cancel := newTestAggregator()
-	defer cancel()
-
-	groupID := fftypes.NewUUID()
-	group := &fftypes.Group{
-		ID:        groupID,
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
-		},
-	}
-	assert.NoError(t, group.Validate(ag.ctx, true))
-	b, _ := json.Marshal(&group)
-
-	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
-	}, true, nil)
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", ag.ctx, mock.Anything, true).Return(nil)
-
-	_, err := ag.resolveInitGroup(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     groupID,
-			Author:    "author1",
-		},
-	})
-	assert.NoError(t, err)
 
 }
