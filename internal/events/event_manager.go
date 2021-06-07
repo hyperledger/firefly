@@ -70,8 +70,8 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	if pi == nil || di == nil || ii == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	newPinNotifier := newEventNotifier(ctx)
-	newEventNotifier := newEventNotifier(ctx)
+	newPinNotifier := newEventNotifier(ctx, "pins")
+	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,

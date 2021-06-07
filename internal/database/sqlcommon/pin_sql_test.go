@@ -36,7 +36,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 
-	s.callbacks.On("EventCreated", mock.Anything).Return()
+	s.callbacks.On("PinCreated", mock.Anything).Return()
 
 	// Create a new pin entry
 	pin := &fftypes.Pin{

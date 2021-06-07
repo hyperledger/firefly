@@ -389,6 +389,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	if err = ag.database.UpsertEvent(ctx, event, false); err != nil {
 		return false, err
 	}
+	log.L(ctx).Infof("Emitting %s for message %s:%s", eventType, msg.Header.Namespace, msg.Header.ID)
 
 	return true, nil
 }

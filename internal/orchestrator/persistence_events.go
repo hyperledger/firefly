@@ -16,7 +16,9 @@
 
 package orchestrator
 
-import "github.com/kaleido-io/firefly/pkg/fftypes"
+import (
+	"github.com/kaleido-io/firefly/pkg/fftypes"
+)
 
 func (or *orchestrator) MessageCreated(sequence int64) {
 	or.batch.NewMessages() <- sequence

@@ -32,7 +32,7 @@ import (
 
 func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHandler) (ep *eventPoller, cancel func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ep = newEventPoller(ctx, mdi, newEventNotifier(ctx), &eventPollerConf{
+	ep = newEventPoller(ctx, mdi, newEventNotifier(ctx, "ut"), &eventPollerConf{
 		eventBatchSize:             10,
 		eventBatchTimeout:          1 * time.Millisecond,
 		eventPollTimeout:           10 * time.Second,
