@@ -35,11 +35,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBatchPinCompleteOk(t *testing.T) {
+func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	batch := &blockchain.BatchPin{
+		Namespace:      "ns1",
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchPaylodRef: fftypes.NewRandB32(),
@@ -70,7 +71,7 @@ func TestBatchPinCompleteOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(batchData.Payload.TX.ID)).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
@@ -82,6 +83,59 @@ func TestBatchPinCompleteOk(t *testing.T) {
 	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestBatchPinCompleteOkPrivate(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &blockchain.BatchPin{
+		Namespace:     "ns1",
+		TransactionID: fftypes.NewUUID(),
+		BatchID:       fftypes.NewUUID(),
+		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
+	}
+	batchData := &fftypes.Batch{
+		ID:         batch.BatchID,
+		Namespace:  "ns1",
+		PayloadRef: batch.BatchPaylodRef,
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   batch.TransactionID,
+			},
+			Messages: []*fftypes.Message{},
+			Data:     []*fftypes.Data{},
+		},
+	}
+	batchDataBytes, err := json.Marshal(&batchData)
+	assert.NoError(t, err)
+	batchReadCloser := ioutil.NopCloser(bytes.NewReader(batchDataBytes))
+
+	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", mock.Anything, mock.
+		MatchedBy(func(pr *fftypes.Bytes32) bool { return *pr == *batch.BatchPaylodRef })).
+		Return(batchReadCloser, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(batchData.Payload.TX.ID)).Return(nil, nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
+	mbi := &blockchainmocks.Plugin{}
+
+	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
+	assert.NoError(t, err)
+
+	// Call through to persistBatch - the hash of our batch will be invalid,
+	// which is swallowed without error as we cannot retry (it is logged of course)
+	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
+	err = fn(context.Background())
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
 }
 
 func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
@@ -220,6 +274,25 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 
 	err := em.persistBatch(context.Background(), batch, "0x12345")
 	assert.EqualError(t, err, "pop")
+}
+
+func TestPersistBatchGetTransactionBadNamespace(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batchPin := &blockchain.BatchPin{
+		TransactionID:  fftypes.NewUUID(),
+		BatchID:        fftypes.NewUUID(),
+		BatchHash:      fftypes.NewRandB32(),
+		BatchPaylodRef: nil,
+		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
+	}
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
+
+	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
 }
 
 func TestPersistBatchGetTransactionFail(t *testing.T) {
@@ -593,5 +666,21 @@ func TestPersistBatchMessageOK(t *testing.T) {
 
 	err := em.persistBatchMessage(context.Background(), batch, 0, msg)
 	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
+}
+
+func TestPersistContextsFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := em.persistContexts(em.ctx, &blockchain.BatchPin{
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+		},
+	}, false)
+	assert.EqualError(t, err, "pop")
 	mdi.AssertExpectations(t)
 }

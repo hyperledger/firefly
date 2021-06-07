@@ -683,3 +683,24 @@ func TestAckClosed(t *testing.T) {
 	ed.inflight[*id1] = &fftypes.Event{ID: id1}
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: id1})
 }
+
+func TestGetEvents(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	mei := &eventsmocks.Plugin{}
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*fftypes.Event{
+		{Sequence: 12345},
+	}, nil)
+
+	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	cancel()
+
+	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(12345), lc[0].LocalSequence())
+}

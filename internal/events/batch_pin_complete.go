@@ -161,7 +161,6 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 				if err == nil {
 					err = em.persistContexts(ctx, batchPin, false)
 				}
-				return err
 			}
 			return err
 		})
