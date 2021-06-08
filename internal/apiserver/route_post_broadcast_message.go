@@ -25,7 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var messageSchema = `{
+var broadcastSchema = `{
 	"properties": {
 		 "data": {
 				"items": {
@@ -88,7 +88,7 @@ var postBroadcastMessage = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInput{} },
-	JSONInputSchema: messageSchema,
+	JSONInputSchema: broadcastSchema,
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

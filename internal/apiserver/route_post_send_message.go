@@ -25,6 +25,82 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
+var privateSendSchema = `{
+	"properties": {
+		 "data": {
+				"items": {
+					 "properties": {
+							"id": {"type": "string"},
+							"hash": {"type": "string"},
+							"validator": {"type": "string"},
+							"datatype": {
+								"type": "object",
+								"properties": {
+									"name": {"type": "string"},
+									"version": {"type": "string"}
+								}
+							},
+							"value": {
+								"type": "object"
+							}
+					 },
+					 "type": "object"
+				},
+				"type": "array"
+		 },
+		 "group": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"members": {
+						"type": "array",
+						"items": {
+							"properties": {
+								"identity": {
+									"type": "string"
+								},
+								"node": {
+									"type": "string"
+								}
+							},
+							"required": ["identity"],
+							"type": "object"
+						}
+					}
+			},
+			"required": ["members"],
+			"type": "object"
+		 },
+		 "header": {
+				"properties": {
+					 "author": {
+							"type": "string"
+					 },
+					 "cid": {},
+					 "context": {
+							"type": "string"
+					 },
+					 "group": {},
+					 "topic": {
+							"type": "string"
+					 },
+					 "tx": {
+							"properties": {
+								 "type": {
+										"type": "string",
+										"default": "pin"
+								 }
+							},
+							"type": "object"
+					 }
+				},
+				"type": "object"
+		 }
+	},
+	"type": "object"
+}`
+
 var postSendMessage = &oapispec.Route{
 	Name:   "postSendMessage",
 	Path:   "namespaces/{ns}/send/message",
@@ -36,7 +112,7 @@ var postSendMessage = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInput{} },
-	JSONInputSchema: messageSchema,
+	JSONInputSchema: privateSendSchema,
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
