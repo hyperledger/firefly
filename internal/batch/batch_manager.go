@@ -221,7 +221,7 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
 		msgs, err = bm.database.GetMessages(bm.ctx, fb.And(
 			fb.Gt("sequence", bm.offset),
-			fb.Gt("local", true),
+			fb.Eq("local", true),
 		).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
