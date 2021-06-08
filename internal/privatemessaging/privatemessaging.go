@@ -35,6 +35,7 @@ import (
 
 type Manager interface {
 	GroupManager
+	dataexchange.Callbacks
 }
 
 type privateMessaging struct {

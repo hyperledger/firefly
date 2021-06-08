@@ -76,5 +76,10 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, err
 	}
 
+	// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
+	if err = bm.exchange.AddPeer(ctx, &node); err != nil {
+		return false, err
+	}
+
 	return true, nil
 }

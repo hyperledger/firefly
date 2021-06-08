@@ -48,14 +48,26 @@ func (h *HTTPS) Capabilities() *dataexchange.Capabilities {
 	return h.capabilities
 }
 
-func (h *HTTPS) GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObject, err error) {
+func (h *HTTPS) GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error) {
 	return
 }
 
-func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error {
+func (h *HTTPS) AddPeer(ctx context.Context, node *fftypes.Node) (err error) {
 	return nil
 }
 
+func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (err error) {
+	return nil
+}
+
+func (h *HTTPS) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.Reader, err error) {
+	return nil, nil
+}
+
 func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (trackingID string, err error) {
+	return "", nil
+}
+
+func (h *HTTPS) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (trackingID string, err error) {
 	return "", nil
 }

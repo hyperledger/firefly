@@ -34,11 +34,14 @@ var (
 		"owner",
 		"identity",
 		"description",
-		"endpoint",
+		"dx_peer",
+		"dx_endpoint",
 		"created",
 	}
 	nodeFilterTypeMap = map[string]string{
-		"message": "message_id",
+		"message":     "message_id",
+		"dx.peer":     "dx_peer",
+		"dx.endpoint": "dx_endpoint",
 	}
 )
 
@@ -85,7 +88,8 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 				Set("owner", node.Owner).
 				Set("identity", node.Identity).
 				Set("description", node.Description).
-				Set("endpoint", node.Endpoint).
+				Set("dx_peer", node.DX.Peer).
+				Set("dx_endpoint", node.DX.Endpoint).
 				Set("created", node.Created).
 				Where(sq.Eq{"identity": node.Identity}),
 		); err != nil {
@@ -101,7 +105,8 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 					node.Owner,
 					node.Identity,
 					node.Description,
-					node.Endpoint,
+					node.DX.Peer,
+					node.DX.Endpoint,
 					node.Created,
 				),
 		); err != nil {
@@ -120,7 +125,8 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 		&node.Owner,
 		&node.Identity,
 		&node.Description,
-		&node.Endpoint,
+		&node.DX.Peer,
+		&node.DX.Endpoint,
 		&node.Created,
 	)
 	if err != nil {

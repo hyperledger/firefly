@@ -228,7 +228,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), or)
+	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), or.messaging)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
@@ -248,7 +248,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}

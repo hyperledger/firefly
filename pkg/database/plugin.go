@@ -512,7 +512,8 @@ var NodeQueryFactory = &queryFields{
 	"owner":       &StringField{},
 	"identity":    &StringField{},
 	"description": &StringField{},
-	"endpoint":    &JSONField{},
+	"dx.peer":     &StringField{},
+	"dx.endpoint": &JSONField{},
 	"created":     &TimeField{},
 }
 

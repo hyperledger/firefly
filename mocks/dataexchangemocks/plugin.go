@@ -21,6 +21,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// AddPeer provides a mock function with given fields: ctx, node
+func (_m *Plugin) AddPeer(ctx context.Context, node *fftypes.Node) error {
+	ret := _m.Called(ctx, node)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node) error); ok {
+		r0 = rf(ctx, node)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 	ret := _m.Called()
@@ -37,27 +51,57 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 	return r0
 }
 
-// GetEndpointInfo provides a mock function with given fields: ctx
-func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, error) {
-	ret := _m.Called(ctx)
+// DownloadBLOB provides a mock function with given fields: ctx, ns, id
+func (_m *Plugin) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (io.Reader, error) {
+	ret := _m.Called(ctx, ns, id)
 
-	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.JSONObject); ok {
-		r0 = rf(ctx)
+	var r0 io.Reader
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID) io.Reader); ok {
+		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.JSONObject)
+			r0 = ret.Get(0).(io.Reader)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.UUID) error); ok {
+		r1 = rf(ctx, ns, id)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// GetEndpointInfo provides a mock function with given fields: ctx
+func (_m *Plugin) GetEndpointInfo(ctx context.Context) (string, fftypes.JSONObject, error) {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 fftypes.JSONObject
+	if rf, ok := ret.Get(1).(func(context.Context) fftypes.JSONObject); ok {
+		r1 = rf(ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(fftypes.JSONObject)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // Init provides a mock function with given fields: ctx, prefix, callbacks
@@ -128,13 +172,34 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// UploadBLOB provides a mock function with given fields: ctx, ns, id, reader
-func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error {
-	ret := _m.Called(ctx, ns, id, reader)
+// TransferBLOB provides a mock function with given fields: ctx, node, ns, id
+func (_m *Plugin) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (string, error) {
+	ret := _m.Called(ctx, node, ns, id)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, string, fftypes.UUID) string); ok {
+		r0 = rf(ctx, node, ns, id)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Node, string, fftypes.UUID) error); ok {
+		r1 = rf(ctx, node, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UploadBLOB provides a mock function with given fields: ctx, ns, id, content
+func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) error {
+	ret := _m.Called(ctx, ns, id, content)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
-		r0 = rf(ctx, ns, id, reader)
+		r0 = rf(ctx, ns, id, content)
 	} else {
 		r0 = ret.Error(0)
 	}
