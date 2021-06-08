@@ -68,3 +68,10 @@ func SwaggerUIHTML(ctx context.Context) []byte {
 		getHost(),
 	))
 }
+
+func SwaggerAdminUIHTML(ctx context.Context) []byte {
+	return []byte(fmt.Sprintf(
+		swaggerUIHTML,
+		fmt.Sprintf("%s/admin", getAdminHost()),
+	))
+}
