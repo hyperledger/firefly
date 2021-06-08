@@ -106,12 +106,18 @@ func TestDispatchBatch(t *testing.T) {
 		},
 	}, nil)
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
-		ID:       node1,
-		Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+		ID: node1,
+		DX: fftypes.DXInfo{
+			Peer:     "node1",
+			Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+		},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node2)).Return(&fftypes.Node{
-		ID:       node2,
-		Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
+		ID: node2,
+		DX: fftypes.DXInfo{
+			Peer:     "node2",
+			Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
+		},
 	}, nil).Once()
 
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil).Once()
@@ -215,7 +221,12 @@ func TestSendImmediateFail(t *testing.T) {
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
 	}, []*fftypes.Node{
-		{Endpoint: fftypes.JSONObject{"some": "data"}},
+		{
+			DX: fftypes.DXInfo{
+				Peer:     "node1",
+				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+			},
+		},
 	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
@@ -233,7 +244,12 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
 	}, []*fftypes.Node{
-		{Endpoint: fftypes.JSONObject{"some": "data"}},
+		{
+			DX: fftypes.DXInfo{
+				Peer:     "node1",
+				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+			},
+		},
 	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }

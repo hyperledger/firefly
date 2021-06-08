@@ -25,6 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/batchmocks"
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
@@ -42,19 +43,20 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	mbi := &blockchainmocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	mba := &batchmocks.Manager{}
+	mdx := &dataexchangemocks.Plugin{}
 	mbi.On("Name").Return("ut_blockchain").Maybe()
 	defaultIdentity := &fftypes.Identity{Identifier: "UTNodeID", OnChain: "0x12345"}
 	mii.On("Resolve", mock.Anything, "UTNodeID").Return(defaultIdentity, nil).Maybe()
 	mbi.On("VerifyIdentitySyntax", mock.Anything, defaultIdentity).Return(nil).Maybe()
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast, fftypes.MessageTypeDefinition}, mock.Anything, mock.Anything).Return()
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mii, mdm, mbi, mpi, mba)
+	b, err := NewBroadcastManager(ctx, mdi, mii, mdm, mbi, mdx, mpi, mba)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

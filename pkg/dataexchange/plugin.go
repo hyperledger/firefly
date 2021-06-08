@@ -42,18 +42,33 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// GetEndpointInfo returns the information about the local endpoint
-	GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObject, err error)
+	GetEndpointInfo(ctx context.Context) (peerID string, endpoint fftypes.JSONObject, err error)
+
+	// AddPeer translates the configuration published by another peer, into a reference string that is used between DX and FireFly to refer to the peer
+	AddPeer(ctx context.Context, node *fftypes.Node) (err error)
 
 	// UploadBLOB streams a blob to storage
-	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error
+	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (err error)
+
+	// DownloadBLOB streams a blob out of storage
+	DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.Reader, err error)
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
 	SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (trackingID string, err error)
+
+	// TransferBLOB initiates a transfer of a previoiusly stored blob to another node
+	TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (trackingID string, err error)
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
 type Callbacks interface {
+
+	// MessageReceived notifies of a message received from another node in the network
+	MessageReceived(peerID string, payload fftypes.Byteable)
+
+	// BLOBReceived notifies of  the ID of a BLOB that has been stored by DX after being received from another node in the network
+	BLOBReceived(peerID string, ns string, id fftypes.UUID)
 }
 
 // Capabilities the supported featureset of the data exchange

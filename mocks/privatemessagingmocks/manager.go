@@ -16,6 +16,11 @@ type Manager struct {
 	mock.Mock
 }
 
+// BLOBReceived provides a mock function with given fields: peerID, ns, id
+func (_m *Manager) BLOBReceived(peerID string, ns string, id fftypes.UUID) {
+	_m.Called(peerID, ns, id)
+}
+
 // GetGroupByID provides a mock function with given fields: ctx, id
 func (_m *Manager) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
 	ret := _m.Called(ctx, id)
@@ -60,6 +65,11 @@ func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]
 	}
 
 	return r0, r1
+}
+
+// MessageReceived provides a mock function with given fields: peerID, payload
+func (_m *Manager) MessageReceived(peerID string, payload fftypes.Byteable) {
+	_m.Called(peerID, payload)
 }
 
 // ResolveInitGroup provides a mock function with given fields: ctx, msg

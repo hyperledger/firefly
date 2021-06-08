@@ -40,7 +40,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
 
-	node.Endpoint, err = nm.exchange.GetEndpointInfo(ctx)
+	node.DX.Peer, node.DX.Endpoint, err = nm.exchange.GetEndpointInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
