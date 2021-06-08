@@ -1,7 +1,7 @@
 BEGIN;
 CREATE TABLE members (
   seq            SERIAL          PRIMARY KEY,
-  group_hash     CHAR(64)        NOT NULL REFERENCES groups(id),
+  group_hash     CHAR(64)        NOT NULL,
   idx            INT             NOT NULL,
   identity       VARCHAR(1024)   NOT NULL,
   node_id        UUID            NOT NULL
