@@ -30,4 +30,8 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "ns1", e.Namespace)
 	assert.Equal(t, *u, *e.Reference)
 
+	e.Sequence = 12345
+	var ls LocallySequenced = e
+	assert.Equal(t, int64(12345), ls.LocalSequence())
+
 }

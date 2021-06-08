@@ -31,6 +31,6 @@ func (bbc *boundBlockchainCallbacks) TransactionUpdate(txTrackingID string, txSt
 	return bbc.ei.TransactionUpdate(bbc.bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
 }
 
-func (bbc *boundBlockchainCallbacks) SequencedBroadcastBatch(batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bbc.ei.SequencedBroadcastBatch(bbc.bi, batch, author, protocolTxID, additionalInfo)
+func (bbc *boundBlockchainCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bbc.ei.BatchPinComplete(bbc.bi, batch, signingIdentity, protocolTxID, additionalInfo)
 }

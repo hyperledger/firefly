@@ -36,7 +36,7 @@ import (
 func newTestEventDispatcher(mdi database.Plugin, mei events.Plugin, sub *subscription) (*eventDispatcher, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, fftypes.NewUUID().String(), sub, newEventNotifier(ctx)), cancel
+	return newEventDispatcher(ctx, mei, mdi, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -122,7 +122,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 				ReadAhead: &five,
 			},
 		},
-		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeDataArrivedBroadcast)),
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageConfirmed)),
 	}
 
 	mdi := &databasemocks.Plugin{}
@@ -152,7 +152,8 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	offsetUpdates := make(chan int64)
 	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		f, _ := a.Get(2).(database.Update).Finalize()
+		f, err := a.Get(2).(database.Update).Finalize()
+		assert.NoError(t, err)
 		v, _ := f.SetOperations[0].Value.Value()
 		offsetUpdates <- v.(int64)
 	}
@@ -179,11 +180,11 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
 	go func() {
-		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-			{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageUnblocked},
-			{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeDataArrivedBroadcast}, // match
-			{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed},     // match
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageInvalid},
+			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeMessageConfirmed}, // match
+			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed}, // match
 		})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
@@ -267,11 +268,11 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
 	go func() {
-		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-			{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeMessageConfirmed}, // match
-			{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed}, // match
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageConfirmed}, // match
+			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeMessageConfirmed}, // match
+			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed}, // match
 		})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
@@ -318,7 +319,7 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]*fftypes.Event{{ID: id1}})
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
 
 	assert.EqualError(t, err, "pop")
 }
@@ -337,7 +338,7 @@ func TestEnrichEventsFailGetData(t *testing.T) {
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]*fftypes.Event{{ID: id1}})
+	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
 
 	assert.EqualError(t, err, "pop")
 }
@@ -359,47 +360,47 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			Event: fftypes.Event{
 				ID:   id1,
-				Type: fftypes.EventTypeDataArrivedBroadcast,
+				Type: fftypes.EventTypeMessageConfirmed,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic1",
-					Context: "context1",
-					Group:   nil,
+					Topics: fftypes.FFNameArray{"topic1"},
+					Tag:    "tag1",
+					Group:  nil,
 				},
 			},
 		},
 		{
 			Event: fftypes.Event{
 				ID:   id2,
-				Type: fftypes.EventTypeDataArrivedBroadcast,
+				Type: fftypes.EventTypeMessageConfirmed,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic1",
-					Context: "context2",
-					Group:   id1,
+					Topics: fftypes.FFNameArray{"topic1"},
+					Tag:    "tag2",
+					Group:  id1,
 				},
 			},
 		},
 		{
 			Event: fftypes.Event{
 				ID:   id3,
-				Type: fftypes.EventTypeMessageConfirmed,
+				Type: fftypes.EventTypeMessageInvalid,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{
-					Topic:   "topic2",
-					Context: "context1",
-					Group:   nil,
+					Topics: fftypes.FFNameArray{"topic2"},
+					Tag:    "tag1",
+					Group:  nil,
 				},
 			},
 		},
 	})
 
-	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeDataArrivedBroadcast))
-	ed.subscription.topicFilter = regexp.MustCompile(".*")
-	ed.subscription.contextFilter = regexp.MustCompile(".*")
+	ed.subscription.eventMatcher = regexp.MustCompile(fmt.Sprintf("^%s$", fftypes.EventTypeMessageConfirmed))
+	ed.subscription.topicsFilter = regexp.MustCompile(".*")
+	ed.subscription.tagFilter = regexp.MustCompile(".*")
 	ed.subscription.groupFilter = regexp.MustCompile(".*")
 	matched := ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
@@ -408,8 +409,8 @@ func TestFilterEventsMatch(t *testing.T) {
 	// id three has the wrong event type
 
 	ed.subscription.eventMatcher = nil
-	ed.subscription.topicFilter = nil
-	ed.subscription.contextFilter = nil
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = nil
 	ed.subscription.groupFilter = nil
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 3, len(matched))
@@ -417,19 +418,19 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[1].ID)
 	assert.Equal(t, *id3, *matched[2].ID)
 
-	ed.subscription.topicFilter = regexp.MustCompile("topic1")
+	ed.subscription.topicsFilter = regexp.MustCompile("topic1")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 2, len(matched))
 	assert.Equal(t, *id1, *matched[0].ID)
 	assert.Equal(t, *id2, *matched[1].ID)
 
-	ed.subscription.topicFilter = nil
-	ed.subscription.contextFilter = regexp.MustCompile("context2")
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = regexp.MustCompile("tag2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)
 
-	ed.subscription.topicFilter = nil
+	ed.subscription.topicsFilter = nil
 	ed.subscription.groupFilter = regexp.MustCompile(id1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
@@ -451,7 +452,7 @@ func TestBufferedDeliveryNoEvents(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
 
-	repoll, err := ed.bufferedDelivery([]*fftypes.Event{})
+	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{})
 	assert.False(t, repoll)
 	assert.Nil(t, err)
 
@@ -469,9 +470,7 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-		{ID: fftypes.NewUUID()},
-	})
+	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
 	assert.EqualError(t, err, "pop")
 
@@ -492,9 +491,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
 
-	repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-		{ID: fftypes.NewUUID()},
-	})
+	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
 	assert.Regexp(t, "FF10182", err)
 
@@ -525,7 +522,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 	ed.eventPoller.pollingOffset = 100050 // ahead of nack
 	go func() {
-		repoll, err := ed.bufferedDelivery([]*fftypes.Event{{ID: ev1, Sequence: 100001}})
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: ev1, Sequence: 100001}})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
 		close(bdDone)
@@ -568,9 +565,9 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	ev2 := fftypes.NewUUID()
 	ed.eventPoller.pollingOffset = 100000
 	go func() {
-		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-			{ID: ev1, Sequence: 100001},
-			{ID: ev2, Sequence: 100002},
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 100001},
+			&fftypes.Event{ID: ev2, Sequence: 100002},
 		})
 		assert.EqualError(t, err, "pop")
 		assert.False(t, repoll)
@@ -615,9 +612,9 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	ev2 := fftypes.NewUUID()
 	ed.eventPoller.pollingOffset = 100000
 	go func() {
-		repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-			{ID: ev1, Sequence: 100001},
-			{ID: ev2, Sequence: 100002},
+		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+			&fftypes.Event{ID: ev1, Sequence: 100001},
+			&fftypes.Event{ID: ev2, Sequence: 100002},
 		})
 		assert.NoError(t, err)
 		assert.True(t, repoll)
@@ -633,8 +630,8 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 func TestBufferedFinalAckFail(t *testing.T) {
 
 	sub := &subscription{
-		definition:  &fftypes.Subscription{},
-		topicFilter: regexp.MustCompile("never matches"),
+		definition:   &fftypes.Subscription{},
+		topicsFilter: regexp.MustCompile("never matches"),
 	}
 	mei := &eventsmocks.Plugin{}
 	mdi := &databasemocks.Plugin{}
@@ -650,9 +647,9 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 	ev2 := fftypes.NewUUID()
 	ed.eventPoller.pollingOffset = 100000
-	repoll, err := ed.bufferedDelivery([]*fftypes.Event{
-		{ID: ev1, Sequence: 100001},
-		{ID: ev2, Sequence: 100002},
+	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
+		&fftypes.Event{ID: ev1, Sequence: 100001},
+		&fftypes.Event{ID: ev2, Sequence: 100002},
 	})
 	assert.EqualError(t, err, "pop")
 	assert.False(t, repoll)
@@ -686,4 +683,25 @@ func TestAckClosed(t *testing.T) {
 	id1 := fftypes.NewUUID()
 	ed.inflight[*id1] = &fftypes.Event{ID: id1}
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: id1})
+}
+
+func TestGetEvents(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	mei := &eventsmocks.Plugin{}
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*fftypes.Event{
+		{Sequence: 12345},
+	}, nil)
+
+	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	cancel()
+
+	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(12345), lc[0].LocalSequence())
 }

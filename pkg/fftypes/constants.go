@@ -19,17 +19,25 @@ package fftypes
 const (
 
 	// SystemNamespace is the system reserved namespace name
-	SystemNamespace = "ff-system"
+	SystemNamespace = "ff_system"
+)
 
-	// SystemTopicBroadcastDatatype is the topic for messages that broadcast data definitions
-	SystemTopicBroadcastDatatype = "ff-broadcast-datatype"
+type SystemTag string
 
-	// SystemTopicBroadcastNamespace is the topic for messages that broadcast namespace definitions
-	SystemTopicBroadcastNamespace = "ff-broadcast-namespace"
+const (
 
-	// SystemTopicBroadcastOrganization is the topic for messages that broadcast organization definitions
-	SystemTopicBroadcastOrganization = "ff-broadcast-organization"
+	// SystemTagDefineDatatype is the topic for messages that broadcast data definitions
+	SystemTagDefineDatatype SystemTag = "ff_define_datatype"
 
-	// SystemTopicBroadcastNode is the topic for messages that broadcast node definitions
-	SystemTopicBroadcastNode = "ff-broadcast-node"
+	// SystemTagDefineNamespace is the topic for messages that broadcast namespace definitions
+	SystemTagDefineNamespace SystemTag = "ff_define_namespace"
+
+	// SystemTagDefineOrganization is the topic for messages that broadcast organization definitions
+	SystemTagDefineOrganization SystemTag = "ff_define_organization"
+
+	// SystemTagDefineNode is the topic for messages that broadcast node definitions
+	SystemTagDefineNode SystemTag = "ff_define_node"
+
+	// SystemTagDefineGroup is the topic for messages that send the definition of a group, to all parties in that group
+	SystemTagDefineGroup SystemTag = "ff_define_group"
 )

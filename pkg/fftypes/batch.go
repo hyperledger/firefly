@@ -30,6 +30,7 @@ type Batch struct {
 	Namespace  string       `json:"namespace"`
 	Type       MessageType  `json:"type"`
 	Author     string       `json:"author"`
+	Group      *UUID        `jdon:"omitempty"`
 	Hash       *Bytes32     `json:"hash"`
 	Created    *FFTime      `json:"created"`
 	Confirmed  *FFTime      `json:"confirmed"`
@@ -48,7 +49,7 @@ func (ma BatchPayload) Value() (driver.Value, error) {
 	return json.Marshal(&ma)
 }
 
-func (ma BatchPayload) Hash() *Bytes32 {
+func (ma *BatchPayload) Hash() *Bytes32 {
 	b, _ := json.Marshal(&ma)
 	var b32 Bytes32 = sha256.Sum256(b)
 	return &b32

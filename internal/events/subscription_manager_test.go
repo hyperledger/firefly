@@ -39,7 +39,7 @@ func newTestSubManager(t *testing.T, mdi *databasemocks.Plugin, mei *eventsmocks
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, newEventNotifier(ctx))
+	sm, err := newSubscriptionManager(ctx, mdi, newEventNotifier(ctx, "ut"))
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -132,7 +132,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	be := &boundCallbacks{sm: sm, ei: mei}
 
 	err = be.EphemeralSubscription("conn1", "ns1", fftypes.SubscriptionFilter{
-		Topic: "[[[[[ !wrong",
+		Topics: "[[[[[ !wrong",
 	}, fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10171", err)
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
@@ -143,7 +143,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	config.Reset()
 	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
-	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background()))
+	_, err := newSubscriptionManager(context.Background(), mdi, newEventNotifier(context.Background(), "ut"))
 	assert.Regexp(t, "FF10172", err)
 }
 
@@ -195,10 +195,10 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 			Filter: fftypes.SubscriptionFilter{
-				Events:  ".*",
-				Topic:   ".*",
-				Context: ".*",
-				Group:   ".*",
+				Events: ".*",
+				Topics: ".*",
+				Tag:    ".*",
+				Group:  ".*",
 			}},
 	}, nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
@@ -237,7 +237,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Topic: "[[[[! badness",
+			Topics: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
@@ -251,11 +251,11 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
 		Filter: fftypes.SubscriptionFilter{
-			Context: "[[[[! badness",
+			Tag: "[[[[! badness",
 		},
 		Transport: "ut",
 	})
-	assert.Regexp(t, "FF10171.*context", err)
+	assert.Regexp(t, "FF10171.*tag", err)
 }
 
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {

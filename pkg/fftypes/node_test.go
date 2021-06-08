@@ -43,7 +43,7 @@ func TestNodeValidation(t *testing.T) {
 
 	var def Definition = n
 	n.Owner = "owner"
-	assert.Equal(t, "ff-org-owner", def.Context())
+	assert.Equal(t, "ff_org_owner", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, n.Message)
 }

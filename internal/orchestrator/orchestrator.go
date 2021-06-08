@@ -32,6 +32,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/identity/iifactory"
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/internal/networkmap"
+	"github.com/kaleido-io/firefly/internal/privatemessaging"
 	"github.com/kaleido-io/firefly/internal/publicstorage/psfactory"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -102,6 +103,7 @@ type orchestrator struct {
 	networkmap    networkmap.Manager
 	batch         batch.Manager
 	broadcast     broadcast.Manager
+	messaging     privatemessaging.Manager
 	data          data.Manager
 	bbc           boundBlockchainCallbacks
 }
@@ -251,8 +253,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.messaging == nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data); err != nil {
+			return err
+		}
+	}
+
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.broadcast, or.data)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.broadcast, or.messaging, or.data)
 		if err != nil {
 			return err
 		}

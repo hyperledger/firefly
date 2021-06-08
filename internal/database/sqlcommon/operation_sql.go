@@ -33,7 +33,7 @@ var (
 		"tx_id",
 		"optype",
 		"opstatus",
-		"recipient",
+		"member",
 		"plugin",
 		"backend_id",
 		"created",
@@ -80,7 +80,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("tx_id", operation.Transaction).
 				Set("optype", operation.Type).
 				Set("opstatus", operation.Status).
-				Set("recipient", operation.Recipient).
+				Set("member", operation.Member).
 				Set("plugin", operation.Plugin).
 				Set("backend_id", operation.BackendID).
 				Set("created", operation.Created).
@@ -100,7 +100,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Transaction,
 					string(operation.Type),
 					string(operation.Status),
-					operation.Recipient,
+					operation.Member,
 					operation.Plugin,
 					operation.BackendID,
 					operation.Created,
@@ -123,7 +123,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Transaction,
 		&op.Type,
 		&op.Status,
-		&op.Recipient,
+		&op.Member,
 		&op.Plugin,
 		&op.BackendID,
 		&op.Created,

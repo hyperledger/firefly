@@ -23,7 +23,7 @@ import (
 
 func TestEventNotifier(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	en := newEventNotifier(ctx)
+	en := newEventNotifier(ctx, "ut")
 	var mySeq int64 = 1000000
 	events := make(chan bool)
 	go func() {
@@ -48,7 +48,7 @@ func TestEventNotifier(t *testing.T) {
 }
 
 func TestEventNotifierClosedChannel(t *testing.T) {
-	en := newEventNotifier(context.Background())
+	en := newEventNotifier(context.Background(), "ut")
 	var mySeq int64 = 1000000
 	events := make(chan bool)
 	go func() {

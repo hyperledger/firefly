@@ -61,6 +61,12 @@ var (
 	BroadcastBatchSize = rootKey("broadcast.batch.size")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
+	// PrvateBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
+	PrivateBatchAgentTimeout = rootKey("private.batch.agentTimeout")
+	// PrivateBatchSize is the maximum size of a batch for broadcast messages
+	PrivateBatchSize = rootKey("private.batch.size")
+	// PrivateBatchTimeout is the timeout to wait for a batch to fill, before sending
+	PrivateBatchTimeout = rootKey("private.batch.timeout")
 	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
 	CorsAllowCredentials = rootKey("cors.credentials")
 	// CorsAllowedHeaders CORS setting to control the allowed headers
@@ -114,6 +120,10 @@ var (
 	EventDispatcherRetryInitDelay = rootKey("event.dispatcher.retry.initDelay")
 	// EventDispatcherRetryMaxDelay he maximum delay to use for retry of data base operations
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
+	// GroupCacheSize cache size for private group addresses
+	GroupCacheSize = rootKey("group.cache.size")
+	// GroupCacheTTL cache time-to-live for private group addresses
+	GroupCacheTTL = rootKey("group.cache.ttl")
 	// HttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
 	HTTPAddress = rootKey("http.address")
 	// HttpPort the local port to listen on for HTTP/Websocket connections
@@ -154,6 +164,8 @@ var (
 	NodeIdentity = rootKey("node.identity")
 	// NodeDescription is a description for the node
 	NodeDescription = rootKey("node.description")
+	// OrgName is the short name o the org
+	OrgName = rootKey("org.name")
 	// OrgIdentity is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgIdentity = rootKey("org.identity")
 	// OrgDescription is a description for the org
@@ -225,7 +237,7 @@ func Reset() {
 	viper.SetDefault(string(BatchRetryMaxDelay), "30s")
 	viper.SetDefault(string(BroadcastBatchAgentTimeout), "2m")
 	viper.SetDefault(string(BroadcastBatchSize), 200)
-	viper.SetDefault(string(BroadcastBatchTimeout), "500ms")
+	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
 	viper.SetDefault(string(CorsAllowCredentials), true)
 	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
 	viper.SetDefault(string(CorsAllowedMethods), []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete})
@@ -235,7 +247,7 @@ func Reset() {
 	viper.SetDefault(string(DataexchangeType), "https")
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
-	viper.SetDefault(string(EventAggregatorBatchSize), 100)
+	viper.SetDefault(string(EventAggregatorBatchSize), 50)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
@@ -243,10 +255,12 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
 	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
-	viper.SetDefault(string(EventDispatcherBatchTimeout), 0)
+	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
 	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
+	viper.SetDefault(string(GroupCacheSize), "1Mb")
+	viper.SetDefault(string(GroupCacheTTL), "1h")
 	viper.SetDefault(string(HTTPAddress), "127.0.0.1")
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")

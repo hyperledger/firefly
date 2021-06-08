@@ -55,3 +55,10 @@ func TestUploadBLOB(t *testing.T) {
 	err := h.UploadBLOB(context.Background(), "ns1", *u, bytes.NewReader([]byte(`hello world`)))
 	assert.NoError(t, err)
 }
+
+func TestSendMessage(t *testing.T) {
+	var h dataexchange.Plugin = &HTTPS{}
+	tid, err := h.SendMessage(context.Background(), &fftypes.Node{}, fftypes.Byteable(`{}`))
+	assert.NoError(t, err)
+	assert.Empty(t, tid)
+}

@@ -77,10 +77,10 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 			Namespace: query.Get("namespace"),
 			Name:      query.Get("name"),
 			Filter: fftypes.SubscriptionFilter{
-				Events:  query.Get("filter.events"),
-				Topic:   query.Get("filter.topic"),
-				Group:   query.Get("filter.group"),
-				Context: query.Get("filter.context"),
+				Events: query.Get("filter.events"),
+				Topics: query.Get("filter.topics"),
+				Group:  query.Get("filter.group"),
+				Tag:    query.Get("filter.tag"),
 			},
 		})
 		if err != nil {

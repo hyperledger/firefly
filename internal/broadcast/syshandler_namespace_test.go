@@ -42,18 +42,48 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mbi := bm.database.(*databasemocks.Plugin)
-	mbi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	mbi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	ns := &fftypes.Namespace{
+		ID:   fftypes.NewUUID(),
+		Name: "ns1",
+	}
+	b, err := json.Marshal(&ns)
+	assert.NoError(t, err)
+	data := &fftypes.Data{
+		Value: fftypes.Byteable(b),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Tag: string(fftypes.SystemTagDefineNamespace),
+		},
+	}, []*fftypes.Data{data})
+	assert.False(t, valid)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
 
 func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
@@ -70,18 +100,18 @@ func TestHandleSystemBroadcastNSUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mbi := bm.database.(*databasemocks.Plugin)
-	mbi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	mbi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
+	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
@@ -90,7 +120,7 @@ func TestHandleSystemBroadcastNSMissingData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{})
 	assert.False(t, valid)
@@ -110,7 +140,7 @@ func TestHandleSystemBroadcastNSBadID(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -127,7 +157,7 @@ func TestHandleSystemBroadcastNSBadData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -148,17 +178,77 @@ func TestHandleSystemBroadcastDuplicate(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mbi := bm.database.(*databasemocks.Plugin)
-	mbi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	ns := &fftypes.Namespace{
+		ID:   fftypes.NewUUID(),
+		Name: "ns1",
+		Type: fftypes.NamespaceTypeLocal,
+	}
+	b, err := json.Marshal(&ns)
+	assert.NoError(t, err)
+	data := &fftypes.Data{
+		Value: fftypes.Byteable(b),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
+	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Tag: string(fftypes.SystemTagDefineNamespace),
+		},
+	}, []*fftypes.Data{data})
+	assert.True(t, valid)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastDuplicateOverrideLocalFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	ns := &fftypes.Namespace{
+		ID:   fftypes.NewUUID(),
+		Name: "ns1",
+		Type: fftypes.NamespaceTypeLocal,
+	}
+	b, err := json.Marshal(&ns)
+	assert.NoError(t, err)
+	data := &fftypes.Data{
+		Value: fftypes.Byteable(b),
+	}
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
+	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Tag: string(fftypes.SystemTagDefineNamespace),
+		},
+	}, []*fftypes.Data{data})
+	assert.False(t, valid)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
 
 func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
@@ -175,15 +265,15 @@ func TestHandleSystemBroadcastDupCheckFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mbi := bm.database.(*databasemocks.Plugin)
-	mbi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastNamespace,
+			Tag: string(fftypes.SystemTagDefineNamespace),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }

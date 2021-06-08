@@ -26,11 +26,18 @@ import (
 func TestOrganizationValidation(t *testing.T) {
 
 	org := &Organization{
+		Name: "!name",
+	}
+	assert.Regexp(t, "FF10131.*name", org.Validate(context.Background(), false))
+
+	org = &Organization{
+		Name:        "ok",
 		Description: string(make([]byte, 4097)),
 	}
 	assert.Regexp(t, "FF10188.*description", org.Validate(context.Background(), false))
 
 	org = &Organization{
+		Name:        "ok",
 		Description: "ok",
 		Identity:    "ok",
 	}
@@ -40,7 +47,7 @@ func TestOrganizationValidation(t *testing.T) {
 
 	var def Definition = org
 	org.Identity = `A B C D E F G H I J K L M N O P Q R S T U V W X Y Z $ ( ) + ! 0 1 2 3 4 5 6 7 8 9`
-	assert.Equal(t, "ff-org-A_B_C_D_E_F_G_H_I_J_K_L_M_N_O_P_Q_R_S_T_U_V_W_X_Y_Z___________0_1", def.Context())
+	assert.Equal(t, "ff_org_A_B_C_D_E_F_G_H_I_J_K_L_M_N_O_P_Q_R_S_T_U_V_W_X_Y_Z___________0_1", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, org.Message)
 }

@@ -40,7 +40,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganization", nm.ctx, "0x23456").Return(&fftypes.Organization{
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
 		Identity:    "0x23456",
 		Description: "owning organization",
 	}, nil)
@@ -56,7 +56,7 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, "ff-org-0x23456", fftypes.SystemTopicBroadcastNode).Return(mockMsg, nil)
+	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineNode).Return(mockMsg, nil)
 
 	msg, err := nm.RegisterNode(nm.ctx)
 	assert.NoError(t, err)
@@ -88,7 +88,7 @@ func TestRegisterNodeBadParentID(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganization", nm.ctx, "0x23456").Return(&fftypes.Organization{
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
 		Identity:    "0x23456",
 		Description: "owning organization",
 	}, nil)
@@ -116,7 +116,7 @@ func TestRegisterNodeBadNodeID(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganization", nm.ctx, "0x23456").Return(&fftypes.Organization{
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(&fftypes.Organization{
 		Identity:    "0x23456",
 		Description: "owning organization",
 	}, nil)
@@ -142,7 +142,7 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganization", nm.ctx, "0x23456").Return(nil, nil)
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(nil, nil)
 
 	mii := nm.identity.(*identitymocks.Plugin)
 	childID := &fftypes.Identity{OnChain: "0x12345"}

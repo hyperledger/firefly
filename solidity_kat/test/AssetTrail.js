@@ -257,14 +257,14 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Described payment instances', () => {
 
-      it('createDescribedPaymentInstance should raise an error if author and recipient are the same', async () => {
+      it('createDescribedPaymentInstance should raise an error if author and member are the same', async () => {
         let exceptionMessage;
         try {
           await assetTrailContract.createDescribedPaymentInstance(testPaymentInstanceIDs[0], testPaymentDefinitionIDs[0], accounts[0], 1, testPaymentHashes[0]);
         } catch (err) {
           exceptionMessage = err.message;
         }
-        assert(exceptionMessage.includes('Author and recipient cannot be the same'));
+        assert(exceptionMessage.includes('Author and member cannot be the same'));
       });
 
       it('createDescribedPaymentInstance should raise an error if amount is 0', async () => {
@@ -286,7 +286,7 @@ contract('AssetTrail.sol', accounts => {
         assert.equal(logArgs.paymentInstanceID, testPaymentInstanceIDs[0]);
         assert.equal(logArgs.paymentDefinitionID, testPaymentDefinitionIDs[0]);
         assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.recipient, accounts[1]);
+        assert.equal(logArgs.member, accounts[1]);
         assert.equal(logArgs.amount, 1);
         assert.equal(logArgs.descriptionHash, testPaymentHashes[0]);
         assert(logArgs.timestamp.toNumber() > 0);
@@ -301,14 +301,14 @@ contract('AssetTrail.sol', accounts => {
 
     describe('Payment instances', () => {
 
-      it('createPaymentInstance should raise an error if author and recipient are the same', async () => {
+      it('createPaymentInstance should raise an error if author and member are the same', async () => {
         let exceptionMessage;
         try {
           await assetTrailContract.createPaymentInstance(testPaymentInstanceIDs[0], testPaymentDefinitionIDs[1], accounts[0], 1);
         } catch (err) {
           exceptionMessage = err.message;
         }
-        assert(exceptionMessage.includes('Author and recipient cannot be the same'));
+        assert(exceptionMessage.includes('Author and member cannot be the same'));
       });
 
       it('createPaymentInstance should raise an error if the amount is 0', async () => {
@@ -330,7 +330,7 @@ contract('AssetTrail.sol', accounts => {
         assert.equal(logArgs.paymentInstanceID, testPaymentInstanceIDs[1]);
         assert.equal(logArgs.paymentDefinitionID, testPaymentDefinitionIDs[1]);
         assert.equal(logArgs.author, accounts[0]);
-        assert.equal(logArgs.recipient, accounts[1]);
+        assert.equal(logArgs.member, accounts[1]);
         assert.equal(logArgs.amount, 1);
         assert(logArgs.timestamp.toNumber() > 0);
 

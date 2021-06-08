@@ -96,7 +96,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x12345/BroadcastBatch", httpURL),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x12345/BatchPin", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
@@ -177,7 +177,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BroadcastBatch"},
+			{ID: "sub12345", Name: "BatchPin"},
 		}))
 
 	resetConf()
@@ -291,7 +291,7 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/instances/0x12345/BroadcastBatch",
+	httpmock.RegisterResponder("POST", "http://localhost:12345/instances/0x12345/BatchPin",
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
@@ -317,55 +317,101 @@ func newTestEthereum() *Ethereum {
 	}
 }
 
-func TestSubmitBroadcastBatchOK(t *testing.T) {
+func TestSubmitBatchPinOK(t *testing.T) {
 
 	e := newTestEthereum()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
-	batch := &blockchain.BroadcastBatch{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
+	batch := &blockchain.BatchPin{
+		TransactionID:  fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:        fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:      fftypes.NewRandB32(),
 		BatchPaylodRef: fftypes.NewRandB32(),
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, addr, req.FormValue("kld-from"))
 			assert.Equal(t, "false", req.FormValue("kld-sync"))
-			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)), body["txnId"])
-			assert.Equal(t, ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)), body["batchId"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
 		})
 
-	txid, err := e.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: addr}, batch)
+	txid, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "abcd1234", txid)
 
 }
 
-func TestSubmitBroadcastBatchFail(t *testing.T) {
+func TestSubmitBatchNilPayloadRef(t *testing.T) {
 
 	e := newTestEthereum()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
 	addr := ethHexFormatB32(fftypes.NewRandB32())
-	batch := &blockchain.BroadcastBatch{
-		TransactionID:  fftypes.NewUUID(),
-		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+	batch := &blockchain.BatchPin{
+		TransactionID: fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:       fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:     fftypes.NewRandB32(),
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/broadcastBatch`,
+	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, addr, req.FormValue("kld-from"))
+			assert.Equal(t, "false", req.FormValue("kld-sync"))
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", body["payloadRef"])
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
+		})
+
+	txid, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "abcd1234", txid)
+
+}
+
+func TestSubmitBatchPinFail(t *testing.T) {
+
+	e := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:  fftypes.NewUUID(),
+		BatchID:        fftypes.NewUUID(),
+		BatchHash:      fftypes.NewRandB32(),
+		BatchPaylodRef: fftypes.NewRandB32(),
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	_, err := e.SubmitBroadcastBatch(context.Background(), &fftypes.Identity{OnChain: addr}, batch)
+	_, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -386,7 +432,7 @@ func TestVerifyEthAddress(t *testing.T) {
 
 }
 
-func TestHandleMessageBatchBroadcastOK(t *testing.T) {
+func TestHandleMessageBatchPinOK(t *testing.T) {
 	data := []byte(`
 [
   {
@@ -396,13 +442,18 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
     "data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+      "batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"contexts": [
+				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
+			],
       "timestamp": "1620576488"
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "logIndex": "50"
   },
   {
@@ -412,13 +463,17 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
-			"txnId": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
-      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0x8a578549e56b49f9bd78d731f22b08d7a04c7cc37d444c2ba3b054e21326697e",
+      "batchHash": "0x20e6ef9b9c4df7fdb77a7de1e00347f4b02d996f2e56a7db361038be7b32a154",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
-      "timestamp": "1620576488"
+      "timestamp": "1620576488",
+			"contexts": [
+				"0x8a63eb509713b0cf9250a8eee24ee2dfc4b37225e3ad5c29c95127699d382f85"
+			]
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "logIndex": "51"
   },
 	{
@@ -428,10 +483,14 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
-			"txnId": "0x8a578549e56b49f9bd78d731f22b08d700000000000000000000000000000000",
-      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0x8a578549e56b49f9bd78d731f22b08d7a04c7cc37d444c2ba3b054e21326697e",
+      "batchHash": "0x892b31099b8476c0692a5f2982ea23a0614949eacf292a64a358aa73ecd404b4",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
-      "timestamp": "1620576488"
+      "timestamp": "1620576488",
+			"contexts": [
+				"0xdab67320f1a0d0f1da572975e3a9ab6ef0fed315771c99fea0bfb54886c1aa94"
+			]
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
     "signature": "Random(address,uint256,bytes32,bytes32,bytes32)",
@@ -444,7 +503,7 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
 		callbacks: em,
 	}
 
-	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
+	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -452,16 +511,78 @@ func TestHandleMessageBatchBroadcastOK(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 
-	b := em.Calls[0].Arguments[0].(*blockchain.BroadcastBatch)
+	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
+	assert.Equal(t, "ns1", b.Namespace)
 	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
 	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
+	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
 	assert.Equal(t, "eda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae", b.BatchPaylodRef.String())
 	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
 	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
+	assert.Len(t, b.Contexts, 2)
+	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
+	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
+
+	em.AssertExpectations(t)
 
 }
 
-func TestHandleMessageBatchBroadcastExit(t *testing.T) {
+func TestHandleMessageNilPayloadRef(t *testing.T) {
+	data := []byte(`
+[
+  {
+    "address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+    "blockNumber": "38011",
+    "transactionIndex": "0x0",
+    "transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+    "data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+      "batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+      "payloadRef": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"contexts": [
+				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
+			],
+      "timestamp": "1620576488"
+    },
+    "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "logIndex": "50"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+
+	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
+	assert.Equal(t, "ns1", b.Namespace)
+	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
+	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
+	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
+	assert.Nil(t, b.BatchPaylodRef)
+	assert.Equal(t, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", em.Calls[0].Arguments[1])
+	assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", em.Calls[0].Arguments[2])
+	assert.Len(t, b.Contexts, 2)
+	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
+	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
+
+	em.AssertExpectations(t)
+
+}
+
+func TestHandleMessageBatchPinExit(t *testing.T) {
 	data := []byte(`
 [
   {
@@ -471,13 +592,14 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
     "data": {
       "author": "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0xa04c7cc37d444c2ba3b054e21326697e00000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9a04c7cc37d444c2ba3b054e21326697e",
+			"batchHash": "0x9c19a93b6e85fee041f60f097121829e54cd4aa97ed070d1bc76147caf911fed",
       "payloadRef": "0x23ad1bc340ac7516f0cbf1be677122303ffce81f32400c440295c44d7963d185",
       "timestamp": "1620576488"
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "logIndex": "51"
   }
 ]`)
@@ -487,7 +609,7 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
 		callbacks: em,
 	}
 
-	em.On("SequencedBroadcastBatch", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	em.On("BatchPinComplete", mock.Anything, "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -497,30 +619,35 @@ func TestHandleMessageBatchBroadcastExit(t *testing.T) {
 
 }
 
-func TestHandleMessageBatchBroadcastEmpty(t *testing.T) {
+func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	var events []interface{}
-	err := json.Unmarshal([]byte(`[{"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"}]`), &events)
+	err := json.Unmarshal([]byte(`[{"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"}]`), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
+func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "!good",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "!good",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"contexts": [
+				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
+				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
+			],
 			"timestamp": "!1620576488"
 		}
 	}]`)
@@ -532,19 +659,24 @@ func TestHandleMessageBatchBroadcastBadTransactionID(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadIDentity(t *testing.T) {
+func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "!good",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"contexts": [
+				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
+				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
+			],
 			"timestamp": "1620576488"
 		}
 	}]`)
@@ -556,19 +688,24 @@ func TestHandleMessageBatchBroadcastBadIDentity(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
+func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
-      "batchId": "!good",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "!good",
       "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"contexts": [
+				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
+				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
+			],
 			"timestamp": "1620576488"
 		}
 	}]`)
@@ -580,19 +717,53 @@ func TestHandleMessageBatchBroadcastBadBatchID(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
-func TestHandleMessageBatchBroadcastBadPayloadRef(t *testing.T) {
+func TestHandleMessageBatchPinBadPayloadRef(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
 		"data": {
       "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-      "batchId": "0x847d3bfd074249efb65d3fed15f5b0a600000000000000000000000000000000",
-			"txnId": "0xe19af8b390604051812d7597d19adfb900000000000000000000000000000000",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
       "payloadRef": "!good",
+			"contexts": [
+				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
+				"0xc6c683a0fbe15e452e1ecc3751657446e2f645a8231e3ef9f3b4a8eae03c4136"
+			],
+			"timestamp": "1620576488"
+		}
+	}]`)
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchPinBadPin(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{callbacks: em}
+	data := []byte(`[{
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "blockNumber": "38011",
+    "transactionIndex": "0x1",
+    "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"data": {
+      "author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+      "payloadRef": "0xeda586bd8f3c4bc1db5c4b5755113b9a9b4174abe28679fdbc219129400dd7ae",
+			"contexts": [
+				"0xb41753f11522d4ef5c4a467972cf54744c04628ff84a1c994f1b288b2f6ec836",
+				"!good"
+			],
 			"timestamp": "1620576488"
 		}
 	}]`)

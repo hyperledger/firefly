@@ -16,14 +16,16 @@
 
 package fftypes
 
-// Blocked refers to a context that is currently blocked and no further
-// messages will be confirmed until the blockage is removed (or this
-// blocked record is manually deleted)
-type Blocked struct {
-	ID        *UUID   `json:"id,omitempty"`
-	Namespace string  `json:"namespace,omitempty"`
-	Context   string  `json:"context,omitempty"`
-	Group     *UUID   `json:"group,omitempty"`
-	Message   *UUID   `json:"message,omitempty"`
-	Created   *FFTime `json:"created,omitempty"`
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewPint(t *testing.T) {
+
+	p := &Pin{Sequence: 12345}
+	var ls LocallySequenced = p
+	assert.Equal(t, int64(12345), ls.LocalSequence())
+
 }

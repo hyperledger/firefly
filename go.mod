@@ -8,9 +8,11 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/akamensky/base58 v0.0.0-20170920141933-92b0f56f531a
 	github.com/bombsimon/wsl/v2 v2.0.0 // indirect
+	github.com/briandowns/spinner v1.15.0 // indirect
 	github.com/coocood/freecache v1.1.1
 	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/docker/go-units v0.4.0
+	github.com/fatih/color v1.12.0 // indirect
 	github.com/getkin/kin-openapi v0.62.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-lintpack/lintpack v0.5.2 // indirect
@@ -32,9 +34,10 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/jarcoal/httpmock v1.0.8
-	github.com/kaleido-io/firefly-cli v0.0.0-20210526151655-4f498066563b // indirect
+	github.com/kaleido-io/firefly-cli v0.0.8 // indirect
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/klauspost/cpuid v1.2.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.6 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.10.2
 	github.com/likexian/gokit v0.24.7
@@ -45,12 +48,14 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.9
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/multiformats/go-multiaddr v0.3.2 // indirect
+	github.com/multiformats/go-multihash v0.0.15 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pelletier/go-toml v1.9.1 // indirect
+	github.com/pelletier/go-toml v1.9.2 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0 // indirect
 	github.com/rs/cors v1.7.0
@@ -70,7 +75,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
-	golang.org/x/sys v0.0.0-20210521203332-0cec03c779c1 // indirect
+	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/text v0.3.6
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect

@@ -111,7 +111,7 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
   }
 };
 
-export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, recipient: string, amount: number, descriptionHash: string, participants: string[] | undefined):
+export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string, member: string, amount: number, descriptionHash: string, participants: string[] | undefined):
   Promise<IAPIGatewaySyncResponse> => {
   try {
     const response = await axios({
@@ -124,7 +124,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
       data: {
         paymentInstanceID: paymentInstanceID,
         paymentDefinitionID: paymentDefinitionID,
-        recipient,
+        member,
         amount,
         descriptionHash,
         participants
@@ -137,7 +137,7 @@ export const createDescribedPaymentInstance = async (paymentInstanceID: string, 
 };
 
 export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
-  recipient: string, amount: number, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
+  member: string, amount: number, participants: string[] | undefined): Promise<IAPIGatewaySyncResponse> => {
   try {
     const response = await axios({
       method: 'post',
@@ -149,7 +149,7 @@ export const createPaymentInstance = async (paymentInstanceID: string, paymentDe
       data: {
         paymentInstanceID: paymentInstanceID,
         paymentDefinitionID: paymentDefinitionID,
-        recipient,
+        member,
         amount,
         participants
       }

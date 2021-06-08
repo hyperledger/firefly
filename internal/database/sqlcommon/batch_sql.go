@@ -33,6 +33,7 @@ var (
 		"btype",
 		"namespace",
 		"author",
+		"group_id",
 		"created",
 		"hash",
 		"payload",
@@ -42,10 +43,11 @@ var (
 		"tx_id",
 	}
 	batchFilterTypeMap = map[string]string{
-		"type":       "btype",
-		"payloadref": "payload_ref",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
+		"type":             "btype",
+		"payloadref":       "payload_ref",
+		"transaction.type": "tx_type",
+		"transaction.id":   "tx_id",
+		"group":            "group_id",
 	}
 )
 
@@ -89,6 +91,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
+				Set("group_id", batch.Group).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("payload", batch.Payload).
@@ -110,6 +113,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 					string(batch.Type),
 					batch.Namespace,
 					batch.Author,
+					batch.Group,
 					batch.Created,
 					batch.Hash,
 					batch.Payload,
@@ -133,6 +137,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Type,
 		&batch.Namespace,
 		&batch.Author,
+		&batch.Group,
 		&batch.Created,
 		&batch.Hash,
 		&batch.Payload,

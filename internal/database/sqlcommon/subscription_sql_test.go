@@ -71,10 +71,10 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		},
 		Transport: "websockets",
 		Filter: fftypes.SubscriptionFilter{
-			Events:  string(fftypes.EventTypeDataArrivedBroadcast),
-			Topic:   "topic.*",
-			Context: "context.*",
-			Group:   "group.*",
+			Events: string(fftypes.EventTypeMessageConfirmed),
+			Topics: "topics.*",
+			Tag:    "tag.*",
+			Group:  "group.*",
 		},
 		Options: fftypes.SubscriptionOptions{
 			FirstEvent: &newest,

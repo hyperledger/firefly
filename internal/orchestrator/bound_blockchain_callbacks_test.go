@@ -33,10 +33,10 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 	bbc := boundBlockchainCallbacks{bi: mbi, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
-	batch := &blockchain.BroadcastBatch{TransactionID: fftypes.NewUUID()}
+	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
 
-	mei.On("SequencedBroadcastBatch", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
-	err := bbc.SequencedBroadcastBatch(batch, "0x12345", "tx12345", info)
+	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
+	err := bbc.BatchPinComplete(batch, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransactionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info).Return(fmt.Errorf("pop"))

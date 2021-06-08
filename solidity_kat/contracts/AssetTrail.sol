@@ -61,7 +61,7 @@ contract AssetTrail {
         bytes32 paymentInstanceID,
         bytes32 paymentDefinitionID,
         address author,
-        address recipient,
+        address member,
         uint amount,
         bytes32 descriptionHash,
         uint timestamp
@@ -71,7 +71,7 @@ contract AssetTrail {
         bytes32 paymentInstanceID,
         bytes32 paymentDefinitionID,
         address author,
-        address recipient,
+        address member,
         uint amount,
         uint timestamp
     );
@@ -122,18 +122,18 @@ contract AssetTrail {
         emit AssetInstanceBatchCreated(batchHash, msg.sender, now);
     }
 
-    function createDescribedPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address recipient, uint amount, bytes32 descriptionHash) public {
-        require(msg.sender != recipient, "Author and recipient cannot be the same");
+    function createDescribedPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address member, uint amount, bytes32 descriptionHash) public {
+        require(msg.sender != member, "Author and member cannot be the same");
         require(amount > 0, "Amount must be greater than 0");
-        require(payment.transferFrom(msg.sender, recipient, amount), "Failed to transfer tokens");
-        emit DescribedPaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, descriptionHash, now);
+        require(payment.transferFrom(msg.sender, member, amount), "Failed to transfer tokens");
+        emit DescribedPaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, member, amount, descriptionHash, now);
     }
 
-    function createPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address recipient, uint amount) public {
-        require(msg.sender != recipient, "Author and recipient cannot be the same");
+    function createPaymentInstance(bytes32 paymentInstanceID, bytes32 paymentDefinitionID, address member, uint amount) public {
+        require(msg.sender != member, "Author and member cannot be the same");
         require(amount > 0, "Amount must be greater than 0");
-        require(payment.transferFrom(msg.sender, recipient, amount), "Failed to transfer tokens");
-        emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, recipient, amount, now);
+        require(payment.transferFrom(msg.sender, member, amount), "Failed to transfer tokens");
+        emit PaymentInstanceCreated(paymentInstanceID, paymentDefinitionID, msg.sender, member, amount, now);
     }
 
     function setAssetInstanceProperty(bytes32 assetDefinitionID, bytes32 assetInstanceID, string memory key, string memory value) public {

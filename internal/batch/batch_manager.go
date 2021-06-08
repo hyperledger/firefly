@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	msgBatchOffsetName = "ff-msgbatch"
+	msgBatchOffsetName = "ff_msgbatch"
 )
 
 func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (Manager, error) {
@@ -61,7 +61,7 @@ func NewBatchManager(ctx context.Context, di database.Plugin, dm data.Manager) (
 }
 
 type Manager interface {
-	RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options)
+	RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -85,7 +85,7 @@ type batchManager struct {
 	startupOffsetRetryAttempts int
 }
 
-type DispatchHandler func(context.Context, *fftypes.Batch) error
+type DispatchHandler func(context.Context, *fftypes.Batch, []*fftypes.Bytes32) error
 
 type Options struct {
 	BatchMaxSize   uint
@@ -100,11 +100,14 @@ type dispatcher struct {
 	batchOptions Options
 }
 
-func (bm *batchManager) RegisterDispatcher(batchType fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
-	bm.dispatchers[batchType] = &dispatcher{
+func (bm *batchManager) RegisterDispatcher(msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions Options) {
+	dispatcher := &dispatcher{
 		handler:      handler,
 		batchOptions: batchOptions,
 		processors:   make(map[string]*batchProcessor),
+	}
+	for _, msgType := range msgTypes {
+		bm.dispatchers[msgType] = dispatcher
 	}
 }
 
@@ -150,13 +153,13 @@ func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
 	dispatcher.mux.Unlock()
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.UUID, namespace, author string) (*batchProcessor, error) {
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
 	}
 	dispatcher.mux.Lock()
-	key := fmt.Sprintf("%s/%s", namespace, author)
+	key := fmt.Sprintf("%s/%s/%v", namespace, author, group)
 	processor, ok := dispatcher.processors[key]
 	if !ok {
 		processor = newBatchProcessor(
@@ -166,6 +169,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, namespace, a
 				Options:   dispatcher.batchOptions,
 				namespace: namespace,
 				author:    author,
+				group:     group,
 				dispatch:  dispatcher.handler,
 				processorQuiescing: func() {
 					bm.removeProcessor(dispatcher, key)
@@ -215,7 +219,10 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 	var msgs []*fftypes.Message
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		msgs, err = bm.database.GetMessages(bm.ctx, fb.Gt("sequence", bm.offset).Sort("sequence").Limit(bm.readPageSize))
+		msgs, err = bm.database.GetMessages(bm.ctx, fb.And(
+			fb.Gt("sequence", bm.offset),
+			fb.Gt("local", true),
+		).Sort("sequence").Limit(bm.readPageSize))
 		if err != nil {
 			return !bm.closed, err // Retry indefinitely, until closed (or context cancelled)
 		}
@@ -338,7 +345,7 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 
 func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Namespace, msg.Header.Author)
+	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, msg.Header.Author)
 	if err != nil {
 		return err
 	}

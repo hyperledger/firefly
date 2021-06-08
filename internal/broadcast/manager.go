@@ -36,7 +36,7 @@ import (
 type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error)
-	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, contextNamespace, topic string) (msg *fftypes.Message, err error)
+	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
 	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
@@ -72,8 +72,10 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		BatchTimeout:   config.GetDuration(config.BroadcastBatchTimeout),
 		DisposeTimeout: config.GetDuration(config.BroadcastBatchAgentTimeout),
 	}
-	ba.RegisterDispatcher(fftypes.MessageTypeBroadcast, bm.dispatchBatch, bo)
-	ba.RegisterDispatcher(fftypes.MessageTypeDefinition, bm.dispatchBatch, bo)
+	ba.RegisterDispatcher([]fftypes.MessageType{
+		fftypes.MessageTypeBroadcast,
+		fftypes.MessageTypeDefinition,
+	}, bm.dispatchBatch, bo)
 	return bm, nil
 }
 
@@ -86,7 +88,7 @@ func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftype
 	return id, nil
 }
 
-func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch) error {
+func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
 	payload, err := json.Marshal(batch)
@@ -103,11 +105,11 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	return bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return bm.submitTXAndUpdateDB(ctx, batch, batch.PayloadRef, publicstorageID)
+		return bm.submitTXAndUpdateDB(ctx, batch, pins, publicstorageID)
 	})
 }
 
-func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, payloadRef *fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32, publicstorageID string) error {
 
 	id, err := bm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
@@ -115,15 +117,6 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		op := fftypes.NewTXOperation(
-			bm.blockchain,
-			batch.Payload.TX.ID,
-			"",
-			fftypes.OpTypeBlockchainBatchPin,
-			fftypes.OpStatusFailed,
-			"")
-		op.Error = err.Error()
-		_ = bm.database.UpsertOperation(ctx, op, false)
 		return err
 	}
 
@@ -131,8 +124,8 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
-			Author:    batch.Author,
 			Namespace: batch.Namespace,
+			Signer:    id.OnChain, // The transaction records on the on-chain identity
 			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
@@ -145,16 +138,19 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	}
 
 	// Update the batch to store the payloadRef
-	err = bm.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", payloadRef))
+	err = bm.database.UpdateBatch(ctx, batch.ID, database.BatchQueryFactory.NewUpdate(ctx).Set("payloadref", batch.PayloadRef))
 	if err != nil {
 		return err
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := bm.blockchain.SubmitBroadcastBatch(ctx, id, &blockchain.BroadcastBatch{
+	blockchainTrackingID, err := bm.blockchain.SubmitBatchPin(ctx, nil, id, &blockchain.BatchPin{
+		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
+		BatchHash:      batch.Hash,
 		BatchPaylodRef: batch.PayloadRef,
+		Contexts:       contexts,
 	})
 	if err != nil {
 		return err
@@ -191,7 +187,7 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return bm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
+	return bm.database.InsertMessageLocal(ctx, msg)
 }
 
 func (bm *broadcastManager) Start() error {

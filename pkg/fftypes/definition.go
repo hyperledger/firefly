@@ -18,8 +18,8 @@ package fftypes
 
 // Definition is implemented by all objects that can be broadcast as system definitions to the network
 type Definition interface {
-	// Context returns the context on which the object should be broadcast
-	Context() string
+	// Topic returns the topic on which the object should be broadcast
+	Topic() string
 	// SetBroadcastMessage sets the message that broadcast the definition
 	SetBroadcastMessage(msgID *UUID)
 }
