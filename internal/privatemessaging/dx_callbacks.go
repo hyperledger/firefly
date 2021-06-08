@@ -18,8 +18,11 @@ package privatemessaging
 
 import "github.com/kaleido-io/firefly/pkg/fftypes"
 
-func (pm *privateMessaging) MessageReceived(peerID string, payload fftypes.Byteable) {
+func (pm *privateMessaging) MessageReceived(peerID string, data []byte) {
 }
 
 func (pm *privateMessaging) BLOBReceived(peerID string, ns string, id fftypes.UUID) {
+}
+
+func (pm *privateMessaging) TransferResult(trackingID string, status fftypes.OpStatus, info string) {
 }

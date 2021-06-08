@@ -17,7 +17,12 @@ func (_m *Callbacks) BLOBReceived(peerID string, ns string, id fftypes.UUID) {
 	_m.Called(peerID, ns, id)
 }
 
-// MessageReceived provides a mock function with given fields: peerID, payload
-func (_m *Callbacks) MessageReceived(peerID string, payload fftypes.Byteable) {
-	_m.Called(peerID, payload)
+// MessageReceived provides a mock function with given fields: peerID, data
+func (_m *Callbacks) MessageReceived(peerID string, data []byte) {
+	_m.Called(peerID, data)
+}
+
+// TransferResult provides a mock function with given fields: trackingID, status, info
+func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string) {
+	_m.Called(trackingID, status, info)
 }
