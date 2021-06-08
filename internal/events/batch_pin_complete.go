@@ -84,6 +84,7 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 				Signer:    signingIdentity,
 				Reference: batchPin.TransactionID,
 			},
+			Created: fftypes.Now(),
 		}
 		tx.Hash = tx.Subject.Hash()
 	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
