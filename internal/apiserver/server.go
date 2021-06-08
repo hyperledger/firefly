@@ -48,16 +48,43 @@ var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 // Serve is the main entry point for the API Server
 func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
-	r := createMuxRouter(o)
-	l, err := createListener(ctx)
-	if err == nil {
-		var s *http.Server
-		s, err = createServer(ctx, r)
+	httpErrChan := make(chan error)
+	adminErrChan := make(chan error)
+
+	go func() {
+		r := createMuxRouter(o)
+		l, err := createListener(ctx)
 		if err == nil {
-			err = serveHTTP(ctx, l, s)
+			var s *http.Server
+			s, err = createServer(ctx, r)
+			if err == nil {
+				err = serveHTTP(ctx, l, s)
+			}
 		}
+		httpErrChan <- err
+	}()
+
+	if config.GetBool(config.AdminHTTPEnabled) {
+		go func() {
+			r := createAdminMuxRouter(o)
+			l, err := createAdminListener(ctx)
+			if err == nil {
+				var s *http.Server
+				s, err = createServer(ctx, r)
+				if err == nil {
+					err = serveHTTP(ctx, l, s)
+				}
+			}
+			httpErrChan <- err
+		}()
 	}
-	return err
+
+	select {
+	case err := <-httpErrChan:
+		return err
+	case err := <-adminErrChan:
+		return err
+	}
 }
 
 func createListener(ctx context.Context) (net.Listener, error) {
@@ -67,6 +94,16 @@ func createListener(ctx context.Context) (net.Listener, error) {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
 	}
 	log.L(ctx).Infof("Listening on HTTP %s", listener.Addr())
+	return listener, err
+}
+
+func createAdminListener(ctx context.Context) (net.Listener, error) {
+	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.AdminHTTPAddress), config.GetUint(config.AdminHTTPPort))
+	listener, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
+	}
+	log.L(ctx).Infof("Admin interface listening on HTTP %s", listener.Addr())
 	return listener, err
 }
 
@@ -332,6 +369,12 @@ func swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, e
 	return 200, nil
 }
 
+func swaggerAdminUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	res.Header().Add("Content-Type", "text/html")
+	_, _ = res.Write(oapispec.SwaggerAdminUIHTML(req.Context()))
+	return 200, nil
+}
+
 func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	vars := mux.Vars(req)
 	if vars["ext"] == ".json" {
@@ -342,6 +385,22 @@ func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err
 	} else {
 		res.Header().Add("Content-Type", "application/x-yaml")
 		doc := oapispec.SwaggerGen(req.Context(), routes)
+		b, _ := yaml.Marshal(&doc)
+		_, _ = res.Write(b)
+	}
+	return 200, nil
+}
+
+func adminSwaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	vars := mux.Vars(req)
+	if vars["ext"] == ".json" {
+		res.Header().Add("Content-Type", "application/json")
+		doc := oapispec.AdminSwaggerGen(req.Context(), adminRoutes)
+		b, _ := json.Marshal(&doc)
+		_, _ = res.Write(b)
+	} else {
+		res.Header().Add("Content-Type", "application/x-yaml")
+		doc := oapispec.AdminSwaggerGen(req.Context(), adminRoutes)
 		b, _ := yaml.Marshal(&doc)
 		_, _ = res.Write(b)
 	}
@@ -369,5 +428,20 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	}
 
 	r.NotFoundHandler = apiWrapper(notFoundHandler)
+	return r
+}
+
+func createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+	r := mux.NewRouter()
+	for _, route := range adminRoutes {
+		if route.JSONHandler != nil {
+			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), routeHandler(o, route)).
+				Methods(route.Method)
+		}
+	}
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(adminSwaggerHandler))
+	r.HandleFunc(`/admin/api`, apiWrapper(swaggerAdminUIHandler))
+	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
+
 	return r
 }
