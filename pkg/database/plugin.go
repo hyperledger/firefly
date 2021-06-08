@@ -411,6 +411,7 @@ var TransactionQueryFactory = &queryFields{
 	"created":    &TimeField{},
 	"sequence":   &Int64Field{},
 	"info":       &JSONField{},
+	"namespace":  &StringField{},
 }
 
 // DataQueryFactory filter fields for data
