@@ -33,7 +33,7 @@ var (
 		"btype",
 		"namespace",
 		"author",
-		"group_id",
+		"group_hash",
 		"created",
 		"hash",
 		"payload",
@@ -47,7 +47,7 @@ var (
 		"payloadref":       "payload_ref",
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
-		"group":            "group_id",
+		"group":            "group_hash",
 	}
 )
 
@@ -91,7 +91,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
-				Set("group_id", batch.Group).
+				Set("group_hash", batch.Group).
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("payload", batch.Payload).

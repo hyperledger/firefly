@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/eventmocks"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
@@ -30,16 +31,27 @@ import (
 func TestBoundBlockchainCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
-	bbc := boundBlockchainCallbacks{bi: mbi, ei: mei}
+	mdx := &dataexchangemocks.Plugin{}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
+	id := fftypes.NewUUID()
 
 	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
-	err := bbc.BatchPinComplete(batch, "0x12345", "tx12345", info)
+	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TransactionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info).Return(fmt.Errorf("pop"))
-	err = bbc.TransactionUpdate("tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info)
+	mei.On("TxSubmissionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TxSubmissionUpdate("tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info)
 	assert.EqualError(t, err, "pop")
+
+	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return()
+	bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
+
+	mei.On("BLOBReceived", mdx, "peer1", "ns1", *id).Return()
+	bc.BLOBReceived("peer1", "ns1", *id)
+
+	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return()
+	bc.MessageReceived("peer1", []byte{})
 }

@@ -19,7 +19,6 @@ package fftypes
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,76 +27,86 @@ import (
 func TestGroupValidation(t *testing.T) {
 
 	group := &Group{
-		Namespace: "!wrong",
+		GroupIdentity: GroupIdentity{
+			Name: "!wrong",
+		},
+	}
+	assert.Regexp(t, "FF10131.*name", group.Validate(context.Background(), false))
+
+	group = &Group{
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "!wrong",
+		},
 	}
 	assert.Regexp(t, "FF10131.*namespace", group.Validate(context.Background(), false))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: string(make([]byte, 4097)),
-	}
-	assert.Regexp(t, "FF10188.*description", group.Validate(context.Background(), false))
-
-	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+		},
 	}
 	assert.Regexp(t, "FF10219.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{Node: NewUUID()},
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members:   Members{{Node: NewUUID()}},
 		},
 	}
 	assert.Regexp(t, "FF10220.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{Identity: "0x12345"},
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members:   Members{{Identity: "0x12345"}},
 		},
 	}
 	assert.Regexp(t, "FF10221.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{Identity: string(make([]byte, 1025)), Node: NewUUID()},
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members:   Members{{Identity: string(make([]byte, 1025)), Node: NewUUID()}},
 		},
 	}
 	assert.Regexp(t, "FF10188.*identity", group.Validate(context.Background(), false))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{Identity: "0x12345", Node: NewUUID()},
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members:   Members{{Identity: "0x12345", Node: NewUUID()}},
 		},
 	}
 	assert.NoError(t, group.Validate(context.Background(), false))
 
-	assert.Regexp(t, "FF10203", group.Validate(context.Background(), true))
+	assert.Regexp(t, "FF10230", group.Validate(context.Background(), true))
+	group.Seal()
+	assert.NoError(t, group.Validate(context.Background(), true))
 
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{ /* blank */ },
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members:   Members{{ /* blank */ }},
 		},
 	}
 	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
 
 	nodeID := MustParseUUID("8b5c0d39-925f-4579-9c60-54f3e846ab99")
 	group = &Group{
-		Namespace:   "ok",
-		Description: "ok",
-		Members: Members{
-			{Node: nodeID, Identity: "0x12345"},
-			{Node: nodeID, Identity: "0x12345"},
+		GroupIdentity: GroupIdentity{
+			Name:      "ok",
+			Namespace: "ok",
+			Members: Members{
+				{Node: nodeID, Identity: "0x12345"},
+				{Node: nodeID, Identity: "0x12345"},
+			},
 		},
 	}
 	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
@@ -108,10 +117,10 @@ func TestGroupValidation(t *testing.T) {
 	b, _ := json.Marshal(&group.Members)
 	assert.Equal(t, `[{"identity":"0x12345","node":"8b5c0d39-925f-4579-9c60-54f3e846ab99"}]`, string(b))
 	group.Seal()
-	assert.Equal(t, "2e58f0625e43d80b1745340151652424e7fc6cb5411490fd5d2fd2301d42c72c", group.Hash.String())
+	assert.Equal(t, "c2e5a42207ce2b48d67a4682a96f914ec0386acc13615550aa503b0841da8824", group.Hash.String())
 
 	var def Definition = group
-	assert.Equal(t, fmt.Sprintf("ff_grp_%s", group.ID), def.Topic())
+	assert.Equal(t, group.Hash.String(), def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, group.Message)
 }

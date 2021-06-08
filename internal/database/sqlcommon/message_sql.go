@@ -38,7 +38,7 @@ var (
 		"namespace",
 		"topics",
 		"tag",
-		"group_id",
+		"group_hash",
 		"datahash",
 		"hash",
 		"pins",
@@ -51,7 +51,7 @@ var (
 		"type":    "mtype",
 		"txntype": "tx_type",
 		"batch":   "batch_id",
-		"group":   "group_id",
+		"group":   "group_hash",
 	}
 )
 
@@ -108,7 +108,7 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("namespace", message.Header.Namespace).
 				Set("topics", message.Header.Topics).
 				Set("tag", message.Header.Tag).
-				Set("group_id", message.Header.Group).
+				Set("group_hash", message.Header.Group).
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
 				Set("pins", message.Pins).

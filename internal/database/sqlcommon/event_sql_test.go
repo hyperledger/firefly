@@ -66,6 +66,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		Namespace: "ns1",
 		Type:      fftypes.EventTypeMessageConfirmed,
 		Reference: fftypes.NewUUID(),
+		Group:     fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
 	}
 	err = s.UpsertEvent(context.Background(), eventUpdated, true)

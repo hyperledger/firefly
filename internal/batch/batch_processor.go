@@ -46,7 +46,7 @@ type batchProcessorConf struct {
 	Options
 	namespace          string
 	author             string
-	group              *fftypes.UUID
+	group              *fftypes.Bytes32
 	dispatch           DispatchHandler
 	processorQuiescing func()
 }

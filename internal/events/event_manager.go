@@ -29,6 +29,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
@@ -45,8 +46,13 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
+	TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
+	// Bound dataexchange callbacks
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)
+	BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID)
+	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte)
 }
 
 type eventManager struct {

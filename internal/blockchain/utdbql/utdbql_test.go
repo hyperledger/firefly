@@ -85,7 +85,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 	}
 
 	txEv := make(chan bool, 1)
-	tx := me.On("TransactionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tx := me.On("TxSubmissionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	tx.RunFn = func(a mock.Arguments) {
 		txEv <- true
 	}
@@ -128,7 +128,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 		sbbEv <- true
 	}
 
-	me.On("TransactionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	me.On("TxSubmissionUpdate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	resetConf()
 	utConfPrefix.Set(UTDBQLConfURL, "memory://")

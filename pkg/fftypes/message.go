@@ -53,7 +53,7 @@ type MessageHeader struct {
 	Author    string          `json:"author,omitempty"`
 	Created   *FFTime         `json:"created,omitempty"`
 	Namespace string          `json:"namespace,omitempty"`
-	Group     *UUID           `json:"group,omitempty"`
+	Group     *Bytes32        `json:"group,omitempty"`
 	Topics    FFNameArray     `json:"topic,omitempty"`
 	Tag       string          `json:"tag,omitempty"`
 	DataHash  *Bytes32        `json:"datahash,omitempty"`
@@ -83,6 +83,7 @@ type MessageInput struct {
 
 // InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
 type InputGroup struct {
+	Name    string        `json:"name,omitempty"`
 	Ledger  *UUID         `json:"ledger,omitempty"`
 	Members []MemberInput `json:"members"`
 }

@@ -24,16 +24,25 @@ import (
 
 // Node is a FireFly node within the network
 type Node struct {
-	ID          *UUID      `json:"id"`
-	Message     *UUID      `json:"message,omitempty"`
-	Owner       string     `json:"parent,omitempty"`
-	Identity    string     `json:"identity,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Endpoint    JSONObject `json:"endpoint,omitempty"`
-	Created     *FFTime    `json:"created,omitempty"`
+	ID          *UUID   `json:"id"`
+	Message     *UUID   `json:"message,omitempty"`
+	Owner       string  `json:"parent,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	Description string  `json:"description,omitempty"`
+	DX          DXInfo  `json:"dx"`
+	Created     *FFTime `json:"created,omitempty"`
+}
+
+// DXInfo is the data exchange information
+type DXInfo struct {
+	Peer     string     `json:"peer,omitempty"`
+	Endpoint JSONObject `json:"endpoint,omitempty"`
 }
 
 func (n *Node) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, n.Name, "name"); err != nil {
+		return err
+	}
 	if err = ValidateLength(ctx, n.Description, "description", 4096); err != nil {
 		return err
 	}

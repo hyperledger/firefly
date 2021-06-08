@@ -56,6 +56,19 @@ func (b32 *Bytes32) UnmarshalText(b []byte) error {
 	return err
 }
 
+func ParseBytes32(ctx context.Context, hexStr string) (*Bytes32, error) {
+	trimmed := []byte(strings.TrimPrefix(hexStr, "0x"))
+	if len(trimmed) != 64 {
+		return nil, i18n.NewError(context.Background(), i18n.MsgInvalidWrongLenB32)
+	}
+	var b32 Bytes32
+	err := b32.UnmarshalText(trimmed)
+	if err != nil {
+		return nil, i18n.WrapError(context.Background(), err, i18n.MsgInvalidHex)
+	}
+	return &b32, nil
+}
+
 // Scan implements sql.Scanner
 func (b32 *Bytes32) Scan(src interface{}) error {
 	switch src := src.(type) {
@@ -73,7 +86,7 @@ func (b32 *Bytes32) Scan(src interface{}) error {
 			return nil
 		}
 		if len(src) != 32 {
-			return b32.Scan(string(src))
+			return b32.UnmarshalText(src)
 		}
 		copy((*b32)[:], src)
 		return nil
@@ -107,4 +120,15 @@ func UUIDBytes(u *UUID) *Bytes32 {
 	var d Bytes32
 	copy(d[:], u[:])
 	return &d
+}
+
+func (b32 *Bytes32) Equals(b2 *Bytes32) bool {
+	switch {
+	case b32 == nil && b2 == nil:
+		return true
+	case b32 == nil || b2 == nil:
+		return false
+	default:
+		return *b32 == *b2
+	}
 }

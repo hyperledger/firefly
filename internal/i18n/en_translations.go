@@ -146,4 +146,8 @@ var (
 	MsgGroupNotFound               = ffm("FF10226", "Group '%s' not found", 404)
 	MsgTooManyItems                = ffm("FF10227", "Maximum number of %s items is %d (supplied=%d)", 400)
 	MsgDuplicateArrayEntry         = ffm("FF10228", "Duplicate %s at index %d: '%s'", 400)
+	MsgDXRESTErr                   = ffm("FF10229", "Error from data exchange: %s")
+	MsgGroupInvalidHash            = ffm("FF10230", "Invalid group: hashes do not match Hash=%s Expected=%s", 400)
+	MsgInvalidHex                  = ffm("FF10231", "Invalid hex supplied", 400)
+	MsgInvalidWrongLenB32          = ffm("FF10232", "Byte length must be 32 (64 hex characters)", 400)
 )

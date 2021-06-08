@@ -146,7 +146,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 	}, nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
-	groupID := fftypes.MustParseUUID("3e2edc259ee944a79072c903218bc88e")
+	var groupID fftypes.Bytes32
+	_ = groupID.UnmarshalText([]byte("44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b"))
 	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		_, ok := <-readyForDispatch
 		if !ok {
@@ -155,18 +156,18 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		assert.Len(t, s, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
-			"746f70696331" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "0000000000003039",
-		/*|  topic1   |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12345) */
-		/*|               context                          |   |          sender + nonce             */
+			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "30783132333435" + "0000000000003039",
+		/*|  topic1   |    | ---- group id -------------------------------------------------|   |author'0x12345'|  |i64 nonce (12345) */
+		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
-			"746f70696332" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "000000000000303a",
-		/*|   topic2  |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12346) */
-		/*|               context                          |   |          sender + nonce             */
+			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "30783132333435" + "000000000000303a",
+		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'0x12345'|  |i64 nonce (12346) */
+		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
 		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
@@ -192,7 +193,7 @@ func TestE2EDispatchPrivate(t *testing.T) {
 			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
 			Author:    "0x12345",
-			Group:     groupID,
+			Group:     &groupID,
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},

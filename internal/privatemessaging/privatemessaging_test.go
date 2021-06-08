@@ -36,7 +36,7 @@ import (
 
 func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	config.Reset()
-	config.Set(config.NodeIdentity, "localnodeid")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "localorg")
 	config.Set(config.GroupCacheTTL, "1m")
 	config.Set(config.GroupCacheSize, "1m")
@@ -79,7 +79,7 @@ func TestDispatchBatch(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	pin1 := fftypes.NewRandB32()
 	pin2 := fftypes.NewRandB32()
 	node1 := fftypes.NewUUID()
@@ -98,20 +98,29 @@ func TestDispatchBatch(t *testing.T) {
 		}
 	}
 
-	mdi.On("GetGroupByID", pm.ctx, groupID).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			{Identity: "org1", Node: node1},
-			{Identity: "org2", Node: node2},
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
+		Hash: fftypes.NewRandB32(),
+		GroupIdentity: fftypes.GroupIdentity{
+			Name: "group1",
+			Members: fftypes.Members{
+				{Identity: "org1", Node: node1},
+				{Identity: "org2", Node: node2},
+			},
 		},
 	}, nil)
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
-		ID:       node1,
-		Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+		ID: node1,
+		DX: fftypes.DXInfo{
+			Peer:     "node1",
+			Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+		},
 	}, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node2)).Return(&fftypes.Node{
-		ID:       node2,
-		Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
+		ID: node2,
+		DX: fftypes.DXInfo{
+			Peer:     "node2",
+			Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
+		},
 	}, nil).Once()
 
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil).Once()
@@ -180,7 +189,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
@@ -191,7 +200,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mii := pm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", pm.ctx, "badauthor").Return(&fftypes.Identity{OnChain: "!badaddress"}, nil)
@@ -215,7 +224,12 @@ func TestSendImmediateFail(t *testing.T) {
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
 	}, []*fftypes.Node{
-		{Endpoint: fftypes.JSONObject{"some": "data"}},
+		{
+			DX: fftypes.DXInfo{
+				Peer:     "node1",
+				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+			},
+		},
 	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
@@ -233,7 +247,12 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
 	}, []*fftypes.Node{
-		{Endpoint: fftypes.JSONObject{"some": "data"}},
+		{
+			DX: fftypes.DXInfo{
+				Peer:     "node1",
+				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+			},
+		},
 	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
