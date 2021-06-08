@@ -52,7 +52,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mii.On("Resolve", nm.ctx, "0x23456").Return(parentID, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -99,7 +99,7 @@ func TestRegisterNodeBadParentID(t *testing.T) {
 	mii.On("Resolve", nm.ctx, "0x23456").Return(nil, fmt.Errorf("pop"))
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
 	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10215", err)
@@ -125,7 +125,7 @@ func TestRegisterNodeBadNodeID(t *testing.T) {
 	mii.On("Resolve", nm.ctx, "0x12345").Return(nil, fmt.Errorf("pop"))
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
 	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "pop", err)
@@ -149,7 +149,7 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
 	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10214", err)
@@ -166,7 +166,7 @@ func TestRegisterNodeParentBadNode(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{"endpoint": "details"}, nil)
+	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
 	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "FF10188", err)
@@ -183,7 +183,7 @@ func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("GetEndpointInfo", nm.ctx).Return(nil, fmt.Errorf("pop"))
+	mdx.On("GetEndpointInfo", nm.ctx).Return("", nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterNode(nm.ctx)
 	assert.Regexp(t, "pop", err)

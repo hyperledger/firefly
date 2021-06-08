@@ -146,4 +146,5 @@ var (
 	MsgGroupNotFound               = ffm("FF10226", "Group '%s' not found", 404)
 	MsgTooManyItems                = ffm("FF10227", "Maximum number of %s items is %d (supplied=%d)", 400)
 	MsgDuplicateArrayEntry         = ffm("FF10228", "Duplicate %s at index %d: '%s'", 400)
+	MsgDXRESTErr                   = ffm("FF10229", "Error from data exchange: %s")
 )

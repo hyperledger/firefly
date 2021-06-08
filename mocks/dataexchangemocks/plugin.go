@@ -52,15 +52,15 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 }
 
 // DownloadBLOB provides a mock function with given fields: ctx, ns, id
-func (_m *Plugin) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (io.Reader, error) {
+func (_m *Plugin) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (io.ReadCloser, error) {
 	ret := _m.Called(ctx, ns, id)
 
-	var r0 io.Reader
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID) io.Reader); ok {
+	var r0 io.ReadCloser
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID) io.ReadCloser); ok {
 		r0 = rf(ctx, ns, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.Reader)
+			r0 = ret.Get(0).(io.ReadCloser)
 		}
 	}
 
@@ -137,20 +137,20 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, node, payload
-func (_m *Plugin) SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (string, error) {
-	ret := _m.Called(ctx, node, payload)
+// SendMessage provides a mock function with given fields: ctx, node, data
+func (_m *Plugin) SendMessage(ctx context.Context, node *fftypes.Node, data []byte) (string, error) {
+	ret := _m.Called(ctx, node, data)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, fftypes.Byteable) string); ok {
-		r0 = rf(ctx, node, payload)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, []byte) string); ok {
+		r0 = rf(ctx, node, data)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Node, fftypes.Byteable) error); ok {
-		r1 = rf(ctx, node, payload)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Node, []byte) error); ok {
+		r1 = rf(ctx, node, data)
 	} else {
 		r1 = ret.Error(1)
 	}

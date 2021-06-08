@@ -51,11 +51,11 @@ type Plugin interface {
 	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (err error)
 
 	// DownloadBLOB streams a blob out of storage
-	DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.Reader, err error)
+	DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.ReadCloser, err error)
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
-	SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (trackingID string, err error)
+	SendMessage(ctx context.Context, node *fftypes.Node, data []byte) (trackingID string, err error)
 
 	// TransferBLOB initiates a transfer of a previoiusly stored blob to another node
 	TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (trackingID string, err error)
@@ -65,10 +65,13 @@ type Plugin interface {
 type Callbacks interface {
 
 	// MessageReceived notifies of a message received from another node in the network
-	MessageReceived(peerID string, payload fftypes.Byteable)
+	MessageReceived(peerID string, data []byte)
 
-	// BLOBReceived notifies of  the ID of a BLOB that has been stored by DX after being received from another node in the network
+	// BLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
 	BLOBReceived(peerID string, ns string, id fftypes.UUID)
+
+	// TransferResult notifies of a status update of a transfer
+	TransferResult(trackingID string, status fftypes.OpStatus, info string)
 }
 
 // Capabilities the supported featureset of the data exchange

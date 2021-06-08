@@ -142,6 +142,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		}
 	}
 
+	go e.eventLoop()
+
 	return nil
 }
 
@@ -182,8 +184,6 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
 		}
 		e.initInfo.stream = &newStream
 	}
-
-	go e.eventLoop()
 
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
 
