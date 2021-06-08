@@ -201,7 +201,7 @@ func (ag *aggregator) processPins(ctx context.Context, pins []*fftypes.Pin) (err
 	return err
 }
 
-func (ag *aggregator) calcHash(topic string, groupID *fftypes.UUID, identity string, nonce int64) *fftypes.Bytes32 {
+func (ag *aggregator) calcHash(topic string, groupID *fftypes.Bytes32, identity string, nonce int64) *fftypes.Bytes32 {
 	h := sha256.New()
 	h.Write([]byte(topic))
 	h.Write((*groupID)[:])
@@ -425,7 +425,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	}
 
 	// Generate the appropriate event
-	event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
+	event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, msg.Header.Group)
 	if err = ag.database.UpsertEvent(ctx, event, false); err != nil {
 		return false, err
 	}

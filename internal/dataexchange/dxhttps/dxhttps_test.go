@@ -281,12 +281,12 @@ func TestEvents(t *testing.T) {
 
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop").Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return()
 	fromServer <- `{"type":"message-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "").Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return()
 	fromServer <- `{"type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
@@ -296,12 +296,12 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop").Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return()
 	fromServer <- `{"type":"blob-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "").Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return()
 	fromServer <- `{"type":"blob-delivered","requestID":"tx12345"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))

@@ -65,7 +65,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "org1"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{ID: fftypes.NewUUID()},
+		{Hash: fftypes.NewRandB32()},
 	}, nil).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
@@ -166,7 +166,7 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{ID: fftypes.NewUUID()},
+		{Hash: fftypes.NewRandB32()},
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
@@ -197,7 +197,7 @@ func TestResolveAndSendSealFail(t *testing.T) {
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{ID: fftypes.NewUUID()},
+		{Hash: fftypes.NewRandB32()},
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)

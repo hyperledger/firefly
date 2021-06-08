@@ -79,7 +79,7 @@ func TestDispatchBatch(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	pin1 := fftypes.NewRandB32()
 	pin2 := fftypes.NewRandB32()
 	node1 := fftypes.NewUUID()
@@ -98,11 +98,14 @@ func TestDispatchBatch(t *testing.T) {
 		}
 	}
 
-	mdi.On("GetGroupByID", pm.ctx, groupID).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			{Identity: "org1", Node: node1},
-			{Identity: "org2", Node: node2},
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
+		Hash: fftypes.NewRandB32(),
+		GroupIdentity: fftypes.GroupIdentity{
+			Name: "group1",
+			Members: fftypes.Members{
+				{Identity: "org1", Node: node1},
+				{Identity: "org2", Node: node2},
+			},
 		},
 	}, nil)
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
@@ -186,7 +189,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
@@ -197,7 +200,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mii := pm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", pm.ctx, "badauthor").Return(&fftypes.Identity{OnChain: "!badaddress"}, nil)

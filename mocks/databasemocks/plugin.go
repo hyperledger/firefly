@@ -349,13 +349,13 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fft
 	return r0, r1
 }
 
-// GetGroupByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Group, error) {
-	ret := _m.Called(ctx, id)
+// GetGroupByHash provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Group, error) {
+	ret := _m.Called(ctx, hash)
 
 	var r0 *fftypes.Group
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Group); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Group); ok {
+		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Group)
@@ -363,8 +363,8 @@ func (_m *Plugin) GetGroupByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1184,13 +1184,13 @@ func (_m *Plugin) UpdateEvent(ctx context.Context, id *fftypes.UUID, update data
 	return r0
 }
 
-// UpdateGroup provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateGroup(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateGroup provides a mock function with given fields: ctx, hash, update
+func (_m *Plugin) UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update database.Update) error {
+	ret := _m.Called(ctx, hash, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, database.Update) error); ok {
+		r0 = rf(ctx, hash, update)
 	} else {
 		r0 = ret.Error(0)
 	}

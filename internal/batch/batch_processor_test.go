@@ -230,7 +230,7 @@ func TestCalcPinsFail(t *testing.T) {
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	gid := fftypes.NewUUID()
+	gid := fftypes.NewRandB32()
 	_, err := bp.maskContexts(bp.ctx, &fftypes.Batch{
 		Group: gid,
 		Payload: fftypes.BatchPayload{

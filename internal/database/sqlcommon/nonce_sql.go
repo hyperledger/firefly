@@ -31,11 +31,11 @@ var (
 	nonceColumns = []string{
 		"context",
 		"nonce",
-		"group_id",
+		"group_hash",
 		"topic",
 	}
 	nonceFilterTypeMap = map[string]string{
-		"group": "group_id",
+		"group": "group_hash",
 	}
 )
 

@@ -39,6 +39,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi.On("GetOrganizationByName", pm.ctx, mock.Anything).Return(&fftypes.Organization{ID: orgID, Identity: "localorg"}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeID, Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, true, false).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*fftypes.Data)
@@ -83,7 +84,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{ID: fftypes.NewUUID()},
+		{Hash: fftypes.NewRandB32()},
 	}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
@@ -194,7 +195,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", pm.ctx, "id-org2").Return(&fftypes.Organization{ID: orgID}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil).Once()
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{ID: fftypes.NewUUID()}}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
 		Group: &fftypes.InputGroup{
@@ -269,7 +270,7 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Group: fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})

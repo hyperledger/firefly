@@ -153,7 +153,7 @@ func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
 	dispatcher.mux.Unlock()
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.UUID, namespace, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace, author string) (*batchProcessor, error) {
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)

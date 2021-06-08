@@ -29,10 +29,9 @@ import (
 
 var (
 	groupColumns = []string{
-		"id",
 		"message_id",
 		"namespace",
-		"description",
+		"name",
 		"ledger",
 		"hash",
 		"created",
@@ -53,9 +52,9 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
 		groupRows, err := s.queryTx(ctx, tx,
-			sq.Select("id").
+			sq.Select("hash").
 				From("groups").
-				Where(sq.Eq{"id": group.ID}),
+				Where(sq.Eq{"hash": group.Hash}),
 		)
 		if err != nil {
 			return err
@@ -71,11 +70,11 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 			sq.Update("groups").
 				Set("message_id", group.Message).
 				Set("namespace", group.Namespace).
-				Set("description", group.Description).
+				Set("name", group.Name).
 				Set("ledger", group.Ledger).
 				Set("hash", group.Hash).
 				Set("created", group.Created).
-				Where(sq.Eq{"id": group.ID}),
+				Where(sq.Eq{"hash": group.Hash}),
 		); err != nil {
 			return err
 		}
@@ -84,10 +83,9 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 			sq.Insert("groups").
 				Columns(groupColumns...).
 				Values(
-					group.ID,
 					group.Message,
 					group.Namespace,
-					group.Description,
+					group.Name,
 					group.Ledger,
 					group.Hash,
 					group.Created,
@@ -112,7 +110,7 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 		if err := s.deleteTx(ctx, tx,
 			sq.Delete("members").
 				Where(sq.And{
-					sq.Eq{"group_id": group.ID},
+					sq.Eq{"group_hash": group.Hash},
 				}),
 		); err != nil {
 			return err
@@ -130,13 +128,13 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 		if _, err := s.insertTx(ctx, tx,
 			sq.Insert("members").
 				Columns(
-					"group_id",
+					"group_hash",
 					"identity",
 					"node_id",
 					"idx",
 				).
 				Values(
-					group.ID,
+					group.Hash,
 					requiredMember.Identity,
 					requiredMember.Node,
 					requiredIdx,
@@ -155,19 +153,19 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 	groupIDs := make([]string, len(groups))
 	for i, m := range groups {
 		if m != nil {
-			groupIDs[i] = m.ID.String()
+			groupIDs[i] = m.Hash.String()
 		}
 	}
 
 	members, err := s.query(ctx,
 		sq.Select(
-			"group_id",
+			"group_hash",
 			"identity",
 			"node_id",
 			"idx",
 		).
 			From("members").
-			Where(sq.Eq{"group_id": groupIDs}).
+			Where(sq.Eq{"group_hash": groupIDs}).
 			OrderBy("idx"),
 	)
 	if err != nil {
@@ -176,14 +174,14 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 	defer members.Close()
 
 	for members.Next() {
-		var groupID fftypes.UUID
+		var groupID fftypes.Bytes32
 		member := &fftypes.Member{}
 		var idx int
 		if err = members.Scan(&groupID, &member.Identity, &member.Node, &idx); err != nil {
 			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "members")
 		}
 		for _, g := range groups {
-			if *g.ID == groupID {
+			if g.Hash.Equals(&groupID) {
 				g.Members = append(g.Members, member)
 			}
 		}
@@ -201,10 +199,9 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Group, error) {
 	var group fftypes.Group
 	err := row.Scan(
-		&group.ID,
 		&group.Message,
 		&group.Namespace,
-		&group.Description,
+		&group.Name,
 		&group.Ledger,
 		&group.Hash,
 		&group.Created,
@@ -215,12 +212,12 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 	return &group, nil
 }
 
-func (s *SQLCommon) GetGroupByID(ctx context.Context, id *fftypes.UUID) (group *fftypes.Group, err error) {
+func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (group *fftypes.Group, err error) {
 
 	rows, err := s.query(ctx,
 		sq.Select(groupColumns...).
 			From("groups").
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"hash": hash}),
 	)
 	if err != nil {
 		return nil, err
@@ -228,7 +225,7 @@ func (s *SQLCommon) GetGroupByID(ctx context.Context, id *fftypes.UUID) (group *
 	defer rows.Close()
 
 	if !rows.Next() {
-		log.L(ctx).Debugf("Group '%s' not found", id)
+		log.L(ctx).Debugf("Group '%s' not found", hash)
 		return nil, nil
 	}
 
@@ -279,8 +276,8 @@ func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (grou
 	return s.getGroupsQuery(ctx, query)
 }
 
-func (s *SQLCommon) UpdateGroup(ctx context.Context, groupid *fftypes.UUID, update database.Update) (err error) {
-	return s.UpdateGroups(ctx, database.GroupQueryFactory.NewFilter(ctx).Eq("id", groupid), update)
+func (s *SQLCommon) UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update database.Update) (err error) {
+	return s.UpdateGroups(ctx, database.GroupQueryFactory.NewFilter(ctx).Eq("hash", hash), update)
 }
 
 func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, update database.Update) (err error) {

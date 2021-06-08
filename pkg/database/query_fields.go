@@ -96,7 +96,9 @@ func (f *stringField) Scan(src interface{}) error {
 	case fftypes.UUID:
 		f.s = tv.String()
 	case *fftypes.Bytes32:
-		f.s = tv.String()
+		if tv != nil {
+			f.s = tv.String()
+		}
 	case fftypes.Bytes32:
 		f.s = tv.String()
 	case nil:
