@@ -106,12 +106,12 @@ func run() error {
 	}
 
 	// Setup signal handling to cancel the context, which shuts down the API Server
-	o := getOrchestrator()
 	errChan := make(chan error)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
 		orchestratorCtx, cancelOrchestratorCtx := context.WithCancel(ctx)
+		o := getOrchestrator()
 		go startFirefly(orchestratorCtx, cancelOrchestratorCtx, o, errChan)
 		select {
 		case sig := <-sigs:

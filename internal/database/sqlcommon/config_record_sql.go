@@ -145,27 +145,6 @@ func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter
 
 }
 
-func (s *SQLCommon) UpdateConfigRecord(ctx context.Context, key string, update database.Update) (err error) {
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update("config"), update, configRecordFilterTypeMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"config_key": key})
-
-	err = s.updateTx(ctx, tx, query)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
-}
-
 func (s *SQLCommon) DeleteConfigRecord(ctx context.Context, key string) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

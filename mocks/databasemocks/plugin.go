@@ -1202,20 +1202,6 @@ func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update data
 	return r0
 }
 
-// UpdateConfigRecord provides a mock function with given fields: ctx, key, update
-func (_m *Plugin) UpdateConfigRecord(ctx context.Context, key string, update database.Update) error {
-	ret := _m.Called(ctx, key, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Update) error); ok {
-		r0 = rf(ctx, key, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateData provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
