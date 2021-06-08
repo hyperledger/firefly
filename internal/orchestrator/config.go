@@ -39,6 +39,12 @@ func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value f
 	if err := or.database.UpsertConfigRecord(ctx, configRecord, true); err != nil {
 		return nil, err
 	}
+
+	go func() {
+		<-ctx.Done()
+		or.cancelCtx()
+	}()
+
 	return value, nil
 }
 
