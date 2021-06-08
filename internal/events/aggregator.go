@@ -91,7 +91,8 @@ func (ag *aggregator) start() error {
 }
 
 func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
-	ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
+	// Retry idefinitely for database errors (until the context closes)
+	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
 		var batchIDs []driver.Value
 		draining := true
 		for draining {
@@ -120,7 +121,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 		}
 		return false, nil
 	})
-	return
+	return rewind, offset
 }
 
 func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {
