@@ -44,8 +44,8 @@ type UTDBQL struct {
 type utDBQLEventType string
 
 const (
-	utDBQLEventTypeBroadcastBatch utDBQLEventType = "BroadcastBatch"
-	utDBQLEventTypeMined          utDBQLEventType = "TransactionMined"
+	utDBQLEventTypeBatchPinComplete utDBQLEventType = "BatchPinComplete"
+	utDBQLEventTypeMined            utDBQLEventType = "TransactionMined"
 
 	eventQueueLength = 50
 )
@@ -106,7 +106,7 @@ func (u *UTDBQL) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Ide
 	return fftypes.ValidateFFNameField(ctx, identity.OnChain, "identity")
 }
 
-func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (u *UTDBQL) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) (txTrackingID string, err error) {
 	trackingID := fftypes.NewUUID().String()
 	b, _ := json.Marshal(&batch)
 
@@ -117,7 +117,7 @@ func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Ide
 	}
 	if err == nil {
 		defer func() { _ = tx.Rollback() }()
-		res, err = tx.Exec("INSERT INTO dbqltx (author, tracking, type, data) VALUES ($1, $2, $3, $4)", identity.OnChain, trackingID, utDBQLEventTypeBroadcastBatch, string(b))
+		res, err = tx.Exec("INSERT INTO dbqltx (author, tracking, type, data) VALUES ($1, $2, $3, $4)", identity.OnChain, trackingID, utDBQLEventTypeBatchPinComplete, string(b))
 	}
 	if err == nil {
 		err = tx.Commit()
@@ -128,7 +128,7 @@ func (u *UTDBQL) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Ide
 	lid, _ := res.LastInsertId()
 	txID := strconv.FormatInt(lid, 10)
 	u.eventStream <- &utEvent{
-		txType:     utDBQLEventTypeBroadcastBatch,
+		txType:     utDBQLEventTypeBatchPinComplete,
 		identity:   identity.OnChain,
 		trackingID: trackingID,
 		txID:       txID,
@@ -163,13 +163,13 @@ func (u *UTDBQL) eventLoop() {
 func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 	var err error
 	switch ev.txType {
-	case utDBQLEventTypeBroadcastBatch:
-		batch := &blockchain.BroadcastBatch{}
+	case utDBQLEventTypeBatchPinComplete:
+		batch := &blockchain.BatchPin{}
 		if err := json.Unmarshal(ev.data, batch); err != nil {
 			log.L(u.ctx).Errorf("Failed to unmarshal '%s' event '%s': %s", ev.txType, ev.txID, err)
 			return
 		}
-		err = u.callbacks.SequencedBroadcastBatch(batch, ev.identity, ev.trackingID, nil)
+		err = u.callbacks.BatchPinComplete(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
 		err = u.callbacks.TransactionUpdate(ev.trackingID, fftypes.OpStatusSucceeded, ev.txID, "", nil)
 	}

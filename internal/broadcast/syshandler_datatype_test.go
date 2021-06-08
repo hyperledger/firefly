@@ -53,14 +53,51 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 	mbi := bm.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
+	mbi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
 	assert.NoError(t, err)
+
+	mdm.AssertExpectations(t)
+	mbi.AssertExpectations(t)
+}
+
+func TestHandleSystemBroadcastDatatypeEventFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	dt := &fftypes.Datatype{
+		ID:        fftypes.NewUUID(),
+		Validator: fftypes.ValidatorTypeJSON,
+		Namespace: "ns1",
+		Name:      "name1",
+		Version:   "ver1",
+		Value:     fftypes.Byteable(`{}`),
+	}
+	dt.Hash = dt.Value.Hash()
+	b, err := json.Marshal(&dt)
+	assert.NoError(t, err)
+	data := &fftypes.Data{
+		Value: fftypes.Byteable(b),
+	}
+
+	mdm := bm.data.(*datamocks.Manager)
+	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mbi := bm.database.(*databasemocks.Plugin)
+	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
+	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
+	mbi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Tag: string(fftypes.SystemTagDefineDatatype),
+		},
+	}, []*fftypes.Data{data})
+	assert.False(t, valid)
+	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
 	mbi.AssertExpectations(t)
@@ -86,7 +123,7 @@ func TestHandleSystemBroadcastDatatypeMissingID(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -116,8 +153,7 @@ func TestHandleSystemBroadcastBadSchema(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -142,7 +178,7 @@ func TestHandleSystemBroadcastMissingData(t *testing.T) {
 
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Topic: fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{})
 	assert.False(t, valid)
@@ -174,8 +210,8 @@ func TestHandleSystemBroadcastDatatypeLookupFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Namespace: fftypes.SystemNamespace,
+			Tag:       string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -211,8 +247,7 @@ func TestHandleSystemBroadcastUpsertFail(t *testing.T) {
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -247,8 +282,7 @@ func TestHandleSystemBroadcastDatatypeDuplicate(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Topic:     fftypes.SystemTopicBroadcastDatatype,
+			Tag: string(fftypes.SystemTagDefineDatatype),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

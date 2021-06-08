@@ -62,7 +62,7 @@ func (d DataRefs) Hash() *Bytes32 {
 }
 
 func (d *Data) Seal(ctx context.Context) error {
-	if d.Value == nil {
+	if d.Value == nil || d.Value.String() == "null" {
 		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 	if d.ID == nil {

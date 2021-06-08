@@ -16,6 +16,8 @@ package batch
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -30,7 +32,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestE2EDispatch(t *testing.T) {
+func TestE2EDispatchBroadcast(t *testing.T) {
 	log.SetLevel("debug")
 
 	mdi := &databasemocks.Plugin{}
@@ -43,11 +45,28 @@ func TestE2EDispatch(t *testing.T) {
 	}, nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
-	handler := func(ctx context.Context, b *fftypes.Batch) error {
+	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		_, ok := <-readyForDispatch
 		if !ok {
 			return nil
 		}
+		assert.Len(t, s, 2)
+		h := sha256.New()
+		nonceBytes, _ := hex.DecodeString(
+			"746f70696331",
+		/*|  topic1   | */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+
+		h = sha256.New()
+		nonceBytes, _ = hex.DecodeString(
+			"746f70696332",
+		/*|   topic2  | */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
+
 		waitForDispatch <- b
 		return nil
 	}
@@ -55,7 +74,7 @@ func TestE2EDispatch(t *testing.T) {
 	bmi, _ := NewBatchManager(ctx, mdi, mdm)
 	bm := bmi.(*batchManager)
 
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, handler, Options{
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, Options{
 		BatchMaxSize:   2,
 		BatchTimeout:   0,
 		DisposeTimeout: 120 * time.Second,
@@ -67,6 +86,7 @@ func TestE2EDispatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Type:      fftypes.MessageTypeBroadcast,
 			ID:        fftypes.NewUUID(),
+			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
 			Author:    "0x12345",
 		},
@@ -113,6 +133,115 @@ func TestE2EDispatch(t *testing.T) {
 
 }
 
+func TestE2EDispatchPrivate(t *testing.T) {
+	log.SetLevel("debug")
+
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
+	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	readyForDispatch := make(chan bool)
+	waitForDispatch := make(chan *fftypes.Batch)
+	groupID := fftypes.MustParseUUID("3e2edc259ee944a79072c903218bc88e")
+	handler := func(ctx context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
+		_, ok := <-readyForDispatch
+		if !ok {
+			return nil
+		}
+		assert.Len(t, s, 2)
+		h := sha256.New()
+		nonceBytes, _ := hex.DecodeString(
+			"746f70696331" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "0000000000003039",
+		/*|  topic1   |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12345) */
+		/*|               context                          |   |          sender + nonce             */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[0].String())
+
+		h = sha256.New()
+		nonceBytes, _ = hex.DecodeString(
+			"746f70696332" + "3e2edc259ee944a79072c903218bc88e" + "30783132333435" + "000000000000303a",
+		/*|   topic2  |    | ---- group id ----------------|   |author'0x12345'|  |i64 nonce (12346) */
+		/*|               context                          |   |          sender + nonce             */
+		) // little endian 12345 in 8 byte hex
+		h.Write(nonceBytes)
+		assert.Equal(t, hex.EncodeToString(h.Sum([]byte{})), s[1].String())
+		waitForDispatch <- b
+		return nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	bmi, _ := NewBatchManager(ctx, mdi, mdm)
+	bm := bmi.(*batchManager)
+
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypePrivate}, handler, Options{
+		BatchMaxSize:   2,
+		BatchTimeout:   0,
+		DisposeTimeout: 120 * time.Second,
+	})
+
+	dataID1 := fftypes.NewUUID()
+	dataHash := fftypes.NewRandB32()
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Type:      fftypes.MessageTypePrivate,
+			ID:        fftypes.NewUUID(),
+			Topics:    []string{"topic1", "topic2"},
+			Namespace: "ns1",
+			Author:    "0x12345",
+			Group:     groupID,
+		},
+		Data: fftypes.DataRefs{
+			{ID: dataID1, Hash: dataHash},
+		},
+	}
+	data := &fftypes.Data{
+		ID:   dataID1,
+		Hash: dataHash,
+	}
+	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		ctx := a.Get(0).(context.Context)
+		fn := a.Get(1).(func(context.Context) error)
+		fn(ctx)
+	}
+	mdi.On("UpdateMessages", mock.Anything, mock.MatchedBy(func(f database.Filter) bool {
+		fi, err := f.Finalize()
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("id IN ['%s']", msg.Header.ID.String()), fi.String())
+		return true
+	}), mock.Anything).Return(nil)
+	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
+	nextNonce := int64(12345)
+	ugcn.RunFn = func(a mock.Arguments) {
+		a[1].(*fftypes.Nonce).Nonce = nextNonce
+		nextNonce++
+	}
+
+	err := bm.Start()
+	assert.NoError(t, err)
+
+	bm.NewMessages() <- msg.Sequence
+
+	readyForDispatch <- true
+	b := <-waitForDispatch
+	assert.Equal(t, *msg.Header.ID, *b.Payload.Messages[0].Header.ID)
+	assert.Equal(t, *data.ID, *b.Payload.Data[0].ID)
+
+	// Wait until everything closes
+	close(readyForDispatch)
+	cancel()
+	bm.WaitStop()
+
+}
 func TestInitFailNoPersistence(t *testing.T) {
 	_, err := NewBatchManager(context.Background(), nil, nil)
 	assert.Error(t, err)
@@ -246,7 +375,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mdi, mdm)
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
 
@@ -283,7 +412,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mdi, mdm)
-	bm.RegisterDispatcher(fftypes.MessageTypeBroadcast, func(c context.Context, b *fftypes.Batch) error {
+	bm.RegisterDispatcher([]fftypes.MessageType{fftypes.MessageTypeBroadcast}, func(c context.Context, b *fftypes.Batch, s []*fftypes.Bytes32) error {
 		return nil
 	}, Options{BatchMaxSize: 1, DisposeTimeout: 0})
 

@@ -113,7 +113,7 @@ describe('Payment definitions: authored', async () => {
         .send({
           paymentDefinitionID,
           author: '0x0000000000000000000000000000000000000001',
-          recipient: '0x0000000000000000000000000000000000000002',
+          member: '0x0000000000000000000000000000000000000002',
           amount: 10
         })
         .expect(200);
@@ -126,7 +126,7 @@ describe('Payment definitions: authored', async () => {
       const paymentInstance = getPaymentInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(paymentInstance.member, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.amount, 10);
       assert.strictEqual(paymentInstance.receipt, 'my-receipt-id');
       assert.strictEqual(typeof paymentInstance.submitted, 'number');
@@ -150,7 +150,7 @@ describe('Payment definitions: authored', async () => {
         author: '0x0000000000000000000000000000000000000001',
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
         amount: '10',
-        recipient: '0x0000000000000000000000000000000000000002',
+        member: '0x0000000000000000000000000000000000000002',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -168,7 +168,7 @@ describe('Payment definitions: authored', async () => {
         .expect(200);
       const paymentInstance = getAssetInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(paymentInstance.member, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.amount, 10);
       assert.strictEqual(paymentInstance.receipt, 'my-receipt-id');

@@ -243,7 +243,7 @@ export interface IEventPaymentInstanceCreated {
   paymentInstanceID: string
   paymentDefinitionID: string
   author: string
-  recipient: string
+  member: string
   descriptionHash?: string
   amount: string
   timestamp: string
@@ -359,7 +359,7 @@ export interface IDBPaymentInstance extends IDBBlockchainPinned {
   paymentInstanceID: string
   paymentDefinitionID: string
   author: string
-  recipient: string
+  member: string
   amount: number
   descriptionHash?: string
   description?: object
@@ -421,7 +421,7 @@ export interface IDocExchangeTransferData {
   from: string
   to: string
   senderSignature: string
-  recipientSignature: string
+  memberSignature: string
   document: string
   timestamp: string
   status: 'sent' | 'received' | 'failed'

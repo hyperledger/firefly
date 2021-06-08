@@ -98,7 +98,7 @@ describe('Payment definitions: unauthored - described', async () => {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
         descriptionHash: testDescription.sample.ipfsSha256,
         amount: '10',
-        recipient: '0x0000000000000000000000000000000000000002',
+        member: '0x0000000000000000000000000000000000000002',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -116,7 +116,7 @@ describe('Payment definitions: unauthored - described', async () => {
         .expect(200);
       const paymentInstance = getAssetInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(paymentInstance.member, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.descriptionHash, testDescription.sample.ipfsSha256);
       assert.deepStrictEqual(paymentInstance.description, testDescription.sample.object);

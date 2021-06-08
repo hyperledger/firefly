@@ -44,9 +44,9 @@ type Plugin interface {
 	// Can apply transformations to the supplied signing identity (only), such as lower case
 	VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error
 
-	// SubmitBroadcastBatch sequences a broadcast globally to all viewers of the blockchain
+	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *BroadcastBatch) (txTrackingID string, err error)
+	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *BatchPin) (txTrackingID string, err error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -63,14 +63,14 @@ type Callbacks interface {
 	// Error should will only be returned in shutdown scenarios
 	TransactionUpdate(txTrackingID string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
 
-	// SequencedBroadcastBatch notifies on the arrival of a sequenced batch of broadcast messages, which might have been
+	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	// Will be combined with he index within the batch, to allocate a sequence to each message in the batch.
 	// For example a padded block number, followed by a padded transaction index within that block.
 	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (block numbers etc.)
 	//
 	// Error should will only be returned in shutdown scenarios
-	SequencedBroadcastBatch(batch *BroadcastBatch, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -85,17 +85,40 @@ type Capabilities struct {
 // All other data is consider protocol specific, and hence stored as opaque data.
 type TransactionStatus = fftypes.OpStatus
 
-// BroadcastBatch is the set of data pinned to the blockchain for a batch of broadcasts.
-// Broadcasts are batched where possible, as the storage of the off-chain data is expensive as it must be propagated to all members
-// of the network (via a technology like IPFS).
-type BroadcastBatch struct {
+// BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
+type BatchPin struct {
 
-	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events
+	// Namespace goes in the clear on the chain
+	Namespace string
+
+	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)
 	TransactionID *fftypes.UUID
 
-	// BatchID is the id of the batch - writing this in plain text to the blockchain makes for easy correlation on-chain/off-chain
+	// BatchID is the id of the batch - not strictly required, but writing this in plain text to the blockchain makes for easy human correlation on-chain/off-chain (it's a UUID so no leakage)
 	BatchID *fftypes.UUID
 
-	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload
+	// BatchHash is the SHA256 hash of the batch
+	BatchHash *fftypes.Bytes32
+
+	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload. Nil for private messages
 	BatchPaylodRef *fftypes.Bytes32
+
+	// Contexts is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
+	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must
+	//
+	// - The primary subject of each hash is a "context"
+	// - The context is a function of:
+	//   - A single topic declared in a message - topics are just a string representing a sequence of events that must be processed in order
+	//   - A ledger - everone with access to this ledger will see these hashes (Fabric channel, Ethereum chain, EEA privacy group, Corda linear ID)
+	//   - A restricted group - if the mesage is private, these are the nodes that are elible to receive a copy of the private message+data
+	// - Each message might choose to include multiple topics (and hence attach to multiple contexts)
+	//   - This allows multiple contexts to merge - very important in multi-party data matching scenarios
+	// - A batch contains many messages, each with one or more topics
+	//   - The array of sequence hashes will cover every unique context within the batch
+	// - For private group communications, the hash is augmented as follow:
+	//   - The hashes are salted with a UUID that is only passed off chain (the UUID of the Group).
+	//   - The hashes are made unique to the sender
+	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
+	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
+	Contexts []*fftypes.Bytes32
 }

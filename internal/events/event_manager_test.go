@@ -27,6 +27,7 @@ import (
 	"github.com/kaleido-io/firefly/mocks/datamocks"
 	"github.com/kaleido-io/firefly/mocks/eventsmocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
+	"github.com/kaleido-io/firefly/mocks/privatemessagingmocks"
 	"github.com/kaleido-io/firefly/mocks/publicstoragemocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -41,9 +42,10 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	mdm := &datamocks.Manager{}
 	met.On("Name").Return("ut").Maybe()
-	em, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mdm)
+	em, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mpm, mdm)
 	assert.NoError(t, err)
 	return em.(*eventManager), cancel
 }
@@ -57,16 +59,17 @@ func TestStartStop(t *testing.T) {
 		Name:      aggregatorOffsetName,
 		Current:   12345,
 	}, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
+	em.NewPins() <- 12345
 	cancel()
 	em.WaitStop()
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -78,8 +81,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mii := &identitymocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	mdm := &datamocks.Manager{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mii, mbm, mdm)
+	_, err := NewEventManager(context.Background(), mpi, mdi, mii, mbm, mpm, mdm)
 	assert.Regexp(t, "FF10172", err)
 
 }
@@ -93,7 +97,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 		Name:      aggregatorOffsetName,
 		Current:   12345,
 	}, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
 
 	getSubCallReady := make(chan bool, 1)
@@ -213,7 +217,7 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := em.CreateDurableSubscription(em.ctx, sub)
 	assert.EqualError(t, err, "pop")
 }

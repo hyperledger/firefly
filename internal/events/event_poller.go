@@ -40,7 +40,7 @@ type eventPoller struct {
 	conf          *eventPollerConf
 }
 
-type newEventsHandler func(events []*fftypes.Event) (bool, error)
+type newEventsHandler func(events []fftypes.LocallySequenced) (bool, error)
 
 type eventPollerConf struct {
 	ephemeral                  bool
@@ -48,7 +48,9 @@ type eventPollerConf struct {
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
 	firstEvent                 *fftypes.SubOptsFirstEvent
-	limitNamespace             string
+	queryFactory               database.QueryFactory
+	addCriteria                func(database.AndFilter) database.AndFilter
+	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
 	newEventsHandler           newEventsHandler
 	offsetName                 string
 	offsetNamespace            string
@@ -147,22 +149,22 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 	return nil
 }
 
-func (ep *eventPoller) readPage() ([]*fftypes.Event, error) {
-	var msgs []*fftypes.Event
+func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
+	var items []fftypes.LocallySequenced
 	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
-		fb := database.MessageQueryFactory.NewFilter(ep.ctx)
-		filter := fb.Gt("sequence", pollingOffset)
-		if ep.conf.limitNamespace != "" {
-			filter = fb.And(filter, fb.Eq("namespace", ep.conf.limitNamespace))
-		}
-		msgs, err = ep.database.GetEvents(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
+		fb := ep.conf.queryFactory.NewFilter(ep.ctx)
+		filter := fb.And(
+			fb.Gt("sequence", pollingOffset),
+		)
+		filter = ep.conf.addCriteria(filter)
+		items, err = ep.conf.getItems(ep.ctx, filter.Sort("sequence").Limit(uint64(ep.conf.eventBatchSize)))
 		if err != nil {
 			return true, err // Retry indefinitely, until context cancelled
 		}
 		return false, nil
 	})
-	return msgs, err
+	return items, err
 }
 
 func (ep *eventPoller) eventLoop() {
@@ -200,7 +202,7 @@ func (ep *eventPoller) eventLoop() {
 	}
 }
 
-func (ep *eventPoller) dispatchEventsRetry(events []*fftypes.Event) (repoll bool, err error) {
+func (ep *eventPoller) dispatchEventsRetry(events []fftypes.LocallySequenced) (repoll bool, err error) {
 	err = ep.conf.retry.Do(ep.ctx, "process events", func(attempt int) (retry bool, err error) {
 		repoll, err = ep.conf.newEventsHandler(events)
 		return err != nil, err // always retry (retry will end on cancelled context)
@@ -213,14 +215,19 @@ func (ep *eventPoller) dispatchEventsRetry(events []*fftypes.Event) (repoll bool
 // - which might be our own eventLoop
 func (ep *eventPoller) newEventNotifications() {
 	defer close(ep.shoulderTaps)
+	var lastNotified int64 = -1
 	for {
 		latestSequence := ep.getPollingOffset()
+		if latestSequence <= lastNotified {
+			latestSequence = lastNotified + 1
+		}
 		err := ep.eventNotifier.waitNext(latestSequence)
 		if err != nil {
 			log.L(ep.ctx).Debugf("event notifier closing")
 			return
 		}
 		ep.shoulderTap()
+		lastNotified = latestSequence
 	}
 }
 

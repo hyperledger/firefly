@@ -4,16 +4,18 @@ pragma solidity >=0.6.0 <0.9.0;
 
 contract Firefly {
 
-    event BroadcastBatch (
+    event BatchPin (
         address author,
         uint timestamp,
-        bytes32 txnId,
-        bytes32 batchId,
-        bytes32 payloadRef
+        string namespace,
+        bytes32 uuids,
+        bytes32 batchHash,
+        bytes32 payloadRef,
+        bytes32[] contexts
     );
 
-    function broadcastBatch(bytes32 txnId, bytes32 batchId, bytes32 payloadRef) public {
-        emit BroadcastBatch(msg.sender, block.timestamp, txnId, batchId, payloadRef);
+    function pinBatch(string memory namespace, bytes32 uuids, bytes32 batchHash, bytes32 payloadRef, bytes32[] memory contexts) public {
+        emit BatchPin(msg.sender, block.timestamp, namespace, uuids, batchHash, payloadRef, contexts);
     }
 
 }

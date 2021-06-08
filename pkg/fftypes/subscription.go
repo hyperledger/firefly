@@ -26,10 +26,10 @@ import (
 
 // SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
 type SubscriptionFilter struct {
-	Events  string `json:"events,omitempty"`
-	Topic   string `json:"topic,omitempty"`
-	Context string `json:"context,omitempty"`
-	Group   string `json:"group,omitempty"`
+	Events string `json:"events,omitempty"`
+	Topics string `json:"topics,omitempty"`
+	Tag    string `json:"tag,omitempty"`
+	Group  string `json:"group,omitempty"`
 }
 
 // SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values

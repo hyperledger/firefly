@@ -55,3 +55,7 @@ func (h *HTTPS) GetEndpointInfo(ctx context.Context) (endpoint fftypes.JSONObjec
 func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, reader io.Reader) error {
 	return nil
 }
+
+func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, payload fftypes.Byteable) (trackingID string, err error) {
+	return "", nil
+}

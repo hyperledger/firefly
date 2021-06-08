@@ -4,8 +4,8 @@ CREATE TABLE subscriptions (
   name           string          NOT NULL,
   transport      string          NOT NULL,
   filter_events  string          NOT NULL,
-  filter_topic   string          NOT NULL,
-  filter_context string          NOT NULL,
+  filter_topics  string          NOT NULL,
+  filter_tag     string          NOT NULL,
   filter_group   string          NOT NULL,
   options        blob            NOT NULL,
   created        int64           NOT NULL

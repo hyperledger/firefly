@@ -147,19 +147,29 @@ It depends on the following Kaleido services:
   │  Components: Components do the heavy lifting within the engine
   │       │
   │       │   ┌───────────────┐  - Maintains a view of the entire network
-  │       ├───┤ network   [Nm]│    * Integrates with network permissioning (NP) plugin
+  │       ├───┤ network   [Nm]│    * Integrates with network permissioning [NP] plugin
   │       │   │ map           │    * Integrates with broadcast plugin
   │       │   └───────────────┘    * Handles hierarchy of member identity, node identity and signing identity
   │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
   │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
-  │       │   │ managaer      |    * Integrates with p2p filesystem (PF) plugin
-  │       │   └───────────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │   │ manager       |    * Integrates with public storage interface [Ps] plugin
+  │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
+  │       │
+  │       │   ┌───────────────┐  - Send private data to individual parties in the network
+  │       ├───┤ private   [Pm]│    * Implements dispatcher for batch component
+  │       │   │ messaging     |    * Integrates with the data exchange [Dx] plugin
+  │       │   └──────┬────────┘    * Messages can be pinned and sequenced via the blockchain, or just sent
+  │       │          │
+  │       │   ┌──────┴────────┐  - Groups of parties, with isolated data and/or blockchains
+  │       │   │ group     [Gm]│    * Integrates with data exchange [Dx] plugin
+  │       │   │ manager       │    * Integrates with blockchain interface [Bi] plugin
+  │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Private data management and validation
   │       ├───┤ data      [Dm]│    * Implements dispatcher for batch component
-  │       │   │ manager       │    * Integrates with data exchange (DX) plugin
-  │       │   └──────┬────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │   │ manager       │    * Integrates with data exchange [Dx] plugin
+  │       │   └──────┬────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │          │
   │       │   ┌──────┴────────┐  - JSON data shema management and validation (architecture extensible to XML and more)
   │       │   │ json      [Jv]│    * JSON Schema validation logic for outbound and inbound messages
@@ -167,24 +177,19 @@ It depends on the following Kaleido services:
   │       │   └──────┬────────┘    * Integrates with broadcast plugin
   │       │          │
   │       │   ┌──────┴────────┐  - Binary data addressable via ID or Hash
-  │       │   │ blob      [Bm]│    * Integrates with data exchange (DX) plugin
-  │       │   │ manager       │    * Hashes data, and maintains mapping to payload references in blob storage
-  │       │   └──────┬────────┘
-  │       │          │
-  │       │   ┌──────┴────────┐  - Groups of parties, with isolated data and/or blockchains
-  │       │   │ group     [Gm]│    * Integrates with data exchange (DX) plugin
-  │       │   │ manager       │    * Integrates with blockchain interface (BI) plugin
-  │       │   └───────────────┘
+  │       │   │ blobstore [Bs]│    * Integrates with data exchange [Dx] plugin
+  │       │   │               │    * Hashes data, and maintains mapping to payload references in blob storage
+  │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │
   │       │   ┌───────────────┐  - Private data management and validation
   │       ├───┤ event     [Em]│    * Implements dispatcher for batch component
-  │       │   │ manager       │    * Integrates with data exchange (DX) plugin
-  │       │   └──────┬────────┘    * Integrates with blockchain interface (BI) plugin
+  │       │   │ manager       │    * Integrates with data exchange [Dx] plugin
+  │       │   └──────┬────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │          │
   │       │   ┌──────┴────────┐  - Handles incoming external data
-  │       │   │           [Ag]│    * Integrates with data exchange (DX) plugin
-  │       │   │ aggregator    │    * Integrates with p2p filesystem (PF) plugin
-  │       │   │               │    * Integrates with blockchain interface (BI) plugin
+  │       │   │           [Ag]│    * Integrates with data exchange [Dx] plugin
+  │       │   │ aggregator    │    * Integrates with public storage interface [Ps] plugin
+  │       │   │               │    * Integrates with blockchain interface [Bi] plugin
   │       │   │               │  - Ensures valid events are dispatched only once all data is available
   │       │   └──────┬────────┘    * Context aware, to prevent block-the-world scenarios
   │       │          │
@@ -195,8 +200,8 @@ It depends on the following Kaleido services:
   │       │   └──────┬────────┘
   │       │          │
   │       │   ┌──────┴────────┐  - Manages delivery of events to connected applications
-  │       │   │ event     [Ed]│    * Integrates with data exchange (DX) plugin
-  │       │   │ dispatcher    │    * Integrates with blockchain interface (BI) plugin
+  │       │   │ event     [Ed]│    * Integrates with data exchange [Dx] plugin
+  │       │   │ dispatcher    │    * Integrates with blockchain interface [Bi] plugin
   │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Token operations

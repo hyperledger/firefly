@@ -3,7 +3,7 @@ CREATE TABLE operations (
   tx_id       string         NOT NULL,
   optype      string         NOT NULL,
   opstatus    string         NOT NULL,
-  recipient   string,
+  member      string,
   plugin      string         NOT NULL,
   backend_id  string         NOT NULL,
   created     int64          NOT NULL,

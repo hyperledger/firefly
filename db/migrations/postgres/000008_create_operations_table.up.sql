@@ -5,7 +5,7 @@ CREATE TABLE operations (
   tx_id       UUID            NOT NULL,
   optype      VARCHAR(64)     NOT NULL,
   opstatus    VARCHAR(64)     NOT NULL,
-  recipient   VARCHAR(1024),
+  member   VARCHAR(1024),
   plugin      VARCHAR(64)     NOT NULL,
   backend_id  VARCHAR(256)    NOT NULL,
   created     BIGINT          NOT NULL,

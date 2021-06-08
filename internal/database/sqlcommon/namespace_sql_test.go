@@ -108,6 +108,13 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaces, err := s.GetNamespaces(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(namespaces))
+
+	// Delete
+	err = s.DeleteNamespace(ctx, namespaceUpdated.ID)
+	assert.NoError(t, err)
+	namespaces, err = s.GetNamespaces(ctx, filter)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(namespaces))
 }
 
 func TestUpsertNamespaceFailBegin(t *testing.T) {
@@ -236,4 +243,20 @@ func TestNamespaceUpdateFail(t *testing.T) {
 	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
 	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
+}
+
+func TestNamespaceDeleteBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.DeleteNamespace(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10114", err)
+}
+
+func TestNamespaceDeleteFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	err := s.DeleteNamespace(context.Background(), fftypes.NewUUID())
+	assert.Regexp(t, "FF10118", err)
 }

@@ -505,10 +505,10 @@ export const handleAssetInstanceTradeRequest = async (assetDefinitionID: string,
   log.info(`Asset instance trade request from requester ${requesterAddress} (instance=${assetInstanceID}) successfully completed`);
 };
 
-export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: string, assetInstanceID: string, recipientAddress: string) => {
-  const recipient = await database.retrieveMemberByAddress(recipientAddress);
-  if (recipient === null) {
-    throw new RequestError('Unknown recipient', 400);
+export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: string, assetInstanceID: string, memberAddress: string) => {
+  const member = await database.retrieveMemberByAddress(memberAddress);
+  if (member === null) {
+    throw new RequestError('Unknown member', 400);
   }
   const assetInstance = await database.retrieveAssetInstanceByID(assetDefinitionID, assetInstanceID);
   if (assetInstance === null) {
@@ -533,10 +533,10 @@ export const handlePushPrivateAssetInstanceRequest = async (assetDefinitionID: s
   if (assetDefinition.contentSchema !== undefined) {
     privateAssetTradePrivateInstancePush.content = assetInstance.content;
   } else {
-    await docExchange.transfer(author.docExchangeDestination, recipient.docExchangeDestination,
+    await docExchange.transfer(author.docExchangeDestination, member.docExchangeDestination,
       utils.getUnstructuredFilePathInDocExchange(assetInstanceID));
     privateAssetTradePrivateInstancePush.filename = assetInstance.filename;
-    log.info(`Private asset instance push request for recipient ${recipientAddress} (instance=${assetInstanceID}) successfully completed`);
+    log.info(`Private asset instance push request for member ${memberAddress} (instance=${assetInstanceID}) successfully completed`);
   }
-  app2app.dispatchMessage(recipient.app2appDestination, privateAssetTradePrivateInstancePush);
+  app2app.dispatchMessage(member.app2appDestination, privateAssetTradePrivateInstancePush);
 };

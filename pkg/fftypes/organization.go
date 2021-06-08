@@ -31,12 +31,16 @@ type Organization struct {
 	Message     *UUID      `json:"message,omitempty"`
 	Parent      string     `json:"parent,omitempty"`
 	Identity    string     `json:"identity,omitempty"`
+	Name        string     `json:"name,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Profile     JSONObject `json:"profile,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 }
 
 func (org *Organization) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, org.Name, "name"); err != nil {
+		return err
+	}
 	if err = ValidateLength(ctx, org.Description, "description", 4096); err != nil {
 		return err
 	}
@@ -48,7 +52,7 @@ func (org *Organization) Validate(ctx context.Context, existing bool) (err error
 	return nil
 }
 
-func orgContext(orgIdentity string) string {
+func orgTopic(orgIdentity string) string {
 	buf := strings.Builder{}
 	for _, r := range orgIdentity {
 		if buf.Len() > 64 {
@@ -60,11 +64,11 @@ func orgContext(orgIdentity string) string {
 			buf.WriteRune('_')
 		}
 	}
-	return fmt.Sprintf("ff-org-%s", buf.String())
+	return fmt.Sprintf("ff_org_%s", buf.String())
 }
 
-func (org *Organization) Context() string {
-	return orgContext(org.Identity)
+func (org *Organization) Topic() string {
+	return orgTopic(org.Identity)
 }
 
 func (org *Organization) SetBroadcastMessage(msgID *UUID) {

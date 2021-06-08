@@ -5,6 +5,7 @@ CREATE TABLE batches (
   btype       VARCHAR(64)     NOT NULL,
   namespace   VARCHAR(64)     NOT NULL,
   author      VARCHAR(1024)   NOT NULL,
+  group_id    UUID,
   hash        CHAR(64),
   created     BIGINT          NOT NULL,
   payload     BYTEA           NOT NULL,

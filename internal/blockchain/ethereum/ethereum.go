@@ -35,8 +35,10 @@ import (
 )
 
 const (
-	broadcastBatchEventSignature = "BroadcastBatch(address,uint256,bytes32,bytes32,bytes32)"
+	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"
 )
+
+var zeroBytes32 = fftypes.Bytes32{}
 
 type Ethereum struct {
 	ctx          context.Context
@@ -79,10 +81,12 @@ type asyncTXSubmission struct {
 	ID string `json:"id"`
 }
 
-type ethBroadcastBatchInput struct {
-	TransactionID string `json:"txnId"`
-	BatchID       string `json:"batchId"`
-	PayloadRef    string `json:"payloadRef"`
+type ethBatchPinInput struct {
+	Namespace  string   `json:"namespace"`
+	UUIDs      string   `json:"uuids"`
+	BatchHash  string   `json:"batchHash"`
+	PayloadRef string   `json:"payloadRef"`
+	Contexts   []string `json:"contexts"`
 }
 
 type ethWSCommandPayload struct {
@@ -91,7 +95,7 @@ type ethWSCommandPayload struct {
 }
 
 var requiredSubscriptions = map[string]string{
-	"BroadcastBatch": "Batch broadcast",
+	"BatchPin": "Batch pin",
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
@@ -245,69 +249,91 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 }
 
 func ethHexFormatB32(b *fftypes.Bytes32) string {
+	if b == nil {
+		return "0x0000000000000000000000000000000000000000000000000000000000000000"
+	}
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) handleBroadcastBatchEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	sBlockNumber := msgJSON.GetString("blockNumber")
 	sTransactionIndex := msgJSON.GetString("transactionIndex")
 	sTransactionHash := msgJSON.GetString("transactionHash")
 	dataJSON := msgJSON.GetObject("data")
 	authorAddress := dataJSON.GetString("author")
-	sTxnID := dataJSON.GetString("txnId")
-	sBatchID := dataJSON.GetString("batchId")
+	ns := dataJSON.GetString("namespace")
+	sUUIDs := dataJSON.GetString("uuids")
+	sBatchHash := dataJSON.GetString("batchHash")
 	sPayloadRef := dataJSON.GetString("payloadRef")
+	sContexts := dataJSON.GetStringArray("contexts")
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
 		sTransactionHash == "" ||
 		authorAddress == "" ||
-		sTxnID == "" ||
-		sBatchID == "" ||
+		sUUIDs == "" ||
+		sBatchHash == "" ||
 		sPayloadRef == "" {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - missing data: %+v", msgJSON)
+		log.L(ctx).Errorf("BatchPin event is not valid - missing data: %+v", msgJSON)
 		return nil // move on
 	}
 
 	authorAddress, err = e.validateEthAddress(ctx, authorAddress)
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad from address (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 
-	var txnIDB32 fftypes.Bytes32
-	err = txnIDB32.UnmarshalText([]byte(sTxnID))
-	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad txnID(%s): %+v", err, msgJSON)
+	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
+	if err != nil || len(hexUUIDs) != 32 {
+		log.L(ctx).Errorf("BatchPin event is not valid - bad uuids (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
 	var txnID fftypes.UUID
-	copy(txnID[:], txnIDB32[0:16])
+	copy(txnID[:], hexUUIDs[0:16])
+	var batchID fftypes.UUID
+	copy(batchID[:], hexUUIDs[16:32])
 
-	var batchIDB32 fftypes.Bytes32
-	err = batchIDB32.UnmarshalText([]byte(sBatchID))
+	var batchHash fftypes.Bytes32
+	err = batchHash.UnmarshalText([]byte(sBatchHash))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad batchID(%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BatchPin event is not valid - bad batchHash (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
-	var batchID fftypes.UUID
-	copy(batchID[:], batchIDB32[0:16])
 
 	var payloadRef fftypes.Bytes32
 	err = payloadRef.UnmarshalText([]byte(sPayloadRef))
 	if err != nil {
-		log.L(ctx).Errorf("BroadcastBatch event is not valid - bad payloadRef (%s): %+v", err, msgJSON)
+		log.L(ctx).Errorf("BatchPin event is not valid - bad payloadRef (%s): %+v", err, msgJSON)
 		return nil // move on
 	}
+	payloadRefOrNil := &payloadRef
+	if *payloadRefOrNil == zeroBytes32 {
+		payloadRefOrNil = nil
+	}
 
-	batch := &blockchain.BroadcastBatch{
+	contexts := make([]*fftypes.Bytes32, len(sContexts))
+	for i, sHash := range sContexts {
+		var hash fftypes.Bytes32
+		err = hash.UnmarshalText([]byte(sHash))
+		if err != nil {
+			log.L(ctx).Errorf("BatchPin event is not valid - bad pin %d (%s): %+v", i, err, msgJSON)
+			return nil // move on
+		}
+		contexts[i] = &hash
+	}
+
+	batch := &blockchain.BatchPin{
+		Namespace:      ns,
 		TransactionID:  &txnID,
 		BatchID:        &batchID,
-		BatchPaylodRef: &payloadRef,
+		BatchHash:      &batchHash,
+		BatchPaylodRef: payloadRefOrNil,
+		Contexts:       contexts,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.SequencedBroadcastBatch(batch, authorAddress, sTransactionHash, msgJSON)
+	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
@@ -349,7 +375,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 
 		switch signature {
 		case broadcastBatchEventSignature:
-			if err := e.handleBroadcastBatchEvent(ctx1, msgJSON); err != nil {
+			if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
 		default:
@@ -416,14 +442,23 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) SubmitBroadcastBatch(ctx context.Context, identity *fftypes.Identity, batch *blockchain.BroadcastBatch) (txTrackingID string, err error) {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
-	input := &ethBroadcastBatchInput{
-		TransactionID: ethHexFormatB32(fftypes.UUIDBytes(batch.TransactionID)),
-		BatchID:       ethHexFormatB32(fftypes.UUIDBytes(batch.BatchID)),
-		PayloadRef:    ethHexFormatB32(batch.BatchPaylodRef),
+	ethHashes := make([]string, len(batch.Contexts))
+	for i, v := range batch.Contexts {
+		ethHashes[i] = ethHexFormatB32(v)
 	}
-	path := fmt.Sprintf("%s/broadcastBatch", e.instancePath)
+	var uuids fftypes.Bytes32
+	copy(uuids[0:16], (*batch.TransactionID)[:])
+	copy(uuids[16:32], (*batch.BatchID)[:])
+	input := &ethBatchPinInput{
+		Namespace:  batch.Namespace,
+		UUIDs:      ethHexFormatB32(&uuids),
+		BatchHash:  ethHexFormatB32(batch.BatchHash),
+		PayloadRef: ethHexFormatB32(batch.BatchPaylodRef),
+		Contexts:   ethHashes,
+	}
+	path := fmt.Sprintf("%s/pinBatch", e.instancePath)
 	res, err := e.client.R().
 		SetContext(ctx).
 		SetQueryParam("kld-from", identity.OnChain).

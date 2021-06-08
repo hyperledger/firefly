@@ -25,6 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/privatemessaging"
 	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
@@ -34,6 +35,7 @@ import (
 )
 
 type EventManager interface {
+	NewPins() chan<- int64
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
@@ -44,7 +46,7 @@ type EventManager interface {
 
 	// Bound blockchain callbacks
 	TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
-	SequencedBroadcastBatch(bi blockchain.Plugin, batch *blockchain.BroadcastBatch, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 type eventManager struct {
@@ -53,26 +55,30 @@ type eventManager struct {
 	database             database.Plugin
 	identity             identity.Plugin
 	broadcast            broadcast.Manager
+	messaging            privatemessaging.Manager
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
 	aggregator           *aggregator
-	eventNotifier        *eventNotifier
+	newEventNotifier     *eventNotifier
+	newPinNotifier       *eventNotifier
 	opCorrelationRetries int
 	defaultTransport     string
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, bm broadcast.Manager, dm data.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager) (EventManager, error) {
 	if pi == nil || di == nil || ii == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
-	en := newEventNotifier(ctx)
+	newPinNotifier := newEventNotifier(ctx, "pins")
+	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
 		database:      di,
 		identity:      ii,
 		broadcast:     bm,
+		messaging:     pm,
 		data:          dm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
@@ -81,12 +87,13 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		},
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
-		eventNotifier:        en,
-		aggregator:           newAggregator(ctx, di, bm, dm, en),
+		newEventNotifier:     newEventNotifier,
+		newPinNotifier:       newPinNotifier,
+		aggregator:           newAggregator(ctx, di, bm, pm, dm, newPinNotifier),
 	}
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, en); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, newEventNotifier); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +109,11 @@ func (em *eventManager) Start() (err error) {
 }
 
 func (em *eventManager) NewEvents() chan<- int64 {
-	return em.eventNotifier.newEvents
+	return em.newEventNotifier.newEvents
+}
+
+func (em *eventManager) NewPins() chan<- int64 {
+	return em.newPinNotifier.newEvents
 }
 
 func (em *eventManager) NewSubscriptions() chan<- *fftypes.UUID {

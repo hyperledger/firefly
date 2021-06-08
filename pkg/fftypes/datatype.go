@@ -72,8 +72,8 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func (dt *Datatype) Context() string {
-	return namespaceContext(dt.Namespace)
+func (dt *Datatype) Topic() string {
+	return namespaceTopic(dt.Namespace)
 }
 
 func (dt *Datatype) SetBroadcastMessage(msgID *UUID) {

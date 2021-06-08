@@ -91,23 +91,23 @@ export const setAssetInstanceProperty = async (assetDefinitionID: string, assetI
 // Payment instance APIs
 
 export const createDescribedPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
-  author: string, recipient: string, amount: number, descriptionHash: string, participants: string[] | undefined, sync: boolean):
+  author: string, member: string, amount: number, descriptionHash: string, participants: string[] | undefined, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   switch (config.protocol) {
     case 'corda':
-      return cordaGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, descriptionHash, participants);
+      return cordaGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, member, amount, descriptionHash, participants);
     case 'ethereum':
-      return ethereumGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, descriptionHash, sync);
+      return ethereumGateway.createDescribedPaymentInstance(paymentInstanceID, paymentDefinitionID, author, member, amount, descriptionHash, sync);
   }
 };
 
 export const createPaymentInstance = async (paymentInstanceID: string, paymentDefinitionID: string,
-  author: string, recipient: string, amount: number, participants: string[] | undefined, sync: boolean):
+  author: string, member: string, amount: number, participants: string[] | undefined, sync: boolean):
   Promise<IAPIGatewayAsyncResponse | IAPIGatewaySyncResponse> => {
   switch (config.protocol) {
     case 'corda':
-      return cordaGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, recipient, amount, participants);
+      return cordaGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, member, amount, participants);
     case 'ethereum':
-      return ethereumGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, author, recipient, amount, sync);
+      return ethereumGateway.createPaymentInstance(paymentInstanceID, paymentDefinitionID, author, member, amount, sync);
   }
 };

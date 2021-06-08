@@ -137,7 +137,7 @@ describe('Payment definitions: authored - described', async () => {
           paymentDefinitionID,
           author: '0x0000000000000000000000000000000000000001',
           description: testDescription.sample.object,
-          recipient: '0x0000000000000000000000000000000000000002',
+          member: '0x0000000000000000000000000000000000000002',
           amount: 10
         })
         .expect(200);
@@ -152,7 +152,7 @@ describe('Payment definitions: authored - described', async () => {
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.descriptionHash, testDescription.sample.ipfsSha256);
       assert.deepStrictEqual(paymentInstance.description, testDescription.sample.object);
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(paymentInstance.member, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.amount, 10);
       assert.strictEqual(paymentInstance.receipt, 'my-receipt-id');
       assert.strictEqual(typeof paymentInstance.submitted, 'number');
@@ -177,7 +177,7 @@ describe('Payment definitions: authored - described', async () => {
         paymentInstanceID: utils.uuidToHex(paymentInstanceID),
         descriptionHash: testDescription.sample.ipfsSha256,
         amount: '10',
-        recipient: '0x0000000000000000000000000000000000000002',
+        member: '0x0000000000000000000000000000000000000002',
         timestamp: timestamp.toString()
       };
       mockEventStreamWebSocket.emit('message', JSON.stringify([{
@@ -195,7 +195,7 @@ describe('Payment definitions: authored - described', async () => {
         .expect(200);
       const paymentInstance = getAssetInstancesResponse.body.find((paymentInstance: IDBPaymentInstance) => paymentInstance.paymentInstanceID === paymentInstanceID);
       assert.strictEqual(paymentInstance.author, '0x0000000000000000000000000000000000000001');
-      assert.strictEqual(paymentInstance.recipient, '0x0000000000000000000000000000000000000002');
+      assert.strictEqual(paymentInstance.member, '0x0000000000000000000000000000000000000002');
       assert.strictEqual(paymentInstance.paymentDefinitionID, paymentDefinitionID);
       assert.strictEqual(paymentInstance.descriptionHash, testDescription.sample.ipfsSha256);
       assert.deepStrictEqual(paymentInstance.description, testDescription.sample.object);

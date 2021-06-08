@@ -87,6 +87,9 @@ type PeristenceInterface interface {
 	// UpdateNamespace - Update namespace
 	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
+	// DeleteNamespace - Delete namespace
+	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
+
 	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 
@@ -96,6 +99,10 @@ type PeristenceInterface interface {
 	// UpsertMessage - Upsert a message, with all the embedded data references.
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
 	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
+
+	// InsertMessageLocal - sets a boolean flag on inserting a new message (cannot be an update) to state it is local.
+	// Only time this flag is ever set. Subsequent updates can affect other fields, but not the local flag. Important to stop infinite message propagation.
+	InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -187,20 +194,17 @@ type PeristenceInterface interface {
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
 
-	// UpsertBlocked - Upsert an offset
-	UpsertBlocked(ctx context.Context, blocked *fftypes.Blocked, allowExisting bool) (err error)
+	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
+	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 
-	// UpdateBlocked - Update offset
-	UpdateBlocked(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	// GetPins - Get pins
+	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
 
-	// GetBlocked - Get an offset by name
-	GetBlockedByContext(ctx context.Context, ns, context string, groupID *fftypes.UUID) (message *fftypes.Blocked, err error)
+	// SetPinDispatched - Set the dispatched flag to true on the specified pins
+	SetPinDispatched(ctx context.Context, sequence int64) (err error)
 
-	// GetBlocked - Get offsets
-	GetBlocked(ctx context.Context, filter Filter) (offset []*fftypes.Blocked, err error)
-
-	// DeleteBlocked - Delete an offset by name
-	DeleteBlocked(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeletePin - Delete a pin
+	DeletePin(ctx context.Context, sequence int64) (err error)
 
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
@@ -251,29 +255,74 @@ type PeristenceInterface interface {
 	// UpdateOrganization - Update organization
 	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetOrganization- Get a organization by ID
-	GetOrganization(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+	// GetOrganizationByIdentity - Get a organization by identity
+	GetOrganizationByIdentity(ctx context.Context, identity string) (org *fftypes.Organization, err error)
 
-	// GetOrganizationByID- Get a organization by ID
+	// GetOrganizationByName - Get a organization by name
+	GetOrganizationByName(ctx context.Context, name string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByID - Get a organization by ID
 	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
 
 	// GetOrganizations - Get organizations
 	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
 
-	// UpsertNode - Upsert an organization
+	// UpsertNode - Upsert a node
 	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
 
-	// UpdateONode - Update organization
+	// UpdateNode - Update node
 	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
-	// GetNode - Get a organization by ID
+	// GetNode - Get a node by ID
 	GetNode(ctx context.Context, identity string) (node *fftypes.Node, err error)
 
-	// GetNodeByID- Get a organization by ID
+	// GetNodeByID- Get a node by ID
 	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
 
-	// GetNodes - Get organizations
+	// GetNodes - Get nodes
 	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
+
+	// UpserGroup - Upsert a group
+	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
+
+	// UpdateGroup - Update group
+	UpdateGroup(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetGroupByID - Get a group by ID
+	GetGroupByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Group, err error)
+
+	// GetGroups - Get groups
+	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
+
+	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
+	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
+
+	// GetNonce - Get a context by hash
+	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
+
+	// GetNonces - Get contexts
+	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, err error)
+
+	// DeleteNonce - Delete context by hash
+	DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err error)
+
+	// InsertNextPin - insert a nextpin
+	InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error)
+
+	// GetNextPinByContextAndIdentity - lookup nextpin by context+identity
+	GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error)
+
+	// GetNextPinByHash - lookup nextpin by its hash
+	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error)
+
+	// GetNextPins - get nextpins
+	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, err error)
+
+	// UpdateNextPin - update a next hash using its local database ID
+	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
+
+	// DeleteNextPin - delete a next hash, using its local database ID
+	DeleteNextPin(ctx context.Context, sequence int64) (err error)
 }
 
 // Callbacks are the methods for passing data from plugin to core
@@ -294,6 +343,7 @@ type PeristenceInterface interface {
 //
 type Callbacks interface {
 	MessageCreated(sequence int64)
+	PinCreated(sequence int64)
 	EventCreated(sequence int64)
 	SubscriptionCreated(id *fftypes.UUID)
 	SubscriptionDeleted(id *fftypes.UUID)
@@ -322,15 +372,17 @@ var MessageQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
-	"topic":     &StringField{},
-	"context":   &StringField{},
+	"topics":    &FFNameArrayField{},
+	"tag":       &StringField{},
 	"group":     &UUIDField{},
 	"created":   &TimeField{},
+	"hash":      &StringField{},
+	"pins":      &StringField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
-	"tx.id":     &UUIDField{},
-	"batchid":   &UUIDField{},
+	"batch":     &UUIDField{},
+	"local":     &BoolField{},
 }
 
 // BatchQueryFactory filter fields for batches
@@ -339,9 +391,8 @@ var BatchQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"topic":      &StringField{},
-	"context":    &StringField{},
-	"group":      &StringField{},
+	"group":      &UUIDField{},
+	"hash":       &StringField{},
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
@@ -352,9 +403,8 @@ var BatchQueryFactory = &queryFields{
 // TransactionQueryFactory filter fields for transactions
 var TransactionQueryFactory = &queryFields{
 	"id":         &UUIDField{},
-	"namespace":  &StringField{},
 	"type":       &StringField{},
-	"author":     &StringField{},
+	"signer":     &StringField{},
 	"status":     &StringField{},
 	"reference":  &UUIDField{},
 	"protocolid": &StringField{},
@@ -398,7 +448,7 @@ var OperationQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"tx":        &UUIDField{},
 	"type":      &StringField{},
-	"recipient": &StringField{},
+	"member":    &StringField{},
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
@@ -410,16 +460,16 @@ var OperationQueryFactory = &queryFields{
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
-	"id":             &UUIDField{},
-	"namespace":      &StringField{},
-	"name":           &StringField{},
-	"transport":      &StringField{},
-	"events":         &StringField{},
-	"filter.topic":   &StringField{},
-	"filter.context": &StringField{},
-	"filter.group":   &StringField{},
-	"options":        &StringField{},
-	"created":        &TimeField{},
+	"id":            &UUIDField{},
+	"namespace":     &StringField{},
+	"name":          &StringField{},
+	"transport":     &StringField{},
+	"events":        &StringField{},
+	"filter.topics": &StringField{},
+	"filter.tag":    &StringField{},
+	"filter.group":  &StringField{},
+	"options":       &StringField{},
+	"created":       &TimeField{},
 }
 
 // EventQueryFactory filter fields for data events
@@ -432,14 +482,15 @@ var EventQueryFactory = &queryFields{
 	"created":   &TimeField{},
 }
 
-// BlockedQueryFactory filter fields for blocked contexts
-var BlockedQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"context":   &StringField{},
-	"group":     &UUIDField{},
-	"message":   &UUIDField{},
-	"created":   &TimeField{},
+// PinQueryFactory filter fields for parked contexts
+var PinQueryFactory = &queryFields{
+	"sequence":   &Int64Field{},
+	"masked":     &BoolField{},
+	"hash":       &StringField{},
+	"batch":      &UUIDField{},
+	"index":      &Int64Field{},
+	"dispatched": &BoolField{},
+	"created":    &TimeField{},
 }
 
 // OrganizationQueryFactory filter fields for organizations
@@ -462,4 +513,30 @@ var NodeQueryFactory = &queryFields{
 	"description": &StringField{},
 	"endpoint":    &JSONField{},
 	"created":     &TimeField{},
+}
+
+// GroupQueryFactory filter fields for nodes
+var GroupQueryFactory = &queryFields{
+	"id":          &UUIDField{},
+	"message":     &UUIDField{},
+	"namespace":   &StringField{},
+	"description": &StringField{},
+	"ledger":      &UUIDField{},
+	"created":     &TimeField{},
+}
+
+// NonceQueryFactory filter fields for nodes
+var NonceQueryFactory = &queryFields{
+	"context": &StringField{},
+	"nonce":   &Int64Field{},
+	"group":   &UUIDField{},
+	"topic":   &StringField{},
+}
+
+// NextPinQueryFactory filter fields for nodes
+var NextPinQueryFactory = &queryFields{
+	"context":  &StringField{},
+	"identity": &StringField{},
+	"hash":     &StringField{},
+	"nonce":    &Int64Field{},
 }

@@ -76,7 +76,6 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 	}
 
 	pollerConf := &eventPollerConf{
-		limitNamespace:             sub.definition.Namespace,
 		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
 		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
@@ -86,9 +85,14 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
 		},
-		offsetType:       fftypes.OffsetTypeSubscription,
-		offsetNamespace:  sub.definition.Namespace,
-		offsetName:       sub.definition.Name,
+		offsetType:      fftypes.OffsetTypeSubscription,
+		offsetNamespace: sub.definition.Namespace,
+		offsetName:      sub.definition.Name,
+		addCriteria: func(af database.AndFilter) database.AndFilter {
+			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
+		},
+		queryFactory:     database.EventQueryFactory,
+		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
 		firstEvent:       sub.definition.Options.FirstEvent,
@@ -129,10 +133,20 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.subscription.dispatcherElection
 }
 
-func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.EventDelivery, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
+	events, err := ed.database.GetEvents(ctx, filter)
+	ls := make([]fftypes.LocallySequenced, len(events))
+	for i, e := range events {
+		ls[i] = e
+	}
+	return ls, err
+}
+
+func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
 	// We need all the messages that match event references
 	refIDs := make([]driver.Value, len(events))
-	for i, e := range events {
+	for i, ls := range events {
+		e := ls.(*fftypes.Event)
 		if e.Reference != nil {
 			refIDs[i] = *e.Reference
 		}
@@ -159,7 +173,8 @@ func (ed *eventDispatcher) enrichEvents(events []*fftypes.Event) ([]*fftypes.Eve
 	}
 
 	enriched := make([]*fftypes.EventDelivery, len(events))
-	for i, e := range events {
+	for i, ls := range events {
+		e := ls.(*fftypes.Event)
 		enriched[i] = &fftypes.EventDelivery{
 			Event:        *e,
 			Subscription: ed.subscription.definition.SubscriptionRef,
@@ -190,21 +205,30 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 			continue
 		}
 		msg := event.Message
-		topic := ""
+		tag := ""
 		group := ""
-		context := ""
+		var topics []string
 		if msg != nil {
-			topic = msg.Header.Topic
-			context = msg.Header.Context
+			tag = msg.Header.Tag
+			topics = msg.Header.Topics
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
 			}
 		}
-		if filter.topicFilter != nil && !filter.topicFilter.MatchString(topic) {
+		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
 			continue
 		}
-		if filter.contextFilter != nil && !filter.contextFilter.MatchString(context) {
-			continue
+		if filter.topicsFilter != nil {
+			topicsMatch := false
+			for _, topic := range topics {
+				if filter.topicsFilter.MatchString(topic) {
+					topicsMatch = true
+					break
+				}
+			}
+			if !topicsMatch {
+				continue
+			}
 		}
 		if filter.groupFilter != nil && !filter.groupFilter.MatchString(group) {
 			continue
@@ -214,7 +238,7 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 	return matchingEvents
 }
 
-func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, error) {
+func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (bool, error) {
 	// At this point, the page of messages we've been given are loaded from the DB into memory,
 	// but we can only make them in-flight and push them to the client up to the maximum
 	// readahead (which is likely lower than our page size - 1 by default)
@@ -222,7 +246,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []*fftypes.Event) (bool, erro
 	if len(events) == 0 {
 		return false, nil
 	}
-	highestOffset := events[len(events)-1].Sequence
+	highestOffset := events[len(events)-1].LocalSequence()
 	var lastAck int64
 	var nacks int
 

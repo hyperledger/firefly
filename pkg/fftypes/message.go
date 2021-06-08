@@ -24,6 +24,11 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+const (
+	// DefaultTopic will be set as the topic of any messages set without a topic
+	DefaultTopic = "default"
+)
+
 // MessageType is the fundamental type of a message
 type MessageType = LowerCasedType
 
@@ -34,22 +39,24 @@ const (
 	MessageTypeBroadcast MessageType = "broadcast"
 	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
 	MessageTypePrivate MessageType = "private"
+	// MessageTypeGroupInit is a special private message that contains the definition of the group
+	MessageTypeGroupInit MessageType = "groupinit"
 )
 
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID        *UUID          `json:"id,omitempty"`
-	CID       *UUID          `json:"cid,omitempty"`
-	Type      MessageType    `json:"type"`
-	TX        TransactionRef `json:"tx,omitempty"`
-	Author    string         `json:"author,omitempty"`
-	Created   *FFTime        `json:"created,omitempty"`
-	Namespace string         `json:"namespace,omitempty"`
-	Topic     string         `json:"topic,omitempty"`
-	Context   string         `json:"context,omitempty"`
-	Group     *UUID          `json:"group,omitempty"`
-	DataHash  *Bytes32       `json:"datahash,omitempty"`
+	ID        *UUID           `json:"id,omitempty"`
+	CID       *UUID           `json:"cid,omitempty"`
+	Type      MessageType     `json:"type"`
+	TxType    TransactionType `json:"txtype,omitempty"`
+	Author    string          `json:"author,omitempty"`
+	Created   *FFTime         `json:"created,omitempty"`
+	Namespace string          `json:"namespace,omitempty"`
+	Group     *UUID           `json:"group,omitempty"`
+	Topics    FFNameArray     `json:"topic,omitempty"`
+	Tag       string          `json:"tag,omitempty"`
+	DataHash  *Bytes32        `json:"datahash,omitempty"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -59,16 +66,25 @@ type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *UUID         `json:"batchID,omitempty"`
-	Sequence  int64         `json:"sequence,omitempty"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
+	Pins      FFNameArray   `json:"pins,omitempty"`
+	Local     bool          `json:"local,omitempty"`
+	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // MessageInput allows API users to submit values in-line in the payload submitted, which
 // will be broken out and stored separately during the call.
 type MessageInput struct {
 	Message
-	InputData InputData `json:"data"`
+	InputData InputData   `json:"data"`
+	Group     *InputGroup `json:"group,omitempty"`
+}
+
+// InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
+type InputGroup struct {
+	Ledger  *UUID         `json:"ledger,omitempty"`
+	Members []MemberInput `json:"members"`
 }
 
 // InputData is an array of data references or values
@@ -98,6 +114,9 @@ func (h *MessageHeader) Hash() *Bytes32 {
 }
 
 func (m *Message) Seal(ctx context.Context) (err error) {
+	if len(m.Header.Topics) == 0 {
+		m.Header.Topics = []string{DefaultTopic}
+	}
 	if m.Header.ID == nil {
 		m.Header.ID = NewUUID()
 	}
@@ -132,6 +151,14 @@ func (m *Message) DupDataCheck(ctx context.Context) (err error) {
 }
 
 func (m *Message) Verify(ctx context.Context) error {
+	if err := m.Header.Topics.Validate(ctx, "header.topics"); err != nil {
+		return err
+	}
+	if m.Header.Tag != "" {
+		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
+			return err
+		}
+	}
 	err := m.DupDataCheck(ctx)
 	if err != nil {
 		return err
@@ -145,4 +172,8 @@ func (m *Message) Verify(ctx context.Context) error {
 		return i18n.NewError(ctx, i18n.MsgVerifyFailedInvalidHashes, m.Hash.String(), headerHash.String(), m.Header.DataHash.String(), dataHash.String())
 	}
 	return nil
+}
+
+func (m *Message) LocalSequence() int64 {
+	return m.Sequence
 }

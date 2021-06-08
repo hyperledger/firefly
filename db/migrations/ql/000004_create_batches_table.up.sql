@@ -3,6 +3,7 @@ CREATE TABLE batches (
   btype       string   NOT NULL,
   namespace   string   NOT NULL,
   author      string   NOT NULL,
+  group_id    string,
   hash        string   NOT NULL,
   created     int64    NOT NULL,
   payload     blob     NOT NULL,
