@@ -22,7 +22,6 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/oapispec"
 	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
 var deleteConfigRecord = &oapispec.Route{
@@ -36,7 +35,7 @@ var deleteConfigRecord = &oapispec.Route{
 	FilterFactory:   database.ConfigRecordQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ConfigRecord{} },
+	JSONOutputValue: nil,
 	JSONOutputCode:  http.StatusNoContent,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		err = r.Or.DeleteConfigRecord(r.Ctx, r.PP["key"])
