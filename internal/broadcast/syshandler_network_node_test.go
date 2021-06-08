@@ -54,7 +54,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, nil)
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
@@ -97,7 +97,7 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, nil)
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -138,7 +138,7 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, nil)
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
@@ -181,7 +181,7 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(&fftypes.Node{Owner: "0x99999"}, nil)
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x99999"}, nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -220,7 +220,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(&fftypes.Node{Owner: "0x23456"}, nil)
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x23456"}, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(nil)
@@ -262,7 +262,7 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",

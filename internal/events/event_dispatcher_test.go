@@ -353,6 +353,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
 	defer cancel()
 
+	gid1 := fftypes.NewRandB32()
 	id1 := fftypes.NewUUID()
 	id2 := fftypes.NewUUID()
 	id3 := fftypes.NewUUID()
@@ -379,7 +380,7 @@ func TestFilterEventsMatch(t *testing.T) {
 				Header: fftypes.MessageHeader{
 					Topics: fftypes.FFNameArray{"topic1"},
 					Tag:    "tag2",
-					Group:  id1,
+					Group:  gid1,
 				},
 			},
 		},
@@ -431,7 +432,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[0].ID)
 
 	ed.subscription.topicsFilter = nil
-	ed.subscription.groupFilter = regexp.MustCompile(id1.String())
+	ed.subscription.groupFilter = regexp.MustCompile(gid1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)

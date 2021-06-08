@@ -11,7 +11,7 @@ CREATE TABLE messages (
   namespace   VARCHAR(64)     NOT NULL,
   topics      VARCHAR(1024)   NOT NULL,
   tag         VARCHAR(64)     NOT NULL,
-  group_id    UUID,
+  group_hash  CHAR(64),
   datahash    CHAR(64)        NOT NULL,
   hash        CHAR(64)        NOT NULL,
   pins        VARCHAR(1024)   NOT NULL,

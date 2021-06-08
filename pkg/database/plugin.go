@@ -286,10 +286,10 @@ type PeristenceInterface interface {
 	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
 
 	// UpdateGroup - Update group
-	UpdateGroup(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
 
-	// GetGroupByID - Get a group by ID
-	GetGroupByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Group, err error)
+	// GetGroupByHash - Get a group by ID
+	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *fftypes.Group, err error)
 
 	// GetGroups - Get groups
 	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
@@ -374,7 +374,7 @@ var MessageQueryFactory = &queryFields{
 	"author":    &StringField{},
 	"topics":    &FFNameArrayField{},
 	"tag":       &StringField{},
-	"group":     &UUIDField{},
+	"group":     &StringField{},
 	"created":   &TimeField{},
 	"hash":      &StringField{},
 	"pins":      &StringField{},
@@ -391,7 +391,7 @@ var BatchQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"group":      &UUIDField{},
+	"group":      &StringField{},
 	"hash":       &StringField{},
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
@@ -479,6 +479,7 @@ var EventQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"namespace": &StringField{},
 	"reference": &UUIDField{},
+	"group":     &StringField{},
 	"sequence":  &Int64Field{},
 	"created":   &TimeField{},
 }
@@ -519,7 +520,7 @@ var NodeQueryFactory = &queryFields{
 
 // GroupQueryFactory filter fields for nodes
 var GroupQueryFactory = &queryFields{
-	"id":          &UUIDField{},
+	"hash":        &StringField{},
 	"message":     &UUIDField{},
 	"namespace":   &StringField{},
 	"description": &StringField{},
@@ -531,7 +532,7 @@ var GroupQueryFactory = &queryFields{
 var NonceQueryFactory = &queryFields{
 	"context": &StringField{},
 	"nonce":   &Int64Field{},
-	"group":   &UUIDField{},
+	"group":   &StringField{},
 	"topic":   &StringField{},
 }
 

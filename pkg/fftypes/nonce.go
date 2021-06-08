@@ -22,6 +22,6 @@ package fftypes
 type Nonce struct {
 	Context *Bytes32 `json:"hash"`
 	Nonce   int64    `json:"nonce"`
-	Group   *UUID    `json:"group,omitempty"`
+	Group   *Bytes32 `json:"group,omitempty"`
 	Topic   string   `json:"topic"`
 }

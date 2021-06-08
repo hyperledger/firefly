@@ -25,15 +25,18 @@ import (
 	"github.com/kaleido-io/firefly/internal/i18n"
 )
 
+type GroupIdentity struct {
+	Ledger    *UUID   `json:"ledger,omitempty"`
+	Namespace string  `json:"namespace,omitempty"`
+	Name      string  `json:"name"`
+	Members   Members `json:"members"`
+}
+
 type Group struct {
-	ID          *UUID    `json:"id"`
-	Message     *UUID    `json:"message,omitempty"`
-	Namespace   string   `json:"namespace,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Ledger      *UUID    `json:"ledger,omitempty"`
-	Hash        *Bytes32 `json:"hash,omitempty"`
-	Created     *FFTime  `json:"created,omitempty"`
-	Members     Members  `json:"members"`
+	GroupIdentity
+	Message *UUID    `json:"message,omitempty"`
+	Hash    *Bytes32 `json:"hash,omitempty"`
+	Created *FFTime  `json:"created,omitempty"`
 }
 
 type Members []*Member
@@ -44,23 +47,22 @@ type Member struct {
 }
 
 type MemberInput struct {
-	Name     string `json:"name,omitempty"`
 	Identity string `json:"identity,omitempty"`
 	Node     string `json:"node,omitempty"`
 }
 
-func (r *Members) Hash() *Bytes32 {
-	b, _ := json.Marshal(&r)
+func (man *GroupIdentity) Hash() *Bytes32 {
+	b, _ := json.Marshal(&man)
 	hash := Bytes32(sha256.Sum256(b))
 	return &hash
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
-		return err
-	}
-	if err = ValidateLength(ctx, group.Description, "description", 4096); err != nil {
-		return err
+	// We allow a blank name for a group (for auto creation)
+	if group.Name != "" {
+		if err = ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
+			return err
+		}
 	}
 	if len(group.Members) == 0 {
 		return i18n.NewError(ctx, i18n.MsgGroupMustHaveMembers)
@@ -83,19 +85,20 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 		dupCheck[key] = true
 	}
 	if existing {
-		if group.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNilID)
+		hash := group.GroupIdentity.Hash()
+		if !group.Hash.Equals(hash) {
+			return i18n.NewError(ctx, i18n.MsgGroupInvalidHash, group.Hash, hash)
 		}
 	}
 	return nil
 }
 
 func (group *Group) Seal() {
-	group.Hash = group.Members.Hash()
+	group.Hash = group.GroupIdentity.Hash()
 }
 
 func (group *Group) Topic() string {
-	return fmt.Sprintf("ff_grp_%s", group.ID)
+	return group.Hash.String()
 }
 
 func (group *Group) SetBroadcastMessage(msgID *UUID) {

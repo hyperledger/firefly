@@ -39,7 +39,7 @@ func TestNoncesE2EWithDB(t *testing.T) {
 	// Create a new nonce entry
 	nonceZero := &fftypes.Nonce{
 		Context: fftypes.NewRandB32(),
-		Group:   fftypes.NewUUID(),
+		Group:   fftypes.NewRandB32(),
 		Topic:   "topic12345",
 	}
 	err := s.UpsertNonceNext(ctx, nonceZero)
@@ -156,7 +156,7 @@ func TestGetNonceSelectFail(t *testing.T) {
 
 func TestGetNonceNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context", "nonce", "group_id", "topic"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context", "nonce", "group_hash", "topic"}))
 	msg, err := s.GetNonce(context.Background(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)

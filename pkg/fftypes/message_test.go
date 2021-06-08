@@ -122,10 +122,11 @@ func TestVerifyNilMisMatchedHashes(t *testing.T) {
 func TestSealKnownMessage(t *testing.T) {
 	msgid := MustParseUUID("2cd37805-5f40-4e12-962e-67868cde3049")
 	cid := MustParseUUID("39296b6e-91b9-4a61-b279-833c85b04d94")
-	gid := MustParseUUID("5cd8afa6-f483-42f1-b11b-5a6f6421c81d")
 	data1 := MustParseUUID("e3a3b714-7e49-4c73-a4ea-87a50b19961a")
 	data2 := MustParseUUID("cc66b23f-d340-4333-82d5-b63adc1c3c07")
 	data3 := MustParseUUID("189c8185-2b92-481a-847a-e57595ab3541")
+	var gid Bytes32
+	gid.UnmarshalText([]byte("3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae"))
 	var hash1, hash2, hash3 Bytes32
 	hash1.UnmarshalText([]byte("3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae"))
 	hash2.UnmarshalText([]byte("1d1462e02d7acee49a8448267c65067e0bec893c9a0c050b9835efa376fec046"))
@@ -141,7 +142,7 @@ func TestSealKnownMessage(t *testing.T) {
 			Topics:    []string{"topic1", "topic2"},
 			Tag:       "tag1",
 			Created:   UnixTime(1620104103123456789),
-			Group:     gid,
+			Group:     &gid,
 		},
 		Data: DataRefs{
 			{ID: data1, Hash: &hash1},
@@ -161,10 +162,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","txtype":"batch_pin","author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"5cd8afa6-f483-42f1-b11b-5a6f6421c81d","topic":["topic1","topic2"],"tag":"tag1","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","txtype":"batch_pin","author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae","topic":["topic1","topic2"],"tag":"tag1","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `67f6eefbd0d7ed32a70c6480e423c6bbd1ac65b9c7037bbcaf48fc235a67b55e`, msgHash.String())
+	assert.Equal(t, `95f0a6a16ba67df7f24c5403733faebb89c304d66d55c21e149213d8ec7e2633`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good

@@ -100,9 +100,13 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	return node, nil
 }
 
-func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (members fftypes.Members, err error) {
+func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (gi *fftypes.GroupIdentity, err error) {
 	foundLocal := false
-	members = make(fftypes.Members, len(in.Group.Members))
+	gi = &fftypes.GroupIdentity{
+		Name:    in.Group.Name,
+		Ledger:  in.Group.Ledger,
+		Members: make(fftypes.Members, len(in.Group.Members)),
+	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the org
 		org, err := pm.resolveOrg(ctx, rInput.Identity)
@@ -115,7 +119,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 			return nil, err
 		}
 		foundLocal = foundLocal || (node.Owner == pm.localOrgIdentity && node.Name == pm.localNodeName)
-		members[i] = &fftypes.Member{
+		gi.Members[i] = &fftypes.Member{
 			Identity: org.Identity,
 			Node:     node.ID,
 		}
@@ -123,21 +127,16 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	if !foundLocal {
 		return nil, i18n.NewError(ctx, i18n.MsgOneMemberLocal)
 	}
-	return members, nil
+	return gi, nil
 }
 
 func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInput) (group *fftypes.Group, isNew bool, err error) {
-	members, err := pm.getReceipients(ctx, in)
+	gi, err := pm.getReceipients(ctx, in)
 	if err != nil {
 		return nil, false, err
 	}
-	fb := database.GroupQueryFactory.NewFilterLimit(ctx, 1)
-	hash := members.Hash()
-	filter := fb.And(
-		fb.Eq("namespace", in.Header.Namespace),
-		fb.Eq("ledger", in.Group.Ledger),
-		fb.Eq("hahs", hash),
-	)
+	hash := gi.Hash()
+	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", hash)
 	groups, err := pm.database.GetGroups(ctx, filter)
 	if err != nil {
 		return nil, false, err
@@ -149,12 +148,9 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	// Generate a new group on the fly here.
 	// It will need to be sent to the group ahead of the message the user is trying to send.
 	group = &fftypes.Group{
-		ID:        fftypes.NewUUID(),
-		Namespace: in.Header.Namespace,
-		Ledger:    in.Group.Ledger,
-		Hash:      hash,
-		Members:   members,
-		Created:   fftypes.Now(),
+		GroupIdentity: *gi,
+		Hash:          hash,
+		Created:       fftypes.Now(),
 	}
 	return group, true, nil
 }

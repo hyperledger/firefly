@@ -38,12 +38,25 @@ func TestGroupInitSealFail(t *testing.T) {
 	assert.Regexp(t, "FF10137", err)
 }
 
-func TestGroupInitWriteFail(t *testing.T) {
+func TestGroupInitWriteGroupFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
+
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestGroupInitWriteDataFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
 	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
@@ -62,7 +75,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -84,7 +97,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -106,7 +119,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -119,12 +132,15 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	defer cancel()
 
 	group := &fftypes.Group{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		GroupIdentity: fftypes.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "abce12345", Node: fftypes.NewUUID()},
+			},
 		},
 	}
+	group.Seal()
 	assert.NoError(t, group.Validate(pm.ctx, true))
 	b, _ := json.Marshal(&group)
 
@@ -138,7 +154,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -150,14 +166,16 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	group := &fftypes.Group{
-		ID:        groupID,
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		GroupIdentity: fftypes.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "abce12345", Node: fftypes.NewUUID()},
+			},
 		},
 	}
+	group.Seal()
 	assert.NoError(t, group.Validate(pm.ctx, true))
 	b, _ := json.Marshal(&group)
 
@@ -173,7 +191,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     groupID,
+			Group:     group.Hash,
 			Author:    "author1",
 		},
 	})
@@ -185,14 +203,16 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	group := &fftypes.Group{
-		ID:        groupID,
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		GroupIdentity: fftypes.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "abce12345", Node: fftypes.NewUUID()},
+			},
 		},
 	}
+	group.Seal()
 	assert.NoError(t, group.Validate(pm.ctx, true))
 	b, _ := json.Marshal(&group)
 
@@ -209,12 +229,11 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     groupID,
+			Group:     group.Hash,
 			Author:    "author1",
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, *groupID, *group.ID)
 
 }
 
@@ -222,14 +241,16 @@ func TestResolveInitGroupNewEventFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	group := &fftypes.Group{
-		ID:        groupID,
-		Namespace: "ns1",
-		Members: fftypes.Members{
-			{Identity: "abce12345", Node: fftypes.NewUUID()},
+		GroupIdentity: fftypes.GroupIdentity{
+			Name:      "group1",
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "abce12345", Node: fftypes.NewUUID()},
+			},
 		},
 	}
+	group.Seal()
 	assert.NoError(t, group.Validate(pm.ctx, true))
 	b, _ := json.Marshal(&group)
 
@@ -246,7 +267,7 @@ func TestResolveInitGroupNewEventFail(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     groupID,
+			Group:     group.Hash,
 			Author:    "author1",
 		},
 	})
@@ -259,14 +280,15 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(&fftypes.Group{}, nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&fftypes.Group{}, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -278,14 +300,14 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -297,14 +319,14 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 
 	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
-			Group:     fftypes.NewUUID(),
+			Group:     fftypes.NewRandB32(),
 			Author:    "author1",
 		},
 	})
@@ -316,20 +338,20 @@ func TestGetGroupByIDOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(&fftypes.Group{ID: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&fftypes.Group{Hash: groupID}, nil)
 
 	group, err := pm.GetGroupByID(pm.ctx, groupID.String())
 	assert.NoError(t, err)
-	assert.Equal(t, *groupID, *group.ID)
+	assert.Equal(t, *groupID, *group.Hash)
 }
 
 func TestGetGroupByIDBadID(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 	_, err := pm.GetGroupByID(pm.ctx, "!wrong")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF10232", err)
 }
 
 func TestGetGroupsOk(t *testing.T) {
@@ -349,25 +371,28 @@ func TestGetGroupNodesCache(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	node1 := fftypes.NewUUID()
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			&fftypes.Member{Node: node1},
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				&fftypes.Member{Node: node1},
+			},
 		},
-	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
+	}
+	group.Seal()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
+	mdi.On("GetNodeByID", pm.ctx, mock.Anything).Return(&fftypes.Node{
 		ID: node1,
 	}, nil).Once()
 
-	nodes, err := pm.getGroupNodes(pm.ctx, groupID)
+	nodes, err := pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 
 	// Note this validates the cache as we only mocked the calls once
-	nodes, err = pm.getGroupNodes(pm.ctx, groupID)
+	nodes, err = pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.NoError(t, err)
 	assert.Equal(t, *node1, *nodes[0].ID)
 }
@@ -376,9 +401,9 @@ func TestGetGroupNodesGetGroupFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.getGroupNodes(pm.ctx, groupID)
 	assert.EqualError(t, err, "pop")
@@ -388,9 +413,9 @@ func TestGetGroupNodesGetGroupNotFound(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 
 	_, err := pm.getGroupNodes(pm.ctx, groupID)
 	assert.Regexp(t, "FF10226", err)
@@ -400,18 +425,21 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	node1 := fftypes.NewUUID()
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			&fftypes.Member{Node: node1},
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				&fftypes.Member{Node: node1},
+			},
 		},
-	}, nil).Once()
+	}
+	group.Seal()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(nil, fmt.Errorf("pop")).Once()
 
-	_, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, err := pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -419,17 +447,19 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
 	node1 := fftypes.NewUUID()
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByID", pm.ctx, uuidMatches(groupID)).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			&fftypes.Member{Node: node1},
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				&fftypes.Member{Node: node1},
+			},
 		},
-	}, nil).Once()
+	}
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
 	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(nil, nil).Once()
 
-	_, err := pm.getGroupNodes(pm.ctx, groupID)
+	_, err := pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.Regexp(t, "FF10224", err)
 }

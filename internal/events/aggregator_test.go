@@ -57,7 +57,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	member2 := "0x23456"
 	topic := "some-topic"
 	batchID := fftypes.NewUUID()
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	msgID := fftypes.NewUUID()
 	h := sha256.New()
 	h.Write([]byte(topic))
@@ -95,10 +95,11 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil).Once()
 	// Get the group members
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		ID: groupID,
-		Members: fftypes.Members{
-			{Identity: member1},
-			{Identity: member2},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: member1},
+				{Identity: member2},
+			},
 		},
 	}, nil)
 	// Look for any earlier pins - none found
@@ -167,7 +168,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	member2 := "0x23456"
 	topic := "some-topic"
 	batchID := fftypes.NewUUID()
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	msgID := fftypes.NewUUID()
 	h := sha256.New()
 	h.Write([]byte(topic))
@@ -503,7 +504,7 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFNameArray{"topic1"},
 		},
 		Pins: fftypes.FFNameArray{"!Wrong"},
@@ -522,7 +523,7 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFNameArray{"topic1"},
 		},
 		Pins: fftypes.FFNameArray{fftypes.NewRandB32().String()},
@@ -570,7 +571,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Topics: fftypes.FFNameArray{"topic1"},
 		},
 		Pins: fftypes.FFNameArray{pin.String()},
@@ -592,7 +593,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	_, err := ag.checkMaskedContextReady(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Author: "author1",
 		},
 	}, "topic1", 12345, fftypes.NewRandB32())
@@ -610,7 +611,7 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Author: "author1",
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
@@ -628,7 +629,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewUUID(),
+			Group:  fftypes.NewRandB32(),
 			Author: "author1",
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
@@ -640,12 +641,14 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author2", 0)
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		Members: fftypes.Members{
-			{Identity: "author2"},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "author2"},
+			},
 		},
 	}, nil)
 
@@ -664,11 +667,13 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		Members: fftypes.Members{
-			{Identity: "author2"},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "author2"},
+			},
 		},
 	}, nil)
 
@@ -687,13 +692,15 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mdi := ag.database.(*databasemocks.Plugin)
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		Members: fftypes.Members{
-			{Identity: "author1"},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "author1"},
+			},
 		},
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -713,13 +720,15 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		Members: fftypes.Members{
-			{Identity: "author1"},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "author1"},
+			},
 		},
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{
@@ -742,13 +751,15 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	groupID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
 	zeroHash := ag.calcHash("topic1", groupID, "author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		Members: fftypes.Members{
-			{Identity: "author1"},
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Identity: "author1"},
+			},
 		},
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil)

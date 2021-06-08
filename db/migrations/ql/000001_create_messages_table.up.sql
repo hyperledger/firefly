@@ -7,7 +7,7 @@ CREATE TABLE messages (
   namespace   string  NOT NULL,
   topics      string  NOT NULL,
   tag         string  NOT NULL,
-  group_id    string,
+  group_hash  string,
   datahash    string  NOT NULL,
   hash        string  NOT NULL,
   pins        string  NOT NULL,
