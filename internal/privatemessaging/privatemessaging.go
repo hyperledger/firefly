@@ -36,6 +36,8 @@ import (
 
 type Manager interface {
 	GroupManager
+
+	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
 }
 
 type privateMessaging struct {
