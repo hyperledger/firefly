@@ -327,9 +327,6 @@ type PeristenceInterface interface {
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
 
-	// UpdateNamespace - Update config record
-	UpdateConfigRecord(ctx context.Context, key string, update Update) (err error)
-
 	// GetConfigRecord - Get an config record by key
 	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
 
@@ -561,6 +558,6 @@ var NextPinQueryFactory = &queryFields{
 
 // ConfigRecordQueryFactory filter fields for config records
 var ConfigRecordQueryFactory = &queryFields{
-	"key":   &StringField{},
-	"value": &JSONField{},
+	"config_key":   &StringField{},
+	"config_value": &StringField{},
 }

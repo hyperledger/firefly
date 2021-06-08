@@ -371,15 +371,3 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 	}
 	return nil
 }
-
-// func buildViperConfig(configRecords []*fftypes.ConfigRecord) (*viper.Viper, error) {
-// 	v := viper.New()
-// 	v.SetConfigType("json")
-// 	for _, c := range configRecords {
-// 		r := bytes.NewBuffer(c.Value)
-// 		if err := v.Sub(c.Key).ReadConfig(r); err != nil {
-// 			return nil, err
-// 		}
-// 	}
-// 	return v, nil
-// }

@@ -160,6 +160,34 @@ func TestBlockchaiInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestBlockchaiInitGetConfigRecordsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBlockchaiInitMergeConfigRecordsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
+		{
+			Key:   "pizza.toppings",
+			Value: []byte("cheese, pepperoni, mushrooms"),
+		},
+	}, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "While parsing config: invalid character 'c' looking for beginning of value")
+}
+
 func TestBadPublicStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.PublicStorageType, "wrong")
