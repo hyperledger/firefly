@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kaleido-io/firefly/internal/config"
 	"github.com/kaleido-io/firefly/mocks/broadcastmocks"
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
 	"github.com/kaleido-io/firefly/mocks/datamocks"
@@ -879,4 +880,71 @@ func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	})
 	assert.EqualError(t, err, "pop")
 
+}
+
+func TestRewindOffchainBatchesNoBatches(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	rewind, offset := ag.rewindOffchainBatches()
+	assert.False(t, rewind)
+	assert.Equal(t, int64(0), offset)
+}
+
+func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
+	config.Set(config.EventAggregatorBatchSize, 10)
+
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
+
+	rewind, offset := ag.rewindOffchainBatches()
+	assert.False(t, rewind)
+	assert.Equal(t, int64(0), offset)
+}
+
+func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
+	config.Set(config.EventAggregatorBatchSize, 10)
+
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+	ag.offchainBatches <- fftypes.NewUUID()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+		{Sequence: 12345},
+	}, nil)
+
+	rewind, offset := ag.rewindOffchainBatches()
+	assert.True(t, rewind)
+	assert.Equal(t, int64(12345), offset)
+}
+
+func TestRewindOffchainBatchesBatchesError(t *testing.T) {
+	config.Set(config.EventAggregatorBatchSize, 10)
+
+	ag, cancel := newTestAggregator()
+	cancel()
+
+	ag.offchainBatches <- fftypes.NewUUID()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	rewind, _ := ag.rewindOffchainBatches()
+	assert.False(t, rewind)
 }

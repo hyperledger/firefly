@@ -28,56 +28,75 @@ import (
 )
 
 func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) {
-	l := log.L(em.ctx)
-	l.Infof("Message received from '%s' (len=%d)", peerID, len(data))
 
-	// Try to de-serialize it as a batch
-	var batch fftypes.Batch
-	err := json.Unmarshal(data, &batch)
-	if err != nil {
-		l.Errorf("Invalid batch: %s", err)
-		return
-	}
+	// Retry for persistence errors (not validation errors)
+	_ = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
 
-	// Find the node associated with the peer
-	filter := database.NodeQueryFactory.NewFilter(em.ctx).Eq("dx.peer", peerID)
-	nodes, err := em.database.GetNodes(em.ctx, filter)
-	if err != nil || len(nodes) < 1 {
-		l.Errorf("Failed to retrieve node: %v", err)
-		return
-	}
-	node := nodes[0]
+		l := log.L(em.ctx)
+		l.Infof("Message received from '%s' (len=%d)", peerID, len(data))
 
-	// Find the identity in the mesage
-	batchOrg, err := em.database.GetOrganizationByIdentity(em.ctx, batch.Author)
-	if err != nil || batchOrg == nil {
-		l.Errorf("Failed to retrieve batch org: %v", err)
-		return
-	}
-
-	// One of the orgs in the hierarchy of the batch author must be the owner of this node
-	parent := batchOrg.Identity
-	foundNodeOrg := batch.Author == node.Owner
-	for !foundNodeOrg && parent != "" {
-		candidate, err := em.database.GetOrganizationByIdentity(em.ctx, parent)
-		if err != nil || candidate == nil {
-			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
-			return
+		// Try to de-serialize it as a batch
+		var batch fftypes.Batch
+		err := json.Unmarshal(data, &batch)
+		if err != nil {
+			l.Errorf("Invalid batch: %s", err)
+			return false, nil
 		}
-		foundNodeOrg = candidate.Identity == node.Owner
-		parent = candidate.Parent
-	}
-	if !foundNodeOrg {
-		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
-		return
-	}
 
-	if err := em.persistBatch(em.ctx, &batch); err != nil {
-		l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
-		return
-	}
+		// Find the node associated with the peer
+		filter := database.NodeQueryFactory.NewFilter(em.ctx).Eq("dx.peer", peerID)
+		nodes, err := em.database.GetNodes(em.ctx, filter)
+		if err != nil {
+			l.Errorf("Failed to retrieve node: %v", err)
+			return true, err // retry for persistence error
+		}
+		if len(nodes) < 1 {
+			l.Errorf("Node not found for peer %s", peerID)
+			return false, nil
+		}
+		node := nodes[0]
 
-	em.aggregator.offchainBatches <- batch.ID
+		// Find the identity in the mesage
+		batchOrg, err := em.database.GetOrganizationByIdentity(em.ctx, batch.Author)
+		if err != nil {
+			l.Errorf("Failed to retrieve batch org: %v", err)
+			return true, err // retry for persistence error
+		}
+		if batchOrg == nil {
+			l.Errorf("Org not found for identity %s", batch.Author)
+			return false, nil
+		}
+
+		// One of the orgs in the hierarchy of the batch author must be the owner of the peer node
+		candidate := batchOrg
+		foundNodeOrg := batch.Author == node.Owner
+		for !foundNodeOrg && candidate.Parent != "" {
+			parent := candidate.Parent
+			candidate, err = em.database.GetOrganizationByIdentity(em.ctx, parent)
+			if err != nil {
+				l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
+				return true, err // retry for persistence error
+			}
+			if candidate == nil {
+				l.Errorf("Did not find org '%s' in chain for identity '%s'", parent, batchOrg.Identity)
+				return false, nil
+			}
+			foundNodeOrg = candidate.Identity == node.Owner
+		}
+		if !foundNodeOrg {
+			l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
+			return false, nil
+		}
+
+		if err := em.persistBatch(em.ctx, &batch); err != nil {
+			l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
+			return true, err // retry - persistBatch only returns retryable errors
+		}
+
+		em.aggregator.offchainBatches <- batch.ID
+		return false, nil
+	})
+
 }
 
 func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID) {
