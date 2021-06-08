@@ -67,9 +67,9 @@ func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]
 	return r0, r1
 }
 
-// MessageReceived provides a mock function with given fields: peerID, payload
-func (_m *Manager) MessageReceived(peerID string, payload fftypes.Byteable) {
-	_m.Called(peerID, payload)
+// MessageReceived provides a mock function with given fields: peerID, data
+func (_m *Manager) MessageReceived(peerID string, data []byte) {
+	_m.Called(peerID, data)
 }
 
 // ResolveInitGroup provides a mock function with given fields: ctx, msg
@@ -93,4 +93,9 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (
 	}
 
 	return r0, r1
+}
+
+// TransferResult provides a mock function with given fields: trackingID, status, info
+func (_m *Manager) TransferResult(trackingID string, status fftypes.OpStatus, info string) {
+	_m.Called(trackingID, status, info)
 }
