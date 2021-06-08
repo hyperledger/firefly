@@ -153,7 +153,7 @@ It depends on the following Kaleido services:
   │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
   │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
-  │       │   │ managaer      |    * Integrates with public storage interface [Ps] plugin
+  │       │   │ manager       |    * Integrates with public storage interface [Ps] plugin
   │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │
   │       │   ┌───────────────┐  - Send private data to individual parties in the network
