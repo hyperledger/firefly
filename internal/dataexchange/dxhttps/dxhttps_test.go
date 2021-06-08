@@ -44,8 +44,9 @@ func TestInit(t *testing.T) {
 
 func TestGetEndpointInfo(t *testing.T) {
 	var h dataexchange.Plugin = &HTTPS{}
-	endpoint, err := h.GetEndpointInfo(context.Background())
+	peer, endpoint, err := h.GetEndpointInfo(context.Background())
 	assert.NoError(t, err)
+	assert.Empty(t, peer)
 	assert.Nil(t, endpoint)
 }
 

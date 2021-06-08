@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/kaleido-io/firefly/mocks/databasemocks"
+	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
 	"github.com/kaleido-io/firefly/mocks/identitymocks"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,10 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -53,6 +57,8 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, nil)
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -76,7 +82,10 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -105,6 +114,49 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	node := &fftypes.Node{
+		ID:          fftypes.NewUUID(),
+		Identity:    "0x12345",
+		Owner:       "0x23456",
+		Description: "my org",
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
+	}
+	b, err := json.Marshal(&node)
+	assert.NoError(t, err)
+	data := &fftypes.Data{
+		Value: fftypes.Byteable(b),
+	}
+
+	mii := bm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
+	mdi.On("GetNode", mock.Anything, "0x12345").Return(nil, nil)
+	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
+	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			Author:    "0x23456",
+			Tag:       string(fftypes.SystemTagDefineNode),
+		},
+	}, []*fftypes.Data{data})
+	assert.False(t, valid)
+	assert.EqualError(t, err, "pop")
+
+	mii.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -114,7 +166,10 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -150,7 +205,10 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -164,6 +222,8 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x12345").Return(&fftypes.Node{Owner: "0x23456"}, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
+	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -187,7 +247,10 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -223,7 +286,10 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -258,7 +324,10 @@ func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -293,7 +362,10 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -325,7 +397,10 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: "my org",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)
@@ -357,7 +432,10 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 		Identity:    "0x12345",
 		Owner:       "0x23456",
 		Description: string(make([]byte, 4097)),
-		Endpoint:    fftypes.JSONObject{"some": "info"},
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
 	}
 	b, err := json.Marshal(&node)
 	assert.NoError(t, err)

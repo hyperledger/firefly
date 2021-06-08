@@ -70,8 +70,11 @@ func TestNodesE2EWithDB(t *testing.T) {
 		Owner:       "0x23456",
 		Identity:    "0x12345",
 		Description: "node1",
-		Endpoint:    fftypes.JSONObject{"some": "info"},
-		Created:     fftypes.Now(),
+		DX: fftypes.DXInfo{
+			Peer:     "peer1",
+			Endpoint: fftypes.JSONObject{"some": "info"},
+		},
+		Created: fftypes.Now(),
 	}
 	err = s.UpsertNode(context.Background(), nodeUpdated, true)
 	assert.NoError(t, err)

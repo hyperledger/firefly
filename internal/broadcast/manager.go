@@ -28,6 +28,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/log"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/kaleido-io/firefly/pkg/dataexchange"
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 	"github.com/kaleido-io/firefly/pkg/identity"
 	"github.com/kaleido-io/firefly/pkg/publicstorage"
@@ -50,12 +51,13 @@ type broadcastManager struct {
 	identity      identity.Plugin
 	data          data.Manager
 	blockchain    blockchain.Plugin
+	exchange      dataexchange.Plugin
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
-	if di == nil || bi == nil || ba == nil || pi == nil {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+	if di == nil || ii == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
@@ -64,6 +66,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		identity:      ii,
 		data:          dm,
 		blockchain:    bi,
+		exchange:      dx,
 		publicstorage: pi,
 		batch:         ba,
 	}
