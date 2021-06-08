@@ -37,27 +37,31 @@ const (
 )
 
 type aggregator struct {
-	ctx         context.Context
-	database    database.Plugin
-	broadcast   broadcast.Manager
-	messaging   privatemessaging.Manager
-	data        data.Manager
-	eventPoller *eventPoller
-	newPins     chan int64
+	ctx             context.Context
+	database        database.Plugin
+	broadcast       broadcast.Manager
+	messaging       privatemessaging.Manager
+	data            data.Manager
+	eventPoller     *eventPoller
+	newPins         chan int64
+	offchainBatches chan *fftypes.UUID
+	retry           *retry.Retry
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager, en *eventNotifier) *aggregator {
+	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
-		ctx:       log.WithLogField(ctx, "role", "aggregator"),
-		database:  di,
-		broadcast: bm,
-		messaging: pm,
-		data:      dm,
-		newPins:   make(chan int64),
+		ctx:             log.WithLogField(ctx, "role", "aggregator"),
+		database:        di,
+		broadcast:       bm,
+		messaging:       pm,
+		data:            dm,
+		newPins:         make(chan int64),
+		offchainBatches: make(chan *fftypes.UUID, batchSize),
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
-		eventBatchSize:             config.GetInt(config.EventAggregatorBatchSize),
+		eventBatchSize:             batchSize,
 		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),
 		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
@@ -76,12 +80,47 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("dispatched", false))
 		},
+		maybeRewind: ag.rewindOffchainBatches,
 	})
+	ag.retry = &ag.eventPoller.conf.retry
 	return ag
 }
 
 func (ag *aggregator) start() error {
 	return ag.eventPoller.start()
+}
+
+func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
+	ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
+		var batchIDs []driver.Value
+		draining := true
+		for draining {
+			select {
+			case batchID := <-ag.offchainBatches:
+				batchIDs = append(batchIDs, batchID)
+			default:
+				draining = false
+			}
+		}
+		if len(batchIDs) > 0 {
+			fb := database.PinQueryFactory.NewFilter(ag.ctx)
+			filter := fb.And(
+				fb.Eq("dispatched", false),
+				fb.In("batch", batchIDs),
+			).Sort("sequence").Limit(1) // only need the one oldest sequence
+			sequences, err := ag.database.GetPins(ag.ctx, filter)
+			if err != nil {
+				return true, err
+			}
+			if len(sequences) > 0 {
+				rewind = true
+				offset = sequences[0].Sequence
+				log.L(ag.ctx).Debugf("Rewinding for off-chain data arrival. New local pin sequence %d", offset)
+			}
+		}
+		return false, nil
+	})
+	return
 }
 
 func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repoll bool, err error) {

@@ -602,13 +602,13 @@ func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*f
 	return r0, r1
 }
 
-// GetNode provides a mock function with given fields: ctx, identity
-func (_m *Plugin) GetNode(ctx context.Context, identity string) (*fftypes.Node, error) {
-	ret := _m.Called(ctx, identity)
+// GetNode provides a mock function with given fields: ctx, owner, name
+func (_m *Plugin) GetNode(ctx context.Context, owner string, name string) (*fftypes.Node, error) {
+	ret := _m.Called(ctx, owner, name)
 
 	var r0 *fftypes.Node
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Node); ok {
-		r0 = rf(ctx, identity)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Node); ok {
+		r0 = rf(ctx, owner, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Node)
@@ -616,8 +616,8 @@ func (_m *Plugin) GetNode(ctx context.Context, identity string) (*fftypes.Node, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, identity)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, owner, name)
 	} else {
 		r1 = ret.Error(1)
 	}

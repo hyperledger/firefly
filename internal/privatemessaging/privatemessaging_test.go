@@ -36,7 +36,7 @@ import (
 
 func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	config.Reset()
-	config.Set(config.NodeIdentity, "localnodeid")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "localorg")
 	config.Set(config.GroupCacheTTL, "1m")
 	config.Set(config.GroupCacheSize, "1m")

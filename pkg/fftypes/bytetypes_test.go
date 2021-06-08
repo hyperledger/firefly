@@ -130,3 +130,18 @@ func TestHashResult(t *testing.T) {
 	h2 := HashResult(hash)
 	assert.Equal(t, [32]byte(h1), [32]byte(*h2))
 }
+
+func TestSafeEqualsBytes32(t *testing.T) {
+
+	var b1, b2 *Bytes32
+	assert.True(t, b1.Equals(b2))
+	b1 = NewRandB32()
+	assert.False(t, b1.Equals(b2))
+	var vb2 Bytes32
+	vb2 = *b1
+	b2 = &vb2
+	assert.True(t, b1.Equals(b2))
+	b2 = NewRandB32()
+	assert.False(t, b1.Equals(b2))
+
+}

@@ -27,7 +27,7 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypeBroadcast
 	if in.Header.Author == "" {
-		in.Header.Author = config.GetString(config.NodeIdentity)
+		in.Header.Author = config.GetString(config.OrgIdentity)
 	}
 	if in.Header.TxType == "" {
 		in.Header.TxType = fftypes.TransactionTypeBatchPin

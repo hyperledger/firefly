@@ -243,7 +243,7 @@ func TestGettTransactionsReadMessageFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestTransactionUpdateBeginFail(t *testing.T) {
+func TestTxSubmissionUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
@@ -251,7 +251,7 @@ func TestTransactionUpdateBeginFail(t *testing.T) {
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestTransactionUpdateBuildQueryFail(t *testing.T) {
+func TestTxSubmissionUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
@@ -259,7 +259,7 @@ func TestTransactionUpdateBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
-func TestTransactionUpdateFail(t *testing.T) {
+func TestTxSubmissionUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))

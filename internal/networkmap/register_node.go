@@ -30,13 +30,13 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		ID:          fftypes.NewUUID(),
 		Created:     fftypes.Now(),
 		Owner:       config.GetString(config.OrgIdentity),
-		Identity:    config.GetString(config.NodeIdentity),
+		Name:        config.GetString(config.NodeName),
 		Description: config.GetString(config.NodeDescription),
 	}
-	if node.Identity == "" {
-		node.Identity = config.GetString(config.OrgIdentity)
+	if node.Name == "" {
+		node.Name = config.GetString(config.OrgIdentity)
 	}
-	if node.Owner == "" || node.Identity == "" {
+	if node.Owner == "" || node.Name == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
 
@@ -50,11 +50,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		return nil, err
 	}
 
-	if _, err = nm.identity.Resolve(ctx, node.Identity); err != nil {
-		return nil, err
-	}
-
-	if err = nm.findOrgsToRoot(ctx, "node", node.Identity, node.Owner); err != nil {
+	if err = nm.findOrgsToRoot(ctx, "node", node.Name, node.Owner); err != nil {
 		return nil, err
 	}
 

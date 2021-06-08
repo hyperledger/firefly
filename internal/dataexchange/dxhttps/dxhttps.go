@@ -219,15 +219,15 @@ func (h *HTTPS) eventLoop() {
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
 			switch msg.Type {
 			case messageFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error)
+				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case messageDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "")
+				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case messageReceived:
 				h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
 			case blobFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error)
+				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case blobDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "")
+				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case blobReceived:
 				if ns, id := h.extractBlobPath(ctx, msg.Path); id != nil {
 					h.callbacks.BLOBReceived(msg.Sender, ns, *id)

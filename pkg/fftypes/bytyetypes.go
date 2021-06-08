@@ -108,3 +108,14 @@ func UUIDBytes(u *UUID) *Bytes32 {
 	copy(d[:], u[:])
 	return &d
 }
+
+func (b32 *Bytes32) Equals(b2 *Bytes32) bool {
+	switch {
+	case b32 == nil && b2 == nil:
+		return true
+	case b32 == nil || b2 == nil:
+		return false
+	default:
+		return *b32 == *b2
+	}
+}

@@ -26,7 +26,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) TransactionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
 
 	// Find a matching operation, for this plugin, with the specified ID.
 	// We retry a few times, as there's an outside possibility of the event arriving before we're finished persisting the operation itself
@@ -50,7 +50,6 @@ func (em *eventManager) TransactionUpdate(bi blockchain.Plugin, txTrackingID str
 
 	update := database.OperationQueryFactory.NewUpdate(em.ctx).
 		Set("status", txState).
-		Set("backendid", protocolTxID).
 		Set("error", errorMessage).
 		Set("info", additionalInfo)
 	for _, op := range operations {

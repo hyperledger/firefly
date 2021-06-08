@@ -25,14 +25,20 @@ import (
 
 func TestNodeValidation(t *testing.T) {
 
+	org := &Organization{
+		Name: "!name",
+	}
+	assert.Regexp(t, "FF10131.*name", org.Validate(context.Background(), false))
+
 	n := &Node{
+		Name:        "ok",
 		Description: string(make([]byte, 4097)),
 	}
 	assert.Regexp(t, "FF10188.*description", n.Validate(context.Background(), false))
 
 	n = &Node{
+		Name:        "ok",
 		Description: "ok",
-		Identity:    "ok",
 	}
 	assert.Regexp(t, "FF10211", n.Validate(context.Background(), false))
 
