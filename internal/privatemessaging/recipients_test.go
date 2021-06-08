@@ -37,8 +37,9 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	orgID := fftypes.NewUUID()
 	var dataID *fftypes.UUID
 	mdi.On("GetOrganizationByName", pm.ctx, mock.Anything).Return(&fftypes.Organization{ID: orgID, Identity: "localorg"}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeID, Identity: "localnodeid"}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeID, Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, true, false).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*fftypes.Data)
@@ -81,9 +82,9 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{ID: fftypes.NewUUID()},
+		{Hash: fftypes.NewRandB32()},
 	}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
@@ -105,7 +106,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
@@ -127,7 +128,7 @@ func TestResolveMemberListMissingLocalMember(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "anothernode"}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node2", Owner: "org1"}}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
 		Group: &fftypes.InputGroup{
@@ -193,8 +194,8 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Parent: "id-org2"}, nil)
 	mdi.On("GetOrganizationByIdentity", pm.ctx, "id-org2").Return(&fftypes.Organization{ID: orgID}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil).Once()
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Identity: "localnodeid"}}, nil)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{ID: fftypes.NewUUID()}}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
 		Group: &fftypes.InputGroup{
@@ -236,14 +237,14 @@ func TestResolveOrgByIDFail(t *testing.T) {
 
 }
 
-func TestResolveNodeFail(t *testing.T) {
+func TestGetNodeFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetNode", pm.ctx, "id-node1").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetNode", pm.ctx, "org1", "id-node1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := pm.resolveNode(pm.ctx, &fftypes.Organization{}, "id-node1")
+	_, err := pm.resolveNode(pm.ctx, &fftypes.Organization{Identity: "org1"}, "id-node1")
 	assert.Regexp(t, "pop", err)
 	mdi.AssertExpectations(t)
 
@@ -269,7 +270,7 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Group: fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})

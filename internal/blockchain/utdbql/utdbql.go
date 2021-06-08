@@ -171,7 +171,7 @@ func (u *UTDBQL) dispatchEvent(ev *utEvent) {
 		}
 		err = u.callbacks.BatchPinComplete(batch, ev.identity, ev.trackingID, nil)
 	case utDBQLEventTypeMined:
-		err = u.callbacks.TransactionUpdate(ev.trackingID, fftypes.OpStatusSucceeded, ev.txID, "", nil)
+		err = u.callbacks.TxSubmissionUpdate(ev.trackingID, fftypes.OpStatusSucceeded, ev.txID, "", nil)
 	}
 	if err != nil {
 		log.L(u.ctx).Errorf("Exiting due to error")

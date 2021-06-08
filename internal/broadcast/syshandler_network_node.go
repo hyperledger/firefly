@@ -57,7 +57,7 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	existing, err := bm.database.GetNode(ctx, node.Identity)
+	existing, err := bm.database.GetNode(ctx, node.Owner, node.Name)
 	if err == nil && existing == nil {
 		existing, err = bm.database.GetNodeByID(ctx, node.ID)
 	}
@@ -73,6 +73,11 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 	}
 
 	if err = bm.database.UpsertNode(ctx, &node, true); err != nil {
+		return false, err
+	}
+
+	// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
+	if err = bm.exchange.AddPeer(ctx, &node); err != nil {
 		return false, err
 	}
 

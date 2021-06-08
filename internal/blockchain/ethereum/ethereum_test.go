@@ -864,7 +864,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "transactionIndex": "0"
   }`)
 
-	em.On("TransactionUpdate",
+	em.On("TxSubmissionUpdate",
 		"4373614c-e0f7-47b0-640e-7eacec417a9e",
 		fftypes.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
@@ -904,7 +904,7 @@ func TestHandleReceiptTXFail(t *testing.T) {
 		"requestPayload": "{\"from\":\"0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635\",\"gas\":0,\"gasPrice\":0,\"headers\":{\"id\":\"6fb94fff-81d3-4094-567d-e031b1871694\",\"type\":\"SendTransaction\"},\"method\":{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txnId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"batchId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"payloadRef\",\"type\":\"bytes32\"}],\"name\":\"broadcastBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},\"params\":[\"12345\",\"!\",\"!\"],\"to\":\"0xd3266a857285fb75eb7df37353b4a15c8bb828f5\",\"value\":0}"
 	}`)
 
-	em.On("TransactionUpdate",
+	em.On("TxSubmissionUpdate",
 		"6fb94fff-81d3-4094-567d-e031b1871694",
 		fftypes.OpStatusFailed,
 		"",

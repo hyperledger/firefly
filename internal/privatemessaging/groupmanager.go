@@ -59,6 +59,14 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
+	// In the case of groups, we actually write the unconfirmed group directly to our database.
+	// So it can be used straight away.
+	// We're able to do this by making the identifier of the group a hash of the identity fields
+	// (name, ledger and member list), as that is all the group contains. There's no data in there.
+	if err = gm.database.UpsertGroup(ctx, group, true); err != nil {
+		return err
+	}
+
 	// Write as data to the local store
 	if err = gm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
 		return err
@@ -85,35 +93,36 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 		// Store the message - this asynchronously triggers the next step in process
 		err = gm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
 	}
+
 	return err
 
 }
 
-func (gm *groupManager) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
-	u, err := fftypes.ParseUUID(ctx, id)
+func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*fftypes.Group, error) {
+	h, err := fftypes.ParseBytes32(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
-	return gm.database.GetGroupByID(ctx, u)
+	return gm.database.GetGroupByHash(ctx, h)
 }
 
 func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error) {
 	return gm.database.GetGroups(ctx, filter)
 }
 
-func (gm *groupManager) getGroupNodes(ctx context.Context, groupID *fftypes.UUID) ([]*fftypes.Node, error) {
+func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32) ([]*fftypes.Node, error) {
 
-	if cached := gm.groupCache.Get(groupID.String()); cached != nil {
+	if cached := gm.groupCache.Get(groupHash.String()); cached != nil {
 		cached.Extend(gm.groupCacheTTL)
 		return cached.Value().([]*fftypes.Node), nil
 	}
 
-	group, err := gm.database.GetGroupByID(ctx, groupID)
+	group, err := gm.database.GetGroupByHash(ctx, groupHash)
 	if err != nil {
 		return nil, err
 	}
 	if group == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgGroupNotFound, groupID)
+		return nil, i18n.NewError(ctx, i18n.MsgGroupNotFound, groupHash)
 	}
 
 	// We de-duplicate nodes in the case that the payload needs to be received by multiple org identities
@@ -134,7 +143,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupID *fftypes.UUID
 		}
 	}
 
-	gm.groupCache.Set(groupID.String(), nodes, gm.groupCacheTTL)
+	gm.groupCache.Set(group.Hash.String(), nodes, gm.groupCacheTTL)
 	return nodes, nil
 }
 
@@ -162,8 +171,8 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 			log.L(ctx).Warnf("Group %s definition in message %s invalid: %s", msg.Header.Group, msg.Header.ID, err)
 			return nil, nil
 		}
-		if !newGroup.ID.Equals(msg.Header.Group) {
-			log.L(ctx).Warnf("Group %s definition in message %s invalid: bad id '%s'", msg.Header.Group, msg.Header.ID, newGroup.ID)
+		if !newGroup.Hash.Equals(msg.Header.Group) {
+			log.L(ctx).Warnf("Group %s definition in message %s invalid: mismatched hash with message '%s'", msg.Header.Group, msg.Header.ID, newGroup.Hash)
 			return nil, nil
 		}
 		newGroup.Message = msg.Header.ID
@@ -171,7 +180,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 		if err != nil {
 			return nil, err
 		}
-		event := fftypes.NewEvent(fftypes.EventTypeGroupConfirmed, newGroup.Namespace, newGroup.ID)
+		event := fftypes.NewEvent(fftypes.EventTypeGroupConfirmed, newGroup.Namespace, nil, newGroup.Hash)
 		if err = gm.database.UpsertEvent(ctx, event, false); err != nil {
 			return nil, err
 		}
@@ -179,7 +188,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 	}
 
 	// Get the existing group
-	group, err := gm.database.GetGroupByID(ctx, msg.Header.Group)
+	group, err := gm.database.GetGroupByHash(ctx, msg.Header.Group)
 	if err != nil {
 		return group, err
 	}

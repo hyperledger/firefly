@@ -105,7 +105,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
 	data          data.Manager
-	bbc           boundBlockchainCallbacks
+	bc            boundCallbacks
 }
 
 func NewOrchestrator() Orchestrator {
@@ -129,8 +129,9 @@ func (or *orchestrator) Init(ctx context.Context) (err error) {
 		err = or.initNamespaces(ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
-	or.bbc.bi = or.blockchain
-	or.bbc.ei = or.events
+	or.bc.bi = or.blockchain
+	or.bc.ei = or.events
+	or.bc.dx = or.dataexchange
 	return err
 }
 
@@ -208,7 +209,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bbc); err != nil {
+	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bc); err != nil {
 		return err
 	}
 
@@ -228,7 +229,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), or)
+	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
@@ -248,7 +249,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.publicstorage, or.batch); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}

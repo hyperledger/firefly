@@ -25,6 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/internal/data"
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/kaleido-io/firefly/internal/retry"
 	"github.com/kaleido-io/firefly/pkg/blockchain"
 	"github.com/kaleido-io/firefly/pkg/database"
 	"github.com/kaleido-io/firefly/pkg/dataexchange"
@@ -40,14 +41,17 @@ type Manager interface {
 type privateMessaging struct {
 	groupManager
 
-	ctx          context.Context
-	database     database.Plugin
-	identity     identity.Plugin
-	exchange     dataexchange.Plugin
-	blockchain   blockchain.Plugin
-	batch        batch.Manager
-	data         data.Manager
-	nodeIdentity string
+	ctx                  context.Context
+	database             database.Plugin
+	identity             identity.Plugin
+	exchange             dataexchange.Plugin
+	blockchain           blockchain.Plugin
+	batch                batch.Manager
+	data                 data.Manager
+	retry                retry.Retry
+	localNodeName        string
+	localOrgIdentity     string
+	opCorrelationRetries int
 }
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager) (Manager, error) {
@@ -56,19 +60,26 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 	}
 
 	pm := &privateMessaging{
-		ctx:        ctx,
-		database:   di,
-		identity:   ii,
-		exchange:   dx,
-		blockchain: bi,
-		batch:      ba,
-		data:       dm,
+		ctx:              ctx,
+		database:         di,
+		identity:         ii,
+		exchange:         dx,
+		blockchain:       bi,
+		batch:            ba,
+		data:             dm,
+		localNodeName:    config.GetString(config.NodeName),
+		localOrgIdentity: config.GetString(config.OrgIdentity),
 		groupManager: groupManager{
 			database:      di,
 			data:          dm,
 			groupCacheTTL: config.GetDuration(config.GroupCacheTTL),
 		},
-		nodeIdentity: config.GetString(config.NodeIdentity),
+		retry: retry.Retry{
+			InitialDelay: config.GetDuration(config.PrivateMessagingRetryInitDelay),
+			MaximumDelay: config.GetDuration(config.PrivateMessagingRetryMaxDelay),
+			Factor:       config.GetFloat64(config.PrivateMessagingRetryFactor),
+		},
+		opCorrelationRetries: config.GetInt(config.PrivateMessagingOpCorrelationRetries),
 	}
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -77,9 +88,9 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 	)
 
 	bo := batch.Options{
-		BatchMaxSize:   config.GetUint(config.PrivateBatchSize),
-		BatchTimeout:   config.GetDuration(config.PrivateBatchTimeout),
-		DisposeTimeout: config.GetDuration(config.PrivateBatchAgentTimeout),
+		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
+		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
+		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
 	}
 
 	ba.RegisterDispatcher([]fftypes.MessageType{

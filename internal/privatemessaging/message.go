@@ -28,7 +28,7 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {
-		in.Header.Author = config.GetString(config.NodeIdentity)
+		in.Header.Author = config.GetString(config.OrgIdentity)
 	}
 	if in.Header.TxType == "" {
 		in.Header.TxType = fftypes.TransactionTypeBatchPin

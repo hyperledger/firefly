@@ -61,12 +61,21 @@ var (
 	BroadcastBatchSize = rootKey("broadcast.batch.size")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = rootKey("broadcast.batch.timeout")
-	// PrvateBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
-	PrivateBatchAgentTimeout = rootKey("private.batch.agentTimeout")
-	// PrivateBatchSize is the maximum size of a batch for broadcast messages
-	PrivateBatchSize = rootKey("private.batch.size")
-	// PrivateBatchTimeout is the timeout to wait for a batch to fill, before sending
-	PrivateBatchTimeout = rootKey("private.batch.timeout")
+	// PrivateMessagingBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
+	PrivateMessagingBatchAgentTimeout = rootKey("privatemessaging.batch.agentTimeout")
+	// PrivateMessagingBatchSize is the maximum size of a batch for broadcast messages
+	PrivateMessagingBatchSize = rootKey("privatemessaging.batch.size")
+	// PrivateMessagingBatchTimeout is the timeout to wait for a batch to fill, before sending
+	PrivateMessagingBatchTimeout = rootKey("privatemessaging.batch.timeout")
+	// PrivateMessagingOpCorrelationRetries how many times to correlate an event for an operation (such as tx submission) back to an operation.
+	// Needed because the operation update might come back before we are finished persisting the ID of the request
+	PrivateMessagingOpCorrelationRetries = rootKey("privatemessaging.opCorrelationRetries")
+	// PrivateMessagingRetryFactor the backoff factor to use for retry of database operations
+	PrivateMessagingRetryFactor = rootKey("privatemessaging.retry.factor")
+	// PrivateMessagingRetryInitDelay the initial delay to use for retry of data base operations
+	PrivateMessagingRetryInitDelay = rootKey("privatemessaging.retry.initDelay")
+	// PrivateMessagingRetryMaxDelay the maximum delay to use for retry of data base operations
+	PrivateMessagingRetryMaxDelay = rootKey("privatemessaging.retry.maxDelay")
 	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
 	CorsAllowCredentials = rootKey("cors.credentials")
 	// CorsAllowedHeaders CORS setting to control the allowed headers
@@ -160,8 +169,8 @@ var (
 	NamespacesDefault = rootKey("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = rootKey("namespaces.predefined")
-	// NodeIDentity is the signing identity allocated to the node
-	NodeIdentity = rootKey("node.identity")
+	// NodeName is a description for the node
+	NodeName = rootKey("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = rootKey("node.description")
 	// OrgName is the short name o the org
@@ -273,6 +282,10 @@ func Reset() {
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
+	viper.SetDefault(string(PrivateMessagingRetryFactor), 2.0)
+	viper.SetDefault(string(PrivateMessagingRetryInitDelay), "100ms")
+	viper.SetDefault(string(PrivateMessagingRetryMaxDelay), "30s")
+	viper.SetDefault(string(PrivateMessagingOpCorrelationRetries), 3)
 	viper.SetDefault(string(SubscriptionDefaultsReadAhead), 0)
 	viper.SetDefault(string(SubscriptionMax), 500)
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")

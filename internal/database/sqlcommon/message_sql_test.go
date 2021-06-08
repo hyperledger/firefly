@@ -85,7 +85,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	dataID3 := fftypes.NewUUID()
 	rand3 := fftypes.NewRandB32()
 	cid := fftypes.NewUUID()
-	gid := fftypes.NewUUID()
+	gid := fftypes.NewRandB32()
 	bid := fftypes.NewUUID()
 	msgUpdated := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -175,7 +175,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(msgs))
 
 	// Update
-	gid2 := fftypes.NewUUID()
+	gid2 := fftypes.NewRandB32()
 	bid2 := fftypes.NewUUID()
 	up := database.MessageQueryFactory.NewUpdate(ctx).
 		Set("group", gid2).
