@@ -52,7 +52,7 @@ var (
 
 // Orchestrator is the main interface behind the API, implementing the actions
 type Orchestrator interface {
-	Init(ctx context.Context) error
+	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 	Broadcast() broadcast.Manager
@@ -100,6 +100,7 @@ type Orchestrator interface {
 
 type orchestrator struct {
 	ctx           context.Context
+	cancelCtx     context.CancelFunc
 	started       bool
 	database      database.Plugin
 	blockchain    blockchain.Plugin
@@ -127,8 +128,9 @@ func NewOrchestrator() Orchestrator {
 	return or
 }
 
-func (or *orchestrator) Init(ctx context.Context) (err error) {
+func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	or.ctx = ctx
+	or.cancelCtx = cancelCtx
 	err = or.initPlugins(ctx)
 	if err == nil {
 		err = or.initComponents(ctx)
@@ -205,6 +207,16 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 	if err = or.database.Init(ctx, databaseConfig.SubPrefix(or.database.Name()), or); err != nil {
+		return err
+	}
+
+	// Read configuration from DB and merge with existing config
+	var configRecords []*fftypes.ConfigRecord
+	filter := database.ConfigRecordQueryFactory.NewFilter(ctx).And()
+	if configRecords, err = or.GetConfigRecords(ctx, filter); err != nil {
+		return err
+	}
+	if err = config.MergeConfig(configRecords); err != nil {
 		return err
 	}
 
@@ -359,3 +371,15 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 	}
 	return nil
 }
+
+// func buildViperConfig(configRecords []*fftypes.ConfigRecord) (*viper.Viper, error) {
+// 	v := viper.New()
+// 	v.SetConfigType("json")
+// 	for _, c := range configRecords {
+// 		r := bytes.NewBuffer(c.Value)
+// 		if err := v.Sub(c.Key).ReadConfig(r); err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	return v, nil
+// }

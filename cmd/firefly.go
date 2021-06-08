@@ -35,7 +35,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// This is a test
 var sigs = make(chan os.Signal, 1)
 
 var rootCmd = &cobra.Command{
@@ -95,30 +94,43 @@ func run() error {
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	ctx = log.WithLogger(ctx, logrus.WithField("pid", os.Getpid()))
+
 	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Project Firefly")
 	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
 
+	// Deferred error return from reading config
+	if err != nil {
+		cancelCtx()
+		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed)
+	}
+
 	// Setup signal handling to cancel the context, which shuts down the API Server
 	o := getOrchestrator()
-	done := make(chan struct{})
+	errChan := make(chan error)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
+
+	for {
+		orchestratorCtx, cancelOrchestratorCtx := context.WithCancel(ctx)
+		go startFirefly(orchestratorCtx, cancelOrchestratorCtx, o, errChan)
 		select {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
 			cancelCtx()
 			o.WaitStop()
-		case <-done:
+			return nil
+		case <-orchestratorCtx.Done():
+			log.L(ctx).Infof("Restarting due to configuration change")
+			o.WaitStop()
+		case err := <-errChan:
+			cancelCtx()
+			return err
 		}
-	}()
-	defer close(done)
-
-	// Deferred error return from reading config
-	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgConfigFailed)
 	}
+}
 
+func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestrator.Orchestrator, errChan chan error) {
+	var err error
 	// Start debug listener
 	debugPort := config.GetInt(config.DebugPort)
 	if debugPort >= 0 {
@@ -134,13 +146,17 @@ func run() error {
 		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
 	}
 
-	if err = o.Init(ctx); err != nil {
-		return err
+	if err = o.Init(ctx, cancelCtx); err != nil {
+		errChan <- err
+		return
 	}
 	if err = o.Start(); err != nil {
-		return err
+		errChan <- err
+		return
 	}
 
 	// Run the API Server
-	return apiserver.Serve(ctx, o)
+	if err = apiserver.Serve(ctx, o); err != nil {
+		errChan <- err
+	}
 }

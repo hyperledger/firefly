@@ -724,13 +724,13 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter d
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx
-func (_m *Orchestrator) Init(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// Init provides a mock function with given fields: ctx, cancelCtx
+func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
+	ret := _m.Called(ctx, cancelCtx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
+		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
 	}

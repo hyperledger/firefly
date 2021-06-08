@@ -58,8 +58,8 @@ var routes = []*oapispec.Route{
 	postRegisterOrg,
 	postRegisterNode,
 	postRegisterNodeOrg,
+	putConfigRecord,
 	getConfigRecord,
 	getConfigRecords,
-	putConfigRecord,
 	deleteConfigRecord,
 }
