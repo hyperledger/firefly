@@ -56,6 +56,7 @@ type Orchestrator interface {
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
 	Broadcast() broadcast.Manager
+	PrivateMessaging() privatemessaging.Manager
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
@@ -115,6 +116,7 @@ func NewOrchestrator() Orchestrator {
 	bifactory.InitPrefix(blockchainConfig)
 	difactory.InitPrefix(databaseConfig)
 	psfactory.InitPrefix(publicstorageConfig)
+	dxfactory.InitPrefix(dataexchangeConfig)
 
 	return or
 }
@@ -167,6 +169,10 @@ func (or *orchestrator) WaitStop() {
 
 func (or *orchestrator) Broadcast() broadcast.Manager {
 	return or.broadcast
+}
+
+func (or *orchestrator) PrivateMessaging() privatemessaging.Manager {
+	return or.messaging
 }
 
 func (or *orchestrator) Events() events.EventManager {
