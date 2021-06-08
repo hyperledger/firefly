@@ -57,7 +57,7 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	existing, err := bm.database.GetNode(ctx, node.Identity)
+	existing, err := bm.database.GetNode(ctx, node.Owner, node.Name)
 	if err == nil && existing == nil {
 		existing, err = bm.database.GetNodeByID(ctx, node.ID)
 	}

@@ -36,7 +36,6 @@ func TestRegisterNodeOk(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeIdentity, "0x12345")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
@@ -70,7 +69,7 @@ func TestRegisterNodeMissingConfig(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, nil)
-	config.Set(config.NodeIdentity, nil)
+	config.Set(config.NodeName, nil)
 	config.Set(config.OrgIdentity, nil)
 
 	_, err := nm.RegisterNode(nm.ctx)
@@ -84,7 +83,7 @@ func TestRegisterNodeBadParentID(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeIdentity, "0x12345")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
@@ -94,8 +93,6 @@ func TestRegisterNodeBadParentID(t *testing.T) {
 	}, nil)
 
 	mii := nm.identity.(*identitymocks.Plugin)
-	childID := &fftypes.Identity{OnChain: "0x12345"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
 	mii.On("Resolve", nm.ctx, "0x23456").Return(nil, fmt.Errorf("pop"))
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
@@ -112,7 +109,7 @@ func TestRegisterNodeBadNodeID(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeIdentity, "0x12345")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
@@ -122,7 +119,7 @@ func TestRegisterNodeBadNodeID(t *testing.T) {
 	}, nil)
 
 	mii := nm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", nm.ctx, "0x12345").Return(nil, fmt.Errorf("pop"))
+	mii.On("Resolve", nm.ctx, "0x23456").Return(nil, fmt.Errorf("pop"))
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
@@ -138,7 +135,7 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, "Node 1")
-	config.Set(config.NodeIdentity, "0x12345")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdi := nm.database.(*databasemocks.Plugin)
@@ -162,7 +159,7 @@ func TestRegisterNodeParentBadNode(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, string(make([]byte, 4097)))
-	config.Set(config.NodeIdentity, "0x12345")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
@@ -179,7 +176,7 @@ func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 	defer cancel()
 
 	config.Set(config.NodeDescription, string(make([]byte, 4097)))
-	config.Set(config.NodeIdentity, "0x12345")
+	config.Set(config.NodeName, "node1")
 	config.Set(config.OrgIdentity, "0x23456")
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)

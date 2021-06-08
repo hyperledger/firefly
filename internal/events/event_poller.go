@@ -51,6 +51,7 @@ type eventPollerConf struct {
 	queryFactory               database.QueryFactory
 	addCriteria                func(database.AndFilter) database.AndFilter
 	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
+	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
 	offsetName                 string
 	offsetNamespace            string
@@ -67,6 +68,9 @@ func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, 
 		eventNotifier: en,
 		closed:        make(chan struct{}),
 		conf:          conf,
+	}
+	if ep.conf.maybeRewind == nil {
+		ep.conf.maybeRewind = func() (bool, int64) { return false, -1 }
 	}
 	return ep
 }
@@ -150,8 +154,19 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 }
 
 func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
+
 	var items []fftypes.LocallySequenced
-	pollingOffset := ep.getPollingOffset() // Ensure we go through the mutex to pickup rewinds
+
+	// We have a hook here to allow a safe to do operations that check pin state, and perform
+	// a rewind based on it.
+	rewind, pollingOffset := ep.conf.maybeRewind()
+	if rewind {
+		ep.rewindPollingOffset(pollingOffset)
+	} else {
+		// Ensure we go through the mutex to pickup rewinds that happened elsewhere
+		pollingOffset = ep.getPollingOffset()
+	}
+
 	err := ep.conf.retry.Do(ep.ctx, "retrieve events", func(attempt int) (retry bool, err error) {
 		fb := ep.conf.queryFactory.NewFilter(ep.ctx)
 		filter := fb.And(

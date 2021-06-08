@@ -83,8 +83,8 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 }
 
 func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
-	nodeIdentity := config.GetString(config.NodeIdentity)
-	id, err := bm.identity.Resolve(ctx, nodeIdentity)
+	orgIdentity := config.GetString(config.OrgIdentity)
+	id, err := bm.identity.Resolve(ctx, orgIdentity)
 	if err != nil {
 		return nil, err
 	}

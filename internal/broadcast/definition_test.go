@@ -32,7 +32,7 @@ func TestBroadcastDefinitionAsNodeBadId(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	config.Set(config.NodeIdentity, "wrong")
+	config.Set(config.OrgIdentity, "wrong")
 	mii := bm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "wrong").Return(nil, fmt.Errorf("pop"))
 	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace)
@@ -43,7 +43,7 @@ func TestBroadcastDefinitionAsNodeBadSigningId(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	config.Set(config.NodeIdentity, "wrong")
+	config.Set(config.OrgIdentity, "wrong")
 	mii := bm.identity.(*identitymocks.Plugin)
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	badID := &fftypes.Identity{OnChain: "0x99999"}

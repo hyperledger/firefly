@@ -24,9 +24,31 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
+func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, author string) error {
+	l := log.L(ctx)
+
+	// Verify the author matches
+	id, err := em.identity.Resolve(ctx, batch.Author)
+	if err != nil {
+		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
+		return nil // This is not retryable. skip this batch
+	}
+	if author != id.OnChain {
+		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
+		return nil // This is not retryable. skip this batch
+	}
+
+	if !onchainHash.Equals(batch.Hash) {
+		l.Errorf("Invalid batch '%s'. Hash in batch '%s' does not match transaction hash '%s'", batch.ID, batch.Hash, onchainHash)
+		return nil // This is not retryable. skip this batch
+	}
+
+	return em.persistBatch(ctx, batch)
+}
+
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch, author string) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) error {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
@@ -42,22 +64,11 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 		return nil // This is not retryable. skip this batch
 	}
 
-	// Verify the author matches
-	id, err := em.identity.Resolve(ctx, batch.Author)
-	if err != nil {
-		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
-		return nil // This is not retryable. skip this batch
-	}
-	if author != id.OnChain {
-		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
-		return nil // This is not retryable. skip this batch
-	}
-
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err = em.database.UpsertBatch(ctx, batch, true, false)
+	err := em.database.UpsertBatch(ctx, batch, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)

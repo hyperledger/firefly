@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestTransactionUpdateRetryThenFound(t *testing.T) {
+func TestTxSubmissionUpdateRetryThenFound(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
@@ -50,7 +50,7 @@ func TestTransactionUpdateRetryThenFound(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
 	assert.NoError(t, err)
 }
 
@@ -65,11 +65,11 @@ func TestTransactionLookupNotFound(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
 	assert.NoError(t, err) // swallowed after logging
 }
 
-func TestTransactionUpdateError(t *testing.T) {
+func TestTxSubmissionUpdateError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
@@ -84,6 +84,6 @@ func TestTransactionUpdateError(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TransactionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
 	assert.EqualError(t, err, "pop")
 }

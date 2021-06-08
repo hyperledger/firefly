@@ -209,7 +209,7 @@ type PeristenceInterface interface {
 	// UpsertOperation - Upsert an operation
 	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
 
-	// UpdateOperation - Update matching operations
+	// UpdateOperation - Update operation by ID
 	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
@@ -274,7 +274,7 @@ type PeristenceInterface interface {
 	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetNode - Get a node by ID
-	GetNode(ctx context.Context, identity string) (node *fftypes.Node, err error)
+	GetNode(ctx context.Context, owner, name string) (node *fftypes.Node, err error)
 
 	// GetNodeByID- Get a node by ID
 	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
@@ -510,7 +510,7 @@ var NodeQueryFactory = &queryFields{
 	"id":          &UUIDField{},
 	"message":     &UUIDField{},
 	"owner":       &StringField{},
-	"identity":    &StringField{},
+	"name":        &StringField{},
 	"description": &StringField{},
 	"dx.peer":     &StringField{},
 	"dx.endpoint": &JSONField{},

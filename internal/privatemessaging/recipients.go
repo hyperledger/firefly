@@ -71,7 +71,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 		if err == nil {
 			node, err = pm.database.GetNodeByID(ctx, nodeID)
 		} else {
-			node, err = pm.database.GetNode(ctx, nodeInput)
+			node, err = pm.database.GetNode(ctx, org.Identity, nodeInput)
 		}
 	} else {
 		// Find any node owned by this organization
@@ -114,7 +114,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || node.Identity == pm.nodeIdentity
+		foundLocal = foundLocal || (node.Owner == pm.localOrgIdentity && node.Name == pm.localNodeName)
 		members[i] = &fftypes.Member{
 			Identity: org.Identity,
 			Node:     node.ID,

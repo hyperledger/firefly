@@ -35,8 +35,8 @@ func TestSendMessageE2EOk(t *testing.T) {
 	defer cancel()
 
 	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localnodeid").Return(&fftypes.Identity{
-		Identifier: "localnodeid",
+	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
+		Identifier: "localorg",
 		OnChain:    "0x12345",
 	}, nil)
 
@@ -56,13 +56,13 @@ func TestSendMessageE2EOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
 	}, nil).Once()
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Identity: "org1node"},
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "org1"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{ID: fftypes.NewUUID()},
@@ -90,7 +90,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	defer cancel()
 
 	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localnodeid").Return(nil, fmt.Errorf("pop"))
+	mii.On("Resolve", pm.ctx, "localorg").Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
 		InputData: fftypes.InputData{
@@ -112,8 +112,8 @@ func TestSendMessageFail(t *testing.T) {
 	defer cancel()
 
 	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localnodeid").Return(&fftypes.Identity{
-		Identifier: "localnodeid",
+	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
+		Identifier: "localorg",
 		OnChain:    "0x12345",
 	}, nil)
 
@@ -163,7 +163,7 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{ID: fftypes.NewUUID()},
@@ -194,7 +194,7 @@ func TestResolveAndSendSealFail(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Identity: "localnodeid"},
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
 	}, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{ID: fftypes.NewUUID()},

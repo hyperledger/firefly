@@ -22,7 +22,7 @@ func (_m *Callbacks) MessageReceived(peerID string, data []byte) {
 	_m.Called(peerID, data)
 }
 
-// TransferResult provides a mock function with given fields: trackingID, status, info
-func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string) {
-	_m.Called(trackingID, status, info)
+// TransferResult provides a mock function with given fields: trackingID, status, info, additionalInfo
+func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) {
+	_m.Called(trackingID, status, info, additionalInfo)
 }

@@ -19,6 +19,7 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/kaleido-io/firefly/internal/i18n"
@@ -32,7 +33,7 @@ var (
 		"id",
 		"message_id",
 		"owner",
-		"identity",
+		"name",
 		"description",
 		"dx_peer",
 		"dx_endpoint",
@@ -58,7 +59,10 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 		nodeRows, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("nodes").
-				Where(sq.Eq{"identity": node.Identity}),
+				Where(sq.Eq{
+					"owner": node.Owner,
+					"name":  node.Name,
+				}),
 		)
 		if err != nil {
 			return err
@@ -76,7 +80,6 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 			}
 			node.ID = &id // Update on returned object
 		}
-		nodeRows.Close()
 	}
 
 	if existing {
@@ -86,12 +89,12 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 				// Note we do not update ID
 				Set("message_id", node.Message).
 				Set("owner", node.Owner).
-				Set("identity", node.Identity).
+				Set("name", node.Name).
 				Set("description", node.Description).
 				Set("dx_peer", node.DX.Peer).
 				Set("dx_endpoint", node.DX.Endpoint).
 				Set("created", node.Created).
-				Where(sq.Eq{"identity": node.Identity}),
+				Where(sq.Eq{"id": node.ID}),
 		); err != nil {
 			return err
 		}
@@ -103,7 +106,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 					node.ID,
 					node.Message,
 					node.Owner,
-					node.Identity,
+					node.Name,
 					node.Description,
 					node.DX.Peer,
 					node.DX.Endpoint,
@@ -123,7 +126,7 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 		&node.ID,
 		&node.Message,
 		&node.Owner,
-		&node.Identity,
+		&node.Name,
 		&node.Description,
 		&node.DX.Peer,
 		&node.DX.Endpoint,
@@ -160,8 +163,8 @@ func (s *SQLCommon) getNodePred(ctx context.Context, desc string, pred interface
 	return node, nil
 }
 
-func (s *SQLCommon) GetNode(ctx context.Context, identity string) (message *fftypes.Node, err error) {
-	return s.getNodePred(ctx, identity, sq.Eq{"identity": identity})
+func (s *SQLCommon) GetNode(ctx context.Context, owner, name string) (message *fftypes.Node, err error) {
+	return s.getNodePred(ctx, fmt.Sprintf("%s/%s", owner, name), sq.Eq{"owner": owner, "name": name})
 }
 
 func (s *SQLCommon) GetNodeByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Node, err error) {

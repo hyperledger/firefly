@@ -71,7 +71,7 @@ type Callbacks interface {
 	BLOBReceived(peerID string, ns string, id fftypes.UUID)
 
 	// TransferResult notifies of a status update of a transfer
-	TransferResult(trackingID string, status fftypes.OpStatus, info string)
+	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)
 }
 
 // Capabilities the supported featureset of the data exchange

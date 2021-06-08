@@ -49,6 +49,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	batchData := &fftypes.Batch{
 		ID:         batch.BatchID,
 		Namespace:  "ns1",
+		Author:     "0x12345",
 		PayloadRef: batch.BatchPaylodRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -69,19 +70,23 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		// Call through to persistBatch - the hash of our batch will be invalid,
+		// which is swallowed without error as we cannot retry (it is logged of course)
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
+		}
+	}
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(batchData.Payload.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
-	assert.NoError(t, err)
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
 
-	// Call through to persistBatch - the hash of our batch will be invalid,
-	// which is swallowed without error as we cannot retry (it is logged of course)
-	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
-	err = fn(context.Background())
+	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -181,13 +186,14 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	err := em.persistBatch(context.Background(), &fftypes.Batch{}, "0x12345")
+	err := em.persistBatch(context.Background(), &fftypes.Batch{})
 	assert.NoError(t, err)
 }
 
 func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
 		Author: "0x23456",
@@ -197,17 +203,19 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 		},
+		Hash: batchHash,
 	}
 	mii := em.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
 	assert.NoError(t, err)
 }
 
 func TestPersistBatchBadAuthor(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
 		ID:     fftypes.NewUUID(),
 		Author: "0x23456",
@@ -217,11 +225,33 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 		},
+		Hash: batchHash,
 	}
 	mii := em.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	batch.Hash = batch.Payload.Hash()
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
+	assert.NoError(t, err)
+}
+
+func TestPersistBatchMismatchChainHash(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batch := &fftypes.Batch{
+		ID:     fftypes.NewUUID(),
+		Author: "0x12345",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				Type: fftypes.TransactionTypeBatchPin,
+				ID:   fftypes.NewUUID(),
+			},
+		},
+		Hash: fftypes.NewRandB32(),
+	}
+	mii := em.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+	batch.Hash = batch.Payload.Hash()
+	err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32(), "0x12345")
 	assert.NoError(t, err)
 }
 
@@ -240,13 +270,10 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	}
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -266,13 +293,10 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	}
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -404,13 +428,10 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	}
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -435,14 +456,11 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 	batch.Payload.Data[0].Hash = batch.Payload.Data[0].Value.Hash()
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -470,14 +488,11 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -505,13 +520,10 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	batch.Payload.Messages[0].Hash = batch.Payload.Messages[0].Header.Hash()
 	batch.Hash = batch.Payload.Hash()
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 
-	err := em.persistBatch(context.Background(), batch, "0x12345")
+	err := em.persistBatch(context.Background(), batch)
 	assert.NoError(t, err)
 }
 func TestPersistBatchDataBadHash(t *testing.T) {

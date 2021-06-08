@@ -158,7 +158,7 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
 			if err == nil {
-				err = em.persistBatch(ctx, batch, signingIdentity)
+				err = em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
 				if err == nil {
 					err = em.persistContexts(ctx, batchPin, false)
 				}

@@ -36,7 +36,7 @@ import (
 
 func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	config.Reset()
-	config.Set(config.NodeIdentity, "UTNodeID")
+	config.Set(config.OrgIdentity, "UTNodeID")
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -128,11 +128,11 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetNodeIdentityEmpty(t *testing.T) {
+func TestGetOrgIdentityEmpty(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	config.Set(config.NodeIdentity, "")
+	config.Set(config.OrgIdentity, "")
 	mii := bm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "").Return(nil, fmt.Errorf("pop"))
 	_, err := bm.GetNodeSigningIdentity(bm.ctx)

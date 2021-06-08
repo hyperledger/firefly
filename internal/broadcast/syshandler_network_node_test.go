@@ -36,7 +36,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -79,7 +79,7 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -120,7 +120,7 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -163,7 +163,7 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -202,7 +202,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -244,7 +244,7 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -283,7 +283,7 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -321,7 +321,7 @@ func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -359,7 +359,7 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -394,7 +394,7 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: "my org",
 		DX: fftypes.DXInfo{
@@ -429,7 +429,7 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
-		Identity:    "0x12345",
+		Name:        "node1",
 		Owner:       "0x23456",
 		Description: string(make([]byte, 4097)),
 		DX: fftypes.DXInfo{
