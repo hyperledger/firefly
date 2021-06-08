@@ -45,6 +45,7 @@ var (
 		"confirmed",
 		"tx_type",
 		"batch_id",
+		"local",
 	}
 	msgFilterTypeMap = map[string]string{
 		"type":    "mtype",
@@ -54,7 +55,16 @@ var (
 	}
 )
 
+func (s *SQLCommon) InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error) {
+	message.Local = true
+	return s.upsertMessageCommon(ctx, message, false, false, true /* local insert */)
+}
+
 func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error) {
+	return s.upsertMessageCommon(ctx, message, allowExisting, allowHashUpdate, false /* not local */)
+}
+
+func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate, isLocal bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -105,6 +115,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.Header.TxType).
 				Set("batch_id", message.BatchID).
+				// Intentionally does NOT include the "local" column
 				Where(sq.Eq{"id": message.Header.ID}),
 		); err != nil {
 			return err
@@ -129,6 +140,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 					message.Confirmed,
 					message.Header.TxType,
 					message.BatchID,
+					isLocal,
 				),
 		)
 		if err != nil {
@@ -268,6 +280,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Confirmed,
 		&msg.Header.TxType,
 		&msg.BatchID,
+		&msg.Local,
 		// Must be added to the list of columns in all selects
 		&msg.Sequence,
 	)

@@ -17,11 +17,11 @@ CREATE TABLE messages (
   pins        VARCHAR(1024)   NOT NULL,
   confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
-  batch_id    UUID
+  batch_id    UUID,
+  local       BOOLEAN         NOT NULL
 );
 
 CREATE UNIQUE INDEX messages_id ON messages(id);
 CREATE INDEX messages_created ON messages(created);
 CREATE INDEX messages_confirmed ON messages(confirmed);
-CREATE INDEX messages_batch ON messages(batch_id);
 COMMIT;

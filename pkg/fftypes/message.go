@@ -69,7 +69,8 @@ type Message struct {
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 	Pins      FFNameArray   `json:"pins,omitempty"`
-	Sequence  int64         `json:"_"` // Local database sequence used internally for batch assembly
+	Local     bool          `json:"local,omitempty"`
+	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // MessageInput allows API users to submit values in-line in the payload submitted, which

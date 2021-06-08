@@ -13,9 +13,9 @@ CREATE TABLE messages (
   pins        string  NOT NULL,
   confirmed   int64,
   tx_type     string  NOT NULL,
+  local       bool    NOT NULL,
   batch_id    string
 );
 
 CREATE UNIQUE INDEX messages_primary ON messages(id);
 CREATE INDEX messages_created ON messages(created);
-CREATE INDEX messages_batch ON messages(batch_id);

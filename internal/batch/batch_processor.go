@@ -167,6 +167,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 		if w.msg != nil {
 			w.msg.BatchID = batch.ID
 			w.msg.Header.Group = batch.Group
+			w.msg.Local = false
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)
