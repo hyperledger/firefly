@@ -187,7 +187,7 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return bm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
+	return bm.database.InsertMessageLocal(ctx, msg)
 }
 
 func (bm *broadcastManager) Start() error {

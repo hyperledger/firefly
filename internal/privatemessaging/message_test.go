@@ -67,7 +67,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{ID: fftypes.NewUUID()},
 	}, nil).Once()
-	mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
 		InputData: fftypes.InputData{

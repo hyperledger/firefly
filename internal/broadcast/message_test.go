@@ -46,7 +46,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.On("ResolveInputData", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, nil)
-	mdi.On("UpsertMessage", ctx, mock.Anything, false, false).Return(nil)
+	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
 		Message: fftypes.Message{

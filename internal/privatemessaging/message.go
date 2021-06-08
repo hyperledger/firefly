@@ -68,5 +68,5 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return pm.database.UpsertMessage(ctx, &in.Message, false /* newly generated UUID in Seal */, false)
+	return pm.database.InsertMessageLocal(ctx, &in.Message)
 }

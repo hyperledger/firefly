@@ -63,7 +63,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	defer cancel()
 
 	msg := &fftypes.Message{}
-	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false, false).Return(nil)
+	bm.database.(*databasemocks.Plugin).On("InsertMessageLocal", mock.Anything, msg).Return(nil)
 
 	err := bm.broadcastMessageCommon(context.Background(), msg)
 	assert.NoError(t, err)

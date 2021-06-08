@@ -113,7 +113,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
@@ -133,7 +133,7 @@ func TestBroadcastOk(t *testing.T) {
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, false, false).Return(nil)
+	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
