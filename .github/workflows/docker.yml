@@ -6,8 +6,6 @@ on:
       - main
       - docker
 
-  workflow_dispatch:
-
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -18,4 +16,6 @@ jobs:
         run: docker build -t ghcr.io/hyperledger-labs/firefly:latest .
 
       - name: Push
-        run: docker push ghcr.io/hyperledger-labs/firefly:latest
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          docker push ghcr.io/hyperledger-labs/firefly:latest
