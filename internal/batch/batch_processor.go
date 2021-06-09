@@ -267,7 +267,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 				filter := database.MessageQueryFactory.NewFilter(ctx).In("id", msgIDs)
 				update := database.MessageQueryFactory.NewUpdate(ctx).
 					Set("batch", batch.ID).
-					Set("group", batch.ID)
+					Set("group", batch.Group)
 				err = bp.database.UpdateMessages(ctx, filter, update)
 			}
 			if err == nil && seal {

@@ -28,6 +28,7 @@ import (
 
 func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) error {
 	if in.Header.Group != nil {
+		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		return nil // validity of existing group checked later
 	}
 	if in.Group == nil || len(in.Group.Members) == 0 {
@@ -37,14 +38,14 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 	if err != nil {
 		return err
 	}
-	log.L(ctx).Debugf("Resolved group. New=%t %+v", isNew, group)
+	log.L(ctx).Debugf("Resolved group '%s' for message. New=%t", group.Hash, isNew)
+	in.Message.Header.Group = group.Hash
 
 	// If the group is new, we need to do a group initialization, before we send the message itself
 	if isNew {
 		return pm.groupManager.groupInit(ctx, sender, group)
 	}
-	in.Message.Header.Group = group.Hash
-	return nil
+	return err
 }
 
 func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (org *fftypes.Organization, err error) {
