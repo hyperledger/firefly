@@ -7,3 +7,5 @@ aux_links:
     - "//wiki.hyperledger.org/display/labs/Firefly"
   "Chat":
     - "https://chat.hyperledger.org/channel/firefly-lab"
+
+theme: jekyll-theme-cayman
