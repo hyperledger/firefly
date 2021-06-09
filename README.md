@@ -18,12 +18,12 @@ As such there are a number of repos, and the list will grow as the community evo
 
 But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
 
-- CLI / Developer experience - https://github.com/kaleido-io/firefly-cli
-- UI Explorer - https://github.com/kaleido-io/firefly-ui
-- Core (this repo) - https://github.com/kaleido-io/firefly
-- HTTP Data Exchange - https://github.com/kaleido-io/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/kaleido-io/ethconnect
-- Corda connector: https://github.com/kaleido-io/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2 
+- CLI / Developer experience - https://github.com/hyperledger-labs/firefly-cli
+- UI Explorer - https://github.com/hyperledger-labs/firefly-ui
+- Core (this repo) - https://github.com/hyperledger-labs/firefly
+- HTTP Data Exchange - https://github.com/hyperledger-labs/firefly-dataexchange-https
+- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger-labs/firefly-ethconnect
+- Corda connector: https://github.com/hyperledger-labs/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2 
 - Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
@@ -35,15 +35,15 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 Architecture discussions are currently facilitated by the following Git issues, but as the community evolves (within
 the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
 
-- [Node Component Architecture - Periodic Table of Elements](https://github.com/kaleido-io/firefly/issues/6)
-- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/kaleido-io/firefly/issues/10)
-- [Simplest Transaction Flow - Ping Pong](https://github.com/kaleido-io/firefly/issues/5)
-- [Plugin Architecture](https://github.com/kaleido-io/firefly/issues/7)
-- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/kaleido-io/firefly/issues/11)
+- [Node Component Architecture - Periodic Table of Elements](https://github.com/hyperledger-labs/firefly/issues/6)
+- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/hyperledger-labs/firefly/issues/10)
+- [Simplest Transaction Flow - Ping Pong](https://github.com/hyperledger-labs/firefly/issues/5)
+- [Plugin Architecture](https://github.com/hyperledger-labs/firefly/issues/7)
+- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/hyperledger-labs/firefly/issues/11)
 
 ## Getting Started
 
-Use the FireFly CLI for fast bootstrap: https://github.com/kaleido-io/firefly-cli
+Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger-labs/firefly-cli
 
 ## Navigating this repo
 
