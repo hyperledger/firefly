@@ -14,7 +14,7 @@ RUN npx truffle compile
 
 FROM node:14-alpine3.11 AS firefly-ui-builder
 RUN apk add git
-RUN git clone https://github.com/kaleido-io/firefly-ui.git
+RUN git clone https://github.com/hyperledger-labs/firefly-ui.git
 WORKDIR /firefly-ui
 RUN npm install
 RUN PUBLIC_URL="/ui" npm run build
