@@ -37,6 +37,7 @@ import (
 type Manager interface {
 	GroupManager
 
+	Start() error
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
 }
 
@@ -101,6 +102,10 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 	}, pm.dispatchBatch, bo)
 
 	return pm, nil
+}
+
+func (pm *privateMessaging) Start() error {
+	return pm.exchange.Start()
 }
 
 func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
