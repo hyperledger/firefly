@@ -148,6 +148,9 @@ func (or *orchestrator) Start() error {
 	if err == nil {
 		err = or.broadcast.Start()
 	}
+	if err == nil {
+		err = or.messaging.Start()
+	}
 	or.started = true
 	return err
 }

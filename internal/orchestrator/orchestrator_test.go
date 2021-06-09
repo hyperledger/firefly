@@ -262,6 +262,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
+	or.mpm.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
