@@ -26,7 +26,7 @@ import (
 type Node struct {
 	ID          *UUID   `json:"id"`
 	Message     *UUID   `json:"message,omitempty"`
-	Owner       string  `json:"parent,omitempty"`
+	Owner       string  `json:"owner,omitempty"`
 	Name        string  `json:"name,omitempty"`
 	Description string  `json:"description,omitempty"`
 	DX          DXInfo  `json:"dx"`

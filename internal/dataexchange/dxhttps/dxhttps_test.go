@@ -205,7 +205,7 @@ func TestSendMessage(t *testing.T) {
 	h, _, _, httpURL, done := newTestHTTPS(t)
 	defer done()
 
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{
 			"requestID": "abcd1234",
 		}))

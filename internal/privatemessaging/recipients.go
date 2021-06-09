@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -42,6 +43,7 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 	if isNew {
 		return pm.groupManager.groupInit(ctx, sender, group)
 	}
+	in.Message.Header.Group = group.Hash
 	return nil
 }
 
@@ -76,8 +78,9 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	} else {
 		// Find any node owned by this organization
 		var nodes []*fftypes.Node
+		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.Identity)
 		for org != nil && node == nil {
-			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.ID)
+			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.Identity)
 			nodes, err = pm.database.GetNodes(ctx, filter)
 			switch {
 			case err == nil && len(nodes) > 0:
@@ -87,7 +90,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 				// This org has a parent, maybe that org owns a node
 				org, err = pm.database.GetOrganizationByIdentity(ctx, org.Parent)
 			default:
-				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, nodeInput)
+				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, originalOrgName)
 			}
 		}
 	}
@@ -152,5 +155,6 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 		Hash:          hash,
 		Created:       fftypes.Now(),
 	}
+	group.Seal()
 	return group, true, nil
 }

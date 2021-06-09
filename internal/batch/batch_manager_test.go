@@ -436,9 +436,12 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
 		fn := a.Get(1).(func(context.Context) error)
-		cancelCtx() // so we only go round once
-		bm.Close()
-		rag.ReturnArguments = mock.Arguments{fn(ctx)}
+		err := fn(ctx).(error)
+		if err != nil && err.Error() == "fizzle" {
+			cancelCtx() // so we only go round once
+			bm.Close()
+		}
+		rag.ReturnArguments = mock.Arguments{err}
 	}
 
 	bm.(*batchManager).messageSequencer()

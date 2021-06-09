@@ -82,7 +82,7 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 				Namespace: batchPin.Namespace,
 				Type:      fftypes.TransactionTypeBatchPin,
 				Signer:    signingIdentity,
-				Reference: batchPin.TransactionID,
+				Reference: batchPin.BatchID,
 			},
 			Created: fftypes.Now(),
 		}
