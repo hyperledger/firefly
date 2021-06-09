@@ -74,6 +74,14 @@ func TestInitBadURL(t *testing.T) {
 	assert.Regexp(t, "FF10162", err)
 }
 
+func TestInitMissingURL(t *testing.T) {
+	config.Reset()
+	h := &HTTPS{}
+	h.InitPrefix(utConfPrefix)
+	err := h.Init(context.Background(), utConfPrefix, &dataexchangemocks.Callbacks{})
+	assert.Regexp(t, "FF10138", err)
+}
+
 func TestGetEndpointInfo(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestHTTPS(t)
