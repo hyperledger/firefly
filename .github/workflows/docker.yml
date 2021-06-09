@@ -1,0 +1,20 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: docker build -t ghcr.io/hyperledger-labs/firefly:latest .
+
+      - name: Push
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          docker push ghcr.io/hyperledger-labs/firefly:latest
