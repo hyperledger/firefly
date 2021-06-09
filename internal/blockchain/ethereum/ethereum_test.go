@@ -339,8 +339,8 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue("kld-from"))
-			assert.Equal(t, "false", req.FormValue("kld-sync"))
+			assert.Equal(t, addr, req.FormValue("fly-from"))
+			assert.Equal(t, "false", req.FormValue("fly-sync"))
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
@@ -375,8 +375,8 @@ func TestSubmitBatchNilPayloadRef(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue("kld-from"))
-			assert.Equal(t, "false", req.FormValue("kld-sync"))
+			assert.Equal(t, addr, req.FormValue("fly-from"))
+			assert.Equal(t, "false", req.FormValue("fly-sync"))
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", body["payloadRef"])

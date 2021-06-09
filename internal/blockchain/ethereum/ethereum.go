@@ -461,8 +461,8 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 	path := fmt.Sprintf("%s/pinBatch", e.instancePath)
 	res, err := e.client.R().
 		SetContext(ctx).
-		SetQueryParam("kld-from", identity.OnChain).
-		SetQueryParam("kld-sync", "false").
+		SetQueryParam("fly-from", identity.OnChain).
+		SetQueryParam("fly-sync", "false").
 		SetBody(input).
 		SetResult(tx).
 		Post(path)
