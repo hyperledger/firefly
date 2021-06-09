@@ -1,0 +1,17 @@
+name: Go
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: docker build -t ghcr.io/hyperledger-labs/firefly:latest .
+
+      - name: Push
+        run: docker push ghcr.io/hyperledger-labs/firefly:latest
