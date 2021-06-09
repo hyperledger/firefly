@@ -25,7 +25,7 @@ import (
 	"github.com/kaleido-io/firefly/pkg/fftypes"
 )
 
-var broadcastSchema = `{
+var privateSendSchema = `{
 	"properties": {
 		 "data": {
 				"items": {
@@ -47,6 +47,30 @@ var broadcastSchema = `{
 					 "type": "object"
 				},
 				"type": "array"
+		 },
+		 "group": {
+				"properties": {
+					"name": {
+						"type": "string"
+					},
+					"members": {
+						"type": "array",
+						"items": {
+							"properties": {
+								"identity": {
+									"type": "string"
+								},
+								"node": {
+									"type": "string"
+								}
+							},
+							"required": ["identity"],
+							"type": "object"
+						}
+					}
+			},
+			"required": ["members"],
+			"type": "object"
 		 },
 		 "header": {
 				"properties": {
@@ -77,9 +101,9 @@ var broadcastSchema = `{
 	"type": "object"
 }`
 
-var postBroadcastMessage = &oapispec.Route{
-	Name:   "postBroadcastMessage",
-	Path:   "namespaces/{ns}/broadcast/message",
+var postSendMessage = &oapispec.Route{
+	Name:   "postSendMessage",
+	Path:   "namespaces/{ns}/send/message",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
@@ -88,11 +112,11 @@ var postBroadcastMessage = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInput{} },
-	JSONInputSchema: broadcastSchema,
+	JSONInputSchema: privateSendSchema,
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInput))
+		output, err = r.Or.PrivateMessaging().SendMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInput))
 		return output, err
 	},
 }

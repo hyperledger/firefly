@@ -12,3 +12,4 @@ coverage.txt
 **/debug.test
 .DS_Store
 frontend
+__debug*

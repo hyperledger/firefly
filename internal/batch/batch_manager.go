@@ -159,7 +159,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
 	}
 	dispatcher.mux.Lock()
-	key := fmt.Sprintf("%s/%s/%v", namespace, author, group)
+	key := fmt.Sprintf("%s:%s[group=%v]", namespace, author, group)
 	processor, ok := dispatcher.processors[key]
 	if !ok {
 		processor = newBatchProcessor(
@@ -179,6 +179,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 		)
 		dispatcher.processors[key] = processor
 	}
+	log.L(bm.ctx).Debugf("Created new processor: %s", key)
 	dispatcher.mux.Unlock()
 	return processor, nil
 }
