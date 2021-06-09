@@ -1,0 +1,11 @@
+remote_theme: pmarsceill/just-the-docs
+logo: "firefly_logo.png"
+aux_links:
+  "GitHub":
+    - "//github.com/hyperledger-labs/firefly"
+  "Wiki":
+    - "//wiki.hyperledger.org/display/labs/Firefly"
+  "Chat":
+    - "https://chat.hyperledger.org/channel/firefly-lab"
+
+theme: jekyll-theme-cayman
