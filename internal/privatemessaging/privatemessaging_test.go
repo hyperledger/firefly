@@ -297,3 +297,14 @@ func TestWriteTransactionUpsertOpFail(t *testing.T) {
 	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
+
+func TestStart(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("Start").Return(nil)
+
+	err := pm.Start()
+	assert.NoError(t, err)
+}

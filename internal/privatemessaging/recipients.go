@@ -18,6 +18,7 @@ package privatemessaging
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/kaleido-io/firefly/internal/log"
@@ -27,6 +28,7 @@ import (
 
 func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) error {
 	if in.Header.Group != nil {
+		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		return nil // validity of existing group checked later
 	}
 	if in.Group == nil || len(in.Group.Members) == 0 {
@@ -36,13 +38,14 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 	if err != nil {
 		return err
 	}
-	log.L(ctx).Debugf("Resolved group. New=%t %+v", isNew, group)
+	log.L(ctx).Debugf("Resolved group '%s' for message. New=%t", group.Hash, isNew)
+	in.Message.Header.Group = group.Hash
 
 	// If the group is new, we need to do a group initialization, before we send the message itself
 	if isNew {
 		return pm.groupManager.groupInit(ctx, sender, group)
 	}
-	return nil
+	return err
 }
 
 func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (org *fftypes.Organization, err error) {
@@ -76,8 +79,9 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	} else {
 		// Find any node owned by this organization
 		var nodes []*fftypes.Node
+		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.Identity)
 		for org != nil && node == nil {
-			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.ID)
+			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.Identity)
 			nodes, err = pm.database.GetNodes(ctx, filter)
 			switch {
 			case err == nil && len(nodes) > 0:
@@ -87,7 +91,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 				// This org has a parent, maybe that org owns a node
 				org, err = pm.database.GetOrganizationByIdentity(ctx, org.Parent)
 			default:
-				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, nodeInput)
+				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, originalOrgName)
 			}
 		}
 	}
@@ -152,5 +156,6 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 		Hash:          hash,
 		Created:       fftypes.Now(),
 	}
+	group.Seal()
 	return group, true, nil
 }

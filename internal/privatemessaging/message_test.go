@@ -81,6 +81,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *dataID, *msg.Data[0].ID)
+	assert.NotNil(t, msg.Header.Group)
 
 }
 

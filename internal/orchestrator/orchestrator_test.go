@@ -262,6 +262,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
+	or.mpm.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
@@ -350,6 +351,7 @@ func TestInitOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, or.mbm, or.Broadcast())
+	assert.Equal(t, or.mpm, or.PrivateMessaging())
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())

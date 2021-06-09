@@ -84,3 +84,40 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (
 
 	return r0, r1
 }
+
+// SendMessage provides a mock function with given fields: ctx, ns, in
+func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+		r1 = rf(ctx, ns, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Start provides a mock function with given fields:
+func (_m *Manager) Start() error {
+	ret := _m.Called()
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
