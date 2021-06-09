@@ -84,6 +84,11 @@ func (h *HTTPS) Name() string {
 func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataexchange.Callbacks) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
+
+	if prefix.GetString(restclient.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.https")
+	}
+
 	h.client = restclient.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{}
 	h.wsconn, err = wsclient.New(ctx, prefix, nil)
