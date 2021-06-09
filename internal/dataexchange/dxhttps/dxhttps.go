@@ -158,7 +158,7 @@ func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, data []byte
 			Recipient: node.DX.Peer,
 		}).
 		SetResult(&responseData).
-		Post("/api/v1/message")
+		Post("/api/v1/messages")
 	if err != nil || !res.IsSuccess() {
 		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}

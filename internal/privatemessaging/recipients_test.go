@@ -158,7 +158,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 			},
 		},
 	})
-	assert.Regexp(t, "FF10224", err)
+	assert.Regexp(t, "FF10233", err)
 	mdi.AssertExpectations(t)
 
 }

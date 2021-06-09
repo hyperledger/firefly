@@ -199,9 +199,6 @@ func (pm *privateMessaging) writeTransaction(ctx context.Context, signingID *fft
 		fftypes.OpTypeBlockchainBatchPin,
 		fftypes.OpStatusPending,
 		"")
-	if err := pm.database.UpsertOperation(ctx, op, false); err != nil {
-		return err
-	}
 
 	return pm.database.UpsertOperation(ctx, op, false)
 }

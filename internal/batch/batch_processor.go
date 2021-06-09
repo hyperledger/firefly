@@ -166,7 +166,6 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 	for _, w := range newWork {
 		if w.msg != nil {
 			w.msg.BatchID = batch.ID
-			w.msg.Header.Group = batch.Group
 			w.msg.Local = false
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
@@ -235,6 +234,9 @@ func (bp *batchProcessor) maskContexts(ctx context.Context, batch *fftypes.Batch
 				return nil, err
 			}
 			contextsOrPins = append(contextsOrPins, contextOrPin)
+			if msg.Header.Group != nil {
+				msg.Pins = append(msg.Pins, contextOrPin.String())
+			}
 		}
 	}
 	return contextsOrPins, nil
@@ -364,7 +366,8 @@ func (bp *batchProcessor) persistenceLoop() {
 
 func (bp *batchProcessor) close() {
 	if !bp.closed {
-		bp.cancelCtx()
+		// We don't cancel the context here, as we use close during quiesce and don't want the
+		// persistence loop to have its context cancelled, and fail to perform DB operations
 		close(bp.newWork)
 		bp.closed = true
 	}

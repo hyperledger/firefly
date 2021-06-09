@@ -75,6 +75,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	// Create a private send message referring to the data
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
+			Group:     group.Hash,
 			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeGroupInit,
 			Author:    signer.Identifier,
