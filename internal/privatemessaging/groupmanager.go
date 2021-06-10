@@ -48,12 +48,15 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	data := &fftypes.Data{
 		Validator: fftypes.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: fftypes.SystemNamespace,
+		Namespace: group.Namespace, // must go in the same ordering context as the message
 		Created:   fftypes.Now(),
 	}
 	data.Value, err = json.Marshal(&group)
 	if err == nil {
-		err = data.Seal(ctx)
+		err = group.Validate(ctx, true)
+		if err == nil {
+			err = data.Seal(ctx)
+		}
 	}
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
@@ -76,7 +79,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Group:     group.Hash,
-			Namespace: fftypes.SystemNamespace,
+			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
 			Type:      fftypes.MessageTypeGroupInit,
 			Author:    signer.Identifier,
 			Tag:       string(fftypes.SystemTagDefineGroup),
@@ -154,7 +157,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 //
 // Errors are only returned for database issues. For validation issues, a nil group is returned without an error.
 func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	if msg.Header.Namespace == fftypes.SystemNamespace && msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
+	if msg.Header.Tag == string(fftypes.SystemTagDefineGroup) {
 		// Store the new group
 		data, foundAll, err := gm.data.GetMessageData(ctx, msg, true)
 		if err != nil || !foundAll || len(data) == 0 {
@@ -194,7 +197,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 		return group, err
 	}
 	if group == nil {
-		log.L(ctx).Warnf("Group %s not found", msg.Header.Group)
+		log.L(ctx).Warnf("Group %s not found for first message in context. type=%s namespace=%s", msg.Header.Group, msg.Header.Type, msg.Header.Namespace)
 		return nil, nil
 	}
 	return group, nil

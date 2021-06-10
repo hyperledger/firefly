@@ -58,9 +58,12 @@ func (man *GroupIdentity) Hash() *Bytes32 {
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
+		return err
+	}
 	// We allow a blank name for a group (for auto creation)
 	if group.Name != "" {
-		if err = ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
+		if err = ValidateFFNameField(ctx, group.Name, "name"); err != nil {
 			return err
 		}
 	}

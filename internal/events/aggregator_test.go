@@ -910,6 +910,7 @@ func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	go ag.offchainListener()
 
 	ag.offchainBatches <- fftypes.NewUUID()
 	ag.offchainBatches <- fftypes.NewUUID()
@@ -929,6 +930,7 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
+	go ag.offchainListener()
 
 	ag.offchainBatches <- fftypes.NewUUID()
 	ag.offchainBatches <- fftypes.NewUUID()
@@ -942,7 +944,7 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.True(t, rewind)
-	assert.Equal(t, int64(12345), offset)
+	assert.Equal(t, int64(12344) /* one before the batch */, offset)
 }
 
 func TestRewindOffchainBatchesBatchesError(t *testing.T) {
@@ -951,7 +953,7 @@ func TestRewindOffchainBatchesBatchesError(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	cancel()
 
-	ag.offchainBatches <- fftypes.NewUUID()
+	ag.queuedRewinds <- fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))

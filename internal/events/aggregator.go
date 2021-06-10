@@ -45,6 +45,7 @@ type aggregator struct {
 	eventPoller     *eventPoller
 	newPins         chan int64
 	offchainBatches chan *fftypes.UUID
+	queuedRewinds   chan *fftypes.UUID
 	retry           *retry.Retry
 }
 
@@ -57,7 +58,8 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		messaging:       pm,
 		data:            dm,
 		newPins:         make(chan int64),
-		offchainBatches: make(chan *fftypes.UUID, batchSize),
+		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -87,7 +89,20 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 }
 
 func (ag *aggregator) start() error {
+	go ag.offchainListener()
 	return ag.eventPoller.start()
+}
+
+func (ag *aggregator) offchainListener() {
+	for {
+		select {
+		case uuid := <-ag.offchainBatches:
+			ag.queuedRewinds <- uuid
+			ag.eventPoller.shoulderTap()
+		case <-ag.ctx.Done():
+			return
+		}
+	}
 }
 
 func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
@@ -97,7 +112,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 		draining := true
 		for draining {
 			select {
-			case batchID := <-ag.offchainBatches:
+			case batchID := <-ag.queuedRewinds:
 				batchIDs = append(batchIDs, batchID)
 			default:
 				draining = false
@@ -115,7 +130,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 			}
 			if len(sequences) > 0 {
 				rewind = true
-				offset = sequences[0].Sequence
+				offset = sequences[0].Sequence - 1
 				log.L(ag.ctx).Debugf("Rewinding for off-chain data arrival. New local pin sequence %d", offset)
 			}
 		}
