@@ -61,6 +61,9 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
 
+	// Status
+	GetStatus(ctx context.Context) (*fftypes.NodeStatus, error)
+
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
 	GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error)

@@ -549,6 +549,29 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 	return r0, r1
 }
 
+// GetStatus provides a mock function with given fields: ctx
+func (_m *Orchestrator) GetStatus(ctx context.Context) (*fftypes.NodeStatus, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.NodeStatus
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.NodeStatus); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.NodeStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSubscriptionByID provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id string) (*fftypes.Subscription, error) {
 	ret := _m.Called(ctx, ns, id)
