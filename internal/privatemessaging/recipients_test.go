@@ -54,7 +54,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		assert.Nil(t, group.Ledger)
 		dataID = data.ID
 	}
-	um := mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
+	um := mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 	um.RunFn = func(a mock.Arguments) {
 		msg := a[1].(*fftypes.Message)
 		assert.Equal(t, fftypes.MessageTypeGroupInit, msg.Header.Type)

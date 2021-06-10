@@ -95,9 +95,11 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 	err = msg.Seal(ctx)
 	if err == nil {
 		// Store the message - this asynchronously triggers the next step in process
-		err = gm.database.UpsertMessage(ctx, msg, false /* newly generated UUID in Seal */, false)
+		err = gm.database.InsertMessageLocal(ctx, msg)
 	}
-
+	if err == nil {
+		log.L(ctx).Infof("Created new group %s", group.Hash)
+	}
 	return err
 
 }
@@ -182,10 +184,6 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *fftypes.Messa
 		newGroup.Message = msg.Header.ID
 		err = gm.database.UpsertGroup(ctx, &newGroup, true)
 		if err != nil {
-			return nil, err
-		}
-		event := fftypes.NewEvent(fftypes.EventTypeGroupConfirmed, newGroup.Namespace, nil, newGroup.Hash)
-		if err = gm.database.UpsertEvent(ctx, event, false); err != nil {
 			return nil, err
 		}
 		return &newGroup, nil

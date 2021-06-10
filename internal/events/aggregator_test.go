@@ -876,6 +876,27 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchGroupInit(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+
+	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeGroupInit,
+		},
+	})
+	assert.NoError(t, err)
+
+}
+
 func TestAttemptMessageUpdateMessageFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()

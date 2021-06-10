@@ -413,14 +413,19 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	// We're going to dispatch it at this point, but we need to validate the data first
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
-	if msg.Header.Namespace == fftypes.SystemNamespace {
+	switch {
+	case msg.Header.Namespace == fftypes.SystemNamespace:
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
 		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
 			// Should only return errors that are retryable
 			return false, err
 		}
-	} else if len(msg.Data) > 0 {
+	case msg.Header.Type == fftypes.MessageTypeGroupInit:
+		// Already handled as part of resolving the context.
+		valid = true
+		eventType = fftypes.EventTypeGroupConfirmed
+	case len(msg.Data) > 0:
 		valid, err = ag.data.ValidateAll(ctx, data)
 		if err != nil {
 			return false, err
