@@ -149,7 +149,7 @@ func (bp *batchProcessor) assemblyLoop() {
 	}
 }
 
-func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork, seal bool) *fftypes.Batch {
+func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*batchWork) *fftypes.Batch {
 	l := log.L(bp.ctx)
 	if batch == nil {
 		batchID := fftypes.NewUUID()
@@ -170,15 +170,6 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 			batch.Payload.Messages = append(batch.Payload.Messages, w.msg)
 		}
 		batch.Payload.Data = append(batch.Payload.Data, w.data...)
-	}
-	if seal {
-		// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
-		batch.Payload.TX = fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeBatchPin,
-			ID:   fftypes.NewUUID(),
-		}
-		batch.Hash = batch.Payload.Hash()
-		l.Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
 	}
 	return batch
 }
@@ -271,7 +262,14 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 				err = bp.database.UpdateMessages(ctx, filter, update)
 			}
 			if err == nil && seal {
+				// Generate a new Transaction reference, which will be used to record status of the associated transaction as it happens
+				batch.Payload.TX = fftypes.TransactionRef{
+					Type: fftypes.TransactionTypeBatchPin,
+					ID:   fftypes.NewUUID(),
+				}
 				contexts, err = bp.maskContexts(bp.ctx, batch)
+				batch.Hash = batch.Payload.Hash()
+				log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
 			}
 			if err == nil {
 				// Persist the batch itself
@@ -325,7 +323,7 @@ func (bp *batchProcessor) persistenceLoop() {
 		}
 
 		batchSize += len(newWork)
-		currentBatch = bp.createOrAddToBatch(currentBatch, newWork, seal)
+		currentBatch = bp.createOrAddToBatch(currentBatch, newWork)
 		l.Debugf("Adding %d entries to batch %s. Size=%d Seal=%t", len(newWork), currentBatch.ID, batchSize, seal)
 
 		// Persist the batch - indefinite retry (unless we close, or context is cancelled)
