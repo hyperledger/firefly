@@ -21,7 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
 const (

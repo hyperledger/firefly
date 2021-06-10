@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kaleido-io/firefly/mocks/blockchainmocks"
-	"github.com/kaleido-io/firefly/mocks/dataexchangemocks"
-	"github.com/kaleido-io/firefly/mocks/eventmocks"
-	"github.com/kaleido-io/firefly/pkg/blockchain"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
+	"github.com/hyperledger-labs/firefly/pkg/blockchain"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 

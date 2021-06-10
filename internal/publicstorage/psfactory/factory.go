@@ -19,10 +19,10 @@ package psfactory
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/publicstorage/ipfs"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/publicstorage/ipfs"
+	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 )
 
 var plugins = []publicstorage.Plugin{

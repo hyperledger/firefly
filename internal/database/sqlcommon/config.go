@@ -19,7 +19,7 @@ package sqlcommon
 import (
 	"fmt"
 
-	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/config"
 )
 
 const (

@@ -1,5 +1,5 @@
 {
-  "name": "@kaleido-io/assettrail-contracts",
+  "name": "@hyperledger-labs/assettrail-contracts",
   "version": "0.0.1",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",

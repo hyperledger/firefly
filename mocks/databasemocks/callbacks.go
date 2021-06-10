@@ -3,7 +3,7 @@
 package databasemocks
 
 import (
-	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 	mock "github.com/stretchr/testify/mock"
 )
 

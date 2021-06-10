@@ -19,9 +19,9 @@ package orchestrator
 import (
 	"testing"
 
-	"github.com/kaleido-io/firefly/mocks/batchmocks"
-	"github.com/kaleido-io/firefly/mocks/eventmocks"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
+	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func TestMessageCreated(t *testing.T) {

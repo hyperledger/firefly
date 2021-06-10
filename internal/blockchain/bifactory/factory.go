@@ -19,11 +19,11 @@ package bifactory
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/blockchain/ethereum"
-	"github.com/kaleido-io/firefly/internal/blockchain/utdbql"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/pkg/blockchain"
+	"github.com/hyperledger-labs/firefly/internal/blockchain/ethereum"
+	"github.com/hyperledger-labs/firefly/internal/blockchain/utdbql"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 )
 
 var plugins = []blockchain.Plugin{

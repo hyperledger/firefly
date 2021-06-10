@@ -1,14 +1,14 @@
 # FireFly
 
-[![codecov](https://codecov.io/gh/kaleido-io/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/kaleido-io/firefly)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kaleido-io/firefly)](https://goreportcard.com/report/github.com/kaleido-io/firefly)
+[![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/hyperledger-labs/firefly)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger-labs/firefly)](https://goreportcard.com/report/github.com/hyperledger-labs/firefly)
 
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
 Please see the
-[Hyperledger FireFly proposal document](https://github.com/kaleido-io/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
+[Hyperledger FireFly proposal document](https://github.com/hyperledger-labs/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
 for more information about the project goals and architecture.
 
 ## FireFly repos
@@ -18,12 +18,12 @@ As such there are a number of repos, and the list will grow as the community evo
 
 But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
 
-- CLI / Developer experience - https://github.com/kaleido-io/firefly-cli
-- UI Explorer - https://github.com/kaleido-io/firefly-ui
-- Core (this repo) - https://github.com/kaleido-io/firefly
-- HTTP Data Exchange - https://github.com/kaleido-io/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/kaleido-io/ethconnect
-- Corda connector: https://github.com/kaleido-io/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2 
+- CLI / Developer experience - https://github.com/hyperledger-labs/firefly-cli
+- UI Explorer - https://github.com/hyperledger-labs/firefly-ui
+- Core (this repo) - https://github.com/hyperledger-labs/firefly
+- HTTP Data Exchange - https://github.com/hyperledger-labs/firefly-dataexchange-https
+- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger-labs/firefly-ethconnect
+- Corda connector: https://github.com/hyperledger-labs/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
 - Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
@@ -35,15 +35,15 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 Architecture discussions are currently facilitated by the following Git issues, but as the community evolves (within
 the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
 
-- [Node Component Architecture - Periodic Table of Elements](https://github.com/kaleido-io/firefly/issues/6)
-- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/kaleido-io/firefly/issues/10)
-- [Simplest Transaction Flow - Ping Pong](https://github.com/kaleido-io/firefly/issues/5)
-- [Plugin Architecture](https://github.com/kaleido-io/firefly/issues/7)
-- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/kaleido-io/firefly/issues/11)
+- [Node Component Architecture - Periodic Table of Elements](https://github.com/hyperledger-labs/firefly/issues/6)
+- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/hyperledger-labs/firefly/issues/10)
+- [Simplest Transaction Flow - Ping Pong](https://github.com/hyperledger-labs/firefly/issues/5)
+- [Plugin Architecture](https://github.com/hyperledger-labs/firefly/issues/7)
+- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/hyperledger-labs/firefly/issues/11)
 
 ## Getting Started
 
-Use the FireFly CLI for fast bootstrap: https://github.com/kaleido-io/firefly-cli
+Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger-labs/firefly-cli
 
 ## Navigating this repo
 
@@ -52,6 +52,7 @@ There are **two core codebases** currently active in this repo:
 ### Generation 2: FireFly
 
 Directories:
+
 - [internal](./internal): The core Golang implementation code
 - [pkg](./pkg): Interfaces intended for external project use
 - [cmd](./cmd): The command line entry point
@@ -91,6 +92,7 @@ A few highlights:
 ### Generation 1: Kaleido Asset Trail (KAT)
 
 Directories:
+
 - [kat](./kat): The core TypeScript runtime
 - [solidity_kat](./solidity_kat): Ethereum/Solidity smart contract code
 - [cordapp_kat](./cordapp_kat): The Corda smart contract (CorDapp)
@@ -111,7 +113,7 @@ It depends on the following Kaleido services:
 ## FireFly code hierarchy
 
 ```
-┌──────────┐  ┌───────────────┐  
+┌──────────┐  ┌───────────────┐
 │ cmd      ├──┤ firefly   [Ff]│  - CLI entry point
 └──────────┘  │               │  - Creates parent context
               │               │  - Signal handling
@@ -337,6 +339,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
 ## API Query Syntax
 
 REST collections provide filter, `skip`, `limit` and `sort` support.
+
 - The field in the message is used as the query parameter
 - When multiple query parameters are supplied these are combined with AND
 - When the same query parameter is supplied multiple times, these are combined with OR
@@ -357,7 +360,7 @@ This states:
 Table of filter operations, which must be the first character of the query string (after the `=` in the above URL path example)
 
 | Operator | Description                       |
-|----------|-----------------------------------|
+| -------- | --------------------------------- |
 | (none)   | Equal                             |
 | `!`      | Not equal                         |
 | `<`      | Less than                         |

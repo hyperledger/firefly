@@ -11,7 +11,7 @@ CREATE_STACK=true
 
 if $DOWNLOAD_CLI
 then
-	go install github.com/kaleido-io/firefly-cli/ff@latest
+	go install github.com/hyperledger-labs/firefly-cli/ff@latest
 fi
 
 if $CREATE_STACK

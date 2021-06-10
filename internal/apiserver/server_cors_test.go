@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/likexian/gokit/assert"
 )
 

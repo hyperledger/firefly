@@ -23,9 +23,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/jarcoal/httpmock"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
 	"github.com/stretchr/testify/assert"
 )
 

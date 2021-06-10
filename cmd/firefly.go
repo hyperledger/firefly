@@ -26,11 +26,11 @@ import (
 	"syscall"
 
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/apiserver"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/orchestrator"
+	"github.com/hyperledger-labs/firefly/internal/apiserver"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/internal/orchestrator"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

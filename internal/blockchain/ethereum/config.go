@@ -17,8 +17,8 @@
 package ethereum
 
 import (
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/wsclient"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/wsclient"
 )
 
 const (

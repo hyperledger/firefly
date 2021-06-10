@@ -16,5 +16,5 @@ nav_order: 1
 
 ---
 
-For the time being please refer to the formal [FireFly Hyperledger Proposal](https://github.com/kaleido-io/hyperledger-hip/blob/gh-pages/HIPs/firefly.md) document 
+For the time being please refer to the formal [FireFly Hyperledger Proposal](https://github.com/hyperledger-labs/hyperledger-hip/blob/gh-pages/HIPs/firefly.md) document 
 for detailed explanations behind the project rationale, problem statement and underlying tech stack + components.

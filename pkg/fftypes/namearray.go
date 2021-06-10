@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
 // FFNameArray is an array of strings, each conforming to the requirements
