@@ -35,6 +35,20 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
+// DeleteConfigRecord provides a mock function with given fields: ctx, key
+func (_m *Plugin) DeleteConfigRecord(ctx context.Context, key string) error {
+	ret := _m.Called(ctx, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteNamespace provides a mock function with given fields: ctx, id
 func (_m *Plugin) DeleteNamespace(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)
@@ -152,6 +166,52 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*ff
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetConfigRecord provides a mock function with given fields: ctx, key
+func (_m *Plugin) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
+	ret := _m.Called(ctx, key)
+
+	var r0 *fftypes.ConfigRecord
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ConfigRecord); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ConfigRecord)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetConfigRecords provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetConfigRecords(ctx context.Context, filter database.Filter) ([]*fftypes.ConfigRecord, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.ConfigRecord
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ConfigRecord); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ConfigRecord)
 		}
 	}
 
@@ -1345,6 +1405,20 @@ func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExi
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertConfigRecord provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ConfigRecord, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}

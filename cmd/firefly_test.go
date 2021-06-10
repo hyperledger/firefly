@@ -54,7 +54,7 @@ func TestShowConfig(t *testing.T) {
 
 func TestExecEngineInitFail(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	o.On("Init", mock.Anything).Return(fmt.Errorf("splutter"))
+	o.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("splutter"))
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
 	os.Chdir(configDir)
@@ -64,7 +64,7 @@ func TestExecEngineInitFail(t *testing.T) {
 
 func TestExecEngineStartFail(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	o.On("Init", mock.Anything).Return(nil)
+	o.On("Init", mock.Anything, mock.Anything).Return(nil)
 	o.On("Start").Return(fmt.Errorf("bang"))
 	_utOrchestrator = o
 	defer func() { _utOrchestrator = nil }()
@@ -75,7 +75,7 @@ func TestExecEngineStartFail(t *testing.T) {
 
 func TestExecOkExitSIGINT(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	o.On("Init", mock.Anything).Return(nil)
+	o.On("Init", mock.Anything, mock.Anything).Return(nil)
 	o.On("Start").Return(nil)
 	o.On("WaitStop").Return()
 	_utOrchestrator = o
