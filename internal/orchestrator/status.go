@@ -30,7 +30,8 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 			Name: config.GetString(config.NodeName),
 		},
 		Org: fftypes.NodeStatusOrg{
-			Name: config.GetString(config.OrgName),
+			Name:     config.GetString(config.OrgName),
+			Identity: config.GetString(config.OrgIdentity),
 		},
 		Defaults: fftypes.NodeStatusDefaults{
 			Namespace: config.GetString(config.NamespacesDefault),
