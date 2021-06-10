@@ -19,9 +19,8 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/oapispec"
 )
 
 var deleteConfigRecord = &oapispec.Route{
@@ -32,7 +31,7 @@ var deleteConfigRecord = &oapispec.Route{
 		{Name: "key", Example: "database", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.ConfigRecordQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,

@@ -16,7 +16,7 @@
 
 package apiserver
 
-import "github.com/kaleido-io/firefly/internal/oapispec"
+import "github.com/hyperledger-labs/firefly/internal/oapispec"
 
 var adminRoutes = []*oapispec.Route{
 	getConfigRecord,

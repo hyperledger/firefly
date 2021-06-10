@@ -19,8 +19,8 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func (or *orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {

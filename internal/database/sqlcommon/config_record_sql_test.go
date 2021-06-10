@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
