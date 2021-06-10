@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
 type DataRef struct {

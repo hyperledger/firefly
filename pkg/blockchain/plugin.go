@@ -19,8 +19,8 @@ package blockchain
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 // Plugin is the interface implemented by each blockchain plugin

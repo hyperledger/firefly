@@ -16,7 +16,7 @@
 
 package utdbql
 
-import "github.com/kaleido-io/firefly/internal/config"
+import "github.com/hyperledger-labs/firefly/internal/config"
 
 const (
 	// UTDBQLConfURL is the QL connection url - likely a memory:// or file:// url

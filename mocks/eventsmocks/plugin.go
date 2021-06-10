@@ -5,11 +5,11 @@ package eventsmocks
 import (
 	context "context"
 
-	config "github.com/kaleido-io/firefly/internal/config"
+	config "github.com/hyperledger-labs/firefly/internal/config"
 
-	events "github.com/kaleido-io/firefly/pkg/events"
+	events "github.com/hyperledger-labs/firefly/pkg/events"
 
-	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

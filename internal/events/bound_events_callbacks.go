@@ -17,8 +17,8 @@
 package events
 
 import (
-	"github.com/kaleido-io/firefly/pkg/events"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/events"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 type boundCallbacks struct {

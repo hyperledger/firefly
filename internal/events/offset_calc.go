@@ -20,10 +20,10 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *fftypes.SubOptsFirstEvent) (firstOffset int64, err error) {

@@ -25,12 +25,12 @@ import (
 
 	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/restclient"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
-	"github.com/kaleido-io/firefly/pkg/publicstorage"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/internal/restclient"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 )
 
 type IPFS struct {

@@ -19,9 +19,9 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/oapispec"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/oapispec"
 )
 
 var deleteSubscription = &oapispec.Route{

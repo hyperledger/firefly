@@ -17,7 +17,7 @@
 package ql
 
 import (
-	"github.com/kaleido-io/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/config"
 )
 
 func (ql *QL) InitPrefix(prefix config.Prefix) {

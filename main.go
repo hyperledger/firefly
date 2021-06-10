@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaleido-io/firefly/cmd"
+	"github.com/hyperledger-labs/firefly/cmd"
 )
 
 func main() {

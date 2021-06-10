@@ -3,8 +3,8 @@
 package batchmocks
 
 import (
-	batch "github.com/kaleido-io/firefly/internal/batch"
-	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+	batch "github.com/hyperledger-labs/firefly/internal/batch"
+	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

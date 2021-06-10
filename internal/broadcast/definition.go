@@ -20,8 +20,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag) (msg *fftypes.Message, err error) {

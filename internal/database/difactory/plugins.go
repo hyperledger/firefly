@@ -17,10 +17,10 @@
 package difactory
 
 import (
-	"github.com/kaleido-io/firefly/internal/database/postgres"
-	"github.com/kaleido-io/firefly/internal/database/ql"
-	"github.com/kaleido-io/firefly/internal/database/sqlite"
-	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/internal/database/postgres"
+	"github.com/hyperledger-labs/firefly/internal/database/ql"
+	"github.com/hyperledger-labs/firefly/internal/database/sqlite"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
 var plugins = []database.Plugin{

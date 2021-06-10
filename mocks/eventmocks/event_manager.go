@@ -5,11 +5,11 @@ package eventmocks
 import (
 	context "context"
 
-	blockchain "github.com/kaleido-io/firefly/pkg/blockchain"
+	blockchain "github.com/hyperledger-labs/firefly/pkg/blockchain"
 
-	dataexchange "github.com/kaleido-io/firefly/pkg/dataexchange"
+	dataexchange "github.com/hyperledger-labs/firefly/pkg/dataexchange"
 
-	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

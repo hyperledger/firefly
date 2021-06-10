@@ -16,7 +16,7 @@
 
 package sqlite
 
-import "github.com/kaleido-io/firefly/internal/config"
+import "github.com/hyperledger-labs/firefly/internal/config"
 
 func (sqlite *SQLite) InitPrefix(prefix config.Prefix) {
 	sqlite.SQLCommon.InitPrefix(sqlite, prefix)

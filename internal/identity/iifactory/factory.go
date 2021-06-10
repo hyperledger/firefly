@@ -19,10 +19,10 @@ package iifactory
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/identity/onchain"
-	"github.com/kaleido-io/firefly/pkg/identity"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity/onchain"
+	"github.com/hyperledger-labs/firefly/pkg/identity"
 )
 
 var plugins = []identity.Plugin{

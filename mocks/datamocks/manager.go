@@ -5,7 +5,7 @@ package datamocks
 import (
 	context "context"
 
-	fftypes "github.com/kaleido-io/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
 	io "io"
 

@@ -19,7 +19,7 @@ package broadcast
 import (
 	"context"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error) {

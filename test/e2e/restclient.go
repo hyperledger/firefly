@@ -18,7 +18,7 @@ package e2e
 
 import (
 	"github.com/go-resty/resty/v2"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 var (
