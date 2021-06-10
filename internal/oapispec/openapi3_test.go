@@ -30,85 +30,96 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testRoutes = []*Route{
+	{
+		Name:   "op1",
+		Path:   "namespaces/{ns}/example1/{id}",
+		Method: http.MethodPost,
+		PathParams: []*PathParam{
+			{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+			{Name: "id", Description: i18n.MsgTBD},
+		},
+		QueryParams:     nil,
+		FilterFactory:   nil,
+		Description:     i18n.MsgTBD,
+		JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+		JSONInputMask:   []string{"id"},
+		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
+		JSONOutputCode:  http.StatusOK,
+	},
+	{
+		Name:           "op2",
+		Path:           "example2",
+		Method:         http.MethodGet,
+		PathParams:     nil,
+		QueryParams:    nil,
+		FilterFactory:  database.MessageQueryFactory,
+		Description:    i18n.MsgTBD,
+		JSONInputValue: func() interface{} { return nil },
+		JSONInputSchema: `{
+			"type": "object",
+			"properties": {
+				"id": "string"
+			}
+		}`,
+		JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
+		JSONOutputCode:  http.StatusOK,
+	},
+	{
+		Name:       "op3",
+		Path:       "example2",
+		Method:     http.MethodPut,
+		PathParams: nil,
+		QueryParams: []*QueryParam{
+			{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+			{Name: "id", Description: i18n.MsgTBD},
+			{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
+		},
+		FilterFactory:     nil,
+		Description:       i18n.MsgTBD,
+		JSONInputValue:    func() interface{} { return &fftypes.Data{} },
+		JSONOutputValue:   func() interface{} { return nil },
+		JSONOutputCode:    http.StatusNoContent,
+		FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
+	},
+	{
+		Name:   "op4",
+		Path:   "example2/{id}",
+		Method: http.MethodDelete,
+		PathParams: []*PathParam{
+			{Name: "id", Description: i18n.MsgTBD},
+		},
+		QueryParams:     nil,
+		FilterFactory:   nil,
+		Description:     i18n.MsgTBD,
+		JSONInputValue:  func() interface{} { return nil },
+		JSONOutputValue: func() interface{} { return nil },
+		JSONOutputCode:  http.StatusNoContent,
+	},
+}
+
 func TestOpenAPI3SwaggerGen(t *testing.T) {
-
 	config.Reset()
-	routes := []*Route{
-		{
-			Name:   "op1",
-			Path:   "namespaces/{ns}/example1/{id}",
-			Method: http.MethodPost,
-			PathParams: []*PathParam{
-				{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-				{Name: "id", Description: i18n.MsgTBD},
-			},
-			QueryParams:     nil,
-			FilterFactory:   nil,
-			Description:     i18n.MsgTBD,
-			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
-			JSONInputMask:   []string{"id"},
-			JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
-			JSONOutputCode:  http.StatusOK,
-		},
-		{
-			Name:           "op2",
-			Path:           "example2",
-			Method:         http.MethodGet,
-			PathParams:     nil,
-			QueryParams:    nil,
-			FilterFactory:  database.MessageQueryFactory,
-			Description:    i18n.MsgTBD,
-			JSONInputValue: func() interface{} { return nil },
-			JSONInputSchema: `{
-				"type": "object",
-				"properties": {
-					"id": "string"
-				}
-			}`,
-			JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
-			JSONOutputCode:  http.StatusOK,
-		},
-		{
-			Name:       "op3",
-			Path:       "example2",
-			Method:     http.MethodPut,
-			PathParams: nil,
-			QueryParams: []*QueryParam{
-				{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-				{Name: "id", Description: i18n.MsgTBD},
-				{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
-			},
-			FilterFactory:     nil,
-			Description:       i18n.MsgTBD,
-			JSONInputValue:    func() interface{} { return &fftypes.Data{} },
-			JSONOutputValue:   func() interface{} { return nil },
-			JSONOutputCode:    http.StatusNoContent,
-			FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
-		},
-		{
-			Name:   "op4",
-			Path:   "example2/{id}",
-			Method: http.MethodDelete,
-			PathParams: []*PathParam{
-				{Name: "id", Description: i18n.MsgTBD},
-			},
-			QueryParams:     nil,
-			FilterFactory:   nil,
-			Description:     i18n.MsgTBD,
-			JSONInputValue:  func() interface{} { return nil },
-			JSONOutputValue: func() interface{} { return nil },
-			JSONOutputCode:  http.StatusNoContent,
-		},
-	}
 
-	doc := SwaggerGen(context.Background(), routes)
+	doc := SwaggerGen(context.Background(), testRoutes)
 	err := doc.Validate(context.Background())
 	assert.NoError(t, err)
 
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
 	fmt.Print(string(b))
+}
 
+func TestOpenAPI3AdminSwaggerGen(t *testing.T) {
+	config.Reset()
+
+	doc := AdminSwaggerGen(context.Background(), testRoutes)
+	err := doc.Validate(context.Background())
+	assert.NoError(t, err)
+
+	b, err := yaml.Marshal(doc)
+	assert.NoError(t, err)
+	fmt.Print(string(b))
 }
 
 func TestDuplicateOperationIDCheck(t *testing.T) {
@@ -117,6 +128,15 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 	}
 	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
 		_ = SwaggerGen(context.Background(), routes)
+	})
+}
+
+func TestAdminDuplicateOperationIDCheck(t *testing.T) {
+	routes := []*Route{
+		{Name: "op1"}, {Name: "op1"},
+	}
+	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
+		_ = AdminSwaggerGen(context.Background(), routes)
 	})
 }
 

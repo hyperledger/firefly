@@ -82,6 +82,20 @@ func (_m *Orchestrator) Data() data.Manager {
 	return r0
 }
 
+// DeleteConfigRecord provides a mock function with given fields: ctx, key
+func (_m *Orchestrator) DeleteConfigRecord(ctx context.Context, key string) error {
+	ret := _m.Called(ctx, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteSubscription provides a mock function with given fields: ctx, ns, id
 func (_m *Orchestrator) DeleteSubscription(ctx context.Context, ns string, id string) error {
 	ret := _m.Called(ctx, ns, id)
@@ -151,6 +165,52 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
 		r1 = rf(ctx, ns, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetConfigRecord provides a mock function with given fields: ctx, key
+func (_m *Orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
+	ret := _m.Called(ctx, key)
+
+	var r0 *fftypes.ConfigRecord
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ConfigRecord); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ConfigRecord)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetConfigRecords provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.ConfigRecord
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.ConfigRecord); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.ConfigRecord)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -687,13 +747,13 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter d
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx
-func (_m *Orchestrator) Init(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// Init provides a mock function with given fields: ctx, cancelCtx
+func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
+	ret := _m.Called(ctx, cancelCtx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
+		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -731,6 +791,29 @@ func (_m *Orchestrator) PrivateMessaging() privatemessaging.Manager {
 	}
 
 	return r0
+}
+
+// PutConfigRecord provides a mock function with given fields: ctx, key, configRecord
+func (_m *Orchestrator) PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (fftypes.Byteable, error) {
+	ret := _m.Called(ctx, key, configRecord)
+
+	var r0 fftypes.Byteable
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.Byteable) fftypes.Byteable); ok {
+		r0 = rf(ctx, key, configRecord)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.Byteable)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.Byteable) error); ok {
+		r1 = rf(ctx, key, configRecord)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Start provides a mock function with given fields:

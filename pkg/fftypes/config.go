@@ -14,19 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package fftypes
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestOpenAPI3SwaggerUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerUIHTML(context.Background()))
-}
-
-func TestOpenAPI3SwaggerAdminUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerAdminUIHTML(context.Background()))
+type ConfigRecord struct {
+	Key   string   `json:"key,omitempty"`
+	Value Byteable `json:"value,omitempty"`
 }

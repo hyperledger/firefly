@@ -14,19 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package apiserver
 
-import (
-	"context"
-	"testing"
+import "github.com/hyperledger-labs/firefly/internal/oapispec"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestOpenAPI3SwaggerUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerUIHTML(context.Background()))
-}
-
-func TestOpenAPI3SwaggerAdminUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerAdminUIHTML(context.Background()))
+var adminRoutes = []*oapispec.Route{
+	getConfigRecord,
+	getConfigRecords,
+	putConfigRecord,
+	deleteConfigRecord,
 }

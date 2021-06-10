@@ -17,6 +17,7 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -151,7 +152,27 @@ var (
 	HTTPTLSKeyFile = rootKey("http.tls.keyFile")
 	// HttpWriteTimeout the write timeout for the HTTP server
 	HTTPWriteTimeout = rootKey("http.writeTimeout")
-	// IdentityType is the name of the inentity interface plugin being used by this firefly name
+	// AdminHTTPEnabled determines whether the admin interface will be enabled or not
+	AdminHTTPEnabled = rootKey("admin.enabled")
+	// AdminHttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
+	AdminHTTPAddress = rootKey("admin.address")
+	// AdminHttpPort the local port to listen on for HTTP/Websocket connections
+	AdminHTTPPort = rootKey("admin.port")
+	// AdminHttpReadTimeout the write timeout for the HTTP server
+	AdminHTTPReadTimeout = rootKey("admin.readTimeout")
+	// AdminHttpTLSCAFile the TLS certificate authority file for the HTTP server
+	AdminHTTPTLSCAFile = rootKey("admin.tls.caFile")
+	// AdminHttpTLSCertFile the TLS certificate file for the HTTP server
+	AdminHTTPTLSCertFile = rootKey("admin.tls.certFile")
+	// AdminHttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
+	AdminHTTPTLSClientAuth = rootKey("admin.tls.clientAuth")
+	// AdminHttpTLSEnabled whether TLS is enabled for the HTTP server
+	AdminHTTPTLSEnabled = rootKey("admin.tls.enabled")
+	// AdminHttpTLSKeyFile the private key file for TLS on the server
+	AdminHTTPTLSKeyFile = rootKey("admin.tls.keyFile")
+	// AdminHttpWriteTimeout the write timeout for the HTTP server
+	AdminHTTPWriteTimeout = rootKey("admin.writeTimeout")
+	// IdentityType is the name of the identity interface plugin being used by this firefly name
 	IdentityType = rootKey("identity.type")
 	// Lang is the language to use for translation
 	Lang = rootKey("lang")
@@ -274,6 +295,11 @@ func Reset() {
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")
 	viper.SetDefault(string(HTTPWriteTimeout), "15s")
+	viper.SetDefault(string(AdminHTTPEnabled), false)
+	viper.SetDefault(string(AdminHTTPAddress), "127.0.0.1")
+	viper.SetDefault(string(AdminHTTPPort), 5001)
+	viper.SetDefault(string(AdminHTTPReadTimeout), "15s")
+	viper.SetDefault(string(AdminHTTPWriteTimeout), "15s")
 	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
@@ -322,6 +348,20 @@ func ReadConfig(cfgFile string) error {
 	viper.AddConfigPath("$HOME/.firefly")
 	viper.AddConfigPath(".")
 	return viper.ReadInConfig()
+}
+
+func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
+	for _, c := range configRecords {
+		s := viper.New()
+		s.SetConfigType("json")
+		if err := s.ReadConfig(bytes.NewBuffer(c.Value)); err != nil {
+			return err
+		}
+		for _, k := range s.AllKeys() {
+			viper.Set(fmt.Sprintf("%s.%s", c.Key, k), s.Get(k))
+		}
+	}
+	return nil
 }
 
 var root = &configPrefix{

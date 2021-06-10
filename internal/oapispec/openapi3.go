@@ -30,6 +30,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func getHost() string {
@@ -40,6 +41,14 @@ func getHost() string {
 	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.HTTPAddress), config.GetString(config.HTTPPort))
 }
 
+func getAdminHost() string {
+	proto := "https"
+	if !config.GetBool(config.HTTPTLSEnabled) {
+		proto = "http"
+	}
+	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminHTTPAddress), config.GetString(config.AdminHTTPPort))
+}
+
 func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
 
 	doc := &openapi3.T{
@@ -48,7 +57,31 @@ func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
 			{URL: fmt.Sprintf("%s/api/v1", getHost())},
 		},
 		Info: &openapi3.Info{
-			Title:       "Firefly",
+			Title:       "FireFly",
+			Version:     "1.0",
+			Description: "Copyright © 2021 Kaleido, Inc.",
+		},
+	}
+	opIds := make(map[string]bool)
+	for _, route := range routes {
+		if route.Name == "" || opIds[route.Name] {
+			log.Panicf("Duplicate/invalid name (used as operation ID in swagger): %s", route.Name)
+		}
+		addRoute(ctx, doc, route)
+		opIds[route.Name] = true
+	}
+	return doc
+}
+
+func AdminSwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
+
+	doc := &openapi3.T{
+		OpenAPI: "3.0.2",
+		Servers: openapi3.Servers{
+			{URL: fmt.Sprintf("%s/admin/api/v1", getAdminHost())},
+		},
+		Info: &openapi3.Info{
+			Title:       "FireFly",
 			Version:     "1.0",
 			Description: "Copyright © 2021 Kaleido, Inc.",
 		},
@@ -230,6 +263,9 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 }
 
 func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
+	if t == reflect.TypeOf(fftypes.Byteable{}) {
+		return reflect.TypeOf(fftypes.Byteable{})
+	}
 	fieldCount := t.NumField()
 	newFields := make([]reflect.StructField, fieldCount)
 	for i := 0; i < fieldCount; i++ {
