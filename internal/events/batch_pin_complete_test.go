@@ -186,7 +186,8 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	err := em.persistBatch(context.Background(), &fftypes.Batch{})
+	valid, err := em.persistBatch(context.Background(), &fftypes.Batch{})
+	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
@@ -273,7 +274,8 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.False(t, valid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -296,7 +298,8 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -431,7 +434,8 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.True(t, valid)
 	assert.NoError(t, err)
 	mdi.AssertExpectations(t)
 }
@@ -460,7 +464,8 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -492,7 +497,8 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -523,9 +529,11 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, false).Return(nil)
 
-	err := em.persistBatch(context.Background(), batch)
+	valid, err := em.persistBatch(context.Background(), batch)
+	assert.True(t, valid)
 	assert.NoError(t, err)
 }
+
 func TestPersistBatchDataBadHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
