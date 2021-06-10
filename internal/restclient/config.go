@@ -16,7 +16,7 @@
 
 package restclient
 
-import "github.com/kaleido-io/firefly/internal/config"
+import "github.com/hyperledger-labs/firefly/internal/config"
 
 const (
 	defaultRetryEnabled     = false

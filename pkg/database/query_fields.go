@@ -26,8 +26,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 // QueryFactory creates a filter builder in the given context, and contains the rules on

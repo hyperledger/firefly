@@ -17,7 +17,7 @@
 package orchestrator
 
 import (
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func (or *orchestrator) MessageCreated(sequence int64) {

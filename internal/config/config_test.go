@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )

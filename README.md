@@ -1,14 +1,14 @@
 # FireFly
 
-[![codecov](https://codecov.io/gh/kaleido-io/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/kaleido-io/firefly)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kaleido-io/firefly)](https://goreportcard.com/report/github.com/kaleido-io/firefly)
+[![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/hyperledger-labs/firefly)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger-labs/firefly)](https://goreportcard.com/report/github.com/hyperledger-labs/firefly)
 
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
 Please see the
-[Hyperledger FireFly proposal document](https://github.com/kaleido-io/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
+[Hyperledger FireFly proposal document](https://github.com/hyperledger-labs/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
 for more information about the project goals and architecture.
 
 ## FireFly repos

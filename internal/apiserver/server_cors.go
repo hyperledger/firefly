@@ -20,8 +20,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/rs/cors"
 )
 

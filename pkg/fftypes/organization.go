@@ -22,7 +22,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/kaleido-io/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
 // Organization is a top-level identity in the network

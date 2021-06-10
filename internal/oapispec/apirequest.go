@@ -21,8 +21,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kaleido-io/firefly/internal/orchestrator"
-	"github.com/kaleido-io/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/internal/orchestrator"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
 type APIRequest struct {

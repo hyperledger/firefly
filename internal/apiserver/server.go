@@ -33,15 +33,15 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
-	"github.com/kaleido-io/firefly/internal/config"
-	"github.com/kaleido-io/firefly/internal/events/eifactory"
-	"github.com/kaleido-io/firefly/internal/events/websockets"
-	"github.com/kaleido-io/firefly/internal/i18n"
-	"github.com/kaleido-io/firefly/internal/log"
-	"github.com/kaleido-io/firefly/internal/oapispec"
-	"github.com/kaleido-io/firefly/internal/orchestrator"
-	"github.com/kaleido-io/firefly/pkg/database"
-	"github.com/kaleido-io/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
+	"github.com/hyperledger-labs/firefly/internal/events/websockets"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/internal/oapispec"
+	"github.com/hyperledger-labs/firefly/internal/orchestrator"
+	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
