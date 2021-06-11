@@ -13,9 +13,9 @@ FireFly focusses on:
 - Giving visbility and control on the private data exchange that occurs between businesses in a multi-party system
 - Simplifying the journey of building multi-party business processes, by empowering non-blockchain developers to build great APIs+UX
 
-You will see enterprise focussed code in FireFly that focusses on hard coordination problems like on-chain/off-chain event sequencing and aggregation, and some smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin etc.
+You will see enterprise focussed code in FireFly solving hard "plumbing" problems like on-chain/off-chain event sequencing and aggregation, and enough smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin etc.
 
-> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture. The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
+> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture (building on the work done in gen1, also in this repo). The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
