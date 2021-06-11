@@ -32,6 +32,40 @@ func TestMessageReceiveOK(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
+		ID:     fftypes.NewUUID(),
+		Author: "signingOrg",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID: fftypes.NewUUID(),
+			},
+		},
+	}
+	batch.Hash = batch.Payload.Hash()
+	b, _ := json.Marshal(batch)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdx := &dataexchangemocks.Plugin{}
+	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
+		{Name: "node1", Owner: "parentOrg"},
+	}, nil)
+	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
+		Identity: "signingOrg", Parent: "parentOrg",
+	}, nil)
+	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
+		Identity: "parentOrg",
+	}, nil)
+	mdi.On("UpsertBatch", em.ctx, mock.Anything, true, false).Return(nil, nil)
+	em.MessageReceived(mdx, "peer1", b)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+}
+
+func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	batch := &fftypes.Batch{
 		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
 		Author: "signingOrg",
 	}

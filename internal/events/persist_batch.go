@@ -43,57 +43,57 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 		return nil // This is not retryable. skip this batch
 	}
 
-	return em.persistBatch(ctx, batch)
+	_, err = em.persistBatch(ctx, batch)
+	return err
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists
 // or discards them. Errors are returned only in the case of database failures, which should be retried.
-func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) error {
+func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, batch *fftypes.Batch) (valid bool, err error) {
 	l := log.L(ctx)
 	now := fftypes.Now()
 
 	if batch.ID == nil || batch.Payload.TX.ID == nil {
-		l.Errorf("Invalid batch '%s'. Missing ID (%v) or payload ID (%v)", batch.ID, batch.ID, batch.Payload.TX.ID)
-		return nil // This is not retryable. skip this batch
+		l.Errorf("Invalid batch '%s'. Missing ID (%v) or transaction ID (%v)", batch.ID, batch.ID, batch.Payload.TX.ID)
+		return false, nil // This is not retryable. skip this batch
 	}
 
 	// Verify the hash calculation
 	hash := batch.Payload.Hash()
 	if batch.Hash == nil || *batch.Hash != *hash {
 		l.Errorf("Invalid batch '%s'. Hash does not match payload. Found=%s Expected=%s", batch.ID, hash, batch.Hash)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 
 	// Set confirmed on the batch (the messages should not be confirmed at this point - that's the aggregator's job)
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err := em.database.UpsertBatch(ctx, batch, true, false)
+	err = em.database.UpsertBatch(ctx, batch, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)
-			return nil // This is not retryable. skip this batch
+			return false, nil // This is not retryable. skip this batch
 		}
 		l.Errorf("Failed to insert batch '%s': %s", batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
+		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 
 	// Insert the data entries
 	for i, data := range batch.Payload.Data {
 		if err = em.persistBatchData(ctx, batch, i, data); err != nil {
-			return err
+			return false, err
 		}
 	}
 
 	// Insert the message entries
 	for i, msg := range batch.Payload.Messages {
 		if err = em.persistBatchMessage(ctx, batch, i, msg); err != nil {
-			return err
+			return false, err
 		}
 	}
 
-	return nil
-
+	return true, nil
 }
 
 func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data) error {

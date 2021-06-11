@@ -28,7 +28,8 @@ func TestGroupValidation(t *testing.T) {
 
 	group := &Group{
 		GroupIdentity: GroupIdentity{
-			Name: "!wrong",
+			Namespace: "ok",
+			Name:      "!wrong",
 		},
 	}
 	assert.Regexp(t, "FF10131.*name", group.Validate(context.Background(), false))

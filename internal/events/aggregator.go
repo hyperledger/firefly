@@ -45,6 +45,7 @@ type aggregator struct {
 	eventPoller     *eventPoller
 	newPins         chan int64
 	offchainBatches chan *fftypes.UUID
+	queuedRewinds   chan *fftypes.UUID
 	retry           *retry.Retry
 }
 
@@ -57,7 +58,8 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		messaging:       pm,
 		data:            dm,
 		newPins:         make(chan int64),
-		offchainBatches: make(chan *fftypes.UUID, batchSize),
+		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
+		queuedRewinds:   make(chan *fftypes.UUID, batchSize),
 	}
 	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
@@ -87,7 +89,20 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 }
 
 func (ag *aggregator) start() error {
+	go ag.offchainListener()
 	return ag.eventPoller.start()
+}
+
+func (ag *aggregator) offchainListener() {
+	for {
+		select {
+		case uuid := <-ag.offchainBatches:
+			ag.queuedRewinds <- uuid
+			ag.eventPoller.shoulderTap()
+		case <-ag.ctx.Done():
+			return
+		}
+	}
 }
 
 func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
@@ -97,7 +112,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 		draining := true
 		for draining {
 			select {
-			case batchID := <-ag.offchainBatches:
+			case batchID := <-ag.queuedRewinds:
 				batchIDs = append(batchIDs, batchID)
 			default:
 				draining = false
@@ -115,7 +130,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 			}
 			if len(sequences) > 0 {
 				rewind = true
-				offset = sequences[0].Sequence
+				offset = sequences[0].Sequence - 1
 				log.L(ag.ctx).Debugf("Rewinding for off-chain data arrival. New local pin sequence %d", offset)
 			}
 		}
@@ -398,14 +413,19 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	// We're going to dispatch it at this point, but we need to validate the data first
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
-	if msg.Header.Namespace == fftypes.SystemNamespace {
+	switch {
+	case msg.Header.Namespace == fftypes.SystemNamespace:
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
 		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
 			// Should only return errors that are retryable
 			return false, err
 		}
-	} else if len(msg.Data) > 0 {
+	case msg.Header.Type == fftypes.MessageTypeGroupInit:
+		// Already handled as part of resolving the context.
+		valid = true
+		eventType = fftypes.EventTypeGroupConfirmed
+	case len(msg.Data) > 0:
 		valid, err = ag.data.ValidateAll(ctx, data)
 		if err != nil {
 			return false, err

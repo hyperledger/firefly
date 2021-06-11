@@ -44,7 +44,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*fftypes.Data)
 		assert.Equal(t, fftypes.ValidatorTypeSystemDefinition, data.Validator)
-		assert.Equal(t, fftypes.SystemNamespace, data.Namespace)
+		assert.Equal(t, "ns1", data.Namespace)
 		var group fftypes.Group
 		err := json.Unmarshal(data.Value, &group)
 		assert.NoError(t, err)
@@ -54,16 +54,21 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		assert.Nil(t, group.Ledger)
 		dataID = data.ID
 	}
-	um := mdi.On("UpsertMessage", pm.ctx, mock.Anything, false, false).Return(nil).Once()
+	um := mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 	um.RunFn = func(a mock.Arguments) {
 		msg := a[1].(*fftypes.Message)
 		assert.Equal(t, fftypes.MessageTypeGroupInit, msg.Header.Type)
-		assert.Equal(t, fftypes.SystemNamespace, msg.Header.Namespace)
+		assert.Equal(t, "ns1", msg.Header.Namespace)
 		assert.Len(t, msg.Data, 1)
 		assert.Equal(t, *dataID, *msg.Data[0].ID)
 	}
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Namespace: "ns1",
+			},
+		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "localorg"},

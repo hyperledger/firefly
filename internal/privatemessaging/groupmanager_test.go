@@ -34,7 +34,7 @@ func TestGroupInitSealFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, nil)
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -46,7 +46,16 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "id1", Node: fftypes.NewUUID()},
+			},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -59,7 +68,16 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, true).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, &fftypes.Group{})
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				{Identity: "id1", Node: fftypes.NewUUID()},
+			},
+		},
+	}
+	group.Seal()
+	err := pm.groupInit(pm.ctx, &fftypes.Identity{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -234,44 +252,6 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-
-}
-
-func TestResolveInitGroupNewEventFail(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Name:      "group1",
-			Namespace: "ns1",
-			Members: fftypes.Members{
-				{Identity: "abce12345", Node: fftypes.NewUUID()},
-			},
-		},
-	}
-	group.Seal()
-	assert.NoError(t, group.Validate(pm.ctx, true))
-	b, _ := json.Marshal(&group)
-
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
-		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(b)},
-	}, true, nil)
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
-	mdi.On("UpsertEvent", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
-
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       string(fftypes.SystemTagDefineGroup),
-			Group:     group.Hash,
-			Author:    "author1",
-		},
-	})
-	assert.EqualError(t, err, "pop")
 
 }
 

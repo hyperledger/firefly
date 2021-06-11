@@ -88,12 +88,15 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 			return false, nil
 		}
 
-		if err := em.persistBatch(em.ctx, &batch); err != nil {
+		valid, err := em.persistBatch(em.ctx, &batch)
+		if err != nil {
 			l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
 			return true, err // retry - persistBatch only returns retryable errors
 		}
 
-		em.aggregator.offchainBatches <- batch.ID
+		if valid {
+			em.aggregator.offchainBatches <- batch.ID
+		}
 		return false, nil
 	})
 
