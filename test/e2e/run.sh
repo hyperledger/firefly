@@ -14,7 +14,7 @@ cd $CWD
 
 if $BUILD_FIREFLY
 then
-	docker build -t kaleidoinc/firefly:latest ../..
+	docker build -t ghcr.io/hyperledger-labs/firefly:latest ../..
 fi
 
 if $DOWNLOAD_CLI
@@ -30,4 +30,4 @@ then
 fi
 
 export STACK_FILE
-go test -v .
+go clean -testcache && go test -v .

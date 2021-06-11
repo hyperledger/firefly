@@ -41,6 +41,8 @@ firefly-nocgo: ${GOFILES}
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 build: firefly-nocgo firefly
+e2e: build
+		./test/e2e/run.sh
 clean: 
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}
