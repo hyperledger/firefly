@@ -30,8 +30,6 @@ var privateSendSchema = `{
 		 "data": {
 				"items": {
 					 "properties": {
-							"id": {"type": "string"},
-							"hash": {"type": "string"},
 							"validator": {"type": "string"},
 							"datatype": {
 								"type": "object",

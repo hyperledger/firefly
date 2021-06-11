@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"fmt"
+	"testing"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -39,16 +41,37 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
-func GetMessages(ts *e2eTestState, client *resty.Client, msgType fftypes.MessageType, expectedStatus int) (msgs []*fftypes.Message) {
+func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, expectedStatus int) (msgs []*fftypes.Message) {
 	path := urlGetMessages
 	resp, err := client.R().
 		SetQueryParam("type", string(msgType)).
-		SetQueryParam("created", fmt.Sprintf(">%d", ts.startTime.UnixNano())).
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
 		SetResult(&msgs).
 		Get(path)
-	require.NoError(ts.t, err)
-	require.Equal(ts.t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return msgs
+}
+
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data []*fftypes.Data) {
+	path := urlGetData
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&data).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return data
+}
+
+func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
+	path := urlGetOrganizations
+	resp, err := client.R().
+		SetResult(&orgs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return orgs
 }
 
 func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*resty.Response, error) {
@@ -59,7 +82,7 @@ func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*rest
 		Post(urlBroadcastMessage)
 }
 
-func PrivateMessage(ts *e2eTestState, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string) (*resty.Response, error) {
+func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -75,25 +98,4 @@ func PrivateMessage(ts *e2eTestState, client *resty.Client, data *fftypes.DataRe
 			},
 		}).
 		Post(urlPrivateMessage)
-}
-
-func GetData(ts *e2eTestState, client *resty.Client, expectedStatus int) (data []*fftypes.Data) {
-	path := urlGetData
-	resp, err := client.R().
-		SetQueryParam("created", fmt.Sprintf(">%d", ts.startTime.UnixNano())).
-		SetResult(&data).
-		Get(path)
-	require.NoError(ts.t, err)
-	require.Equal(ts.t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return data
-}
-
-func GetOrgs(ts *e2eTestState, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
-	path := urlGetOrganizations
-	resp, err := client.R().
-		SetResult(&orgs).
-		Get(path)
-	require.NoError(ts.t, err)
-	require.Equal(ts.t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return orgs
 }

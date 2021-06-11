@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type e2eTestState struct {
+type testState struct {
 	startTime time.Time
 	t         *testing.T
 	client1   *resty.Client
@@ -55,20 +55,20 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *e2eTestState, client *resty.Client, value fftypes.Byteable, msgType fftypes.MessageType) {
-	messages := GetMessages(ts, client, msgType, 200)
+func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes.Byteable, msgType fftypes.MessageType) {
+	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
 	assert.Equal(ts.t, 1, len(messages))
 	assert.Equal(ts.t, fftypes.LowerCasedType("batch_pin"), (messages)[0].Header.TxType)
 	assert.Equal(ts.t, "default", (messages)[0].Header.Namespace)
 	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[0].Header.Topics)
 
-	data := GetData(ts, client, 200)
+	data := GetData(ts.t, client, ts.startTime, 200)
 	assert.Equal(ts.t, 1, len(data))
 	assert.Equal(ts.t, "default", (data)[0].Namespace)
 	assert.Equal(ts.t, value, (data)[0].Value)
 }
 
-func beforeE2ETest(t *testing.T) *e2eTestState {
+func beforeE2ETest(t *testing.T) *testState {
 	stackFile := os.Getenv("STACK_FILE")
 	if stackFile == "" {
 		t.Fatal("STACK_FILE must be set")
@@ -79,7 +79,7 @@ func beforeE2ETest(t *testing.T) *e2eTestState {
 	port2, err := GetMemberPort(stackFile, 1)
 	require.NoError(t, err)
 
-	ts := &e2eTestState{
+	ts := &testState{
 		t:         t,
 		startTime: time.Now(),
 		client1:   resty.New(),
@@ -94,7 +94,7 @@ func beforeE2ETest(t *testing.T) *e2eTestState {
 	pollForUp(t, ts.client1)
 	pollForUp(t, ts.client2)
 
-	orgs := GetOrgs(ts, ts.client1, 200)
+	orgs := GetOrgs(t, ts.client1, 200)
 	require.GreaterOrEqual(t, 2, len(orgs), "Must have two registered orgs: %v", orgs)
 	ts.org1 = orgs[0]
 	ts.org2 = orgs[1]
@@ -190,7 +190,7 @@ func TestE2EPrivate(t *testing.T) {
 		Value: value,
 	}
 
-	resp, err := PrivateMessage(ts, ts.client1, &data, []string{
+	resp, err := PrivateMessage(t, ts.client1, &data, []string{
 		ts.org1.Name,
 		ts.org2.Name,
 	})
