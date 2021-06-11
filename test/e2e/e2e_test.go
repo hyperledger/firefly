@@ -94,10 +94,16 @@ func beforeE2ETest(t *testing.T) *testState {
 	pollForUp(t, ts.client1)
 	pollForUp(t, ts.client2)
 
-	orgs := GetOrgs(t, ts.client1, 200)
-	require.GreaterOrEqual(t, 2, len(orgs), "Must have two registered orgs: %v", orgs)
-	ts.org1 = orgs[0]
-	ts.org2 = orgs[1]
+	for {
+		orgs := GetOrgs(t, ts.client1, 200)
+		if len(orgs) >= 2 {
+			ts.org1 = orgs[0]
+			ts.org2 = orgs[1]
+			break
+		}
+		t.Logf("Waiting for 2 orgs to appear. Currently have: %v", orgs)
+		time.Sleep(3 * time.Second)
+	}
 
 	wsUrl1 := url.URL{
 		Scheme:   "ws",
