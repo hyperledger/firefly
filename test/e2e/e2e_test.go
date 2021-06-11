@@ -126,8 +126,9 @@ func TestEndToEnd(t *testing.T) {
 	}()
 
 	var resp *resty.Response
+	value := fftypes.Byteable("\"Hello\"")
 	data := fftypes.DataRefOrValue{
-		Value: fftypes.Byteable("\"Hello\""),
+		Value: value,
 	}
 
 	resp, err = BroadcastMessage(client1, &data)
@@ -135,8 +136,8 @@ func TestEndToEnd(t *testing.T) {
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
-	validateReceivedMessages(t, client1, fftypes.Byteable("Hello"))
+	validateReceivedMessages(t, client1, value)
 
 	<-received2
-	validateReceivedMessages(t, client2, fftypes.Byteable("Hello"))
+	validateReceivedMessages(t, client2, value)
 }
