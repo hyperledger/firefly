@@ -18,11 +18,13 @@ package e2e
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/gorilla/websocket"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,6 +42,27 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	}
 	require.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode())
+}
+
+func validateReceivedMessages(t *testing.T, client *resty.Client, value fftypes.Byteable) {
+	resp, err := GetMessages(client)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode())
+
+	messages := resp.Result().(*[]fftypes.Message)
+	assert.Equal(t, 1, len(*messages))
+	assert.Equal(t, fftypes.LowerCasedType("batch_pin"), (*messages)[0].Header.TxType)
+	assert.Equal(t, "default", (*messages)[0].Header.Namespace)
+	assert.Equal(t, fftypes.FFNameArray{"default"}, (*messages)[0].Header.Topics)
+
+	resp, err = GetData(client)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode())
+
+	data := resp.Result().(*[]fftypes.Data)
+	assert.Equal(t, 1, len(*data))
+	assert.Equal(t, "default", (*data)[0].Namespace)
+	assert.Equal(t, value, (*data)[0].Value)
 }
 
 func TestEndToEnd(t *testing.T) {
@@ -63,25 +86,58 @@ func TestEndToEnd(t *testing.T) {
 	pollForUp(t, client1)
 	pollForUp(t, client2)
 
-	var resp *resty.Response
-	definitionName := "definition1"
+	wsUrl1 := url.URL{
+		Scheme:   "ws",
+		Host:     fmt.Sprintf("localhost:%d", port1),
+		Path:     "/ws",
+		RawQuery: "namespace=default&ephemeral&autoack",
+	}
+	wsUrl2 := url.URL{
+		Scheme:   "ws",
+		Host:     fmt.Sprintf("localhost:%d", port2),
+		Path:     "/ws",
+		RawQuery: "namespace=default&ephemeral&autoack",
+	}
 
-	resp, err = BroadcastDatatype(client1, definitionName)
+	t.Logf("Websocket 1: " + wsUrl1.String())
+	t.Logf("Websocket 2: " + wsUrl2.String())
+
+	ws1, _, err := websocket.DefaultDialer.Dial(wsUrl1.String(), nil)
+	require.NoError(t, err)
+	ws2, _, err := websocket.DefaultDialer.Dial(wsUrl2.String(), nil)
+	require.NoError(t, err)
+
+	received1 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ws1.ReadMessage()
+			require.NoError(t, err)
+			received1 <- true
+		}
+	}()
+
+	received2 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ws2.ReadMessage()
+			require.NoError(t, err)
+			received2 <- true
+		}
+	}()
+
+	var resp *resty.Response
+	value := fftypes.Byteable("\"Hello\"")
+	data := fftypes.DataRefOrValue{
+		Value: value,
+	}
+
+	resp, err = BroadcastMessage(client1, &data)
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
-	resp, err = GetData(client1)
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode())
-	data := resp.Result().(*[]fftypes.Data)
-	assert.Equal(t, 1, len(*data))
-	assert.Equal(t, "default", (*data)[0].Namespace)
-	assert.Equal(t, fftypes.ValidatorType("datadef"), (*data)[0].Validator)
-	assert.Equal(t, definitionName, (*data)[0].Value.JSONObject().GetString("name"))
+	<-received1
+	validateReceivedMessages(t, client1, value)
 
-	resp, err = GetData(client2)
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode())
-	data = resp.Result().(*[]fftypes.Data)
-	t.Logf("Returned results from member 2: %d", len(*data))
+	<-received2
+	validateReceivedMessages(t, client2, value)
 }

@@ -2,12 +2,20 @@
 set -euo pipefail
 
 CWD=$(dirname "$0")
-CLI=ff
+CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
 STACK_NAME=firefly-e2e
 STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 DOWNLOAD_CLI=true
 CREATE_STACK=true
+BUILD_FIREFLY=true
+
+cd $CWD
+
+if $BUILD_FIREFLY
+then
+	docker build -t kaleidoinc/firefly:latest ../..
+fi
 
 if $DOWNLOAD_CLI
 then
@@ -22,4 +30,4 @@ then
 fi
 
 export STACK_FILE
-cd $CWD && go test -v .
+go test -v .
