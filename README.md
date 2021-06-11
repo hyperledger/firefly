@@ -1,9 +1,21 @@
 # FireFly
 
-[![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/master/graph/badge.svg?token=VZZ14OMCC0)](https://codecov.io/gh/hyperledger-labs/firefly)
+[![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger-labs/firefly)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger-labs/firefly)](https://goreportcard.com/report/github.com/hyperledger-labs/firefly)
 
-FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise up to 100x faster by allowing them to focus on business logic instead of infrastructure.
+FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
+
+FireFly focusses on:
+- Providing a great developer API and experience, with a CLI and UI as first class project components
+- Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
+- Making proven multi-party system patterns easy for new projects to adopt
+- Providing developer friendly access to custom transactions+events in the underlying blockchain platforms
+- Giving visbility and control on the private data exchange that occurs between businesses in a multi-party system
+- Simplifying the journey of building multi-party business processes, by empowering non-blockchain developers to build great APIs+UX
+
+You will see enterprise focussed code in FireFly solving hard "plumbing" problems like on-chain/off-chain event sequencing and aggregation, and enough smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin, NodeRED etc.
+
+> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture (building on the work done in gen1, also in this repo). The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
@@ -40,6 +52,7 @@ the Hyperledger foundation) we expect these documents and conversations to move 
 - [Simplest Transaction Flow - Ping Pong](https://github.com/hyperledger-labs/firefly/issues/5)
 - [Plugin Architecture](https://github.com/hyperledger-labs/firefly/issues/7)
 - [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/hyperledger-labs/firefly/issues/11)
+- [Private messaging architecture](https://github.com/hyperledger-labs/firefly/issues/68)
 
 ## Getting Started
 
