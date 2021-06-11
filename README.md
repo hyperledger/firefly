@@ -16,7 +16,7 @@ FireFly focusses on:
 
 For this reason you will see heavy lifting code in FireFly that focusses on hard coordination problems like on-chain/off-chain event sequencing and aggregation, but you won't find sophisticated smart contract code.
 
-You will instead find patterns of integration with the individual multi-party system communities that are already building that deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon etc.
+You will instead find patterns of integration with the individual communities that are already building that deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon etc.
 
 > Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture. The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
 
