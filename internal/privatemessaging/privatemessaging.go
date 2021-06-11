@@ -150,6 +150,7 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 
 		op := fftypes.NewTXOperation(
 			pm.exchange,
+			batch.Namespace,
 			batch.Payload.TX.ID,
 			trackingID,
 			fftypes.OpTypeDataExchangeBatchSend,
@@ -199,6 +200,7 @@ func (pm *privateMessaging) writeTransaction(ctx context.Context, signingID *fft
 	// The pending blockchain transaction
 	op := fftypes.NewTXOperation(
 		pm.blockchain,
+		batch.Namespace,
 		batch.Payload.TX.ID,
 		blockchainTrackingID,
 		fftypes.OpTypeBlockchainBatchPin,

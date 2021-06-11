@@ -30,6 +30,7 @@ import (
 var (
 	opColumns = []string{
 		"id",
+		"namespace",
 		"tx_id",
 		"optype",
 		"opstatus",
@@ -77,6 +78,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 		// Update the operation
 		if err = s.updateTx(ctx, tx,
 			sq.Update("operations").
+				Set("namespace", operation.Namespace).
 				Set("tx_id", operation.Transaction).
 				Set("optype", operation.Type).
 				Set("opstatus", operation.Status).
@@ -97,6 +99,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Columns(opColumns...).
 				Values(
 					operation.ID,
+					operation.Namespace,
 					operation.Transaction,
 					string(operation.Type),
 					string(operation.Status),
@@ -120,6 +123,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	var op fftypes.Operation
 	err := row.Scan(
 		&op.ID,
+		&op.Namespace,
 		&op.Transaction,
 		&op.Type,
 		&op.Status,

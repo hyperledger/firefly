@@ -162,6 +162,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	// The pending blockchain transaction
 	op := fftypes.NewTXOperation(
 		bm.blockchain,
+		batch.Namespace,
 		batch.Payload.TX.ID,
 		blockchainTrackingID,
 		fftypes.OpTypeBlockchainBatchPin,
@@ -174,6 +175,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	// The completed PublicStorage upload
 	op = fftypes.NewTXOperation(
 		bm.publicstorage,
+		batch.Namespace,
 		batch.Payload.TX.ID,
 		publicstorageID,
 		fftypes.OpTypePublicStorageBatchBroadcast,

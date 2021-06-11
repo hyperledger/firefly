@@ -38,6 +38,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operationID := fftypes.NewUUID()
 	operation := &fftypes.Operation{
 		ID:          operationID,
+		Namespace:   "ns1",
 		Type:        fftypes.OpTypeBlockchainBatchPin,
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusPending,
@@ -58,6 +59,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	operationUpdated := &fftypes.Operation{
 		ID:          operationID,
+		Namespace:   "ns1",
 		Type:        fftypes.OpTypeBlockchainBatchPin,
 		Transaction: fftypes.NewUUID(),
 		Status:      fftypes.OpStatusFailed,
