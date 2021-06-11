@@ -6,9 +6,9 @@
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
 
 FireFly focusses on:
-- Providing a great developer API and experience, with CLI and UI as first class project components
-- Pluggability for implementations of multi-party system infrastructure (on-chain, off-chain, identity, compute etc.)
-- Making well adopted multi-party system patterns easy for new projects to adopt
+- Providing a great developer API and experience, with a CLI and UI as first class project components
+- Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
+- Making proven multi-party system patterns easy for new projects to adopt
 - Providing developer friendly access to custom transactions+events in the underlying blockchain platforms
 - Simplfying deployment through a highly available microservice architecture, with pluggable infrastructure (dockerized of course)
 - Giving visbility and control on the private data exchange that occurs between businesses in a multi-party system
@@ -18,7 +18,7 @@ For this reason you will see heavy lifting code in FireFly that focusses on hard
 
 You will instead find patterns of integration with the individual multi-party system communities that are already building that deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon etc.
 
-> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFyl architecture. The tokens working group is being lead by @jimthematix
+> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture. The tokens working group is being lead by @jimthematix
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
