@@ -68,3 +68,7 @@ func (sqlite *SQLite) Open(url string) (*sql.DB, error) {
 func (sqlite *SQLite) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return migratesqlite.WithInstance(db, &migratesqlite.Config{})
 }
+
+func (sqlite *SQLite) IndividualSort() bool {
+	return true
+}

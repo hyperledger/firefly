@@ -182,7 +182,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go func() {
 		repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{
 			&fftypes.Event{ID: ev1, Sequence: 10000001, Reference: ref1, Type: fftypes.EventTypeMessageConfirmed}, // match
-			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageInvalid},
+			&fftypes.Event{ID: ev2, Sequence: 10000002, Reference: ref2, Type: fftypes.EventTypeMessageRejected},
 			&fftypes.Event{ID: ev3, Sequence: 10000003, Reference: ref3, Type: fftypes.EventTypeMessageConfirmed}, // match
 			&fftypes.Event{ID: ev4, Sequence: 10000004, Reference: ref4, Type: fftypes.EventTypeMessageConfirmed}, // match
 		})
@@ -387,7 +387,7 @@ func TestFilterEventsMatch(t *testing.T) {
 		{
 			Event: fftypes.Event{
 				ID:   id3,
-				Type: fftypes.EventTypeMessageInvalid,
+				Type: fftypes.EventTypeMessageRejected,
 			},
 			Message: &fftypes.Message{
 				Header: fftypes.MessageHeader{

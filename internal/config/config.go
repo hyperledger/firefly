@@ -19,6 +19,7 @@ package config
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -153,25 +154,25 @@ var (
 	// HttpWriteTimeout the write timeout for the HTTP server
 	HTTPWriteTimeout = rootKey("http.writeTimeout")
 	// AdminHTTPEnabled determines whether the admin interface will be enabled or not
-	AdminHTTPEnabled = rootKey("admin.enabled")
+	AdminEnabled = rootKey("admin.enabled")
 	// AdminHttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
-	AdminHTTPAddress = rootKey("admin.address")
+	AdminAddress = rootKey("admin.address")
 	// AdminHttpPort the local port to listen on for HTTP/Websocket connections
-	AdminHTTPPort = rootKey("admin.port")
+	AdminPort = rootKey("admin.port")
 	// AdminHttpReadTimeout the write timeout for the HTTP server
-	AdminHTTPReadTimeout = rootKey("admin.readTimeout")
+	AdminReadTimeout = rootKey("admin.readTimeout")
 	// AdminHttpTLSCAFile the TLS certificate authority file for the HTTP server
-	AdminHTTPTLSCAFile = rootKey("admin.tls.caFile")
+	AdminTLSCAFile = rootKey("admin.tls.caFile")
 	// AdminHttpTLSCertFile the TLS certificate file for the HTTP server
-	AdminHTTPTLSCertFile = rootKey("admin.tls.certFile")
+	AdminTLSCertFile = rootKey("admin.tls.certFile")
 	// AdminHttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
-	AdminHTTPTLSClientAuth = rootKey("admin.tls.clientAuth")
+	AdminTLSClientAuth = rootKey("admin.tls.clientAuth")
 	// AdminHttpTLSEnabled whether TLS is enabled for the HTTP server
-	AdminHTTPTLSEnabled = rootKey("admin.tls.enabled")
+	AdminTLSEnabled = rootKey("admin.tls.enabled")
 	// AdminHttpTLSKeyFile the private key file for TLS on the server
-	AdminHTTPTLSKeyFile = rootKey("admin.tls.keyFile")
+	AdminTLSKeyFile = rootKey("admin.tls.keyFile")
 	// AdminHttpWriteTimeout the write timeout for the HTTP server
-	AdminHTTPWriteTimeout = rootKey("admin.writeTimeout")
+	AdminWriteTimeout = rootKey("admin.writeTimeout")
 	// IdentityType is the name of the identity interface plugin being used by this firefly name
 	IdentityType = rootKey("identity.type")
 	// Lang is the language to use for translation
@@ -295,11 +296,11 @@ func Reset() {
 	viper.SetDefault(string(HTTPPort), 5000)
 	viper.SetDefault(string(HTTPReadTimeout), "15s")
 	viper.SetDefault(string(HTTPWriteTimeout), "15s")
-	viper.SetDefault(string(AdminHTTPEnabled), false)
-	viper.SetDefault(string(AdminHTTPAddress), "127.0.0.1")
-	viper.SetDefault(string(AdminHTTPPort), 5001)
-	viper.SetDefault(string(AdminHTTPReadTimeout), "15s")
-	viper.SetDefault(string(AdminHTTPWriteTimeout), "15s")
+	viper.SetDefault(string(AdminEnabled), false)
+	viper.SetDefault(string(AdminAddress), "127.0.0.1")
+	viper.SetDefault(string(AdminPort), 5001)
+	viper.SetDefault(string(AdminReadTimeout), "15s")
+	viper.SetDefault(string(AdminWriteTimeout), "15s")
 	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
@@ -354,11 +355,18 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 	for _, c := range configRecords {
 		s := viper.New()
 		s.SetConfigType("json")
-		if err := s.ReadConfig(bytes.NewBuffer(c.Value)); err != nil {
+		var val interface{}
+		if err := json.Unmarshal(c.Value, &val); err != nil {
 			return err
 		}
-		for _, k := range s.AllKeys() {
-			viper.Set(fmt.Sprintf("%s.%s", c.Key, k), s.Get(k))
+		switch val.(type) {
+		case map[string]interface{}:
+			_ = s.ReadConfig(bytes.NewBuffer(c.Value))
+			for _, k := range s.AllKeys() {
+				viper.Set(fmt.Sprintf("%s.%s", c.Key, k), s.Get(k))
+			}
+		default:
+			viper.Set(c.Key, val)
 		}
 	}
 	return nil
@@ -424,6 +432,12 @@ func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
 		viper.SetDefault(key, defValue)
 	}
 	c.keys[key] = true
+}
+
+func GetConfig() fftypes.JSONObject {
+	conf := fftypes.JSONObject{}
+	_ = viper.Unmarshal(&conf)
+	return conf
 }
 
 // GetString gets a configuration string

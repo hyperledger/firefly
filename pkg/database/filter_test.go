@@ -42,7 +42,7 @@ func TestBuildMessageFilter(t *testing.T) {
 		Finalize()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=namespace descending skip=50 limit=25", f.String())
+	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25", f.String())
 }
 
 func TestBuildMessageFilter2(t *testing.T) {
@@ -70,9 +70,13 @@ func TestBuildMessageFilter3(t *testing.T) {
 		fb.NotContains("topics", "def"),
 		fb.IContains("topics", "ghi"),
 		fb.NotIContains("topics", "jkl"),
-	).Finalize()
+	).
+		Sort("-created").
+		Sort("topics").
+		Sort("-sequence").
+		Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( topics %= 'abc' ) && ( topics %! 'def' ) && ( topics ^= 'ghi' ) && ( topics ^! 'jkl' )", f.String())
+	assert.Equal(t, "( created IN [1000000000,2000000000,3000000000] ) && ( created NI [1000000000,2000000000,3000000000] ) && ( created < 0 ) && ( created <= 0 ) && ( created >= 0 ) && ( created != 0 ) && ( sequence > 12345 ) && ( topics %= 'abc' ) && ( topics %! 'def' ) && ( topics ^= 'ghi' ) && ( topics ^! 'jkl' ) sort=-created,topics,-sequence", f.String())
 }
 
 func TestBuildMessageBadInFilterField(t *testing.T) {
@@ -111,6 +115,22 @@ func TestBuildMessageUUIDConvert(t *testing.T) {
 	assert.Equal(t, "( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id IN ['4066abdc-8bbd-4472-9d29-1a55b467f9b9'] ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != null ) && ( id == '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id != '4066abdc-8bbd-4472-9d29-1a55b467f9b9' ) && ( id == null ) && ( id == null )", f.String())
 }
 
+func TestBuildMessageBytes32Convert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	b32, _ := fftypes.ParseBytes32(context.Background(), "7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0")
+	var nilB32 *fftypes.Bytes32
+	f, err := fb.And(
+		fb.Eq("hash", b32),
+		fb.Eq("hash", *b32),
+		fb.In("hash", []driver.Value{*b32}),
+		fb.Eq("hash", b32.String()),
+		fb.Neq("hash", nil),
+		fb.Eq("hash", ""),
+		fb.Eq("hash", nilB32),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, "( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash IN ['7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0'] ) && ( hash == '7f4806535f8b3d9bf178af053d2bbdb46047365466ed16bbb0732a71492bdaf0' ) && ( hash != null ) && ( hash == null ) && ( hash == null )", f.String())
+}
 func TestBuildMessageIntConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
@@ -181,6 +201,26 @@ func TestBuildMessageBoolConvert(t *testing.T) {
 	assert.Equal(t, "( masked == false ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == false ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == true ) && ( masked == false )", f.String())
 }
 
+func TestBuildMessageSortableBoolConvert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	f, err := fb.And(
+		fb.Eq("pending", false),
+		fb.Eq("pending", true),
+		fb.Eq("pending", "false"),
+		fb.Eq("pending", "true"),
+		fb.Eq("pending", "True"),
+		fb.Eq("pending", ""),
+		fb.Eq("pending", int(111)),
+		fb.Eq("pending", int32(222)),
+		fb.Eq("pending", int64(333)),
+		fb.Eq("pending", uint(444)),
+		fb.Eq("pending", uint32(555)),
+		fb.Eq("pending", uint64(666)),
+		fb.Eq("pending", nil),
+	).Finalize()
+	assert.NoError(t, err)
+	assert.Equal(t, "( pending == 0 ) && ( pending == 1 ) && ( pending == 0 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 0 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 1 ) && ( pending == 0 )", f.String())
+}
 func TestBuildMessageJSONConvert(t *testing.T) {
 	fb := TransactionQueryFactory.NewFilter(context.Background())
 	f, err := fb.And(
@@ -214,6 +254,18 @@ func TestBuildMessageFailBoolConvert(t *testing.T) {
 	fb := PinQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("masked", map[bool]bool{true: false}).Finalize()
 	assert.Regexp(t, "FF10149.*masked", err)
+}
+
+func TestBuildMessageFailBypes32Convert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("group", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*group", err)
+}
+
+func TestBuildMessageFailSortableBoolConvert(t *testing.T) {
+	fb := MessageQueryFactory.NewFilter(context.Background())
+	_, err := fb.Lt("pending", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF10149.*pending", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
@@ -274,10 +326,13 @@ func TestStringsForTypes(t *testing.T) {
 
 	assert.Equal(t, "test", (&stringField{s: "test"}).String())
 	assert.Equal(t, "037a025d-681d-4150-a413-05f368729c66", (&uuidField{fftypes.MustParseUUID("037a025d-681d-4150-a413-05f368729c66")}).String())
+	b32 := fftypes.NewRandB32()
+	assert.Equal(t, b32.String(), (&bytes32Field{b32: b32}).String())
 	assert.Equal(t, "12345", (&int64Field{i: 12345}).String())
 	now := fftypes.Now()
 	assert.Equal(t, now.String(), (&timeField{t: now}).String())
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
 	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFNameArray{"t1", "t2"}}).String())
 	assert.Equal(t, "true", (&boolField{b: true}).String())
+	assert.Equal(t, "true", (&sortableBoolField{b: true}).String())
 }

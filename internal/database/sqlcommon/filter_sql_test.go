@@ -29,6 +29,7 @@ import (
 
 func TestSQLQueryFactory(t *testing.T) {
 	s, _ := newMockProvider().init()
+	s.individualSort = true
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
 		fb.Eq("namespace", "ns1"),
@@ -41,18 +42,19 @@ func TestSQLQueryFactory(t *testing.T) {
 	).
 		Skip(50).
 		Limit(25).
+		Sort("-id").
 		Sort("namespace").
-		Descending()
+		Sort("-sequence")
 
 	sel := squirrel.Select("*").From("mytable")
 	sel, err := s.filterSelect(context.Background(), "", sel, f, map[string]string{
 		"namespace": "ns",
-	})
+	}, []string{"sequence"})
 	assert.NoError(t, err)
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ? AND confirmed IS NULL) ORDER BY ns DESC LIMIT 25 OFFSET 50", sqlFilter)
+	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ? AND confirmed IS NULL) ORDER BY id DESC, ns, seq DESC LIMIT 25 OFFSET 50", sqlFilter)
 	assert.Equal(t, "ns1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])
@@ -79,10 +81,11 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 		fb.NotContains("topics", "def"),
 		fb.IContains("topics", "ghi"),
 		fb.NotIContains("topics", "jkl"),
-	)
+	).
+		Descending()
 
 	sel := squirrel.Select("*").From("mytable AS mt")
-	sel, err := s.filterSelect(context.Background(), "mt", sel, f, nil)
+	sel, err := s.filterSelect(context.Background(), "mt", sel, f, nil, []string{"sequence"})
 	assert.NoError(t, err)
 
 	sqlFilter, _, err := sel.ToSql()
@@ -94,7 +97,7 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil)
+	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil, []string{"sequence"})
 	assert.Regexp(t, "FF10149.*namespace", err)
 }
 

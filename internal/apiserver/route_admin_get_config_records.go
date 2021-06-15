@@ -27,7 +27,7 @@ import (
 
 var getConfigRecords = &oapispec.Route{
 	Name:            "getConfigRecords",
-	Path:            "config",
+	Path:            "config/records",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,

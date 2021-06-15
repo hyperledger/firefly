@@ -64,7 +64,7 @@ func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 		httpErrChan <- err
 	}()
 
-	if config.GetBool(config.AdminHTTPEnabled) {
+	if config.GetBool(config.AdminEnabled) {
 		go func() {
 			r := createAdminMuxRouter(o)
 			l, err := createAdminListener(ctx)
@@ -79,6 +79,10 @@ func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 		}()
 	}
 
+	return waitForServerStop(httpErrChan, adminErrChan)
+}
+
+func waitForServerStop(httpErrChan, adminErrChan chan error) error {
 	select {
 	case err := <-httpErrChan:
 		return err
@@ -98,7 +102,7 @@ func createListener(ctx context.Context) (net.Listener, error) {
 }
 
 func createAdminListener(ctx context.Context) (net.Listener, error) {
-	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.AdminHTTPAddress), config.GetUint(config.AdminHTTPPort))
+	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.AdminAddress), config.GetUint(config.AdminPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
@@ -234,11 +238,7 @@ func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handl
 				defer part.Close()
 			case strings.HasPrefix(strings.ToLower(contentType), "application/json"):
 				if jsonInput != nil {
-					if reflect.TypeOf(jsonInput) == reflect.TypeOf(fftypes.Byteable{}) {
-						err = json.NewDecoder(req.Body).Decode(jsonInput)
-					} else {
-						err = json.NewDecoder(req.Body).Decode(&jsonInput)
-					}
+					err = json.NewDecoder(req.Body).Decode(&jsonInput)
 				}
 			default:
 				return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)

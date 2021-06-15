@@ -34,7 +34,7 @@ var (
 		"group_hash",
 		"topic",
 	}
-	nonceFilterTypeMap = map[string]string{
+	nonceFilterFieldMap = map[string]string{
 		"group": "group_hash",
 	}
 )
@@ -139,7 +139,7 @@ func (s *SQLCommon) GetNonce(ctx context.Context, context *fftypes.Bytes32) (mes
 
 func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (message []*fftypes.Nonce, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}

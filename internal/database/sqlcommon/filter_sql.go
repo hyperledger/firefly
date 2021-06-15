@@ -26,25 +26,40 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
-func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
 		return sel, err
 	}
 	if len(fi.Sort) == 0 {
-		fi.Sort = []string{"sequence"}
-		fi.Descending = true
+		for _, s := range defaultSort {
+			fi.Sort = append(fi.Sort, &database.SortField{Field: s, Descending: true})
+		}
 	}
 	sel, err = s.filterSelectFinalized(ctx, tableName, sel, fi, typeMap, preconditions...)
-	direction := ""
-	if fi.Descending {
-		direction = " DESC"
-	}
 	sort := make([]string, len(fi.Sort))
-	for i, field := range fi.Sort {
-		sort[i] = s.mapField(tableName, field, typeMap)
+	var sortString string
+	if s.provider.IndividualSort() {
+		for i, sf := range fi.Sort {
+			direction := ""
+			if sf.Descending {
+				direction = " DESC"
+			}
+			sort[i] = fmt.Sprintf("%s%s", s.mapField(tableName, sf.Field, typeMap), direction)
+		}
+		sortString = strings.Join(sort, ", ")
+	} else {
+		direction := ""
+		for i, sf := range fi.Sort {
+			if sf.Descending {
+				// If any are descending, they all become descending
+				direction = " DESC"
+			}
+			sort[i] = s.mapField(tableName, sf.Field, typeMap)
+		}
+		sortString = strings.Join(sort, ", ") + direction
 	}
-	sel = sel.OrderBy(fmt.Sprintf("%s%s", strings.Join(sort, ","), direction))
+	sel = sel.OrderBy(sortString)
 	if err == nil {
 		if fi.Skip > 0 {
 			sel = sel.Offset(fi.Skip)

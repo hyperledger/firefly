@@ -79,6 +79,7 @@ var testRoutes = []*Route{
 		Description:       i18n.MsgTBD,
 		JSONInputValue:    func() interface{} { return &fftypes.Data{} },
 		JSONOutputValue:   func() interface{} { return nil },
+		JSONInputMask:     []string{"id"},
 		JSONOutputCode:    http.StatusNoContent,
 		FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
 	},

@@ -36,7 +36,7 @@ var (
 		"dispatched",
 		"created",
 	}
-	pinFilterTypeMap = map[string]string{
+	pinFilterFieldMap = map[string]string{
 		"batch": "batch_id",
 		"index": "idx",
 	}
@@ -118,7 +118,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 
 	cols := append([]string{}, pinColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("pins"), filter, pinFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("pins"), filter, pinFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}

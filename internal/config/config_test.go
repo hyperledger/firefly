@@ -121,3 +121,50 @@ func TestGetKnownKeys(t *testing.T) {
 func TestSetupLogging(t *testing.T) {
 	SetupLogging(context.Background())
 }
+
+func TestMergeConfigOk(t *testing.T) {
+
+	conf1 := fftypes.Byteable(`{
+		"some":  {
+			"nested": {
+				"stuff": "value1"
+			}
+		}
+	}`)
+	conf2 := fftypes.Byteable(`{
+		"some":  {
+			"more": {
+				"stuff": "value2"
+			}
+		}
+	}`)
+	conf3 := fftypes.Byteable(`"value3"`)
+
+	viper.Reset()
+	viper.Set("base.something", "value4")
+	err := MergeConfig([]*fftypes.ConfigRecord{
+		{Key: "base", Value: conf1},
+		{Key: "base", Value: conf2},
+		{Key: "base.some.plain", Value: conf3},
+	})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "value1", viper.Get("base.some.nested.stuff"))
+	assert.Equal(t, "value2", viper.Get("base.some.more.stuff"))
+	assert.Equal(t, "value3", viper.Get("base.some.plain"))
+	assert.Equal(t, "value4", viper.Get("base.something"))
+
+}
+
+func TestMergeConfigBadJSON(t *testing.T) {
+	err := MergeConfig([]*fftypes.ConfigRecord{
+		{Key: "base", Value: fftypes.Byteable(`!json`)},
+	})
+	assert.Error(t, err)
+}
+
+func TestGetConfig(t *testing.T) {
+	Reset()
+	conf := GetConfig()
+	assert.Equal(t, "info", conf.GetObject("log").GetString("level"))
+}

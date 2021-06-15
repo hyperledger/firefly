@@ -42,7 +42,7 @@ var (
 		"error",
 		"info",
 	}
-	opFilterTypeMap = map[string]string{
+	opFilterFieldMap = map[string]string{
 		"tx":        "tx_id",
 		"type":      "optype",
 		"status":    "opstatus",
@@ -168,7 +168,7 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("operations"), update, opFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("operations"), update, opFilterFieldMap)
 	if err != nil {
 		return err
 	}

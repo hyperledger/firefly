@@ -66,10 +66,12 @@ type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	BatchID   *UUID         `json:"batchID,omitempty"`
+	Local     bool          `json:"local,omitempty"`
+	Rejected  bool          `json:"rejected,omitempty"`
+	Pending   SortableBool  `json:"pending"`
 	Confirmed *FFTime       `json:"confirmed,omitempty"`
 	Data      DataRefs      `json:"data"`
 	Pins      FFNameArray   `json:"pins,omitempty"`
-	Local     bool          `json:"local,omitempty"`
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
@@ -125,6 +127,7 @@ func (m *Message) Seal(ctx context.Context) (err error) {
 		m.Header.Created = Now()
 	}
 	m.Confirmed = nil
+	m.Pending = true
 	if m.Data == nil {
 		m.Data = DataRefs{}
 	}

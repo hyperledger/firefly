@@ -19,9 +19,14 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
+
+func (or *orchestrator) GetConfig(ctx context.Context) fftypes.JSONObject {
+	return config.GetConfig()
+}
 
 func (or *orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
 	return or.database.GetConfigRecord(ctx, key)

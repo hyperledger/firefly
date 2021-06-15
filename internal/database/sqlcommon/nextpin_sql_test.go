@@ -193,7 +193,7 @@ func TestNextPinUpdateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	u := database.NextPinQueryFactory.NewUpdate(context.Background()).Set("context", fftypes.NewUUID())
+	u := database.NextPinQueryFactory.NewUpdate(context.Background()).Set("context", fftypes.NewRandB32())
 	err := s.UpdateNextPin(context.Background(), 12345, u)
 	assert.Regexp(t, "FF10117", err)
 }

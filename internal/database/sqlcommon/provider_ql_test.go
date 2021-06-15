@@ -87,3 +87,7 @@ func (tp *qlTestProvider) Open(url string) (*sql.DB, error) {
 func (tp *qlTestProvider) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return ql.WithInstance(db, &ql.Config{})
 }
+
+func (tp *qlTestProvider) IndividualSort() bool {
+	return false // QL does not support individual column sorting
+}

@@ -32,8 +32,9 @@ var (
 		"config_key",
 		"config_value",
 	}
-	configRecordFilterTypeMap = map[string]string{
-		"config_key": "string",
+	configRecordFilterFieldMap = map[string]string{
+		"key":   "config_key",
+		"value": "config_value",
 	}
 )
 
@@ -121,7 +122,7 @@ func (s *SQLCommon) GetConfigRecord(ctx context.Context, key string) (result *ff
 }
 
 func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter) (result []*fftypes.ConfigRecord, err error) {
-	query, err := s.filterSelect(ctx, "", sq.Select(configRecordColumns...).From("config"), filter, configRecordFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(configRecordColumns...).From("config"), filter, configRecordFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}

@@ -386,10 +386,12 @@ var MessageQueryFactory = &queryFields{
 	"author":    &StringField{},
 	"topics":    &FFNameArrayField{},
 	"tag":       &StringField{},
-	"group":     &StringField{},
+	"group":     &Bytes32Field{},
 	"created":   &TimeField{},
-	"hash":      &StringField{},
-	"pins":      &StringField{},
+	"hash":      &Bytes32Field{},
+	"pins":      &FFNameArrayField{},
+	"rejected":  &BoolField{},
+	"pending":   &SortableBoolField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
 	"tx.type":   &StringField{},
@@ -403,8 +405,8 @@ var BatchQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
-	"group":      &StringField{},
-	"hash":       &StringField{},
+	"group":      &Bytes32Field{},
+	"hash":       &Bytes32Field{},
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
 	"confirmed":  &TimeField{},
@@ -433,7 +435,7 @@ var DataQueryFactory = &queryFields{
 	"validator":        &StringField{},
 	"datatype.name":    &StringField{},
 	"datatype.version": &StringField{},
-	"hash":             &StringField{},
+	"hash":             &Bytes32Field{},
 	"created":          &TimeField{},
 }
 
@@ -492,7 +494,7 @@ var EventQueryFactory = &queryFields{
 	"type":      &StringField{},
 	"namespace": &StringField{},
 	"reference": &UUIDField{},
-	"group":     &StringField{},
+	"group":     &Bytes32Field{},
 	"sequence":  &Int64Field{},
 	"created":   &TimeField{},
 }
@@ -501,7 +503,7 @@ var EventQueryFactory = &queryFields{
 var PinQueryFactory = &queryFields{
 	"sequence":   &Int64Field{},
 	"masked":     &BoolField{},
-	"hash":       &StringField{},
+	"hash":       &Bytes32Field{},
 	"batch":      &UUIDField{},
 	"index":      &Int64Field{},
 	"dispatched": &BoolField{},
@@ -533,7 +535,7 @@ var NodeQueryFactory = &queryFields{
 
 // GroupQueryFactory filter fields for nodes
 var GroupQueryFactory = &queryFields{
-	"hash":        &StringField{},
+	"hash":        &Bytes32Field{},
 	"message":     &UUIDField{},
 	"namespace":   &StringField{},
 	"description": &StringField{},
@@ -545,20 +547,20 @@ var GroupQueryFactory = &queryFields{
 var NonceQueryFactory = &queryFields{
 	"context": &StringField{},
 	"nonce":   &Int64Field{},
-	"group":   &StringField{},
+	"group":   &Bytes32Field{},
 	"topic":   &StringField{},
 }
 
 // NextPinQueryFactory filter fields for nodes
 var NextPinQueryFactory = &queryFields{
-	"context":  &StringField{},
+	"context":  &Bytes32Field{},
 	"identity": &StringField{},
-	"hash":     &StringField{},
+	"hash":     &Bytes32Field{},
 	"nonce":    &Int64Field{},
 }
 
 // ConfigRecordQueryFactory filter fields for config records
 var ConfigRecordQueryFactory = &queryFields{
-	"config_key":   &StringField{},
-	"config_value": &StringField{},
+	"key":   &StringField{},
+	"value": &StringField{},
 }

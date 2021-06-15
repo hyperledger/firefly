@@ -30,7 +30,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func getHost() string {
@@ -46,7 +45,7 @@ func getAdminHost() string {
 	if !config.GetBool(config.HTTPTLSEnabled) {
 		proto = "http"
 	}
-	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminHTTPAddress), config.GetString(config.AdminHTTPPort))
+	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminAddress), config.GetString(config.AdminPort))
 }
 
 func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
@@ -246,6 +245,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 			addParam(ctx, op, "query", field, "", "", i18n.MsgFilterParamDesc)
 		}
 		addParam(ctx, op, "query", "sort", "", "", i18n.MsgFilterSortDesc)
+		addParam(ctx, op, "query", "ascending", "", "", i18n.MsgFilterAscendingDesc)
 		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc)
 		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, config.GetUint(config.APIMaxFilterSkip))
 		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, config.GetUint(config.APIMaxFilterLimit))
@@ -263,9 +263,6 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 }
 
 func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
-	if t == reflect.TypeOf(fftypes.Byteable{}) {
-		return reflect.TypeOf(fftypes.Byteable{})
-	}
 	fieldCount := t.NumField()
 	newFields := make([]reflect.StructField, fieldCount)
 	for i := 0; i < fieldCount; i++ {
