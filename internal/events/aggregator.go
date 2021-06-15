@@ -443,7 +443,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	if !valid {
 		// An message with invalid (but complete) data is still considered dispatched.
 		// However, we drive a different event to the applications.
-		eventType = fftypes.EventTypeMessageInvalid
+		eventType = fftypes.EventTypeMessageRejected
 	}
 
 	// Generate the appropriate event
