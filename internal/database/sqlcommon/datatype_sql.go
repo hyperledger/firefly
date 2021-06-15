@@ -40,7 +40,7 @@ var (
 		"created",
 		"value",
 	}
-	datatypeFilterTypeMap = map[string]string{
+	datatypeFilterFieldMap = map[string]string{
 		"message": "message_id",
 	}
 )
@@ -161,7 +161,7 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version str
 
 func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("datatypes"), update, datatypeFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("datatypes"), update, datatypeFilterFieldMap)
 	if err != nil {
 		return err
 	}

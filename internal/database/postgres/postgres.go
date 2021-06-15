@@ -68,3 +68,7 @@ func (psql *Postgres) Open(url string) (*sql.DB, error) {
 func (psql *Postgres) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return postgres.WithInstance(db, &postgres.Config{})
 }
+
+func (psql *Postgres) IndividualSort() bool {
+	return true
+}

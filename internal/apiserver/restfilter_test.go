@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuildFilter(t *testing.T) {
+func TestBuildFilterDescending(t *testing.T) {
 	maxFilterLimit = 250
 
 	req := httptest.NewRequest("GET", "/things?created=0&confirmed=!0&Tag=>abc&TAG=<abc&tag=<=abc&tag=>=abc&tag=@abc&tag=^abc&tag=!@abc&tag=!^abc&skip=10&limit=50&sort=tag,sequence&descending", nil)
@@ -33,7 +33,19 @@ func TestBuildFilter(t *testing.T) {
 	fi, err := filter.Finalize()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( tag %! 'abc' ) || ( tag ^! 'abc' ) || ( tag <= 'abc' ) || ( tag < 'abc' ) || ( tag >= 'abc' ) || ( tag > 'abc' ) || ( tag %= 'abc' ) || ( tag ^= 'abc' ) ) sort=tag,sequence descending skip=10 limit=50", fi.String())
+	assert.Equal(t, "( confirmed != 0 ) && ( created == 0 ) && ( ( tag %! 'abc' ) || ( tag ^! 'abc' ) || ( tag <= 'abc' ) || ( tag < 'abc' ) || ( tag >= 'abc' ) || ( tag > 'abc' ) || ( tag %= 'abc' ) || ( tag ^= 'abc' ) ) sort=-tag,-sequence skip=10 limit=50", fi.String())
+}
+
+func TestBuildFilterAscending(t *testing.T) {
+	maxFilterLimit = 250
+
+	req := httptest.NewRequest("GET", "/things?created=0&sort=tag,sequence&ascending", nil)
+	filter, err := buildFilter(req, database.MessageQueryFactory)
+	assert.NoError(t, err)
+	fi, err := filter.Finalize()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "( created == 0 ) sort=tag,sequence", fi.String())
 }
 
 func TestBuildFilterLimitSkip(t *testing.T) {

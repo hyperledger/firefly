@@ -36,7 +36,7 @@ var (
 		"description",
 		"created",
 	}
-	namespaceFilterTypeMap = map[string]string{
+	namespaceFilterFieldMap = map[string]string{
 		"message": "message_id",
 		"type":    "ntype",
 	}
@@ -157,7 +157,7 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 
 func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, updat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("namespaces"), update, namespaceFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("namespaces"), update, namespaceFilterFieldMap)
 	if err != nil {
 		return err
 	}

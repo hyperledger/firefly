@@ -42,6 +42,7 @@ type mockProvider struct {
 	fakePSQLInsert          bool
 	openError               error
 	getMigrationDriverError error
+	individualSort          bool
 }
 
 func newMockProvider() *mockProvider {
@@ -87,4 +88,8 @@ func (mp *mockProvider) Open(url string) (*sql.DB, error) {
 
 func (mp *mockProvider) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return nil, mp.getMigrationDriverError
+}
+
+func (mp *mockProvider) IndividualSort() bool {
+	return mp.individualSort
 }

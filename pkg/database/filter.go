@@ -130,18 +130,23 @@ type FilterBuilder interface {
 	NotIContains(name string, value driver.Value) Filter
 }
 
+// SortField is field+direction for sorting
+type SortField struct {
+	Field      string
+	Descending bool
+}
+
 // FilterInfo is the structure returned by Finalize to the plugin, to serialize this filter
 // into the underlying database mechanism's filter language
 type FilterInfo struct {
-	Sort       []string
-	Skip       uint64
-	Limit      uint64
-	Descending bool
-	Field      string
-	Op         FilterOp
-	Values     []FieldSerialization
-	Value      FieldSerialization
-	Children   []*FilterInfo
+	Sort     []*SortField
+	Skip     uint64
+	Limit    uint64
+	Field    string
+	Op       FilterOp
+	Values   []FieldSerialization
+	Value    FieldSerialization
+	Children []*FilterInfo
 }
 
 func valueString(f FieldSerialization) string {
@@ -189,10 +194,14 @@ func (f *FilterInfo) String() string {
 	val.WriteString(f.filterString())
 
 	if len(f.Sort) > 0 {
-		val.WriteString(fmt.Sprintf(" sort=%s", strings.Join(f.Sort, ",")))
-		if f.Descending {
-			val.WriteString(" descending")
+		fields := make([]string, len(f.Sort))
+		for i, s := range f.Sort {
+			if s.Descending {
+				fields[i] = "-"
+			}
+			fields[i] += s.Field
 		}
+		val.WriteString(fmt.Sprintf(" sort=%s", strings.Join(fields, ",")))
 	}
 	if f.Skip > 0 {
 		val.WriteString(fmt.Sprintf(" skip=%d", f.Skip))
@@ -215,12 +224,13 @@ func (fb *filterBuilder) Fields() []string {
 }
 
 type filterBuilder struct {
-	ctx         context.Context
-	queryFields queryFields
-	sort        []string
-	skip        uint64
-	limit       uint64
-	descending  bool
+	ctx             context.Context
+	queryFields     queryFields
+	sort            []*SortField
+	skip            uint64
+	limit           uint64
+	forceAscending  bool
+	forceDescending bool
 }
 
 type baseFilter struct {
@@ -274,23 +284,40 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		}
 	}
 
+	if f.fb.forceDescending {
+		for _, sf := range f.fb.sort {
+			sf.Descending = true
+		}
+	} else if f.fb.forceAscending {
+		for _, sf := range f.fb.sort {
+			sf.Descending = false
+		}
+	}
+
 	return &FilterInfo{
-		Children:   children,
-		Op:         f.op,
-		Field:      f.field,
-		Values:     values,
-		Value:      value,
-		Sort:       f.fb.sort,
-		Skip:       f.fb.skip,
-		Limit:      f.fb.limit,
-		Descending: f.fb.descending,
+		Children: children,
+		Op:       f.op,
+		Field:    f.field,
+		Values:   values,
+		Value:    value,
+		Sort:     f.fb.sort,
+		Skip:     f.fb.skip,
+		Limit:    f.fb.limit,
 	}, nil
 }
 
 func (f *baseFilter) Sort(fields ...string) Filter {
 	for _, field := range fields {
+		descending := false
+		if strings.HasPrefix(field, "-") {
+			field = strings.TrimPrefix(field, "-")
+			descending = true
+		}
 		if _, ok := f.fb.queryFields[field]; ok {
-			f.fb.sort = append(f.fb.sort, field)
+			f.fb.sort = append(f.fb.sort, &SortField{
+				Field:      field,
+				Descending: descending,
+			})
 		}
 	}
 	return f
@@ -307,12 +334,12 @@ func (f *baseFilter) Limit(limit uint64) Filter {
 }
 
 func (f *baseFilter) Ascending() Filter {
-	f.fb.descending = false
+	f.fb.forceAscending = true
 	return f
 }
 
 func (f *baseFilter) Descending() Filter {
-	f.fb.descending = true
+	f.fb.forceDescending = true
 	return f
 }
 

@@ -431,14 +431,16 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 			return false, err
 		}
 	}
-	if valid {
-		// This message is now confirmed
-		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).Set("confirmed", fftypes.Now())
-		err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
-		if err != nil {
-			return false, err
-		}
-	} else {
+	// This message is now confirmed
+	setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
+		Set("pending", false).           // the sequence is locked
+		Set("confirmed", fftypes.Now()). // the timestamp of the aggregator provides ordering
+		Set("rejected", !valid)          // mark if the message was not accepted
+	err = ag.database.UpdateMessage(ctx, msg.Header.ID, setConfirmed)
+	if err != nil {
+		return false, err
+	}
+	if !valid {
 		// An message with invalid (but complete) data is still considered dispatched.
 		// However, we drive a different event to the applications.
 		eventType = fftypes.EventTypeMessageInvalid
