@@ -33,7 +33,8 @@ func TestPostRegisterOrganization(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	input := fftypes.Organization{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

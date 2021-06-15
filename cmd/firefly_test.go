@@ -17,11 +17,13 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"syscall"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/mocks/apiservermocks"
 	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -87,4 +89,44 @@ func TestExecOkExitSIGINT(t *testing.T) {
 	}()
 	err := Execute()
 	assert.NoError(t, err)
+}
+
+func TestExecOkRestartThenExit(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	var orContext context.Context
+	initCount := 0
+	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	init.RunFn = func(a mock.Arguments) {
+		orContext = a[0].(context.Context)
+		cancelOrContext := a[1].(context.CancelFunc)
+		initCount++
+		if initCount == 2 {
+			init.ReturnArguments = mock.Arguments{fmt.Errorf("second run")}
+		}
+		cancelOrContext()
+	}
+	o.On("Start").Return(nil)
+	ws := o.On("WaitStop")
+	ws.RunFn = func(a mock.Arguments) {
+		<-orContext.Done()
+	}
+	_utOrchestrator = o
+	defer func() { _utOrchestrator = nil }()
+
+	os.Chdir(configDir)
+	err := Execute()
+	assert.EqualError(t, err, "second run")
+}
+
+func TestAPIServerError(t *testing.T) {
+	o := &orchestratormocks.Orchestrator{}
+	o.On("Init", mock.Anything, mock.Anything).Return(nil)
+	o.On("Start").Return(nil)
+	as := &apiservermocks.Server{}
+	as.On("Serve", mock.Anything, o).Return(fmt.Errorf("pop"))
+
+	errChan := make(chan error)
+	go startFirefly(context.Background(), func() {}, o, as, errChan)
+	err := <-errChan
+	assert.EqualError(t, err, "pop")
 }

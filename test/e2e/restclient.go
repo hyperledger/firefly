@@ -95,6 +95,7 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 			InputData: fftypes.InputData{data},
 			Group: &fftypes.InputGroup{
 				Members: members,
+				Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
 			},
 		}).
 		Post(urlPrivateMessage)

@@ -56,14 +56,29 @@ func pollForUp(t *testing.T, client *resty.Client) {
 }
 
 func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes.Byteable, msgType fftypes.MessageType) {
+	var group *fftypes.Bytes32
 	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
+	for i, message := range messages {
+		ts.t.Logf("Message %d: %+v", i, *message)
+		if group != nil {
+			assert.Equal(ts.t, group.String(), message.Header.Group.String(), "All messages must be same group")
+		}
+		group = message.Header.Group
+	}
 	assert.Equal(ts.t, 1, len(messages))
 	assert.Equal(ts.t, fftypes.LowerCasedType("batch_pin"), (messages)[0].Header.TxType)
 	assert.Equal(ts.t, "default", (messages)[0].Header.Namespace)
 	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[0].Header.Topics)
 
 	data := GetData(ts.t, client, ts.startTime, 200)
-	assert.Equal(ts.t, 1, len(data))
+	for i, d := range data {
+		ts.t.Logf("Data %d: %+v", i, *d)
+	}
+	if group == nil {
+		assert.Equal(ts.t, 1, len(data))
+	} else if msgType == fftypes.MessageTypePrivate {
+		assert.Equal(ts.t, group.String(), (data)[1].Value.JSONObject().GetString("hash"))
+	}
 	assert.Equal(ts.t, "default", (data)[0].Namespace)
 	assert.Equal(ts.t, value, (data)[0].Value)
 }

@@ -28,7 +28,8 @@ import (
 
 func TestGetMessageByID(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
@@ -42,7 +43,8 @@ func TestGetMessageByID(t *testing.T) {
 
 func TestGetMessageByIDWithData(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345?data", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

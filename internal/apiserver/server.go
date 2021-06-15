@@ -46,19 +46,31 @@ import (
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
+// Server is the external interface for the API Server
+type Server interface {
+	Serve(ctx context.Context, o orchestrator.Orchestrator) error
+}
+
+type apiServer struct {
+}
+
+func NewAPIServer() Server {
+	return &apiServer{}
+}
+
 // Serve is the main entry point for the API Server
-func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
+func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 	httpErrChan := make(chan error)
 	adminErrChan := make(chan error)
 
 	go func() {
-		r := createMuxRouter(o)
-		l, err := createListener(ctx)
+		r := as.createMuxRouter(o)
+		l, err := as.createListener(ctx)
 		if err == nil {
 			var s *http.Server
-			s, err = createServer(ctx, r)
+			s, err = as.createServer(ctx, r)
 			if err == nil {
-				err = serveHTTP(ctx, l, s)
+				err = as.serveHTTP(ctx, l, s)
 			}
 		}
 		httpErrChan <- err
@@ -66,23 +78,23 @@ func Serve(ctx context.Context, o orchestrator.Orchestrator) error {
 
 	if config.GetBool(config.AdminEnabled) {
 		go func() {
-			r := createAdminMuxRouter(o)
-			l, err := createAdminListener(ctx)
+			r := as.createAdminMuxRouter(o)
+			l, err := as.createAdminListener(ctx)
 			if err == nil {
 				var s *http.Server
-				s, err = createServer(ctx, r)
+				s, err = as.createServer(ctx, r)
 				if err == nil {
-					err = serveHTTP(ctx, l, s)
+					err = as.serveHTTP(ctx, l, s)
 				}
 			}
 			httpErrChan <- err
 		}()
 	}
 
-	return waitForServerStop(httpErrChan, adminErrChan)
+	return as.waitForServerStop(httpErrChan, adminErrChan)
 }
 
-func waitForServerStop(httpErrChan, adminErrChan chan error) error {
+func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan chan error) error {
 	select {
 	case err := <-httpErrChan:
 		return err
@@ -91,7 +103,7 @@ func waitForServerStop(httpErrChan, adminErrChan chan error) error {
 	}
 }
 
-func createListener(ctx context.Context) (net.Listener, error) {
+func (as *apiServer) createListener(ctx context.Context) (net.Listener, error) {
 	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HTTPAddress), config.GetUint(config.HTTPPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -101,7 +113,7 @@ func createListener(ctx context.Context) (net.Listener, error) {
 	return listener, err
 }
 
-func createAdminListener(ctx context.Context) (net.Listener, error) {
+func (as *apiServer) createAdminListener(ctx context.Context) (net.Listener, error) {
 	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.AdminAddress), config.GetUint(config.AdminPort))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -111,7 +123,7 @@ func createAdminListener(ctx context.Context) (net.Listener, error) {
 	return listener, err
 }
 
-func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
+func (as *apiServer) createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
 
 	defaultFilterLimit = uint64(config.GetUint(config.APIDefaultFilterLimit))
 	maxFilterLimit = uint64(config.GetUint(config.APIMaxFilterLimit))
@@ -169,7 +181,7 @@ func createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err err
 	return srv, nil
 }
 
-func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (err error) {
+func (as *apiServer) serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (err error) {
 	serverEnded := make(chan struct{})
 	go func() {
 		select {
@@ -195,7 +207,7 @@ func serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (er
 	return err
 }
 
-func getFirstFilePart(req *http.Request) (*multipart.Part, error) {
+func (as *apiServer) getFirstFilePart(req *http.Request) (*multipart.Part, error) {
 
 	ctx := req.Context()
 	l := log.L(ctx)
@@ -217,9 +229,9 @@ func getFirstFilePart(req *http.Request) (*multipart.Part, error) {
 	}
 }
 
-func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
+func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
-	return apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
+	return as.apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 
 		var jsonInput interface{}
 		if route.JSONInputValue != nil {
@@ -231,7 +243,7 @@ func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handl
 		if req.Method != http.MethodGet && req.Method != http.MethodDelete {
 			switch {
 			case strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") && route.FormUploadHandler != nil:
-				part, err = getFirstFilePart(req)
+				part, err = as.getFirstFilePart(req)
 				if err != nil {
 					return 400, err
 				}
@@ -313,7 +325,7 @@ func routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.Handl
 	})
 }
 
-func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
+func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
 	apiTimeout := config.GetDuration(config.APIRequestTimeout) // Query once at startup when wrapping
 	return func(res http.ResponseWriter, req *http.Request) {
 
@@ -358,24 +370,24 @@ func apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status
 	}
 }
 
-func notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "application/json")
 	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
-func swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "text/html")
 	_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context()))
 	return 200, nil
 }
 
-func swaggerAdminUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerAdminUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "text/html")
 	_, _ = res.Write(oapispec.SwaggerAdminUIHTML(req.Context()))
 	return 200, nil
 }
 
-func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	vars := mux.Vars(req)
 	if vars["ext"] == ".json" {
 		res.Header().Add("Content-Type", "application/json")
@@ -391,7 +403,7 @@ func swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err
 	return 200, nil
 }
 
-func adminSwaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+func (as *apiServer) adminSwaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	vars := mux.Vars(req)
 	if vars["ext"] == ".json" {
 		res.Header().Add("Content-Type", "application/json")
@@ -407,17 +419,17 @@ func adminSwaggerHandler(res http.ResponseWriter, req *http.Request) (status int
 	return 200, nil
 }
 
-func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, route)).
 				Methods(route.Method)
 		}
 	}
 	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(swaggerHandler))
-	r.HandleFunc(`/api`, apiWrapper(swaggerUIHandler))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler))
+	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
@@ -427,20 +439,20 @@ func createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
 	}
 
-	r.NotFoundHandler = apiWrapper(notFoundHandler)
+	r.NotFoundHandler = as.apiWrapper(as.notFoundHandler)
 	return r
 }
 
-func createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), routeHandler(o, route)).
+			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, route)).
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, apiWrapper(adminSwaggerHandler))
-	r.HandleFunc(`/admin/api`, apiWrapper(swaggerAdminUIHandler))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.adminSwaggerHandler))
+	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerAdminUIHandler))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	return r

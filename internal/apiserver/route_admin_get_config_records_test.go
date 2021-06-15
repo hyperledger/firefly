@@ -30,7 +30,8 @@ import (
 
 func TestGetConfigRecords(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createAdminMuxRouter(o)
+	as := &apiServer{}
+	r := as.createAdminMuxRouter(o)
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
