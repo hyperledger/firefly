@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -77,4 +78,14 @@ func TestDeleteConfigRecord(t *testing.T) {
 	ctx := context.Background()
 	err := or.DeleteConfigRecord(ctx, "foobar")
 	assert.NoError(t, err)
+}
+
+func TestGetConfig(t *testing.T) {
+	config.Reset()
+	config.Set(config.LogLevel, "trace")
+
+	or := newTestOrchestrator()
+	conf := or.GetConfig(or.ctx)
+	t.Log(conf.String())
+	assert.Equal(t, "trace", conf.GetObject("log").GetString("level"))
 }

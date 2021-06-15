@@ -21,23 +21,25 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
+	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var deleteConfigRecord = &oapispec.Route{
-	Name:   "deleteConfigRecord",
-	Path:   "config/{key}",
-	Method: http.MethodDelete,
+var getConfigRecord = &oapispec.Route{
+	Name:   "getConfigRecord",
+	Path:   "config/records/{key}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "key", Example: "database", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.ConfigRecordQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: nil,
-	JSONOutputCode:  http.StatusNoContent,
+	JSONOutputValue: func() interface{} { return fftypes.Byteable{} },
+	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		err = r.Or.DeleteConfigRecord(r.Ctx, r.PP["key"])
-		return nil, err
+		configRecord, err := r.Or.GetConfigRecord(r.Ctx, r.PP["key"])
+		return configRecord.Value, err
 	},
 }

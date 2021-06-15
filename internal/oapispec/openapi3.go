@@ -45,7 +45,7 @@ func getAdminHost() string {
 	if !config.GetBool(config.HTTPTLSEnabled) {
 		proto = "http"
 	}
-	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminHTTPAddress), config.GetString(config.AdminHTTPPort))
+	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminAddress), config.GetString(config.AdminPort))
 }
 
 func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {

@@ -24,9 +24,31 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
+const anyJSONSchema = `{
+	"anyOf": [
+		{
+			"type": "string"
+		},
+		{
+			"type": "number"
+		},
+		{
+			"type": "object",
+			"additionalProperties": true
+		},
+		{
+			"type": "array",
+			"items": {
+				"type": "object",
+				"additionalProperties": true
+			}
+		}
+	]
+}`
+
 var putConfigRecord = &oapispec.Route{
 	Name:   "putConfigRecord",
-	Path:   "config/{key}",
+	Path:   "config/records/{key}",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{
 		{Name: "key", Example: "database", Description: i18n.MsgTBD},
@@ -37,6 +59,7 @@ var putConfigRecord = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
 	JSONOutputValue: nil,
 	JSONOutputCode:  http.StatusOK,
+	JSONInputSchema: anyJSONSchema,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.PutConfigRecord(r.Ctx, r.PP["key"], *r.Input.(*fftypes.Byteable))
 		return output, err
