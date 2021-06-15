@@ -30,6 +30,7 @@ import (
 var (
 	opColumns = []string{
 		"id",
+		"namespace",
 		"tx_id",
 		"optype",
 		"opstatus",
@@ -41,7 +42,7 @@ var (
 		"error",
 		"info",
 	}
-	opFilterTypeMap = map[string]string{
+	opFilterFieldMap = map[string]string{
 		"tx":        "tx_id",
 		"type":      "optype",
 		"status":    "opstatus",
@@ -77,6 +78,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 		// Update the operation
 		if err = s.updateTx(ctx, tx,
 			sq.Update("operations").
+				Set("namespace", operation.Namespace).
 				Set("tx_id", operation.Transaction).
 				Set("optype", operation.Type).
 				Set("opstatus", operation.Status).
@@ -97,6 +99,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Columns(opColumns...).
 				Values(
 					operation.ID,
+					operation.Namespace,
 					operation.Transaction,
 					string(operation.Type),
 					string(operation.Status),
@@ -120,6 +123,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 	var op fftypes.Operation
 	err := row.Scan(
 		&op.ID,
+		&op.Namespace,
 		&op.Transaction,
 		&op.Type,
 		&op.Status,
@@ -164,7 +168,7 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +199,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("operations"), update, opFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("operations"), update, opFilterFieldMap)
 	if err != nil {
 		return err
 	}

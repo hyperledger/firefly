@@ -138,7 +138,28 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Set the pin to dispatched
 	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
 	// Update the message
-	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+		update, err := u.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, update.SetOperations, 3)
+
+		assert.Equal(t, "pending", update.SetOperations[0].Field)
+		v, err := update.SetOperations[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0) /* sortable bool false */, v)
+
+		assert.Equal(t, "confirmed", update.SetOperations[1].Field)
+		v, err = update.SetOperations[1].Value.Value()
+		assert.NoError(t, err)
+		assert.Greater(t, v, int64(0))
+
+		assert.Equal(t, "rejected", update.SetOperations[2].Field)
+		v, err = update.SetOperations[2].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, false, v)
+
+		return true
+	})).Return(nil)
 	// Confirm the offset
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
@@ -820,6 +841,28 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
+		update, err := u.Finalize()
+		assert.NoError(t, err)
+		assert.Len(t, update.SetOperations, 3)
+
+		assert.Equal(t, "pending", update.SetOperations[0].Field)
+		v, err := update.SetOperations[0].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0) /* sortable bool */, v)
+
+		assert.Equal(t, "confirmed", update.SetOperations[1].Field)
+		v, err = update.SetOperations[1].Value.Value()
+		assert.NoError(t, err)
+		assert.Greater(t, v, int64(0))
+
+		assert.Equal(t, "rejected", update.SetOperations[2].Field)
+		v, err = update.SetOperations[2].Value.Value()
+		assert.NoError(t, err)
+		assert.Equal(t, true, v)
+
+		return true
+	})).Return(nil)
 	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{

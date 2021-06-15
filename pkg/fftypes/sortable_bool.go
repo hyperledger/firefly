@@ -17,28 +17,35 @@
 package fftypes
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"database/sql/driver"
+	"strings"
 )
 
-type fakePlugin struct{}
+// SortableBool is a boolean, which is stored as a SMALLINT in databases where
+// sorting/indexing by a BOOLEAN type is not consistently supported. TRUE>FALSE
+type SortableBool bool
 
-func (f *fakePlugin) Name() string { return "fake" }
+func (sb SortableBool) Value() (driver.Value, error) {
+	if sb {
+		return int64(1), nil
+	}
+	return int64(0), nil
+}
 
-func TestNewPendingMessageOp(t *testing.T) {
+func (sb *SortableBool) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case int64:
+		*sb = src > 0
+		return nil
+	case bool:
+		*sb = SortableBool(src)
+		return nil
+	case string:
+		*sb = SortableBool(strings.EqualFold("true", src))
+		return nil
+	default:
+		*sb = false
+		return nil
+	}
 
-	txID := NewUUID()
-	op := NewTXOperation(&fakePlugin{}, "ns1", txID, "testBackend", OpTypePublicStorageBatchBroadcast, OpStatusPending, "member")
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Namespace:   "ns1",
-		Transaction: txID,
-		Plugin:      "fake",
-		BackendID:   "testBackend",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Member:      "member",
-		Status:      OpStatusPending,
-		Created:     op.Created,
-	}, *op)
 }

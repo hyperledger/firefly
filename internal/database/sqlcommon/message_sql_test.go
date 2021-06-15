@@ -60,6 +60,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			TxType:    fftypes.TransactionTypeNone,
 		},
 		Hash:      fftypes.NewRandB32(),
+		Pending:   true,
 		Confirmed: nil,
 		Data: []*fftypes.DataRef{
 			{ID: dataID1, Hash: rand1},
@@ -103,6 +104,8 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		},
 		Hash:      fftypes.NewRandB32(),
 		Pins:      []string{fftypes.NewRandB32().String(), fftypes.NewRandB32().String()},
+		Rejected:  true,
+		Pending:   false,
 		Confirmed: fftypes.Now(),
 		BatchID:   bid,
 		Data: []*fftypes.DataRef{
@@ -391,7 +394,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), 0, "pin", nil, false, 0))
+		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), true, true, 0, "pin", nil, false, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), msgID)
 	assert.Regexp(t, "FF10115", err)
@@ -438,7 +441,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), 0, "pin", nil, false, 0))
+		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), true, true, 0, "pin", nil, false, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, err := s.GetMessages(context.Background(), f)

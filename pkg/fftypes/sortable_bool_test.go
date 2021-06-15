@@ -22,23 +22,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type fakePlugin struct{}
+func TestSortableBoolScanValue(t *testing.T) {
 
-func (f *fakePlugin) Name() string { return "fake" }
+	sb := SortableBool(true)
+	sv, err := sb.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), sv)
+	sb = SortableBool(false)
+	sv, err = sb.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), sv)
 
-func TestNewPendingMessageOp(t *testing.T) {
+	assert.NoError(t, sb.Scan(int64(1)))
+	assert.True(t, bool(sb))
+	assert.NoError(t, sb.Scan(int64(0)))
+	assert.False(t, bool(sb))
+	assert.NoError(t, sb.Scan(true))
+	assert.True(t, bool(sb))
 
-	txID := NewUUID()
-	op := NewTXOperation(&fakePlugin{}, "ns1", txID, "testBackend", OpTypePublicStorageBatchBroadcast, OpStatusPending, "member")
-	assert.Equal(t, Operation{
-		ID:          op.ID,
-		Namespace:   "ns1",
-		Transaction: txID,
-		Plugin:      "fake",
-		BackendID:   "testBackend",
-		Type:        OpTypePublicStorageBatchBroadcast,
-		Member:      "member",
-		Status:      OpStatusPending,
-		Created:     op.Created,
-	}, *op)
+	assert.NoError(t, sb.Scan("false"))
+	assert.False(t, bool(sb))
+	assert.NoError(t, sb.Scan("True"))
+	assert.True(t, bool(sb))
+
+	assert.NoError(t, sb.Scan(float64(12345)))
+	assert.False(t, bool(sb))
 }

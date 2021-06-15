@@ -185,7 +185,7 @@ func TestBlockchaiInitMergeConfigRecordsFail(t *testing.T) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "While parsing config: invalid character 'c' looking for beginning of value")
+	assert.EqualError(t, err, "invalid character 'c' looking for beginning of value")
 }
 
 func TestBadPublicStoragePlugin(t *testing.T) {

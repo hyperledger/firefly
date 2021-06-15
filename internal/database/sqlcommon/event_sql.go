@@ -36,7 +36,7 @@ var (
 		"group_hash",
 		"created",
 	}
-	eventFilterTypeMap = map[string]string{
+	eventFilterFieldMap = map[string]string{
 		"type":      "etype",
 		"reference": "ref",
 		"group":     "group_hash",
@@ -153,7 +153,7 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("events"), update, eventFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("events"), update, eventFilterFieldMap)
 	if err != nil {
 		return err
 	}

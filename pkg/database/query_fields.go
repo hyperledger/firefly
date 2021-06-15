@@ -155,6 +155,33 @@ func (f *uuidField) Value() (driver.Value, error)         { return f.u.Value() }
 func (f *uuidField) String() string                       { return fmt.Sprintf("%v", f.u) }
 func (f *UUIDField) getSerialization() FieldSerialization { return &uuidField{} }
 
+type Bytes32Field struct{}
+type bytes32Field struct{ b32 *fftypes.Bytes32 }
+
+func (f *bytes32Field) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case string:
+		if tv == "" {
+			f.b32 = nil
+			return nil
+		}
+		f.b32, err = fftypes.ParseBytes32(context.Background(), tv)
+		return err
+	case *fftypes.Bytes32:
+		f.b32 = tv
+	case fftypes.Bytes32:
+		b32 := tv
+		f.b32 = &b32
+	case nil:
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b32)
+	}
+	return nil
+}
+func (f *bytes32Field) Value() (driver.Value, error)         { return f.b32.Value() }
+func (f *bytes32Field) String() string                       { return fmt.Sprintf("%v", f.b32) }
+func (f *Bytes32Field) getSerialization() FieldSerialization { return &bytes32Field{} }
+
 type Int64Field struct{}
 type int64Field struct{ i int64 }
 
@@ -284,3 +311,35 @@ func (f *boolField) Scan(src interface{}) (err error) {
 func (f *boolField) Value() (driver.Value, error)         { return f.b, nil }
 func (f *boolField) String() string                       { return fmt.Sprintf("%t", f.b) }
 func (f *BoolField) getSerialization() FieldSerialization { return &boolField{} }
+
+type SortableBoolField struct{}
+type sortableBoolField struct{ b fftypes.SortableBool }
+
+func (f *sortableBoolField) Scan(src interface{}) (err error) {
+	switch tv := src.(type) {
+	case int:
+		f.b = tv != 0
+	case int32:
+		f.b = tv != 0
+	case int64:
+		f.b = tv != 0
+	case uint:
+		f.b = tv != 0
+	case uint32:
+		f.b = tv != 0
+	case uint64:
+		f.b = tv != 0
+	case bool:
+		f.b = fftypes.SortableBool(tv)
+	case string:
+		f.b = fftypes.SortableBool(strings.EqualFold(tv, "true"))
+	case nil:
+		f.b = false
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
+	}
+	return nil
+}
+func (f *sortableBoolField) Value() (driver.Value, error)         { return f.b.Value() }
+func (f *sortableBoolField) String() string                       { return fmt.Sprintf("%t", f.b) }
+func (f *SortableBoolField) getSerialization() FieldSerialization { return &sortableBoolField{} }

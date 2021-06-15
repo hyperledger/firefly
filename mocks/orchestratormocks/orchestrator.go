@@ -172,6 +172,22 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	return r0, r1
 }
 
+// GetConfig provides a mock function with given fields: ctx
+func (_m *Orchestrator) GetConfig(ctx context.Context) fftypes.JSONObject {
+	ret := _m.Called(ctx)
+
+	var r0 fftypes.JSONObject
+	if rf, ok := ret.Get(0).(func(context.Context) fftypes.JSONObject); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.JSONObject)
+		}
+	}
+
+	return r0
+}
+
 // GetConfigRecord provides a mock function with given fields: ctx, key
 func (_m *Orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
 	ret := _m.Called(ctx, key)

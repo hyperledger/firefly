@@ -93,8 +93,11 @@ func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilte
 		}
 	}
 	descendingVals := getValues(req.Form, "descending")
+	ascendingVals := getValues(req.Form, "ascending")
 	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.EqualFold(descendingVals[0], "true")) {
 		filter.Descending()
+	} else if len(ascendingVals) > 0 && (ascendingVals[0] == "" || strings.EqualFold(ascendingVals[0], "true")) {
+		filter.Ascending()
 	}
 	return filter, nil
 }

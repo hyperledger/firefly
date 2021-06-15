@@ -42,12 +42,14 @@ var (
 		"datahash",
 		"hash",
 		"pins",
+		"rejected",
+		"pending",
 		"confirmed",
 		"tx_type",
 		"batch_id",
 		"local",
 	}
-	msgFilterTypeMap = map[string]string{
+	msgFilterFieldMap = map[string]string{
 		"type":    "mtype",
 		"txntype": "tx_type",
 		"batch":   "batch_id",
@@ -112,6 +114,8 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("datahash", message.Header.DataHash).
 				Set("hash", message.Hash).
 				Set("pins", message.Pins).
+				Set("rejected", message.Rejected).
+				Set("pending", message.Pending).
 				Set("confirmed", message.Confirmed).
 				Set("tx_type", message.Header.TxType).
 				Set("batch_id", message.BatchID).
@@ -137,6 +141,8 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 					message.Header.DataHash,
 					message.Hash,
 					message.Pins,
+					message.Rejected,
+					message.Pending,
 					message.Confirmed,
 					message.Header.TxType,
 					message.BatchID,
@@ -277,6 +283,8 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.DataHash,
 		&msg.Hash,
 		&msg.Pins,
+		&msg.Rejected,
+		&msg.Pending,
 		&msg.Confirmed,
 		&msg.Header.TxType,
 		&msg.BatchID,
@@ -351,7 +359,8 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
+		[]string{"pending", "confirmed", "created"}) // put unconfirmed messages first, then order by confirmed
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +373,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 		cols[i] = fmt.Sprintf("m.%s", col)
 	}
 	cols[len(msgColumns)] = s.provider.SequenceField("m")
-	query, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterTypeMap,
+	query, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterFieldMap, []string{"sequence"},
 		sq.Eq{"md.data_id": dataID})
 	if err != nil {
 		return nil, err
@@ -375,7 +384,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 }
 
 func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, error) {
-	query, err := s.filterSelect(ctx, "", sq.Select("id", s.provider.SequenceField(""), "hash").From("messages"), filter, msgFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select("id", s.provider.SequenceField(""), "hash").From("messages"), filter, msgFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -408,12 +417,12 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("messages"), update, msgFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("messages"), update, msgFilterFieldMap)
 	if err != nil {
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterTypeMap)
+	query, err = s.filterUpdate(ctx, "", query, filter, opFilterFieldMap)
 	if err != nil {
 		return err
 	}

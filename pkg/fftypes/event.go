@@ -23,8 +23,8 @@ const (
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
 	EventTypeMessageConfirmed EventType = "message_confirmed"
-	// EventTypeMessageInvalid occurs if a message is received and confirmed from a sequencing perspective, but is invalid
-	EventTypeMessageInvalid EventType = "message_invalid"
+	// EventTypeMessageRejected occurs if a message is received and confirmed from a sequencing perspective, but is rejected as invalid (mismatch to schema, or duplicate system broadcast)
+	EventTypeMessageRejected EventType = "message_rejected"
 	// EventTypeNamespaceConfirmed occurs when a new namespace is ready for use (on the namespace itself)
 	EventTypeNamespaceConfirmed EventType = "namespace_confirmed"
 	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)

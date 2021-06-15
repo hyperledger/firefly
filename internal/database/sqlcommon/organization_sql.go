@@ -38,7 +38,7 @@ var (
 		"profile",
 		"created",
 	}
-	organizationFilterTypeMap = map[string]string{
+	organizationFilterFieldMap = map[string]string{
 		"message": "message_id",
 	}
 )
@@ -171,7 +171,7 @@ func (s *SQLCommon) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (
 
 func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter) (message []*fftypes.Organization, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (s *SQLCommon) UpdateOrganization(ctx context.Context, id *fftypes.UUID, up
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("orgs"), update, organizationFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("orgs"), update, organizationFilterFieldMap)
 	if err != nil {
 		return err
 	}

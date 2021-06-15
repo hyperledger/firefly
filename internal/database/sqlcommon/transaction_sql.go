@@ -40,7 +40,7 @@ var (
 		"status",
 		"info",
 	}
-	transactionFilterTypeMap = map[string]string{
+	transactionFilterFieldMap = map[string]string{
 		"type":       "ttype",
 		"protocolid": "protocol_id",
 		"reference":  "ref",
@@ -175,7 +175,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter)
 
 	cols := append([]string{}, transactionColumns...)
 	cols = append(cols, s.provider.SequenceField(""))
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("transactions"), update, transactionFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("transactions"), update, transactionFilterFieldMap)
 	if err != nil {
 		return err
 	}

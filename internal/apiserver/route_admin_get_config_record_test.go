@@ -29,20 +29,26 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDeleteConfigRecord(t *testing.T) {
+func TestGetConfigRecord(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createAdminMuxRouter(o)
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	u := fftypes.NewUUID()
-	req := httptest.NewRequest("DELETE", fmt.Sprintf("/admin/api/v1/config/%s", u), &buf)
+	req := httptest.NewRequest("GET", fmt.Sprintf("/admin/api/v1/config/records/%s", u), &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("DeleteConfigRecord", mock.Anything, u.String()).
-		Return(nil)
+	o.On("GetConfigRecord", mock.Anything, u.String()).
+		Return(&fftypes.ConfigRecord{
+			Key:   u.String(),
+			Value: fftypes.Byteable(`{"foo": "bar"}`),
+		}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 204, res.Result().StatusCode)
+	assert.Equal(t, 200, res.Result().StatusCode)
+	outputBuf := new(bytes.Buffer)
+	outputBuf.ReadFrom(res.Body)
+	assert.Equal(t, "{\"foo\":\"bar\"}\n", outputBuf.String())
 }

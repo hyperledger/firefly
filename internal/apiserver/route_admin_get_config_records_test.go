@@ -19,7 +19,6 @@ package apiserver
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -29,26 +28,27 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetConfigRecord(t *testing.T) {
+func TestGetConfigRecords(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createAdminMuxRouter(o)
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	u := fftypes.NewUUID()
-	req := httptest.NewRequest("GET", fmt.Sprintf("/admin/api/v1/config/%s", u), &buf)
+	req := httptest.NewRequest("GET", "/admin/api/v1/config/records", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetConfigRecord", mock.Anything, u.String()).
-		Return(&fftypes.ConfigRecord{
-			Key:   u.String(),
-			Value: fftypes.Byteable(`{"foo": "bar"}`),
+	o.On("GetConfigRecords", mock.Anything, mock.Anything).
+		Return([]*fftypes.ConfigRecord{
+			{
+				Key:   "foo",
+				Value: fftypes.Byteable(`{"foo": "bar"}`),
+			},
 		}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 	outputBuf := new(bytes.Buffer)
 	outputBuf.ReadFrom(res.Body)
-	assert.Equal(t, "{\"foo\":\"bar\"}\n", outputBuf.String())
+	assert.Equal(t, "[{\"key\":\"foo\",\"value\":{\"foo\":\"bar\"}}]\n", outputBuf.String())
 }

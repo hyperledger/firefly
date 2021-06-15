@@ -28,27 +28,25 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetConfigRecords(t *testing.T) {
+func TestPutConfigRecord(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	r := createAdminMuxRouter(o)
-	input := fftypes.ConfigRecord{}
+	input := &fftypes.ConfigRecord{
+		Key:   "foo",
+		Value: fftypes.Byteable(`{"foo": "bar"}`),
+	}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("GET", "/admin/api/v1/config", &buf)
+	req := httptest.NewRequest("PUT", "/admin/api/v1/config/records/foo", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetConfigRecords", mock.Anything, mock.Anything).
-		Return([]*fftypes.ConfigRecord{
-			{
-				Key:   "foo",
-				Value: fftypes.Byteable(`{"foo": "bar"}`),
-			},
-		}, nil)
+	o.On("PutConfigRecord", mock.Anything, mock.Anything, mock.Anything).
+		Return(input.Value, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 	outputBuf := new(bytes.Buffer)
 	outputBuf.ReadFrom(res.Body)
-	assert.Equal(t, "[{\"key\":\"foo\",\"value\":{\"foo\":\"bar\"}}]\n", outputBuf.String())
+	assert.Equal(t, "{\"foo\":\"bar\"}\n", outputBuf.String())
 }

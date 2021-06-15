@@ -66,3 +66,7 @@ func (ql *QL) Open(url string) (*sql.DB, error) {
 func (ql *QL) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return migrateql.WithInstance(db, &migrateql.Config{})
 }
+
+func (ql *QL) IndividualSort() bool {
+	return false
+}

@@ -52,6 +52,8 @@ func TestStartStopServer(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPPort, 0)
 	config.Set(config.UIPath, "test")
+	config.Set(config.AdminEnabled, true)
+	config.Set(config.AdminPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	err := Serve(ctx, &orchestratormocks.Orchestrator{})
@@ -62,6 +64,13 @@ func TestInvalidListener(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPAddress, "...")
 	_, err := createListener(context.Background())
+	assert.Error(t, err)
+}
+
+func TestInvalidAdminListener(t *testing.T) {
+	config.Reset()
+	config.Set(config.AdminAddress, "...")
+	_, err := createAdminListener(context.Background())
 	assert.Error(t, err)
 }
 
@@ -350,12 +359,39 @@ func TestSwaggerUI(t *testing.T) {
 	assert.Regexp(t, "html", string(b))
 }
 
+func TestAdminSwaggerUI(t *testing.T) {
+	handler := apiWrapper(swaggerAdminUIHandler)
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/admin/api", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	assert.Regexp(t, "html", string(b))
+}
+
 func TestSwaggerYAML(t *testing.T) {
 	handler := apiWrapper(swaggerHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/swagger.yaml", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	doc, err := openapi3.NewLoader().LoadFromData(b)
+	assert.NoError(t, err)
+	err = doc.Validate(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestAdminSwaggerYAML(t *testing.T) {
+	handler := apiWrapper(adminSwaggerHandler)
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/admin/api/swagger.yaml", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 	b, _ := ioutil.ReadAll(res.Body)
@@ -377,4 +413,33 @@ func TestSwaggerJSON(t *testing.T) {
 	b, _ := ioutil.ReadAll(res.Body)
 	err = json.Unmarshal(b, &openapi3.T{})
 	assert.NoError(t, err)
+}
+
+func TestAdminSwaggerJSON(t *testing.T) {
+	mo := &orchestratormocks.Orchestrator{}
+	r := createAdminMuxRouter(mo)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	res, err := http.Get(fmt.Sprintf("http://%s/admin/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	b, _ := ioutil.ReadAll(res.Body)
+	err = json.Unmarshal(b, &openapi3.T{})
+	assert.NoError(t, err)
+}
+
+func TestWaitForServerStop(t *testing.T) {
+
+	chl1 := make(chan error, 1)
+	chl2 := make(chan error, 1)
+	chl1 <- fmt.Errorf("pop1")
+
+	err := waitForServerStop(chl1, chl2)
+	assert.EqualError(t, err, "pop1")
+
+	chl2 <- fmt.Errorf("pop2")
+	err = waitForServerStop(chl1, chl2)
+	assert.EqualError(t, err, "pop2")
+
 }

@@ -39,7 +39,7 @@ var (
 		"blobstore",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
-	dataFilterTypeMap    = map[string]string{
+	dataFilterFieldMap   = map[string]string{
 		"validator":        "validator",
 		"datatype.name":    "datatype_name",
 		"datatype.version": "datatype_version",
@@ -182,7 +182,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 
 func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 
 func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("data"), update, dataFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("data"), update, dataFilterFieldMap)
 	if err != nil {
 		return err
 	}

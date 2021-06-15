@@ -9,7 +9,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceRoot}/main.go",
+      "program": "${workspaceFolder}/main.go",
       "args": [
         "-f",
         "/Users/peterbroadhurst/.firefly/stacks/dev/firefly_0.core"

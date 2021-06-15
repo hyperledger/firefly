@@ -95,6 +95,7 @@ type Orchestrator interface {
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error)
 
 	// Config Managemnet
+	GetConfig(ctx context.Context) fftypes.JSONObject
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
 	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error)
 	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)

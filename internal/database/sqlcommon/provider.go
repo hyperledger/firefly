@@ -44,4 +44,7 @@ type Provider interface {
 	// SequenceField must be auto added by the database to each table, via appropriate DDL in the migrations
 	// Different formats exist for putting a table prefix. QL is "id(prefix)" rather than "prefix.seq"
 	SequenceField(tableName string) string
+
+	// IndividualSort returns true if individual column sorting is supported in "ORDER BY" clauses
+	IndividualSort() bool
 }

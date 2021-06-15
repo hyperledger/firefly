@@ -42,7 +42,7 @@ var (
 		"tx_type",
 		"tx_id",
 	}
-	batchFilterTypeMap = map[string]string{
+	batchFilterFieldMap = map[string]string{
 		"type":             "btype",
 		"payloadref":       "payload_ref",
 		"transaction.type": "tx_type",
@@ -179,7 +179,7 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 
 func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterTypeMap)
+	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("batches"), update, batchFilterTypeMap)
+	query, err := s.buildUpdate(sq.Update("batches"), update, batchFilterFieldMap)
 	if err != nil {
 		return err
 	}
