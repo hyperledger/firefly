@@ -35,7 +35,8 @@ func TestPostDataJSON(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	input := fftypes.Data{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -56,7 +57,8 @@ func TestPostDataBinary(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -82,7 +84,8 @@ func TestPostDataBinaryMissing(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -107,7 +110,8 @@ func TestPostDataBadForm(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)

@@ -30,7 +30,8 @@ import (
 
 func TestPostNewSubscription(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	input := fftypes.Subscription{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

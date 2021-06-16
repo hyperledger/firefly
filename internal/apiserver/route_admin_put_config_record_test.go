@@ -30,7 +30,8 @@ import (
 
 func TestPutConfigRecord(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createAdminMuxRouter(o)
+	as := &apiServer{}
+	r := as.createAdminMuxRouter(o)
 	input := &fftypes.ConfigRecord{
 		Key:   "foo",
 		Value: fftypes.Byteable(`{"foo": "bar"}`),

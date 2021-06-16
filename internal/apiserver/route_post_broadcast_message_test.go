@@ -33,7 +33,8 @@ func TestPostBroadcastMessage(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

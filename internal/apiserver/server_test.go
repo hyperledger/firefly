@@ -56,21 +56,24 @@ func TestStartStopServer(t *testing.T) {
 	config.Set(config.AdminPort, 0)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
-	err := Serve(ctx, &orchestratormocks.Orchestrator{})
+	as := NewAPIServer()
+	err := as.Serve(ctx, &orchestratormocks.Orchestrator{})
 	assert.NoError(t, err)
 }
 
 func TestInvalidListener(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPAddress, "...")
-	_, err := createListener(context.Background())
+	as := &apiServer{}
+	_, err := as.createListener(context.Background())
 	assert.Error(t, err)
 }
 
 func TestInvalidAdminListener(t *testing.T) {
 	config.Reset()
 	config.Set(config.AdminAddress, "...")
-	_, err := createAdminListener(context.Background())
+	as := &apiServer{}
+	_, err := as.createAdminListener(context.Background())
 	assert.Error(t, err)
 }
 
@@ -78,7 +81,8 @@ func TestServeFail(t *testing.T) {
 	l, _ := net.Listen("tcp", "127.0.0.1:0")
 	l.Close() // So server will fail
 	s := &http.Server{}
-	err := serveHTTP(context.Background(), l, s)
+	as := &apiServer{}
+	err := as.serveHTTP(context.Background(), l, s)
 	assert.Error(t, err)
 }
 
@@ -86,7 +90,8 @@ func TestMissingCAFile(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPTLSCAFile, "badness")
 	r := mux.NewRouter()
-	_, err := createServer(context.Background(), r)
+	as := &apiServer{}
+	_, err := as.createServer(context.Background(), r)
 	assert.Regexp(t, "FF10105", err)
 }
 
@@ -94,7 +99,8 @@ func TestBadCAFile(t *testing.T) {
 	config.Reset()
 	config.Set(config.HTTPTLSCAFile, configDir+"/firefly.core.yaml")
 	r := mux.NewRouter()
-	_, err := createServer(context.Background(), r)
+	as := &apiServer{}
+	_, err := as.createServer(context.Background(), r)
 	assert.Regexp(t, "FF10106", err)
 }
 
@@ -135,20 +141,21 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 	config.Set(config.HTTPTLSCAFile, publicKeyFile.Name())
 	config.Set(config.HTTPPort, 0)
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	l, err := createListener(ctx)
+	as := &apiServer{}
+	l, err := as.createListener(ctx)
 	assert.NoError(t, err)
 	r := mux.NewRouter()
 	r.HandleFunc("/test", func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(200)
 		json.NewEncoder(res).Encode(map[string]interface{}{"hello": "world"})
 	})
-	s, err := createServer(ctx, r)
+	s, err := as.createServer(ctx, r)
 	assert.NoError(t, err)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		err := serveHTTP(ctx, l, s)
+		err := as.serveHTTP(ctx, l, s)
 		assert.NoError(t, err)
 		wg.Done()
 	}()
@@ -186,7 +193,8 @@ func TestTLSServerSelfSignedWithClientAuth(t *testing.T) {
 
 func TestJSONHTTPServePOST201(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -212,7 +220,8 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -237,7 +246,8 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -262,7 +272,8 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -287,7 +298,8 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 
 func TestStatusCodeHintMapping(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "GET",
@@ -312,7 +324,8 @@ func TestStatusCodeHintMapping(t *testing.T) {
 
 func TestStatusInvalidContentType(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	handler := routeHandler(mo, &oapispec.Route{
+	as := &apiServer{}
+	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
 		Method:          "POST",
@@ -335,7 +348,8 @@ func TestStatusInvalidContentType(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	handler := apiWrapper(notFoundHandler)
+	as := &apiServer{}
+	handler := as.apiWrapper(as.notFoundHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -348,7 +362,8 @@ func TestNotFound(t *testing.T) {
 }
 
 func TestSwaggerUI(t *testing.T) {
-	handler := apiWrapper(swaggerUIHandler)
+	as := &apiServer{}
+	handler := as.apiWrapper(as.swaggerUIHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -360,7 +375,8 @@ func TestSwaggerUI(t *testing.T) {
 }
 
 func TestAdminSwaggerUI(t *testing.T) {
-	handler := apiWrapper(swaggerAdminUIHandler)
+	as := &apiServer{}
+	handler := as.apiWrapper(as.swaggerAdminUIHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -372,7 +388,8 @@ func TestAdminSwaggerUI(t *testing.T) {
 }
 
 func TestSwaggerYAML(t *testing.T) {
-	handler := apiWrapper(swaggerHandler)
+	as := &apiServer{}
+	handler := as.apiWrapper(as.swaggerHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -387,7 +404,8 @@ func TestSwaggerYAML(t *testing.T) {
 }
 
 func TestAdminSwaggerYAML(t *testing.T) {
-	handler := apiWrapper(adminSwaggerHandler)
+	as := &apiServer{}
+	handler := as.apiWrapper(as.adminSwaggerHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 
@@ -403,7 +421,8 @@ func TestAdminSwaggerYAML(t *testing.T) {
 
 func TestSwaggerJSON(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	r := createMuxRouter(mo)
+	as := &apiServer{}
+	r := as.createMuxRouter(mo)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -417,7 +436,8 @@ func TestSwaggerJSON(t *testing.T) {
 
 func TestAdminSwaggerJSON(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
-	r := createAdminMuxRouter(mo)
+	as := &apiServer{}
+	r := as.createAdminMuxRouter(mo)
 	s := httptest.NewServer(r)
 	defer s.Close()
 
@@ -435,11 +455,12 @@ func TestWaitForServerStop(t *testing.T) {
 	chl2 := make(chan error, 1)
 	chl1 <- fmt.Errorf("pop1")
 
-	err := waitForServerStop(chl1, chl2)
+	as := &apiServer{}
+	err := as.waitForServerStop(chl1, chl2)
 	assert.EqualError(t, err, "pop1")
 
 	chl2 <- fmt.Errorf("pop2")
-	err = waitForServerStop(chl1, chl2)
+	err = as.waitForServerStop(chl1, chl2)
 	assert.EqualError(t, err, "pop2")
 
 }

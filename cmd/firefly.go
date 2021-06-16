@@ -112,7 +112,8 @@ func run() error {
 	for {
 		orchestratorCtx, cancelOrchestratorCtx := context.WithCancel(ctx)
 		o := getOrchestrator()
-		go startFirefly(orchestratorCtx, cancelOrchestratorCtx, o, errChan)
+		as := apiserver.NewAPIServer()
+		go startFirefly(orchestratorCtx, cancelOrchestratorCtx, o, as, errChan)
 		select {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
@@ -129,7 +130,7 @@ func run() error {
 	}
 }
 
-func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestrator.Orchestrator, errChan chan error) {
+func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestrator.Orchestrator, as apiserver.Server, errChan chan error) {
 	var err error
 	// Start debug listener
 	debugPort := config.GetInt(config.DebugPort)
@@ -156,7 +157,8 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestra
 	}
 
 	// Run the API Server
-	if err = apiserver.Serve(ctx, o); err != nil {
+
+	if err = as.Serve(ctx, o); err != nil {
 		errChan <- err
 	}
 }

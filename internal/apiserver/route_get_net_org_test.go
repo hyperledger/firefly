@@ -31,7 +31,8 @@ func TestGetOrg(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/network/organizations/org12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

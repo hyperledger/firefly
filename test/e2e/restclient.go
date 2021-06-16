@@ -17,15 +17,22 @@
 package e2e
 
 import (
+	"fmt"
+	"testing"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/require"
 )
 
 var (
 	urlGetNamespaces    = "/namespaces"
 	urlGetMessages      = "/namespaces/default/messages"
 	urlBroadcastMessage = "/namespaces/default/broadcast/message"
+	urlPrivateMessage   = "/namespaces/default/send/message"
 	urlGetData          = "/namespaces/default/data"
+	urlGetOrganizations = "/network/organizations"
 )
 
 func GetNamespaces(client *resty.Client) (*resty.Response, error) {
@@ -34,10 +41,37 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
-func GetMessages(client *resty.Client) (*resty.Response, error) {
-	return client.R().
-		SetResult(&[]fftypes.Message{}).
-		Get(urlGetMessages)
+func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, expectedStatus int) (msgs []*fftypes.Message) {
+	path := urlGetMessages
+	resp, err := client.R().
+		SetQueryParam("type", string(msgType)).
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&msgs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return msgs
+}
+
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data []*fftypes.Data) {
+	path := urlGetData
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&data).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return data
+}
+
+func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
+	path := urlGetOrganizations
+	resp, err := client.R().
+		SetResult(&orgs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return orgs
 }
 
 func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*resty.Response, error) {
@@ -48,8 +82,21 @@ func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*rest
 		Post(urlBroadcastMessage)
 }
 
-func GetData(client *resty.Client) (*resty.Response, error) {
+func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string) (*resty.Response, error) {
+	members := make([]fftypes.MemberInput, len(orgNames))
+	for i, oName := range orgNames {
+		// We let FireFly resolve the friendly name of the org to the identity
+		members[i] = fftypes.MemberInput{
+			Identity: oName,
+		}
+	}
 	return client.R().
-		SetResult(&[]fftypes.Data{}).
-		Get(urlGetData)
+		SetBody(fftypes.MessageInput{
+			InputData: fftypes.InputData{data},
+			Group: &fftypes.InputGroup{
+				Members: members,
+				Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+			},
+		}).
+		Post(urlPrivateMessage)
 }

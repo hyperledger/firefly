@@ -30,6 +30,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type testState struct {
+	startTime time.Time
+	t         *testing.T
+	client1   *resty.Client
+	client2   *resty.Client
+	ws1       *websocket.Conn
+	ws2       *websocket.Conn
+	org1      *fftypes.Organization
+	org2      *fftypes.Organization
+}
+
 func pollForUp(t *testing.T, client *resty.Client) {
 	var resp *resty.Response
 	var err error
@@ -44,28 +55,35 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(t *testing.T, client *resty.Client, value fftypes.Byteable) {
-	resp, err := GetMessages(client)
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode())
+func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes.Byteable, msgType fftypes.MessageType) {
+	var group *fftypes.Bytes32
+	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
+	for i, message := range messages {
+		ts.t.Logf("Message %d: %+v", i, *message)
+		if group != nil {
+			assert.Equal(ts.t, group.String(), message.Header.Group.String(), "All messages must be same group")
+		}
+		group = message.Header.Group
+	}
+	assert.Equal(ts.t, 1, len(messages))
+	assert.Equal(ts.t, fftypes.LowerCasedType("batch_pin"), (messages)[0].Header.TxType)
+	assert.Equal(ts.t, "default", (messages)[0].Header.Namespace)
+	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[0].Header.Topics)
 
-	messages := resp.Result().(*[]fftypes.Message)
-	assert.Equal(t, 1, len(*messages))
-	assert.Equal(t, fftypes.LowerCasedType("batch_pin"), (*messages)[0].Header.TxType)
-	assert.Equal(t, "default", (*messages)[0].Header.Namespace)
-	assert.Equal(t, fftypes.FFNameArray{"default"}, (*messages)[0].Header.Topics)
-
-	resp, err = GetData(client)
-	require.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode())
-
-	data := resp.Result().(*[]fftypes.Data)
-	assert.Equal(t, 1, len(*data))
-	assert.Equal(t, "default", (*data)[0].Namespace)
-	assert.Equal(t, value, (*data)[0].Value)
+	data := GetData(ts.t, client, ts.startTime, 200)
+	for i, d := range data {
+		ts.t.Logf("Data %d: %+v", i, *d)
+	}
+	if group == nil {
+		assert.Equal(ts.t, 1, len(data))
+	} else if msgType == fftypes.MessageTypePrivate {
+		assert.Equal(ts.t, group.String(), (data)[1].Value.JSONObject().GetString("hash"))
+	}
+	assert.Equal(ts.t, "default", (data)[0].Namespace)
+	assert.Equal(ts.t, value, (data)[0].Value)
 }
 
-func TestEndToEnd(t *testing.T) {
+func beforeE2ETest(t *testing.T) *testState {
 	stackFile := os.Getenv("STACK_FILE")
 	if stackFile == "" {
 		t.Fatal("STACK_FILE must be set")
@@ -76,15 +94,31 @@ func TestEndToEnd(t *testing.T) {
 	port2, err := GetMemberPort(stackFile, 1)
 	require.NoError(t, err)
 
-	client1 := resty.New()
-	client1.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port1))
-	client2 := resty.New()
-	client2.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port2))
+	ts := &testState{
+		t:         t,
+		startTime: time.Now(),
+		client1:   resty.New(),
+		client2:   resty.New(),
+	}
 
-	t.Logf("Client 1: " + client1.HostURL)
-	t.Logf("Client 2: " + client2.HostURL)
-	pollForUp(t, client1)
-	pollForUp(t, client2)
+	ts.client1.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port1))
+	ts.client2.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port2))
+
+	t.Logf("Client 1: " + ts.client1.HostURL)
+	t.Logf("Client 2: " + ts.client2.HostURL)
+	pollForUp(t, ts.client1)
+	pollForUp(t, ts.client2)
+
+	for {
+		orgs := GetOrgs(t, ts.client1, 200)
+		if len(orgs) >= 2 {
+			ts.org1 = orgs[0]
+			ts.org2 = orgs[1]
+			break
+		}
+		t.Logf("Waiting for 2 orgs to appear. Currently have: %v", orgs)
+		time.Sleep(3 * time.Second)
+	}
 
 	wsUrl1 := url.URL{
 		Scheme:   "ws",
@@ -102,15 +136,22 @@ func TestEndToEnd(t *testing.T) {
 	t.Logf("Websocket 1: " + wsUrl1.String())
 	t.Logf("Websocket 2: " + wsUrl2.String())
 
-	ws1, _, err := websocket.DefaultDialer.Dial(wsUrl1.String(), nil)
+	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), nil)
 	require.NoError(t, err)
-	ws2, _, err := websocket.DefaultDialer.Dial(wsUrl2.String(), nil)
+	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), nil)
 	require.NoError(t, err)
+
+	return ts
+}
+
+func TestE2EBroadcast(t *testing.T) {
+
+	ts := beforeE2ETest(t)
 
 	received1 := make(chan bool)
 	go func() {
 		for {
-			_, _, err := ws1.ReadMessage()
+			_, _, err := ts.ws1.ReadMessage()
 			require.NoError(t, err)
 			received1 <- true
 		}
@@ -119,25 +160,67 @@ func TestEndToEnd(t *testing.T) {
 	received2 := make(chan bool)
 	go func() {
 		for {
-			_, _, err := ws2.ReadMessage()
+			_, _, err := ts.ws2.ReadMessage()
 			require.NoError(t, err)
 			received2 <- true
 		}
 	}()
 
 	var resp *resty.Response
-	value := fftypes.Byteable("\"Hello\"")
+	value := fftypes.Byteable(`"Hello"`)
 	data := fftypes.DataRefOrValue{
 		Value: value,
 	}
 
-	resp, err = BroadcastMessage(client1, &data)
+	resp, err := BroadcastMessage(ts.client1, &data)
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
-	validateReceivedMessages(t, client1, value)
+	validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypeBroadcast)
 
 	<-received2
-	validateReceivedMessages(t, client2, value)
+	validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypeBroadcast)
+}
+
+func TestE2EPrivate(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+
+	received1 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws1.ReadMessage()
+			require.NoError(t, err)
+			received1 <- true
+		}
+	}()
+
+	received2 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws2.ReadMessage()
+			require.NoError(t, err)
+			received2 <- true
+		}
+	}()
+
+	var resp *resty.Response
+	value := fftypes.Byteable(`"Hello"`)
+	data := fftypes.DataRefOrValue{
+		Value: value,
+	}
+
+	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
+
+	<-received1
+	validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypePrivate)
+
+	<-received2
+	validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypePrivate)
 }

@@ -36,11 +36,17 @@ mocks: ${GOFILES}
 		$(MOCKERY) --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
 		$(MOCKERY) --case underscore --dir internal/wsclient         --name WSClient         --output mocks/wsmocks               --outpkg wsmocks
 		$(MOCKERY) --case underscore --dir internal/orchestrator     --name Orchestrator     --output mocks/orchestratormocks     --outpkg orchestratormocks
+		$(MOCKERY) --case underscore --dir internal/apiserver        --name Server           --output mocks/apiservermocks        --outpkg apiservermocks
 firefly-nocgo: ${GOFILES}		
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 build: firefly-nocgo firefly
+e2e: build
+		./test/e2e/run.sh
+.ALWAYS: ;
+e2e-rebuild: .ALWAYS
+		DOWNLOAD_CLI=false BUILD_FIREFLY=false CREATE_STACK=false ./test/e2e/run.sh
 clean: 
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}

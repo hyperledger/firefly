@@ -33,7 +33,8 @@ func TestPostSendMessage(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

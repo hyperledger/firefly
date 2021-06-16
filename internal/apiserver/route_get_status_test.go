@@ -28,7 +28,8 @@ import (
 
 func TestGetStatus(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	r := createMuxRouter(o)
+	as := &apiServer{}
+	r := as.createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/status", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
