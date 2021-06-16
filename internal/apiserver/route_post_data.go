@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -70,7 +71,7 @@ var postData = &oapispec.Route{
 				}
 			}
 		}
-		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, r.FP["autometa"] == "true")
+		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }
