@@ -777,6 +777,20 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	return r0
 }
 
+// IsPreInit provides a mock function with given fields:
+func (_m *Orchestrator) IsPreInit() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // NetworkMap provides a mock function with given fields:
 func (_m *Orchestrator) NetworkMap() networkmap.Manager {
 	ret := _m.Called()
@@ -830,6 +844,11 @@ func (_m *Orchestrator) PutConfigRecord(ctx context.Context, key string, configR
 	}
 
 	return r0, r1
+}
+
+// ResetConfig provides a mock function with given fields: ctx
+func (_m *Orchestrator) ResetConfig(ctx context.Context) {
+	_m.Called(ctx)
 }
 
 // Start provides a mock function with given fields:

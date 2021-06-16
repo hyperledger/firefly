@@ -60,6 +60,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
+	IsPreInit() bool
 
 	// Status
 	GetStatus(ctx context.Context) (*fftypes.NodeStatus, error)
@@ -100,6 +101,7 @@ type Orchestrator interface {
 	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error)
 	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)
 	DeleteConfigRecord(ctx context.Context, key string) (err error)
+	ResetConfig(ctx context.Context)
 }
 
 type orchestrator struct {
@@ -118,6 +120,7 @@ type orchestrator struct {
 	messaging     privatemessaging.Manager
 	data          data.Manager
 	bc            boundCallbacks
+	preInitMode   bool
 }
 
 func NewOrchestrator() Orchestrator {
@@ -136,6 +139,9 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.ctx = ctx
 	or.cancelCtx = cancelCtx
 	err = or.initPlugins(ctx)
+	if or.preInitMode {
+		return nil
+	}
 	if err == nil {
 		err = or.initComponents(ctx)
 	}
@@ -150,6 +156,10 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 }
 
 func (or *orchestrator) Start() error {
+	if or.preInitMode {
+		log.L(or.ctx).Infof("Orchestrator in pre-init mode, waiting for initialization")
+		return nil
+	}
 	err := or.blockchain.Start()
 	if err == nil {
 		err = or.batch.Start()
@@ -182,6 +192,10 @@ func (or *orchestrator) WaitStop() {
 	or.started = false
 }
 
+func (or *orchestrator) IsPreInit() bool {
+	return or.preInitMode
+}
+
 func (or *orchestrator) Broadcast() broadcast.Manager {
 	return or.broadcast
 }
@@ -202,7 +216,7 @@ func (or *orchestrator) Data() data.Manager {
 	return or.data
 }
 
-func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
+func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
 
 	if or.database == nil {
 		diType := config.GetString(config.DatabaseType)
@@ -220,8 +234,19 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	if configRecords, err = or.GetConfigRecords(ctx, filter); err != nil {
 		return err
 	}
-	if err = config.MergeConfig(configRecords); err != nil {
+	if len(configRecords) == 0 && config.GetBool(config.AdminPreinit) {
+		or.preInitMode = true
+		return nil
+	}
+	return config.MergeConfig(configRecords)
+}
+
+func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
+
+	if err = or.initDatabaseCheckPreinit(ctx); err != nil {
 		return err
+	} else if or.preInitMode {
+		return nil
 	}
 
 	if or.identity == nil {

@@ -63,18 +63,20 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) err
 	httpErrChan := make(chan error)
 	adminErrChan := make(chan error)
 
-	go func() {
-		r := as.createMuxRouter(o)
-		l, err := as.createListener(ctx)
-		if err == nil {
-			var s *http.Server
-			s, err = as.createServer(ctx, r)
+	if !o.IsPreInit() {
+		go func() {
+			r := as.createMuxRouter(o)
+			l, err := as.createListener(ctx)
 			if err == nil {
-				err = as.serveHTTP(ctx, l, s)
+				var s *http.Server
+				s, err = as.createServer(ctx, r)
+				if err == nil {
+					err = as.serveHTTP(ctx, l, s)
+				}
 			}
-		}
-		httpErrChan <- err
-	}()
+			httpErrChan <- err
+		}()
+	}
 
 	if config.GetBool(config.AdminEnabled) {
 		go func() {

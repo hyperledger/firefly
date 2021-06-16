@@ -267,7 +267,7 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 	return err
 }
 func (f *jsonField) Value() (driver.Value, error)         { return f.b, nil }
-func (f *jsonField) String() string                       { return fmt.Sprintf("%s", f.b) }
+func (f *jsonField) String() string                       { return string(f.b) }
 func (f *JSONField) getSerialization() FieldSerialization { return &jsonField{} }
 
 type FFNameArrayField struct{}

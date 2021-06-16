@@ -81,11 +81,17 @@ func TestDeleteConfigRecord(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
+	or := newTestOrchestrator()
 	config.Reset()
 	config.Set(config.LogLevel, "trace")
 
-	or := newTestOrchestrator()
 	conf := or.GetConfig(or.ctx)
 	t.Log(conf.String())
 	assert.Equal(t, "trace", conf.GetObject("log").GetString("level"))
+}
+
+func TestResetConfig(t *testing.T) {
+	or := newTestOrchestrator()
+	or.ResetConfig(context.Background())
+	<-or.ctx.Done()
 }

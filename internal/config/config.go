@@ -159,6 +159,8 @@ var (
 	AdminAddress = rootKey("admin.address")
 	// AdminHttpPort the local port to listen on for HTTP/Websocket connections
 	AdminPort = rootKey("admin.port")
+	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
+	AdminPreinit = rootKey("admin.preinit")
 	// AdminHttpReadTimeout the write timeout for the HTTP server
 	AdminReadTimeout = rootKey("admin.readTimeout")
 	// AdminHttpTLSCAFile the TLS certificate authority file for the HTTP server

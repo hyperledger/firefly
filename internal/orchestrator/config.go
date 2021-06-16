@@ -44,23 +44,13 @@ func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value f
 	if err := or.database.UpsertConfigRecord(ctx, configRecord, true); err != nil {
 		return nil, err
 	}
-
-	// Restart afterward to pick up the configuration change
-	go func() {
-		<-ctx.Done()
-		or.cancelCtx()
-	}()
-
 	return value, nil
 }
 
+func (or *orchestrator) ResetConfig(ctx context.Context) {
+	or.cancelCtx()
+}
+
 func (or *orchestrator) DeleteConfigRecord(ctx context.Context, key string) (err error) {
-
-	// Restart afterward to pick up the configuration change
-	go func() {
-		<-ctx.Done()
-		or.cancelCtx()
-	}()
-
 	return or.database.DeleteConfigRecord(ctx, key)
 }

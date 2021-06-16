@@ -57,9 +57,12 @@ type testOrchestrator struct {
 }
 
 func newTestOrchestrator() *testOrchestrator {
+	config.Reset()
+	ctx, cancel := context.WithCancel(context.Background())
 	tor := &testOrchestrator{
 		orchestrator: orchestrator{
-			ctx: context.Background(),
+			ctx:       ctx,
+			cancelCtx: cancel,
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -114,6 +117,18 @@ func TestBadDatabaseInitFail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestBadDatabasePreInitMode(t *testing.T) {
+	or := newTestOrchestrator()
+	config.Set(config.AdminPreinit, true)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+	err = or.Start()
+	assert.NoError(t, err)
 }
 
 func TestBadIdentityPlugin(t *testing.T) {
@@ -320,17 +335,16 @@ func TestStartStopOk(t *testing.T) {
 }
 
 func TestInitNamespacesBadName(t *testing.T) {
+	or := newTestOrchestrator()
 	config.Reset()
 	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
 		{"name": "!Badness"},
 	})
-	or := newTestOrchestrator()
 	err := or.initNamespaces(context.Background())
 	assert.Regexp(t, "FF10131", err)
 }
 
 func TestInitNamespacesGetFail(t *testing.T) {
-	config.Reset()
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
@@ -338,7 +352,6 @@ func TestInitNamespacesGetFail(t *testing.T) {
 }
 
 func TestInitNamespacesUpsertFail(t *testing.T) {
-	config.Reset()
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
@@ -347,7 +360,6 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 }
 
 func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
-	config.Reset()
 	or := newTestOrchestrator()
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{
 		Type: fftypes.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
@@ -357,7 +369,6 @@ func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 }
 
 func TestInitNamespacesDefaultMissing(t *testing.T) {
-	config.Reset()
 	or := newTestOrchestrator()
 	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{})
 	err := or.initNamespaces(context.Background())
@@ -365,7 +376,6 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 }
 
 func TestInitNamespacesDupName(t *testing.T) {
-	config.Reset()
 	or := newTestOrchestrator()
 	config.Set(config.NamespacesPredefined, fftypes.JSONObjectArray{
 		{"name": "ns1"},

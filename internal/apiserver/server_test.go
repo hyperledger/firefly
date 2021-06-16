@@ -57,7 +57,9 @@ func TestStartStopServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	err := as.Serve(ctx, &orchestratormocks.Orchestrator{})
+	mor := &orchestratormocks.Orchestrator{}
+	mor.On("IsPreInit").Return(false)
+	err := as.Serve(ctx, mor)
 	assert.NoError(t, err)
 }
 
