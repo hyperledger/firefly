@@ -152,4 +152,5 @@ var (
 	MsgInvalidWrongLenB32          = ffm("FF10232", "Byte length must be 32 (64 hex characters)", 400)
 	MsgNodeNotFoundInOrg           = ffm("FF10233", "Unable to find any nodes owned by org '%s', or parent orgs", 400)
 	MsgFilterAscendingDesc         = ffm("FF10234", "Ascending sort order (overrides all fields in a multi-field sort)")
+	MsgPreInitCheckFailed          = ffm("FF10235", "Pre-initialization has not yet been completed. Add config records with the admin API complete initialization and reset the node")
 )

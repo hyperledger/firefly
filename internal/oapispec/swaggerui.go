@@ -62,16 +62,9 @@ var swaggerUIHTML = `<!DOCTYPE html>
 </html>
 `
 
-func SwaggerUIHTML(ctx context.Context) []byte {
+func SwaggerUIHTML(ctx context.Context, url string) []byte {
 	return []byte(fmt.Sprintf(
 		swaggerUIHTML,
-		getHost(),
-	))
-}
-
-func SwaggerAdminUIHTML(ctx context.Context) []byte {
-	return []byte(fmt.Sprintf(
-		swaggerUIHTML,
-		fmt.Sprintf("%s/admin", getAdminHost()),
+		url,
 	))
 }

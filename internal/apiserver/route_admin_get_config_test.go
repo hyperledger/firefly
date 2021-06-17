@@ -22,16 +22,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetConfig(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
-	r := as.createAdminMuxRouter(o)
+	o, r := newTestAdminServer()
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

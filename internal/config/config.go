@@ -135,45 +135,11 @@ var (
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
 	GroupCacheTTL = rootKey("group.cache.ttl")
-	// HttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
-	HTTPAddress = rootKey("http.address")
-	// HttpPort the local port to listen on for HTTP/Websocket connections
-	HTTPPort = rootKey("http.port")
-	// HttpReadTimeout the write timeout for the HTTP server
-	HTTPReadTimeout = rootKey("http.readTimeout")
-	// HttpTLSCAFile the TLS certificate authority file for the HTTP server
-	HTTPTLSCAFile = rootKey("http.tls.caFile")
-	// HttpTLSCertFile the TLS certificate file for the HTTP server
-	HTTPTLSCertFile = rootKey("http.tls.certFile")
-	// HttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
-	HTTPTLSClientAuth = rootKey("http.tls.clientAuth")
-	// HttpTLSEnabled whether TLS is enabled for the HTTP server
-	HTTPTLSEnabled = rootKey("http.tls.enabled")
-	// HttpTLSKeyFile the private key file for TLS on the server
-	HTTPTLSKeyFile = rootKey("http.tls.keyFile")
-	// HttpWriteTimeout the write timeout for the HTTP server
-	HTTPWriteTimeout = rootKey("http.writeTimeout")
 	// AdminHTTPEnabled determines whether the admin interface will be enabled or not
 	AdminEnabled = rootKey("admin.enabled")
+	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
+	AdminPreinit = rootKey("admin.preinit")
 	// AdminHttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
-	AdminAddress = rootKey("admin.address")
-	// AdminHttpPort the local port to listen on for HTTP/Websocket connections
-	AdminPort = rootKey("admin.port")
-	// AdminHttpReadTimeout the write timeout for the HTTP server
-	AdminReadTimeout = rootKey("admin.readTimeout")
-	// AdminHttpTLSCAFile the TLS certificate authority file for the HTTP server
-	AdminTLSCAFile = rootKey("admin.tls.caFile")
-	// AdminHttpTLSCertFile the TLS certificate file for the HTTP server
-	AdminTLSCertFile = rootKey("admin.tls.certFile")
-	// AdminHttpTLSClientAuth whether the HTTP server requires a mutual TLS connection
-	AdminTLSClientAuth = rootKey("admin.tls.clientAuth")
-	// AdminHttpTLSEnabled whether TLS is enabled for the HTTP server
-	AdminTLSEnabled = rootKey("admin.tls.enabled")
-	// AdminHttpTLSKeyFile the private key file for TLS on the server
-	AdminTLSKeyFile = rootKey("admin.tls.keyFile")
-	// AdminHttpWriteTimeout the write timeout for the HTTP server
-	AdminWriteTimeout = rootKey("admin.writeTimeout")
-	// IdentityType is the name of the identity interface plugin being used by this firefly name
 	IdentityType = rootKey("identity.type")
 	// Lang is the language to use for translation
 	Lang = rootKey("lang")
@@ -292,15 +258,7 @@ func Reset() {
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
-	viper.SetDefault(string(HTTPAddress), "127.0.0.1")
-	viper.SetDefault(string(HTTPPort), 5000)
-	viper.SetDefault(string(HTTPReadTimeout), "15s")
-	viper.SetDefault(string(HTTPWriteTimeout), "15s")
 	viper.SetDefault(string(AdminEnabled), false)
-	viper.SetDefault(string(AdminAddress), "127.0.0.1")
-	viper.SetDefault(string(AdminPort), 5001)
-	viper.SetDefault(string(AdminReadTimeout), "15s")
-	viper.SetDefault(string(AdminWriteTimeout), "15s")
 	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(Lang), "en")
 	viper.SetDefault(string(LogLevel), "info")
@@ -329,8 +287,6 @@ func Reset() {
 
 // ReadConfig initializes the config
 func ReadConfig(cfgFile string) error {
-	Reset()
-
 	// Set precedence order for reading config location
 	viper.SetEnvPrefix("firefly")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

@@ -917,3 +917,21 @@ func TestHandleReceiptTXFail(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+
+func TestHandleReceiptNoRequestID(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	wsm := &wsmocks.WSClient{}
+	e := &Ethereum{
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
+	}
+
+	var reply fftypes.JSONObject
+	data := []byte(`{}`)
+	err := json.Unmarshal(data, &reply)
+	assert.NoError(t, err)
+	err = e.handleReceipt(context.Background(), reply)
+	assert.NoError(t, err)
+}

@@ -22,6 +22,7 @@ var adminRoutes = []*oapispec.Route{
 	getConfig,
 	getConfigRecord,
 	getConfigRecords,
+	postResetConfig,
 	putConfigRecord,
 	deleteConfigRecord,
 }

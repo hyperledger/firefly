@@ -41,12 +41,13 @@ func TestDefaults(t *testing.T) {
 	os.Chdir(configDir)
 	defer os.Chdir(cwd)
 
+	Reset()
 	err = ReadConfig("")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(CorsAllowCredentials))
-	assert.Equal(t, uint(0), GetUint(HTTPPort))
+	assert.Equal(t, uint(25), GetUint(APIDefaultFilterLimit))
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, int64(0), GetInt64(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))
@@ -57,11 +58,13 @@ func TestDefaults(t *testing.T) {
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
+	Reset()
 	err := ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
+	Reset()
 	err := ReadConfig(configDir + "/no.hope.yaml")
 	assert.Error(t, err)
 }

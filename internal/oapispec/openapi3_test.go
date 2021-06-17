@@ -102,19 +102,7 @@ var testRoutes = []*Route{
 func TestOpenAPI3SwaggerGen(t *testing.T) {
 	config.Reset()
 
-	doc := SwaggerGen(context.Background(), testRoutes)
-	err := doc.Validate(context.Background())
-	assert.NoError(t, err)
-
-	b, err := yaml.Marshal(doc)
-	assert.NoError(t, err)
-	fmt.Print(string(b))
-}
-
-func TestOpenAPI3AdminSwaggerGen(t *testing.T) {
-	config.Reset()
-
-	doc := AdminSwaggerGen(context.Background(), testRoutes)
+	doc := SwaggerGen(context.Background(), testRoutes, "http://localhost:12345/api/v1")
 	err := doc.Validate(context.Background())
 	assert.NoError(t, err)
 
@@ -128,16 +116,7 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 		{Name: "op1"}, {Name: "op1"},
 	}
 	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
-		_ = SwaggerGen(context.Background(), routes)
-	})
-}
-
-func TestAdminDuplicateOperationIDCheck(t *testing.T) {
-	routes := []*Route{
-		{Name: "op1"}, {Name: "op1"},
-	}
-	assert.PanicsWithValue(t, "Duplicate/invalid name (used as operation ID in swagger): op1", func() {
-		_ = AdminSwaggerGen(context.Background(), routes)
+		_ = SwaggerGen(context.Background(), routes, "http://localhost:12345/api/v1")
 	})
 }
 
@@ -156,6 +135,6 @@ func TestBadCustomSchema(t *testing.T) {
 		},
 	}
 	assert.PanicsWithValue(t, "invalid schema for *fftypes.Message: invalid character '!' looking for beginning of value", func() {
-		_ = SwaggerGen(context.Background(), routes)
+		_ = SwaggerGen(context.Background(), routes, "http://localhost:12345/api/v1")
 	})
 }

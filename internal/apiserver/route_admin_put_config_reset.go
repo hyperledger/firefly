@@ -17,23 +17,27 @@
 package apiserver
 
 import (
-	"net/http/httptest"
-	"testing"
+	"net/http"
 
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/oapispec"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataDefs(t *testing.T) {
-	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes", nil)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	o.On("GetDatatypes", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Datatype{}, nil)
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 200, res.Result().StatusCode)
+var postResetConfig = &oapispec.Route{
+	Name:            "postResetConfig",
+	Path:            "config/reset",
+	Method:          http.MethodPost,
+	PathParams:      nil,
+	QueryParams:     nil,
+	FilterFactory:   nil,
+	Description:     i18n.MsgTBD,
+	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
+	JSONOutputValue: nil,
+	JSONOutputCode:  http.StatusNoContent,
+	JSONInputSchema: emptyObjectSchema,
+	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+		r.Or.ResetConfig(r.Ctx)
+		return nil, nil
+	},
 }

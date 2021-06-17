@@ -17,23 +17,22 @@
 package apiserver
 
 import (
+	"bytes"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataDefs(t *testing.T) {
-	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes", nil)
+func TestPostResetConfig(t *testing.T) {
+	o, r := newTestAdminServer()
+	req := httptest.NewRequest("POST", "/admin/api/v1/config/reset", bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDatatypes", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Datatype{}, nil)
+	o.On("ResetConfig", mock.Anything).Return()
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+	assert.Equal(t, 204, res.Result().StatusCode)
 }
