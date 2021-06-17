@@ -41,6 +41,7 @@ func TestDefaults(t *testing.T) {
 	os.Chdir(configDir)
 	defer os.Chdir(cwd)
 
+	Reset()
 	err = ReadConfig("")
 	assert.NoError(t, err)
 
@@ -57,11 +58,13 @@ func TestDefaults(t *testing.T) {
 }
 
 func TestSpecificConfigFileOk(t *testing.T) {
+	Reset()
 	err := ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
+	Reset()
 	err := ReadConfig(configDir + "/no.hope.yaml")
 	assert.Error(t, err)
 }

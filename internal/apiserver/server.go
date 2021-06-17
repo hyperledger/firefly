@@ -60,8 +60,8 @@ type apiServer struct {
 }
 
 func InitConfig() {
-	initHTTPConfPrefx(adminConfigPrefix, 5000)
-	initHTTPConfPrefx(apiConfigPrefix, 5001)
+	initHTTPConfPrefx(apiConfigPrefix, 5000)
+	initHTTPConfPrefx(adminConfigPrefix, 5001)
 }
 
 func NewAPIServer() Server {
