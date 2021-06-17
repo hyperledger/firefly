@@ -143,7 +143,7 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 	for i, node := range nodes {
 		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
-		trackingID, err := pm.exchange.SendMessage(ctx, node, payload)
+		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
 		if err != nil {
 			return err
 		}

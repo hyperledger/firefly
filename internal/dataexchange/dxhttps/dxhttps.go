@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/internal/config"
@@ -120,10 +121,10 @@ func (h *HTTPS) GetEndpointInfo(ctx context.Context) (peerID string, endpoint ff
 	return endpoint.GetString("id"), endpoint, nil
 }
 
-func (h *HTTPS) AddPeer(ctx context.Context, node *fftypes.Node) (err error) {
+func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error) {
 	res, err := h.client.R().SetContext(ctx).
-		SetBody(node.DX.Endpoint).
-		Put(fmt.Sprintf("/api/v1/peers/%s", node.DX.Peer))
+		SetBody(endpoint).
+		Put(fmt.Sprintf("/api/v1/peers/%s", peerID))
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
@@ -159,12 +160,12 @@ func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io
 	return res.RawBody(), nil
 }
 
-func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, data []byte) (trackingID string, err error) {
+func (h *HTTPS) SendMessage(ctx context.Context, peerID string, data []byte) (trackingID string, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&sendMessage{
 			Message:   string(data),
-			Recipient: node.DX.Peer,
+			Recipient: peerID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
@@ -174,12 +175,12 @@ func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, data []byte
 	return responseData.RequestID, nil
 }
 
-func (h *HTTPS) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (trackingID string, err error) {
+func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (trackingID string, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
-			Path:      fmt.Sprintf("%s/%s", ns, id),
-			Recipient: node.DX.Peer,
+			Path:      payloadRef,
+			Recipient: peerID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
@@ -187,6 +188,24 @@ func (h *HTTPS) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string,
 		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	return responseData.RequestID, nil
+}
+
+func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, err error) {
+	var responseData responseWithRequestID
+	res, err := h.client.R().SetContext(ctx).
+		SetResult(&responseData).
+		Head(fmt.Sprintf("/api/v1/blobs/%s/%s/%s", peerID, ns, id.String()))
+	if err == nil && res.StatusCode() == http.StatusNotFound {
+		return nil, nil
+	}
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+	}
+	hashString := res.Header().Get(dxHTTPHeaderHash)
+	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash")
+	}
+	return hash, nil
 }
 
 func (h *HTTPS) eventLoop() {

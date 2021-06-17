@@ -58,7 +58,7 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(nil)
+	mdx.On("AddPeer", mock.Anything, "peer1", node.DX.Endpoint).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -142,7 +142,7 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	mdi.On("GetNodeByID", mock.Anything, node.ID).Return(nil, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
@@ -223,7 +223,7 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x23456"}, nil)
 	mdi.On("UpsertNode", mock.Anything, mock.Anything, true).Return(nil)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("AddPeer", mock.Anything, mock.Anything).Return(nil)
+	mdx.On("AddPeer", mock.Anything, "peer1", mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",

@@ -123,16 +123,13 @@ func TestAddPeer(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), &fftypes.Node{
-		DX: fftypes.DXInfo{
-			Peer: "peer1",
-			Endpoint: fftypes.JSONObject{
-				"id":       "peer1",
-				"endpoint": "https://peer1.example.com",
-				"cert":     "cert...",
-			},
+	err := h.AddPeer(context.Background(), "peer1",
+		fftypes.JSONObject{
+			"id":       "peer1",
+			"endpoint": "https://peer1.example.com",
+			"cert":     "cert...",
 		},
-	})
+	)
 	assert.NoError(t, err)
 }
 
@@ -143,7 +140,7 @@ func TestAddPeerError(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/peers/peer1", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.AddPeer(context.Background(), &fftypes.Node{})
+	err := h.AddPeer(context.Background(), "peer1", fftypes.JSONObject{})
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -206,6 +203,87 @@ func TestUploadBLOBError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
+func TestCheckBLOBReceivedOk(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestHTTPS(t)
+	defer done()
+
+	u := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
+		func(r *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				Header: http.Header{
+					"Dx-Hash": []string{hash.String()},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	hashReturned, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	assert.NoError(t, err)
+	assert.Equal(t, *hash, *hashReturned)
+}
+
+func TestCheckBLOBReceivedBadHash(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestHTTPS(t)
+	defer done()
+
+	u := fftypes.NewUUID()
+	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
+		func(r *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				Header: http.Header{
+					"Dx-Hash": []string{"!wrong"},
+				},
+				StatusCode: 200,
+			}
+			return res, nil
+		})
+
+	_, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	assert.Regexp(t, "FF10237", err)
+}
+
+func TestCheckBLOBReceivedNotFound(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestHTTPS(t)
+	defer done()
+
+	u := fftypes.NewUUID()
+	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
+		func(r *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				StatusCode: 404,
+			}
+			return res, nil
+		})
+
+	hashReturned, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	assert.NoError(t, err)
+	assert.Nil(t, hashReturned)
+}
+
+func TestCheckBLOBReceivedError(t *testing.T) {
+
+	h, _, _, httpURL, done := newTestHTTPS(t)
+	defer done()
+
+	u := fftypes.NewUUID()
+	httpmock.RegisterResponder("HEAD", fmt.Sprintf("%s/api/v1/blobs/peer1/ns1/%s", httpURL, u),
+		func(r *http.Request) (*http.Response, error) {
+			res := &http.Response{
+				StatusCode: 500,
+			}
+			return res, nil
+		})
+
+	_, err := h.CheckBLOBReceived(context.Background(), "peer1", "ns1", *u)
+	assert.Regexp(t, "FF10229", err)
+}
+
 func TestDownloadBLOB(t *testing.T) {
 
 	h, _, _, httpURL, done := newTestHTTPS(t)
@@ -243,7 +321,7 @@ func TestSendMessage(t *testing.T) {
 			"requestID": "abcd1234",
 		}))
 
-	trackingID, err := h.SendMessage(context.Background(), &fftypes.Node{}, []byte(`some data`))
+	trackingID, err := h.SendMessage(context.Background(), "peer1", []byte(`some data`))
 	assert.NoError(t, err)
 	assert.Equal(t, "abcd1234", trackingID)
 }
@@ -255,7 +333,7 @@ func TestSendMessageError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.SendMessage(context.Background(), &fftypes.Node{}, []byte(`some data`))
+	_, err := h.SendMessage(context.Background(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -269,8 +347,7 @@ func TestTransferBLOB(t *testing.T) {
 			"requestID": "abcd1234",
 		}))
 
-	u := fftypes.NewUUID()
-	trackingID, err := h.TransferBLOB(context.Background(), &fftypes.Node{}, "ns1", *u)
+	trackingID, err := h.TransferBLOB(context.Background(), "peer1", "ns1/id1")
 	assert.NoError(t, err)
 	assert.Equal(t, "abcd1234", trackingID)
 }
@@ -282,8 +359,7 @@ func TestTransferBLOBError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	u := fftypes.NewUUID()
-	_, err := h.TransferBLOB(context.Background(), &fftypes.Node{}, "ns1", *u)
+	_, err := h.TransferBLOB(context.Background(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
