@@ -83,6 +83,7 @@ func getOrchestrator() orchestrator.Orchestrator {
 
 // Execute is called by the main method of the package
 func Execute() error {
+	apiserver.InitConfig()
 	return rootCmd.Execute()
 }
 

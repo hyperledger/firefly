@@ -46,7 +46,7 @@ func TestDefaults(t *testing.T) {
 
 	assert.Equal(t, "info", GetString(LogLevel))
 	assert.True(t, GetBool(CorsAllowCredentials))
-	assert.Equal(t, uint(0), GetUint(HTTPPort))
+	assert.Equal(t, uint(25), GetUint(APIDefaultFilterLimit))
 	assert.Equal(t, int(0), GetInt(DebugPort))
 	assert.Equal(t, int64(0), GetInt64(DebugPort))
 	assert.Equal(t, 250*time.Millisecond, GetDuration(BatchRetryInitDelay))

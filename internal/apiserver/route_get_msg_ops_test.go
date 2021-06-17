@@ -20,16 +20,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetMessageOperations(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
+	o, r := newTestAPIServer()
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/uuid1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

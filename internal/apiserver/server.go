@@ -18,13 +18,9 @@ package apiserver
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"mime/multipart"
-	"net"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -46,51 +42,55 @@ import (
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
+var (
+	adminConfigPrefix = config.NewPluginConfig("admin")
+	apiConfigPrefix   = config.NewPluginConfig("http")
+)
+
 // Server is the external interface for the API Server
 type Server interface {
 	Serve(ctx context.Context, o orchestrator.Orchestrator) error
 }
 
 type apiServer struct {
+	// Defaults set with config
+	defaultFilterLimit uint64
+	maxFilterLimit     uint64
+	maxFilterSkip      uint64
+}
+
+func InitConfig() {
+	initHTTPConfPrefx(adminConfigPrefix, 5000)
+	initHTTPConfPrefx(apiConfigPrefix, 5001)
 }
 
 func NewAPIServer() Server {
-	return &apiServer{}
+	return &apiServer{
+		defaultFilterLimit: uint64(config.GetUint(config.APIDefaultFilterLimit)),
+		maxFilterLimit:     uint64(config.GetUint(config.APIMaxFilterLimit)),
+		maxFilterSkip:      uint64(config.GetUint(config.APIMaxFilterSkip)),
+	}
 }
 
 // Serve is the main entry point for the API Server
-func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) error {
+func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (err error) {
 	httpErrChan := make(chan error)
 	adminErrChan := make(chan error)
 
 	if !o.IsPreInit() {
-		go func() {
-			r := as.createMuxRouter(o)
-			l, err := as.createListener(ctx)
-			if err == nil {
-				var s *http.Server
-				s, err = as.createServer(ctx, r)
-				if err == nil {
-					err = as.serveHTTP(ctx, l, s)
-				}
-			}
-			httpErrChan <- err
-		}()
+		apiHTTPServer, err := newHTTPServer(ctx, "api", as.createMuxRouter(o), httpErrChan, apiConfigPrefix)
+		if err != nil {
+			return err
+		}
+		go apiHTTPServer.serveHTTP(ctx)
 	}
 
 	if config.GetBool(config.AdminEnabled) {
-		go func() {
-			r := as.createAdminMuxRouter(o)
-			l, err := as.createAdminListener(ctx)
-			if err == nil {
-				var s *http.Server
-				s, err = as.createServer(ctx, r)
-				if err == nil {
-					err = as.serveHTTP(ctx, l, s)
-				}
-			}
-			httpErrChan <- err
-		}()
+		adminHTTPServer, err := newHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix)
+		if err != nil {
+			return err
+		}
+		go adminHTTPServer.serveHTTP(ctx)
 	}
 
 	return as.waitForServerStop(httpErrChan, adminErrChan)
@@ -103,110 +103,6 @@ func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan chan error) err
 	case err := <-adminErrChan:
 		return err
 	}
-}
-
-func (as *apiServer) createListener(ctx context.Context) (net.Listener, error) {
-	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.HTTPAddress), config.GetUint(config.HTTPPort))
-	listener, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
-	}
-	log.L(ctx).Infof("Listening on HTTP %s", listener.Addr())
-	return listener, err
-}
-
-func (as *apiServer) createAdminListener(ctx context.Context) (net.Listener, error) {
-	listenAddr := fmt.Sprintf("%s:%d", config.GetString(config.AdminAddress), config.GetUint(config.AdminPort))
-	listener, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAPIServerStartFailed, listenAddr)
-	}
-	log.L(ctx).Infof("Admin interface listening on HTTP %s", listener.Addr())
-	return listener, err
-}
-
-func (as *apiServer) createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
-
-	defaultFilterLimit = uint64(config.GetUint(config.APIDefaultFilterLimit))
-	maxFilterLimit = uint64(config.GetUint(config.APIMaxFilterLimit))
-	maxFilterSkip = uint64(config.GetUint(config.APIMaxFilterSkip))
-
-	// Support client auth
-	clientAuth := tls.NoClientCert
-	if config.GetBool(config.HTTPTLSClientAuth) {
-		clientAuth = tls.RequireAndVerifyClientCert
-	}
-
-	// Support custom CA file
-	var rootCAs *x509.CertPool
-	caFile := config.GetString(config.HTTPTLSCAFile)
-	if caFile != "" {
-		rootCAs = x509.NewCertPool()
-		var caBytes []byte
-		caBytes, err = ioutil.ReadFile(caFile)
-		if err == nil {
-			ok := rootCAs.AppendCertsFromPEM(caBytes)
-			if !ok {
-				err = i18n.NewError(ctx, i18n.MsgInvalidCAFile)
-			}
-		}
-	} else {
-		rootCAs, err = x509.SystemCertPool()
-	}
-
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgTLSConfigFailed)
-	}
-
-	srv = &http.Server{
-		Handler:      wrapCorsIfEnabled(ctx, r),
-		WriteTimeout: config.GetDuration(config.HTTPWriteTimeout),
-		ReadTimeout:  config.GetDuration(config.HTTPReadTimeout),
-		TLSConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			ClientAuth: clientAuth,
-			ClientCAs:  rootCAs,
-			RootCAs:    rootCAs,
-			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-				cert := verifiedChains[0][0]
-				log.L(ctx).Debugf("Client certificate provided Subject=%s Issuer=%s Expiry=%s", cert.Subject, cert.Issuer, cert.NotAfter)
-				return nil
-			},
-		},
-		ConnContext: func(newCtx context.Context, c net.Conn) context.Context {
-			l := log.L(ctx).WithField("req", fftypes.ShortID())
-			newCtx = log.WithLogger(newCtx, l)
-			l.Debugf("New HTTP connection: remote=%s local=%s", c.RemoteAddr().String(), c.LocalAddr().String())
-			return newCtx
-		},
-	}
-	return srv, nil
-}
-
-func (as *apiServer) serveHTTP(ctx context.Context, listener net.Listener, srv *http.Server) (err error) {
-	serverEnded := make(chan struct{})
-	go func() {
-		select {
-		case <-ctx.Done():
-			log.L(ctx).Infof("API server context cancelled - shutting down")
-			srv.Close()
-		case <-serverEnded:
-			return
-		}
-	}()
-
-	if config.GetBool(config.HTTPTLSEnabled) {
-		err = srv.ServeTLS(listener, config.GetString(config.HTTPTLSCertFile), config.GetString(config.HTTPTLSKeyFile))
-	} else {
-		err = srv.Serve(listener)
-	}
-	if err == http.ErrServerClosed {
-		err = nil
-	}
-	close(serverEnded)
-	log.L(ctx).Infof("API server complete")
-
-	return err
 }
 
 func (as *apiServer) getFirstFilePart(req *http.Request) (*multipart.Part, error) {
@@ -285,7 +181,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 				}
 			}
 			if route.FilterFactory != nil {
-				filter, err = buildFilter(req, route.FilterFactory)
+				filter, err = as.buildFilter(req, route.FilterFactory)
 			}
 		}
 
@@ -377,48 +273,46 @@ func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request)
 	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
 }
 
-func (as *apiServer) swaggerUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	res.Header().Add("Content-Type", "text/html")
-	_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context()))
-	return 200, nil
-}
-
-func (as *apiServer) swaggerAdminUIHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	res.Header().Add("Content-Type", "text/html")
-	_, _ = res.Write(oapispec.SwaggerAdminUIHTML(req.Context()))
-	return 200, nil
-}
-
-func (as *apiServer) swaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	vars := mux.Vars(req)
-	if vars["ext"] == ".json" {
-		res.Header().Add("Content-Type", "application/json")
-		doc := oapispec.SwaggerGen(req.Context(), routes)
-		b, _ := json.Marshal(&doc)
-		_, _ = res.Write(b)
-	} else {
-		res.Header().Add("Content-Type", "application/x-yaml")
-		doc := oapispec.SwaggerGen(req.Context(), routes)
-		b, _ := yaml.Marshal(&doc)
-		_, _ = res.Write(b)
+func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+		res.Header().Add("Content-Type", "text/html")
+		_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context(), url))
+		return 200, nil
 	}
-	return 200, nil
 }
 
-func (as *apiServer) adminSwaggerHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	vars := mux.Vars(req)
-	if vars["ext"] == ".json" {
-		res.Header().Add("Content-Type", "application/json")
-		doc := oapispec.AdminSwaggerGen(req.Context(), adminRoutes)
-		b, _ := json.Marshal(&doc)
-		_, _ = res.Write(b)
-	} else {
-		res.Header().Add("Content-Type", "application/x-yaml")
-		doc := oapispec.AdminSwaggerGen(req.Context(), adminRoutes)
-		b, _ := yaml.Marshal(&doc)
-		_, _ = res.Write(b)
+func (as *apiServer) getAPIURL() string {
+	proto := "https"
+	if !apiConfigPrefix.GetBool(HTTPConfTLSEnabled) {
+		proto = "http"
 	}
-	return 200, nil
+	return fmt.Sprintf("%s://%s:%s/api/v1", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
+}
+
+func (as *apiServer) getAdminURL() string {
+	proto := "https"
+	if !adminConfigPrefix.GetBool(HTTPConfTLSEnabled) {
+		proto = "http"
+	}
+	return fmt.Sprintf("%s://%s:%s/admin/api/v1", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
+}
+
+func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
+		vars := mux.Vars(req)
+		if vars["ext"] == ".json" {
+			res.Header().Add("Content-Type", "application/json")
+			doc := oapispec.SwaggerGen(req.Context(), routes, url)
+			b, _ := json.Marshal(&doc)
+			_, _ = res.Write(b)
+		} else {
+			res.Header().Add("Content-Type", "application/x-yaml")
+			doc := oapispec.SwaggerGen(req.Context(), routes, url)
+			b, _ := yaml.Marshal(&doc)
+			_, _ = res.Write(b)
+		}
+		return 200, nil
+	}
 }
 
 func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
@@ -430,8 +324,8 @@ func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 		}
 	}
 	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler))
-	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, as.getAPIURL())))
+	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(as.getAPIURL())))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
@@ -453,8 +347,8 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.adminSwaggerHandler))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerAdminUIHandler))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, as.getAdminURL())))
+	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(as.getAdminURL())))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	return r

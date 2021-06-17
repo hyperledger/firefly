@@ -28,14 +28,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
-var (
-	// Defaults set with config
-	defaultFilterLimit uint64
-	maxFilterLimit     uint64
-	maxFilterSkip      uint64
-)
-
-func getValues(values url.Values, key string) (results []string) {
+func (as *apiServer) getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
 		// We choose to be case insensitive for our filters, so protocolID and protocolid can be used interchangeably
 		if strings.EqualFold(queryName, key) {
@@ -45,44 +38,44 @@ func getValues(values url.Values, key string) (results []string) {
 	return results
 }
 
-func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilter, error) {
+func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilter, error) {
 	ctx := req.Context()
 	log.L(ctx).Debugf("Query: %s", req.URL.RawQuery)
-	fb := ff.NewFilterLimit(ctx, defaultFilterLimit)
+	fb := ff.NewFilterLimit(ctx, as.defaultFilterLimit)
 	possibleFields := fb.Fields()
 	sort.Strings(possibleFields)
 	filter := fb.And()
 	_ = req.ParseForm()
 	for _, field := range possibleFields {
-		values := getValues(req.Form, field)
+		values := as.getValues(req.Form, field)
 		if len(values) == 1 {
-			filter.Condition(getCondition(fb, field, values[0]))
+			filter.Condition(as.getCondition(fb, field, values[0]))
 		} else if len(values) > 0 {
 			sort.Strings(values)
 			fs := make([]database.Filter, len(values))
 			for i, value := range values {
-				fs[i] = getCondition(fb, field, value)
+				fs[i] = as.getCondition(fb, field, value)
 			}
 			filter.Condition(fb.Or(fs...))
 		}
 	}
-	skipVals := getValues(req.Form, "skip")
+	skipVals := as.getValues(req.Form, "skip")
 	if len(skipVals) > 0 {
 		s, _ := strconv.ParseUint(skipVals[0], 10, 64)
-		if maxFilterSkip != 0 && s > maxFilterSkip {
-			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterSkip, maxFilterSkip)
+		if as.maxFilterSkip != 0 && s > as.maxFilterSkip {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterSkip, as.maxFilterSkip)
 		}
 		filter.Skip(s)
 	}
-	limitVals := getValues(req.Form, "limit")
+	limitVals := as.getValues(req.Form, "limit")
 	if len(limitVals) > 0 {
 		l, _ := strconv.ParseUint(limitVals[0], 10, 64)
-		if maxFilterLimit != 0 && l > maxFilterLimit {
-			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterLimit, maxFilterLimit)
+		if as.maxFilterLimit != 0 && l > as.maxFilterLimit {
+			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterLimit, as.maxFilterLimit)
 		}
 		filter.Limit(l)
 	}
-	sortVals := getValues(req.Form, "sort")
+	sortVals := as.getValues(req.Form, "sort")
 	for _, sv := range sortVals {
 		subSortVals := strings.Split(sv, ",")
 		for _, ssv := range subSortVals {
@@ -92,8 +85,8 @@ func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilte
 			}
 		}
 	}
-	descendingVals := getValues(req.Form, "descending")
-	ascendingVals := getValues(req.Form, "ascending")
+	descendingVals := as.getValues(req.Form, "descending")
+	ascendingVals := as.getValues(req.Form, "ascending")
 	if len(descendingVals) > 0 && (descendingVals[0] == "" || strings.EqualFold(descendingVals[0], "true")) {
 		filter.Descending()
 	} else if len(ascendingVals) > 0 && (ascendingVals[0] == "" || strings.EqualFold(ascendingVals[0], "true")) {
@@ -102,7 +95,7 @@ func buildFilter(req *http.Request, ff database.QueryFactory) (database.AndFilte
 	return filter, nil
 }
 
-func getCondition(fb database.FilterBuilder, field, value string) database.Filter {
+func (as *apiServer) getCondition(fb database.FilterBuilder, field, value string) database.Filter {
 	switch {
 	case strings.HasPrefix(value, ">="):
 		return fb.Gte(field, value[2:])

@@ -32,52 +32,12 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
-func getHost() string {
-	proto := "https"
-	if !config.GetBool(config.HTTPTLSEnabled) {
-		proto = "http"
-	}
-	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.HTTPAddress), config.GetString(config.HTTPPort))
-}
-
-func getAdminHost() string {
-	proto := "https"
-	if !config.GetBool(config.HTTPTLSEnabled) {
-		proto = "http"
-	}
-	return fmt.Sprintf("%s://%s:%s", proto, config.GetString(config.AdminAddress), config.GetString(config.AdminPort))
-}
-
-func SwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
+func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
 
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: fmt.Sprintf("%s/api/v1", getHost())},
-		},
-		Info: &openapi3.Info{
-			Title:       "FireFly",
-			Version:     "1.0",
-			Description: "Copyright © 2021 Kaleido, Inc.",
-		},
-	}
-	opIds := make(map[string]bool)
-	for _, route := range routes {
-		if route.Name == "" || opIds[route.Name] {
-			log.Panicf("Duplicate/invalid name (used as operation ID in swagger): %s", route.Name)
-		}
-		addRoute(ctx, doc, route)
-		opIds[route.Name] = true
-	}
-	return doc
-}
-
-func AdminSwaggerGen(ctx context.Context, routes []*Route) *openapi3.T {
-
-	doc := &openapi3.T{
-		OpenAPI: "3.0.2",
-		Servers: openapi3.Servers{
-			{URL: fmt.Sprintf("%s/admin/api/v1", getAdminHost())},
+			{URL: url},
 		},
 		Info: &openapi3.Info{
 			Title:       "FireFly",

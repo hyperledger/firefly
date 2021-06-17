@@ -24,9 +24,5 @@ import (
 )
 
 func TestOpenAPI3SwaggerUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerUIHTML(context.Background()))
-}
-
-func TestOpenAPI3SwaggerAdminUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerAdminUIHTML(context.Background()))
+	assert.NotEmpty(t, SwaggerUIHTML(context.Background(), "http://localhost:12345/api/v1"))
 }

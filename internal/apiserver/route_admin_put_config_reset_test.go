@@ -21,15 +21,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostResetConfig(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
-	r := as.createAdminMuxRouter(o)
+	o, r := newTestAdminServer()
 	req := httptest.NewRequest("POST", "/admin/api/v1/config/reset", bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

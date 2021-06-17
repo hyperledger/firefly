@@ -22,16 +22,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPutConfigRecord(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
-	r := as.createAdminMuxRouter(o)
+	o, r := newTestAdminServer()
 	input := &fftypes.ConfigRecord{
 		Key:   "foo",
 		Value: fftypes.Byteable(`{"foo": "bar"}`),
