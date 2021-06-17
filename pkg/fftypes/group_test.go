@@ -125,3 +125,32 @@ func TestGroupValidation(t *testing.T) {
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, group.Message)
 }
+
+func TestGroupSealSorting(t *testing.T) {
+
+	m1 := &Member{Node: NewUUID(), Identity: "0x11111"}
+	m2 := &Member{Node: NewUUID(), Identity: "0x22222"}
+	m3 := &Member{Node: NewUUID(), Identity: "0x33333"}
+	m4 := &Member{Node: NewUUID(), Identity: "0x44444"}
+	m5 := &Member{Node: NewUUID(), Identity: "0x55555"}
+
+	group1 := &Group{
+		GroupIdentity: GroupIdentity{
+			Name:      "name1",
+			Namespace: "ns1",
+			Members:   Members{m1, m2, m3, m4, m5},
+		},
+	}
+	group2 := &Group{
+		GroupIdentity: GroupIdentity{
+			Name:      "name1",
+			Namespace: "ns1",
+			Members:   Members{m4, m3, m1, m2, m5},
+		},
+	}
+	group1.Seal()
+	group2.Seal()
+
+	assert.Equal(t, *group1.Hash, *group2.Hash)
+
+}

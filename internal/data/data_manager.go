@@ -19,7 +19,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
@@ -39,7 +38,7 @@ type Manager interface {
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, ns string, data *fftypes.Data) (*fftypes.Data, error)
-	UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error)
+	UploadBLOB(ctx context.Context, ns string, data *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 }
 
 type dataManager struct {

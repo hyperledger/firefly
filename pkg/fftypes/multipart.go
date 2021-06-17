@@ -14,25 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package fftypes
 
-import (
-	"context"
-	"net/http"
+import "io"
 
-	"github.com/hyperledger-labs/firefly/internal/orchestrator"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-)
-
-type APIRequest struct {
-	Ctx    context.Context
-	Or     orchestrator.Orchestrator
-	Req    *http.Request
-	QP     map[string]string
-	PP     map[string]string
-	FP     map[string]string
-	Filter database.AndFilter
-	Input  interface{}
-	Part   *fftypes.Multipart
+// Multipart represents streaming data in a multi-part upload
+type Multipart struct {
+	Filename string
+	Mimetype string
+	Data     io.Reader
 }

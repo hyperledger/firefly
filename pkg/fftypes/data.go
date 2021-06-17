@@ -33,12 +33,12 @@ type DataRef struct {
 type Data struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Validator ValidatorType `json:"validator"`
-	Blobstore bool          `json:"blobstore,omitempty"`
 	Namespace string        `json:"namespace,omitempty"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
 	Created   *FFTime       `json:"created,omitempty"`
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
 	Value     Byteable      `json:"value"`
+	Blob      *Bytes32      `json:"blob,omitempty"`
 }
 
 type DatatypeRef struct {
@@ -62,7 +62,7 @@ func (d DataRefs) Hash() *Bytes32 {
 }
 
 func (d *Data) Seal(ctx context.Context) error {
-	if d.Value == nil || d.Value.String() == "null" {
+	if (d.Value == nil || d.Value.String() == "null") && d.Blob == nil {
 		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 	if d.ID == nil {
@@ -71,6 +71,19 @@ func (d *Data) Seal(ctx context.Context) error {
 	if d.Created == nil {
 		d.Created = Now()
 	}
-	d.Hash = d.Value.Hash()
+	// The hash is either the blob hash, the value hash, or if both are supplied
+	// (e.g. a blob with associated metadata) it a hash of the two HEX hashes
+	// concattenated together (no spaces or separation).
+	switch {
+	case d.Value != nil && d.Blob == nil:
+		d.Hash = d.Value.Hash()
+	case d.Value == nil && d.Blob != nil:
+		d.Hash = d.Blob
+	default:
+		hash := sha256.New()
+		hash.Write([]byte(d.Value.Hash().String()))
+		hash.Write([]byte(d.Blob.String()))
+		d.Hash = HashResult(hash)
+	}
 	return nil
 }

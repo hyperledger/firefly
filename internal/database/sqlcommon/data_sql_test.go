@@ -88,6 +88,7 @@ func TestDataE2EWithDB(t *testing.T) {
 		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
 		Value:   []byte(val2.String()),
+		Blob:    fftypes.NewRandB32(),
 	}
 
 	// Check disallows hash update

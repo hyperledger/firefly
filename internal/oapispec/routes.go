@@ -35,6 +35,8 @@ type Route struct {
 	PathParams []*PathParam
 	// QueryParams is a list of documented query parameters
 	QueryParams []*QueryParam
+	// FormParams is a list of documented multi-part form parameters - combine with FormUploadHandler
+	FormParams []*FormParam
 	// FilterFactory is a reference to a filter object that defines the search param on resource collection interfaces
 	FilterFactory database.QueryFactory
 	// Method is the HTTP method
@@ -83,6 +85,14 @@ type QueryParam struct {
 	Example string
 	// ExampleFromConf is a field to fill in, in the helper UI, from the runtime configuration
 	ExampleFromConf config.RootKey
+	// Description is a message key to a translatable description of the parameter
+	Description i18n.MessageKey
+}
+
+// FormParam is a description of a multi-part form parameter
+type FormParam struct {
+	// Name is the name of the parameter, from the Gorilla path mux
+	Name string
 	// Description is a message key to a translatable description of the parameter
 	Description i18n.MessageKey
 }

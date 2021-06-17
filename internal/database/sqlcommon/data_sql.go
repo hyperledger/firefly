@@ -36,7 +36,7 @@ var (
 		"datatype_version",
 		"hash",
 		"created",
-		"blobstore",
+		"blob_hash",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
 	dataFilterFieldMap   = map[string]string{
@@ -93,7 +93,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 				Set("datatype_version", datatype.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
-				Set("blobstore", data.Blobstore).
+				Set("blob_hash", data.Blob).
 				Set("value", data.Value).
 				Where(sq.Eq{"id": data.ID}),
 		); err != nil {
@@ -111,7 +111,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					datatype.Version,
 					data.Hash,
 					data.Created,
-					data.Blobstore,
+					data.Blob,
 					data.Value,
 				),
 		); err != nil {
@@ -134,7 +134,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Datatype.Version,
 		&data.Hash,
 		&data.Created,
-		&data.Blobstore,
+		&data.Blob,
 	}
 	if withValue {
 		results = append(results, &data.Value)

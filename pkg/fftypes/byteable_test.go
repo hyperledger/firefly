@@ -87,5 +87,5 @@ func TestByteableUnmarshalFail(t *testing.T) {
 	assert.Error(t, err)
 
 	jo := b.JSONObject()
-	assert.Equal(t, JSONObject{}, *jo)
+	assert.Equal(t, JSONObject{}, jo)
 }

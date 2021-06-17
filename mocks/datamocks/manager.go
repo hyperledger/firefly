@@ -7,8 +7,6 @@ import (
 
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
-	io "io"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -84,13 +82,13 @@ func (_m *Manager) ResolveInputData(ctx context.Context, ns string, inData fftyp
 	return r0, r1
 }
 
-// UploadBLOB provides a mock function with given fields: ctx, ns, reader
-func (_m *Manager) UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, ns, reader)
+// UploadBLOB provides a mock function with given fields: ctx, ns, _a2, blob, autoMeta
+func (_m *Manager) UploadBLOB(ctx context.Context, ns string, _a2 *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, _a2, blob, autoMeta)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader) *fftypes.Data); ok {
-		r0 = rf(ctx, ns, reader)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Data, *fftypes.Multipart, bool) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, _a2, blob, autoMeta)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -98,8 +96,8 @@ func (_m *Manager) UploadBLOB(ctx context.Context, ns string, reader io.Reader) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, io.Reader) error); ok {
-		r1 = rf(ctx, ns, reader)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Data, *fftypes.Multipart, bool) error); ok {
+		r1 = rf(ctx, ns, _a2, blob, autoMeta)
 	} else {
 		r1 = ret.Error(1)
 	}

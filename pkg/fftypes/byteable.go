@@ -56,19 +56,19 @@ func (h Byteable) String() string {
 	return string(b)
 }
 
-func (h Byteable) JSONObjectOk() (*JSONObject, bool) {
-	var jo *JSONObject
+func (h Byteable) JSONObjectOk() (JSONObject, bool) {
+	var jo JSONObject
 	err := json.Unmarshal(h, &jo)
 	if err != nil {
 		log.L(context.Background()).Warnf("Unable to deserialize as JSON object: %s", string(h))
-		jo = &JSONObject{}
+		jo = JSONObject{}
 	}
 	return jo, err == nil
 }
 
 // JSONObject attempts to de-serailize the contained structure as a JSON Object (map)
 // Will fail if the type is array, string, bool, number etc.
-func (h Byteable) JSONObject() *JSONObject {
+func (h Byteable) JSONObject() JSONObject {
 	jo, _ := h.JSONObjectOk()
 	return jo
 }

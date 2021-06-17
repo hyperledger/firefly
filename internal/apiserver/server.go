@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"reflect"
@@ -105,8 +106,16 @@ func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan chan error) err
 	}
 }
 
-func (as *apiServer) getFirstFilePart(req *http.Request) (*multipart.Part, error) {
+type multipartState struct {
+	mpr        *multipart.Reader
+	formParams map[string]string
+	part       *fftypes.Multipart
+	close      func()
+}
 
+func (as *apiServer) getFilePart(req *http.Request) (*multipartState, error) {
+
+	formParams := make(map[string]string)
 	ctx := req.Context()
 	l := log.L(ctx)
 	mpr, err := req.MultipartReader()
@@ -119,12 +128,48 @@ func (as *apiServer) getFirstFilePart(req *http.Request) (*multipart.Part, error
 			return nil, i18n.WrapError(ctx, err, i18n.MsgMultiPartFormReadError)
 		}
 		if part.FileName() == "" {
-			l.Debugf("Ignoring form field in multi-part upload: %s", part.FormName())
+			value, _ := ioutil.ReadAll(part)
+			formParams[part.FormName()] = string(value)
 		} else {
 			l.Debugf("Processing multi-part upload. Field='%s' Filename='%s'", part.FormName(), part.FileName())
-			return part, nil
+			mp := &fftypes.Multipart{
+				Data:     part,
+				Filename: part.FileName(),
+				Mimetype: part.Header.Get("Content-Disposition"),
+			}
+			return &multipartState{
+				mpr:        mpr,
+				formParams: formParams,
+				part:       mp,
+				close:      func() { _ = part.Close() },
+			}, nil
 		}
 	}
+}
+
+func (as *apiServer) getParams(req *http.Request, route *oapispec.Route) (queryParams, pathParams map[string]string) {
+	queryParams = make(map[string]string)
+	pathParams = make(map[string]string)
+	if len(route.PathParams) > 0 {
+		v := mux.Vars(req)
+		for _, pp := range route.PathParams {
+			pathParams[pp.Name] = v[pp.Name]
+		}
+	}
+	for _, qp := range route.QueryParams {
+		val, exists := req.URL.Query()[qp.Name]
+		if qp.IsBool {
+			if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
+				val = []string{"true"}
+			} else {
+				val = []string{"false"}
+			}
+		}
+		if exists && len(val) > 0 {
+			queryParams[qp.Name] = val[0]
+		}
+	}
+	return queryParams, pathParams
 }
 
 func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.Route) http.HandlerFunc {
@@ -135,17 +180,18 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		if route.JSONInputValue != nil {
 			jsonInput = route.JSONInputValue()
 		}
-		var part *multipart.Part
+		var queryParams, pathParams map[string]string
+		var multipart *multipartState
 		contentType := req.Header.Get("Content-Type")
 		var err error
 		if req.Method != http.MethodGet && req.Method != http.MethodDelete {
 			switch {
 			case strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") && route.FormUploadHandler != nil:
-				part, err = as.getFirstFilePart(req)
+				multipart, err = as.getFilePart(req)
 				if err != nil {
 					return 400, err
 				}
-				defer part.Close()
+				defer multipart.close()
 			case strings.HasPrefix(strings.ToLower(contentType), "application/json"):
 				if jsonInput != nil {
 					err = json.NewDecoder(req.Body).Decode(&jsonInput)
@@ -155,31 +201,11 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 			}
 		}
 
-		queryParams := make(map[string]string)
-		pathParams := make(map[string]string)
 		var filter database.AndFilter
 		var status = 400 // if fail parsing input
 		var output interface{}
 		if err == nil {
-			if len(route.PathParams) > 0 {
-				v := mux.Vars(req)
-				for _, pp := range route.PathParams {
-					pathParams[pp.Name] = v[pp.Name]
-				}
-			}
-			for _, qp := range route.QueryParams {
-				val, exists := req.URL.Query()[qp.Name]
-				if qp.IsBool {
-					if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
-						val = []string{"true"}
-					} else {
-						val = []string{"false"}
-					}
-				}
-				if exists && len(val) > 0 {
-					queryParams[qp.Name] = val[0]
-				}
-			}
+			queryParams, pathParams = as.getParams(req, route)
 			if route.FilterFactory != nil {
 				filter, err = as.buildFilter(req, route.FilterFactory)
 			}
@@ -187,20 +213,30 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 
 		if err == nil {
 			status = route.JSONOutputCode
-			req := oapispec.APIRequest{
-				Ctx:     req.Context(),
-				Or:      o,
-				Req:     req,
-				PP:      pathParams,
-				QP:      queryParams,
-				Filter:  filter,
-				Input:   jsonInput,
-				FReader: part,
+			r := oapispec.APIRequest{
+				Ctx:    req.Context(),
+				Or:     o,
+				Req:    req,
+				PP:     pathParams,
+				QP:     queryParams,
+				Filter: filter,
+				Input:  jsonInput,
 			}
-			if part != nil {
-				output, err = route.FormUploadHandler(req)
+			if multipart != nil {
+				r.FP = multipart.formParams
+				r.Part = multipart.part
+				output, err = route.FormUploadHandler(r)
 			} else {
-				output, err = route.JSONHandler(req)
+				output, err = route.JSONHandler(r)
+			}
+		}
+		if err == nil && multipart != nil {
+			// Catch the case that someone puts form fields after the file in a multi-part body.
+			// We don't support that, so that we can stream through the core rather than having
+			// to hold everything in memory.
+			trailing, expectEOF := multipart.mpr.NextPart()
+			if expectEOF == nil {
+				err = i18n.NewError(req.Context(), i18n.MsgFieldsAfterFile, trailing.FormName())
 			}
 		}
 		if err == nil {

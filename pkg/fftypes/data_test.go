@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"context"
+	"crypto/sha256"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,10 +42,33 @@ func TestSealNoData(t *testing.T) {
 	assert.Regexp(t, "FF10199", err)
 }
 
-func TestSealOK(t *testing.T) {
+func TestSealValueOnly(t *testing.T) {
 	d := &Data{
 		Value: []byte("{}"),
 	}
 	err := d.Seal(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, d.Hash.String(), "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a")
+}
+
+func TestSealBlobOnly(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+	d := &Data{
+		Blob: blobHash,
+	}
+	err := d.Seal(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, d.Hash.String(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+}
+
+func TestSealBlobAndHashOnly(t *testing.T) {
+	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+	d := &Data{
+		Blob:  blobHash,
+		Value: []byte("{}"),
+	}
+	h := sha256.Sum256([]byte(`44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9`))
+	err := d.Seal(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, d.Hash[:], h[:])
 }

@@ -19,6 +19,7 @@ package data
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"io"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -33,17 +34,11 @@ type blobStore struct {
 	exchange dataexchange.Plugin
 }
 
-func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, reader io.Reader) (*fftypes.Data, error) {
+func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, data *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
 
-	data := &fftypes.Data{
-		ID:        fftypes.NewUUID(),
-		Namespace: ns,
-		Validator: "",
-		Blobstore: true,
-		Datatype:  nil,
-		Created:   fftypes.Now(),
-		Value:     nil,
-	}
+	data.ID = fftypes.NewUUID()
+	data.Namespace = ns
+	data.Created = fftypes.Now()
 
 	hash := sha256.New()
 	dxReader, dx := io.Pipe()
@@ -53,7 +48,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, reader io.Reader
 	copyDone := make(chan error, 1)
 	go func() {
 		var err error
-		written, err = io.Copy(storeAndHash, reader)
+		written, err = io.Copy(storeAndHash, blob.Data)
 		log.L(ctx).Debugf("Upload BLOB streamed %d bytes (err=%v)", written, err)
 		_ = dx.Close()
 		copyDone <- err
@@ -68,7 +63,18 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, reader io.Reader
 	if copyErr != nil {
 		return nil, i18n.WrapError(ctx, copyErr, i18n.MsgBlobStreamingFailed)
 	}
-	data.Hash = fftypes.HashResult(hash)
+
+	// autoMeta will create/update JSON metadata with the upload details
+	if autoMeta {
+		do := data.Value.JSONObject()
+		do["filename"] = blob.Filename
+		do["mimetype"] = blob.Mimetype
+		do["size"] = float64(written)
+		data.Value, _ = json.Marshal(&do)
+	}
+
+	data.Blob = fftypes.HashResult(hash)
+	_ = data.Seal(ctx)
 	log.L(ctx).Infof("Uploaded BLOB %.2fkb hash=%s", float64(written)/1024, data.Hash)
 
 	err := bs.database.UpsertData(ctx, data, false, false)
