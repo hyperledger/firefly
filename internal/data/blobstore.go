@@ -54,7 +54,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, data *fftypes.Da
 		copyDone <- err
 	}()
 
-	dxErr := bs.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
+	payloadRef, uploadHash, dxErr := bs.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
 	dxReader.Close()
 	copyErr := <-copyDone
 	if dxErr != nil {
@@ -74,10 +74,23 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, data *fftypes.Da
 	}
 
 	data.Blob = fftypes.HashResult(hash)
+	if *uploadHash != *data.Blob {
+		return nil, i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, data.Blob)
+	}
 	_ = data.Seal(ctx)
 	log.L(ctx).Infof("Uploaded BLOB %.2fkb hash=%s", float64(written)/1024, data.Hash)
 
-	err := bs.database.UpsertData(ctx, data, false, false)
+	err := bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
+		err := bs.database.UpsertData(ctx, data, false, false)
+		if err == nil {
+			err = bs.database.InsertBlob(ctx, &fftypes.Blob{
+				Hash:       uploadHash,
+				PayloadRef: payloadRef,
+				Created:    fftypes.Now(),
+			})
+		}
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

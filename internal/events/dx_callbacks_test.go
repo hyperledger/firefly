@@ -271,7 +271,7 @@ func TestBLOBReceivedNoop(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	u := fftypes.NewUUID()
-	em.BLOBReceived(mdx, "peer1", "ns1", *u)
+	em.BLOBReceived(mdx, "peer1", fftypes.NewRandB32(), fmt.Sprintf("ns1/%s", u))
 }
 
 func TestTransferResultOk(t *testing.T) {

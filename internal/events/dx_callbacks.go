@@ -102,7 +102,7 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 
 }
 
-func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID) {
+func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash *fftypes.Bytes32, payloadRef string) {
 }
 
 func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) {

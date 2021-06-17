@@ -36,7 +36,7 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
-	id := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
 
 	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
 	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
@@ -49,8 +49,8 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return()
 	bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
 
-	mei.On("BLOBReceived", mdx, "peer1", "ns1", *id).Return()
-	bc.BLOBReceived("peer1", "ns1", *id)
+	mei.On("BLOBReceived", mdx, "peer1", hash, "ns1/id1").Return()
+	bc.BLOBReceived("peer1", hash, "ns1/id1")
 
 	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return()
 	bc.MessageReceived("peer1", []byte{})

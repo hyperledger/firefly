@@ -154,4 +154,6 @@ var (
 	MsgFilterAscendingDesc         = ffm("FF10234", "Ascending sort order (overrides all fields in a multi-field sort)")
 	MsgPreInitCheckFailed          = ffm("FF10235", "Pre-initialization has not yet been completed. Add config records with the admin API complete initialization and reset the node")
 	MsgFieldsAfterFile             = ffm("FF10236", "Additional form field sent after file in multi-part form (ignored): '%s'", 400)
+	MsgDXBadResponse               = ffm("FF10237", "Expected '%s' in data exchange response")
+	MsgDXBadHash                   = ffm("FF10238", "Unexpected hash returned from data exchange upload. Hash=%s Expected=%s")
 )

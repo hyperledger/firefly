@@ -35,6 +35,20 @@ func (_m *Plugin) Capabilities() *database.Capabilities {
 	return r0
 }
 
+// DeleteBlob provides a mock function with given fields: ctx, sequence
+func (_m *Plugin) DeleteBlob(ctx context.Context, sequence int64) error {
+	ret := _m.Called(ctx, sequence)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, sequence)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteConfigRecord provides a mock function with given fields: ctx, key
 func (_m *Plugin) DeleteConfigRecord(ctx context.Context, key string) error {
 	ret := _m.Called(ctx, key)
@@ -166,6 +180,52 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*ff
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*fftypes.Batch)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBlobMatchingHash provides a mock function with given fields: ctx, hash
+func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Blob, error) {
+	ret := _m.Called(ctx, hash)
+
+	var r0 *fftypes.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Blob); ok {
+		r0 = rf(ctx, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Blob)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+		r1 = rf(ctx, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBlobs provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*fftypes.Blob, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Blob); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.Blob)
 		}
 	}
 
@@ -1116,6 +1176,20 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks data
 // InitPrefix provides a mock function with given fields: prefix
 func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
+}
+
+// InsertBlob provides a mock function with given fields: ctx, nextpin
+func (_m *Plugin) InsertBlob(ctx context.Context, nextpin *fftypes.Blob) error {
+	ret := _m.Called(ctx, nextpin)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Blob) error); ok {
+		r0 = rf(ctx, nextpin)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // InsertMessageLocal provides a mock function with given fields: ctx, message

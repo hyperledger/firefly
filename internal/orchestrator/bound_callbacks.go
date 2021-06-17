@@ -41,8 +41,8 @@ func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpSta
 	bc.ei.TransferResult(bc.dx, trackingID, status, info, additionalInfo)
 }
 
-func (bc *boundCallbacks) BLOBReceived(peerID string, ns string, id fftypes.UUID) {
-	bc.ei.BLOBReceived(bc.dx, peerID, ns, id)
+func (bc *boundCallbacks) BLOBReceived(peerID string, hash *fftypes.Bytes32, payloadRef string) {
+	bc.ei.BLOBReceived(bc.dx, peerID, hash, payloadRef)
 }
 
 func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) {

@@ -47,11 +47,11 @@ type Plugin interface {
 	// AddPeer translates the configuration published by another peer, into a reference string that is used between DX and FireFly to refer to the peer
 	AddPeer(ctx context.Context, node *fftypes.Node) (err error)
 
-	// UploadBLOB streams a blob to storage
-	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (err error)
+	// UploadBLOB streams a blob to storage, and returns the hash to confirm the hash calculated in Core matches the hash calculated in the plugin
+	UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error)
 
-	// DownloadBLOB streams a blob out of storage
-	DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.ReadCloser, err error)
+	// DownloadBLOB streams a received blob out of storage
+	DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error)
 
 	// SendMessage sends an in-line package of data to another network node.
 	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
@@ -68,7 +68,7 @@ type Callbacks interface {
 	MessageReceived(peerID string, data []byte)
 
 	// BLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
-	BLOBReceived(peerID string, ns string, id fftypes.UUID)
+	BLOBReceived(peerID string, hash *fftypes.Bytes32, payloadRef string)
 
 	// TransferResult notifies of a status update of a transfer
 	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)

@@ -12,9 +12,9 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// BLOBReceived provides a mock function with given fields: peerID, ns, id
-func (_m *Callbacks) BLOBReceived(peerID string, ns string, id fftypes.UUID) {
-	_m.Called(peerID, ns, id)
+// BLOBReceived provides a mock function with given fields: peerID, hash, payloadRef
+func (_m *Callbacks) BLOBReceived(peerID string, hash *fftypes.Bytes32, payloadRef string) {
+	_m.Called(peerID, hash, payloadRef)
 }
 
 // MessageReceived provides a mock function with given fields: peerID, data

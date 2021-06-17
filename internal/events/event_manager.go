@@ -51,7 +51,7 @@ type EventManager interface {
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)
-	BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID)
+	BLOBReceived(dx dataexchange.Plugin, peerID string, hash *fftypes.Bytes32, payloadRef string)
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte)
 }
 

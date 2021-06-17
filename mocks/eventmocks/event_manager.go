@@ -19,9 +19,9 @@ type EventManager struct {
 	mock.Mock
 }
 
-// BLOBReceived provides a mock function with given fields: dx, peerID, ns, id
-func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID) {
-	_m.Called(dx, peerID, ns, id)
+// BLOBReceived provides a mock function with given fields: dx, peerID, hash, payloadRef
+func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash *fftypes.Bytes32, payloadRef string) {
+	_m.Called(dx, peerID, hash, payloadRef)
 }
 
 // BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity, protocolTxID, additionalInfo

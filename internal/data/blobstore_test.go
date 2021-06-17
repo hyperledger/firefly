@@ -18,6 +18,7 @@ package data
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -44,7 +45,14 @@ func TestUploadBlobOk(t *testing.T) {
 	}
 
 	mdi := dm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
 	mdi.On("UpsertData", mock.Anything, mock.Anything, false, false).Return(nil)
+	mdi.On("InsertBlob", mock.Anything, mock.Anything).Return(nil)
 
 	dxID := make(chan fftypes.UUID, 1)
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
@@ -53,8 +61,10 @@ func TestUploadBlobOk(t *testing.T) {
 		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
 		assert.Equal(t, b, readBytes)
-		dxID <- a[2].(fftypes.UUID)
-		dxUpload.ReturnArguments = mock.Arguments{err}
+		uuid := a[2].(fftypes.UUID)
+		dxID <- uuid
+		var hash fftypes.Bytes32 = sha256.Sum256(b)
+		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, err}
 	}
 
 	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader(b)}, false)
@@ -77,16 +87,25 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 	defer cancel()
 
 	mdi := dm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
 	mdi.On("UpsertData", mock.Anything, mock.Anything, false, false).Return(nil)
+	mdi.On("InsertBlob", mock.Anything, mock.Anything).Return(nil)
 
 	dxID := make(chan fftypes.UUID, 1)
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
 	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything)
 	dxUpload.RunFn = func(a mock.Arguments) {
-		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
-		dxID <- a[2].(fftypes.UUID)
-		dxUpload.ReturnArguments = mock.Arguments{err}
+		uuid := a[2].(fftypes.UUID)
+		dxID <- uuid
+		var hash fftypes.Bytes32 = sha256.Sum256(readBytes)
+		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, err}
 	}
 
 	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{
@@ -113,7 +132,7 @@ func TestUploadBlobReadFail(t *testing.T) {
 	defer cancel()
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.NoError(t, err)
@@ -130,10 +149,28 @@ func TestUploadBlobWriteFailDoesNotRead(t *testing.T) {
 	defer cancel()
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, fmt.Errorf("pop"))
 
 	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
 	assert.Regexp(t, "pop", err)
+
+}
+
+func TestUploadBlobHashMismatch(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	b := []byte(`any old data`)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), nil)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	assert.Regexp(t, "FF10238", err)
 
 }
 
@@ -141,17 +178,19 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
+	b := []byte(`any old data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(b)
 
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
-	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return(nil)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, nil)
 	dxUpload.RunFn = func(a mock.Arguments) {
 		_, err := ioutil.ReadAll(a[3].(io.Reader))
 		assert.Nil(t, err)
 	}
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, false, false).Return(fmt.Errorf("pop"))
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "pop", err)
 
 }
