@@ -287,6 +287,8 @@ func Reset() {
 
 // ReadConfig initializes the config
 func ReadConfig(cfgFile string) error {
+	Reset()
+
 	// Set precedence order for reading config location
 	viper.SetEnvPrefix("firefly")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
