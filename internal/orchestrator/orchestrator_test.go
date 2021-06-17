@@ -408,6 +408,7 @@ func TestInitOK(t *testing.T) {
 	err = or.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
 
+	assert.False(t, or.IsPreInit())
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
 	assert.Equal(t, or.mem, or.Events())
