@@ -90,6 +90,7 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
+	config.Reset()
 	err := config.ReadConfig(cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
