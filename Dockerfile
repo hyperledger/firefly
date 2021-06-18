@@ -1,8 +1,10 @@
 FROM golang:1.16-alpine3.13 AS firefly-builder
-RUN apk add make gcc build-base
+RUN apk add make gcc build-base git
 WORKDIR /firefly
+ADD go.mod go.sum ./
+RUN go mod download
 ADD . .
-RUN make
+RUN make build
 WORKDIR /firefly/solidity_firefly
 
 FROM node:14-alpine3.11 AS solidity-builder
