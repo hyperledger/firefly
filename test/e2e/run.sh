@@ -38,5 +38,7 @@ then
 	$CLI start -n $STACK_NAME
 fi
 
+$CLI info
+
 export STACK_FILE
 go clean -testcache && go test -v .
