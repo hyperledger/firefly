@@ -1,12 +1,13 @@
 FROM golang:1.16-alpine3.13 AS firefly-builder
-RUN apk add make gcc build-base curl
+RUN apk add make gcc build-base curl git
 WORKDIR /firefly
+ADD go.mod go.sum ./
+RUN go mod download
 ENV UI_RELEASE "https://github.com/hyperledger-labs/firefly-ui/releases/download/v0.1.0/v0.1.0_3d0e531.tgz"
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
-RUN make
-WORKDIR /firefly/solidity_firefly
+RUN make build
 
 FROM node:14-alpine3.11 AS solidity-builder
 WORKDIR /firefly/solidity_firefly
