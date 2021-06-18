@@ -37,12 +37,15 @@ var (
 		"hash",
 		"created",
 		"blob_hash",
+		"public_ref",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
 	dataFilterFieldMap   = map[string]string{
 		"validator":        "validator",
 		"datatype.name":    "datatype_name",
 		"datatype.version": "datatype_version",
+		"blob":             "blob_hash",
+		"publicref":        "public_ref",
 	}
 )
 
@@ -94,6 +97,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 				Set("hash", data.Hash).
 				Set("created", data.Created).
 				Set("blob_hash", data.Blob).
+				Set("public_ref", data.PublicRef).
 				Set("value", data.Value).
 				Where(sq.Eq{"id": data.ID}),
 		); err != nil {
@@ -112,6 +116,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					data.Hash,
 					data.Created,
 					data.Blob,
+					data.PublicRef,
 					data.Value,
 				),
 		); err != nil {
@@ -135,6 +140,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Hash,
 		&data.Created,
 		&data.Blob,
+		&data.PublicRef,
 	}
 	if withValue {
 		results = append(results, &data.Value)

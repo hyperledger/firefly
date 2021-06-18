@@ -57,7 +57,7 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	in.Message.Data, err = pm.data.ResolveInputData(ctx, in.Header.Namespace, in.InputData)
+	in.Message.Data, err = pm.data.ResolveInputDataPrivate(ctx, in.Header.Namespace, in.InputData)
 	if err != nil {
 		return err
 	}

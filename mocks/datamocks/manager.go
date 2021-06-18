@@ -59,8 +59,40 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
-// ResolveInputData provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInputData(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error) {
+// ResolveInputDataBroadcast provides a mock function with given fields: ctx, ns, inData
+func (_m *Manager) ResolveInputDataBroadcast(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error) {
+	ret := _m.Called(ctx, ns, inData)
+
+	var r0 fftypes.DataRefs
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InputData) fftypes.DataRefs); ok {
+		r0 = rf(ctx, ns, inData)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(fftypes.DataRefs)
+		}
+	}
+
+	var r1 []*fftypes.DataAndBlob
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InputData) []*fftypes.DataAndBlob); ok {
+		r1 = rf(ctx, ns, inData)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]*fftypes.DataAndBlob)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.InputData) error); ok {
+		r2 = rf(ctx, ns, inData)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// ResolveInputDataPrivate provides a mock function with given fields: ctx, ns, inData
+func (_m *Manager) ResolveInputDataPrivate(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error) {
 	ret := _m.Called(ctx, ns, inData)
 
 	var r0 fftypes.DataRefs

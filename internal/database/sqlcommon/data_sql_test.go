@@ -85,10 +85,11 @@ func TestDataE2EWithDB(t *testing.T) {
 			Name:    "customer",
 			Version: "0.0.1",
 		},
-		Hash:    fftypes.NewRandB32(),
-		Created: fftypes.Now(),
-		Value:   []byte(val2.String()),
-		Blob:    fftypes.NewRandB32(),
+		Hash:      fftypes.NewRandB32(),
+		Created:   fftypes.Now(),
+		Value:     []byte(val2.String()),
+		Blob:      fftypes.NewRandB32(),
+		PublicRef: fftypes.NewRandB32(),
 	}
 
 	// Check disallows hash update

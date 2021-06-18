@@ -39,6 +39,12 @@ type Data struct {
 	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
 	Value     Byteable      `json:"value"`
 	Blob      *Bytes32      `json:"blob,omitempty"`
+	PublicRef *Bytes32      `json:"publicRef,omitempty"`
+}
+
+type DataAndBlob struct {
+	Data *Data
+	Blob *Blob
 }
 
 type DatatypeRef struct {

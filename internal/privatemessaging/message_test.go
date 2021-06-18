@@ -42,7 +42,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -120,7 +120,7 @@ func TestSendMessageFail(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -171,7 +171,7 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
@@ -202,7 +202,7 @@ func TestResolveAndSendSealFail(t *testing.T) {
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputData", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ /* missing */ },
 	}, nil)
 
