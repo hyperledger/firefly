@@ -314,6 +314,8 @@ func newTestEthereum() *Ethereum {
 		client:       resty.New().SetHostURL("http://localhost:12345"),
 		instancePath: "/instances/0x12345",
 		topic:        "topic1",
+		prefixShort:  defaultPrefixShort,
+		prefixLong:   defaultPrefixLong,
 	}
 }
 
@@ -339,8 +341,8 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, addr, req.FormValue("fly-from"))
-			assert.Equal(t, "false", req.FormValue("fly-sync"))
+			assert.Equal(t, addr, req.FormValue(defaultPrefixShort+"-from"))
+			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchPaylodRef), body["payloadRef"])
