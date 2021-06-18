@@ -97,8 +97,10 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
-				ID:   dataID,
-				Blob: blobHash,
+				ID: dataID,
+				Blob: &fftypes.BlobRef{
+					Hash: blobHash,
+				},
 			},
 			Blob: &fftypes.Blob{
 				Hash:       blobHash,
@@ -123,7 +125,9 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 			},
 		},
 		InputData: fftypes.InputData{
-			{Blob: blobHash},
+			{Blob: &fftypes.BlobRef{
+				Hash: blobHash,
+			}},
 		},
 	})
 	assert.NoError(t, err)
@@ -187,8 +191,10 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
-				ID:   dataID,
-				Blob: blobHash,
+				ID: dataID,
+				Blob: &fftypes.BlobRef{
+					Hash: blobHash,
+				},
 			},
 			Blob: &fftypes.Blob{
 				Hash:       blobHash,
@@ -225,8 +231,10 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
-				ID:   dataID,
-				Blob: blobHash,
+				ID: dataID,
+				Blob: &fftypes.BlobRef{
+					Hash: blobHash,
+				},
 			},
 			Blob: &fftypes.Blob{
 				Hash:       blobHash,
@@ -261,8 +269,10 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
-				ID:   dataID,
-				Blob: blobHash,
+				ID: dataID,
+				Blob: &fftypes.BlobRef{
+					Hash: blobHash,
+				},
 			},
 			Blob: &fftypes.Blob{
 				Hash:       blobHash,
@@ -290,8 +300,10 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
-				ID:   dataID,
-				Blob: blobHash,
+				ID: dataID,
+				Blob: &fftypes.BlobRef{
+					Hash: blobHash,
+				},
 			},
 			Blob: &fftypes.Blob{
 				Hash:       blobHash,

@@ -130,8 +130,9 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 func (pm *privateMessaging) transferBlobs(ctx context.Context, batch *fftypes.Batch, node *fftypes.Node) error {
 	// Send all the blobs associated with this batch
 	for _, d := range batch.Payload.Data {
-		if d.Blob != nil {
-			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob)
+		// We only need to send a blob if there is one, and it's not been uploaded to the public storage
+		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
+			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
 			if err != nil {
 				return err
 			}

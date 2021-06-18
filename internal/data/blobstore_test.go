@@ -29,6 +29,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -192,5 +193,216 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 
 	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "pop", err)
+
+}
+
+func TestCopyBlobPStoDXOk(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("/private/loc", &hash, nil)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("InsertBlob", ctx, mock.Anything).Return(nil)
+
+	blob, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, "/private/loc", blob.PayloadRef)
+	assert.Equal(t, hash, *blob.Hash)
+
+}
+
+func TestCopyBlobPStoDXHashMismatch(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", fftypes.NewRandB32(), nil)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("InsertBlob", ctx, mock.Anything).Return(nil)
+
+	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.Regexp(t, "FF10238", err)
+
+}
+
+func TestCopyBlobPStoPublicHashMismatch(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var correctHash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", &correctHash, nil)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("InsertBlob", ctx, mock.Anything).Return(nil)
+
+	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   fftypes.NewRandB32(),
+			Public: "public-ref",
+		},
+	})
+	assert.Regexp(t, "FF10238", err)
+
+}
+
+func TestCopyBlobPStoDXInsertFail(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", &hash, nil)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("InsertBlob", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestCopyBlobPStoUploadFail(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(io.NopCloser(bytes.NewReader(payload)), nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, fmt.Errorf("pop"))
+	dxUpload.RunFn = func(a mock.Arguments) {
+		_, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+	}
+
+	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestCopyBlobPStoDownloadFail(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(nil, fmt.Errorf("pop"))
+
+	_, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestCopyBlobPStoDownloadNotFound(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	payload := []byte(`some data`)
+	var hash fftypes.Bytes32 = sha256.Sum256(payload)
+
+	mpi := dm.publicstorage.(*publicstoragemocks.Plugin)
+	mpi.On("RetrieveData", ctx, "public-ref").Return(nil, nil)
+
+	blob, err := dm.CopyBlobPStoDX(ctx, &fftypes.Data{
+		Namespace: "ns1",
+		ID:        fftypes.NewUUID(),
+		Blob: &fftypes.BlobRef{
+			Hash:   &hash,
+			Public: "public-ref",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Nil(t, blob)
 
 }

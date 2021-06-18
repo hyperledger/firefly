@@ -35,7 +35,7 @@ type Batch struct {
 	Created    *FFTime      `json:"created"`
 	Confirmed  *FFTime      `json:"confirmed"`
 	Payload    BatchPayload `json:"payload"`
-	PayloadRef *Bytes32     `json:"payloadRef,omitempty"`
+	PayloadRef string       `json:"payloadRef,omitempty"`
 	Blobs      []*Bytes32   `json:"blobs,omitempty"` // only used in-flight
 }
 

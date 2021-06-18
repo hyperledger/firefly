@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 	"github.com/karlseguin/ccache"
 )
 
@@ -40,28 +41,32 @@ type Manager interface {
 
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
+	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
 }
 
 type dataManager struct {
 	blobStore
 
 	database          database.Plugin
+	publicstorage     publicstorage.Plugin
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
 }
 
-func NewDataManager(ctx context.Context, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
-	if di == nil || dx == nil {
+func NewDataManager(ctx context.Context, di database.Plugin, pi publicstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
+	if di == nil || pi == nil || dx == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	dm := &dataManager{
 		database:          di,
+		publicstorage:     pi,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
 		blobStore: blobStore{
-			database: di,
-			exchange: dx,
+			database:      di,
+			publicstorage: pi,
+			exchange:      dx,
 		},
 	}
 	dm.validatorCache = ccache.New(
@@ -198,21 +203,21 @@ func (dm *dataManager) checkValidatorType(ctx context.Context, validator fftypes
 	}
 }
 
-func (dm *dataManager) resolveBlob(ctx context.Context, blobHash *fftypes.Bytes32) (*fftypes.Blob, error) {
-	if blobHash != nil {
-		blob, err := dm.database.GetBlobMatchingHash(ctx, blobHash)
+func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *fftypes.BlobRef) (*fftypes.Blob, error) {
+	if blobRef != nil && blobRef.Hash != nil {
+		blob, err := dm.database.GetBlobMatchingHash(ctx, blobRef.Hash)
 		if err != nil {
 			return nil, err
 		}
 		if blob == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, blobHash)
+			return nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, blobRef.Hash)
 		}
 		return blob, nil
 	}
 	return nil, nil
 }
 
-func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable, blobHash *fftypes.Bytes32) (data *fftypes.Data, blob *fftypes.Blob, err error) {
+func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable, blobRef *fftypes.BlobRef) (data *fftypes.Data, blob *fftypes.Blob, err error) {
 	// If a datatype is specified, we need to verify the payload conforms
 	if datatype != nil {
 		if err := dm.checkValidatorType(ctx, validator); err != nil {
@@ -236,7 +241,7 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validato
 		validator = ""
 	}
 
-	if blob, err = dm.resolveBlob(ctx, blobHash); err != nil {
+	if blob, err = dm.resolveBlob(ctx, blobRef); err != nil {
 		return nil, nil, err
 	}
 
@@ -246,7 +251,7 @@ func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validato
 		Datatype:  datatype,
 		Namespace: ns,
 		Value:     value,
-		Blob:      blobHash,
+		Blob:      blobRef,
 	}
 	err = data.Seal(ctx)
 	if err == nil {
@@ -327,7 +332,7 @@ func (dm *dataManager) resolveInputData(ctx context.Context, ns string, inData f
 
 		// If the data is being resolved for public broadcast, and there is a blob attachment, that blob
 		// needs to be published by our calller
-		if broadcast && blob != nil && data.PublicRef == nil {
+		if broadcast && blob != nil && data.Blob.Public == "" {
 			dataToPublish = append(dataToPublish, &fftypes.DataAndBlob{
 				Data: data,
 				Blob: blob,

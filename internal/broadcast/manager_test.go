@@ -211,7 +211,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()}, "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -224,7 +224,7 @@ func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()}, "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -251,7 +251,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 		},
 	}
 
-	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()}, "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -281,7 +281,7 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 		},
 	}
 
-	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()}, "id1")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -313,9 +313,10 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 				}},
 			},
 		},
+		PayloadRef: "ipfs_id",
 	}
 
-	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()}, "ipfs_id")
+	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
 	op1 := mdi.Calls[2].Arguments[1].(*fftypes.Operation)

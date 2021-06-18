@@ -78,15 +78,15 @@ func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftype
 		defer reader.Close()
 
 		// ... to the public storage
-		publicRef, backendID, err := bm.publicstorage.PublishData(ctx, reader)
+		publicRef, err := bm.publicstorage.PublishData(ctx, reader)
 		if err != nil {
 			return nil, err
 		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage. Backend ID: '%s'", d.Data.Blob, d.Data.ID, backendID)
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Data.Blob, d.Data.ID, publicRef)
 
 		// Update the data in the database, with the public reference.
 		// We do this independently for each piece of data
-		update := database.DataQueryFactory.NewUpdate(ctx).Set("publicref", publicRef)
+		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", publicRef)
 		err = bm.database.UpdateData(ctx, d.Data.ID, update)
 		if err != nil {
 			return nil, err

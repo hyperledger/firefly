@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,7 +34,8 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
-	dm, err := NewDataManager(ctx, mdi, mdx)
+	mps := &publicstoragemocks.Plugin{}
+	dm, err := NewDataManager(ctx, mdi, mps, mdx)
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, cancel
 }
@@ -90,7 +92,7 @@ func TestValidateE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), nil, nil)
+	_, err := NewDataManager(context.Background(), nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -295,7 +297,9 @@ func TestResolveInputDataBroadcastDataToPublish(t *testing.T) {
 		ID:        dataID,
 		Namespace: "ns1",
 		Hash:      dataHash,
-		Blob:      blobHash,
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
 	}, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(&fftypes.Blob{
 		Hash:       blobHash,
@@ -327,7 +331,9 @@ func TestResolveInputDataBroadcastResolveBlobFail(t *testing.T) {
 		ID:        dataID,
 		Namespace: "ns1",
 		Hash:      dataHash,
-		Blob:      blobHash,
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
 	}, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, fmt.Errorf("pop"))
 
@@ -561,7 +567,9 @@ func TestValidateAndStoreBlobError(t *testing.T) {
 	blobHash := fftypes.NewRandB32()
 	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
 	_, _, _, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
-		Blob: blobHash,
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
 	})
 	assert.Regexp(t, "pop", err)
 }
@@ -574,7 +582,9 @@ func TestValidateAndStoreBlobNotFound(t *testing.T) {
 	blobHash := fftypes.NewRandB32()
 	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, nil)
 	_, _, _, err := dm.validateAndStoreInlined(ctx, "ns1", &fftypes.DataRefOrValue{
-		Blob: blobHash,
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
 	})
 	assert.Regexp(t, "FF10239", err)
 }

@@ -45,6 +45,7 @@ func TestSealNoData(t *testing.T) {
 func TestSealValueOnly(t *testing.T) {
 	d := &Data{
 		Value: []byte("{}"),
+		Blob:  &BlobRef{},
 	}
 	err := d.Seal(context.Background())
 	assert.NoError(t, err)
@@ -54,7 +55,9 @@ func TestSealValueOnly(t *testing.T) {
 func TestSealBlobOnly(t *testing.T) {
 	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
 	d := &Data{
-		Blob: blobHash,
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
 	}
 	err := d.Seal(context.Background())
 	assert.NoError(t, err)
@@ -64,7 +67,9 @@ func TestSealBlobOnly(t *testing.T) {
 func TestSealBlobAndHashOnly(t *testing.T) {
 	blobHash, _ := ParseBytes32(context.Background(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
 	d := &Data{
-		Blob:  blobHash,
+		Blob: &BlobRef{
+			Hash: blobHash,
+		},
 		Value: []byte("{}"),
 	}
 	h := sha256.Sum256([]byte(`44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9`))

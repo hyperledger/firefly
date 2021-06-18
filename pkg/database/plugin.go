@@ -449,7 +449,8 @@ var DataQueryFactory = &queryFields{
 	"datatype.name":    &StringField{},
 	"datatype.version": &StringField{},
 	"hash":             &Bytes32Field{},
-	"blob":             &Bytes32Field{},
+	"blob.hash":        &Bytes32Field{},
+	"blob.public":      &StringField{},
 	"created":          &TimeField{},
 }
 

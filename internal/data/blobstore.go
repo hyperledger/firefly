@@ -22,16 +22,56 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/docker/go-units"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 )
 
 type blobStore struct {
-	database database.Plugin
-	exchange dataexchange.Plugin
+	publicstorage publicstorage.Plugin
+	database      database.Plugin
+	exchange      dataexchange.Plugin
+}
+
+func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftypes.UUID, expectedHash *fftypes.Bytes32, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
+	hashCalc := sha256.New()
+	dxReader, dx := io.Pipe()
+	storeAndHash := io.MultiWriter(hashCalc, dx)
+
+	copyDone := make(chan error, 1)
+	go func() {
+		var err error
+		written, err = io.Copy(storeAndHash, reader)
+		log.L(ctx).Debugf("Upload BLOB streamed %d bytes (err=%v)", written, err)
+		_ = dx.Close()
+		copyDone <- err
+	}()
+
+	payloadRef, uploadHash, dxErr := bs.exchange.UploadBLOB(ctx, ns, *id, dxReader)
+	dxReader.Close()
+	copyErr := <-copyDone
+	if dxErr != nil {
+		return nil, -1, "", dxErr
+	}
+	if copyErr != nil {
+		return nil, -1, "", i18n.WrapError(ctx, copyErr, i18n.MsgBlobStreamingFailed)
+	}
+
+	hash = fftypes.HashResult(hashCalc)
+	if !uploadHash.Equals(hash) {
+		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
+	}
+
+	if expectedHash != nil && !uploadHash.Equals(expectedHash) {
+		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, expectedHash)
+	}
+
+	return hash, written, payloadRef, nil
+
 }
 
 func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
@@ -49,28 +89,9 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	data.Namespace = ns
 	data.Created = fftypes.Now()
 
-	hash := sha256.New()
-	dxReader, dx := io.Pipe()
-	storeAndHash := io.MultiWriter(hash, dx)
-
-	var written int64
-	copyDone := make(chan error, 1)
-	go func() {
-		var err error
-		written, err = io.Copy(storeAndHash, blob.Data)
-		log.L(ctx).Debugf("Upload BLOB streamed %d bytes (err=%v)", written, err)
-		_ = dx.Close()
-		copyDone <- err
-	}()
-
-	payloadRef, uploadHash, dxErr := bs.exchange.UploadBLOB(ctx, ns, *data.ID, dxReader)
-	dxReader.Close()
-	copyErr := <-copyDone
-	if dxErr != nil {
-		return nil, dxErr
-	}
-	if copyErr != nil {
-		return nil, i18n.WrapError(ctx, copyErr, i18n.MsgBlobStreamingFailed)
+	hash, written, payloadRef, err := bs.uploadVerifyBLOB(ctx, ns, data.ID, nil /* we don't have an expected hash for a new upload */, blob.Data)
+	if err != nil {
+		return nil, err
 	}
 
 	// autoMeta will create/update JSON metadata with the upload details
@@ -82,18 +103,17 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 		data.Value, _ = json.Marshal(&do)
 	}
 
-	data.Blob = fftypes.HashResult(hash)
-	if *uploadHash != *data.Blob {
-		return nil, i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, data.Blob)
+	data.Blob = &fftypes.BlobRef{
+		Hash: hash,
 	}
 	_ = data.Seal(ctx)
 	log.L(ctx).Infof("Uploaded BLOB %.2fkb hash=%s", float64(written)/1024, data.Hash)
 
-	err := bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
+	err = bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		err := bs.database.UpsertData(ctx, data, false, false)
 		if err == nil {
 			err = bs.database.InsertBlob(ctx, &fftypes.Blob{
-				Hash:       uploadHash,
+				Hash:       hash,
 				PayloadRef: payloadRef,
 				Created:    fftypes.Now(),
 			})
@@ -105,4 +125,34 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	}
 
 	return data, nil
+}
+
+func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error) {
+
+	reader, err := bs.publicstorage.RetrieveData(ctx, data.Blob.Public)
+	if err != nil {
+		return nil, err
+	}
+	if reader == nil {
+		log.L(ctx).Infof("Blob '%s' not found in public storage", data.Blob.Public)
+		return nil, nil
+	}
+	defer reader.Close()
+
+	hash, written, payloadRef, err := bs.uploadVerifyBLOB(ctx, data.Namespace, data.ID, data.Blob.Hash, reader)
+	if err != nil {
+		return nil, err
+	}
+	log.L(ctx).Infof("Transferred blob '%s' (%s) from public storage '%s' to local data exchange '%s'", hash, units.HumanSizeWithPrecision(float64(written), 2), data.Blob.Public, payloadRef)
+
+	blob = &fftypes.Blob{
+		Hash:       hash,
+		PayloadRef: payloadRef,
+		Created:    fftypes.Now(),
+	}
+	err = bs.database.InsertBlob(ctx, blob)
+	if err != nil {
+		return nil, err
+	}
+	return blob, nil
 }

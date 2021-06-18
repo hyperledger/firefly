@@ -171,7 +171,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 				ID: txID,
 			},
 			Data: []*fftypes.Data{
-				{ID: dataID1, Blob: blob1},
+				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
 		Hash: batchHash,
@@ -285,7 +285,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 		Author: "org1",
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Blob: fftypes.NewRandB32()},
+				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 			},
 		},
 	}, []*fftypes.Node{
@@ -350,7 +350,7 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: fftypes.NewRandB32()},
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 			},
 		},
 	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
@@ -369,7 +369,7 @@ func TestTransferBlobsFail(t *testing.T) {
 	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: fftypes.NewRandB32()},
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 			},
 		},
 	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
@@ -390,7 +390,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: fftypes.NewRandB32()},
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 			},
 		},
 	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})

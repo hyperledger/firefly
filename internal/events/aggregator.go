@@ -410,6 +410,11 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		return false, err
 	}
 
+	// Verify we have all the blobs for the data
+	if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
+		return false, err
+	}
+
 	// We're going to dispatch it at this point, but we need to validate the data first
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed
@@ -454,4 +459,48 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	log.L(ctx).Infof("Emitting %s for message %s:%s", eventType, msg.Header.Namespace, msg.Header.ID)
 
 	return true, nil
+}
+
+// resolveBlobs ensures that the blobs for all the attachments in the data array, have been received into the
+// local data exchange blob store. Either because of a private transfer, or by downloading them from the public storage
+func (ag *aggregator) resolveBlobs(ctx context.Context, data []*fftypes.Data) (resolved bool, err error) {
+	l := log.L(ctx)
+
+	for _, d := range data {
+		if d.Blob == nil || d.Blob.Hash == nil {
+			continue
+		}
+
+		// See if we already have the data
+		blob, err := ag.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+		if err != nil {
+			return false, err
+		}
+		if blob != nil {
+			l.Debugf("Blob '%s' found in local DX with ref '%s'", blob.Hash, blob.PayloadRef)
+			continue
+		}
+
+		// If there's a public reference, download it from there and stream it into the blob store
+		// We double check the hash on the way, to ensure the streaming from A->B worked ok.
+		if d.Blob.Public != "" {
+			blob, err = ag.data.CopyBlobPStoDX(ctx, d)
+			if err != nil {
+				return false, err
+			}
+			if blob != nil {
+				l.Debugf("Blob '%s' downloaded from public storage to local DX with ref '%s'", blob.Hash, blob.PayloadRef)
+				continue
+			}
+		}
+
+		// If we've reached here, the data isn't available yet.
+		// This isn't an error, we just need to wait for it to arrive.
+		l.Debugf("Blob '%s' not available", d.Blob.Hash)
+		return false, nil
+
+	}
+
+	return true, nil
+
 }

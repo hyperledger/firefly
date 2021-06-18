@@ -43,7 +43,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		Namespace:      "ns1",
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchData := &fftypes.Batch{
@@ -66,7 +66,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr *fftypes.Bytes32) bool { return *pr == *batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -121,7 +121,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr *fftypes.Bytes32) bool { return *pr == *batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -149,7 +149,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -170,7 +170,7 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
@@ -310,7 +310,7 @@ func TestPersistBatchGetTransactionBadNamespace(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -330,7 +330,7 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -350,7 +350,7 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -372,7 +372,7 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -393,7 +393,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
