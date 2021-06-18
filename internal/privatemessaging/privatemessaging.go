@@ -127,6 +127,39 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	})
 }
 
+func (pm *privateMessaging) transferBlobs(ctx context.Context, batch *fftypes.Batch, node *fftypes.Node) error {
+	// Send all the blobs associated with this batch
+	for _, d := range batch.Payload.Data {
+		if d.Blob != nil {
+			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob)
+			if err != nil {
+				return err
+			}
+			if blob == nil {
+				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
+			}
+
+			trackingID, err := pm.exchange.TransferBLOB(ctx, node.DX.Peer, blob.PayloadRef)
+			if err != nil {
+				return err
+			}
+
+			op := fftypes.NewTXOperation(
+				pm.exchange,
+				batch.Namespace,
+				batch.Payload.TX.ID,
+				trackingID,
+				fftypes.OpTypeDataExchangeBlobSend,
+				fftypes.OpStatusPending,
+				node.ID.String())
+			if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
 	l := log.L(ctx)
 
@@ -143,6 +176,12 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 	for i, node := range nodes {
 		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
 
+		// Initiate transfer of any blobs first
+		if err = pm.transferBlobs(ctx, batch, node); err != nil {
+			return err
+		}
+
+		// Send the payload itself
 		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
 		if err != nil {
 			return err

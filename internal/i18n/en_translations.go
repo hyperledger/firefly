@@ -156,4 +156,5 @@ var (
 	MsgFieldsAfterFile             = ffm("FF10236", "Additional form field sent after file in multi-part form (ignored): '%s'", 400)
 	MsgDXBadResponse               = ffm("FF10237", "Expected '%s' in data exchange response")
 	MsgDXBadHash                   = ffm("FF10238", "Unexpected hash returned from data exchange upload. Hash=%s Expected=%s")
+	MsgBlobNotFound                = ffm("FF10239", "No blob has been uploaded or confirmed received, with hash=%s")
 )
