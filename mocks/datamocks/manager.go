@@ -114,13 +114,13 @@ func (_m *Manager) ResolveInputDataPrivate(ctx context.Context, ns string, inDat
 	return r0, r1
 }
 
-// UploadBLOB provides a mock function with given fields: ctx, ns, _a2, blob, autoMeta
-func (_m *Manager) UploadBLOB(ctx context.Context, ns string, _a2 *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, ns, _a2, blob, autoMeta)
+// UploadBLOB provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
+func (_m *Manager) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Data, *fftypes.Multipart, bool) *fftypes.Data); ok {
-		r0 = rf(ctx, ns, _a2, blob, autoMeta)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.DataRefOrValue, *fftypes.Multipart, bool) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -128,8 +128,8 @@ func (_m *Manager) UploadBLOB(ctx context.Context, ns string, _a2 *fftypes.Data,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Data, *fftypes.Multipart, bool) error); ok {
-		r1 = rf(ctx, ns, _a2, blob, autoMeta)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.DataRefOrValue, *fftypes.Multipart, bool) error); ok {
+		r1 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -137,13 +137,13 @@ func (_m *Manager) UploadBLOB(ctx context.Context, ns string, _a2 *fftypes.Data,
 	return r0, r1
 }
 
-// UploadJSON provides a mock function with given fields: ctx, ns, _a2
-func (_m *Manager) UploadJSON(ctx context.Context, ns string, _a2 *fftypes.Data) (*fftypes.Data, error) {
-	ret := _m.Called(ctx, ns, _a2)
+// UploadJSON provides a mock function with given fields: ctx, ns, inData
+func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error) {
+	ret := _m.Called(ctx, ns, inData)
 
 	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Data) *fftypes.Data); ok {
-		r0 = rf(ctx, ns, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.DataRefOrValue) *fftypes.Data); ok {
+		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Data)
@@ -151,8 +151,8 @@ func (_m *Manager) UploadJSON(ctx context.Context, ns string, _a2 *fftypes.Data)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Data) error); ok {
-		r1 = rf(ctx, ns, _a2)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.DataRefOrValue) error); ok {
+		r1 = rf(ctx, ns, inData)
 	} else {
 		r1 = ret.Error(1)
 	}

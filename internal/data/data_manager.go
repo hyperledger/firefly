@@ -38,8 +38,8 @@ type Manager interface {
 	ResolveInputDataBroadcast(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
-	UploadJSON(ctx context.Context, ns string, data *fftypes.Data) (*fftypes.Data, error)
-	UploadBLOB(ctx context.Context, ns string, data *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
+	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
+	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 }
 
 type dataManager struct {
@@ -271,8 +271,8 @@ func (dm *dataManager) validateAndStoreInlined(ctx context.Context, ns string, v
 	}, nil
 }
 
-func (dm *dataManager) UploadJSON(ctx context.Context, ns string, data *fftypes.Data) (*fftypes.Data, error) {
-	data, _, err := dm.validateAndStore(ctx, ns, data.Validator, data.Datatype, data.Value, data.Blob)
+func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error) {
+	data, _, err := dm.validateAndStore(ctx, ns, inData.Validator, inData.Datatype, inData.Value, inData.Blob)
 	return data, err
 }
 

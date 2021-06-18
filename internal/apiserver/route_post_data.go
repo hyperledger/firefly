@@ -45,16 +45,16 @@ var postData = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Data{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Created", "Blob", "Blobstore", "Hash"},
+	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
+	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCode:  http.StatusCreated, // Sync operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Data))
+		output, err = r.Or.Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataRefOrValue))
 		return output, err
 	},
 	FormUploadHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		data := &fftypes.Data{}
+		data := &fftypes.DataRefOrValue{}
 		metadata := r.FP["metadata"]
 		if len(metadata) > 0 {
 			// The metadata might be JSON, or just a simple string. Try to unmarshal and see

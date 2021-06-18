@@ -67,7 +67,7 @@ func TestUploadBlobOk(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, err}
 	}
 
-	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader(b)}, false)
+	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader(b)}, false)
 	assert.NoError(t, err)
 
 	// Check the hashes and other details of the data
@@ -108,7 +108,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, err}
 	}
 
-	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{
+	data, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
 		Value: fftypes.Byteable(`{"custom": "value1"}`),
 	}, &fftypes.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
@@ -138,7 +138,7 @@ func TestUploadBlobReadFail(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
 	assert.Regexp(t, "FF10217.*pop", err)
 
 }
@@ -151,7 +151,7 @@ func TestUploadBlobWriteFailDoesNotRead(t *testing.T) {
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, fmt.Errorf("pop"))
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -169,7 +169,7 @@ func TestUploadBlobHashMismatch(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "FF10238", err)
 
 }
@@ -190,7 +190,7 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.Data{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{}, &fftypes.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "pop", err)
 
 }

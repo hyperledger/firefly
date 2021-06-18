@@ -487,7 +487,7 @@ func TestUploadJSONLoadDatatypeFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
-	_, err := dm.UploadJSON(ctx, "ns1", &fftypes.Data{
+	_, err := dm.UploadJSON(ctx, "ns1", &fftypes.DataRefOrValue{
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",

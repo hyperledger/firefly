@@ -26,18 +26,15 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostDataJSON(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 	input := fftypes.Data{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -45,7 +42,7 @@ func TestPostDataJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadJSON", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Data")).
+	mdm.On("UploadJSON", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue")).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -55,11 +52,9 @@ func TestPostDataJSON(t *testing.T) {
 func TestPostDataBinary(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -72,7 +67,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Data"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -82,11 +77,9 @@ func TestPostDataBinary(t *testing.T) {
 func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -114,7 +107,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.Data) bool {
+	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
 		assert.Equal(t, `{"filename":"anything"}`, string(d.Value))
 		assert.Equal(t, fftypes.ValidatorTypeJSON, d.Validator)
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
@@ -130,11 +123,9 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 func TestPostDataBinaryStringMetadata(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -150,7 +141,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.Data) bool {
+	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
 		assert.Equal(t, `"string metadata"`, string(d.Value))
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
@@ -165,11 +156,9 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 func TestPostDataTrailingMetadata(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -198,11 +187,9 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 func TestPostDataBinaryMissing(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
@@ -214,7 +201,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Data"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -224,11 +211,9 @@ func TestPostDataBinaryMissing(t *testing.T) {
 func TestPostDataBadForm(t *testing.T) {
 	log.SetLevel("debug")
 
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
 	o.On("Data").Return(mdm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 
 	var b bytes.Buffer
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)
@@ -236,7 +221,7 @@ func TestPostDataBadForm(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Data"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -23,18 +23,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostBroadcastMessage(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

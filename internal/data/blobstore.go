@@ -34,7 +34,16 @@ type blobStore struct {
 	exchange dataexchange.Plugin
 }
 
-func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, data *fftypes.Data, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Namespace: ns,
+		Created:   fftypes.Now(),
+		Validator: inData.Validator,
+		Datatype:  inData.Datatype,
+		Value:     inData.Value,
+	}
 
 	data.ID = fftypes.NewUUID()
 	data.Namespace = ns
