@@ -453,7 +453,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
       "timestamp": "1620576488"
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "50"
   },
   {
@@ -473,7 +473,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 			]
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "51"
   },
 	{
@@ -548,7 +548,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
       "timestamp": "1620576488"
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "50"
   }
 ]`)
@@ -599,7 +599,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
       "timestamp": "1620576488"
     },
     "subID": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+    "signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "logIndex": "51"
   }
 ]`)
@@ -623,7 +623,7 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	var events []interface{}
-	err := json.Unmarshal([]byte(`[{"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"}]`), &events)
+	err := json.Unmarshal([]byte(`[{"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"}]`), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
@@ -634,7 +634,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -663,7 +663,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -692,7 +692,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
@@ -721,7 +721,7 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
 	data := []byte(`[{
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
     "blockNumber": "38011",
     "transactionIndex": "0x1",
     "transactionHash": "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",

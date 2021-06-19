@@ -367,7 +367,7 @@ func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
 	uiPath := config.GetString(config.UIPath)
-	if uiPath != "" {
+	if uiPath != "" && config.GetBool(config.UIEnabled) {
 		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
 	}
 

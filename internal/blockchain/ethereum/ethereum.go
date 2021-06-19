@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,bytes32,bytes32[])"
+	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
 )
 
 type Ethereum struct {
