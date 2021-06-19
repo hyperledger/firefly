@@ -1178,13 +1178,13 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 	_m.Called(prefix)
 }
 
-// InsertBlob provides a mock function with given fields: ctx, nextpin
-func (_m *Plugin) InsertBlob(ctx context.Context, nextpin *fftypes.Blob) error {
-	ret := _m.Called(ctx, nextpin)
+// InsertBlob provides a mock function with given fields: ctx, blob
+func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
+	ret := _m.Called(ctx, blob)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Blob) error); ok {
-		r0 = rf(ctx, nextpin)
+		r0 = rf(ctx, blob)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -18,7 +18,7 @@ require (
 	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6 // indirect
 	github.com/golangci/goconst v0.0.0-20180610141641-041c5f2b40f3 // indirect
 	github.com/golangci/gocyclo v0.0.0-20180528134321-2becd97e67ee // indirect
-	github.com/golangci/golangci-lint v1.41.0 // indirect
+	github.com/golangci/golangci-lint v1.41.1 // indirect
 	github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc // indirect
 	github.com/golangci/prealloc v0.0.0-20180630174525-215b22d4de21 // indirect
 	github.com/google/uuid v1.2.0

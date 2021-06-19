@@ -40,6 +40,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	blob := &fftypes.Blob{
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: fftypes.NewRandB32().String(),
+		Peer:       "peer1",
 		Created:    fftypes.Now(),
 	}
 	err := s.InsertBlob(ctx, blob)

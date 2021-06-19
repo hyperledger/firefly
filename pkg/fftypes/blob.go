@@ -19,6 +19,7 @@ package fftypes
 type Blob struct {
 	Hash       *Bytes32 `json:"hash"`
 	PayloadRef string   `json:"payloadRef,omitempty"`
+	Peer       string   `json:"peer,omitempty"`
 	Created    *FFTime  `json:"created,omitempty"`
 	Sequence   int64    `json:"-"`
 }

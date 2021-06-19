@@ -378,27 +378,27 @@ func TestEvents(t *testing.T) {
 
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 	fromServer <- `{"type":"message-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 	fromServer <- `{"type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("MessageReceived", "peer1", []byte("message1")).Return()
+	mcb.On("MessageReceived", "peer1", []byte("message1")).Return(nil)
 	fromServer <- `{"type":"message-received","sender":"peer1","message":"message1"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 	fromServer <- `{"type":"blob-failed","requestID":"tx12345","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
-	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return()
+	mcb.On("TransferResult", "tx12345", fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 	fromServer <- `{"type":"blob-delivered","requestID":"tx12345"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
@@ -413,9 +413,9 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"commit"}`, string(msg))
 
 	hash := fftypes.NewRandB32()
-	mcb.On("BLOBReceived", mock.Anything, mock.MatchedBy(func(b32 *fftypes.Bytes32) bool {
-		return *b32 == *hash
-	}), fmt.Sprintf("ns1/%s", u.String())).Return()
+	mcb.On("BLOBReceived", mock.Anything, mock.MatchedBy(func(b32 fftypes.Bytes32) bool {
+		return b32 == *hash
+	}), fmt.Sprintf("ns1/%s", u.String())).Return(nil)
 	fromServer <- fmt.Sprintf(`{"type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"%s"}`, u.String(), hash.String())
 	msg = <-toServer
 	assert.Equal(t, `{"action":"commit"}`, string(msg))

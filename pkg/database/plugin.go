@@ -325,7 +325,7 @@ type PeristenceInterface interface {
 	DeleteNextPin(ctx context.Context, sequence int64) (err error)
 
 	// InsertBlob - insert a blob
-	InsertBlob(ctx context.Context, nextpin *fftypes.Blob) (err error)
+	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
 
 	// GetBlobMatchingHash - lookup first blob batching a hash
 	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)

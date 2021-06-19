@@ -96,13 +96,13 @@ type Plugin interface {
 type Callbacks interface {
 
 	// MessageReceived notifies of a message received from another node in the network
-	MessageReceived(peerID string, data []byte)
+	MessageReceived(peerID string, data []byte) error
 
 	// BLOBReceived notifies of the ID of a BLOB that has been stored by DX after being received from another node in the network
-	BLOBReceived(peerID string, hash *fftypes.Bytes32, payloadRef string)
+	BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error
 
 	// TransferResult notifies of a status update of a transfer
-	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)
+	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the data exchange

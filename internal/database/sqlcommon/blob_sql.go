@@ -31,6 +31,7 @@ var (
 	blobColumns = []string{
 		"hash",
 		"payload_ref",
+		"peer",
 		"created",
 	}
 	blobFilterFieldMap = map[string]string{
@@ -51,6 +52,7 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err err
 			Values(
 				blob.Hash,
 				blob.PayloadRef,
+				blob.Peer,
 				blob.Created,
 			),
 	)
@@ -67,6 +69,7 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blo
 	err := row.Scan(
 		&blob.Hash,
 		&blob.PayloadRef,
+		&blob.Peer,
 		&blob.Created,
 		&blob.Sequence,
 	)

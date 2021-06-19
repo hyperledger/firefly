@@ -20,8 +20,17 @@ type EventManager struct {
 }
 
 // BLOBReceived provides a mock function with given fields: dx, peerID, hash, payloadRef
-func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash *fftypes.Bytes32, payloadRef string) {
-	_m.Called(dx, peerID, hash, payloadRef)
+func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error {
+	ret := _m.Called(dx, peerID, hash, payloadRef)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, string) error); ok {
+		r0 = rf(dx, peerID, hash, payloadRef)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity, protocolTxID, additionalInfo
@@ -83,8 +92,17 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 }
 
 // MessageReceived provides a mock function with given fields: dx, peerID, data
-func (_m *EventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) {
-	_m.Called(dx, peerID, data)
+func (_m *EventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error {
+	ret := _m.Called(dx, peerID, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, []byte) error); ok {
+		r0 = rf(dx, peerID, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewEvents provides a mock function with given fields:
@@ -150,8 +168,17 @@ func (_m *EventManager) Start() error {
 }
 
 // TransferResult provides a mock function with given fields: dx, trackingID, status, info, additionalInfo
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) {
-	_m.Called(dx, trackingID, status, info, additionalInfo)
+func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(dx, trackingID, status, info, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(dx, trackingID, status, info, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // TxSubmissionUpdate provides a mock function with given fields: bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo

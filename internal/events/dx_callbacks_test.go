@@ -17,6 +17,7 @@
 package events
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -24,6 +25,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -55,7 +57,8 @@ func TestMessageReceiveOK(t *testing.T) {
 		Identity: "parentOrg",
 	}, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything, true, false).Return(nil, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -82,7 +85,8 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -116,7 +120,8 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 		Identity: "parentOrg",
 	}, nil)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.Regexp(t, "FF10158", err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -127,7 +132,9 @@ func TestMessageReceivedBadData(t *testing.T) {
 	defer cancel()
 
 	mdx := &dataexchangemocks.Plugin{}
-	em.MessageReceived(mdx, "peer1", []byte(`!{}`))
+	err := em.MessageReceived(mdx, "peer1", []byte(`!{}`))
+	assert.NoError(t, err)
+
 }
 
 func TestMessageReceiveNodeLookupError(t *testing.T) {
@@ -140,7 +147,8 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.Regexp(t, "FF10158", err)
 }
 
 func TestMessageReceiveNodeNotFound(t *testing.T) {
@@ -153,7 +161,8 @@ func TestMessageReceiveNodeNotFound(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 }
 
 func TestMessageReceiveAuthorLookupError(t *testing.T) {
@@ -169,7 +178,8 @@ func TestMessageReceiveAuthorLookupError(t *testing.T) {
 		{Name: "node1", Owner: "org1"},
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.Regexp(t, "FF10158", err)
 }
 
 func TestMessageReceiveAuthorNotFound(t *testing.T) {
@@ -185,7 +195,8 @@ func TestMessageReceiveAuthorNotFound(t *testing.T) {
 		{Name: "node1", Owner: "org1"},
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 }
 
 func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
@@ -207,7 +218,8 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, fmt.Errorf("pop"))
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.Regexp(t, "FF10158", err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -232,7 +244,8 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
@@ -259,19 +272,116 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	em.MessageReceived(mdx, "peer1", b)
+	err := em.MessageReceived(mdx, "peer1", b)
+	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
 
-func TestBLOBReceivedNoop(t *testing.T) {
+func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	hash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+
+	mdx := &dataexchangemocks.Plugin{}
+
+	mdi := em.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID},
+	}, nil)
+	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return([]*fftypes.Message{
+		{BatchID: batchID},
+	}, nil)
+
+	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	assert.NoError(t, err)
+
+	bid := <-em.aggregator.offchainBatches
+	assert.Equal(t, *batchID, *bid)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestBLOBReceivedBadEvent(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	err := em.BLOBReceived(nil, "", fftypes.Bytes32{}, "")
+	assert.NoError(t, err)
+}
+
+func TestBLOBReceivedGetMessagesFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	hash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+
 	mdx := &dataexchangemocks.Plugin{}
-	u := fftypes.NewUUID()
-	em.BLOBReceived(mdx, "peer1", fftypes.NewRandB32(), fmt.Sprintf("ns1/%s", u))
+
+	mdi := em.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID},
+	}, nil)
+	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestBLOBReceivedGetDataRefsFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+
+	mdi := em.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
+	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestBLOBReceivedInsertBlobFails(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+
+	mdi := em.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
 }
 
 func TestTransferResultOk(t *testing.T) {
@@ -290,7 +400,8 @@ func TestTransferResultOk(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	assert.NoError(t, err)
 
 }
 
@@ -303,13 +414,28 @@ func TestTransferResultNotFound(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	assert.Regexp(t, "FF10158", err)
+
+}
+
+func TestTransferGetOpFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	assert.Regexp(t, "FF10158", err)
 
 }
 
 func TestTransferUpdateFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
-	defer cancel()
+	cancel() // retryable error
 
 	mdi := em.database.(*databasemocks.Plugin)
 	id := fftypes.NewUUID()
@@ -323,6 +449,7 @@ func TestTransferUpdateFail(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-	em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	assert.Regexp(t, "FF10158", err)
 
 }

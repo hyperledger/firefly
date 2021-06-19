@@ -233,28 +233,33 @@ func (h *HTTPS) eventLoop() {
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
 			switch msg.Type {
 			case messageFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case messageDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case messageReceived:
-				h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
+				err = h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
 			case blobFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case blobDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case blobReceived:
-				hash, err := fftypes.ParseBytes32(ctx, msg.Hash)
+				var hash *fftypes.Bytes32
+				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
 				if err != nil {
 					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
+					err = nil // still confirm the message
 				} else {
-					h.callbacks.BLOBReceived(msg.Sender, hash, msg.Path)
+					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Path)
 				}
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)
 			}
 
-			// Send the ack - only fails if shutting down
-			err = h.wsconn.Send(ctx, ack)
+			// Send the ack - as long as we didn't fail processing (which should only happen in core
+			// if core itself is shutting down)
+			if err == nil {
+				err = h.wsconn.Send(ctx, ack)
+			}
 			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)
 				return
