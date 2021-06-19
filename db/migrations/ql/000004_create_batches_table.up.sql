@@ -4,7 +4,7 @@ CREATE TABLE batches (
   namespace   string   NOT NULL,
   author      string   NOT NULL,
   group_hash  string,
-  hash        string   NOT NULL,
+  hash        string,
   created     int64    NOT NULL,
   payload     blob     NOT NULL,
   payload_ref string,
