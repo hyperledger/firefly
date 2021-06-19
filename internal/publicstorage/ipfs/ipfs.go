@@ -72,7 +72,7 @@ func (i *IPFS) Capabilities() *publicstorage.Capabilities {
 	return i.capabilities
 }
 
-func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef string, err error) {
+func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (string, error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.apiClient.R().
 		SetContext(ctx).
@@ -83,7 +83,7 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef stri
 		return "", restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
-	return payloadRef, err
+	return ipfsResponse.Hash, err
 }
 
 func (i *IPFS) RetrieveData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error) {

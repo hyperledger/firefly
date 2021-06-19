@@ -109,7 +109,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(nil, "", fmt.Errorf("pop"))
+	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.EqualError(t, err, "pop")
@@ -122,7 +122,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
-	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
@@ -148,7 +148,7 @@ func TestDispatchBatchSubmitBroadcastBadIdentity(t *testing.T) {
 	mii := bm.identity.(*identitymocks.Plugin)
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-	mps.On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mii.On("Resolve", mock.Anything, "wrong").Return(nil, fmt.Errorf("pop"))
 	mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything).Return(nil)
 
@@ -170,7 +170,7 @@ func TestDispatchBatchSubmitBroadcastBadOnchainIdentity(t *testing.T) {
 	mii := bm.identity.(*identitymocks.Plugin)
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-	mps.On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	badID := &fftypes.Identity{OnChain: "0x99999"}
 	mii.On("Resolve", mock.Anything, "wrong").Return(badID, nil)
 	mbi.On("VerifyIdentitySyntax", mock.Anything, badID).Return(fmt.Errorf("pop"))
@@ -191,7 +191,7 @@ func TestDispatchBatchSubmitBatchPinFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 
-	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return(fftypes.NewRandB32(), "id1", nil)
+	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)

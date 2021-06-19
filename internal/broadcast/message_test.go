@@ -82,7 +82,6 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
 
 	blobHash := fftypes.NewRandB32()
-	payloadRef := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
@@ -114,7 +113,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "some data", string(b))
 		return true
-	})).Return(payloadRef, "backendid", nil)
+	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
 
@@ -175,7 +174,6 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
-	payloadRef := fftypes.NewRandB32()
 
 	ctx := context.Background()
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(ioutil.NopCloser(bytes.NewReader([]byte(`some data`))), nil)
@@ -184,7 +182,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "some data", string(b))
 		return true
-	})).Return(payloadRef, "backendid", nil)
+	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -216,7 +214,6 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
-	payloadRef := fftypes.NewRandB32()
 
 	ctx := context.Background()
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(ioutil.NopCloser(bytes.NewReader([]byte(`some data`))), nil)
@@ -225,7 +222,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "some data", string(b))
 		return true
-	})).Return(payloadRef, "backendid", nil)
+	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
@@ -264,7 +261,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "some data", string(b))
 		return true
-	})).Return(nil, "", fmt.Errorf("pop"))
+	})).Return("", fmt.Errorf("pop"))
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
