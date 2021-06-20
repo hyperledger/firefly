@@ -39,11 +39,16 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
+	// GetOptionsSchema returns a JSON schema for the transport specific options
+	GetOptionsSchema() string
+
 	// ValidateOptions verifies a set of input options, prior to storage of a new subscription
-	ValidateOptions(transportOptions fftypes.JSONObject) error
+	// The plugin can modify the core subscription options, such as overriding whether data is delivered.
+	ValidateOptions(options *fftypes.SubscriptionOptions) error
 
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
-	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery) error
+	// Data will only be supplied as non-nil if the subscription is set to include data
+	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error
 }
 
 type SubscriptionMatcher func(fftypes.SubscriptionRef) bool
@@ -58,7 +63,7 @@ type Callbacks interface {
 	RegisterConnection(connID string, matcher SubscriptionMatcher) error
 
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
-	EphemeralSubscription(connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error
+	EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error
 
 	// ConnnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
 	// Note the plugin must not crash if it receives PublishEvent calls on the connID after the ConnectionClosed event is fired
@@ -67,10 +72,10 @@ type Callbacks interface {
 	// DeliveryResponse responds to a previous event delivery, to either:
 	// - Acknowledge it: the offset for the associated subscription can move forwards
 	//   * Note all gaps must fill before the offset can move forwards, so this message might still be redelivered if streaming ahead
+	//   * If a message is included in the response, then that will be automatically sent with the correct CID
 	// - Reject it: This resets the associated subscription back to the last committed offset
 	//   * Note all message since the last committed offet will be redelivered, so additional messages to be redelivered if streaming ahead
-	DeliveryResponse(connID string, inflight fftypes.EventDeliveryResponse) error
+	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error
 }
 
-type Capabilities struct {
-}
+type Capabilities struct{}

@@ -46,6 +46,7 @@ const (
 type SubscriptionCoreOptions struct {
 	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
 	ReadAhead  *uint16            `json:"readAhead,omitempty"`
+	WithData   *bool              `json:"withData,omitempty"`
 }
 
 // SubscriptionOptions cutomize the behavior of subscriptions
@@ -85,6 +86,7 @@ func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
 	}
 	delete(so.additionalOptions, "firstEvent")
 	delete(so.additionalOptions, "readAhead")
+	delete(so.additionalOptions, "withData")
 	return nil
 }
 
@@ -92,8 +94,11 @@ func (so SubscriptionOptions) MarshalJSON() ([]byte, error) {
 	if so.additionalOptions == nil {
 		so.additionalOptions = JSONObject{}
 	}
+	if so.WithData != nil {
+		so.additionalOptions["withData"] = so.WithData
+	}
 	if so.FirstEvent != nil {
-		so.additionalOptions["firstEvent"] = so.FirstEvent
+		so.additionalOptions["firstEvent"] = *so.FirstEvent
 	}
 	if so.ReadAhead != nil {
 		so.additionalOptions["readAhead"] = float64(*so.ReadAhead)

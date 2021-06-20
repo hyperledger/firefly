@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
@@ -51,6 +52,7 @@ type connection struct {
 type subscriptionManager struct {
 	ctx                  context.Context
 	database             database.Plugin
+	data                 data.Manager
 	eventNotifier        *eventNotifier
 	transports           map[string]events.Plugin
 	connections          map[string]*connection
@@ -63,11 +65,12 @@ type subscriptionManager struct {
 	retry                retry.Retry
 }
 
-func newSubscriptionManager(ctx context.Context, di database.Plugin, en *eventNotifier) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
 		ctx:                  ctx,
 		database:             di,
+		data:                 dm,
 		transports:           make(map[string]events.Plugin),
 		connections:          make(map[string]*connection),
 		durableSubs:          make(map[fftypes.UUID]*subscription),
@@ -230,7 +233,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownEventTransportPlugin, subDef.Transport)
 	}
 
-	if err := transport.ValidateOptions(subDef.Options.TransportOptions()); err != nil {
+	if err := transport.ValidateOptions(&subDef.Options); err != nil {
 		return nil, err
 	}
 
@@ -336,7 +339,7 @@ func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub
 	ei, foundTransport := sm.transports[sub.definition.Transport]
 	if foundTransport {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, conn.id, sub, sm.eventNotifier)
+			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, conn.id, sub, sm.eventNotifier)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
@@ -345,7 +348,7 @@ func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub
 	}
 }
 
-func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
+func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error {
 	sm.mux.Lock()
 	defer sm.mux.Unlock()
 
@@ -364,8 +367,8 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 		},
 		Transport: ei.Name(),
 		Ephemeral: true,
-		Filter:    filter,
-		Options:   options,
+		Filter:    *filter,
+		Options:   *options,
 		Created:   fftypes.Now(),
 	}
 
@@ -375,7 +378,7 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, connID, newSub, sm.eventNotifier)
+	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, connID, newSub, sm.eventNotifier)
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher
@@ -403,7 +406,7 @@ func (sm *subscriptionManager) connnectionClosed(ei events.Plugin, connID string
 	}
 }
 
-func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight fftypes.EventDeliveryResponse) error {
+func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight *fftypes.EventDeliveryResponse) error {
 	sm.mux.Lock()
 	var dispatcher *eventDispatcher
 	conn, ok := sm.connections[connID]
@@ -419,6 +422,6 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 		return i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
 	}
 
-	dispatcher.deliveryResponse(&inflight)
+	dispatcher.deliveryResponse(inflight)
 	return nil
 }

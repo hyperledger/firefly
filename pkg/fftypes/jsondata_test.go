@@ -74,6 +74,26 @@ func TestJSONObject(t *testing.T) {
 
 func TestJSONObjectArray(t *testing.T) {
 
+	data := Byteable(`{
+		"field1": true,
+		"field2": false,
+		"field3": "True",
+		"field4": "not true",
+		"field5": { "not": "boolable" },
+		"field6": null
+	}`)
+	dataJSON := data.JSONObject()
+	assert.True(t, dataJSON.GetBool("field1"))
+	assert.False(t, dataJSON.GetBool("field2"))
+	assert.True(t, dataJSON.GetBool("field3"))
+	assert.False(t, dataJSON.GetBool("field4"))
+	assert.False(t, dataJSON.GetBool("field5"))
+	assert.False(t, dataJSON.GetBool("field6"))
+	assert.False(t, dataJSON.GetBool("field7"))
+}
+
+func TestJSONObjectBool(t *testing.T) {
+
 	data := JSONObjectArray{
 		{"some": "data"},
 	}

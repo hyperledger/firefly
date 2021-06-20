@@ -99,7 +99,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	}
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, newEventNotifier); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier); err != nil {
 		return nil, err
 	}
 

@@ -35,15 +35,29 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 	return r0
 }
 
-// DeliveryRequest provides a mock function with given fields: connID, sub, event
-func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery) error {
-	ret := _m.Called(connID, sub, event)
+// DeliveryRequest provides a mock function with given fields: connID, sub, event, data
+func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+	ret := _m.Called(connID, sub, event, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery) error); ok {
-		r0 = rf(connID, sub, event)
+	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery, []*fftypes.Data) error); ok {
+		r0 = rf(connID, sub, event, data)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetOptionsSchema provides a mock function with given fields:
+func (_m *Plugin) GetOptionsSchema() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -82,13 +96,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// ValidateOptions provides a mock function with given fields: transportOptions
-func (_m *Plugin) ValidateOptions(transportOptions fftypes.JSONObject) error {
-	ret := _m.Called(transportOptions)
+// ValidateOptions provides a mock function with given fields: options
+func (_m *Plugin) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+	ret := _m.Called(options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.JSONObject) error); ok {
-		r0 = rf(transportOptions)
+	if rf, ok := ret.Get(0).(func(*fftypes.SubscriptionOptions) error); ok {
+		r0 = rf(options)
 	} else {
 		r0 = ret.Error(0)
 	}

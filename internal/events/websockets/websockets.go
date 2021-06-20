@@ -62,12 +62,21 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) ValidateOptions(transportOptions fftypes.JSONObject) error {
-	// We don't have any additional options currently
+func (ws *WebSockets) GetOptionsSchema() string {
+	return `{}` // no extra options currently
+}
+
+func (ws *WebSockets) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+	// We don't support streaming the full data over websockets
+	if options.WithData != nil && *options.WithData {
+		return i18n.NewError(ws.ctx, i18n.MsgWebsocketsNoData)
+	}
+	forceFalse := false
+	options.WithData = &forceFalse
 	return nil
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery) error {
+func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
@@ -93,7 +102,7 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) error {
-	return ws.callbacks.DeliveryResponse(connID, *inflight)
+	return ws.callbacks.DeliveryResponse(connID, inflight)
 }
 
 func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) error {
@@ -101,7 +110,7 @@ func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPay
 		return i18n.NewError(ws.ctx, i18n.MsgWSInvalidStartAction)
 	}
 	if start.Ephemeral {
-		return ws.callbacks.EphemeralSubscription(connID, start.Namespace, start.Filter, start.Options)
+		return ws.callbacks.EphemeralSubscription(connID, start.Namespace, &start.Filter, &start.Options)
 	}
 	return ws.callbacks.RegisterConnection(connID, func(sr fftypes.SubscriptionRef) bool {
 		return sr.Namespace == start.Namespace && sr.Name == start.Name

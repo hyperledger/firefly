@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
@@ -43,6 +44,7 @@ type eventDispatcher struct {
 	closed        chan struct{}
 	connID        string
 	ctx           context.Context
+	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
 	elected       bool
@@ -55,7 +57,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
@@ -64,6 +66,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:      di,
 		transport:     ei,
+		data:          dm,
 		connID:        connID,
 		cancelCtx:     cancelCtx,
 		subscription:  sub,
@@ -162,16 +165,6 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		return nil, err
 	}
 
-	dfb := database.DataQueryFactory.NewFilter(ed.ctx)
-	dataFilter := dfb.And(
-		dfb.In("id", refIDs),
-		dfb.Eq("namespace", ed.namespace),
-	)
-	dataRefs, err := ed.database.GetDataRefs(ed.ctx, dataFilter)
-	if err != nil {
-		return nil, err
-	}
-
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
@@ -182,12 +175,6 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		for _, msg := range msgs {
 			if *e.Reference == *msg.Header.ID {
 				enriched[i].Message = msg
-				break
-			}
-		}
-		for _, dr := range dataRefs {
-			if *e.Reference == *dr.ID {
-				enriched[i].Data = dr
 				break
 			}
 		}
@@ -352,9 +339,17 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 }
 
 func (ed *eventDispatcher) deliverEvents() {
+	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for event := range ed.eventDelivery {
 		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-		err := ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event)
+		var data []*fftypes.Data
+		var err error
+		if withData && event.Message != nil {
+			data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+		}
+		if err == nil {
+			err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
+		}
 		if err != nil {
 			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 		}

@@ -47,6 +47,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ws.Init(ctx, svrPrefix, cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
+	assert.NotNil(t, ws.GetOptionsSchema())
 	cbs.On("ConnnectionClosed", mock.Anything).Return(nil).Maybe()
 
 	svr := httptest.NewServer(ws)
@@ -71,12 +72,29 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	}
 }
 
-func TestValidateOptions(t *testing.T) {
+func TestValidateOptionsFail(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	ws, _, cancel := newTestWebsockets(t, cbs)
 	defer cancel()
 
-	assert.NoError(t, ws.ValidateOptions(fftypes.JSONObject{}))
+	yes := true
+	err := ws.ValidateOptions(&fftypes.SubscriptionOptions{
+		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+			WithData: &yes,
+		},
+	})
+	assert.Regexp(t, "FF10244", err)
+}
+
+func TestValidateOptionsOk(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, _, cancel := newTestWebsockets(t, cbs)
+	defer cancel()
+
+	opts := &fftypes.SubscriptionOptions{}
+	err := ws.ValidateOptions(opts)
+	assert.NoError(t, err)
+	assert.False(t, *opts.WithData)
 }
 
 func TestSendBadData(t *testing.T) {
@@ -159,7 +177,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
-	})
+	}, nil)
 
 	b := <-wsc.Receive()
 	var res fftypes.EventDelivery
@@ -211,7 +229,7 @@ func TestStartReceiveDurable(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
-	})
+	}, nil)
 	// Put a second in flight
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
 		Event: fftypes.Event{ID: fftypes.NewUUID()},
@@ -220,7 +238,7 @@ func TestStartReceiveDurable(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "sub2",
 		},
-	})
+	}, nil)
 
 	b := <-wsc.Receive()
 	var res fftypes.EventDelivery
@@ -276,7 +294,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
-	})
+	}, nil)
 
 	b := <-wsc.Receive()
 	var res fftypes.EventDelivery
@@ -451,7 +469,7 @@ func TestWebsocketDispatchAfterClose(t *testing.T) {
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
 	}
-	err := ws.DeliveryRequest("gone", nil, &fftypes.EventDelivery{})
+	err := ws.DeliveryRequest("gone", nil, &fftypes.EventDelivery{}, nil)
 	assert.Regexp(t, "FF10173", err)
 }
 
@@ -474,7 +492,7 @@ func TestDispatchAutoAck(t *testing.T) {
 	err := wsc.ws.DeliveryRequest(wsc.connID, nil, &fftypes.EventDelivery{
 		Event:        fftypes.Event{ID: fftypes.NewUUID()},
 		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
-	})
+	}, nil)
 	assert.NoError(t, err)
 	cbs.AssertExpectations(t)
 }

@@ -27,11 +27,13 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 
 	firstEvent := SubOptsFirstEventNewest
 	readAhead := uint16(50)
+	yes := true
 	sub1 := &Subscription{
 		Options: SubscriptionOptions{
 			SubscriptionCoreOptions: SubscriptionCoreOptions{
 				FirstEvent: &firstEvent,
 				ReadAhead:  &readAhead,
+				WithData:   &yes,
 			},
 		},
 	}
@@ -43,7 +45,7 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	b1, err := sub1.Options.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50}`, string(b1.([]byte)))
+	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50,"withData":true}`, string(b1.([]byte)))
 
 	// Verify it restores ok
 	sub2 := &Subscription{}
@@ -56,8 +58,9 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	assert.Equal(t, string(b1.([]byte)), string(b2.([]byte)))
 
 	// Confirm we don't pass core options, to transports
-	assert.Nil(t, sub2.Options.TransportOptions()["readAhead"])
+	assert.Nil(t, sub2.Options.TransportOptions()["withData"])
 	assert.Nil(t, sub2.Options.TransportOptions()["firstEvent"])
+	assert.Nil(t, sub2.Options.TransportOptions()["readAhead"])
 
 	// Confirm we get back the transport options
 	assert.Equal(t, float64(12345), sub2.Options.TransportOptions().GetObject("my-nested-opts")["myopt1"])

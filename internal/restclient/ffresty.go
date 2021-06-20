@@ -79,6 +79,11 @@ func New(ctx context.Context, staticConfig config.Prefix) *resty.Client {
 		log.L(ctx).Debugf("Created REST client to %s", url)
 	}
 
+	proxy := staticConfig.GetString(HTTPConfigProxyURL)
+	if proxy != "" {
+		client.SetProxy(proxy)
+	}
+
 	client.SetTimeout(staticConfig.GetDuration(HTTPConfigRequestTimeout))
 
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {

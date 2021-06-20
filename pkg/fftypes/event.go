@@ -50,7 +50,6 @@ type EventDelivery struct {
 	Event
 	Subscription SubscriptionRef `json:"subscription"`
 	Message      *Message        `json:"message,omitempty"`
-	Data         *DataRef        `json:"data,omitempty"`
 }
 
 // EventDeliveryResponse is the payload an application sends back, to confirm it has accepted (or rejected) the event and as such
@@ -60,6 +59,7 @@ type EventDeliveryResponse struct {
 	Rejected     bool            `json:"rejected,omitempty"`
 	Info         string          `json:"info,omitempty"`
 	Subscription SubscriptionRef `json:"subscription"`
+	Reply        *MessageInput   `json:"reply,omitempty"`
 }
 
 func NewEvent(t EventType, ns string, ref *UUID, group *Bytes32) *Event {

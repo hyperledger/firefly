@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
+	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
@@ -50,6 +51,18 @@ func (jd *JSONObject) Scan(src interface{}) error {
 func (jd JSONObject) GetString(key string) string {
 	s, _ := jd.GetStringOk(key)
 	return s
+}
+
+func (jd JSONObject) GetBool(key string) bool {
+	vInterface := jd[key]
+	switch vt := vInterface.(type) {
+	case string:
+		return strings.EqualFold(vt, "true")
+	case bool:
+		return vt
+	default:
+		return false
+	}
 }
 
 func (jd JSONObject) GetStringOk(key string) (string, bool) {
