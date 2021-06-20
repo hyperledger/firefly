@@ -62,7 +62,12 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, event *fftypes.EventDelivery) error {
+func (ws *WebSockets) ValidateOptions(transportOptions fftypes.JSONObject) error {
+	// We don't have any additional options currently
+	return nil
+}
+
+func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()

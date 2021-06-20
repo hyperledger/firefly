@@ -354,7 +354,7 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 func (ed *eventDispatcher) deliverEvents() {
 	for event := range ed.eventDelivery {
 		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-		err := ed.transport.DeliveryRequest(ed.connID, event)
+		err := ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event)
 		if err != nil {
 			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 		}

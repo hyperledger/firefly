@@ -39,8 +39,11 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
+	// ValidateOptions verifies a set of input options, prior to storage of a new subscription
+	ValidateOptions(transportOptions fftypes.JSONObject) error
+
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
-	DeliveryRequest(connID string, event *fftypes.EventDelivery) error
+	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery) error
 }
 
 type SubscriptionMatcher func(fftypes.SubscriptionRef) bool

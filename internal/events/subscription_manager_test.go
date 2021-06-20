@@ -60,6 +60,7 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 			ID: sub2,
 		}, Transport: "ut"},
 	}, nil)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	err := sm.start()
@@ -100,6 +101,7 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	err := sm.start()
@@ -125,6 +127,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	err := sm.start()
@@ -216,9 +219,27 @@ func TestCreateSubscriptionBadTransport(t *testing.T) {
 	assert.Regexp(t, "FF1017", err)
 }
 
+func TestCreateSubscriptionBadTransportOptions(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mdi, mei)
+	defer cancel()
+	sub := &fftypes.Subscription{
+		Transport: "ut",
+		Options:   fftypes.SubscriptionOptions{},
+	}
+	sub.Options.TransportOptions()["myoption"] = "badvalue"
+	mei.On("ValidateOptions", mock.MatchedBy(func(opts fftypes.JSONObject) bool {
+		return opts["myoption"] == "badvalue"
+	})).Return(fmt.Errorf("pop"))
+	_, err := sm.parseSubscriptionDef(sm.ctx, sub)
+	assert.Regexp(t, "pop", err)
+}
+
 func TestCreateSubscriptionBadEventilter(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
@@ -233,6 +254,7 @@ func TestCreateSubscriptionBadEventilter(t *testing.T) {
 func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
@@ -247,6 +269,7 @@ func TestCreateSubscriptionBadTopicFilter(t *testing.T) {
 func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
@@ -261,6 +284,7 @@ func TestCreateSubscriptionBadContextFilter(t *testing.T) {
 func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
@@ -276,6 +300,7 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 	err := sm.start()
@@ -400,6 +425,7 @@ func TestNewDurableSubscriptionUnknownTransport(t *testing.T) {
 func TestNewDurableSubscriptionOK(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	sm, cancel := newTestSubManager(t, mdi, mei)
 	defer cancel()
 

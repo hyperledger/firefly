@@ -225,8 +225,13 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *fftypes.Subscription) (sub *subscription, err error) {
 	filter := subDef.Filter
 
-	if _, ok := sm.transports[subDef.Transport]; !ok {
+	transport, ok := sm.transports[subDef.Transport]
+	if !ok {
 		return nil, i18n.NewError(ctx, i18n.MsgUnknownEventTransportPlugin, subDef.Transport)
+	}
+
+	if err := transport.ValidateOptions(subDef.Options.TransportOptions()); err != nil {
+		return nil, err
 	}
 
 	var eventFilter *regexp.Regexp

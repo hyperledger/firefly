@@ -50,8 +50,10 @@ func TestEventDispatcherStartStop(t *testing.T) {
 			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
 			Ephemeral:       true,
 			Options: fftypes.SubscriptionOptions{
-				ReadAhead:  &ten,
-				FirstEvent: &oldest,
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead:  &ten,
+					FirstEvent: &oldest,
+				},
 			},
 		},
 	})
@@ -119,7 +121,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		definition: &fftypes.Subscription{
 			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
 			Options: fftypes.SubscriptionOptions{
-				ReadAhead: &five,
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead: &five,
+				},
 			},
 		},
 		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageConfirmed)),
@@ -129,9 +133,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	mei := &eventsmocks.Plugin{}
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
 	}
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
@@ -237,9 +241,9 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	mei := &eventsmocks.Plugin{}
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
 	}
 
 	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
@@ -490,7 +494,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
@@ -514,7 +518,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliver.RunFn = func(a mock.Arguments) {
 		close(delivered)
 	}
@@ -556,7 +560,7 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	delivered := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliver.RunFn = func(a mock.Arguments) {
 		delivered <- true
 	}
@@ -603,7 +607,7 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	deliver.RunFn = func(a mock.Arguments) {
 		failNacked <- true
 	}

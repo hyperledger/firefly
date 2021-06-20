@@ -17,6 +17,7 @@
 package fftypes
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,15 +29,21 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	readAhead := uint16(50)
 	sub1 := &Subscription{
 		Options: SubscriptionOptions{
-			FirstEvent: &firstEvent,
-			ReadAhead:  &readAhead,
+			SubscriptionCoreOptions: SubscriptionCoreOptions{
+				FirstEvent: &firstEvent,
+				ReadAhead:  &readAhead,
+			},
 		},
+	}
+	sub1.Options.TransportOptions()["my-nested-opts"] = map[string]interface{}{
+		"myopt1": 12345,
+		"myopt2": "test",
 	}
 
 	// Verify it serializes as bytes to the database
 	b1, err := sub1.Options.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"firstEvent":"newest","readAhead":50}`, string(b1.([]byte)))
+	assert.Equal(t, `{"firstEvent":"newest","my-nested-opts":{"myopt1":12345,"myopt2":"test"},"readAhead":50}`, string(b1.([]byte)))
 
 	// Verify it restores ok
 	sub2 := &Subscription{}
@@ -44,7 +51,17 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	assert.NoError(t, err)
 	b2, err := sub1.Options.Value()
 	assert.NoError(t, err)
+	assert.Equal(t, SubOptsFirstEventNewest, *sub2.Options.FirstEvent)
+	assert.Equal(t, uint16(50), *sub2.Options.ReadAhead)
 	assert.Equal(t, string(b1.([]byte)), string(b2.([]byte)))
+
+	// Confirm we don't pass core options, to transports
+	assert.Nil(t, sub2.Options.TransportOptions()["readAhead"])
+	assert.Nil(t, sub2.Options.TransportOptions()["firstEvent"])
+
+	// Confirm we get back the transport options
+	assert.Equal(t, float64(12345), sub2.Options.TransportOptions().GetObject("my-nested-opts")["myopt1"])
+	assert.Equal(t, "test", sub2.Options.TransportOptions().GetObject("my-nested-opts")["myopt2"])
 
 	// Verify it can also scan as a string
 	err = sub2.Options.Scan(string(b1.([]byte)))
@@ -53,5 +70,19 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 	// Out of luck with anything else
 	err = sub2.Options.Scan(false)
 	assert.Regexp(t, "FF10125", err)
+
+}
+
+func TestSubscriptionUnMarshalFail(t *testing.T) {
+
+	b, err := json.Marshal(&SubscriptionOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, `{}`, string(b))
+
+	err = json.Unmarshal([]byte(`!badjson`), &SubscriptionOptions{})
+	assert.Regexp(t, "invalid", err)
+
+	err = json.Unmarshal([]byte(`{"readAhead": "!a number"}`), &SubscriptionOptions{})
+	assert.Regexp(t, "readAhead", err)
 
 }
