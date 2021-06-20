@@ -17,6 +17,8 @@
 package e2e
 
 import (
+	"context"
+	"crypto/sha256"
 	"fmt"
 	"net/url"
 	"os"
@@ -80,13 +82,17 @@ func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes
 		assert.Equal(ts.t, group.String(), (data)[1].Value.JSONObject().GetString("hash"))
 	}
 	assert.Equal(ts.t, "default", (data)[0].Namespace)
+	expectedHash, err := data[0].CalcHash(context.Background())
+	assert.NoError(ts.t, err)
+	assert.Equal(ts.t, *expectedHash, *data[0].Hash)
 
 	if value != nil {
 		assert.Equal(ts.t, value, (data)[0].Value)
-	}
-
-	if data[0].Blob != nil {
-		panic("TODO!")
+	} else {
+		blob := GetBlob(ts.t, client, data[0], 200)
+		assert.NotNil(ts.t, blob)
+		var hash fftypes.Bytes32 = sha256.Sum256(blob)
+		assert.Equal(ts.t, *data[0].Blob.Hash, hash)
 	}
 }
 

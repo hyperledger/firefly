@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"testing"
 	"time"
@@ -38,6 +39,7 @@ var (
 	urlBroadcastMessage = "/namespaces/default/broadcast/message"
 	urlPrivateMessage   = "/namespaces/default/send/message"
 	urlGetData          = "/namespaces/default/data"
+	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -89,6 +91,18 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return data
+}
+
+func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedStatus int) []byte {
+	path := fmt.Sprintf(urlGetDataBlob, data.ID)
+	resp, err := client.R().
+		SetDoNotParseResponse(true).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	blob, err := ioutil.ReadAll(resp.RawBody())
+	require.NoError(t, err)
+	return blob
 }
 
 func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
