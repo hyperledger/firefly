@@ -14,8 +14,9 @@ coverage.html:
 coverage: test coverage.html
 lint:
 		GOGC=20 $(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run -v --timeout 5m
-mocks: ${GOFILES}
+mockery: .ALWAYS
 		go get github.com/vektra/mockery/cmd/mockery
+mocks: mockery ${GOFILES}
 		$(eval MOCKERY := $(shell go list -f '{{.Target}}' github.com/vektra/mockery/cmd/mockery))
 		${MOCKERY} --case underscore --dir pkg/blockchain            --name Plugin           --output mocks/blockchainmocks       --outpkg blockchainmocks
 		${MOCKERY} --case underscore --dir pkg/blockchain            --name Callbacks        --output mocks/blockchainmocks      --outpkg blockchainmocks

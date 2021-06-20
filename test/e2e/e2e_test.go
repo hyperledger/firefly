@@ -80,7 +80,14 @@ func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes
 		assert.Equal(ts.t, group.String(), (data)[1].Value.JSONObject().GetString("hash"))
 	}
 	assert.Equal(ts.t, "default", (data)[0].Namespace)
-	assert.Equal(ts.t, value, (data)[0].Value)
+
+	if value != nil {
+		assert.Equal(ts.t, value, (data)[0].Value)
+	}
+
+	if data[0].Blob != nil {
+		panic("TODO!")
+	}
 }
 
 func beforeE2ETest(t *testing.T) *testState {
@@ -254,8 +261,8 @@ func TestE2EBroadcastBlob(t *testing.T) {
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
-	// validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypeBroadcast)
+	validateReceivedMessages(ts, ts.client1, nil, fftypes.MessageTypeBroadcast)
 
 	<-received2
-	// validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypeBroadcast)
+	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypeBroadcast)
 }

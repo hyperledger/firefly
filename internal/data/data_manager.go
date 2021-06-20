@@ -19,6 +19,7 @@ package data
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
@@ -42,6 +43,7 @@ type Manager interface {
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
 	UploadBLOB(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error)
 	CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (blob *fftypes.Blob, err error)
+	DownloadBLOB(ctx context.Context, ns, dataID string) (io.ReadCloser, error)
 }
 
 type dataManager struct {

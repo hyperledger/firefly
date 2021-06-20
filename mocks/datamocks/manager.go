@@ -7,6 +7,8 @@ import (
 
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 
+	io "io"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -45,6 +47,29 @@ func (_m *Manager) CopyBlobPStoDX(ctx context.Context, _a1 *fftypes.Data) (*ffty
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Data) error); ok {
 		r1 = rf(ctx, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DownloadBLOB provides a mock function with given fields: ctx, ns, dataID
+func (_m *Manager) DownloadBLOB(ctx context.Context, ns string, dataID string) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, ns, dataID)
+
+	var r0 io.ReadCloser
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) io.ReadCloser); ok {
+		r0 = rf(ctx, ns, dataID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(io.ReadCloser)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, dataID)
 	} else {
 		r1 = ret.Error(1)
 	}

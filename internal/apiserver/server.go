@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -240,23 +241,45 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 			}
 		}
 		if err == nil {
-			isNil := output == nil || reflect.ValueOf(output).IsNil()
-			if isNil && status != 204 {
-				err = i18n.NewError(req.Context(), i18n.Msg404NoResult)
-				status = 404
-			}
-			res.Header().Add("Content-Type", "application/json")
-			res.WriteHeader(status)
-			if !isNil {
-				err = json.NewEncoder(res).Encode(output)
-				if err != nil {
-					err = i18n.WrapError(req.Context(), err, i18n.MsgResponseMarshalError)
-					log.L(req.Context()).Errorf(err.Error())
-				}
-			}
+			status, err = as.handleOutput(req.Context(), res, status, output)
 		}
 		return status, err
 	})
+}
+
+func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, status int, output interface{}) (int, error) {
+	vOutput := reflect.ValueOf(output)
+	outputKind := vOutput.Kind()
+	isPointer := outputKind == reflect.Ptr
+	invalid := outputKind == reflect.Invalid
+	isNil := output == nil || invalid || (isPointer && vOutput.IsNil())
+	var reader io.ReadCloser
+	var marshalErr error
+	if !isNil && vOutput.CanInterface() {
+		reader, _ = vOutput.Interface().(io.ReadCloser)
+	}
+	switch {
+	case isNil:
+		if status != 204 {
+			return 404, i18n.NewError(ctx, i18n.Msg404NoResult)
+		}
+		res.WriteHeader(204)
+	case reader != nil:
+		defer reader.Close()
+		res.Header().Add("Content-Type", "application/octet-stream")
+		res.WriteHeader(status)
+		_, marshalErr = io.Copy(res, reader)
+	default:
+		res.Header().Add("Content-Type", "application/json")
+		res.WriteHeader(status)
+		marshalErr = json.NewEncoder(res).Encode(output)
+	}
+	if marshalErr != nil {
+		err := i18n.WrapError(ctx, marshalErr, i18n.MsgResponseMarshalError)
+		log.L(ctx).Errorf(err.Error())
+		return 500, err
+	}
+	return status, nil
 }
 
 func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {

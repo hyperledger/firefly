@@ -35,6 +35,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func uuidMatches(id1 *fftypes.UUID) interface{} {
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
+}
+
 func TestUploadBlobOk(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
@@ -404,5 +408,160 @@ func TestCopyBlobPStoDownloadNotFound(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Nil(t, blob)
+
+}
+
+func TestDownloadBlobOk(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	blobHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns1",
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
+	}, nil)
+	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(&fftypes.Blob{
+		Hash:       blobHash,
+		PayloadRef: "ns1/blob1",
+	}, nil)
+
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("DownloadBLOB", ctx, "ns1/blob1").Return(
+		ioutil.NopCloser(bytes.NewReader([]byte("some blob"))),
+		nil)
+
+	reader, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.NoError(t, err)
+	b, err := ioutil.ReadAll(reader)
+	reader.Close()
+	assert.Equal(t, "some blob", string(b))
+
+}
+
+func TestDownloadBlobNotFound(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	blobHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns1",
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
+	}, nil)
+	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, nil)
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.Regexp(t, "FF10239", err)
+
+}
+
+func TestDownloadBlobLookupErr(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	blobHash := fftypes.NewRandB32()
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns1",
+		Blob: &fftypes.BlobRef{
+			Hash: blobHash,
+		},
+	}, nil)
+	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, fmt.Errorf("pop"))
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestDownloadBlobNoBlob(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns1",
+		Blob:      &fftypes.BlobRef{},
+	}, nil)
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.Regexp(t, "FF10241", err)
+
+}
+
+func TestDownloadBlobNSMismatch(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+		ID:        dataID,
+		Namespace: "ns2",
+		Blob:      &fftypes.BlobRef{},
+	}, nil)
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.Regexp(t, "FF10143", err)
+
+}
+
+func TestDownloadBlobDataLookupErr(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	dataID := fftypes.NewUUID()
+
+	mdi := dm.database.(*databasemocks.Plugin)
+	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(nil, fmt.Errorf("pop"))
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
+	assert.Regexp(t, "pop", err)
+
+}
+
+func TestDownloadBlobBadNS(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	dataID := fftypes.NewUUID()
+
+	_, err := dm.DownloadBLOB(ctx, "!wrong", dataID.String())
+	assert.Regexp(t, "FF10131.*namespace", err)
+
+}
+
+func TestDownloadBlobBadID(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	_, err := dm.DownloadBLOB(ctx, "ns1", "!uuid")
+	assert.Regexp(t, "FF10142", err)
 
 }

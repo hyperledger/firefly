@@ -158,3 +158,35 @@ func (bs *blobStore) CopyBlobPStoDX(ctx context.Context, data *fftypes.Data) (bl
 	}
 	return blob, nil
 }
+
+func (bs *blobStore) DownloadBLOB(ctx context.Context, ns, dataID string) (io.ReadCloser, error) {
+
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+	id, err := fftypes.ParseUUID(ctx, dataID)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := bs.database.GetDataByID(ctx, id, false)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil || data.Namespace != ns {
+		return nil, i18n.NewError(ctx, i18n.Msg404NoResult)
+	}
+	if data.Blob == nil || data.Blob.Hash == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgDataDoesNotHaveBlob)
+	}
+
+	blob, err := bs.database.GetBlobMatchingHash(ctx, data.Blob.Hash)
+	if err != nil {
+		return nil, err
+	}
+	if blob == nil {
+		return nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, data.Blob.Hash)
+	}
+
+	return bs.exchange.DownloadBLOB(ctx, blob.PayloadRef)
+}
