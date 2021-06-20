@@ -133,7 +133,7 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, 
 	assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
 	assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
 	assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
-	assert.Equal(t, blobHash, *data.Blob)
+	assert.Equal(t, blobHash, *data.Blob.Hash)
 
 	return client.R().
 		SetBody(fftypes.MessageInput{

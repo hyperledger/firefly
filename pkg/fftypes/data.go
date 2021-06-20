@@ -71,29 +71,33 @@ func (d DataRefs) Hash() *Bytes32 {
 	return &b32
 }
 
-func (d *Data) Seal(ctx context.Context) error {
+func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if (d.Value == nil || d.Value.String() == "null") && (d.Blob == nil || d.Blob.Hash == nil) {
-		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
-	}
-	if d.ID == nil {
-		d.ID = NewUUID()
-	}
-	if d.Created == nil {
-		d.Created = Now()
+		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 	// The hash is either the blob hash, the value hash, or if both are supplied
 	// (e.g. a blob with associated metadata) it a hash of the two HEX hashes
 	// concattenated together (no spaces or separation).
 	switch {
 	case d.Value != nil && (d.Blob == nil || d.Blob.Hash == nil):
-		d.Hash = d.Value.Hash()
+		return d.Value.Hash(), nil
 	case d.Value == nil && d.Blob != nil && d.Blob.Hash != nil:
-		d.Hash = d.Blob.Hash
+		return d.Blob.Hash, nil
 	default:
 		hash := sha256.New()
 		hash.Write([]byte(d.Value.Hash().String()))
 		hash.Write([]byte(d.Blob.Hash.String()))
-		d.Hash = HashResult(hash)
+		return HashResult(hash), nil
 	}
-	return nil
+}
+
+func (d *Data) Seal(ctx context.Context) (err error) {
+	if d.ID == nil {
+		d.ID = NewUUID()
+	}
+	if d.Created == nil {
+		d.Created = Now()
+	}
+	d.Hash, err = d.CalcHash(ctx)
+	return err
 }

@@ -453,7 +453,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID()},
+				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
 			},
 		},
 	}
@@ -534,7 +534,7 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestPersistBatchDataBadHash(t *testing.T) {
+func TestPersistBatchDataNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
@@ -547,6 +547,21 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestPersistBatchDataBadHash(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batch := &fftypes.Batch{
+		ID: fftypes.NewUUID(),
+	}
+	data := &fftypes.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.Byteable(`"test"`),
+		Hash:  fftypes.NewRandB32(),
+	}
+	err := em.persistBatchData(context.Background(), batch, 0, data)
+	assert.NoError(t, err)
+}
+
 func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -554,9 +569,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -574,9 +587,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -593,9 +604,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -606,7 +615,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestPersistBatchMessageBadHash(t *testing.T) {
+func TestPersistBatchMessageNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
