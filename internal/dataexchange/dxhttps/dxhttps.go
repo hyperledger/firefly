@@ -185,7 +185,7 @@ func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (tr
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
-			Path:      payloadRef,
+			Path:      fmt.Sprintf("/%s", payloadRef),
 			Recipient: peerID,
 		}).
 		SetResult(&responseData).

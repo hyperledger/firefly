@@ -123,8 +123,7 @@ func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*rest
 		Post(urlBroadcastMessage)
 }
 
-func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
-
+func CreateBlob(t *testing.T, client *resty.Client) *fftypes.Data {
 	r, _ := rand.Int(rand.Reader, big.NewInt(1024*1024))
 	blob := make([]byte, r.Int64()+1024*1024)
 	for i := 0; i < len(blob); i++ {
@@ -133,7 +132,7 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, 
 	var blobHash fftypes.Bytes32 = sha256.Sum256(blob)
 	t.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
 	var data fftypes.Data
-	res, err := client.R().
+	resp, err := client.R().
 		SetFormData(map[string]string{
 			"autometa": "true",
 			"metadata": `{"mymeta": "data"}`,
@@ -141,14 +140,17 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, 
 		SetFileReader("file", "myfile.txt", bytes.NewReader(blob)).
 		SetResult(&data).
 		Post(urlUploadData)
-	if err != nil || res.IsError() {
-		return res, err
-	}
+	require.NoError(t, err)
+	require.Equal(t, 201, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
 	assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
 	assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
 	assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
 	assert.Equal(t, blobHash, *data.Blob.Hash)
+	return &data
+}
 
+func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
+	data := CreateBlob(t, client)
 	return client.R().
 		SetBody(fftypes.MessageInput{
 			InputData: fftypes.InputData{
@@ -156,6 +158,28 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, 
 			},
 		}).
 		Post(urlBroadcastMessage)
+}
+
+func PrivateBlobMessage(t *testing.T, client *resty.Client, orgNames []string) (*resty.Response, error) {
+	data := CreateBlob(t, client)
+	members := make([]fftypes.MemberInput, len(orgNames))
+	for i, oName := range orgNames {
+		// We let FireFly resolve the friendly name of the org to the identity
+		members[i] = fftypes.MemberInput{
+			Identity: oName,
+		}
+	}
+	return client.R().
+		SetBody(fftypes.MessageInput{
+			InputData: fftypes.InputData{
+				{DataRef: fftypes.DataRef{ID: data.ID}},
+			},
+			Group: &fftypes.InputGroup{
+				Members: members,
+				Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+			},
+		}).
+		Post(urlPrivateMessage)
 }
 
 func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string) (*resty.Response, error) {

@@ -73,26 +73,30 @@ func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes
 	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[0].Header.Topics)
 
 	data := GetData(ts.t, client, ts.startTime, 200)
+	var msgData *fftypes.Data
 	for i, d := range data {
 		ts.t.Logf("Data %d: %+v", i, *d)
+		if *d.ID == *messages[0].Data[0].ID {
+			msgData = d
+		}
 	}
+	assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[0].Data[0].ID)
 	if group == nil {
 		assert.Equal(ts.t, 1, len(data))
-	} else if msgType == fftypes.MessageTypePrivate {
-		assert.Equal(ts.t, group.String(), (data)[1].Value.JSONObject().GetString("hash"))
 	}
-	assert.Equal(ts.t, "default", (data)[0].Namespace)
-	expectedHash, err := data[0].CalcHash(context.Background())
+
+	assert.Equal(ts.t, "default", msgData.Namespace)
+	expectedHash, err := msgData.CalcHash(context.Background())
 	assert.NoError(ts.t, err)
-	assert.Equal(ts.t, *expectedHash, *data[0].Hash)
+	assert.Equal(ts.t, *expectedHash, *msgData.Hash)
 
 	if value != nil {
 		assert.Equal(ts.t, value, (data)[0].Value)
 	} else {
-		blob := GetBlob(ts.t, client, data[0], 200)
+		blob := GetBlob(ts.t, client, msgData, 200)
 		assert.NotNil(ts.t, blob)
 		var hash fftypes.Bytes32 = sha256.Sum256(blob)
-		assert.Equal(ts.t, *data[0].Blob.Hash, hash)
+		assert.Equal(ts.t, *msgData.Blob.Hash, hash)
 	}
 }
 
@@ -271,4 +275,42 @@ func TestE2EBroadcastBlob(t *testing.T) {
 
 	<-received2
 	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypeBroadcast)
+}
+
+func TestE2EPrivateBlob(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+
+	received1 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws1.ReadMessage()
+			require.NoError(t, err)
+			received1 <- true
+		}
+	}()
+
+	received2 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws2.ReadMessage()
+			require.NoError(t, err)
+			received2 <- true
+		}
+	}()
+
+	var resp *resty.Response
+
+	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
+
+	<-received1
+	validateReceivedMessages(ts, ts.client1, nil, fftypes.MessageTypePrivate)
+
+	<-received2
+	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypePrivate)
 }

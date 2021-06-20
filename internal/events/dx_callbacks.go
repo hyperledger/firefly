@@ -123,6 +123,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 				Peer:       peerID,
 				PayloadRef: payloadRef,
 				Hash:       &hash,
+				Created:    fftypes.Now(),
 			})
 			if err != nil {
 				return err
