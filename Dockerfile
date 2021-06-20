@@ -1,7 +1,7 @@
 FROM golang:1.16-alpine3.13 AS firefly-builder
 RUN apk add make gcc build-base curl
 WORKDIR /firefly
-ENV UI_RELEASE "https://github.com/hyperledger-labs/firefly-ui/releases/download/v0.1.0/v0.1.0_e41748c.tgz"
+ENV UI_RELEASE "https://github.com/hyperledger-labs/firefly-ui/releases/download/v0.1.0/v0.1.0_3d0e531.tgz"
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
