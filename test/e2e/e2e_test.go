@@ -97,8 +97,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	ts := &testState{
 		t:         t,
 		startTime: time.Now(),
-		client1:   resty.New(),
-		client2:   resty.New(),
+		client1:   NewResty(t),
+		client2:   NewResty(t),
 	}
 
 	ts.client1.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port1))
@@ -116,7 +116,7 @@ func beforeE2ETest(t *testing.T) *testState {
 			ts.org2 = orgs[1]
 			break
 		}
-		t.Logf("Waiting for 2 orgs to appear. Currently have: %v", orgs)
+		t.Logf("Waiting for 2 orgs to appear. Currently have: %d", len(orgs))
 		time.Sleep(3 * time.Second)
 	}
 
@@ -223,4 +223,39 @@ func TestE2EPrivate(t *testing.T) {
 
 	<-received2
 	validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypePrivate)
+}
+
+func TestE2EBroadcastBlob(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+
+	received1 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws1.ReadMessage()
+			require.NoError(t, err)
+			received1 <- true
+		}
+	}()
+
+	received2 := make(chan bool)
+	go func() {
+		for {
+			_, _, err := ts.ws2.ReadMessage()
+			require.NoError(t, err)
+			received2 <- true
+		}
+	}()
+
+	var resp *resty.Response
+
+	resp, err := BroadcastBlobMessage(t, ts.client1)
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
+
+	<-received1
+	// validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypeBroadcast)
+
+	<-received2
+	// validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypeBroadcast)
 }

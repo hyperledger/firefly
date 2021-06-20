@@ -154,9 +154,12 @@ func TestUploadBLOB(t *testing.T) {
 	httpmock.RegisterResponder("PUT", fmt.Sprintf("%s/api/v1/blobs/ns1/%s", httpURL, u),
 		func(r *http.Request) (*http.Response, error) {
 			res := &http.Response{
-				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{}`))),
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{
+					"hash": "%s"
+				}`, hash)))),
 				Header: http.Header{
-					"Dx-Hash": []string{hash.String()},
+					"Content-Type": []string{"application/json"},
+					"Dx-Hash":      []string{hash.String()},
 				},
 				StatusCode: 200,
 			}

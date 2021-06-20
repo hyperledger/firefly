@@ -71,6 +71,11 @@ type responseWithRequestID struct {
 	RequestID string `json:"requestID"`
 }
 
+type uploadBlob struct {
+	Hash       string      `json:"hash"`
+	LastUpdate json.Number `json:"lastUpdate"`
+}
+
 type sendMessage struct {
 	Message   string `json:"message"`
 	Recipient string `json:"recipient"`
@@ -133,16 +138,17 @@ func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSO
 
 func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
+	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
 		SetFileReader("file", id.String(), content).
+		SetResult(&upload).
 		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
 		err = restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 		return "", nil, err
 	}
-	hashString := res.Header().Get(dxHTTPHeaderHash)
-	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return "", nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash")
+	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
+		return "", nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
 	}
 	return payloadRef, hash, nil
 }
@@ -203,7 +209,7 @@ func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fft
 	}
 	hashString := res.Header().Get(dxHTTPHeaderHash)
 	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
 	}
 	return hash, nil
 }

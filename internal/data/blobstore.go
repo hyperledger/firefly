@@ -62,6 +62,8 @@ func (bs *blobStore) uploadVerifyBLOB(ctx context.Context, ns string, id *fftype
 	}
 
 	hash = fftypes.HashResult(hashCalc)
+	log.L(ctx).Debugf("Upload BLOB size=%d hashes: calculated=%s upload=%s (expected=%v)", written, hash, uploadHash, expectedHash)
+
 	if !uploadHash.Equals(hash) {
 		return nil, -1, "", i18n.NewError(ctx, i18n.MsgDXBadHash, uploadHash, hash)
 	}

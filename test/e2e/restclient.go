@@ -17,23 +17,50 @@
 package e2e
 
 import (
+	"bytes"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
 )
 
 var (
 	urlGetNamespaces    = "/namespaces"
+	urlUploadData       = "/namespaces/default/data"
 	urlGetMessages      = "/namespaces/default/messages"
 	urlBroadcastMessage = "/namespaces/default/broadcast/message"
 	urlPrivateMessage   = "/namespaces/default/send/message"
 	urlGetData          = "/namespaces/default/data"
 	urlGetOrganizations = "/network/organizations"
 )
+
+func NewResty(t *testing.T) *resty.Client {
+	client := resty.New()
+	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
+		t.Logf("==> %s %s", req.Method, req.URL)
+		return nil
+	})
+	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
+		if resp == nil {
+			return nil
+		}
+		t.Logf("<== %d", resp.StatusCode())
+		if resp.IsError() {
+			t.Logf("<!! %s", resp.String())
+			t.Logf("Headers: %+v", resp.Header())
+		}
+		return nil
+	})
+
+	return client
+}
 
 func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 	return client.R().
@@ -78,6 +105,41 @@ func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*rest
 	return client.R().
 		SetBody(fftypes.MessageInput{
 			InputData: fftypes.InputData{data},
+		}).
+		Post(urlBroadcastMessage)
+}
+
+func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
+
+	r, _ := rand.Int(rand.Reader, big.NewInt(1024*1024))
+	blob := make([]byte, r.Int64()+1024*1024)
+	for i := 0; i < len(blob); i++ {
+		blob[i] = byte('a' + i%26)
+	}
+	var blobHash fftypes.Bytes32 = sha256.Sum256(blob)
+	t.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
+	var data fftypes.Data
+	res, err := client.R().
+		SetFormData(map[string]string{
+			"autometa": "true",
+			"metadata": `{"mymeta": "data"}`,
+		}).
+		SetFileReader("file", "myfile.txt", bytes.NewReader(blob)).
+		SetResult(&data).
+		Post(urlUploadData)
+	if err != nil || res.IsError() {
+		return res, err
+	}
+	assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
+	assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
+	assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
+	assert.Equal(t, blobHash, *data.Blob)
+
+	return client.R().
+		SetBody(fftypes.MessageInput{
+			InputData: fftypes.InputData{
+				{DataRef: fftypes.DataRef{ID: data.ID}},
+			},
 		}).
 		Post(urlBroadcastMessage)
 }
