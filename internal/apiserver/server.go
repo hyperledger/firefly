@@ -345,7 +345,7 @@ func (as *apiServer) getAPIURL() string {
 	if !apiConfigPrefix.GetBool(HTTPConfTLSEnabled) {
 		proto = "http"
 	}
-	return fmt.Sprintf("%s://%s:%s/api/v1", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
+	return fmt.Sprintf("%s://%s:%s", proto, apiConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
 }
 
 func (as *apiServer) getAdminURL() string {
@@ -353,7 +353,7 @@ func (as *apiServer) getAdminURL() string {
 	if !adminConfigPrefix.GetBool(HTTPConfTLSEnabled) {
 		proto = "http"
 	}
-	return fmt.Sprintf("%s://%s:%s/admin/api/v1", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
+	return fmt.Sprintf("%s://%s:%s/admin", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
 }
 
 func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {

@@ -56,12 +56,14 @@ var testRoutes = []*Route{
 		FilterFactory:  database.MessageQueryFactory,
 		Description:    i18n.MsgTBD,
 		JSONInputValue: func() interface{} { return nil },
-		JSONInputSchema: `{
+		JSONInputSchema: func(ctx context.Context) string {
+			return `{
 			"type": "object",
 			"properties": {
 				"id": "string"
 			}
-		}`,
+		}`
+		},
 		JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
 		JSONOutputCode:  http.StatusOK,
 	},
@@ -134,7 +136,7 @@ func TestBadCustomSchema(t *testing.T) {
 			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
 			JSONInputMask:   []string{"id"},
 			JSONOutputCode:  http.StatusOK,
-			JSONInputSchema: `!json`,
+			JSONInputSchema: func(ctx context.Context) string { return `!json` },
 		},
 	}
 	assert.PanicsWithValue(t, "invalid schema for *fftypes.Message: invalid character '!' looking for beginning of value", func() {

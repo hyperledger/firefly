@@ -17,6 +17,7 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -59,7 +60,7 @@ var putConfigRecord = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
 	JSONOutputValue: nil,
 	JSONOutputCode:  http.StatusOK,
-	JSONInputSchema: anyJSONSchema,
+	JSONInputSchema: func(ctx context.Context) string { return anyJSONSchema },
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.PutConfigRecord(r.Ctx, r.PP["key"], *r.Input.(*fftypes.Byteable))
 		return output, err

@@ -17,6 +17,7 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -34,7 +35,7 @@ var postRegisterNodeOrg = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
 	JSONInputMask:   nil,
-	JSONInputSchema: emptyObjectSchema,
+	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCode:  http.StatusAccepted, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

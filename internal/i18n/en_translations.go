@@ -173,4 +173,5 @@ var (
 	MsgWebhooksOptInputQuery       = ffm("FF10253", "A top-level property of the first data input, to use for query parameters")
 	MsgWebhooksOptInputHeaders     = ffm("FF10254", "A top-level property of the first data input, to use for headers")
 	MsgWebhooksOptInputBody        = ffm("FF10255", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
+	MsgWebhooksOptFastAck          = ffm("FF10256", "When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
 )

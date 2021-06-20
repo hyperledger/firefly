@@ -49,13 +49,13 @@ func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, even
 	return r0
 }
 
-// GetOptionsSchema provides a mock function with given fields:
-func (_m *Plugin) GetOptionsSchema() string {
-	ret := _m.Called()
+// GetOptionsSchema provides a mock function with given fields: _a0
+func (_m *Plugin) GetOptionsSchema(_a0 context.Context) string {
+	ret := _m.Called(_a0)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(string)
 	}

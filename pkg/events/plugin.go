@@ -40,7 +40,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// GetOptionsSchema returns a JSON schema for the transport specific options
-	GetOptionsSchema() string
+	GetOptionsSchema(context.Context) string
 
 	// ValidateOptions verifies a set of input options, prior to storage of a new subscription
 	// The plugin can modify the core subscription options, such as overriding whether data is delivered.

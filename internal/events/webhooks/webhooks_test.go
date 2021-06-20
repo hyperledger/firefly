@@ -39,7 +39,7 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	wh.Init(ctx, svrPrefix, cbs)
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
-	assert.NotNil(t, wh.GetOptionsSchema())
+	assert.NotNil(t, wh.GetOptionsSchema(wh.ctx))
 	return wh, cancelCtx
 }
 

@@ -47,7 +47,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ws.Init(ctx, svrPrefix, cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
-	assert.NotNil(t, ws.GetOptionsSchema())
+	assert.NotNil(t, ws.GetOptionsSchema(context.Background()))
 	cbs.On("ConnnectionClosed", mock.Anything).Return(nil).Maybe()
 
 	svr := httptest.NewServer(ws)

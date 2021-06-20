@@ -74,9 +74,13 @@ func (wh *WebHooks) Capabilities() *events.Capabilities {
 	return wh.capabilities
 }
 
-func (wh *WebHooks) GetOptionsSchema() string {
+func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 	return fmt.Sprintf(`{
 		"properties": {
+			"fastack": {
+				"type": "boolean",
+				"description": "%s"
+			},
 			"url": {
 				"type": "string",
 				"description": "%s"
@@ -109,8 +113,8 @@ func (wh *WebHooks) GetOptionsSchema() string {
 			},
 			"input": {
 				"type": "object",
+				"description": "%s",
 				"properties": {
-					"description": "%s",
 					"query": {
 						"type": "string",
 						"description": "%s"
@@ -127,16 +131,17 @@ func (wh *WebHooks) GetOptionsSchema() string {
 			}
 		}
 	}`,
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptURL),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptMethod),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptJSON),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptReply),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptHeaders),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptQuery),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptInput),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptInputQuery),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptInputHeaders),
-		i18n.Expand(wh.ctx, i18n.MsgWebhooksOptInputBody),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptFastAck),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptURL),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptMethod),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptJSON),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptReply),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptHeaders),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptQuery),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInput),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInputQuery),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInputHeaders),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInputBody),
 	)
 }
 

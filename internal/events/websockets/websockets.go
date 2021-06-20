@@ -62,7 +62,7 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) GetOptionsSchema() string {
+func (ws *WebSockets) GetOptionsSchema(ctx context.Context) string {
 	return `{}` // no extra options currently
 }
 

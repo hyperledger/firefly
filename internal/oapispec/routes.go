@@ -17,6 +17,8 @@
 package oapispec
 
 import (
+	"context"
+
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/database"
@@ -48,7 +50,7 @@ type Route struct {
 	// JSONInputMask are fields that aren't available for users to supply on input
 	JSONInputMask []string
 	// JSONInputSchema is a custom schema definition, for the case where the auto-gen + mask isn't good enough
-	JSONInputSchema string
+	JSONInputSchema func(ctx context.Context) string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
 	// JSONOutputCode is the success response code
