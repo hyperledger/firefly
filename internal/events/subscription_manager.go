@@ -54,6 +54,7 @@ type subscriptionManager struct {
 	database             database.Plugin
 	data                 data.Manager
 	eventNotifier        *eventNotifier
+	rs                   *replySender
 	transports           map[string]events.Plugin
 	connections          map[string]*connection
 	mux                  sync.Mutex
@@ -65,7 +66,7 @@ type subscriptionManager struct {
 	retry                retry.Retry
 }
 
-func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier, rs *replySender) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
 		ctx:                  ctx,
@@ -79,6 +80,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
 		cancelCtx:            cancelCtx,
 		eventNotifier:        en,
+		rs:                   rs,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.SubscriptionsRetryInitialDelay),
 			MaximumDelay: config.GetDuration(config.SubscriptionsRetryMaxDelay),
@@ -189,17 +191,6 @@ func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
 }
 
 func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
-	var subDef *fftypes.Subscription
-	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
-		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
-		return err != nil, err // indefinite retry
-	})
-	if err != nil || subDef == nil {
-		// either the context was cancelled (so we're closing), or the subscription no longer exists
-		log.L(sm.ctx).Infof("Unable to process deleted subscription event for id=%s (%v)", id, err)
-		return
-	}
-
 	sm.mux.Lock()
 	var dispatchers []*eventDispatcher
 	// Remove it from the list of durable subs (if there)
@@ -217,7 +208,7 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	}
 	sm.mux.Unlock()
 
-	log.L(sm.ctx).Infof("Deleting subscription %s:%s [%s] loaded=%t dispatchers=%d", subDef.Namespace, subDef.Name, subDef.ID, loaded, len(dispatchers))
+	log.L(sm.ctx).Infof("Cleaning up subscription %s loaded=%t dispatchers=%d", id, loaded, len(dispatchers))
 
 	// Outside the lock, close out the active dispatchers
 	for _, dispatcher := range dispatchers {
@@ -339,7 +330,7 @@ func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub
 	ei, foundTransport := sm.transports[sub.definition.Transport]
 	if foundTransport {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, conn.id, sub, sm.eventNotifier)
+			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
@@ -378,7 +369,7 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, connID, newSub, sm.eventNotifier)
+	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, connID, newSub, sm.eventNotifier)
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher

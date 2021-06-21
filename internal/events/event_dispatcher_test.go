@@ -24,9 +24,11 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
+	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,9 +39,13 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	rs := &replySender{
+		broadcast: &broadcastmocks.Manager{},
+		messaging: &privatemessagingmocks.Manager{},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, mdm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
+	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -728,4 +734,75 @@ func TestDeliverEventsWithDataFail(t *testing.T) {
 	an := <-ed.acksNacks
 	assert.True(t, an.isNack)
 
+}
+
+func TestEventDispatcherWithReply(t *testing.T) {
+	log.SetLevel("debug")
+	var two = uint16(5)
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Options: fftypes.SubscriptionOptions{
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead: &two,
+				},
+			},
+		},
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageConfirmed)),
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	cancel()
+	ed.acksNacks = make(chan ackNack, 2)
+	mbm := ed.rs.broadcast.(*broadcastmocks.Manager)
+	mpm := ed.rs.messaging.(*privatemessagingmocks.Manager)
+	mbm.On("BroadcastMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	mpm.On("SendMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+
+	event1 := fftypes.NewUUID()
+	event2 := fftypes.NewUUID()
+	ed.inflight[*event1] = &fftypes.Event{
+		ID:        event1,
+		Namespace: "ns1",
+	}
+	ed.inflight[*event2] = &fftypes.Event{
+		ID:        event2,
+		Namespace: "ns1",
+	}
+
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
+		ID: event1,
+		Reply: &fftypes.MessageInput{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Tag:  "myreplytag1",
+					CID:  fftypes.NewUUID(),
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
+			InputData: fftypes.InputData{
+				{Value: fftypes.Byteable(`"my reply"`)},
+			},
+		},
+	})
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
+		ID: event2,
+		Reply: &fftypes.MessageInput{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Tag:   "myreplytag2",
+					CID:   fftypes.NewUUID(),
+					Type:  fftypes.MessageTypePrivate,
+					Group: fftypes.NewRandB32(),
+				},
+			},
+			InputData: fftypes.InputData{
+				{Value: fftypes.Byteable(`"my reply"`)},
+			},
+		},
+	})
+
+	mbm.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }

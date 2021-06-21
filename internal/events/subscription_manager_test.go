@@ -22,9 +22,11 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
+	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +46,11 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"))
+	rs := &replySender{
+		broadcast: &broadcastmocks.Manager{},
+		messaging: &privatemessagingmocks.Manager{},
+	}
+	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), rs)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -159,7 +165,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	config.Reset()
 	config.Set(config.EventTransportsEnabled, []string{"!unknown!"})
-	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"))
+	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), nil)
 	assert.Regexp(t, "FF10172", err)
 }
 

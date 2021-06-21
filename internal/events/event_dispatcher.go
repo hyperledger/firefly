@@ -47,6 +47,7 @@ type eventDispatcher struct {
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
+	rs            *replySender
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*fftypes.Event
@@ -57,7 +58,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
@@ -66,6 +67,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:      di,
 		transport:     ei,
+		rs:            rs,
 		data:          dm,
 		connID:        connID,
 		cancelCtx:     cancelCtx,
@@ -363,7 +365,6 @@ func (ed *eventDispatcher) deliverEvents() {
 		}
 	}
 }
-
 func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) {
 	l := log.L(ed.ctx)
 
@@ -381,6 +382,12 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	if !found {
 		l.Warnf("Response for event not in flight: %s rejected=%t info='%s' (likely previous reject)", response.ID, response.Rejected, response.Info)
 		return
+	}
+
+	// We might have a message to send, do that before we dispatch the ack
+	// Note a failure to send the reply does not invalidate the ack
+	if response.Reply != nil {
+		ed.rs.sendReply(ed.ctx, event, response.Reply)
 	}
 
 	l.Debugf("Response for event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)

@@ -96,6 +96,10 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 				"type": "boolean",
 				"description": "%s"
 			},
+			"replytag": {
+				"type": "string",
+				"description": "%s"
+			},
 			"headers": {
 				"type": "object",
 				"description": "%s",
@@ -135,6 +139,7 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 		i18n.Expand(ctx, i18n.MsgWebhooksOptMethod),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptJSON),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptReply),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptReplyTag),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptHeaders),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptQuery),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInput),
@@ -327,6 +332,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 						CID:   event.Message.Header.ID,
 						Group: event.Message.Header.Group,
 						Type:  event.Message.Header.Type,
+						Tag:   sub.Options.TransportOptions().GetString("replytag"),
 					},
 				},
 				InputData: fftypes.InputData{

@@ -40,6 +40,7 @@ var (
 	urlPrivateMessage   = "/namespaces/default/send/message"
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
+	urlSubscriptions    = "/namespaces/default/subscriptions"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -113,6 +114,41 @@ func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*ff
 	require.NoError(t, err)
 	require.Equal(t, expectedStatus, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return orgs
+}
+
+func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, expectedStatus int) *fftypes.Subscription {
+	path := urlSubscriptions
+	var sub fftypes.Subscription
+	resp, err := client.R().
+		SetBody(input).
+		SetResult(&sub).
+		SetHeader("Content-Type", "application/json").
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatus, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &sub
+}
+
+func CleanupExistingSubscription(t *testing.T, client *resty.Client, namespace, name string) {
+	var subs []*fftypes.Subscription
+	path := urlSubscriptions
+	resp, err := client.R().
+		SetResult(&subs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	for _, s := range subs {
+		if s.Namespace == namespace && s.Name == name {
+			DeleteSubscription(t, client, s.ID)
+		}
+	}
+}
+
+func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
+	path := fmt.Sprintf("%s/%s", urlSubscriptions, id)
+	resp, err := client.R().Delete(path)
+	require.NoError(t, err)
+	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
 func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*resty.Response, error) {

@@ -116,10 +116,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	em.NewSubscriptions() <- fftypes.NewUUID()
 	<-getSubCalled
 
-	getSubCallReady <- true
 	em.DeletedSubscriptions() <- fftypes.NewUUID()
-	<-getSubCalled
-
 	close(getSubCallReady)
 }
 
