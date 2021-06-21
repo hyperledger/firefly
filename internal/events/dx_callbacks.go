@@ -53,7 +53,11 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 			l.Errorf("Invalid transmission: nil message")
 			return nil
 		}
-		return em.unpinnedMessageReceived(peerID, wrapper.Message, wrapper.Data)
+		if wrapper.Group == nil {
+			l.Errorf("Invalid transmission: nil group")
+			return nil
+		}
+		return em.unpinnedMessageReceived(peerID, wrapper.Message, wrapper.Group, wrapper.Data)
 	default:
 		l.Errorf("Invalid transmission: unknonwn type '%s'", wrapper.Type)
 		return nil
@@ -256,14 +260,22 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 
 }
 
-func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.Message, data []*fftypes.Data) error {
+func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.Message, group *fftypes.Group, data []*fftypes.Data) error {
 	if message.Header.TxType != fftypes.TransactionTypeNone {
 		log.L(em.ctx).Errorf("Unpinned message '%s' transaction type must be 'none'. TxType=%s", message.Header.ID, message.Header.TxType)
 		return nil
 	}
 
+	// Because we received this off chain, it's entirely possible the group init has not made it
+	// to us yet. So we need to go through the same processing as if we had initiated the group.
+	// This might result in both sides broadcasting a group-init message, but that's fine.
+
 	return em.retry.Do(em.ctx, "unpinned message received", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+
+			if err := em.messaging.EnsureLocalGroup(ctx, group); err != nil {
+				return err
+			}
 
 			node, err := em.checkReceivedIdentity(peerID, message.Header.Author)
 			if err != nil {

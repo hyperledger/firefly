@@ -389,7 +389,6 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
-	<-received1 // request
 	<-received2 // request
 
 	<-received1 // reply
@@ -399,10 +398,4 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Regexp(t, "Example YAML", string(decoded1))
 
-	<-received2 // reply
-	val2 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, 2, 0)
-	assert.Equal(t, float64(200), val2.JSONObject()["status"])
-	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))
-	assert.NoError(t, err)
-	assert.Regexp(t, "Example YAML", string(decoded2))
 }

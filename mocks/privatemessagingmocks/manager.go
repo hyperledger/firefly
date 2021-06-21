@@ -16,6 +16,20 @@ type Manager struct {
 	mock.Mock
 }
 
+// EnsureLocalGroup provides a mock function with given fields: ctx, group
+func (_m *Manager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) error {
+	ret := _m.Called(ctx, group)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group) error); ok {
+		r0 = rf(ctx, group)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetGroupByID provides a mock function with given fields: ctx, id
 func (_m *Manager) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
 	ret := _m.Called(ctx, id)

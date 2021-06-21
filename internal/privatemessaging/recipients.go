@@ -41,7 +41,7 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 	log.L(ctx).Debugf("Resolved group '%s' for message. New=%t", group.Hash, isNew)
 	in.Message.Header.Group = group.Hash
 
-	// If the group is new, we need to do a group initialization, before we send the message itself
+	// If the group is new, we need to do a group initialization, before we send the message itself.
 	if isNew {
 		return pm.groupManager.groupInit(ctx, sender, group)
 	}

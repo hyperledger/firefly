@@ -120,7 +120,7 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	}
 
 	// Retrieve the group
-	nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
+	_, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
 	if err != nil {
 		return err
 	}

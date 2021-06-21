@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -180,6 +181,18 @@ func TestMessageReceivedNilMessage(t *testing.T) {
 	}`))
 	assert.NoError(t, err)
 
+}
+
+func TestMessageReceivedNilGroup(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdx := &dataexchangemocks.Plugin{}
+	err := em.MessageReceived(mdx, "peer1", []byte(`{
+		"type": "message",
+		"message": {}
+	}`))
+	assert.NoError(t, err)
 }
 
 func TestMessageReceiveNodeLookupError(t *testing.T) {
@@ -549,6 +562,7 @@ func TestMessageReceiveMessageWrongType(t *testing.T) {
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
+		Group:   &fftypes.Group{},
 	})
 
 	mdx := &dataexchangemocks.Plugin{}
@@ -574,10 +588,14 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
+		Group:   &fftypes.Group{},
 	})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(nil)
 
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -608,10 +626,14 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
+		Group:   &fftypes.Group{},
 	})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(nil)
 
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -642,10 +664,14 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
+		Group:   &fftypes.Group{},
 	})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(nil)
 
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -689,10 +715,14 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
 		Data:    []*fftypes.Data{data},
+		Group:   &fftypes.Group{},
 	})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(nil)
 
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -736,10 +766,14 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: msg,
 		Data:    []*fftypes.Data{data},
+		Group:   &fftypes.Group{},
 	})
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(nil)
 
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
@@ -754,6 +788,50 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertEvent", em.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	err = em.MessageReceived(mdx, "peer1", b)
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+}
+
+func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // to avoid infinite retry
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Author: "signingOrg",
+			ID:     fftypes.NewUUID(),
+			TxType: fftypes.TransactionTypeNone,
+		},
+	}
+	data := &fftypes.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.Byteable(`{}`),
+	}
+	err := msg.Seal(em.ctx)
+	assert.NoError(t, err)
+	err = data.Seal(em.ctx)
+	assert.NoError(t, err)
+	b, _ := json.Marshal(&fftypes.TransportWrapper{
+		Type:    fftypes.TransportPayloadTypeMessage,
+		Message: msg,
+		Data:    []*fftypes.Data{data},
+		Group:   &fftypes.Group{},
+	})
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdx := &dataexchangemocks.Plugin{}
+
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)

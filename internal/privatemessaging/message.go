@@ -88,7 +88,7 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *fftypes.Message) (err error) {
 
 	// Retrieve the group
-	nodes, err := pm.groupManager.getGroupNodes(ctx, message.Header.Group)
+	group, nodes, err := pm.groupManager.getGroupNodes(ctx, message.Header.Group)
 	if err != nil {
 		return err
 	}
@@ -111,6 +111,7 @@ func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *ff
 		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: message,
 		Data:    data,
+		Group:   group,
 	})
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)

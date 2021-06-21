@@ -29,4 +29,5 @@ type TransportWrapper struct {
 	Message *Message             `json:"message,omitempty"`
 	Data    []*Data              `json:"data,omitempty"`
 	Batch   *Batch               `json:"batch,omitempty"`
+	Group   *Group               `json:"group,omitempty"`
 }
