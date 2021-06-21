@@ -129,13 +129,14 @@ func beforeE2ETest(t *testing.T) *testState {
 	pollForUp(t, ts.client2)
 
 	for {
-		orgs := GetOrgs(t, ts.client1, 200)
-		if len(orgs) >= 2 {
-			ts.org1 = orgs[0]
-			ts.org2 = orgs[1]
+		orgsC1 := GetOrgs(t, ts.client1, 200)
+		orgsC2 := GetOrgs(t, ts.client2, 200)
+		if len(orgsC1) >= 2 && len(orgsC2) >= 2 {
+			ts.org1 = orgsC1[0]
+			ts.org2 = orgsC1[1]
 			break
 		}
-		t.Logf("Waiting for 2 orgs to appear. Currently have: %d", len(orgs))
+		t.Logf("Waiting for 2 orgs to appear. Currently have: node1=%d node2=%d", len(orgsC1), len(orgsC2))
 		time.Sleep(3 * time.Second)
 	}
 

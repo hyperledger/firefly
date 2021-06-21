@@ -108,7 +108,7 @@ func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *ff
 	}
 
 	payload, err := json.Marshal(&fftypes.TransportWrapper{
-		Type:    fftypes.TransportPayloadTypeBatch,
+		Type:    fftypes.TransportPayloadTypeMessage,
 		Message: message,
 		Data:    data,
 	})
