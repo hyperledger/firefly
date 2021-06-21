@@ -92,6 +92,9 @@ func TestGetConfig(t *testing.T) {
 
 func TestResetConfig(t *testing.T) {
 	or := newTestOrchestrator()
-	or.ResetConfig(context.Background())
+	requestCtx, cancelFunc := context.WithCancel(context.Background())
+	or.ResetConfig(requestCtx)
+	// Simulates the HTTP completing
+	cancelFunc()
 	<-or.ctx.Done()
 }
