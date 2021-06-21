@@ -44,6 +44,8 @@ type Ethereum struct {
 	ctx          context.Context
 	topic        string
 	instancePath string
+	prefixShort  string
+	prefixLong   string
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
@@ -122,6 +124,9 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	if e.topic == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
 	}
+
+	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
+	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
 	e.client = restclient.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
@@ -461,8 +466,8 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 	path := fmt.Sprintf("%s/pinBatch", e.instancePath)
 	res, err := e.client.R().
 		SetContext(ctx).
-		SetQueryParam("fly-from", identity.OnChain).
-		SetQueryParam("fly-sync", "false").
+		SetQueryParam(e.prefixShort+"-from", identity.OnChain).
+		SetQueryParam(e.prefixShort+"-sync", "false").
 		SetBody(input).
 		SetResult(tx).
 		Post(path)
