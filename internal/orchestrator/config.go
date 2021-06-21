@@ -48,7 +48,11 @@ func (or *orchestrator) PutConfigRecord(ctx context.Context, key string, value f
 }
 
 func (or *orchestrator) ResetConfig(ctx context.Context) {
-	or.cancelCtx()
+	// Restart the current context finishes to pick up the configuration change
+	go func() {
+		<-ctx.Done()
+		or.cancelCtx()
+	}()
 }
 
 func (or *orchestrator) DeleteConfigRecord(ctx context.Context, key string) (err error) {
