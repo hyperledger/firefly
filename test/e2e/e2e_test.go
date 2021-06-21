@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"os"
@@ -58,7 +59,7 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes.Byteable, msgType fftypes.MessageType) {
+func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftypes.MessageType, count, idx int) fftypes.Byteable {
 	var group *fftypes.Bytes32
 	messages := GetMessages(ts.t, client, ts.startTime, msgType, 200)
 	for i, message := range messages {
@@ -68,20 +69,20 @@ func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes
 		}
 		group = message.Header.Group
 	}
-	assert.Equal(ts.t, 1, len(messages))
-	assert.Equal(ts.t, fftypes.LowerCasedType("batch_pin"), (messages)[0].Header.TxType)
-	assert.Equal(ts.t, "default", (messages)[0].Header.Namespace)
-	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[0].Header.Topics)
+	assert.Equal(ts.t, count, len(messages))
+	assert.Equal(ts.t, fftypes.LowerCasedType("batch_pin"), (messages)[idx].Header.TxType)
+	assert.Equal(ts.t, "default", (messages)[idx].Header.Namespace)
+	assert.Equal(ts.t, fftypes.FFNameArray{"default"}, (messages)[idx].Header.Topics)
 
 	data := GetData(ts.t, client, ts.startTime, 200)
 	var msgData *fftypes.Data
 	for i, d := range data {
 		ts.t.Logf("Data %d: %+v", i, *d)
-		if *d.ID == *messages[0].Data[0].ID {
+		if *d.ID == *messages[idx].Data[0].ID {
 			msgData = d
 		}
 	}
-	assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[0].Data[0].ID)
+	assert.NotNil(ts.t, msgData, "Found data with ID '%s'", messages[idx].Data[0].ID)
 	if group == nil {
 		assert.Equal(ts.t, 1, len(data))
 	}
@@ -91,14 +92,14 @@ func validateReceivedMessages(ts *testState, client *resty.Client, value fftypes
 	assert.NoError(ts.t, err)
 	assert.Equal(ts.t, *expectedHash, *msgData.Hash)
 
-	if value != nil {
-		assert.Equal(ts.t, value, (data)[0].Value)
-	} else {
+	if msgData.Blob != nil {
 		blob := GetBlob(ts.t, client, msgData, 200)
 		assert.NotNil(ts.t, blob)
 		var hash fftypes.Bytes32 = sha256.Sum256(blob)
 		assert.Equal(ts.t, *msgData.Blob.Hash, hash)
 	}
+
+	return msgData.Value
 }
 
 func beforeE2ETest(t *testing.T) *testState {
@@ -142,13 +143,13 @@ func beforeE2ETest(t *testing.T) *testState {
 		Scheme:   "ws",
 		Host:     fmt.Sprintf("localhost:%d", port1),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
 	}
 	wsUrl2 := url.URL{
 		Scheme:   "ws",
 		Host:     fmt.Sprintf("localhost:%d", port2),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())
@@ -182,103 +183,113 @@ func wsReader(t *testing.T, conn *websocket.Conn) chan []byte {
 	return receiver
 }
 
-// func TestE2EBroadcast(t *testing.T) {
+func TestE2EBroadcast(t *testing.T) {
 
-// 	ts := beforeE2ETest(t)
-// 	defer ts.done()
+	ts := beforeE2ETest(t)
+	defer ts.done()
 
-// 	received1 := wsReader(t, ts.ws1)
-// 	received2 := wsReader(t, ts.ws2)
+	received1 := wsReader(t, ts.ws1)
+	received2 := wsReader(t, ts.ws2)
 
-// 	var resp *resty.Response
-// 	value := fftypes.Byteable(`"Hello"`)
-// 	data := fftypes.DataRefOrValue{
-// 		Value: value,
-// 	}
+	var resp *resty.Response
+	value := fftypes.Byteable(`"Hello"`)
+	data := fftypes.DataRefOrValue{
+		Value: value,
+	}
 
-// 	resp, err := BroadcastMessage(ts.client1, &data)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, 202, resp.StatusCode())
+	resp, err := BroadcastMessage(ts.client1, &data)
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
 
-// 	<-received1
-// 	validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypeBroadcast)
+	<-received1
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, 1, 0)
+	assert.Equal(t, data.Value, val1)
 
-// 	<-received2
-// 	validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypeBroadcast)
-// }
+	<-received2
+	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, 1, 0)
+	assert.Equal(t, data.Value, val2)
 
-// func TestE2EPrivate(t *testing.T) {
+}
 
-// 	ts := beforeE2ETest(t)
-// 	defer ts.done()
+func TestE2EPrivate(t *testing.T) {
 
-// 	received1 := wsReader(t, ts.ws1)
-// 	received2 := wsReader(t, ts.ws2)
+	ts := beforeE2ETest(t)
+	defer ts.done()
 
-// 	var resp *resty.Response
-// 	value := fftypes.Byteable(`"Hello"`)
-// 	data := fftypes.DataRefOrValue{
-// 		Value: value,
-// 	}
+	received1 := wsReader(t, ts.ws1)
+	received2 := wsReader(t, ts.ws2)
 
-// 	resp, err := PrivateMessage(t, ts.client1, &data, []string{
-// 		ts.org1.Name,
-// 		ts.org2.Name,
-// 	})
-// 	require.NoError(t, err)
-// 	assert.Equal(t, 202, resp.StatusCode())
+	var resp *resty.Response
+	value := fftypes.Byteable(`"Hello"`)
+	data := fftypes.DataRefOrValue{
+		Value: value,
+	}
 
-// 	<-received1
-// 	validateReceivedMessages(ts, ts.client1, value, fftypes.MessageTypePrivate)
+	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
 
-// 	<-received2
-// 	validateReceivedMessages(ts, ts.client2, value, fftypes.MessageTypePrivate)
-// }
+	<-received1
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, 1, 0)
+	assert.Equal(t, data.Value, val1)
 
-// func TestE2EBroadcastBlob(t *testing.T) {
+	<-received2
+	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, 1, 0)
+	assert.Equal(t, data.Value, val2)
+}
 
-// 	ts := beforeE2ETest(t)
-// 	defer ts.done()
+func TestE2EBroadcastBlob(t *testing.T) {
 
-// 	received1 := wsReader(t, ts.ws1)
-// 	received2 := wsReader(t, ts.ws2)
+	ts := beforeE2ETest(t)
+	defer ts.done()
 
-// 	var resp *resty.Response
+	received1 := wsReader(t, ts.ws1)
+	received2 := wsReader(t, ts.ws2)
 
-// 	resp, err := BroadcastBlobMessage(t, ts.client1)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, 202, resp.StatusCode())
+	var resp *resty.Response
 
-// 	<-received1
-// 	validateReceivedMessages(ts, ts.client1, nil, fftypes.MessageTypeBroadcast)
+	resp, err := BroadcastBlobMessage(t, ts.client1)
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
 
-// 	<-received2
-// 	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypeBroadcast)
-// }
+	<-received1
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, 1, 0)
+	assert.Regexp(t, "myfile.txt", string(val1))
 
-// func TestE2EPrivateBlob(t *testing.T) {
+	<-received2
+	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, 1, 0)
+	assert.Regexp(t, "myfile.txt", string(val2))
 
-// 	ts := beforeE2ETest(t)
-// 	defer ts.done()
+}
 
-// 	received1 := wsReader(t, ts.ws1)
-// 	received2 := wsReader(t, ts.ws2)
+func TestE2EPrivateBlob(t *testing.T) {
 
-// 	var resp *resty.Response
+	ts := beforeE2ETest(t)
+	defer ts.done()
 
-// 	resp, err := PrivateBlobMessage(t, ts.client1, []string{
-// 		ts.org1.Name,
-// 		ts.org2.Name,
-// 	})
-// 	require.NoError(t, err)
-// 	assert.Equal(t, 202, resp.StatusCode())
+	received1 := wsReader(t, ts.ws1)
+	received2 := wsReader(t, ts.ws2)
 
-// 	<-received1
-// 	validateReceivedMessages(ts, ts.client1, nil, fftypes.MessageTypePrivate)
+	var resp *resty.Response
 
-// 	<-received2
-// 	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypePrivate)
-// }
+	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
+
+	<-received1
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, 1, 0)
+	assert.Regexp(t, "myfile.txt", string(val1))
+
+	<-received2
+	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, 1, 0)
+	assert.Regexp(t, "myfile.txt", string(val2))
+}
 
 func TestE2EWebhookExchange(t *testing.T) {
 
@@ -296,27 +307,43 @@ func TestE2EWebhookExchange(t *testing.T) {
 			"withData": true,
 			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
 			"reply": true,
+			"replytag": "myreply",
 			"method": "GET"
+		},
+		"filter": {
+			"tag": "myrequest"
 		}
 	}`
 	CleanupExistingSubscription(t, ts.client2, "default", "myhook")
 	sub := CreateSubscription(t, ts.client2, subJSON, 201)
 	assert.NotNil(t, sub.ID)
 
+	data := fftypes.DataRefOrValue{
+		Value: fftypes.Byteable(`{}`),
+	}
+
 	var resp *resty.Response
-	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+	resp, err := PrivateMessage(t, ts.client1, &data, []string{
 		ts.org1.Name,
 		ts.org2.Name,
-	})
+	}, "myrequest")
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
-	<-received1
-	<-received2
+	<-received1 // request
+	<-received2 // request
 
 	<-received1 // reply
-	validateReceivedMessages(ts, ts.client1, nil, fftypes.MessageTypePrivate)
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, 2, 0)
+	assert.Equal(t, float64(200), val1.JSONObject()["status"])
+	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
+	assert.NoError(t, err)
+	assert.Regexp(t, "Example YAML", string(decoded1))
 
 	<-received2 // reply
-	validateReceivedMessages(ts, ts.client2, nil, fftypes.MessageTypePrivate)
+	val2 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, 2, 0)
+	assert.Equal(t, float64(200), val2.JSONObject()["status"])
+	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))
+	assert.NoError(t, err)
+	assert.Regexp(t, "Example YAML", string(decoded2))
 }

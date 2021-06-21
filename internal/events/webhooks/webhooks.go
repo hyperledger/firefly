@@ -317,7 +317,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 			Body: b,
 		}
 	}
-	b, _ := json.MarshalIndent(&res, "", "  ")
+	b, _ := json.Marshal(&res)
 	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
 
 	// Emit the response

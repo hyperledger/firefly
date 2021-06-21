@@ -218,7 +218,7 @@ func PrivateBlobMessage(t *testing.T, client *resty.Client, orgNames []string) (
 		Post(urlPrivateMessage)
 }
 
-func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string) (*resty.Response, error) {
+func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag ...string) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -226,13 +226,17 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 			Identity: oName,
 		}
 	}
+	msg := fftypes.MessageInput{
+		InputData: fftypes.InputData{data},
+		Group: &fftypes.InputGroup{
+			Members: members,
+			Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+		},
+	}
+	if len(tag) > 0 {
+		msg.Header.Tag = tag[0]
+	}
 	return client.R().
-		SetBody(fftypes.MessageInput{
-			InputData: fftypes.InputData{data},
-			Group: &fftypes.InputGroup{
-				Members: members,
-				Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
-			},
-		}).
+		SetBody(msg).
 		Post(urlPrivateMessage)
 }

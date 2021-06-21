@@ -111,6 +111,7 @@ func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/,
 		return nil //
 	}
 	if data.Hash == nil || *data.Hash != *hash {
+		l.Errorf("Invalid data entry %d in batch '%s': Hash=%v Expected=%v", i, batch.ID, data.Hash, hash)
 		return nil // skip data entry
 	}
 
