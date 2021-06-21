@@ -111,7 +111,10 @@ func (pm *privateMessaging) Start() error {
 func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	payload, err := json.Marshal(batch)
+	payload, err := json.Marshal(&fftypes.TransportWrapper{
+		Type:  fftypes.TransportPayloadTypeBatch,
+		Batch: batch,
+	})
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}

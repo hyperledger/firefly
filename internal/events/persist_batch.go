@@ -97,67 +97,78 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 }
 
 func (em *eventManager) persistBatchData(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, data *fftypes.Data) error {
+	_, err := em.persistReceivedData(ctx, i, data, "batch", batch.ID)
+	return err
+}
+
+func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context*/, i int, data *fftypes.Data, mType string, mID *fftypes.UUID) (bool, error) {
+
 	l := log.L(ctx)
-	l.Tracef("Batch %s data %d: %+v", batch.ID, i, data)
+	l.Tracef("%s '%s' data %d: %+v", mType, mID, i, data)
 
 	if data == nil {
-		l.Errorf("null data entry %d in batch '%s'", i, batch.ID)
-		return nil // skip data entry
+		l.Errorf("null data entry %d in %s '%s'", i, mType, mID)
+		return false, nil // skip data entry
 	}
 
 	hash, err := data.CalcHash(ctx)
 	if err != nil {
-		l.Errorf("Invalid data entry %d in batch '%s': %s", i, batch.ID, err)
-		return nil //
+		log.L(ctx).Errorf("Invalid data entry %d in %s '%s': %s", i, mType, mID, err)
+		return false, nil //
 	}
 	if data.Hash == nil || *data.Hash != *hash {
-		l.Errorf("Invalid data entry %d in batch '%s': Hash=%v Expected=%v", i, batch.ID, data.Hash, hash)
-		return nil // skip data entry
+		log.L(ctx).Errorf("Invalid data entry %d in %s '%s': Hash=%v Expected=%v", i, mType, mID, data.Hash, hash)
+		return false, nil // skip data entry
 	}
 
 	// Insert the data, ensuring the hash doesn't change
 	if err := em.database.UpsertData(ctx, data, true, false); err != nil {
 		if err == database.HashMismatch {
-			l.Errorf("Invalid data entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, data.ID, data.Hash)
-			return nil // This is not retryable. skip this data entry
+			log.L(ctx).Errorf("Invalid data entry %d in %s '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, mType, mID, data.ID, data.Hash)
+			return false, nil // This is not retryable. skip this data entry
 		}
-		l.Errorf("Failed to insert data entry %d in batch '%s': %s", i, batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
+		log.L(ctx).Errorf("Failed to insert data entry %d in %s '%s': %s", i, mType, mID, err)
+		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message) error {
-	l := log.L(ctx)
-	l.Tracef("Batch %s message %d: %+v", batch.ID, i, msg)
-
-	if msg == nil {
-		l.Errorf("null message entry %d in batch '%s'", i, batch.ID)
+	if msg != nil && msg.Header.Author != batch.Author {
+		log.L(ctx).Errorf("Mismatched author '%s' on message entry %d in batch '%s'", msg.Header.Author, i, batch.ID)
 		return nil // skip entry
 	}
 
-	if msg.Header.Author != batch.Author {
-		l.Errorf("Mismatched author '%s' on message entry %d in batch '%s'", msg.Header.Author, i, batch.ID)
-		return nil // skip entry
+	_, err := em.persistReceivedMessage(ctx, i, msg, "batch", batch.ID)
+	return err
+}
+
+func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX context*/, i int, msg *fftypes.Message, mType string, mID *fftypes.UUID) (bool, error) {
+	l := log.L(ctx)
+	l.Tracef("%s '%s' message %d: %+v", mType, mID, i, msg)
+
+	if msg == nil {
+		l.Errorf("null message entry %d in %s '%s'", i, mType, mID)
+		return false, nil // skip entry
 	}
 
 	err := msg.Verify(ctx)
 	if err != nil {
-		l.Errorf("Invalid message entry %d in batch '%s': %s", i, batch.ID, err)
-		return nil // skip message entry
+		l.Errorf("Invalid message entry %d in %s '%s': %s", i, mType, mID, err)
+		return false, nil // skip message entry
 	}
 
 	// Insert the message, ensuring the hash doesn't change.
 	// We do not mark it as confirmed at this point, that's the job of the aggregator.
 	if err = em.database.UpsertMessage(ctx, msg, true, false); err != nil {
 		if err == database.HashMismatch {
-			l.Errorf("Invalid message entry %d in batch '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
-			return nil // This is not retryable. skip this data entry
+			l.Errorf("Invalid message entry %d in %s '%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, mType, mID, msg.Header.ID, msg.Hash)
+			return false, nil // This is not retryable. skip this data entry
 		}
-		l.Errorf("Failed to insert message entry %d in batch '%s': %s", i, batch.ID, err)
-		return err // a peristence failure here is considered retryable (so returned)
+		l.Errorf("Failed to insert message entry %d in %s '%s': %s", i, mType, mID, err)
+		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 
-	return nil
+	return true, nil
 }

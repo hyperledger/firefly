@@ -29,66 +29,105 @@ import (
 
 func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error {
 
+	l := log.L(em.ctx)
+
+	// De-serializae the transport wrapper
+	var wrapper fftypes.TransportWrapper
+	err := json.Unmarshal(data, &wrapper)
+	if err != nil {
+		l.Errorf("Invalid transmission from '%s': %s", peerID, err)
+		return nil
+	}
+
+	l.Infof("%s received from '%s' (len=%d)", wrapper.Type, peerID, len(data))
+
+	switch wrapper.Type {
+	case fftypes.TransportPayloadTypeBatch:
+		if wrapper.Batch == nil {
+			l.Errorf("Invalid transmission: nil batch")
+			return nil
+		}
+		return em.pinedBatchReceived(peerID, wrapper.Batch)
+	case fftypes.TransportPayloadTypeMessage:
+		if wrapper.Message == nil {
+			l.Errorf("Invalid transmission: nil message")
+			return nil
+		}
+		return em.unpinnedMessageReceived(peerID, wrapper.Message, wrapper.Data)
+	default:
+		l.Errorf("Invalid transmission: unknonwn type '%s'", wrapper.Type)
+		return nil
+	}
+
+}
+
+func (em *eventManager) checkReceivedIdentity(peerID string, author string) (node *fftypes.Node, err error) {
+	l := log.L(em.ctx)
+
+	// Find the node associated with the peer
+	filter := database.NodeQueryFactory.NewFilter(em.ctx).Eq("dx.peer", peerID)
+	nodes, err := em.database.GetNodes(em.ctx, filter)
+	if err != nil {
+		l.Errorf("Failed to retrieve node: %v", err)
+		return nil, err // retry for persistence error
+	}
+	if len(nodes) < 1 {
+		l.Errorf("Node not found for peer %s", peerID)
+		return nil, nil
+	}
+	node = nodes[0]
+
+	// Find the identity in the mesage
+	org, err := em.database.GetOrganizationByIdentity(em.ctx, author)
+	if err != nil {
+		l.Errorf("Failed to retrieve org: %v", err)
+		return nil, err // retry for persistence error
+	}
+	if org == nil {
+		l.Errorf("Org not found for identity %s", author)
+		return nil, nil
+	}
+
+	// One of the orgs in the hierarchy of the author must be the owner of the peer node
+	candidate := org
+	foundNodeOrg := author == node.Owner
+	for !foundNodeOrg && candidate.Parent != "" {
+		parent := candidate.Parent
+		candidate, err = em.database.GetOrganizationByIdentity(em.ctx, parent)
+		if err != nil {
+			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
+			return nil, err // retry for persistence error
+		}
+		if candidate == nil {
+			l.Errorf("Did not find org '%s' in chain for identity '%s'", parent, org.Identity)
+			return nil, nil
+		}
+		foundNodeOrg = candidate.Identity == node.Owner
+	}
+	if !foundNodeOrg {
+		l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
+		return nil, nil
+	}
+
+	return node, nil
+}
+
+func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) error {
+	l := log.L(em.ctx)
+
 	// Retry for persistence errors (not validation errors)
 	return em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
 
-		l := log.L(em.ctx)
-		l.Infof("Message received from '%s' (len=%d)", peerID, len(data))
-
-		// Try to de-serialize it as a batch
-		var batch fftypes.Batch
-		err := json.Unmarshal(data, &batch)
+		node, err := em.checkReceivedIdentity(peerID, batch.Author)
 		if err != nil {
-			l.Errorf("Invalid batch: %s", err)
+			return true, err
+		}
+		if node == nil {
+			l.Errorf("Batch received from invalid author '%s' for peer ID '%s'", batch.Author, peerID)
 			return false, nil
 		}
 
-		// Find the node associated with the peer
-		filter := database.NodeQueryFactory.NewFilter(em.ctx).Eq("dx.peer", peerID)
-		nodes, err := em.database.GetNodes(em.ctx, filter)
-		if err != nil {
-			l.Errorf("Failed to retrieve node: %v", err)
-			return true, err // retry for persistence error
-		}
-		if len(nodes) < 1 {
-			l.Errorf("Node not found for peer %s", peerID)
-			return false, nil
-		}
-		node := nodes[0]
-
-		// Find the identity in the mesage
-		batchOrg, err := em.database.GetOrganizationByIdentity(em.ctx, batch.Author)
-		if err != nil {
-			l.Errorf("Failed to retrieve batch org: %v", err)
-			return true, err // retry for persistence error
-		}
-		if batchOrg == nil {
-			l.Errorf("Org not found for identity %s", batch.Author)
-			return false, nil
-		}
-
-		// One of the orgs in the hierarchy of the batch author must be the owner of the peer node
-		candidate := batchOrg
-		foundNodeOrg := batch.Author == node.Owner
-		for !foundNodeOrg && candidate.Parent != "" {
-			parent := candidate.Parent
-			candidate, err = em.database.GetOrganizationByIdentity(em.ctx, parent)
-			if err != nil {
-				l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
-				return true, err // retry for persistence error
-			}
-			if candidate == nil {
-				l.Errorf("Did not find org '%s' in chain for identity '%s'", parent, batchOrg.Identity)
-				return false, nil
-			}
-			foundNodeOrg = candidate.Identity == node.Owner
-		}
-		if !foundNodeOrg {
-			l.Errorf("No org in the chain matches owner '%s' of node '%s' ('%s')", node.Owner, node.ID, node.Name)
-			return false, nil
-		}
-
-		valid, err := em.persistBatch(em.ctx, &batch)
+		valid, err := em.persistBatch(em.ctx, batch)
 		if err != nil {
 			l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
 			return true, err // retry - persistBatch only returns retryable errors
@@ -209,6 +248,47 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			}
 		}
 		return false, nil
+	})
+
+}
+
+func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.Message, data []*fftypes.Data) error {
+	if message.Header.TxType != fftypes.TransactionTypeNone {
+		log.L(em.ctx).Errorf("Unpinned message '%s' transaction type must be 'none'. TxType=%s", message.Header.ID, message.Header.TxType)
+		return nil
+	}
+
+	return em.retry.Do(em.ctx, "unpinned message received", func(attempt int) (bool, error) {
+		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+
+			node, err := em.checkReceivedIdentity(peerID, message.Header.Author)
+			if err != nil {
+				return err
+			}
+			if node == nil {
+				log.L(ctx).Errorf("Message received from invalid author '%s' for peer ID '%s'", message.Header.Author, peerID)
+				return nil
+			}
+
+			// Persist the data
+			for i, d := range data {
+				if ok, err := em.persistReceivedData(ctx, i, d, "message", message.Header.ID); err != nil || !ok {
+					return err
+				}
+			}
+
+			// Persist the message - immediately considered confirmed as this is an unpinned receive
+			message.Confirmed = fftypes.Now()
+			message.Pending = false
+			if ok, err := em.persistReceivedMessage(ctx, 0, message, "message", message.Header.ID); err != nil || !ok {
+				return err
+			}
+
+			// Assuming all was good, we
+			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, message.Header.Namespace, message.Header.ID, message.Header.Group)
+			return em.database.UpsertEvent(ctx, event, false)
+		})
+		return err != nil, err
 	})
 
 }
