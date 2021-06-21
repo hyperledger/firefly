@@ -176,4 +176,5 @@ var (
 	MsgWebhooksOptFastAck          = ffm("FF10256", "When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
 	MsgWebhooksReplyBadJSON        = ffm("FF10257", "Failed to process reply from webhook as JSON")
 	MsgWebhooksOptReplyTag         = ffm("FF10258", "The tag to set on the reply message")
+	MsgWebhooksOptReplyTx          = ffm("FF10259", "The transaction type to set on the reply message")
 )

@@ -100,6 +100,10 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 				"type": "string",
 				"description": "%s"
 			},
+			"replytx": {
+				"type": "string",
+				"description": "%s"
+			},
 			"headers": {
 				"type": "object",
 				"description": "%s",
@@ -140,6 +144,7 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 		i18n.Expand(ctx, i18n.MsgWebhooksOptJSON),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptReply),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptReplyTag),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptReplyTx),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptHeaders),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptQuery),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInput),
@@ -329,10 +334,11 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 			Reply: &fftypes.MessageInput{
 				Message: fftypes.Message{
 					Header: fftypes.MessageHeader{
-						CID:   event.Message.Header.ID,
-						Group: event.Message.Header.Group,
-						Type:  event.Message.Header.Type,
-						Tag:   sub.Options.TransportOptions().GetString("replytag"),
+						CID:    event.Message.Header.ID,
+						Group:  event.Message.Header.Group,
+						Type:   event.Message.Header.Type,
+						Tag:    sub.Options.TransportOptions().GetString("replytag"),
+						TxType: fftypes.LowerCasedType(strings.ToLower(sub.Options.TransportOptions().GetString("replytx"))),
 					},
 				},
 				InputData: fftypes.InputData{
