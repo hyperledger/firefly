@@ -407,7 +407,7 @@ var MessageQueryFactory = &queryFields{
 	"pending":   &SortableBoolField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
-	"tx.type":   &StringField{},
+	"txtype":    &StringField{},
 	"batch":     &UUIDField{},
 	"local":     &BoolField{},
 }
