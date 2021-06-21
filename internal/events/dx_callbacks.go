@@ -273,7 +273,7 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 	return em.retry.Do(em.ctx, "unpinned message received", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 
-			if err := em.messaging.EnsureLocalGroup(ctx, group); err != nil {
+			if valid, err := em.messaging.EnsureLocalGroup(ctx, group); err != nil || !valid {
 				return err
 			}
 

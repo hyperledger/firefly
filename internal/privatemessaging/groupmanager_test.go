@@ -453,18 +453,21 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	node1 := fftypes.NewUUID()
 	group := &fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
+			Namespace: "ns1",
 			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+				&fftypes.Member{Node: node1, Identity: "id1"},
 			},
 		},
 	}
+	group.Seal()
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, group, false).Return(nil)
 
-	err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.NoError(t, err)
+	assert.True(t, ok)
 
 	mdi.AssertExpectations(t)
 }
@@ -485,13 +488,14 @@ func TestEnsureLocalGroupExistingOk(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil)
 
-	err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.NoError(t, err)
+	assert.True(t, ok)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestEnsureLocalGroupDBErr(t *testing.T) {
+func TestEnsureLocalGroupLookupErr(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
@@ -507,8 +511,51 @@ func TestEnsureLocalGroupDBErr(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.EnsureLocalGroup(pm.ctx, group)
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.EqualError(t, err, "pop")
+	assert.False(t, ok)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestEnsureLocalGroupInsertErr(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	node1 := fftypes.NewUUID()
+	group := &fftypes.Group{
+		GroupIdentity: fftypes.GroupIdentity{
+			Namespace: "ns1",
+			Members: fftypes.Members{
+				&fftypes.Member{Node: node1, Identity: "id1"},
+			},
+		},
+	}
+	group.Seal()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("UpsertGroup", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	assert.EqualError(t, err, "pop")
+	assert.False(t, ok)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestEnsureLocalGroupBadGroup(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	group := &fftypes.Group{}
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+
+	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
+	assert.NoError(t, err)
+	assert.False(t, ok)
 
 	mdi.AssertExpectations(t)
 }

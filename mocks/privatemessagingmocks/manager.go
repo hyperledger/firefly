@@ -17,17 +17,24 @@ type Manager struct {
 }
 
 // EnsureLocalGroup provides a mock function with given fields: ctx, group
-func (_m *Manager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) error {
+func (_m *Manager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (bool, error) {
 	ret := _m.Called(ctx, group)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group) error); ok {
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group) bool); ok {
 		r0 = rf(ctx, group)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Group) error); ok {
+		r1 = rf(ctx, group)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetGroupByID provides a mock function with given fields: ctx, id

@@ -33,7 +33,7 @@ type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error)
 	GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error)
 	ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error)
-	EnsureLocalGroup(ctx context.Context, group *fftypes.Group) error
+	EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error)
 }
 
 type groupManager struct {
@@ -48,20 +48,29 @@ type groupHashEntry struct {
 	nodes []*fftypes.Node
 }
 
-func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) error {
+func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
 	// In the case that we've received a private message for a group, it's possible (likely actually)
 	// that the private message using the group will arrive before the group init message confirming
 	// the group via the blockchain.
 	// So this method checks if a group exists, and if it doesn't inserts it.
 	// We do assume the other side has sent the batch init of the group (rather than generating a second one)
 	if g, err := gm.database.GetGroupByHash(ctx, group.Hash); err != nil {
-		return err
+		return false, err
 	} else if g != nil {
 		// The group already exists
-		return nil
+		return true, nil
 	}
 
-	return gm.database.UpsertGroup(ctx, group, false)
+	err = group.Validate(ctx, true)
+	if err != nil {
+		log.L(ctx).Errorf("Attempt to insert invalid group %s:%s: %s", group.Namespace, group.Hash, err)
+		return false, nil
+	}
+	err = gm.database.UpsertGroup(ctx, group, false)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity, group *fftypes.Group) (err error) {
