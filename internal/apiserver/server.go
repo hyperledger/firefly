@@ -59,6 +59,7 @@ type apiServer struct {
 	defaultFilterLimit uint64
 	maxFilterLimit     uint64
 	maxFilterSkip      uint64
+	apiTimeout         time.Duration
 }
 
 func InitConfig() {
@@ -71,6 +72,7 @@ func NewAPIServer() Server {
 		defaultFilterLimit: uint64(config.GetUint(config.APIDefaultFilterLimit)),
 		maxFilterLimit:     uint64(config.GetUint(config.APIMaxFilterLimit)),
 		maxFilterSkip:      uint64(config.GetUint(config.APIMaxFilterSkip)),
+		apiTimeout:         config.GetDuration(config.APIRequestTimeout),
 	}
 }
 
@@ -283,7 +285,6 @@ func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, 
 }
 
 func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
-	apiTimeout := config.GetDuration(config.APIRequestTimeout) // Query once at startup when wrapping
 	return func(res http.ResponseWriter, req *http.Request) {
 
 		// Configure a server-side timeout on each request, to try and avoid cases where the API requester
@@ -292,7 +293,7 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
 		// This is dependent on the context being passed down through to all blocking operations down the stack
 		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		ctx, cancel := context.WithTimeout(req.Context(), apiTimeout)
+		ctx, cancel := context.WithTimeout(req.Context(), as.apiTimeout)
 		req = req.WithContext(ctx)
 		defer cancel()
 
