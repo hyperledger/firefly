@@ -471,6 +471,22 @@ func TestTransferResultOk(t *testing.T) {
 
 }
 
+func TestTransferResultNotCorrelated(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+	id := fftypes.NewUUID()
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
+	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	err := em.TransferResult(mdx, "tracking12345", fftypes.OpStatusFailed, "error info", fftypes.JSONObject{"extra": "info"})
+	assert.NoError(t, err)
+
+}
+
 func TestTransferResultNotFound(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // avoid retries

@@ -235,7 +235,11 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			// we have a limit on how long we wait to correlate an operation if we don't have a DB erro,
 			// as it should only be a short window where the DB transaction to insert the operation is still
 			// outstanding
-			return attempt <= em.opCorrelationRetries, i18n.NewError(em.ctx, i18n.Msg404NotFound)
+			if attempt >= em.opCorrelationRetries {
+				log.L(em.ctx).Warnf("Unable to correlate %s event %s", dx.Name(), trackingID)
+				return false, nil // just skip this
+			}
+			return true, i18n.NewError(em.ctx, i18n.Msg404NotFound)
 		}
 
 		update := database.OperationQueryFactory.NewUpdate(em.ctx).

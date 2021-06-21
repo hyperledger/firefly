@@ -212,7 +212,7 @@ func (bm *batchManager) assembleMessageData(msg *fftypes.Message) (data []*fftyp
 	if !foundAll {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, msg.Header.ID)
 	}
-	log.L(bm.ctx).Infof("Added broadcast message %s", msg.Header.ID)
+	log.L(bm.ctx).Infof("Detected new batch-pinned message %s", msg.Header.ID)
 	return data, nil
 }
 

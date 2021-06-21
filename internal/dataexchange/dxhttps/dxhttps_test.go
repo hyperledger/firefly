@@ -436,6 +436,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	}
 	r := make(chan []byte)
 	close(r)
+	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	h.eventLoop() // we're simply looking for it exiting
 }
@@ -450,6 +451,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{}`)
+	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	h.eventLoop() // we're simply looking for it exiting
@@ -467,6 +469,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{}`)
+	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	wsm.On("Send", mock.Anything, mock.Anything).Return(nil)
 	h.eventLoop() // we're simply looking for it exiting

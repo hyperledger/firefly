@@ -215,6 +215,7 @@ func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fft
 }
 
 func (h *HTTPS) eventLoop() {
+	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
 	ack, _ := json.Marshal(map[string]string{"action": "commit"})
