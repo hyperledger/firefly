@@ -553,6 +553,7 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 
 	<-bdDone
 	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
+
 }
 
 func TestBufferedDeliveryFailNack(t *testing.T) {
@@ -593,9 +594,11 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	}()
 
 	<-failNacked
+	<-failNacked
 
 	<-bdDone
 	assert.Equal(t, int64(100000), ed.eventPoller.pollingOffset)
+
 }
 
 func TestBufferedFinalAckFail(t *testing.T) {
@@ -625,6 +628,7 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	assert.False(t, repoll)
 
 	assert.Equal(t, int64(100002), ed.eventPoller.pollingOffset)
+
 }
 
 func TestAckNotInFlightNoop(t *testing.T) {
@@ -636,6 +640,18 @@ func TestAckNotInFlightNoop(t *testing.T) {
 	defer cancel()
 
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: fftypes.NewUUID()})
+}
+
+func TestEventDeliveryClosed(t *testing.T) {
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	ed, cancel := newTestEventDispatcher(sub)
+	close(ed.eventDelivery)
+
+	ed.deliverEvents()
+	cancel()
 }
 
 func TestAckClosed(t *testing.T) {
@@ -686,7 +702,7 @@ func TestDeliverEventsWithDataFail(t *testing.T) {
 	}
 
 	ed, cancel := newTestEventDispatcher(sub)
-	cancel()
+	defer cancel()
 
 	mdm := ed.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ed.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))

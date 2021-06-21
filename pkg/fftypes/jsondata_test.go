@@ -149,7 +149,8 @@ func TestJSONNestedSafeGet(t *testing.T) {
 					}
 				}
 			],
-			"string_array": ["str1","str2"]
+			"string_array": ["str1","str2"],
+			"wrong": null
 		}
 	`), &jd)
 	assert.NoError(t, err)
@@ -161,6 +162,13 @@ func TestJSONNestedSafeGet(t *testing.T) {
 	vo, ok := jd.GetObjectOk("wrong")
 	assert.False(t, ok)
 	assert.NotNil(t, vo)
+	vo, ok = jd.GetObjectOk("string_array")
+	assert.False(t, ok)
+	assert.NotNil(t, vo)
+	jd["already_typed"] = JSONObject{"some": "stuff"}
+	vo, ok = jd.GetObjectOk("already_typed")
+	assert.True(t, ok)
+	assert.Equal(t, "stuff", vo.GetString("some"))
 
 	assert.Equal(t, "value",
 		jd.GetObjectArray("nested_array")[0].

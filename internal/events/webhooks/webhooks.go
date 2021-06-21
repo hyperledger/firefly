@@ -47,7 +47,6 @@ type whRequest struct {
 	url       string
 	method    string
 	body      fftypes.JSONObject
-	reply     bool
 	forceJSON bool
 }
 
@@ -151,7 +150,6 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 		url:       options.GetString("url"),
 		method:    options.GetString("method"),
 		forceJSON: options.GetBool("json"),
-		reply:     options.GetBool("reply"),
 	}
 	if req.url == "" {
 		return nil, i18n.NewError(wh.ctx, i18n.MsgWebhookURLEmpty)
@@ -212,10 +210,11 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 		defaultTrue := true
 		options.WithData = &defaultTrue
 	}
-	return nil
+	_, err := wh.buildRequest(options.TransportOptions(), fftypes.JSONObject{})
+	return err
 }
 
-func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (req *whRequest, res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (res *whResponse, err error) {
 
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]fftypes.Byteable, 0, len(data))
@@ -233,31 +232,31 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		}
 	}
 
-	req, err = wh.buildRequest(sub.Options.TransportOptions(), firstData)
+	req, err := wh.buildRequest(sub.Options.TransportOptions(), firstData)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if req.r.Method == http.MethodPost || req.r.Method == http.MethodPatch || req.r.Method == http.MethodPut {
+	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
 		switch {
 		case !withData:
 			// We are just sending the event itself
-			req.r.SetBody(&event)
+			req.r.SetBody(event)
 		case req.body != nil:
 			// We might have been told to extract a body from the first data record
-			req.r.SetBody(&req.body)
+			req.r.SetBody(req.body)
 		case len(allData) > 1:
 			// We've got an array of data to POST
-			req.r.SetBody(&allData)
+			req.r.SetBody(allData)
 		default:
 			// Otherwise just send the first object directly
-			req.r.SetBody(&firstData)
+			req.r.SetBody(firstData)
 		}
 	}
 
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
 
@@ -279,7 +278,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		var resData interface{}
 		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
 		if err != nil {
-			return nil, nil, err
+			return nil, i18n.WrapError(wh.ctx, err, i18n.MsgWebhooksReplyBadJSON)
 		}
 		res.Body, _ = json.Marshal(&resData) // we know we can re-marshal it
 	} else {
@@ -287,19 +286,17 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		buf := &bytes.Buffer{}
 		buf.WriteRune('"')
 		b64Encoder := base64.NewEncoder(base64.StdEncoding, buf)
-		_, err := io.Copy(b64Encoder, resp.RawBody())
-		if err != nil {
-			return nil, nil, err
-		}
+		_, _ = io.Copy(b64Encoder, resp.RawBody())
+		_ = b64Encoder.Close()
 		buf.WriteRune('"')
 		res.Body = buf.Bytes()
 	}
 
-	return req, res, nil
+	return res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
-	req, res, gwErr := wh.attemptRequest(sub, event, data)
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+	res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -319,7 +316,7 @@ func (wh *WebHooks) doDelivery(connID string, sub *fftypes.Subscription, event *
 	log.L(wh.ctx).Tracef("Webhook response: %s", string(b))
 
 	// Emit the response
-	if req.reply {
+	if reply {
 		return wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
@@ -327,7 +324,9 @@ func (wh *WebHooks) doDelivery(connID string, sub *fftypes.Subscription, event *
 			Reply: &fftypes.MessageInput{
 				Message: fftypes.Message{
 					Header: fftypes.MessageHeader{
-						CID: event.Message.Header.ID,
+						CID:   event.Message.Header.ID,
+						Group: event.Message.Header.Group,
+						Type:  event.Message.Header.Type,
 					},
 				},
 				InputData: fftypes.InputData{
@@ -340,19 +339,28 @@ func (wh *WebHooks) doDelivery(connID string, sub *fftypes.Subscription, event *
 }
 
 func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
-	if event.Message == nil {
-		log.L(wh.ctx).Warnf("Webhook subscription called with non-message event '%s'", event.ID)
+	if event.Message == nil && sub.Options.WithData != nil && *sub.Options.WithData {
+		log.L(wh.ctx).Debugf("Webhook withData=true subscription called with non-message event '%s'", event.ID)
+		return nil
+	}
+
+	reply := sub.Options.TransportOptions().GetBool("reply")
+	if reply && event.Message.Header.CID != nil {
+		// We cowardly refuse to dispatch a message that is itself a reply, as it's hard for users to
+		// avoid loops - and there's no way for us to detect here if a user has configured correctly
+		// to avoid a loop.
+		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
 		return nil
 	}
 
 	// In fastack mode we drive calls in parallel to the backend, immediately acknowledging the event
 	if sub.Options.TransportOptions().GetBool("fastack") {
 		go func() {
-			err := wh.doDelivery(connID, sub, event, data)
+			err := wh.doDelivery(connID, reply, sub, event, data)
 			log.L(wh.ctx).Warnf("Webhook delivery failed in fastack mode for event '%s': %s", event.ID, err)
 		}()
 		return nil
 	}
 
-	return wh.doDelivery(connID, sub, event, data)
+	return wh.doDelivery(connID, reply, sub, event, data)
 }

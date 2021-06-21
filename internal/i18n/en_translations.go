@@ -174,4 +174,5 @@ var (
 	MsgWebhooksOptInputHeaders     = ffm("FF10254", "A top-level property of the first data input, to use for headers")
 	MsgWebhooksOptInputBody        = ffm("FF10255", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
 	MsgWebhooksOptFastAck          = ffm("FF10256", "When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
+	MsgWebhooksReplyBadJSON        = ffm("FF10257", "Failed to process reply from webhook as JSON")
 )

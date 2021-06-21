@@ -340,18 +340,26 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 
 func (ed *eventDispatcher) deliverEvents() {
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
-	for event := range ed.eventDelivery {
-		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-		var data []*fftypes.Data
-		var err error
-		if withData && event.Message != nil {
-			data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
-		}
-		if err == nil {
-			err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
-		}
-		if err != nil {
-			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+	for {
+		select {
+		case event, ok := <-ed.eventDelivery:
+			if !ok {
+				return
+			}
+			log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+			var data []*fftypes.Data
+			var err error
+			if withData && event.Message != nil {
+				data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+			}
+			if err == nil {
+				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
+			}
+			if err != nil {
+				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+			}
+		case <-ed.ctx.Done():
+			return
 		}
 	}
 }

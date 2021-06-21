@@ -84,11 +84,17 @@ func (jd JSONObject) GetObject(key string) JSONObject {
 func (jd JSONObject) GetObjectOk(key string) (JSONObject, bool) {
 	vInterace, ok := jd[key]
 	if ok && vInterace != nil {
-		if vMap, ok := vInterace.(map[string]interface{}); ok {
+		vInterface := jd[key]
+		switch vMap := vInterface.(type) {
+		case map[string]interface{}:
 			return JSONObject(vMap), true
+		case JSONObject:
+			return vMap, true
+		default:
+			log.L(context.Background()).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
+			return JSONObject{}, false // Ensures a non-nil return
 		}
 	}
-	log.L(context.Background()).Errorf("Invalid object value '%+v' for key '%s'", vInterace, key)
 	return JSONObject{}, false // Ensures a non-nil return
 }
 
