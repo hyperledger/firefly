@@ -263,6 +263,11 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID: fftypes.NewUUID(),
+			},
+		},
 	}, []*fftypes.Node{
 		{
 			DX: fftypes.DXInfo{
@@ -347,13 +352,9 @@ func TestTransferBlobsNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
-			},
-		},
-	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
 	assert.Regexp(t, "FF10239", err)
 }
 
@@ -366,13 +367,9 @@ func TestTransferBlobsFail(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("TransferBLOB", pm.ctx, "peer1", "blob/1").Return("", fmt.Errorf("pop"))
 
-	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
-			},
-		},
-	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -387,13 +384,9 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	mdx.On("TransferBLOB", pm.ctx, "peer1", "blob/1").Return("tracking1", nil)
 	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	err := pm.transferBlobs(pm.ctx, &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
-			},
-		},
-	}, &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
 	assert.Regexp(t, "pop", err)
 }
 func TestStart(t *testing.T) {

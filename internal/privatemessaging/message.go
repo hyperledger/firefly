@@ -18,9 +18,10 @@ package privatemessaging
 
 import (
 	"context"
+	"encoding/json"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
@@ -28,7 +29,7 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {
-		in.Header.Author = config.GetString(config.OrgIdentity)
+		in.Header.Author = pm.localOrgIdentity
 	}
 	if in.Header.TxType == "" {
 		in.Header.TxType = fftypes.TransactionTypeBatchPin
@@ -62,11 +63,58 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 		return err
 	}
 
+	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
+		in.Message.Confirmed = fftypes.Now()
+		in.Message.Pending = false
+	}
+
 	// Seal the message
 	if err := in.Message.Seal(ctx); err != nil {
 		return err
 	}
 
 	// Store the message - this asynchronously triggers the next step in process
-	return pm.database.InsertMessageLocal(ctx, &in.Message)
+	if err = pm.database.InsertMessageLocal(ctx, &in.Message); err != nil {
+		return err
+	}
+
+	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
+		return pm.sendUnpinnedMessage(ctx, &in.Message)
+	}
+
+	return nil
+}
+
+func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *fftypes.Message) (err error) {
+
+	// Retrieve the group
+	nodes, err := pm.groupManager.getGroupNodes(ctx, message.Header.Group)
+	if err != nil {
+		return err
+	}
+
+	id, err := pm.identity.Resolve(ctx, message.Header.Author)
+	if err == nil {
+		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
+	}
+	if err != nil {
+		log.L(ctx).Errorf("Invalid signing identity '%s': %s", message.Header.Author, err)
+		return err
+	}
+
+	data, _, err := pm.data.GetMessageData(ctx, message, true)
+	if err != nil {
+		return err
+	}
+
+	payload, err := json.Marshal(&fftypes.TransportWrapper{
+		Type:    fftypes.TransportPayloadTypeBatch,
+		Message: message,
+		Data:    data,
+	})
+	if err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
+
+	return pm.sendData(ctx, "message", message.Header.ID, message.Header.Group, message.Header.Namespace, nodes, payload, nil, data)
 }
