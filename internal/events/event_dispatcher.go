@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
@@ -43,8 +44,10 @@ type eventDispatcher struct {
 	closed        chan struct{}
 	connID        string
 	ctx           context.Context
+	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
+	rs            *replySender
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*fftypes.Event
@@ -55,7 +58,7 @@ type eventDispatcher struct {
 	subscription  *subscription
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
@@ -64,6 +67,8 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:      di,
 		transport:     ei,
+		rs:            rs,
+		data:          dm,
 		connID:        connID,
 		cancelCtx:     cancelCtx,
 		subscription:  sub,
@@ -162,16 +167,6 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		return nil, err
 	}
 
-	dfb := database.DataQueryFactory.NewFilter(ed.ctx)
-	dataFilter := dfb.And(
-		dfb.In("id", refIDs),
-		dfb.Eq("namespace", ed.namespace),
-	)
-	dataRefs, err := ed.database.GetDataRefs(ed.ctx, dataFilter)
-	if err != nil {
-		return nil, err
-	}
-
 	enriched := make([]*fftypes.EventDelivery, len(events))
 	for i, ls := range events {
 		e := ls.(*fftypes.Event)
@@ -182,12 +177,6 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		for _, msg := range msgs {
 			if *e.Reference == *msg.Header.ID {
 				enriched[i].Message = msg
-				break
-			}
-		}
-		for _, dr := range dataRefs {
-			if *e.Reference == *dr.ID {
-				enriched[i].Data = dr
 				break
 			}
 		}
@@ -352,15 +341,30 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 }
 
 func (ed *eventDispatcher) deliverEvents() {
-	for event := range ed.eventDelivery {
-		log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-		err := ed.transport.DeliveryRequest(ed.connID, event)
-		if err != nil {
-			ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
+	for {
+		select {
+		case event, ok := <-ed.eventDelivery:
+			if !ok {
+				return
+			}
+			log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+			var data []*fftypes.Data
+			var err error
+			if withData && event.Message != nil {
+				data, _, err = ed.data.GetMessageData(ed.ctx, event.Message, true)
+			}
+			if err == nil {
+				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
+			}
+			if err != nil {
+				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+			}
+		case <-ed.ctx.Done():
+			return
 		}
 	}
 }
-
 func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) {
 	l := log.L(ed.ctx)
 
@@ -378,6 +382,12 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	if !found {
 		l.Warnf("Response for event not in flight: %s rejected=%t info='%s' (likely previous reject)", response.ID, response.Rejected, response.Info)
 		return
+	}
+
+	// We might have a message to send, do that before we dispatch the ack
+	// Note a failure to send the reply does not invalidate the ack
+	if response.Reply != nil {
+		ed.rs.sendReply(ed.ctx, event, response.Reply)
 	}
 
 	l.Debugf("Response for event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)

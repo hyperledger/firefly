@@ -111,13 +111,16 @@ func (pm *privateMessaging) Start() error {
 func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	// Serialize the full payload, which has already been sealed for us by the BatchManager
-	payload, err := json.Marshal(batch)
+	payload, err := json.Marshal(&fftypes.TransportWrapper{
+		Type:  fftypes.TransportPayloadTypeBatch,
+		Batch: batch,
+	})
 	if err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
 	// Retrieve the group
-	nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
+	_, nodes, err := pm.groupManager.getGroupNodes(ctx, batch.Group)
 	if err != nil {
 		return err
 	}
@@ -127,9 +130,86 @@ func (pm *privateMessaging) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 	})
 }
 
-func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
+func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.Data, txid *fftypes.UUID, node *fftypes.Node) error {
+	// Send all the blobs associated with this batch
+	for _, d := range data {
+		// We only need to send a blob if there is one, and it's not been uploaded to the public storage
+		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
+			blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
+			if err != nil {
+				return err
+			}
+			if blob == nil {
+				return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
+			}
+
+			trackingID, err := pm.exchange.TransferBLOB(ctx, node.DX.Peer, blob.PayloadRef)
+			if err != nil {
+				return err
+			}
+
+			if txid != nil {
+				op := fftypes.NewTXOperation(
+					pm.exchange,
+					d.Namespace,
+					txid,
+					trackingID,
+					fftypes.OpTypeDataExchangeBlobSend,
+					fftypes.OpStatusPending,
+					node.ID.String())
+				if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
+	// Write it to the dataexchange for each member
+	for i, node := range nodes {
+
+		if node.Owner == pm.localOrgIdentity {
+			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
+			continue
+		}
+
+		l.Debugf("Sending %s %s:%s to group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
+
+		// Initiate transfer of any blobs first
+		if err = pm.transferBlobs(ctx, data, txid, node); err != nil {
+			return err
+		}
+
+		// Send the payload itself
+		trackingID, err := pm.exchange.SendMessage(ctx, node.DX.Peer, payload)
+		if err != nil {
+			return err
+		}
+
+		if txid != nil {
+			op := fftypes.NewTXOperation(
+				pm.exchange,
+				ns,
+				txid,
+				trackingID,
+				fftypes.OpTypeDataExchangeBatchSend,
+				fftypes.OpStatusPending,
+				node.ID.String())
+			if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
 	id, err := pm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
 		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
@@ -139,27 +219,8 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 		return err
 	}
 
-	// Write it to the dataexchange for each member
-	for i, node := range nodes {
-		l.Infof("Sending batch %s:%s to group=%s node=%s (%d/%d)", batch.Namespace, batch.ID, batch.Group, node.ID, i+1, len(nodes))
-
-		trackingID, err := pm.exchange.SendMessage(ctx, node, payload)
-		if err != nil {
-			return err
-		}
-
-		op := fftypes.NewTXOperation(
-			pm.exchange,
-			batch.Namespace,
-			batch.Payload.TX.ID,
-			trackingID,
-			fftypes.OpTypeDataExchangeBatchSend,
-			fftypes.OpStatusPending,
-			node.ID.String())
-		if err = pm.database.UpsertOperation(ctx, op, false); err != nil {
-			return err
-		}
-
+	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, payload, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
+		return err
 	}
 
 	return pm.writeTransaction(ctx, id, batch, contexts)

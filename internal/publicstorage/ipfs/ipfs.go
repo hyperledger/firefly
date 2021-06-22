@@ -23,13 +23,11 @@ import (
 
 	"io"
 
-	"github.com/akamensky/base58"
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 )
 
@@ -74,27 +72,7 @@ func (i *IPFS) Capabilities() *publicstorage.Capabilities {
 	return i.capabilities
 }
 
-func (i *IPFS) ipfsHashToBytes32(ipfshash string) (*fftypes.Bytes32, error) {
-	b, err := base58.Decode(ipfshash)
-	if err != nil {
-		return nil, i18n.WrapError(i.ctx, err, i18n.MsgIPFSHashDecodeFailed, ipfshash)
-	}
-	if len(b) != 34 {
-		return nil, i18n.NewError(i.ctx, i18n.MsgIPFSHashDecodeFailed, b)
-	}
-	var b32 fftypes.Bytes32
-	copy(b32[:], b[2:34])
-	return &b32, nil
-}
-
-func (i *IPFS) bytes32ToIPFSHash(payloadRef *fftypes.Bytes32) string {
-	var hashBytes [34]byte
-	copy(hashBytes[0:2], []byte{0x12, 0x20})
-	copy(hashBytes[2:34], payloadRef[0:32])
-	return base58.Encode(hashBytes[:])
-}
-
-func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, backendID string, err error) {
+func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (string, error) {
 	var ipfsResponse ipfsUploadResponse
 	res, err := i.apiClient.R().
 		SetContext(ctx).
@@ -102,19 +80,17 @@ func (i *IPFS) PublishData(ctx context.Context, data io.Reader) (payloadRef *fft
 		SetResult(&ipfsResponse).
 		Post("/api/v0/add")
 	if err != nil || !res.IsSuccess() {
-		return nil, "", restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
+		return "", restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
-	payloadRef, err = i.ipfsHashToBytes32(ipfsResponse.Hash)
-	return payloadRef, ipfsResponse.Hash, err
+	return ipfsResponse.Hash, err
 }
 
-func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error) {
-	ipfsHash := i.bytes32ToIPFSHash(payloadRef)
+func (i *IPFS) RetrieveData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error) {
 	res, err := i.gwClient.R().
 		SetContext(ctx).
 		SetDoNotParseResponse(true).
-		Get(fmt.Sprintf("/ipfs/%s", ipfsHash))
+		Get(fmt.Sprintf("/ipfs/%s", payloadRef))
 	restclient.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
 	if err != nil || !res.IsSuccess() {
 		if res != nil && res.RawBody() != nil {
@@ -122,6 +98,6 @@ func (i *IPFS) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (d
 		}
 		return nil, restclient.WrapRestErr(i.ctx, res, err, i18n.MsgIPFSRESTErr)
 	}
-	log.L(ctx).Infof("IPFS retrieved %s", ipfsHash)
+	log.L(ctx).Infof("IPFS retrieved %s", payloadRef)
 	return res.RawBody(), nil
 }

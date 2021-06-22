@@ -73,7 +73,7 @@ func uuidMatches(id1 *fftypes.UUID) interface{} {
 	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
 }
 
-func TestDispatchBatch(t *testing.T) {
+func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -86,6 +86,8 @@ func TestDispatchBatch(t *testing.T) {
 	node2 := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 	batchHash := fftypes.NewRandB32()
+	dataID1 := fftypes.NewUUID()
+	blob1 := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mbi := pm.blockchain.(*blockchainmocks.Plugin)
@@ -122,14 +124,26 @@ func TestDispatchBatch(t *testing.T) {
 			Endpoint: fftypes.JSONObject{"url": "https://node2.example.com"},
 		},
 	}, nil).Once()
-
-	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil).Once()
+	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&fftypes.Blob{
+		Hash:       blob1,
+		PayloadRef: "/blob/1",
+	}, nil)
+	mdx.On("TransferBLOB", pm.ctx, "node1", "/blob/1").Return("tracking1", nil)
 	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.BackendID == "tracking1" && op.Type == fftypes.OpTypeDataExchangeBatchSend
+		return op.BackendID == "tracking1" && op.Type == fftypes.OpTypeDataExchangeBlobSend
 	}), false).Return(nil, nil)
-	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking2", nil).Once()
+	mdx.On("TransferBLOB", pm.ctx, "node2", "/blob/1").Return("tracking2", nil)
 	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.BackendID == "tracking2" && op.Type == fftypes.OpTypeDataExchangeBatchSend
+		return op.BackendID == "tracking2" && op.Type == fftypes.OpTypeDataExchangeBlobSend
+	}), false).Return(nil, nil)
+
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking3", nil).Once()
+	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tracking3" && op.Type == fftypes.OpTypeDataExchangeBatchSend
+	}), false).Return(nil, nil)
+	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking4", nil).Once()
+	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tracking4" && op.Type == fftypes.OpTypeDataExchangeBatchSend
 	}), false).Return(nil, nil)
 
 	mdi.On("UpsertTransaction", pm.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
@@ -155,6 +169,9 @@ func TestDispatchBatch(t *testing.T) {
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: txID,
+			},
+			Data: []*fftypes.Data{
+				{ID: dataID1, Blob: &fftypes.BlobRef{Hash: blob1}},
 			},
 		},
 		Hash: batchHash,
@@ -246,6 +263,36 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "org1",
+		Payload: fftypes.BatchPayload{
+			TX: fftypes.TransactionRef{
+				ID: fftypes.NewUUID(),
+			},
+		},
+	}, []*fftypes.Node{
+		{
+			DX: fftypes.DXInfo{
+				Peer:     "node1",
+				Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
+			},
+		},
+	}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestSendSubmitBlobTransferFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+		Author: "org1",
+		Payload: fftypes.BatchPayload{
+			Data: []*fftypes.Data{
+				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+			},
+		},
 	}, []*fftypes.Node{
 		{
 			DX: fftypes.DXInfo{
@@ -298,6 +345,50 @@ func TestWriteTransactionUpsertOpFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
+func TestTransferBlobsNotFound(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, nil)
+
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	assert.Regexp(t, "FF10239", err)
+}
+
+func TestTransferBlobsFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("TransferBLOB", pm.ctx, "peer1", "blob/1").Return("", fmt.Errorf("pop"))
+
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestTransferBlobsOpInsertFail(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+
+	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(&fftypes.Blob{PayloadRef: "blob/1"}, nil)
+	mdx.On("TransferBLOB", pm.ctx, "peer1", "blob/1").Return("tracking1", nil)
+	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+
+	err := pm.transferBlobs(pm.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
+	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
+	assert.Regexp(t, "pop", err)
+}
 func TestStart(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()

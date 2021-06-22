@@ -30,11 +30,11 @@ func (bc *boundCallbacks) RegisterConnection(connID string, matcher events.Subsc
 	return bc.sm.registerConnection(bc.ei, connID, matcher)
 }
 
-func (bc *boundCallbacks) EphemeralSubscription(connID, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
+func (bc *boundCallbacks) EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error {
 	return bc.sm.ephemeralSubscription(bc.ei, connID, namespace, filter, options)
 }
 
-func (bc *boundCallbacks) DeliveryResponse(connID string, inflight fftypes.EventDeliveryResponse) error {
+func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error {
 	return bc.sm.deliveryResponse(bc.ei, connID, inflight)
 }
 

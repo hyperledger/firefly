@@ -63,6 +63,13 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	newest := fftypes.SubOptsFirstEventNewest
 	fifty := uint16(50)
+	subOpts := fftypes.SubscriptionOptions{
+		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+			FirstEvent: &newest,
+			ReadAhead:  &fifty,
+		},
+	}
+	subOpts.TransportOptions()["my-transport-option"] = true
 	subscriptionUpdated := &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
 			ID:        fftypes.NewUUID(), // will fail with us trying to update this
@@ -76,10 +83,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 			Tag:    "tag.*",
 			Group:  "group.*",
 		},
-		Options: fftypes.SubscriptionOptions{
-			FirstEvent: &newest,
-			ReadAhead:  &fifty,
-		},
+		Options: subOpts,
 		Created: fftypes.Now(),
 	}
 
@@ -98,6 +102,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	subscriptionJson, _ = json.Marshal(&subscriptionUpdated)
 	subscriptionReadJson, _ = json.Marshal(&subscriptionRead)
 	assert.Equal(t, string(subscriptionJson), string(subscriptionReadJson))
+	assert.Equal(t, true, subscriptionRead.Options.TransportOptions()["my-transport-option"])
 
 	// Query back the subscription
 	fb := database.SubscriptionQueryFactory.NewFilter(ctx)

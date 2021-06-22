@@ -42,10 +42,19 @@ const (
 	SubOptsFirstEventNewest SubOptsFirstEvent = "newest"
 )
 
-// SubscriptionOptions cutomize the behavior of subscriptions
-type SubscriptionOptions struct {
+// SubscriptionCoreOptions are the core options that apply across all transports
+type SubscriptionCoreOptions struct {
 	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
 	ReadAhead  *uint16            `json:"readAhead,omitempty"`
+	WithData   *bool              `json:"withData,omitempty"`
+}
+
+// SubscriptionOptions cutomize the behavior of subscriptions
+type SubscriptionOptions struct {
+	SubscriptionCoreOptions
+
+	// Extenisble by the specific transport - so we serialize/de-serialize via map
+	additionalOptions JSONObject
 }
 
 // SubscriptionRef are the fields that can be used to refer to a subscription
@@ -66,21 +75,57 @@ type Subscription struct {
 	Created   *FFTime             `json:"created"`
 }
 
+func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
+	so.additionalOptions = JSONObject{}
+	err := json.Unmarshal(b, &so.additionalOptions)
+	if err == nil {
+		err = json.Unmarshal(b, &so.SubscriptionCoreOptions)
+	}
+	if err != nil {
+		return err
+	}
+	delete(so.additionalOptions, "firstEvent")
+	delete(so.additionalOptions, "readAhead")
+	delete(so.additionalOptions, "withData")
+	return nil
+}
+
+func (so SubscriptionOptions) MarshalJSON() ([]byte, error) {
+	if so.additionalOptions == nil {
+		so.additionalOptions = JSONObject{}
+	}
+	if so.WithData != nil {
+		so.additionalOptions["withData"] = so.WithData
+	}
+	if so.FirstEvent != nil {
+		so.additionalOptions["firstEvent"] = *so.FirstEvent
+	}
+	if so.ReadAhead != nil {
+		so.additionalOptions["readAhead"] = float64(*so.ReadAhead)
+	}
+	return json.Marshal(&so.additionalOptions)
+}
+
+func (so *SubscriptionOptions) TransportOptions() JSONObject {
+	if so.additionalOptions == nil {
+		so.additionalOptions = JSONObject{}
+	}
+	return so.additionalOptions
+}
+
 // Scan implements sql.Scanner
 func (so *SubscriptionOptions) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case []byte:
-		return json.Unmarshal(src, &so)
+		return so.UnmarshalJSON(src)
 	case string:
-		return json.Unmarshal([]byte(src), &so)
-
+		return so.UnmarshalJSON([]byte(src))
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, so)
 	}
-
 }
 
 // Value implements sql.Valuer
 func (so SubscriptionOptions) Value() (driver.Value, error) {
-	return json.Marshal(&so)
+	return so.MarshalJSON()
 }

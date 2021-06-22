@@ -1,8 +1,8 @@
 BEGIN;
 CREATE TABLE messages_data (
   seq        SERIAL   PRIMARY KEY,
-  message_id UUID     NOT NULL REFERENCES messages(id),
-  data_id    UUID     NOT NULL REFERENCES data(id),
+  message_id UUID     NOT NULL,
+  data_id    UUID     NOT NULL,
   data_hash  CHAR(64) NOT NULL,
   data_idx   INT      NOT NULL
 );

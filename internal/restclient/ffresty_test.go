@@ -95,6 +95,19 @@ func TestRequestRetry(t *testing.T) {
 
 }
 
+func TestConfWithProxy(t *testing.T) {
+
+	ctx := context.Background()
+
+	resetConf()
+	utConfPrefix.Set(HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.Set(HTTPConfigProxyURL, "http://myproxy.example.com:12345")
+	utConfPrefix.Set(HTTPConfigRetryEnabled, false)
+
+	c := New(ctx, utConfPrefix)
+	assert.True(t, c.IsProxySet())
+}
+
 func TestLongResponse(t *testing.T) {
 
 	ctx := context.Background()

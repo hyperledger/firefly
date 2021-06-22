@@ -7,8 +7,6 @@ import (
 
 	config "github.com/hyperledger-labs/firefly/internal/config"
 
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
-
 	io "io"
 
 	mock "github.com/stretchr/testify/mock"
@@ -71,41 +69,32 @@ func (_m *Plugin) Name() string {
 }
 
 // PublishData provides a mock function with given fields: ctx, data
-func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (*fftypes.Bytes32, string, error) {
+func (_m *Plugin) PublishData(ctx context.Context, data io.Reader) (string, error) {
 	ret := _m.Called(ctx, data)
 
-	var r0 *fftypes.Bytes32
-	if rf, ok := ret.Get(0).(func(context.Context, io.Reader) *fftypes.Bytes32); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, io.Reader) string); ok {
 		r0 = rf(ctx, data)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Bytes32)
-		}
+		r0 = ret.Get(0).(string)
 	}
 
-	var r1 string
-	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) string); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, io.Reader) error); ok {
 		r1 = rf(ctx, data)
 	} else {
-		r1 = ret.Get(1).(string)
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, io.Reader) error); ok {
-		r2 = rf(ctx, data)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // RetrieveData provides a mock function with given fields: ctx, payloadRef
-func (_m *Plugin) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (io.ReadCloser, error) {
+func (_m *Plugin) RetrieveData(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
 	ret := _m.Called(ctx, payloadRef)
 
 	var r0 io.ReadCloser
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) io.ReadCloser); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
 		r0 = rf(ctx, payloadRef)
 	} else {
 		if ret.Get(0) != nil {
@@ -114,7 +103,7 @@ func (_m *Plugin) RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Bytes32) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, payloadRef)
 	} else {
 		r1 = ret.Error(1)

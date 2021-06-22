@@ -28,7 +28,7 @@ contract('Firefly.sol', accounts => {
         const namespace = "ns1";
         const uuids = randB32Hex();
         const batchHash = randB32Hex();
-        const payloadRef = randB32Hex();
+        const payloadRef = "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD";
         const contexts = [randB32Hex(),randB32Hex(),randB32Hex()];
         const result = await fireflyContract.pinBatch(namespace, uuids, batchHash, payloadRef, contexts);
         const logArgs = result.logs[0].args;
@@ -43,11 +43,11 @@ contract('Firefly.sol', accounts => {
         assert.equal(logArgs.contexts[2], contexts[2]);
       });
 
-      it('private with an all-zero payloadRef', async () => {
+      it('private with an empty payloadRef', async () => {
         const namespace = "ns1";
         const uuids = randB32Hex();
         const batchHash = randB32Hex();
-        const payloadRef = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        const payloadRef = "";
         const contexts = [randB32Hex(),randB32Hex(),randB32Hex()];
         const result = await fireflyContract.pinBatch(namespace, uuids, batchHash, payloadRef, contexts);
         const logArgs = result.logs[0].args;

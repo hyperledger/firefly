@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
+	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger-labs/firefly/internal/config"
@@ -52,6 +52,10 @@ type wsEvent struct {
 	Error     string  `json:"error"`
 }
 
+const (
+	dxHTTPHeaderHash = "dx-hash"
+)
+
 type msgType string
 
 const (
@@ -65,6 +69,11 @@ const (
 
 type responseWithRequestID struct {
 	RequestID string `json:"requestID"`
+}
+
+type uploadBlob struct {
+	Hash       string      `json:"hash"`
+	LastUpdate json.Number `json:"lastUpdate"`
 }
 
 type sendMessage struct {
@@ -117,30 +126,37 @@ func (h *HTTPS) GetEndpointInfo(ctx context.Context) (peerID string, endpoint ff
 	return endpoint.GetString("id"), endpoint, nil
 }
 
-func (h *HTTPS) AddPeer(ctx context.Context, node *fftypes.Node) (err error) {
+func (h *HTTPS) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) (err error) {
 	res, err := h.client.R().SetContext(ctx).
-		SetBody(node.DX.Endpoint).
-		Put(fmt.Sprintf("/api/v1/peers/%s", node.DX.Peer))
+		SetBody(endpoint).
+		Put(fmt.Sprintf("/api/v1/peers/%s", peerID))
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
 	return nil
 }
 
-func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (err error) {
+func (h *HTTPS) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, err error) {
+	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
+	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
 		SetFileReader("file", id.String(), content).
-		Put(fmt.Sprintf("/api/v1/blobs/%s/%s", ns, &id))
+		SetResult(&upload).
+		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		err = restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return "", nil, err
 	}
-	return nil
+	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
+		return "", nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
+	}
+	return payloadRef, hash, nil
 }
 
-func (h *HTTPS) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (content io.ReadCloser, err error) {
+func (h *HTTPS) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
 	res, err := h.client.R().SetContext(ctx).
 		SetDoNotParseResponse(true).
-		Get(fmt.Sprintf("/api/v1/blobs/%s/%s", ns, &id))
+		Get(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
 		if err == nil {
 			_ = res.RawBody().Close()
@@ -150,12 +166,12 @@ func (h *HTTPS) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (c
 	return res.RawBody(), nil
 }
 
-func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, data []byte) (trackingID string, err error) {
+func (h *HTTPS) SendMessage(ctx context.Context, peerID string, data []byte) (trackingID string, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&sendMessage{
 			Message:   string(data),
-			Recipient: node.DX.Peer,
+			Recipient: peerID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
@@ -165,12 +181,12 @@ func (h *HTTPS) SendMessage(ctx context.Context, node *fftypes.Node, data []byte
 	return responseData.RequestID, nil
 }
 
-func (h *HTTPS) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (trackingID string, err error) {
+func (h *HTTPS) TransferBLOB(ctx context.Context, peerID, payloadRef string) (trackingID string, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&transferBlob{
-			Path:      fmt.Sprintf("%s/%s", ns, id),
-			Recipient: node.DX.Peer,
+			Path:      fmt.Sprintf("/%s", payloadRef),
+			Recipient: peerID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
@@ -180,26 +196,26 @@ func (h *HTTPS) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string,
 	return responseData.RequestID, nil
 }
 
-func (h *HTTPS) extractBlobPath(ctx context.Context, path string) (ns string, id *fftypes.UUID) {
-	parts := strings.Split(path, "/")
-	if len(parts) != 2 {
-		log.L(ctx).Errorf("Invalid blob path: %s", path)
-		return "", nil
+func (h *HTTPS) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, err error) {
+	var responseData responseWithRequestID
+	res, err := h.client.R().SetContext(ctx).
+		SetResult(&responseData).
+		Head(fmt.Sprintf("/api/v1/blobs/%s/%s/%s", peerID, ns, id.String()))
+	if err == nil && res.StatusCode() == http.StatusNotFound {
+		return nil, nil
 	}
-	ns = parts[0]
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		log.L(ctx).Errorf("Invalid blob namespace: %s", path)
-		return "", nil
+	if err != nil || !res.IsSuccess() {
+		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
 	}
-	id, err := fftypes.ParseUUID(ctx, parts[1])
-	if err != nil {
-		log.L(ctx).Errorf("Invalid blob UUID: %s", path)
-		return "", nil
+	hashString := res.Header().Get(dxHTTPHeaderHash)
+	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
 	}
-	return ns, id
+	return hash, nil
 }
 
 func (h *HTTPS) eventLoop() {
+	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
 	ack, _ := json.Marshal(map[string]string{"action": "commit"})
@@ -224,25 +240,33 @@ func (h *HTTPS) eventLoop() {
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
 			switch msg.Type {
 			case messageFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case messageDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case messageReceived:
-				h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
+				err = h.callbacks.MessageReceived(msg.Sender, fftypes.Byteable(msg.Message))
 			case blobFailed:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, msg.Error, nil)
 			case blobDelivered:
-				h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
+				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, "", nil)
 			case blobReceived:
-				if ns, id := h.extractBlobPath(ctx, msg.Path); id != nil {
-					h.callbacks.BLOBReceived(msg.Sender, ns, *id)
+				var hash *fftypes.Bytes32
+				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
+				if err != nil {
+					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
+					err = nil // still confirm the message
+				} else {
+					err = h.callbacks.BLOBReceived(msg.Sender, *hash, msg.Path)
 				}
 			default:
 				l.Errorf("Message unexpected: %s", msg.Type)
 			}
 
-			// Send the ack - only fails if shutting down
-			err = h.wsconn.Send(ctx, ack)
+			// Send the ack - as long as we didn't fail processing (which should only happen in core
+			// if core itself is shutting down)
+			if err == nil {
+				err = h.wsconn.Send(ctx, ack)
+			}
 			if err != nil {
 				l.Errorf("Event loop exiting: %s", err)
 				return

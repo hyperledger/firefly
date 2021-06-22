@@ -21,18 +21,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/mocks/networkmapmocks"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetNodess(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 	req := httptest.NewRequest("GET", "/api/v1/network/nodes", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

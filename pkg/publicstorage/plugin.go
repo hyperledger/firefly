@@ -38,11 +38,11 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// PublishData publishes data to the Public Storage, and returns a Bytes32 payload reference ID
-	PublishData(ctx context.Context, data io.Reader) (payloadRef *fftypes.Bytes32, backendID string, err error)
+	// PublishData publishes data to the Public Storage, and returns a payload reference ID
+	PublishData(ctx context.Context, data io.Reader) (payloadRef string, err error)
 
 	// RetrieveData reads data back from IPFS using the payload reference format returned from PublishData
-	RetrieveData(ctx context.Context, payloadRef *fftypes.Bytes32) (data io.ReadCloser, err error)
+	RetrieveData(ctx context.Context, payloadRef string) (data io.ReadCloser, err error)
 }
 
 type Callbacks interface {

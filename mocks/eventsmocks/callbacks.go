@@ -20,11 +20,11 @@ func (_m *Callbacks) ConnnectionClosed(connID string) {
 }
 
 // DeliveryResponse provides a mock function with given fields: connID, inflight
-func (_m *Callbacks) DeliveryResponse(connID string, inflight fftypes.EventDeliveryResponse) error {
+func (_m *Callbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error {
 	ret := _m.Called(connID, inflight)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, fftypes.EventDeliveryResponse) error); ok {
+	if rf, ok := ret.Get(0).(func(string, *fftypes.EventDeliveryResponse) error); ok {
 		r0 = rf(connID, inflight)
 	} else {
 		r0 = ret.Error(0)
@@ -34,11 +34,11 @@ func (_m *Callbacks) DeliveryResponse(connID string, inflight fftypes.EventDeliv
 }
 
 // EphemeralSubscription provides a mock function with given fields: connID, namespace, filter, options
-func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filter fftypes.SubscriptionFilter, options fftypes.SubscriptionOptions) error {
+func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error {
 	ret := _m.Called(connID, namespace, filter, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, fftypes.SubscriptionFilter, fftypes.SubscriptionOptions) error); ok {
+	if rf, ok := ret.Get(0).(func(string, string, *fftypes.SubscriptionFilter, *fftypes.SubscriptionOptions) error); ok {
 		r0 = rf(connID, namespace, filter, options)
 	} else {
 		r0 = ret.Error(0)

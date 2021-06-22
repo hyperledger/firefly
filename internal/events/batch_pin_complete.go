@@ -41,7 +41,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete info: %+v", additionalInfo)
 
-	if batchPin.BatchPaylodRef != nil {
+	if batchPin.BatchPaylodRef != "" {
 		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
 	}
 	return em.handlePrivatePinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)

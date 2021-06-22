@@ -36,7 +36,7 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
-	id := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
 
 	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
 	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
@@ -46,12 +46,15 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 	err = bc.TxSubmissionUpdate("tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return()
-	bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
+	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TransferResult("tracking12345", fftypes.OpStatusFailed, "error info", info)
+	assert.EqualError(t, err, "pop")
 
-	mei.On("BLOBReceived", mdx, "peer1", "ns1", *id).Return()
-	bc.BLOBReceived("peer1", "ns1", *id)
+	mei.On("BLOBReceived", mdx, "peer1", *hash, "ns1/id1").Return(fmt.Errorf("pop"))
+	err = bc.BLOBReceived("peer1", *hash, "ns1/id1")
+	assert.EqualError(t, err, "pop")
 
-	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return()
-	bc.MessageReceived("peer1", []byte{})
+	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return(fmt.Errorf("pop"))
+	err = bc.MessageReceived("peer1", []byte{})
+	assert.EqualError(t, err, "pop")
 }

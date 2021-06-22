@@ -100,8 +100,8 @@ type BatchPin struct {
 	// BatchHash is the SHA256 hash of the batch
 	BatchHash *fftypes.Bytes32
 
-	// BatchPaylodRef is a 32 byte fixed length binary value that can be passed to the storage interface to retrieve the payload. Nil for private messages
-	BatchPaylodRef *fftypes.Bytes32
+	// BatchPaylodRef is a string that can be passed to to the storage interface to retrieve the payload. Nil for private messages
+	BatchPaylodRef string
 
 	// Contexts is an array of hashes that allow the FireFly runtimes to identify whether one of the messgages in
 	// that batch is the next message for a sequence that involves that node. If so that means the FireFly runtime must

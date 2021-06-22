@@ -25,6 +25,7 @@ var routes = []*oapispec.Route{
 	getBatchByID,
 	getBatches,
 	getData,
+	getDataBlob,
 	getDataByID,
 	getDataDefByID,
 	getDataDefs,

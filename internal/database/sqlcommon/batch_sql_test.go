@@ -67,7 +67,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	txid := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
-	payloadRef := fftypes.NewRandB32()
+	payloadRef := ""
 	batchUpdated := &fftypes.Batch{
 		ID:        batchID,
 		Type:      fftypes.MessageTypeBroadcast,

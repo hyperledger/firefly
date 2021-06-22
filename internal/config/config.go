@@ -139,7 +139,7 @@ var (
 	AdminEnabled = rootKey("admin.enabled")
 	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
 	AdminPreinit = rootKey("admin.preinit")
-	// AdminHttpAddress the local address to listen on for HTTP/Websocket connections (empty means any address)
+	// IdentityType the type of the identity plugin in use
 	IdentityType = rootKey("identity.type")
 	// Lang is the language to use for translation
 	Lang = rootKey("lang")
@@ -181,6 +181,8 @@ var (
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
 	SubscriptionsRetryFactor = rootKey("event.dispatcher.retry.factor")
+	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
+	UIEnabled = rootKey("ui.enabled")
 	// UIPath the path on which to serve the UI
 	UIPath = rootKey("ui.path")
 	// ValidatorCacheSize
@@ -254,7 +256,7 @@ func Reset() {
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
 	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
-	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets"})
+	viper.SetDefault(string(EventTransportsEnabled), []string{"websockets", "webhooks"})
 	viper.SetDefault(string(EventTransportsDefault), "websockets")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
@@ -279,6 +281,7 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
 

@@ -103,7 +103,7 @@ func TestVerifyBroadcastBatchTXCycle(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "payload1",
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 		},
@@ -143,7 +143,7 @@ func TestCloseOnEventDispatchError(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "payload1",
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 		},
@@ -171,7 +171,7 @@ func TestVerifyBroadcastDBError(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "payload1",
 		Contexts: []*fftypes.Bytes32{
 			fftypes.NewRandB32(),
 		},
