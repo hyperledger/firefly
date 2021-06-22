@@ -63,14 +63,14 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 		return err
 	}
 
-	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
-		in.Message.Confirmed = fftypes.Now()
-		in.Message.Pending = false
-	}
-
 	// Seal the message
 	if err := in.Message.Seal(ctx); err != nil {
 		return err
+	}
+
+	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
+		in.Message.Confirmed = fftypes.Now()
+		in.Message.Pending = false
 	}
 
 	// Store the message - this asynchronously triggers the next step in process

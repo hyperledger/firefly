@@ -52,6 +52,7 @@ type Ethereum struct {
 		subs   []*subscription
 	}
 	wsconn wsclient.WSClient
+	closed chan struct{}
 }
 
 type eventStream struct {
@@ -145,6 +146,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		}
 	}
 
+	e.closed = make(chan struct{})
 	go e.eventLoop()
 
 	return nil
@@ -378,6 +380,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 }
 
 func (e *Ethereum) eventLoop() {
+	defer close(e.closed)
 	l := log.L(e.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(e.ctx, l)
 	ack, _ := json.Marshal(map[string]string{"type": "ack", "topic": e.topic})
