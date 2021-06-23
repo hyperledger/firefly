@@ -39,4 +39,13 @@ fi
 $CLI info $STACK_NAME
 
 export STACK_FILE
-go clean -testcache && go test -v .
+go clean -testcache
+
+set +e
+
+go test -v .
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
+  docker logs firefly-e2e_firefly_core_0_1
+  exit $STATUS
+fi
