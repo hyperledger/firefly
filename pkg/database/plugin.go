@@ -323,6 +323,19 @@ type PeristenceInterface interface {
 
 	// DeleteNextPin - delete a next hash, using its local database ID
 	DeleteNextPin(ctx context.Context, sequence int64) (err error)
+
+	// InsertBlob - insert a blob
+	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
+
+	// GetBlobMatchingHash - lookup first blob batching a hash
+	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
+
+	// GetBlobs - get blobs
+	GetBlobs(ctx context.Context, filter Filter) (message []*fftypes.Blob, err error)
+
+	// DeleteBlob - delete a blob, using its local database ID
+	DeleteBlob(ctx context.Context, sequence int64) (err error)
+
 	// UpsertConfigRecord - Upsert a config record
 	// Throws IDMismatch error if updating and ids don't match
 	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
@@ -394,7 +407,7 @@ var MessageQueryFactory = &queryFields{
 	"pending":   &SortableBoolField{},
 	"confirmed": &TimeField{},
 	"sequence":  &Int64Field{},
-	"tx.type":   &StringField{},
+	"txtype":    &StringField{},
 	"batch":     &UUIDField{},
 	"local":     &BoolField{},
 }
@@ -436,6 +449,8 @@ var DataQueryFactory = &queryFields{
 	"datatype.name":    &StringField{},
 	"datatype.version": &StringField{},
 	"hash":             &Bytes32Field{},
+	"blob.hash":        &Bytes32Field{},
+	"blob.public":      &StringField{},
 	"created":          &TimeField{},
 }
 
@@ -563,4 +578,11 @@ var NextPinQueryFactory = &queryFields{
 var ConfigRecordQueryFactory = &queryFields{
 	"key":   &StringField{},
 	"value": &StringField{},
+}
+
+// BlobQueryFactory filter fields for config records
+var BlobQueryFactory = &queryFields{
+	"hash":       &Bytes32Field{},
+	"payloadref": &StringField{},
+	"created":    &TimeField{},
 }

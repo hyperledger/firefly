@@ -21,13 +21,13 @@ type Plugin struct {
 	mock.Mock
 }
 
-// AddPeer provides a mock function with given fields: ctx, node
-func (_m *Plugin) AddPeer(ctx context.Context, node *fftypes.Node) error {
-	ret := _m.Called(ctx, node)
+// AddPeer provides a mock function with given fields: ctx, peerID, endpoint
+func (_m *Plugin) AddPeer(ctx context.Context, peerID string, endpoint fftypes.JSONObject) error {
+	ret := _m.Called(ctx, peerID, endpoint)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node) error); ok {
-		r0 = rf(ctx, node)
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, peerID, endpoint)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -51,13 +51,36 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 	return r0
 }
 
-// DownloadBLOB provides a mock function with given fields: ctx, ns, id
-func (_m *Plugin) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) (io.ReadCloser, error) {
-	ret := _m.Called(ctx, ns, id)
+// CheckBLOBReceived provides a mock function with given fields: ctx, peerID, ns, id
+func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, error) {
+	ret := _m.Called(ctx, peerID, ns, id)
+
+	var r0 *fftypes.Bytes32
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.UUID) *fftypes.Bytes32); ok {
+		r0 = rf(ctx, peerID, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Bytes32)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, fftypes.UUID) error); ok {
+		r1 = rf(ctx, peerID, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DownloadBLOB provides a mock function with given fields: ctx, payloadRef
+func (_m *Plugin) DownloadBLOB(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
+	ret := _m.Called(ctx, payloadRef)
 
 	var r0 io.ReadCloser
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID) io.ReadCloser); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
+		r0 = rf(ctx, payloadRef)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(io.ReadCloser)
@@ -65,8 +88,8 @@ func (_m *Plugin) DownloadBLOB(ctx context.Context, ns string, id fftypes.UUID) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.UUID) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, payloadRef)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -137,20 +160,20 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, node, data
-func (_m *Plugin) SendMessage(ctx context.Context, node *fftypes.Node, data []byte) (string, error) {
-	ret := _m.Called(ctx, node, data)
+// SendMessage provides a mock function with given fields: ctx, peerID, data
+func (_m *Plugin) SendMessage(ctx context.Context, peerID string, data []byte) (string, error) {
+	ret := _m.Called(ctx, peerID, data)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, []byte) string); ok {
-		r0 = rf(ctx, node, data)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []byte) string); ok {
+		r0 = rf(ctx, peerID, data)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Node, []byte) error); ok {
-		r1 = rf(ctx, node, data)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []byte) error); ok {
+		r1 = rf(ctx, peerID, data)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -172,20 +195,20 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBLOB provides a mock function with given fields: ctx, node, ns, id
-func (_m *Plugin) TransferBLOB(ctx context.Context, node *fftypes.Node, ns string, id fftypes.UUID) (string, error) {
-	ret := _m.Called(ctx, node, ns, id)
+// TransferBLOB provides a mock function with given fields: ctx, peerID, payloadRef
+func (_m *Plugin) TransferBLOB(ctx context.Context, peerID string, payloadRef string) (string, error) {
+	ret := _m.Called(ctx, peerID, payloadRef)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Node, string, fftypes.UUID) string); ok {
-		r0 = rf(ctx, node, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
+		r0 = rf(ctx, peerID, payloadRef)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Node, string, fftypes.UUID) error); ok {
-		r1 = rf(ctx, node, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, peerID, payloadRef)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -194,15 +217,31 @@ func (_m *Plugin) TransferBLOB(ctx context.Context, node *fftypes.Node, ns strin
 }
 
 // UploadBLOB provides a mock function with given fields: ctx, ns, id, content
-func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) error {
+func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (string, *fftypes.Bytes32, error) {
 	ret := _m.Called(ctx, ns, id, content)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.UUID, io.Reader) string); ok {
 		r0 = rf(ctx, ns, id, content)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 *fftypes.Bytes32
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.UUID, io.Reader) *fftypes.Bytes32); ok {
+		r1 = rf(ctx, ns, id, content)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*fftypes.Bytes32)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.UUID, io.Reader) error); ok {
+		r2 = rf(ctx, ns, id, content)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }

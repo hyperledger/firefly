@@ -18,20 +18,21 @@ package oapispec
 
 import (
 	"context"
-	"io"
 	"net/http"
 
 	"github.com/hyperledger-labs/firefly/internal/orchestrator"
 	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 type APIRequest struct {
-	Ctx     context.Context
-	Or      orchestrator.Orchestrator
-	Req     *http.Request
-	QP      map[string]string
-	PP      map[string]string
-	Filter  database.AndFilter
-	Input   interface{}
-	FReader io.Reader
+	Ctx    context.Context
+	Or     orchestrator.Orchestrator
+	Req    *http.Request
+	QP     map[string]string
+	PP     map[string]string
+	FP     map[string]string
+	Filter database.AndFilter
+	Input  interface{}
+	Part   *fftypes.Multipart
 }

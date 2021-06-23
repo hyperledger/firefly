@@ -74,6 +74,26 @@ func TestJSONObject(t *testing.T) {
 
 func TestJSONObjectArray(t *testing.T) {
 
+	data := Byteable(`{
+		"field1": true,
+		"field2": false,
+		"field3": "True",
+		"field4": "not true",
+		"field5": { "not": "boolable" },
+		"field6": null
+	}`)
+	dataJSON := data.JSONObject()
+	assert.True(t, dataJSON.GetBool("field1"))
+	assert.False(t, dataJSON.GetBool("field2"))
+	assert.True(t, dataJSON.GetBool("field3"))
+	assert.False(t, dataJSON.GetBool("field4"))
+	assert.False(t, dataJSON.GetBool("field5"))
+	assert.False(t, dataJSON.GetBool("field6"))
+	assert.False(t, dataJSON.GetBool("field7"))
+}
+
+func TestJSONObjectBool(t *testing.T) {
+
 	data := JSONObjectArray{
 		{"some": "data"},
 	}
@@ -129,7 +149,8 @@ func TestJSONNestedSafeGet(t *testing.T) {
 					}
 				}
 			],
-			"string_array": ["str1","str2"]
+			"string_array": ["str1","str2"],
+			"wrong": null
 		}
 	`), &jd)
 	assert.NoError(t, err)
@@ -141,6 +162,13 @@ func TestJSONNestedSafeGet(t *testing.T) {
 	vo, ok := jd.GetObjectOk("wrong")
 	assert.False(t, ok)
 	assert.NotNil(t, vo)
+	vo, ok = jd.GetObjectOk("string_array")
+	assert.False(t, ok)
+	assert.NotNil(t, vo)
+	jd["already_typed"] = JSONObject{"some": "stuff"}
+	vo, ok = jd.GetObjectOk("already_typed")
+	assert.True(t, ok)
+	assert.Equal(t, "stuff", vo.GetString("some"))
 
 	assert.Equal(t, "value",
 		jd.GetObjectArray("nested_array")[0].

@@ -23,18 +23,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/mocks/networkmapmocks"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostRegisterNode(t *testing.T) {
-	o := &orchestratormocks.Orchestrator{}
+	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	as := &apiServer{}
-	r := as.createMuxRouter(o)
 	input := fftypes.EmptyInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

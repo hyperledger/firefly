@@ -291,7 +291,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
 		if err != nil {
 			return err
 		}

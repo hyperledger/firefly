@@ -50,9 +50,9 @@ type EventManager interface {
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject)
-	BLOBReceived(dx dataexchange.Plugin, peerID string, ns string, id fftypes.UUID)
-	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte)
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
+	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 }
 
 type eventManager struct {
@@ -99,7 +99,10 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 	}
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, newEventNotifier); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, &replySender{
+		broadcast: bm,
+		messaging: pm,
+	}); err != nil {
 		return nil, err
 	}
 

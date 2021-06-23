@@ -30,7 +30,7 @@ import (
 )
 
 func TestDataE2EWithDB(t *testing.T) {
-	log.SetLevel("debug")
+	log.SetLevel("trace")
 
 	s := newQLTestProvider(t)
 	defer s.Close()
@@ -88,6 +88,10 @@ func TestDataE2EWithDB(t *testing.T) {
 		Hash:    fftypes.NewRandB32(),
 		Created: fftypes.Now(),
 		Value:   []byte(val2.String()),
+		Blob: &fftypes.BlobRef{
+			Hash:   fftypes.NewRandB32(),
+			Public: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		},
 	}
 
 	// Check disallows hash update

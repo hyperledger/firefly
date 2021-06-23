@@ -99,20 +99,19 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Ba
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	// Write it to IPFS to get a payload reference hash (might not be the sha256 data hash).
+	// Write it to IPFS to get a payload reference
 	// The payload ref will be persisted back to the batch, as well as being used in the TX
-	var publicstorageID string
-	batch.PayloadRef, publicstorageID, err = bm.publicstorage.PublishData(ctx, bytes.NewReader(payload))
+	batch.PayloadRef, err = bm.publicstorage.PublishData(ctx, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
 
 	return bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return bm.submitTXAndUpdateDB(ctx, batch, pins, publicstorageID)
+		return bm.submitTXAndUpdateDB(ctx, batch, pins)
 	})
 }
 
-func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32, publicstorageID string) error {
+func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
 	id, err := bm.identity.Resolve(ctx, batch.Author)
 	if err == nil {
@@ -177,7 +176,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		bm.publicstorage,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		publicstorageID,
+		batch.PayloadRef,
 		fftypes.OpTypePublicStorageBatchBroadcast,
 		fftypes.OpStatusSucceeded, // Note we performed the action synchronously above
 		"")

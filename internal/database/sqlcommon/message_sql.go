@@ -50,10 +50,10 @@ var (
 		"local",
 	}
 	msgFilterFieldMap = map[string]string{
-		"type":    "mtype",
-		"txntype": "tx_type",
-		"batch":   "batch_id",
-		"group":   "group_hash",
+		"type":   "mtype",
+		"txtype": "tx_type",
+		"batch":  "batch_id",
+		"group":  "group_hash",
 	}
 )
 

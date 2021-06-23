@@ -36,13 +36,16 @@ var (
 		"datatype_version",
 		"hash",
 		"created",
-		"blobstore",
+		"blob_hash",
+		"blob_public",
 	}
 	dataColumnsWithValue = append(append([]string{}, dataColumnsNoValue...), "value")
 	dataFilterFieldMap   = map[string]string{
 		"validator":        "validator",
 		"datatype.name":    "datatype_name",
 		"datatype.version": "datatype_version",
+		"blob.hash":        "blob_hash",
+		"blob.public":      "blob_public",
 	}
 )
 
@@ -83,6 +86,11 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 		datatype = &fftypes.DatatypeRef{}
 	}
 
+	blob := data.Blob
+	if blob == nil {
+		blob = &fftypes.BlobRef{}
+	}
+
 	if existing {
 		// Update the data
 		if err = s.updateTx(ctx, tx,
@@ -93,7 +101,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 				Set("datatype_version", datatype.Version).
 				Set("hash", data.Hash).
 				Set("created", data.Created).
-				Set("blobstore", data.Blobstore).
+				Set("blob_hash", blob.Hash).
+				Set("blob_public", blob.Public).
 				Set("value", data.Value).
 				Where(sq.Eq{"id": data.ID}),
 		); err != nil {
@@ -111,7 +120,8 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					datatype.Version,
 					data.Hash,
 					data.Created,
-					data.Blobstore,
+					blob.Hash,
+					blob.Public,
 					data.Value,
 				),
 		); err != nil {
@@ -125,6 +135,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue bool) (*fftypes.Data, error) {
 	data := fftypes.Data{
 		Datatype: &fftypes.DatatypeRef{},
+		Blob:     &fftypes.BlobRef{},
 	}
 	results := []interface{}{
 		&data.ID,
@@ -134,12 +145,16 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		&data.Datatype.Version,
 		&data.Hash,
 		&data.Created,
-		&data.Blobstore,
+		&data.Blob.Hash,
+		&data.Blob.Public,
 	}
 	if withValue {
 		results = append(results, &data.Value)
 	}
 	err := row.Scan(results...)
+	if data.Blob.Hash == nil && data.Blob.Public == "" {
+		data.Blob = nil
+	}
 	if data.Datatype.Name == "" && data.Datatype.Version == "" {
 		data.Datatype = nil
 	}

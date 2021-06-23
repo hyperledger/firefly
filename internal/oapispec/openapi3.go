@@ -37,7 +37,7 @@ func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
 	doc := &openapi3.T{
 		OpenAPI: "3.0.2",
 		Servers: openapi3.Servers{
-			{URL: url},
+			{URL: url + "/api/v1"},
 		},
 		Info: &openapi3.Info{
 			Title:       "FireFly",
@@ -80,10 +80,10 @@ func initInput(op *openapi3.Operation) {
 	}
 }
 
-func addInput(input interface{}, mask []string, schemaDef string, op *openapi3.Operation) {
+func addInput(ctx context.Context, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
 	var schemaRef *openapi3.SchemaRef
-	if schemaDef != "" {
-		err := json.Unmarshal([]byte(schemaDef), &schemaRef)
+	if schemaDef != nil {
+		err := json.Unmarshal([]byte(schemaDef(ctx)), &schemaRef)
 		if err != nil {
 			panic(fmt.Sprintf("invalid schema for %T: %s", input, err))
 		}
@@ -96,19 +96,29 @@ func addInput(input interface{}, mask []string, schemaDef string, op *openapi3.O
 	}
 }
 
-func addFormInput(op *openapi3.Operation) {
+func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*FormParam) {
+	props := openapi3.Schemas{
+		"filename.ext": &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Type:   "string",
+				Format: "binary",
+			},
+		},
+	}
+	for _, fp := range formParams {
+		props[fp.Name] = &openapi3.SchemaRef{
+			Value: &openapi3.Schema{
+				Description: i18n.Expand(ctx, i18n.MsgSuccessResponse),
+				Type:        "string",
+			},
+		}
+	}
+
 	op.RequestBody.Value.Content["multipart/form-data"] = &openapi3.MediaType{
 		Schema: &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
-				Type: "object",
-				Properties: openapi3.Schemas{
-					"filename.ext": &openapi3.SchemaRef{
-						Value: &openapi3.Schema{
-							Type:   "string",
-							Format: "binary",
-						},
-					},
-				},
+				Type:       "object",
+				Properties: props,
 			},
 		},
 	}
@@ -173,10 +183,10 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		}
 		initInput(op)
 		if input != nil {
-			addInput(input, route.JSONInputMask, route.JSONInputSchema, op)
+			addInput(ctx, input, route.JSONInputMask, route.JSONInputSchema, op)
 		}
 		if route.FormUploadHandler != nil {
-			addFormInput(op)
+			addFormInput(ctx, op, route.FormParams)
 		}
 	}
 	var output interface{}

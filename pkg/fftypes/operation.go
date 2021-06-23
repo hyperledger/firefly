@@ -28,6 +28,8 @@ const (
 	OpTypePublicStorageBatchBroadcast OpType = "publicstorage_batch_broadcast"
 	// OpTypeDataExchangeBatchSend is a private send
 	OpTypeDataExchangeBatchSend OpType = "dataexchange_batch_send"
+	// OpTypeDataExchangeBlobSend is a private send
+	OpTypeDataExchangeBlobSend OpType = "dataexchange_blob_send"
 )
 
 // OpStatus is the current status of an operation

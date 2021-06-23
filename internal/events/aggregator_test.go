@@ -830,6 +830,33 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	blobHash := fftypes.NewRandB32()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{
+			Hash:   blobHash,
+			Public: "public-ref",
+		}},
+	}, true, nil)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, blobHash).Return(nil, nil)
+
+	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, nil)
+
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
+	})
+	assert.NoError(t, err)
+	assert.False(t, dispatched)
+
+}
+
 func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
@@ -1024,4 +1051,130 @@ func TestRewindOffchainBatchesBatchesError(t *testing.T) {
 
 	rewind, _ := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
+}
+
+func TestResolveBlobsNoop(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{}},
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, resolved)
+}
+
+func TestResolveBlobsErrorGettingHash(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash: fftypes.NewRandB32(),
+		}},
+	})
+
+	assert.EqualError(t, err, "pop")
+	assert.False(t, resolved)
+}
+
+func TestResolveBlobsNotFoundPrivate(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash: fftypes.NewRandB32(),
+		}},
+	})
+
+	assert.NoError(t, err)
+	assert.False(t, resolved)
+}
+
+func TestResolveBlobsFoundPrivate(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(&fftypes.Blob{}, nil)
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash: fftypes.NewRandB32(),
+		}},
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, resolved)
+}
+
+func TestResolveBlobsCopyNotFound(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, nil)
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash:   fftypes.NewRandB32(),
+			Public: "public-ref",
+		}},
+	})
+
+	assert.NoError(t, err)
+	assert.False(t, resolved)
+}
+
+func TestResolveBlobsCopyFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash:   fftypes.NewRandB32(),
+			Public: "public-ref",
+		}},
+	})
+
+	assert.EqualError(t, err, "pop")
+	assert.False(t, resolved)
+}
+
+func TestResolveBlobsCopyOk(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("CopyBlobPStoDX", ag.ctx, mock.Anything).Return(&fftypes.Blob{}, nil)
+
+	resolved, err := ag.resolveBlobs(ag.ctx, []*fftypes.Data{
+		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+			Hash:   fftypes.NewRandB32(),
+			Public: "public-ref",
+		}},
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, resolved)
 }

@@ -10,11 +10,11 @@ contract Firefly {
         string namespace,
         bytes32 uuids,
         bytes32 batchHash,
-        bytes32 payloadRef,
+        string payloadRef,
         bytes32[] contexts
     );
 
-    function pinBatch(string memory namespace, bytes32 uuids, bytes32 batchHash, bytes32 payloadRef, bytes32[] memory contexts) public {
+    function pinBatch(string memory namespace, bytes32 uuids, bytes32 batchHash, string memory payloadRef, bytes32[] memory contexts) public {
         emit BatchPin(msg.sender, block.timestamp, namespace, uuids, batchHash, payloadRef, contexts);
     }
 

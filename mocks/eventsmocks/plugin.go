@@ -35,15 +35,29 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 	return r0
 }
 
-// DeliveryRequest provides a mock function with given fields: connID, event
-func (_m *Plugin) DeliveryRequest(connID string, event *fftypes.EventDelivery) error {
-	ret := _m.Called(connID, event)
+// DeliveryRequest provides a mock function with given fields: connID, sub, event, data
+func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+	ret := _m.Called(connID, sub, event, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.EventDelivery) error); ok {
-		r0 = rf(connID, event)
+	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery, []*fftypes.Data) error); ok {
+		r0 = rf(connID, sub, event, data)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetOptionsSchema provides a mock function with given fields: _a0
+func (_m *Plugin) GetOptionsSchema(_a0 context.Context) string {
+	ret := _m.Called(_a0)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(string)
 	}
 
 	return r0
@@ -77,6 +91,20 @@ func (_m *Plugin) Name() string {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ValidateOptions provides a mock function with given fields: options
+func (_m *Plugin) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+	ret := _m.Called(options)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*fftypes.SubscriptionOptions) error); ok {
+		r0 = rf(options)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

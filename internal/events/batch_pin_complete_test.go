@@ -43,7 +43,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		Namespace:      "ns1",
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchData := &fftypes.Batch{
@@ -66,7 +66,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr *fftypes.Bytes32) bool { return *pr == *batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -121,7 +121,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mpi := em.publicstorage.(*publicstoragemocks.Plugin)
 	mpi.On("RetrieveData", mock.Anything, mock.
-		MatchedBy(func(pr *fftypes.Bytes32) bool { return *pr == *batch.BatchPaylodRef })).
+		MatchedBy(func(pr string) bool { return pr == batch.BatchPaylodRef })).
 		Return(batchReadCloser, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -149,7 +149,7 @@ func TestSequencedBroadcastRetrieveIPFSFail(t *testing.T) {
 	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -170,7 +170,7 @@ func TestBatchPinCompleteBadData(t *testing.T) {
 	batch := &blockchain.BatchPin{
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
-		BatchPaylodRef: fftypes.NewRandB32(),
+		BatchPaylodRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchReadCloser := ioutil.NopCloser(bytes.NewReader([]byte(`!json`)))
@@ -310,7 +310,7 @@ func TestPersistBatchGetTransactionBadNamespace(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -330,7 +330,7 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -350,7 +350,7 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -372,7 +372,7 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -393,7 +393,7 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 		TransactionID:  fftypes.NewUUID(),
 		BatchID:        fftypes.NewUUID(),
 		BatchHash:      fftypes.NewRandB32(),
-		BatchPaylodRef: nil,
+		BatchPaylodRef: "",
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
@@ -453,7 +453,7 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 				ID:   fftypes.NewUUID(),
 			},
 			Data: []*fftypes.Data{
-				{ID: fftypes.NewUUID()},
+				{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)},
 			},
 		},
 	}
@@ -534,7 +534,7 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestPersistBatchDataBadHash(t *testing.T) {
+func TestPersistBatchDataNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
@@ -547,6 +547,21 @@ func TestPersistBatchDataBadHash(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestPersistBatchDataBadHash(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	batch := &fftypes.Batch{
+		ID: fftypes.NewUUID(),
+	}
+	data := &fftypes.Data{
+		ID:    fftypes.NewUUID(),
+		Value: fftypes.Byteable(`"test"`),
+		Hash:  fftypes.NewRandB32(),
+	}
+	err := em.persistBatchData(context.Background(), batch, 0, data)
+	assert.NoError(t, err)
+}
+
 func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -554,9 +569,7 @@ func TestPersistBatchDataUpsertHashMismatch(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -574,9 +587,7 @@ func TestPersistBatchDataUpsertDataError(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -593,9 +604,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	data := &fftypes.Data{
-		ID: fftypes.NewUUID(),
-	}
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"test"`)}
 	data.Hash = data.Value.Hash()
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -606,7 +615,7 @@ func TestPersistBatchDataOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestPersistBatchMessageBadHash(t *testing.T) {
+func TestPersistBatchMessageNilData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{

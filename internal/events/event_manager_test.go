@@ -116,10 +116,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	em.NewSubscriptions() <- fftypes.NewUUID()
 	<-getSubCalled
 
-	getSubCallReady <- true
 	em.DeletedSubscriptions() <- fftypes.NewUUID()
-	<-getSubCalled
-
 	close(getSubCallReady)
 }
 
@@ -177,7 +174,9 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 			Name:      "sub1",
 		},
 		Options: fftypes.SubscriptionOptions{
-			FirstEvent: &wrongFirstEvent,
+			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+				FirstEvent: &wrongFirstEvent,
+			},
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
@@ -197,7 +196,9 @@ func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
 			Name:      "sub1",
 		},
 		Options: fftypes.SubscriptionOptions{
-			FirstEvent: &wrongFirstEvent,
+			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+				FirstEvent: &wrongFirstEvent,
+			},
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)

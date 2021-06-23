@@ -24,38 +24,48 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
+	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
+	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestEventDispatcher(mdi database.Plugin, mei events.Plugin, sub *subscription) (*eventDispatcher, func()) {
+func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
+	mdi := &databasemocks.Plugin{}
+	mei := &eventsmocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	rs := &replySender{
+		broadcast: &broadcastmocks.Manager{},
+		messaging: &privatemessagingmocks.Manager{},
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
+	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mei := &eventsmocks.Plugin{}
 	ten := uint16(10)
 	oldest := fftypes.SubOptsFirstEventOldest
-	ed, cancel := newTestEventDispatcher(mdi, mei, &subscription{
+	ed, cancel := newTestEventDispatcher(&subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{
 			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
 			Ephemeral:       true,
 			Options: fftypes.SubscriptionOptions{
-				ReadAhead:  &ten,
-				FirstEvent: &oldest,
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead:  &ten,
+					FirstEvent: &oldest,
+				},
 			},
 		},
 	})
 	defer cancel()
+	mdi := ed.database.(*databasemocks.Plugin)
 	ge := mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	confirmedElected := make(chan bool)
 	ge.RunFn = func(a mock.Arguments) {
@@ -80,10 +90,12 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 		},
 	}
 
+	ed1, cancel1 := newTestEventDispatcher(sub)
+	ed2, cancel2 := newTestEventDispatcher(sub /* same sub */)
+
 	gev1Wait := make(chan bool)
 	gev1Done := make(chan struct{})
-	mei := &eventsmocks.Plugin{}
-	mdi1 := &databasemocks.Plugin{}
+	mdi1 := ed1.database.(*databasemocks.Plugin)
 	gev1 := mdi1.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
 	mdi1.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "ns1", "sub1").Return(&fftypes.Offset{
 		Type:      fftypes.OffsetTypeSubscription,
@@ -95,10 +107,6 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 		gev1Wait <- true
 		<-gev1Done
 	}
-	ed1, cancel1 := newTestEventDispatcher(mdi1, mei, sub)
-
-	mdi2 := &databasemocks.Plugin{} // No mocks, so will bail if called
-	ed2, cancel2 := newTestEventDispatcher(mdi2, mei, sub /* same sub */)
 
 	ed1.start()
 	<-gev1Wait
@@ -119,24 +127,25 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		definition: &fftypes.Subscription{
 			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
 			Options: fftypes.SubscriptionOptions{
-				ReadAhead: &five,
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead: &five,
+				},
 			},
 		},
 		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageConfirmed)),
 	}
 
-	mdi := &databasemocks.Plugin{}
-
-	eventDeliveries := make(chan *fftypes.EventDelivery)
-	mei := &eventsmocks.Plugin{}
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
-	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
-	}
-
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
+
+	eventDeliveries := make(chan *fftypes.EventDelivery)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
+	}
 
 	// Setup the IDs
 	ref1 := fftypes.NewUUID()
@@ -166,15 +175,8 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	})).Return([]*fftypes.Message{
 		{Header: fftypes.MessageHeader{ID: ref1}},
 		{Header: fftypes.MessageHeader{ID: ref2}},
+		{Header: fftypes.MessageHeader{ID: ref3}},
 		{Header: fftypes.MessageHeader{ID: ref4}},
-	}, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
-		fi, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`( id IN ['%s','%s','%s','%s'] ) && ( namespace == 'ns1' )`, ref1, ref2, ref3, ref4), fi.String())
-		return true
-	})).Return(fftypes.DataRefs{
-		{ID: ref3},
 	}, nil)
 
 	// Deliver a batch of messages
@@ -197,7 +199,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	assert.Equal(t, *ref1, *event1.Message.Header.ID)
 	event3 := <-eventDeliveries
 	assert.Equal(t, *ev3, *event3.ID)
-	assert.Equal(t, *ref3, *event3.Data.ID)
+	assert.Equal(t, *ref3, *event3.Message.Header.ID)
 	event4 := <-eventDeliveries
 	assert.Equal(t, *ev4, *event4.ID)
 	assert.Equal(t, *ref4, *event4.Message.Header.ID)
@@ -233,18 +235,18 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 		},
 	}
 
-	mdi := &databasemocks.Plugin{}
-
-	eventDeliveries := make(chan *fftypes.EventDelivery)
-	mei := &eventsmocks.Plugin{}
-	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
-	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		eventDeliveries <- a.Get(1).(*fftypes.EventDelivery)
-	}
-
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
+
+	eventDeliveries := make(chan *fftypes.EventDelivery)
+	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		eventDeliveries <- a.Get(2).(*fftypes.EventDelivery)
+	}
 
 	// Setup the IDs
 	ref1 := fftypes.NewUUID()
@@ -263,7 +265,6 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 		{Header: fftypes.MessageHeader{ID: ref3}},
 		{Header: fftypes.MessageHeader{ID: ref4}},
 	}, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(fftypes.DataRefs{}, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -311,31 +312,11 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
+	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	id1 := fftypes.NewUUID()
-	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
-
-	assert.EqualError(t, err, "pop")
-}
-
-func TestEnrichEventsFailGetData(t *testing.T) {
-
-	sub := &subscription{
-		definition: &fftypes.Subscription{},
-	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
-	defer cancel()
-
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
@@ -348,9 +329,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
 	gid1 := fftypes.NewRandB32()
@@ -448,9 +427,7 @@ func TestBufferedDeliveryNoEvents(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{})
@@ -464,11 +441,10 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
+	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
@@ -482,15 +458,15 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	go ed.deliverEvents()
 	cancel()
 
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
@@ -503,18 +479,18 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
 
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliver.RunFn = func(a mock.Arguments) {
 		close(delivered)
 	}
@@ -544,19 +520,19 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
 	ed.readAhead = 50
 
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	delivered := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(nil)
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	deliver.RunFn = func(a mock.Arguments) {
 		delivered <- true
 	}
@@ -583,6 +559,7 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 
 	<-bdDone
 	assert.Equal(t, int64(100001), ed.eventPoller.pollingOffset)
+
 }
 
 func TestBufferedDeliveryFailNack(t *testing.T) {
@@ -591,19 +568,19 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
 	ed.readAhead = 50
 
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
-	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	deliver.RunFn = func(a mock.Arguments) {
 		failNacked <- true
 	}
@@ -623,9 +600,11 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	}()
 
 	<-failNacked
+	<-failNacked
 
 	<-bdDone
 	assert.Equal(t, int64(100000), ed.eventPoller.pollingOffset)
+
 }
 
 func TestBufferedFinalAckFail(t *testing.T) {
@@ -634,13 +613,12 @@ func TestBufferedFinalAckFail(t *testing.T) {
 		definition:   &fftypes.Subscription{},
 		topicsFilter: regexp.MustCompile("never matches"),
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 	go ed.deliverEvents()
 	ed.readAhead = 50
 
+	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -656,6 +634,7 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	assert.False(t, repoll)
 
 	assert.Equal(t, int64(100002), ed.eventPoller.pollingOffset)
+
 }
 
 func TestAckNotInFlightNoop(t *testing.T) {
@@ -663,12 +642,22 @@ func TestAckNotInFlightNoop(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	defer cancel()
 
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: fftypes.NewUUID()})
+}
+
+func TestEventDeliveryClosed(t *testing.T) {
+
+	sub := &subscription{
+		definition: &fftypes.Subscription{},
+	}
+	ed, cancel := newTestEventDispatcher(sub)
+	close(ed.eventDelivery)
+
+	ed.deliverEvents()
+	cancel()
 }
 
 func TestAckClosed(t *testing.T) {
@@ -676,9 +665,7 @@ func TestAckClosed(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := &databasemocks.Plugin{}
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
+	ed, cancel := newTestEventDispatcher(sub)
 	cancel()
 
 	id1 := fftypes.NewUUID()
@@ -693,16 +680,129 @@ func TestGetEvents(t *testing.T) {
 	sub := &subscription{
 		definition: &fftypes.Subscription{},
 	}
-	mei := &eventsmocks.Plugin{}
-	mdi := ag.database.(*databasemocks.Plugin)
+
+	ed, cancel := newTestEventDispatcher(sub)
+	cancel()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+
 	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*fftypes.Event{
 		{Sequence: 12345},
 	}, nil)
 
-	ed, cancel := newTestEventDispatcher(mdi, mei, sub)
-	cancel()
-
 	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), lc[0].LocalSequence())
+}
+
+func TestDeliverEventsWithDataFail(t *testing.T) {
+	yes := true
+	sub := &subscription{
+		definition: &fftypes.Subscription{
+			Options: fftypes.SubscriptionOptions{
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					WithData: &yes,
+				},
+			},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+
+	mdm := ed.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ed.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
+
+	id1 := fftypes.NewUUID()
+	ed.eventDelivery <- &fftypes.EventDelivery{
+		Event: fftypes.Event{
+			ID: id1,
+		},
+		Message: &fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID: fftypes.NewUUID(),
+			},
+			Data: fftypes.DataRefs{
+				{ID: fftypes.NewUUID()},
+			},
+		},
+	}
+
+	ed.inflight[*id1] = &fftypes.Event{ID: id1}
+	go ed.deliverEvents()
+
+	an := <-ed.acksNacks
+	assert.True(t, an.isNack)
+
+}
+
+func TestEventDispatcherWithReply(t *testing.T) {
+	log.SetLevel("debug")
+	var two = uint16(5)
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Options: fftypes.SubscriptionOptions{
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					ReadAhead: &two,
+				},
+			},
+		},
+		eventMatcher: regexp.MustCompile(fmt.Sprintf("^%s|%s$", fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageConfirmed)),
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	cancel()
+	ed.acksNacks = make(chan ackNack, 2)
+	mbm := ed.rs.broadcast.(*broadcastmocks.Manager)
+	mpm := ed.rs.messaging.(*privatemessagingmocks.Manager)
+	mbm.On("BroadcastMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	mpm.On("SendMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+
+	event1 := fftypes.NewUUID()
+	event2 := fftypes.NewUUID()
+	ed.inflight[*event1] = &fftypes.Event{
+		ID:        event1,
+		Namespace: "ns1",
+	}
+	ed.inflight[*event2] = &fftypes.Event{
+		ID:        event2,
+		Namespace: "ns1",
+	}
+
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
+		ID: event1,
+		Reply: &fftypes.MessageInput{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Tag:  "myreplytag1",
+					CID:  fftypes.NewUUID(),
+					Type: fftypes.MessageTypeBroadcast,
+				},
+			},
+			InputData: fftypes.InputData{
+				{Value: fftypes.Byteable(`"my reply"`)},
+			},
+		},
+	})
+	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
+		ID: event2,
+		Reply: &fftypes.MessageInput{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Tag:   "myreplytag2",
+					CID:   fftypes.NewUUID(),
+					Type:  fftypes.MessageTypePrivate,
+					Group: fftypes.NewRandB32(),
+				},
+			},
+			InputData: fftypes.InputData{
+				{Value: fftypes.Byteable(`"my reply"`)},
+			},
+		},
+	})
+
+	mbm.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }

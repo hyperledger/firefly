@@ -54,11 +54,14 @@ const (
 )
 
 type httpServer struct {
-	name    string
-	s       *http.Server
-	l       net.Listener
-	conf    config.Prefix
-	onClose chan error
+	name        string
+	s           *http.Server
+	l           net.Listener
+	conf        config.Prefix
+	onClose     chan error
+	tlsEnabled  bool
+	tlsCertFile string
+	tlsKeyFile  string
 }
 
 func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
@@ -75,9 +78,12 @@ func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
 
 func newHTTPServer(ctx context.Context, name string, r *mux.Router, onClose chan error, conf config.Prefix) (hs *httpServer, err error) {
 	hs = &httpServer{
-		name:    name,
-		onClose: onClose,
-		conf:    conf,
+		name:        name,
+		onClose:     onClose,
+		conf:        conf,
+		tlsEnabled:  conf.GetBool(HTTPConfTLSEnabled),
+		tlsCertFile: conf.GetString(HTTPConfTLSCertFile),
+		tlsKeyFile:  conf.GetString(HTTPConfTLSKeyFile),
 	}
 	hs.l, err = hs.createListener(ctx)
 	if err == nil {
@@ -163,8 +169,8 @@ func (hs *httpServer) serveHTTP(ctx context.Context) {
 	}()
 
 	var err error
-	if hs.conf.GetBool(HTTPConfTLSEnabled) {
-		err = hs.s.ServeTLS(hs.l, hs.conf.GetString(HTTPConfTLSCertFile), hs.conf.GetString(HTTPConfTLSKeyFile))
+	if hs.tlsEnabled {
+		err = hs.s.ServeTLS(hs.l, hs.tlsCertFile, hs.tlsKeyFile)
 	} else {
 		err = hs.s.Serve(hs.l)
 	}

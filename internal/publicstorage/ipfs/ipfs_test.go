@@ -19,7 +19,6 @@ package ipfs
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -71,37 +70,6 @@ func TestInit(t *testing.T) {
 	assert.NotNil(t, i.Capabilities())
 }
 
-func TestIPFSHashToBytes32(t *testing.T) {
-	i := IPFS{ctx: context.Background()}
-	ipfsHash := "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL"
-	var expectedSHA256 fftypes.Bytes32
-	expectedSHA256.UnmarshalText([]byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
-	res, err := i.ipfsHashToBytes32(ipfsHash)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedSHA256, *res)
-}
-
-func TestBytes32ToIPFSHash(t *testing.T) {
-	var b32 fftypes.Bytes32
-	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
-	i := IPFS{ctx: context.Background()}
-	assert.Equal(t, "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL", i.bytes32ToIPFSHash(&b32))
-}
-
-func TestIPFSHashToBytes32BadData(t *testing.T) {
-	i := IPFS{ctx: context.Background()}
-	ipfsHash := "!!"
-	_, err := i.ipfsHashToBytes32(ipfsHash)
-	assert.Regexp(t, "FF10135", err)
-}
-
-func TestIPFSHashToBytes32WrongLen(t *testing.T) {
-	i := IPFS{ctx: context.Background()}
-	ipfsHash := "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptm"
-	_, err := i.ipfsHashToBytes32(ipfsHash)
-	assert.Regexp(t, "FF10135", err)
-}
-
 func TestIPFSUploadSuccess(t *testing.T) {
 	i := &IPFS{}
 
@@ -123,10 +91,9 @@ func TestIPFSUploadSuccess(t *testing.T) {
 		}))
 
 	data := []byte(`hello world`)
-	hash, backendID, err := i.PublishData(context.Background(), bytes.NewReader(data))
+	payloadRef, err := i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.NoError(t, err)
-	assert.Equal(t, `Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD`, backendID)
-	assert.Equal(t, `f852c7fa62f971817f54d8a80dcd63fcf7098b3cbde9ae8ec1ee449013ec5db0`, hash.String())
+	assert.Equal(t, `Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD`, payloadRef)
 
 }
 
@@ -149,15 +116,13 @@ func TestIPFSUploadFail(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
 	data := []byte(`hello world`)
-	_, _, err = i.PublishData(context.Background(), bytes.NewReader(data))
+	_, err = i.PublishData(context.Background(), bytes.NewReader(data))
 	assert.Regexp(t, "FF10136", err)
 
 }
 
 func TestIPFSDownloadSuccess(t *testing.T) {
 	i := &IPFS{}
-	var b32 fftypes.Bytes32
-	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
@@ -175,7 +140,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewBytesResponder(200, data))
 
-	r, err := i.RetrieveData(context.Background(), &b32)
+	r, err := i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.NoError(t, err)
 	defer r.Close()
 
@@ -187,8 +152,6 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 
 func TestIPFSDownloadFail(t *testing.T) {
 	i := &IPFS{}
-	var b32 fftypes.Bytes32
-	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
@@ -205,15 +168,13 @@ func TestIPFSDownloadFail(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewJsonResponderOrPanic(500, map[string]interface{}{"error": "pop"}))
 
-	_, err = i.RetrieveData(context.Background(), &b32)
+	_, err = i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.Regexp(t, "FF10136", err)
 
 }
 
 func TestIPFSDownloadError(t *testing.T) {
 	i := &IPFS{}
-	var b32 fftypes.Bytes32
-	hex.Decode(b32[:], []byte("29f35e27c4b008b58d3e70fda9518eac65fc1ef4894de91f42b4799841c0a683"))
 
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
@@ -230,7 +191,7 @@ func TestIPFSDownloadError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
 		httpmock.NewErrorResponder(fmt.Errorf("pop")))
 
-	_, err = i.RetrieveData(context.Background(), &b32)
+	_, err = i.RetrieveData(context.Background(), "QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL")
 	assert.Regexp(t, "FF10136", err)
 
 }
