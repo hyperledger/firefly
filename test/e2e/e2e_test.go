@@ -174,10 +174,10 @@ func wsReader(t *testing.T, conn *websocket.Conn) chan []byte {
 		for {
 			_, b, err := conn.ReadMessage()
 			if err != nil {
-				t.Logf("Websocket closing (%s)", err)
+				t.Logf("Websocket %s closing, error: %s", conn.RemoteAddr(), err)
 				return
 			}
-			t.Logf("WS Recevied: %s", b)
+			t.Logf("Websocket %s receive: %s", conn.RemoteAddr(), b)
 			receiver <- b
 		}
 	}()
