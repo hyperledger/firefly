@@ -28,7 +28,7 @@ fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]
 then
-	go install github.com/hyperledger-labs/firefly-cli/ff@latest
+	go install github.com/hyperledger-labs/firefly-cli/ff@workflow
 fi
 
 if [ "$CREATE_STACK" == "true" ]
