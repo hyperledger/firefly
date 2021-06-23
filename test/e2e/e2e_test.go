@@ -392,7 +392,7 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 	<-received2 // request
 
 	<-received1 // reply
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeNone, 2, 1)
+	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeNone, 2, 0)
 	assert.Equal(t, float64(200), val1.JSONObject()["status"])
 	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
 	assert.NoError(t, err)
