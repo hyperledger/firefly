@@ -18,7 +18,9 @@ package config
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -119,6 +121,26 @@ func TestGetKnownKeys(t *testing.T) {
 	for _, k := range knownKeys {
 		assert.NotEmpty(t, root.Resolve(k))
 	}
+}
+
+func TestSetupLoggingToFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "logtest")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	fileName := path.Join(tmpDir, "test.log")
+	Reset()
+	Set(LogFilename, fileName)
+	Set(LogLevel, "debug")
+	Set(LogMaxAge, "72h")
+	SetupLogging(context.Background())
+
+	Reset()
+	SetupLogging(context.Background())
+
+	b, err := ioutil.ReadFile(fileName)
+	assert.NoError(t, err)
+	assert.Regexp(t, "Log level", string(b))
 }
 
 func TestSetupLogging(t *testing.T) {

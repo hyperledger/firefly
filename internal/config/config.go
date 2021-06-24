@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -32,6 +33,8 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 // The following keys can be access from the root configuration.
@@ -153,6 +156,16 @@ var (
 	LogTimeFormat = rootKey("log.timeFormat")
 	// LogUTC sets log timestamps to the UTC timezone
 	LogUTC = rootKey("log.utc")
+	// LogFilename sets logging to file
+	LogFilename = rootKey("log.filename")
+	// LogFilesize sets the size to roll logs at
+	LogFilesize = rootKey("log.filesize")
+	// LogMaxBackups sets the maximum number of old files to keep
+	LogMaxBackups = rootKey("log.maxBackups")
+	// LogMaxAge sets the maximum age at which to roll
+	LogMaxAge = rootKey("log.maxAge")
+	// LogCompress sets whether to compress backups
+	LogCompress = rootKey("log.compress")
 	// NamespacesDefault is the default namespace - must be in the predefines list
 	NamespacesDefault = rootKey("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
@@ -266,6 +279,9 @@ func Reset() {
 	viper.SetDefault(string(LogLevel), "info")
 	viper.SetDefault(string(LogTimeFormat), "2006-01-02T15:04:05.000Z07:00")
 	viper.SetDefault(string(LogUTC), false)
+	viper.SetDefault(string(LogFilesize), "100m")
+	viper.SetDefault(string(LogMaxAge), "24h")
+	viper.SetDefault(string(LogMaxBackups), 2)
 	viper.SetDefault(string(NamespacesDefault), "default")
 	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
@@ -517,6 +533,17 @@ func SetupLogging(ctx context.Context) {
 		TimestampFormat: GetString(LogTimeFormat),
 		UTC:             GetBool(LogUTC),
 	})
+	logFilename := GetString(LogFilename)
+	if logFilename != "" {
+		lumberjack := &lumberjack.Logger{
+			Filename:   logFilename,
+			MaxSize:    int(math.Ceil(float64(GetByteSize(LogFilesize)) / 1024 / 1024)), /* round up in megabytes */
+			MaxBackups: GetInt(LogMaxBackups),
+			MaxAge:     int(math.Ceil(float64(GetDuration(LogMaxAge)) / float64(time.Hour) / 24)), /* round up in days */
+			Compress:   GetBool(LogCompress),
+		}
+		logrus.SetOutput(lumberjack)
+	}
 	log.SetLevel(GetString(LogLevel))
 	log.L(ctx).Debugf("Log level: %s", logrus.GetLevel())
 }
