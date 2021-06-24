@@ -341,20 +341,19 @@ func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, 
 	}
 }
 
-func (as *apiServer) getAPIURL() string {
-	proto := "https"
-	if !apiConfigPrefix.GetBool(HTTPConfTLSEnabled) {
-		proto = "http"
+func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string {
+	publicURL := conf.GetString(HTTPConfPublicURL)
+	if publicURL == "" {
+		proto := "https"
+		if !conf.GetBool(HTTPConfTLSEnabled) {
+			proto = "http"
+		}
+		publicURL = fmt.Sprintf("%s://%s:%s", proto, conf.GetString(HTTPConfAddress), conf.GetString(HTTPConfPort))
 	}
-	return fmt.Sprintf("%s://%s:%s", proto, apiConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
-}
-
-func (as *apiServer) getAdminURL() string {
-	proto := "https"
-	if !adminConfigPrefix.GetBool(HTTPConfTLSEnabled) {
-		proto = "http"
+	if pathPrefix != "" {
+		publicURL += "/" + pathPrefix
 	}
-	return fmt.Sprintf("%s://%s:%s/admin", proto, adminConfigPrefix.GetString(HTTPConfAddress), apiConfigPrefix.GetString(HTTPConfPort))
+	return publicURL
 }
 
 func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
@@ -384,8 +383,9 @@ func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 		}
 	}
 	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, as.getAPIURL())))
-	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(as.getAPIURL())))
+	publicURL := as.getPublicURL(apiConfigPrefix, "")
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, publicURL)))
+	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
@@ -407,8 +407,9 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, as.getAdminURL())))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(as.getAdminURL())))
+	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(adminRoutes, publicURL)))
+	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	return r
