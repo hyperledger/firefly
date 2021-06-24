@@ -35,6 +35,8 @@ import (
 const (
 	// HTTPConfAddress the local address to listen on
 	HTTPConfAddress = "address"
+	// HTTPConfPublicURL the public address of the node to advertise in the swagger
+	HTTPConfPublicURL = "publicURL"
 	// HTTPConfPort the local port to listen on for HTTP/Websocket connections
 	HTTPConfPort = "port"
 	// HTTPConfReadTimeout the write timeout for the HTTP server
@@ -66,6 +68,7 @@ type httpServer struct {
 
 func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
 	prefix.AddKnownKey(HTTPConfAddress, "127.0.0.1")
+	prefix.AddKnownKey(HTTPConfPublicURL)
 	prefix.AddKnownKey(HTTPConfPort, defaultPort)
 	prefix.AddKnownKey(HTTPConfReadTimeout, "15s")
 	prefix.AddKnownKey(HTTPConfWriteTimeout, "15s")
