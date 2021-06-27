@@ -142,7 +142,7 @@ var (
 	MsgDuplicateMember             = ffm("FF10222", "Member %d is a duplicate org+node combination")
 	MsgOrgNotFound                 = ffm("FF10223", "Org with name or identity '%s' not found", 400)
 	MsgNodeNotFound                = ffm("FF10224", "Node with name or identity '%s' not found", 400)
-	MsgOneMemberLocal              = ffm("FF10225", "One member must be on the local node", 400)
+	MsgLocalNodeResolveFailed      = ffm("FF10225", "Unable to find local node to add to group. Check the status API to confirm the node is registered", 500)
 	MsgGroupNotFound               = ffm("FF10226", "Group '%s' not found", 404)
 	MsgTooManyItems                = ffm("FF10227", "Maximum number of %s items is %d (supplied=%d)", 400)
 	MsgDuplicateArrayEntry         = ffm("FF10228", "Duplicate %s at index %d: '%s'", 400)

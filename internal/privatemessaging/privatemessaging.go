@@ -54,6 +54,7 @@ type privateMessaging struct {
 	data                 data.Manager
 	retry                retry.Retry
 	localNodeName        string
+	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
 	localOrgIdentity     string
 	opCorrelationRetries int
 }
