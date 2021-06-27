@@ -41,6 +41,6 @@ func (rs *replySender) sendReply(ctx context.Context, event *fftypes.Event, repl
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)
 	} else {
-		log.L(ctx).Infof("Sent reply '%s' (%s) to event '%s'", msg.Header.ID, msg.Header.Type, event.ID)
+		log.L(ctx).Infof("Sent reply %s:%s (%s) cid=%s to event '%s'", msg.Header.Namespace, msg.Header.ID, msg.Header.Type, msg.Header.CID, event.ID)
 	}
 }

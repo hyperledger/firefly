@@ -101,5 +101,11 @@ func (ie *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, even
 			}
 		}
 	}
+	ie.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+		ID:           event.ID,
+		Rejected:     false,
+		Subscription: event.Subscription,
+		Reply:        nil,
+	})
 	return nil
 }

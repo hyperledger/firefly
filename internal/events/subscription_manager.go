@@ -414,7 +414,7 @@ func (sm *subscriptionManager) connnectionClosed(ei events.Plugin, connID string
 	}
 }
 
-func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight *fftypes.EventDeliveryResponse) error {
+func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight *fftypes.EventDeliveryResponse) {
 	sm.mux.Lock()
 	var dispatcher *eventDispatcher
 	conn, ok := sm.connections[connID]
@@ -424,12 +424,15 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	sm.mux.Unlock()
 
 	if ok && conn.ei != ei {
-		return i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+		err := i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		return
 	}
 	if dispatcher == nil {
-		return i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
+		err := i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
+		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		return
 	}
 
 	dispatcher.deliveryResponse(inflight)
-	return nil
 }

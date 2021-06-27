@@ -101,8 +101,8 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	wc.processAutoStart(req)
 }
 
-func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) error {
-	return ws.callbacks.DeliveryResponse(connID, inflight)
+func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) {
+	ws.callbacks.DeliveryResponse(connID, inflight)
 }
 
 func (ws *WebSockets) start(connID string, start *fftypes.WSClientActionStartPayload) error {

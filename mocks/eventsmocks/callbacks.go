@@ -20,17 +20,8 @@ func (_m *Callbacks) ConnnectionClosed(connID string) {
 }
 
 // DeliveryResponse provides a mock function with given fields: connID, inflight
-func (_m *Callbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error {
-	ret := _m.Called(connID, inflight)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.EventDeliveryResponse) error); ok {
-		r0 = rf(connID, inflight)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Callbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) {
+	_m.Called(connID, inflight)
 }
 
 // EphemeralSubscription provides a mock function with given fields: connID, namespace, filter, options

@@ -38,6 +38,7 @@ import (
 func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
 	rs := &replySender{
 		broadcast: &broadcastmocks.Manager{},

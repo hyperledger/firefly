@@ -26,7 +26,7 @@ require (
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
-	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-isatty v0.0.13
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.9
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/pelletier/go-toml v1.9.2 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/qeesung/image2ascii v1.0.1 // indirect
+	github.com/qeesung/image2ascii v1.0.1
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0 // indirect
@@ -44,7 +44,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/vektra/mockery v1.1.2 // indirect
 	github.com/wayneashleyberry/terminal-dimensions v1.0.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xeipuuv/gojsonschema v1.2.0

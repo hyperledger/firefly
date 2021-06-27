@@ -353,7 +353,7 @@ func (ed *eventDispatcher) deliverEvents() {
 			if !ok {
 				return
 			}
-			log.L(ed.ctx).Debugf("Dispatching event: %.10d/%s [%s]: ref=%s/%s", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
+			log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
 			var data []*fftypes.Data
 			var err error
 			if withData && event.Message != nil {
@@ -395,7 +395,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 		ed.rs.sendReply(ed.ctx, event, response.Reply)
 	}
 
-	l.Debugf("Response for event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)
+	l.Debugf("Response for %s event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)
 	// We don't do any meaningful work in this call, we just set things up so the right thing
 	// will happen when the poller wakes up. So we need to pass it over
 	select {

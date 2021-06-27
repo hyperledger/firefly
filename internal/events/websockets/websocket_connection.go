@@ -183,7 +183,7 @@ func (wc *websocketConnection) dispatch(event *fftypes.EventDelivery) error {
 	}
 
 	if autoAck {
-		return wc.ws.ack(wc.connID, inflight)
+		wc.ws.ack(wc.connID, inflight)
 	}
 
 	return nil
@@ -290,7 +290,8 @@ func (wc *websocketConnection) handleAck(ack *fftypes.WSClientActionAckPayload) 
 	}
 
 	// Deliver the ack to the core, now we're unlocked
-	return wc.ws.ack(wc.connID, inflight)
+	wc.ws.ack(wc.connID, inflight)
+	return nil
 }
 
 func (wc *websocketConnection) close() {

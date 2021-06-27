@@ -34,8 +34,8 @@ func (bc *boundCallbacks) EphemeralSubscription(connID, namespace string, filter
 	return bc.sm.ephemeralSubscription(bc.ei, connID, namespace, filter, options)
 }
 
-func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error {
-	return bc.sm.deliveryResponse(bc.ei, connID, inflight)
+func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) {
+	bc.sm.deliveryResponse(bc.ei, connID, inflight)
 }
 
 func (bc *boundCallbacks) ConnnectionClosed(connID string) {

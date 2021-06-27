@@ -348,13 +348,13 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 		subID = d.subscription.definition.ID
 	}
 
-	err = be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
+	be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(), // Won't be in-flight, but that's fine
 		Subscription: fftypes.SubscriptionRef{
 			ID: subID,
 		},
 	})
-	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
 }
 
 func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
@@ -367,13 +367,13 @@ func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
+	be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(),
 		Subscription: fftypes.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
 	})
-	assert.Regexp(t, "FF10181", err)
+	mdi.AssertExpectations(t)
 }
 
 func TestConnIDSafetyChecking(t *testing.T) {
@@ -396,8 +396,7 @@ func TestConnIDSafetyChecking(t *testing.T) {
 	err = be2.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{}, &fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10190", err)
 
-	err = be2.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{})
-	assert.Regexp(t, "FF10190", err)
+	be2.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{})
 
 	be2.ConnnectionClosed("conn1")
 

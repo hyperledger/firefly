@@ -56,6 +56,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 
 	cbs := ie.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
+	cbs.On("DeliveryResponse", ie.connID, mock.Anything).Return(nil)
 
 	called := 0
 	err := ie.AddListener("ns1", func(event *fftypes.EventDelivery) error {
@@ -64,14 +65,14 @@ func TestDeliveryRequestOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = ie.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
+	err = ie.DeliveryRequest(ie.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns1",
 		},
 	}, nil)
 	assert.NoError(t, err)
 
-	err = ie.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
+	err = ie.DeliveryRequest(ie.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns2",
 		},
@@ -79,6 +80,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, called)
+	cbs.AssertExpectations(t)
 
 }
 

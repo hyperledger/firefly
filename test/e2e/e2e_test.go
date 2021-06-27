@@ -21,7 +21,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"image/png"
 	"net/url"
@@ -385,13 +384,13 @@ func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 	}
 
 	reply := RequestReply(t, ts.client1, &data, []string{
+		ts.org1.Name,
 		ts.org2.Name,
 	}, "myrequest", fftypes.TransactionTypeNone)
 	assert.NotNil(t, reply)
-	var bodyData string
-	err := json.Unmarshal(reply.InlineData[0].Value, &bodyData)
-	assert.NoError(t, err)
 
+	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")
+	t.Logf(bodyData)
 	b, err := base64.RawStdEncoding.DecodeString(bodyData)
 	assert.NoError(t, err)
 	ffImg, err := png.Decode(bytes.NewReader(b))

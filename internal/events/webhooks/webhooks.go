@@ -329,7 +329,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 
 	// Emit the response
 	if reply {
-		return wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
 			Subscription: event.Subscription,
