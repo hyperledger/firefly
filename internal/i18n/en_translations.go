@@ -180,4 +180,5 @@ var (
 	MsgRequestTimeout              = ffm("FF10260", "The request with id '%s' timed out after %.2fms", 408)
 	MsgRequestReplyTagRequired     = ffm("FF10261", "For request messages 'header.tag' must be set on the request message to route it to a suitable responder", 400)
 	MsgRequestCannotHaveCID        = ffm("FF10262", "For request messages 'header.cid' must be unset", 400)
+	MsgRequestTimeoutDesc          = ffm("FF10263", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")
 )
