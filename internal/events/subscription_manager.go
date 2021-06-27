@@ -41,6 +41,7 @@ type subscription struct {
 	groupFilter        *regexp.Regexp
 	tagFilter          *regexp.Regexp
 	topicsFilter       *regexp.Regexp
+	authorFilter       *regexp.Regexp
 }
 
 type connection struct {
@@ -267,6 +268,14 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
+	var authorFilter *regexp.Regexp
+	if filter.Author != "" {
+		authorFilter, err = regexp.Compile(filter.Author)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.Author)
+		}
+	}
+
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
@@ -274,6 +283,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		groupFilter:        groupFilter,
 		tagFilter:          tagFilter,
 		topicsFilter:       topicsFilter,
+		authorFilter:       authorFilter,
 	}
 	return sub, err
 }

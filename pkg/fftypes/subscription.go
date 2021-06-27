@@ -30,6 +30,7 @@ type SubscriptionFilter struct {
 	Topics string `json:"topics,omitempty"`
 	Tag    string `json:"tag,omitempty"`
 	Group  string `json:"group,omitempty"`
+	Author string `json:"author,omitempty"`
 }
 
 // SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values

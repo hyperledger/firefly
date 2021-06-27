@@ -5,7 +5,6 @@ CREATE TABLE events (
   etype          VARCHAR(64)     NOT NULL,
   namespace      VARCHAR(64)     NOT NULL,
   ref            UUID,
-  group_hash     CHAR(64),
   created        BIGINT          NOT NULL
 );
 

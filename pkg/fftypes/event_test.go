@@ -25,12 +25,10 @@ import (
 func TestNewEvent(t *testing.T) {
 
 	u := NewUUID()
-	g := NewRandB32()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u, g)
+	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
 	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
 	assert.Equal(t, "ns1", e.Namespace)
 	assert.Equal(t, *u, *e.Reference)
-	assert.Equal(t, *g, *e.Group)
 
 	e.Sequence = 12345
 	var ls LocallySequenced = e

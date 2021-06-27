@@ -226,6 +226,7 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 				Topics: ".*",
 				Tag:    ".*",
 				Group:  ".*",
+				Author: ".*",
 			}},
 	}, nil)
 	err := sm.start()
@@ -310,6 +311,20 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 		Transport: "ut",
 	})
 	assert.Regexp(t, "FF10171.*group", err)
+}
+
+func TestCreateSubscriptionBadAuthorFilter(t *testing.T) {
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Author: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*author", err)
 }
 
 func TestDispatchDeliveryResponseOK(t *testing.T) {

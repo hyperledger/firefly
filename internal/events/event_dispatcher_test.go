@@ -347,6 +347,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic1"},
 					Tag:    "tag1",
 					Group:  nil,
+					Author: "0x12345",
 				},
 			},
 		},
@@ -360,6 +361,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic1"},
 					Tag:    "tag2",
 					Group:  gid1,
+					Author: "0x23456",
 				},
 			},
 		},
@@ -373,6 +375,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic2"},
 					Tag:    "tag1",
 					Group:  nil,
+					Author: "0x12345",
 				},
 			},
 		},
@@ -411,6 +414,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[0].ID)
 
 	ed.subscription.topicsFilter = nil
+	ed.subscription.authorFilter = nil
 	ed.subscription.groupFilter = regexp.MustCompile(gid1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
@@ -419,6 +423,14 @@ func TestFilterEventsMatch(t *testing.T) {
 	ed.subscription.groupFilter = regexp.MustCompile("^$")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 0, len(matched))
+
+	ed.subscription.groupFilter = nil
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = nil
+	ed.subscription.authorFilter = regexp.MustCompile("0x23456")
+	matched = ed.filterEvents(events)
+	assert.Equal(t, 1, len(matched))
+	assert.Equal(t, *id2, *matched[0].ID)
 
 }
 

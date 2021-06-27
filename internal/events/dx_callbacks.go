@@ -301,7 +301,7 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 			}
 
 			// Assuming all was good, we
-			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, message.Header.Namespace, message.Header.ID, message.Header.Group)
+			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, message.Header.Namespace, message.Header.ID)
 			return em.database.UpsertEvent(ctx, event, false)
 		})
 		return err != nil, err

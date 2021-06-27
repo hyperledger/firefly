@@ -196,15 +196,20 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 		msg := event.Message
 		tag := ""
 		group := ""
+		author := ""
 		var topics []string
 		if msg != nil {
 			tag = msg.Header.Tag
 			topics = msg.Header.Topics
+			author = msg.Header.Author
 			if msg.Header.Group != nil {
 				group = msg.Header.Group.String()
 			}
 		}
 		if filter.tagFilter != nil && !filter.tagFilter.MatchString(tag) {
+			continue
+		}
+		if filter.authorFilter != nil && !filter.authorFilter.MatchString(author) {
 			continue
 		}
 		if filter.topicsFilter != nil {

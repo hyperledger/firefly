@@ -40,7 +40,6 @@ type Event struct {
 	Type      EventType `json:"type"`
 	Namespace string    `json:"namespace"`
 	Reference *UUID     `json:"reference"`
-	Group     *Bytes32  `json:"group,omitempty"`
 	Created   *FFTime   `json:"created"`
 }
 
@@ -62,13 +61,12 @@ type EventDeliveryResponse struct {
 	Reply        *MessageInput   `json:"reply,omitempty"`
 }
 
-func NewEvent(t EventType, ns string, ref *UUID, group *Bytes32) *Event {
+func NewEvent(t EventType, ns string, ref *UUID) *Event {
 	return &Event{
 		ID:        NewUUID(),
 		Type:      t,
 		Namespace: ns,
 		Reference: ref,
-		Group:     group,
 		Created:   Now(),
 	}
 }

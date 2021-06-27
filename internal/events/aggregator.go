@@ -452,7 +452,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	}
 
 	// Generate the appropriate event
-	event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, msg.Header.Group)
+	event := fftypes.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID)
 	if err = ag.database.UpsertEvent(ctx, event, false); err != nil {
 		return false, err
 	}
