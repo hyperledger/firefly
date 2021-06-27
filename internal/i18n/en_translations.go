@@ -178,4 +178,6 @@ var (
 	MsgWebhooksOptReplyTag         = ffm("FF10258", "The tag to set on the reply message")
 	MsgWebhooksOptReplyTx          = ffm("FF10259", "The transaction type to set on the reply message")
 	MsgRequestTimeout              = ffm("FF10260", "The request with id '%s' timed out after %.2fms", 408)
+	MsgRequestReplyTagRequired     = ffm("FF10261", "For request messages 'header.tag' must be set on the request message to route it to a suitable responder", 400)
+	MsgRequestCannotHaveCID        = ffm("FF10262", "For request messages 'header.cid' must be unset", 400)
 )

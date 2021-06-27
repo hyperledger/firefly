@@ -225,6 +225,12 @@ It depends on the following Kaleido services:
   │       │   │               │  - ...
   │       │   └───────────────┘
   │       │
+  │       │   ┌───────────────┐
+  │       ├───┤ sync /   [Sa] │  - Sync/Async Bridge
+  │       │   │ async bridge  │    * Provides synchronous request/reply APIs
+  │       │   │               │    * Translates to underlying event-driven API 
+  │       │   └───────────────┘
+  │       │
   │       │   ┌───────────────┐  - Aggregates messages and data, with rolled up hashes for pinning
   │       ├───┤ batch     [Ba]│    * Pluggable dispatchers
   │       │   │ manager       │  - Database decoupled from main-line API processing

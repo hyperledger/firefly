@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/networkmap"
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -60,7 +61,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
-	SyncAsyncBridge() SyncAsyncBridge
+	SyncAsyncBridge() syncasync.SyncAsyncBridge
 	IsPreInit() bool
 
 	// Status
@@ -120,7 +121,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
 	data          data.Manager
-	saBridge      *syncAsyncBridge
+	syncasync     syncasync.SyncAsyncBridge
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -154,7 +155,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.saBridge = newSyncAsyncBridge(ctx, or.database, or.data, or.events, or.messaging)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.messaging)
 	return err
 }
 
@@ -219,8 +220,8 @@ func (or *orchestrator) Data() data.Manager {
 	return or.data
 }
 
-func (or *orchestrator) SyncAsyncBridge() SyncAsyncBridge {
-	return or.saBridge
+func (or *orchestrator) SyncAsyncBridge() syncasync.SyncAsyncBridge {
+	return or.syncasync
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
