@@ -39,8 +39,8 @@ func TestPostRequestMessage(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	msa.On("RequestReply", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInput")).
-		Return(&fftypes.MessageInput{}, nil)
+	msa.On("RequestReply", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
+		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

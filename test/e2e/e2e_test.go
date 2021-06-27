@@ -17,10 +17,13 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"image/png"
 	"net/url"
 	"os"
 	"testing"
@@ -31,6 +34,9 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattn/go-isatty"
+	image2ascii "github.com/qeesung/image2ascii/convert"
 )
 
 type testState struct {
@@ -184,121 +190,175 @@ func wsReader(t *testing.T, conn *websocket.Conn) chan []byte {
 	return receiver
 }
 
-func TestE2EBroadcast(t *testing.T) {
+// func TestE2EBroadcast(t *testing.T) {
+
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
+
+// 	received1 := wsReader(t, ts.ws1)
+// 	received2 := wsReader(t, ts.ws2)
+
+// 	var resp *resty.Response
+// 	value := fftypes.Byteable(`"Hello"`)
+// 	data := fftypes.DataRefOrValue{
+// 		Value: value,
+// 	}
+
+// 	resp, err := BroadcastMessage(ts.client1, &data)
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
+
+// 	<-received1
+// 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Equal(t, data.Value, val1)
+
+// 	<-received2
+// 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Equal(t, data.Value, val2)
+
+// }
+
+// func TestE2EPrivate(t *testing.T) {
+
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
+
+// 	received1 := wsReader(t, ts.ws1)
+// 	received2 := wsReader(t, ts.ws2)
+
+// 	var resp *resty.Response
+// 	value := fftypes.Byteable(`"Hello"`)
+// 	data := fftypes.DataRefOrValue{
+// 		Value: value,
+// 	}
+
+// 	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+// 		ts.org1.Name,
+// 		ts.org2.Name,
+// 	}, "", fftypes.TransactionTypeBatchPin)
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
+
+// 	<-received1
+// 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Equal(t, data.Value, val1)
+
+// 	<-received2
+// 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Equal(t, data.Value, val2)
+// }
+
+// func TestE2EBroadcastBlob(t *testing.T) {
+
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
+
+// 	received1 := wsReader(t, ts.ws1)
+// 	received2 := wsReader(t, ts.ws2)
+
+// 	var resp *resty.Response
+
+// 	resp, err := BroadcastBlobMessage(t, ts.client1)
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
+
+// 	<-received1
+// 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Regexp(t, "myfile.txt", string(val1))
+
+// 	<-received2
+// 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Regexp(t, "myfile.txt", string(val2))
+
+// }
+
+// func TestE2EPrivateBlob(t *testing.T) {
+
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
+
+// 	received1 := wsReader(t, ts.ws1)
+// 	received2 := wsReader(t, ts.ws2)
+
+// 	var resp *resty.Response
+
+// 	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+// 		ts.org1.Name,
+// 		ts.org2.Name,
+// 	})
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
+
+// 	<-received1
+// 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Regexp(t, "myfile.txt", string(val1))
+
+// 	<-received2
+// 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
+// 	assert.Regexp(t, "myfile.txt", string(val2))
+// }
+
+// func TestE2EWebhookExchange(t *testing.T) {
+
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
+
+// 	received1 := wsReader(t, ts.ws1)
+// 	received2 := wsReader(t, ts.ws2)
+
+// 	subJSON := `{
+// 		"transport": "webhooks",
+// 		"namespace": "default",
+// 		"name": "myhook",
+// 		"options": {
+// 			"withData": true,
+// 			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
+// 			"reply": true,
+// 			"replytag": "myreply",
+// 			"method": "GET"
+// 		},
+// 		"filter": {
+// 			"tag": "myrequest"
+// 		}
+// 	}`
+// 	CleanupExistingSubscription(t, ts.client2, "default", "myhook")
+// 	sub := CreateSubscription(t, ts.client2, subJSON, 201)
+// 	assert.NotNil(t, sub.ID)
+
+// 	data := fftypes.DataRefOrValue{
+// 		Value: fftypes.Byteable(`{}`),
+// 	}
+
+// 	var resp *resty.Response
+// 	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+// 		ts.org1.Name,
+// 		ts.org2.Name,
+// 	}, "myrequest", fftypes.TransactionTypeBatchPin)
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
+
+// 	<-received1 // request
+// 	<-received2 // request
+
+// 	<-received1 // reply
+// 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
+// 	assert.Equal(t, float64(200), val1.JSONObject()["status"])
+// 	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
+// 	assert.NoError(t, err)
+// 	assert.Regexp(t, "Example YAML", string(decoded1))
+
+// 	<-received2 // reply
+// 	val2 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
+// 	assert.Equal(t, float64(200), val2.JSONObject()["status"])
+// 	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))
+// 	assert.NoError(t, err)
+// 	assert.Regexp(t, "Example YAML", string(decoded2))
+// }
+
+func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 
 	ts := beforeE2ETest(t)
 	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
-
-	var resp *resty.Response
-	value := fftypes.Byteable(`"Hello"`)
-	data := fftypes.DataRefOrValue{
-		Value: value,
-	}
-
-	resp, err := BroadcastMessage(ts.client1, &data)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(t, data.Value, val1)
-
-	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(t, data.Value, val2)
-
-}
-
-func TestE2EPrivate(t *testing.T) {
-
-	ts := beforeE2ETest(t)
-	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
-
-	var resp *resty.Response
-	value := fftypes.Byteable(`"Hello"`)
-	data := fftypes.DataRefOrValue{
-		Value: value,
-	}
-
-	resp, err := PrivateMessage(t, ts.client1, &data, []string{
-		ts.org1.Name,
-		ts.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(t, data.Value, val1)
-
-	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Equal(t, data.Value, val2)
-}
-
-func TestE2EBroadcastBlob(t *testing.T) {
-
-	ts := beforeE2ETest(t)
-	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
-
-	var resp *resty.Response
-
-	resp, err := BroadcastBlobMessage(t, ts.client1)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val1))
-
-	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val2))
-
-}
-
-func TestE2EPrivateBlob(t *testing.T) {
-
-	ts := beforeE2ETest(t)
-	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
-
-	var resp *resty.Response
-
-	resp, err := PrivateBlobMessage(t, ts.client1, []string{
-		ts.org1.Name,
-		ts.org2.Name,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val1))
-
-	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val2))
-}
-
-func TestE2EWebhookExchange(t *testing.T) {
-
-	ts := beforeE2ETest(t)
-	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
 
 	subJSON := `{
 		"transport": "webhooks",
@@ -306,64 +366,7 @@ func TestE2EWebhookExchange(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
-			"reply": true,
-			"replytag": "myreply",
-			"method": "GET"
-		},
-		"filter": {
-			"tag": "myrequest"
-		}
-	}`
-	CleanupExistingSubscription(t, ts.client2, "default", "myhook")
-	sub := CreateSubscription(t, ts.client2, subJSON, 201)
-	assert.NotNil(t, sub.ID)
-
-	data := fftypes.DataRefOrValue{
-		Value: fftypes.Byteable(`{}`),
-	}
-
-	var resp *resty.Response
-	resp, err := PrivateMessage(t, ts.client1, &data, []string{
-		ts.org1.Name,
-		ts.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeBatchPin)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received1 // request
-	<-received2 // request
-
-	<-received1 // reply
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
-	assert.Equal(t, float64(200), val1.JSONObject()["status"])
-	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
-	assert.NoError(t, err)
-	assert.Regexp(t, "Example YAML", string(decoded1))
-
-	<-received2 // reply
-	val2 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2, 0)
-	assert.Equal(t, float64(200), val2.JSONObject()["status"])
-	decoded2, err := base64.StdEncoding.DecodeString(val2.JSONObject().GetString("body"))
-	assert.NoError(t, err)
-	assert.Regexp(t, "Example YAML", string(decoded2))
-}
-
-func TestE2EWebhookExchangeNoTx(t *testing.T) {
-
-	ts := beforeE2ETest(t)
-	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
-
-	subJSON := `{
-		"transport": "webhooks",
-		"namespace": "default",
-		"name": "myhook",
-		"options": {
-			"withData": true,
-			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
+			"url": "https://github.com/hyperledger-labs/firefly/raw/main/resources/ff-logo-32.png",
 			"reply": true,
 			"replytag": "myreply",
 			"replytx": "none",
@@ -381,21 +384,25 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 		Value: fftypes.Byteable(`{}`),
 	}
 
-	var resp *resty.Response
-	resp, err := PrivateMessage(t, ts.client1, &data, []string{
-		ts.org1.Name,
+	reply := RequestReply(t, ts.client1, &data, []string{
 		ts.org2.Name,
 	}, "myrequest", fftypes.TransactionTypeNone)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
-
-	<-received2 // request
-
-	<-received1 // reply
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeNone, 2, 0)
-	assert.Equal(t, float64(200), val1.JSONObject()["status"])
-	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
+	assert.NotNil(t, reply)
+	var bodyData string
+	err := json.Unmarshal(reply.InlineData[0].Value, &bodyData)
 	assert.NoError(t, err)
-	assert.Regexp(t, "Example YAML", string(decoded1))
+
+	b, err := base64.RawStdEncoding.DecodeString(bodyData)
+	assert.NoError(t, err)
+	ffImg, err := png.Decode(bytes.NewReader(b))
+	assert.NoError(t, err)
+
+	convertOptions := image2ascii.DefaultOptions
+	convertOptions.FixedWidth = 32
+	convertOptions.FixedHeight = 32
+	convertOptions.Colored = isatty.IsTerminal(os.Stdout.Fd())
+
+	converter := image2ascii.NewImageConverter()
+	fmt.Print(converter.Image2ASCIIString(ffImg, &convertOptions))
 
 }

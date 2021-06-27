@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) error {
+func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		return nil // validity of existing group checked later
@@ -104,7 +104,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	return node, nil
 }
 
-func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInput) (gi *fftypes.GroupIdentity, err error) {
+func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
 	foundLocal := false
 	gi = &fftypes.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
@@ -163,7 +163,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context) (*fftypes.UUID
 	return pm.localNodeID, nil
 }
 
-func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInput) (group *fftypes.Group, isNew bool, err error) {
+func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInOut) (group *fftypes.Group, isNew bool, err error) {
 	gi, err := pm.getReceipients(ctx, in)
 	if err != nil {
 		return nil, false, err

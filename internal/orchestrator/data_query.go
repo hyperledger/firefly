@@ -75,12 +75,12 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	return msg, err
 }
 
-func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error) {
+func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInOut, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil {
 		return nil, err
 	}
-	msgI := &fftypes.MessageInput{
+	msgI := &fftypes.MessageInOut{
 		Message: *msg,
 	}
 	if withValues {
@@ -92,9 +92,9 @@ func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withV
 		msgI.SetInlineData(data)
 	} else {
 		// Just put the data refs into the serialized struct
-		msgI.InputData = make(fftypes.InputData, len(msg.Data))
+		msgI.InlineData = make(fftypes.InlineData, len(msg.Data))
 		for i, dr := range msg.Data {
-			msgI.InputData[i] = &fftypes.DataRefOrValue{
+			msgI.InlineData[i] = &fftypes.DataRefOrValue{
 				DataRef: *dr,
 			}
 		}

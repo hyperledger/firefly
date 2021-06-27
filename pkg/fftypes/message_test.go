@@ -178,7 +178,7 @@ func TestSealKnownMessage(t *testing.T) {
 }
 
 func TestSetInlineData(t *testing.T) {
-	msg := &MessageInput{}
+	msg := &MessageInOut{}
 	msg.SetInlineData([]*Data{
 		{ID: NewUUID(), Value: Byteable(`"some data"`)},
 	})

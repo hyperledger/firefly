@@ -30,7 +30,7 @@ type replySender struct {
 	messaging privatemessaging.Manager
 }
 
-func (rs *replySender) sendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInput) {
+func (rs *replySender) sendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
 	var err error
 	var msg *fftypes.Message
 	if reply.Header.Group != nil {

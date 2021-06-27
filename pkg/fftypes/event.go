@@ -58,7 +58,7 @@ type EventDeliveryResponse struct {
 	Rejected     bool            `json:"rejected,omitempty"`
 	Info         string          `json:"info,omitempty"`
 	Subscription SubscriptionRef `json:"subscription"`
-	Reply        *MessageInput   `json:"reply,omitempty"`
+	Reply        *MessageInOut   `json:"reply,omitempty"`
 }
 
 func NewEvent(t EventType, ns string, ref *UUID) *Event {

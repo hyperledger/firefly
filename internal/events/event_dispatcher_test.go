@@ -785,7 +785,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
 		ID: event1,
-		Reply: &fftypes.MessageInput{
+		Reply: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Tag:  "myreplytag1",
@@ -793,14 +793,14 @@ func TestEventDispatcherWithReply(t *testing.T) {
 					Type: fftypes.MessageTypeBroadcast,
 				},
 			},
-			InputData: fftypes.InputData{
+			InlineData: fftypes.InlineData{
 				{Value: fftypes.Byteable(`"my reply"`)},
 			},
 		},
 	})
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
 		ID: event2,
-		Reply: &fftypes.MessageInput{
+		Reply: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Tag:   "myreplytag2",
@@ -809,7 +809,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 					Group: fftypes.NewRandB32(),
 				},
 			},
-			InputData: fftypes.InputData{
+			InlineData: fftypes.InlineData{
 				{Value: fftypes.Byteable(`"my reply"`)},
 			},
 		},

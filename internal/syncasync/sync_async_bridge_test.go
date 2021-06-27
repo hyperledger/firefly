@@ -55,7 +55,7 @@ func TestRequestReplyOk(t *testing.T) {
 	mpm := sa.messaging.(*privatemessagingmocks.Manager)
 	send := mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
 	send.RunFn = func(a mock.Arguments) {
-		msg := a[2].(*fftypes.MessageInput)
+		msg := a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msg.Header.ID)
 		requestID = msg.Header.ID
 		assert.Equal(t, "mytag", msg.Header.Tag)
@@ -95,7 +95,7 @@ func TestRequestReplyOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{
+	reply, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag: "mytag",
@@ -104,7 +104,7 @@ func TestRequestReplyOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *replyID, *reply.Header.ID)
-	assert.Equal(t, `"response data"`, string(reply.InputData[0].Value))
+	assert.Equal(t, `"response data"`, string(reply.InlineData[0].Value))
 
 }
 
@@ -119,7 +119,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	mpm := sa.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag: "mytag",
@@ -141,7 +141,7 @@ func TestRequestReplySendFail(t *testing.T) {
 	mpm := sa.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag: "mytag",
@@ -160,7 +160,7 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	mei := sa.events.(*eventmocks.EventManager)
 	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag: "mytag",
@@ -176,7 +176,7 @@ func TestRequestSetupSystemMissingTag(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{})
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{})
 	assert.Regexp(t, "FF10261", err)
 
 }
@@ -186,7 +186,7 @@ func TestRequestSetupSystemInvalidCID(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInput{
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag: "mytag",

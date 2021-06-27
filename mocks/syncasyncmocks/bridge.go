@@ -15,20 +15,20 @@ type Bridge struct {
 }
 
 // RequestReply provides a mock function with given fields: ctx, ns, request
-func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.MessageInput) (*fftypes.MessageInput, error) {
+func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
 	ret := _m.Called(ctx, ns, request)
 
-	var r0 *fftypes.MessageInput
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.MessageInput); ok {
+	var r0 *fftypes.MessageInOut
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.MessageInOut); ok {
 		r0 = rf(ctx, ns, request)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageInput)
+			r0 = ret.Get(0).(*fftypes.MessageInOut)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
 		r1 = rf(ctx, ns, request)
 	} else {
 		r1 = ret.Error(1)

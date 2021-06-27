@@ -75,12 +75,12 @@ type Message struct {
 	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
 }
 
-// MessageInput allows API users to submit values in-line in the payload submitted, which
+// MessageInOut allows API users to submit values in-line in the payload submitted, which
 // will be broken out and stored separately during the call.
-type MessageInput struct {
+type MessageInOut struct {
 	Message
-	InputData InputData   `json:"data"`
-	Group     *InputGroup `json:"group,omitempty"`
+	InlineData InlineData  `json:"data"`
+	Group      *InputGroup `json:"group,omitempty"`
 }
 
 // InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
@@ -90,8 +90,8 @@ type InputGroup struct {
 	Members []MemberInput `json:"members"`
 }
 
-// InputData is an array of data references or values
-type InputData []*DataRefOrValue
+// InlineData is an array of data references or values
+type InlineData []*DataRefOrValue
 
 // DataRefOrValue allows a value to be specified in-line in the data array of an input
 // message, avoiding the need for a multiple API calls.
@@ -117,10 +117,10 @@ func (h *MessageHeader) Hash() *Bytes32 {
 	return &b32
 }
 
-func (m *MessageInput) SetInlineData(data []*Data) {
-	m.InputData = make(InputData, len(data))
+func (m *MessageInOut) SetInlineData(data []*Data) {
+	m.InlineData = make(InlineData, len(data))
 	for i, d := range data {
-		m.InputData[i] = &DataRefOrValue{
+		m.InlineData[i] = &DataRefOrValue{
 			DataRef: DataRef{
 				ID:   d.ID,
 				Hash: d.Hash,

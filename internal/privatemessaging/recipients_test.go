@@ -68,7 +68,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		assert.Equal(t, *dataID, *msg.Data[0].ID)
 	}
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Namespace: "ns1",
@@ -97,7 +97,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 		{Hash: fftypes.NewRandB32()},
 	}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -119,7 +119,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -141,7 +141,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node2", Owner: "org1"}}, nil).Once()
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -162,7 +162,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{ID: fftypes.NewUUID()}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -183,7 +183,7 @@ func TestResolveMemberOrgNameNotFound(t *testing.T) {
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByIdentity", pm.ctx, "org1").Return(nil, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -208,7 +208,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"}}, nil)
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{Identifier: "0x12345"}, &fftypes.MessageInOut{
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
 				{Identity: "org1"},
@@ -278,7 +278,7 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Group: fftypes.NewRandB32(),
@@ -292,7 +292,7 @@ func TestResolveReceipientListEmptyList(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{})
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{})
 	assert.Regexp(t, "FF10219", err)
 }
 

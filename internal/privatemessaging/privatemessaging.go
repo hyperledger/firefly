@@ -38,8 +38,8 @@ type Manager interface {
 	GroupManager
 
 	Start() error
-	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
-	SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error)
+	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error)
+	SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error)
 }
 
 type privateMessaging struct {

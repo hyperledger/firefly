@@ -375,15 +375,15 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 }
 
 // GetMessageByID provides a mock function with given fields: ctx, ns, id, withValues
-func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string, withValues bool) (*fftypes.MessageInput, error) {
+func (_m *Orchestrator) GetMessageByID(ctx context.Context, ns string, id string, withValues bool) (*fftypes.MessageInOut, error) {
 	ret := _m.Called(ctx, ns, id, withValues)
 
-	var r0 *fftypes.MessageInput
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) *fftypes.MessageInput); ok {
+	var r0 *fftypes.MessageInOut
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool) *fftypes.MessageInOut); ok {
 		r0 = rf(ctx, ns, id, withValues)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageInput)
+			r0 = ret.Get(0).(*fftypes.MessageInOut)
 		}
 	}
 

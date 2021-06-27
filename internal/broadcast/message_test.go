@@ -48,18 +48,18 @@ func TestBroadcastMessageOk(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
-	mdm.On("ResolveInputDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Author: "0x12345",
 			},
 		},
-		InputData: fftypes.InputData{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
 		},
 	})
@@ -91,7 +91,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
-	mdm.On("ResolveInputDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
 		{
@@ -117,13 +117,13 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Author: "0x12345",
 			},
 		},
-		InputData: fftypes.InputData{
+		InlineData: fftypes.InlineData{
 			{Blob: &fftypes.BlobRef{
 				Hash: blobHash,
 			}},
@@ -152,10 +152,10 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mdm.On("ResolveInputDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
+	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
 		},
 	})

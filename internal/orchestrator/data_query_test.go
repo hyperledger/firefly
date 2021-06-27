@@ -103,12 +103,12 @@ func TestGetMessageByIDOkNoValues(t *testing.T) {
 
 	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), false)
 	assert.NoError(t, err)
-	assert.NotNil(t, msgI.InputData[0].ID)
-	assert.NotNil(t, msgI.InputData[0].Hash)
-	assert.Nil(t, msgI.InputData[0].Value)
-	assert.NotNil(t, msgI.InputData[1].ID)
-	assert.NotNil(t, msgI.InputData[1].Hash)
-	assert.Nil(t, msgI.InputData[1].Value)
+	assert.NotNil(t, msgI.InlineData[0].ID)
+	assert.NotNil(t, msgI.InlineData[0].Hash)
+	assert.Nil(t, msgI.InlineData[0].Value)
+	assert.NotNil(t, msgI.InlineData[1].ID)
+	assert.NotNil(t, msgI.InlineData[1].Hash)
+	assert.Nil(t, msgI.InlineData[1].Value)
 }
 
 func TestGetMessageByIDOkWithValues(t *testing.T) {
@@ -131,12 +131,12 @@ func TestGetMessageByIDOkWithValues(t *testing.T) {
 
 	msgI, err := or.GetMessageByID(context.Background(), "ns1", msgID.String(), true)
 	assert.NoError(t, err)
-	assert.NotNil(t, msgI.InputData[0].ID)
-	assert.NotNil(t, msgI.InputData[0].Hash)
-	assert.NotNil(t, msgI.InputData[0].Value)
-	assert.NotNil(t, msgI.InputData[1].ID)
-	assert.NotNil(t, msgI.InputData[1].Hash)
-	assert.NotNil(t, msgI.InputData[1].Value)
+	assert.NotNil(t, msgI.InlineData[0].ID)
+	assert.NotNil(t, msgI.InlineData[0].Hash)
+	assert.NotNil(t, msgI.InlineData[0].Value)
+	assert.NotNil(t, msgI.InlineData[1].ID)
+	assert.NotNil(t, msgI.InlineData[1].Hash)
+	assert.NotNil(t, msgI.InlineData[1].Value)
 }
 
 func TestGetMessageByIDValuesFail(t *testing.T) {

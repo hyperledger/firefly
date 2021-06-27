@@ -35,14 +35,14 @@ import (
 type Bridge interface {
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
-	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInput) (reply *fftypes.MessageInput, err error)
+	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
 
 type inflightRequest struct {
 	id        *fftypes.UUID
 	startTime time.Time
 	namespace string
-	response  chan *fftypes.MessageInput
+	response  chan *fftypes.MessageInOut
 }
 
 type syncAsyncBridge struct {
@@ -72,7 +72,7 @@ func (sa *syncAsyncBridge) addInFlight(ns string) (*inflightRequest, error) {
 		id:        fftypes.NewUUID(),
 		namespace: ns,
 		startTime: time.Now(),
-		response:  make(chan *fftypes.MessageInput),
+		response:  make(chan *fftypes.MessageInOut),
 	}
 	sa.inflightMux.Lock()
 	defer func() {
@@ -93,7 +93,7 @@ func (sa *syncAsyncBridge) addInFlight(ns string) (*inflightRequest, error) {
 	return inflight, nil
 }
 
-func (sa *syncAsyncBridge) removeInFlight(inflight *inflightRequest, reply *fftypes.MessageInput) {
+func (sa *syncAsyncBridge) removeInFlight(inflight *inflightRequest, reply *fftypes.MessageInOut) {
 	sa.inflightMux.Lock()
 	defer func() {
 		sa.inflightMux.Unlock()
@@ -156,14 +156,14 @@ func (sa *syncAsyncBridge) resolveInflight(inflight *inflightRequest, msg *fftyp
 		log.L(sa.ctx).Errorf("Failed to read response data for message '%s' on request '%s': %s", msg.Header.ID, inflight.id, err)
 		return
 	}
-	response := &fftypes.MessageInput{Message: *msg}
+	response := &fftypes.MessageInOut{Message: *msg}
 	response.SetInlineData(data)
 
 	// We deliver the full data in the response
 	inflight.response <- response
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, inRequest *fftypes.MessageInput) (reply *fftypes.MessageInput, err error) {
+func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, inRequest *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error) {
 
 	if inRequest.Header.Tag == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)

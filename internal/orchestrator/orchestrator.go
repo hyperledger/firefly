@@ -79,7 +79,7 @@ type Orchestrator interface {
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error)
+	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInOut, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)

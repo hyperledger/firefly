@@ -205,9 +205,9 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
-		assert.Equal(t, "myheaderval2", response.Reply.InputData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
-		assert.Equal(t, "replyvalue", response.Reply.InputData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
-		assert.Equal(t, float64(200), response.Reply.InputData[0].Value.JSONObject()["status"])
+		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
+		assert.Equal(t, "replyvalue", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
+		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		return true
 	})).Return(nil)
 
@@ -364,8 +364,8 @@ func TestRequestReplyBadJSON(t *testing.T) {
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Regexp(t, "FF10257", response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Regexp(t, "FF10257", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
@@ -425,8 +425,8 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(500), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Equal(t, `c29tZSBieXRlcw==`, response.Reply.InputData[0].Value.JSONObject()["body"]) // base64 val
+		assert.Equal(t, float64(500), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Equal(t, `c29tZSBieXRlcw==`, response.Reply.InlineData[0].Value.JSONObject()["body"]) // base64 val
 		return true
 	})).Return(nil)
 
@@ -473,8 +473,8 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.NotEmpty(t, response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.NotEmpty(t, response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
@@ -520,8 +520,8 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Regexp(t, "FF10242", response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Regexp(t, "FF10242", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 	dr.RunFn = func(a mock.Arguments) {

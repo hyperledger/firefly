@@ -333,7 +333,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 			ID:           event.ID,
 			Rejected:     false,
 			Subscription: event.Subscription,
-			Reply: &fftypes.MessageInput{
+			Reply: &fftypes.MessageInOut{
 				Message: fftypes.Message{
 					Header: fftypes.MessageHeader{
 						CID:    event.Message.Header.ID,
@@ -343,7 +343,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 						TxType: fftypes.LowerCasedType(strings.ToLower(sub.Options.TransportOptions().GetString("replytx"))),
 					},
 				},
-				InputData: fftypes.InputData{
+				InlineData: fftypes.InlineData{
 					{Value: b},
 				},
 			},

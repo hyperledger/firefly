@@ -38,6 +38,7 @@ var (
 	urlGetMessages      = "/namespaces/default/messages"
 	urlBroadcastMessage = "/namespaces/default/broadcast/message"
 	urlPrivateMessage   = "/namespaces/default/send/message"
+	urlRequestMessage   = "/namespaces/default/request/message"
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
@@ -153,8 +154,8 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 
 func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*resty.Response, error) {
 	return client.R().
-		SetBody(fftypes.MessageInput{
-			InputData: fftypes.InputData{data},
+		SetBody(fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{data},
 		}).
 		Post(urlBroadcastMessage)
 }
@@ -188,8 +189,8 @@ func CreateBlob(t *testing.T, client *resty.Client) *fftypes.Data {
 func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
 	data := CreateBlob(t, client)
 	return client.R().
-		SetBody(fftypes.MessageInput{
-			InputData: fftypes.InputData{
+		SetBody(fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
 			},
 		}).
@@ -206,8 +207,8 @@ func PrivateBlobMessage(t *testing.T, client *resty.Client, orgNames []string) (
 		}
 	}
 	return client.R().
-		SetBody(fftypes.MessageInput{
-			InputData: fftypes.InputData{
+		SetBody(fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
 				{DataRef: fftypes.DataRef{ID: data.ID}},
 			},
 			Group: &fftypes.InputGroup{
@@ -226,14 +227,14 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 			Identity: oName,
 		}
 	}
-	msg := fftypes.MessageInput{
+	msg := fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Tag:    tag,
 				TxType: txType,
 			},
 		},
-		InputData: fftypes.InputData{data},
+		InlineData: fftypes.InlineData{data},
 		Group: &fftypes.InputGroup{
 			Members: members,
 			Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
@@ -242,4 +243,35 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 	return client.R().
 		SetBody(msg).
 		Post(urlPrivateMessage)
+}
+
+func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {
+	members := make([]fftypes.MemberInput, len(orgNames))
+	for i, oName := range orgNames {
+		// We let FireFly resolve the friendly name of the org to the identity
+		members[i] = fftypes.MemberInput{
+			Identity: oName,
+		}
+	}
+	msg := fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:    tag,
+				TxType: txType,
+			},
+		},
+		InlineData: fftypes.InlineData{data},
+		Group: &fftypes.InputGroup{
+			Members: members,
+			Name:    fmt.Sprintf("test_%d", time.Now().Unix()),
+		},
+	}
+	var replyMsg fftypes.MessageInOut
+	resp, err := client.R().
+		SetBody(msg).
+		SetResult(&replyMsg).
+		Post(urlRequestMessage)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
+	return &replyMsg
 }
