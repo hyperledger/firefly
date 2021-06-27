@@ -27,6 +27,7 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
+	in.Header.ID = nil
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypeBroadcast
 	if in.Header.Author == "" {

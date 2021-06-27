@@ -293,7 +293,19 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
 		// This is dependent on the context being passed down through to all blocking operations down the stack
 		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		ctx, cancel := context.WithTimeout(req.Context(), as.apiTimeout)
+		reqTimeout := as.apiTimeout
+		reqTimeoutHeader := req.Header.Get("Request-Timeout")
+		if reqTimeoutHeader != "" {
+			customTimeout, err := fftypes.ParseDurationString(reqTimeoutHeader, time.Second /* default is seconds */)
+			if err != nil {
+				log.L(req.Context()).Warnf("Invalid Request-Timeout header '%s': %s", reqTimeoutHeader, err)
+			} else {
+				reqTimeout = time.Duration(customTimeout)
+			}
+		}
+		ctx, cancel := context.WithTimeout(req.Context(), reqTimeout)
+		httpReqID := fftypes.ShortID()
+		ctx = log.WithLogField(ctx, "httpreq", httpReqID)
 		req = req.WithContext(ctx)
 		defer cancel()
 
@@ -304,6 +316,7 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 		status, err := handler(res, req)
 		durationMS := float64(time.Since(startTime)) / float64(time.Millisecond)
 		if err != nil {
+
 			// Routers don't need to tweak the status code when sending errors.
 			// .. either the FF12345 error they raise is mapped to a status hint
 			ffcodeExtract := ffcodeExtractor.FindStringSubmatch(err.Error())
@@ -312,6 +325,18 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 					status = statusHint
 				}
 			}
+
+			// If the context is done, we wrap in 408
+			if status != http.StatusRequestTimeout {
+				select {
+				case <-ctx.Done():
+					l.Errorf("Request failed and context is closed. Returning %d (overriding %d): %s", http.StatusRequestTimeout, status, err)
+					status = http.StatusRequestTimeout
+					err = i18n.WrapError(ctx, err, i18n.MsgRequestTimeout, httpReqID, durationMS)
+				default:
+				}
+			}
+
 			// ... or we default to 500
 			if status < 300 {
 				status = 500

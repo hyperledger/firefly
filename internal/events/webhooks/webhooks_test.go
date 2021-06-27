@@ -37,7 +37,7 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	config.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
-	rc := cbs.On("RegisterConnection", "*", mock.Anything).Return(nil)
+	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
 	rc.RunFn = func(a mock.Arguments) {
 		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(fftypes.SubscriptionRef{}))
 	}
@@ -201,7 +201,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
@@ -211,7 +211,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -266,7 +266,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		}`),
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -316,14 +316,14 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -363,13 +363,13 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
 		assert.Regexp(t, "FF10257", response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
 	assert.NoError(t, err)
 }
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
@@ -421,7 +421,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
@@ -430,7 +430,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -469,7 +469,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
@@ -478,7 +478,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -516,7 +516,7 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 
 	waiter := make(chan struct{})
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	dr := mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
@@ -528,7 +528,7 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 		close(waiter)
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -560,7 +560,7 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 		},
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, nil)
+	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 }
 
@@ -593,6 +593,6 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		},
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, nil)
+	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 }

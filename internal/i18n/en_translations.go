@@ -177,4 +177,5 @@ var (
 	MsgWebhooksReplyBadJSON        = ffm("FF10257", "Failed to process reply from webhook as JSON")
 	MsgWebhooksOptReplyTag         = ffm("FF10258", "The tag to set on the reply message")
 	MsgWebhooksOptReplyTx          = ffm("FF10259", "The transaction type to set on the reply message")
+	MsgRequestTimeout              = ffm("FF10260", "The request with id '%s' timed out after %.2fms", 408)
 )

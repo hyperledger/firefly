@@ -23,6 +23,8 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
+	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
@@ -53,6 +55,9 @@ type EventManager interface {
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
+
+	// Internal events
+	AddSystemEventListener(ns string, el system.EventListener) error
 }
 
 type eventManager struct {
@@ -70,6 +75,7 @@ type eventManager struct {
 	newPinNotifier       *eventNotifier
 	opCorrelationRetries int
 	defaultTransport     string
+	internalEvents       *system.Events
 }
 
 func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager) (EventManager, error) {
@@ -97,6 +103,8 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		newPinNotifier:       newPinNotifier,
 		aggregator:           newAggregator(ctx, di, bm, pm, dm, newPinNotifier),
 	}
+	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsName)
+	em.internalEvents = ie.(*system.Events)
 
 	var err error
 	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, &replySender{
@@ -173,4 +181,8 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
 	return em.database.DeleteSubscriptionByID(ctx, subDef.ID)
+}
+
+func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
+	return em.internalEvents.AddListener(ns, el)
 }

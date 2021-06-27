@@ -149,7 +149,7 @@ func ParseToDuration(durationString string) time.Duration {
 	if durationString == "" {
 		return time.Duration(0)
 	}
-	ffd, err := ParseDurationString(durationString)
+	ffd, err := ParseDurationString(durationString, time.Millisecond)
 	if err != nil {
 		log.L(context.Background()).Warn(err)
 	}
@@ -157,15 +157,15 @@ func ParseToDuration(durationString string) time.Duration {
 }
 
 // ParseDurationString is a standard handling of any duration string, in config or API options
-func ParseDurationString(durationString string) (FFDuration, error) {
+func ParseDurationString(durationString string, def time.Duration) (FFDuration, error) {
 	duration, err := time.ParseDuration(durationString)
 	if err != nil {
 		intVal, err := strconv.ParseInt(durationString, 10, 64)
 		if err != nil {
 			return 0, i18n.NewError(context.Background(), i18n.MsgDurationParseFail, durationString)
 		}
-		// Default is milliseconds for all durations
-		duration = time.Duration(intVal) * time.Millisecond
+		// Default without a suffix
+		duration = time.Duration(intVal) * def
 	}
 	return FFDuration(duration), nil
 }
@@ -186,7 +186,7 @@ func (fd *FFDuration) UnmarshalJSON(b []byte) error {
 		*fd = FFDuration(intVal) * FFDuration(time.Millisecond)
 		return nil
 	}
-	duration, err := ParseDurationString(stringVal)
+	duration, err := ParseDurationString(stringVal, time.Millisecond)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func (fd *FFDuration) Scan(src interface{}) error {
 		return nil
 
 	case string:
-		duration, err := ParseDurationString(src)
+		duration, err := ParseDurationString(src, time.Millisecond)
 		if err != nil {
 			return err
 		}

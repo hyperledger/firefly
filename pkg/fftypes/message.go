@@ -117,6 +117,21 @@ func (h *MessageHeader) Hash() *Bytes32 {
 	return &b32
 }
 
+func (m *MessageInput) SetInlineData(data []*Data) {
+	m.InputData = make(InputData, len(data))
+	for i, d := range data {
+		m.InputData[i] = &DataRefOrValue{
+			DataRef: DataRef{
+				ID:   d.ID,
+				Hash: d.Hash,
+			},
+			Validator: d.Validator,
+			Datatype:  d.Datatype,
+			Value:     d.Value,
+		}
+	}
+}
+
 func (m *Message) Seal(ctx context.Context) (err error) {
 	if len(m.Header.Topics) == 0 {
 		m.Header.Topics = []string{DefaultTopic}

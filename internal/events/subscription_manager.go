@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
@@ -98,7 +99,13 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 func (sm *subscriptionManager) loadTransports() error {
 	var err error
 	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
+	uniqueTransports := make(map[string]bool)
 	for _, transport := range enabledTransports {
+		uniqueTransports[transport] = true
+	}
+	// Cannot disable the internal listener
+	uniqueTransports[system.SystemEventsName] = true
+	for transport := range uniqueTransports {
 		sm.transports[transport], err = eifactory.GetPlugin(sm.ctx, transport)
 		if err != nil {
 			return err

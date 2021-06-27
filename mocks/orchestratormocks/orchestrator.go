@@ -19,6 +19,8 @@ import (
 
 	networkmap "github.com/hyperledger-labs/firefly/internal/networkmap"
 
+	orchestrator "github.com/hyperledger-labs/firefly/internal/orchestrator"
+
 	privatemessaging "github.com/hyperledger-labs/firefly/internal/privatemessaging"
 )
 
@@ -860,6 +862,22 @@ func (_m *Orchestrator) Start() error {
 		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SyncAsyncBridge provides a mock function with given fields:
+func (_m *Orchestrator) SyncAsyncBridge() orchestrator.SyncAsyncBridge {
+	ret := _m.Called()
+
+	var r0 orchestrator.SyncAsyncBridge
+	if rf, ok := ret.Get(0).(func() orchestrator.SyncAsyncBridge); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(orchestrator.SyncAsyncBridge)
+		}
 	}
 
 	return r0

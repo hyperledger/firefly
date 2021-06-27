@@ -26,6 +26,11 @@ import (
 )
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
+	in.Header.ID = nil
+	return pm.SendMessageWithID(ctx, ns, in)
+}
+
+func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {

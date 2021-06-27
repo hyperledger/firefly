@@ -89,18 +89,7 @@ func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string, withV
 		if err != nil {
 			return nil, err
 		}
-		msgI.InputData = make(fftypes.InputData, len(data))
-		for i, d := range data {
-			msgI.InputData[i] = &fftypes.DataRefOrValue{
-				DataRef: fftypes.DataRef{
-					ID:   d.ID,
-					Hash: d.Hash,
-				},
-				Validator: d.Validator,
-				Datatype:  d.Datatype,
-				Value:     d.Value,
-			}
-		}
+		msgI.SetInlineData(data)
 	} else {
 		// Just put the data refs into the serialized struct
 		msgI.InputData = make(fftypes.InputData, len(msg.Data))

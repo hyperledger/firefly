@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
@@ -257,4 +258,23 @@ func TestCreateDeleteDurableSubscriptionOk(t *testing.T) {
 	mdi.On("DeleteSubscriptionByID", mock.Anything, subId).Return(nil)
 	err := em.DeleteDurableSubscription(em.ctx, sub)
 	assert.NoError(t, err)
+}
+
+func TestAddInternalListener(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	ie := &system.Events{}
+	cbs := &eventsmocks.Callbacks{}
+
+	cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
+	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
+
+	conf := config.NewPluginConfig("ut.events")
+	ie.InitPrefix(conf)
+	ie.Init(em.ctx, conf, cbs)
+	em.internalEvents = ie
+	defer cancel()
+	err := em.AddSystemEventListener("ns1", func(event *fftypes.EventDelivery) error { return nil })
+	assert.NoError(t, err)
+
+	cbs.AssertExpectations(t)
 }

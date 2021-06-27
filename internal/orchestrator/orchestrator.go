@@ -60,6 +60,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
+	SyncAsyncBridge() SyncAsyncBridge
 	IsPreInit() bool
 
 	// Status
@@ -119,6 +120,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
 	data          data.Manager
+	saBridge      *syncAsyncBridge
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -152,6 +154,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.saBridge = newSyncAsyncBridge(ctx, or.database, or.data, or.events, or.messaging)
 	return err
 }
 
@@ -214,6 +217,10 @@ func (or *orchestrator) NetworkMap() networkmap.Manager {
 
 func (or *orchestrator) Data() data.Manager {
 	return or.data
+}
+
+func (or *orchestrator) SyncAsyncBridge() SyncAsyncBridge {
+	return or.saBridge
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {

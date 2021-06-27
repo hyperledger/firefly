@@ -176,3 +176,13 @@ func TestSealKnownMessage(t *testing.T) {
 	var ls LocallySequenced = &msg
 	assert.Equal(t, int64(12345), ls.LocalSequence())
 }
+
+func TestSetInlineData(t *testing.T) {
+	msg := &MessageInput{}
+	msg.SetInlineData([]*Data{
+		{ID: NewUUID(), Value: Byteable(`"some data"`)},
+	})
+	b, err := json.Marshal(&msg)
+	assert.NoError(t, err)
+	assert.Regexp(t, "some data", string(b))
+}

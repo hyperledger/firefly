@@ -40,6 +40,7 @@ type WebHooks struct {
 	capabilities *events.Capabilities
 	callbacks    events.Callbacks
 	client       *resty.Client
+	connID       string
 }
 
 type whRequest struct {
@@ -64,9 +65,10 @@ func (wh *WebHooks) Init(ctx context.Context, prefix config.Prefix, callbacks ev
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
 		client:       restclient.New(ctx, prefix),
+		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection("*", func(sr fftypes.SubscriptionRef) bool { return true })
+	return callbacks.RegisterConnection(wh.connID, func(sr fftypes.SubscriptionRef) bool { return true })
 }
 
 func (wh *WebHooks) Capabilities() *events.Capabilities {
