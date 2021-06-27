@@ -868,15 +868,15 @@ func (_m *Orchestrator) Start() error {
 }
 
 // SyncAsyncBridge provides a mock function with given fields:
-func (_m *Orchestrator) SyncAsyncBridge() syncasync.SyncAsyncBridge {
+func (_m *Orchestrator) SyncAsyncBridge() syncasync.Bridge {
 	ret := _m.Called()
 
-	var r0 syncasync.SyncAsyncBridge
-	if rf, ok := ret.Get(0).(func() syncasync.SyncAsyncBridge); ok {
+	var r0 syncasync.Bridge
+	if rf, ok := ret.Get(0).(func() syncasync.Bridge); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(syncasync.SyncAsyncBridge)
+			r0 = ret.Get(0).(syncasync.Bridge)
 		}
 	}
 

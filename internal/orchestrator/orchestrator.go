@@ -61,7 +61,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
-	SyncAsyncBridge() syncasync.SyncAsyncBridge
+	SyncAsyncBridge() syncasync.Bridge
 	IsPreInit() bool
 
 	// Status
@@ -121,7 +121,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
 	data          data.Manager
-	syncasync     syncasync.SyncAsyncBridge
+	syncasync     syncasync.Bridge
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -220,7 +220,7 @@ func (or *orchestrator) Data() data.Manager {
 	return or.data
 }
 
-func (or *orchestrator) SyncAsyncBridge() syncasync.SyncAsyncBridge {
+func (or *orchestrator) SyncAsyncBridge() syncasync.Bridge {
 	return or.syncasync
 }
 

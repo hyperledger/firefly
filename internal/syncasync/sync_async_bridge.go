@@ -30,9 +30,9 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-// SyncAsyncBridge translates synchronous (HTTP API) calls, into asynchronously sending a
+// Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
-type SyncAsyncBridge interface {
+type Bridge interface {
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInput) (reply *fftypes.MessageInput, err error)
@@ -55,7 +55,7 @@ type syncAsyncBridge struct {
 	inflight    map[string]map[fftypes.UUID]*inflightRequest
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, ei events.EventManager, pm privatemessaging.Manager) SyncAsyncBridge {
+func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, ei events.EventManager, pm privatemessaging.Manager) Bridge {
 	sa := &syncAsyncBridge{
 		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
 		database:  di,
@@ -93,7 +93,7 @@ func (sa *syncAsyncBridge) addInFlight(ns string) (*inflightRequest, error) {
 	return inflight, nil
 }
 
-func (sa *syncAsyncBridge) removeInFlight(ctx context.Context, inflight *inflightRequest, reply *fftypes.MessageInput) {
+func (sa *syncAsyncBridge) removeInFlight(inflight *inflightRequest, reply *fftypes.MessageInput) {
 	sa.inflightMux.Lock()
 	defer func() {
 		sa.inflightMux.Unlock()
@@ -120,7 +120,7 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 
 	// Find the right set of potential callbacks
 	inflightNS := sa.inflight[event.Namespace]
-	if inflightNS == nil || len(inflightNS) == 0 || event.Type != fftypes.EventTypeMessageConfirmed {
+	if len(inflightNS) == 0 || event.Type != fftypes.EventTypeMessageConfirmed {
 		// No need to do any expensive lookups/matching - this could not be a match
 		return nil
 	}
@@ -177,7 +177,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, inReques
 		return nil, err
 	}
 	defer func() {
-		sa.removeInFlight(ctx, inflight, reply)
+		sa.removeInFlight(inflight, reply)
 	}()
 
 	inRequest.Header.ID = inflight.id
