@@ -122,7 +122,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	defer cancel()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/myapi", func(res http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/myapi/my/sub/path", func(res http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
 		assert.Equal(t, "dynamicheaderval", req.Header.Get("Dynamic-Header"))
 		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
@@ -155,7 +155,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	to["reply"] = true
 	to["json"] = true
 	to["method"] = "PUT"
-	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
+	to["url"] = fmt.Sprintf("http://%s/myapi/", server.Listener.Addr())
 	to["headers"] = map[string]interface{}{
 		"my-header": "myheaderval",
 	}
@@ -166,6 +166,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		"query":   "in_query",
 		"headers": "in_headers",
 		"body":    "in_body",
+		"path":    "in_path",
 	}
 	event := &fftypes.EventDelivery{
 		Event: fftypes.Event{
@@ -196,7 +197,8 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 			},
 			"in_headers": {
 				"dynamic-header": "dynamicheaderval"
-			}
+			},
+			"in_path": "/my/sub/path"
 		}`),
 	}
 

@@ -135,6 +135,10 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 					"body": {
 						"type": "string",
 						"description": "%s"
+					},
+					"path": {
+						"type": "string",
+						"description": "%s"
 					}
 				}
 			}
@@ -153,6 +157,7 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputQuery),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputHeaders),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputBody),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInputPath),
 	)
 }
 
@@ -212,6 +217,14 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 		inputBody := input.GetString("body")
 		if inputBody != "" {
 			req.body = firstData.GetObject(inputBody)
+		}
+		// Choose to add an additional dynamic path
+		inputPath := input.GetString("path")
+		if inputPath != "" {
+			extraPath := firstData.GetString(inputPath)
+			if len(extraPath) > 0 {
+				req.url = strings.TrimSuffix(req.url, "/") + "/" + strings.TrimPrefix(extraPath, "/")
+			}
 		}
 	}
 	return req, err

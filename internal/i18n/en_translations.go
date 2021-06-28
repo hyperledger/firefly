@@ -181,4 +181,5 @@ var (
 	MsgRequestReplyTagRequired     = ffm("FF10261", "For request messages 'header.tag' must be set on the request message to route it to a suitable responder", 400)
 	MsgRequestCannotHaveCID        = ffm("FF10262", "For request messages 'header.cid' must be unset", 400)
 	MsgRequestTimeoutDesc          = ffm("FF10263", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")
+	MsgWebhooksOptInputPath        = ffm("FF10264", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
 )

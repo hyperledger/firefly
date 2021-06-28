@@ -25,6 +25,7 @@ import (
 	"image/png"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -394,12 +395,17 @@ func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 	ffImg, err := png.Decode(bytes.NewReader(b))
 	assert.NoError(t, err)
 
+	// Verify we got the right data back by parsing it
 	convertOptions := image2ascii.DefaultOptions
-	convertOptions.FixedWidth = 80
+	convertOptions.FixedWidth = 100
 	convertOptions.FixedHeight = 60
-	convertOptions.Colored = true
-
+	convertOptions.Colored = false
 	converter := image2ascii.NewImageConverter()
-	fmt.Print(converter.Image2ASCIIString(ffImg, &convertOptions))
+	str := converter.Image2ASCIIString(ffImg, &convertOptions)
+	for _, s := range strings.Split(str, "\n") {
+		if len(strings.TrimSpace(s)) > 0 {
+			fmt.Println(s)
+		}
+	}
 
 }
