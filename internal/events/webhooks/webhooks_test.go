@@ -167,6 +167,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		"headers": "in_headers",
 		"body":    "in_body",
 		"path":    "in_path",
+		"replytx": "in_replytx",
 	}
 	event := &fftypes.EventDelivery{
 		Event: fftypes.Event{
@@ -198,7 +199,8 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 			"in_headers": {
 				"dynamic-header": "dynamicheaderval"
 			},
-			"in_path": "/my/sub/path"
+			"in_path": "/my/sub/path",
+			"in_replytx": true
 		}`),
 	}
 
@@ -207,6 +209,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
+		assert.Equal(t, fftypes.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
 		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
 		assert.Equal(t, "replyvalue", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
 		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])

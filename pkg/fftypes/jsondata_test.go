@@ -68,6 +68,14 @@ func TestJSONObject(t *testing.T) {
 	assert.Nil(t, hash)
 
 	v, ok := JSONObject{"test": false}.GetStringOk("test")
+	assert.True(t, ok)
+	assert.Equal(t, "false", v)
+
+	v, ok = JSONObject{"test": float64(12345)}.GetStringOk("test")
+	assert.True(t, ok)
+	assert.Equal(t, "12345", v)
+
+	v, ok = JSONObject{"test": map[string]int{"x": 12345}}.GetStringOk("test")
 	assert.False(t, ok)
 	assert.Equal(t, "", v)
 }

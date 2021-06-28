@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -40,10 +41,15 @@ var postNewSubscription = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
-	JSONInputMask:   []string{"ID", "Namespace", "Created", "Ephemeral"},
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputCode:  http.StatusCreated, // Sync operation
 	JSONInputSchema: func(ctx context.Context) string {
+		baseSchema, _, _ := openapi3gen.NewSchemaRefForValue(&fftypes.Subscription{})
+		baseProps := baseSchema.Value.Properties
+		delete(baseProps, "id")
+		delete(baseProps, "namespace")
+		delete(baseProps, "created")
+		delete(baseProps, "ephemeral")
 		var schemas openapi3.SchemaRefs
 		for _, t := range config.GetStringSlice(config.EventTransportsEnabled) {
 			transport, _ := eifactory.GetPlugin(context.Background(), t)
@@ -92,11 +98,12 @@ var postNewSubscription = &oapispec.Route{
 				schemas = append(schemas, &schema)
 			}
 		}
-		b, _ := json.Marshal(&openapi3.SchemaRef{
+		baseProps["options"] = &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
 				OneOf: schemas,
 			},
-		})
+		}
+		b, _ := json.Marshal(&baseSchema)
 		return string(b)
 	},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {

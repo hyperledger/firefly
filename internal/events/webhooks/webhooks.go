@@ -49,6 +49,7 @@ type whRequest struct {
 	method    string
 	body      fftypes.JSONObject
 	forceJSON bool
+	replyTx   string
 }
 
 type whResponse struct {
@@ -139,6 +140,10 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 					"path": {
 						"type": "string",
 						"description": "%s"
+					},
+					"replytx": {
+						"type": "string",
+						"description": "%s"
 					}
 				}
 			}
@@ -158,6 +163,7 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputHeaders),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputBody),
 		i18n.Expand(ctx, i18n.MsgWebhooksOptInputPath),
+		i18n.Expand(ctx, i18n.MsgWebhooksOptInputReplyTx),
 	)
 }
 
@@ -167,6 +173,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 		url:       options.GetString("url"),
 		method:    options.GetString("method"),
 		forceJSON: options.GetBool("json"),
+		replyTx:   options.GetString("replytx"),
 	}
 	if req.url == "" {
 		return nil, i18n.NewError(wh.ctx, i18n.MsgWebhookURLEmpty)
@@ -226,6 +233,17 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 				req.url = strings.TrimSuffix(req.url, "/") + "/" + strings.TrimPrefix(extraPath, "/")
 			}
 		}
+		// Choose to add an additional dynamic path
+		inputTxtype := input.GetString("replytx")
+		if inputTxtype != "" {
+			txType := firstData.GetString(inputTxtype)
+			if len(txType) > 0 {
+				req.replyTx = txType
+				if strings.EqualFold(txType, "true") {
+					req.replyTx = string(fftypes.TransactionTypeBatchPin)
+				}
+			}
+		}
 	}
 	return req, err
 }
@@ -239,7 +257,7 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 	return err
 }
 
-func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (req *whRequest, res *whResponse, err error) {
 
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]fftypes.Byteable, 0, len(data))
@@ -257,9 +275,9 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		}
 	}
 
-	req, err := wh.buildRequest(sub.Options.TransportOptions(), firstData)
+	req, err = wh.buildRequest(sub.Options.TransportOptions(), firstData)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if req.method == http.MethodPost || req.method == http.MethodPatch || req.method == http.MethodPut {
@@ -281,7 +299,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 
 	resp, err := req.r.Execute(req.method, req.url)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() { _ = resp.RawBody().Close() }()
 
@@ -303,7 +321,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		var resData interface{}
 		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
 		if err != nil {
-			return nil, i18n.WrapError(wh.ctx, err, i18n.MsgWebhooksReplyBadJSON)
+			return nil, nil, i18n.WrapError(wh.ctx, err, i18n.MsgWebhooksReplyBadJSON)
 		}
 		res.Body, _ = json.Marshal(&resData) // we know we can re-marshal it
 	} else {
@@ -317,11 +335,11 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		res.Body = buf.Bytes()
 	}
 
-	return res, nil
+	return req, res, nil
 }
 
 func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
-	res, gwErr := wh.attemptRequest(sub, event, data)
+	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
 		// rather than just causing timeouts
@@ -342,6 +360,10 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 
 	// Emit the response
 	if reply {
+		txType := fftypes.LowerCasedType(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
+		if req != nil && req.replyTx != "" {
+			txType = fftypes.LowerCasedType(strings.ToLower(req.replyTx))
+		}
 		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
@@ -353,7 +375,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 						Group:  event.Message.Header.Group,
 						Type:   event.Message.Header.Type,
 						Tag:    sub.Options.TransportOptions().GetString("replytag"),
-						TxType: fftypes.LowerCasedType(strings.ToLower(sub.Options.TransportOptions().GetString("replytx"))),
+						TxType: txType,
 					},
 				},
 				InlineData: fftypes.InlineData{
