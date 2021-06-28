@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
@@ -40,10 +41,12 @@ type subscription struct {
 	groupFilter        *regexp.Regexp
 	tagFilter          *regexp.Regexp
 	topicsFilter       *regexp.Regexp
+	authorFilter       *regexp.Regexp
 }
 
 type connection struct {
 	id          string
+	transport   string
 	matcher     events.SubscriptionMatcher
 	dispatchers map[fftypes.UUID]*eventDispatcher
 	ei          events.Plugin
@@ -98,7 +101,13 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 func (sm *subscriptionManager) loadTransports() error {
 	var err error
 	enabledTransports := config.GetStringSlice(config.EventTransportsEnabled)
+	uniqueTransports := make(map[string]bool)
 	for _, transport := range enabledTransports {
+		uniqueTransports[transport] = true
+	}
+	// Cannot disable the internal listener
+	uniqueTransports[system.SystemEventsTransport] = true
+	for transport := range uniqueTransports {
 		sm.transports[transport], err = eifactory.GetPlugin(sm.ctx, transport)
 		if err != nil {
 			return err
@@ -183,9 +192,7 @@ func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
 	if sm.durableSubs[*subDef.ID] == nil {
 		sm.durableSubs[*subDef.ID] = newSub
 		for _, conn := range sm.connections {
-			if conn.matcher != nil && conn.matcher(subDef.SubscriptionRef) {
-				sm.matchedSubscriptionWithLock(conn, newSub)
-			}
+			sm.matchSubToConnLocked(conn, newSub)
 		}
 	}
 }
@@ -260,6 +267,14 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		}
 	}
 
+	var authorFilter *regexp.Regexp
+	if filter.Author != "" {
+		authorFilter, err = regexp.Compile(filter.Author)
+		if err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgRegexpCompileFailed, "filter.author", filter.Author)
+		}
+	}
+
 	sub = &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition:         subDef,
@@ -267,6 +282,7 @@ func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef 
 		groupFilter:        groupFilter,
 		tagFilter:          tagFilter,
 		topicsFilter:       topicsFilter,
+		authorFilter:       authorFilter,
 	}
 	return sub, err
 }
@@ -288,10 +304,12 @@ func (sm *subscriptionManager) getCreateConnLocked(ei events.Plugin, connID stri
 	if !ok {
 		conn = &connection{
 			id:          connID,
+			transport:   ei.Name(),
 			dispatchers: make(map[fftypes.UUID]*eventDispatcher),
 			ei:          ei,
 		}
 		sm.connections[connID] = conn
+		log.L(sm.ctx).Debugf("Registered connection %s for %s", conn.id, ei.Name())
 	}
 	return conn
 }
@@ -318,24 +336,19 @@ func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID strin
 	}
 	// Make new dispatchers for all durable subscriptions that match
 	for _, sub := range sm.durableSubs {
-		if conn.matcher(sub.definition.SubscriptionRef) {
-			sm.matchedSubscriptionWithLock(conn, sub)
-		}
+		sm.matchSubToConnLocked(conn, sub)
 	}
 
 	return nil
 }
 
-func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub *subscription) {
-	ei, foundTransport := sm.transports[sub.definition.Transport]
-	if foundTransport {
+func (sm *subscriptionManager) matchSubToConnLocked(conn *connection, sub *subscription) {
+	if conn.transport == sub.definition.Transport && conn.matcher(sub.definition.SubscriptionRef) {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
+			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
-	} else {
-		log.L(sm.ctx).Warnf("Subscription %s:%s [%s] defined for unknown transport '%s", sub.definition.Namespace, sub.definition.Name, sub.definition.ID, sub.definition.Transport)
 	}
 }
 
@@ -373,6 +386,9 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher
+
+	log.L(sm.ctx).Infof("Created new %s ephemeral subscription %s:%s for connID=%s", ei.Name(), namespace, subID, connID)
+
 	return nil
 }
 
@@ -397,22 +413,25 @@ func (sm *subscriptionManager) connnectionClosed(ei events.Plugin, connID string
 	}
 }
 
-func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight *fftypes.EventDeliveryResponse) error {
+func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string, inflight *fftypes.EventDeliveryResponse) {
 	sm.mux.Lock()
 	var dispatcher *eventDispatcher
 	conn, ok := sm.connections[connID]
 	if ok && inflight.Subscription.ID != nil {
 		dispatcher = conn.dispatchers[*inflight.Subscription.ID]
 	}
-	sm.mux.Unlock()
-
 	if ok && conn.ei != ei {
-		return i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+		err := i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
+		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		sm.mux.Unlock()
+		return
 	}
 	if dispatcher == nil {
-		return i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
+		err := i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
+		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		sm.mux.Unlock()
+		return
 	}
-
+	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
-	return nil
 }

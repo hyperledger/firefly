@@ -37,7 +37,7 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	config.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
-	rc := cbs.On("RegisterConnection", "*", mock.Anything).Return(nil)
+	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
 	rc.RunFn = func(a mock.Arguments) {
 		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(fftypes.SubscriptionRef{}))
 	}
@@ -122,7 +122,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	defer cancel()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/myapi", func(res http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/myapi/my/sub/path?escape_query", func(res http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
 		assert.Equal(t, "dynamicheaderval", req.Header.Get("Dynamic-Header"))
 		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
@@ -155,7 +155,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	to["reply"] = true
 	to["json"] = true
 	to["method"] = "PUT"
-	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
+	to["url"] = fmt.Sprintf("http://%s/myapi/", server.Listener.Addr())
 	to["headers"] = map[string]interface{}{
 		"my-header": "myheaderval",
 	}
@@ -166,6 +166,8 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		"query":   "in_query",
 		"headers": "in_headers",
 		"body":    "in_body",
+		"path":    "in_path",
+		"replytx": "in_replytx",
 	}
 	event := &fftypes.EventDelivery{
 		Event: fftypes.Event{
@@ -196,22 +198,25 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 			},
 			"in_headers": {
 				"dynamic-header": "dynamicheaderval"
-			}
+			},
+			"in_path": "/my/sub/path?escape_query",
+			"in_replytx": true
 		}`),
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
-		assert.Equal(t, "myheaderval2", response.Reply.InputData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
-		assert.Equal(t, "replyvalue", response.Reply.InputData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
-		assert.Equal(t, float64(200), response.Reply.InputData[0].Value.JSONObject()["status"])
+		assert.Equal(t, fftypes.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
+		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
+		assert.Equal(t, "replyvalue", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
+		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -266,7 +271,7 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 		}`),
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -316,14 +321,14 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -363,13 +368,13 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Regexp(t, "FF10257", response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Regexp(t, "FF10257", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{})
 	assert.NoError(t, err)
 }
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
@@ -421,16 +426,16 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(500), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Equal(t, `c29tZSBieXRlcw==`, response.Reply.InputData[0].Value.JSONObject()["body"]) // base64 val
+		assert.Equal(t, float64(500), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Equal(t, `c29tZSBieXRlcw==`, response.Reply.InlineData[0].Value.JSONObject()["body"]) // base64 val
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -469,16 +474,16 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.NotEmpty(t, response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.NotEmpty(t, response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -516,19 +521,19 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 
 	waiter := make(chan struct{})
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	dr := mcb.On("DeliveryResponse", "*", mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
 		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
-		assert.Equal(t, float64(502), response.Reply.InputData[0].Value.JSONObject()["status"])
-		assert.Regexp(t, "FF10242", response.Reply.InputData[0].Value.JSONObject().GetObject("body")["error"])
+		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		assert.Regexp(t, "FF10242", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 	dr.RunFn = func(a mock.Arguments) {
 		close(waiter)
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, []*fftypes.Data{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.Byteable(`"value2"`)},
 	})
@@ -560,7 +565,7 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 		},
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, nil)
+	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 }
 
@@ -593,6 +598,6 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		},
 	}
 
-	err := wh.DeliveryRequest("*", sub, event, nil)
+	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 }

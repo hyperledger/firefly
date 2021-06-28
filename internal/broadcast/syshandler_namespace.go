@@ -55,7 +55,7 @@ func (bm *broadcastManager) handleNamespaceBroadcast(ctx context.Context, msg *f
 		return false, err
 	}
 
-	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, msg.Header.Group)
+	event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID)
 	if err = bm.database.UpsertEvent(ctx, event, false); err != nil {
 		return false, err
 	}

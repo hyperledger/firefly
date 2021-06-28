@@ -17,8 +17,8 @@
 package apiserver
 
 import (
+	"context"
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -26,24 +26,22 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var getMsgByID = &oapispec.Route{
-	Name:   "getMsgByID",
-	Path:   "namespaces/{ns}/messages/{msgid}",
-	Method: http.MethodGet,
+var postRequestMessage = &oapispec.Route{
+	Name:   "postRequestMessage",
+	Path:   "namespaces/{ns}/request/message",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "msgid", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "data", IsBool: true, Description: i18n.MsgTBD},
-	},
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} }, // can include full values
-	JSONOutputCode:  http.StatusOK,
+	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
+	JSONInputSchema: func(ctx context.Context) string { return privateSendSchema },
+	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
+	JSONOutputCode:  http.StatusOK, // Sync operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"], strings.EqualFold(r.QP["data"], "true"))
+		output, err = r.Or.SyncAsyncBridge().RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
 		return output, err
 	},
 }

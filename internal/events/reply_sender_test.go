@@ -38,6 +38,6 @@ func TestSendreplyFail(t *testing.T) {
 	rs.sendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-	}, &fftypes.MessageInput{})
+	}, &fftypes.MessageInOut{})
 	mbm.AssertExpectations(t)
 }

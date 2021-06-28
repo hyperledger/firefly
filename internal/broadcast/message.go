@@ -26,7 +26,8 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+	in.Header.ID = nil
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypeBroadcast
 	if in.Header.Author == "" {
@@ -40,7 +41,7 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 	var dataToPublish []*fftypes.DataAndBlob
 	err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-		in.Message.Data, dataToPublish, err = bm.data.ResolveInputDataBroadcast(ctx, ns, in.InputData)
+		in.Message.Data, dataToPublish, err = bm.data.ResolveInlineDataBroadcast(ctx, ns, in.InlineData)
 		if err != nil {
 			return err
 		}

@@ -107,11 +107,11 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (
 }
 
 // SendMessage provides a mock function with given fields: ctx, ns, in
-func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (*fftypes.Message, error) {
+func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, in)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInput) *fftypes.Message); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.Message); ok {
 		r0 = rf(ctx, ns, in)
 	} else {
 		if ret.Get(0) != nil {
@@ -120,7 +120,30 @@ func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.Messa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
+		r1 = rf(ctx, ns, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SendMessageWithID provides a mock function with given fields: ctx, ns, in
+func (_m *Manager) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
 		r1 = rf(ctx, ns, in)
 	} else {
 		r1 = ret.Error(1)

@@ -17,12 +17,15 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"image/png"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,6 +34,8 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	image2ascii "github.com/qeesung/image2ascii/convert"
 )
 
 type testState struct {
@@ -349,13 +354,10 @@ func TestE2EWebhookExchange(t *testing.T) {
 	assert.Regexp(t, "Example YAML", string(decoded2))
 }
 
-func TestE2EWebhookExchangeNoTx(t *testing.T) {
+func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 
 	ts := beforeE2ETest(t)
 	defer ts.done()
-
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
 
 	subJSON := `{
 		"transport": "webhooks",
@@ -363,7 +365,7 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
+			"url": "https://github.com/hyperledger-labs/firefly/raw/main/resources/ff-logo-32.png",
 			"reply": true,
 			"replytag": "myreply",
 			"replytx": "none",
@@ -381,21 +383,29 @@ func TestE2EWebhookExchangeNoTx(t *testing.T) {
 		Value: fftypes.Byteable(`{}`),
 	}
 
-	var resp *resty.Response
-	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+	reply := RequestReply(t, ts.client1, &data, []string{
 		ts.org1.Name,
 		ts.org2.Name,
 	}, "myrequest", fftypes.TransactionTypeNone)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
+	assert.NotNil(t, reply)
 
-	<-received2 // request
-
-	<-received1 // reply
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeNone, 2, 0)
-	assert.Equal(t, float64(200), val1.JSONObject()["status"])
-	decoded1, err := base64.StdEncoding.DecodeString(val1.JSONObject().GetString("body"))
+	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")
+	b, err := base64.StdEncoding.DecodeString(bodyData)
 	assert.NoError(t, err)
-	assert.Regexp(t, "Example YAML", string(decoded1))
+	ffImg, err := png.Decode(bytes.NewReader(b))
+	assert.NoError(t, err)
+
+	// Verify we got the right data back by parsing it
+	convertOptions := image2ascii.DefaultOptions
+	convertOptions.FixedWidth = 100
+	convertOptions.FixedHeight = 60
+	convertOptions.Colored = false
+	converter := image2ascii.NewImageConverter()
+	str := converter.Image2ASCIIString(ffImg, &convertOptions)
+	for _, s := range strings.Split(str, "\n") {
+		if len(strings.TrimSpace(s)) > 0 {
+			fmt.Println(s)
+		}
+	}
 
 }

@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/networkmap"
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -60,6 +61,7 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
+	SyncAsyncBridge() syncasync.Bridge
 	IsPreInit() bool
 
 	// Status
@@ -77,7 +79,7 @@ type Orchestrator interface {
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
 	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
-	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInput, error)
+	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInOut, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
 	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
 	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
@@ -119,6 +121,7 @@ type orchestrator struct {
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
 	data          data.Manager
+	syncasync     syncasync.Bridge
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -152,6 +155,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.messaging)
 	return err
 }
 
@@ -214,6 +218,10 @@ func (or *orchestrator) NetworkMap() networkmap.Manager {
 
 func (or *orchestrator) Data() data.Manager {
 	return or.data
+}
+
+func (or *orchestrator) SyncAsyncBridge() syncasync.Bridge {
+	return or.syncasync
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {

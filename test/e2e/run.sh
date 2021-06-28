@@ -22,6 +22,10 @@ STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 
 cd $CWD
 
+if [ "$CREATE_STACK" == "true" ]; then
+	$CLI remove -f $STACK_NAME || true
+fi
+
 if [ "$BUILD_FIREFLY" == "true" ]; then
 	docker build -t ghcr.io/hyperledger-labs/firefly:latest ../..
 fi
@@ -31,7 +35,6 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-	$CLI remove -f $STACK_NAME || true
 	$CLI init $STACK_NAME 2
 	$CLI start -n $STACK_NAME
 fi

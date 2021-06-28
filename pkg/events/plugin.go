@@ -75,7 +75,7 @@ type Callbacks interface {
 	//   * If a message is included in the response, then that will be automatically sent with the correct CID
 	// - Reject it: This resets the associated subscription back to the last committed offset
 	//   * Note all message since the last committed offet will be redelivered, so additional messages to be redelivered if streaming ahead
-	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) error
+	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse)
 }
 
 type Capabilities struct{}

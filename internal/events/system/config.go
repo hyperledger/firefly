@@ -14,24 +14,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package system
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/hyperledger-labs/firefly/internal/config"
 )
 
-func TestNewEvent(t *testing.T) {
+const (
+	readAhead = 50
+)
 
-	u := NewUUID()
-	e := NewEvent(EventTypeMessageConfirmed, "ns1", u)
-	assert.Equal(t, EventTypeMessageConfirmed, e.Type)
-	assert.Equal(t, "ns1", e.Namespace)
-	assert.Equal(t, *u, *e.Reference)
+const (
+	// SystemEventsConfReadAhead is the readahead used for system events
+	SystemEventsConfReadAhead = "readAhead"
+)
 
-	e.Sequence = 12345
-	var ls LocallySequenced = e
-	assert.Equal(t, int64(12345), ls.LocalSequence())
-
+func (se *Events) InitPrefix(prefix config.Prefix) {
+	prefix.AddKnownKey(SystemEventsConfReadAhead, readAhead)
 }

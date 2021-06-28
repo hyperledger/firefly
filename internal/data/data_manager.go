@@ -36,8 +36,8 @@ type Manager interface {
 	CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error
 	ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error)
 	GetMessageData(ctx context.Context, msg *fftypes.Message, withValue bool) (data []*fftypes.Data, foundAll bool, err error)
-	ResolveInputDataPrivate(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error)
-	ResolveInputDataBroadcast(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error)
+	ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, error)
+	ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error)
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error)
@@ -283,20 +283,20 @@ func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *fftype
 	return data, err
 }
 
-func (dm *dataManager) ResolveInputDataPrivate(ctx context.Context, ns string, inData fftypes.InputData) (refs fftypes.DataRefs, err error) {
-	refs, _, err = dm.resolveInputData(ctx, ns, inData, false)
+func (dm *dataManager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, err error) {
+	refs, _, err = dm.resolveInlineData(ctx, ns, inData, false)
 	return refs, err
 }
 
-// ResolveInputDataBroadcast ensures the data object are stored, and returns a list of any data that does not currently
+// ResolveInlineDataBroadcast ensures the data object are stored, and returns a list of any data that does not currently
 // have a public storage reference, and hence must be published to publicstorage before a broadcast message can be sent.
 // We deliberately do NOT perform those publishes inside of this action, as we expect to be in a RunAsGroup (trnasaction)
 // at this point, and hence expensive things like a multi-megabyte upload should be decoupled by our caller.
-func (dm *dataManager) ResolveInputDataBroadcast(ctx context.Context, ns string, inData fftypes.InputData) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
-	return dm.resolveInputData(ctx, ns, inData, true)
+func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
+	return dm.resolveInlineData(ctx, ns, inData, true)
 }
 
-func (dm *dataManager) resolveInputData(ctx context.Context, ns string, inData fftypes.InputData, broadcast bool) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
+func (dm *dataManager) resolveInlineData(ctx context.Context, ns string, inData fftypes.InlineData, broadcast bool) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
 
 	refs = make(fftypes.DataRefs, len(inData))
 	if broadcast {

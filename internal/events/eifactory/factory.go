@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/events/webhooks"
 	"github.com/hyperledger-labs/firefly/internal/events/websockets"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -29,6 +30,7 @@ import (
 var plugins = []events.Plugin{
 	&websockets.WebSockets{},
 	&webhooks.WebHooks{},
+	&system.Events{},
 }
 
 var pluginsByName = make(map[string]events.Plugin)

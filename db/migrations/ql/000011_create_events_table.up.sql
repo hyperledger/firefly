@@ -3,7 +3,6 @@ CREATE TABLE events (
   etype          string       NOT NULL,
   namespace      string       NOT NULL,
   ref            string,
-  group_hash     string,
   created        int64        NOT NULL
 );
 

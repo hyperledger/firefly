@@ -86,8 +86,9 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 	assert.NoError(t, err)
 
 	sm.connections["conn1"] = &connection{
-		ei: mei,
-		id: "conn1",
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
 		dispatchers: map[fftypes.UUID]*eventDispatcher{
 			*sub1: testED1,
 		},
@@ -226,6 +227,7 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 				Topics: ".*",
 				Tag:    ".*",
 				Group:  ".*",
+				Author: ".*",
 			}},
 	}, nil)
 	err := sm.start()
@@ -312,6 +314,20 @@ func TestCreateSubscriptionBadGroupFilter(t *testing.T) {
 	assert.Regexp(t, "FF10171.*group", err)
 }
 
+func TestCreateSubscriptionBadAuthorFilter(t *testing.T) {
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	_, err := sm.parseSubscriptionDef(sm.ctx, &fftypes.Subscription{
+		Filter: fftypes.SubscriptionFilter{
+			Author: "[[[[! badness",
+		},
+		Transport: "ut",
+	})
+	assert.Regexp(t, "FF10171.*author", err)
+}
+
 func TestDispatchDeliveryResponseOK(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
@@ -333,13 +349,13 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 		subID = d.subscription.definition.ID
 	}
 
-	err = be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
+	be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(), // Won't be in-flight, but that's fine
 		Subscription: fftypes.SubscriptionRef{
 			ID: subID,
 		},
 	})
-	assert.NoError(t, err)
+	mdi.AssertExpectations(t)
 }
 
 func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
@@ -352,13 +368,13 @@ func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
 
-	err = be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
+	be.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{
 		ID: fftypes.NewUUID(),
 		Subscription: fftypes.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
 	})
-	assert.Regexp(t, "FF10181", err)
+	mdi.AssertExpectations(t)
 }
 
 func TestConnIDSafetyChecking(t *testing.T) {
@@ -372,6 +388,7 @@ func TestConnIDSafetyChecking(t *testing.T) {
 	sm.connections["conn1"] = &connection{
 		ei:          mei1,
 		id:          "conn1",
+		transport:   "ut",
 		dispatchers: map[fftypes.UUID]*eventDispatcher{},
 	}
 
@@ -381,8 +398,7 @@ func TestConnIDSafetyChecking(t *testing.T) {
 	err = be2.EphemeralSubscription("conn1", "ns1", &fftypes.SubscriptionFilter{}, &fftypes.SubscriptionOptions{})
 	assert.Regexp(t, "FF10190", err)
 
-	err = be2.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{})
-	assert.Regexp(t, "FF10190", err)
+	be2.DeliveryResponse("conn1", &fftypes.EventDeliveryResponse{})
 
 	be2.ConnnectionClosed("conn1")
 
@@ -414,8 +430,9 @@ func TestNewDurableSubscriptionUnknownTransport(t *testing.T) {
 	mdi := sm.database.(*databasemocks.Plugin)
 
 	sm.connections["conn1"] = &connection{
-		ei: mei,
-		id: "conn1",
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
 		matcher: func(sr fftypes.SubscriptionRef) bool {
 			return sr.Namespace == "ns1" && sr.Name == "sub1"
 		},
@@ -445,8 +462,9 @@ func TestNewDurableSubscriptionOK(t *testing.T) {
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 
 	sm.connections["conn1"] = &connection{
-		ei: mei,
-		id: "conn1",
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
 		matcher: func(sr fftypes.SubscriptionRef) bool {
 			return sr.Namespace == "ns1" && sr.Name == "sub1"
 		},
@@ -474,7 +492,7 @@ func TestMatchedSubscriptionWithLockUnknownTransport(t *testing.T) {
 	defer cancel()
 
 	conn := &connection{}
-	sm.matchedSubscriptionWithLock(conn, &subscription{definition: &fftypes.Subscription{Transport: "Wrong!"}})
+	sm.matchSubToConnLocked(conn, &subscription{definition: &fftypes.Subscription{Transport: "Wrong!"}})
 	assert.Nil(t, conn.dispatchers)
 }
 
@@ -502,8 +520,9 @@ func TestDeletewDurableSubscriptionOk(t *testing.T) {
 	ed, _ := newTestEventDispatcher(sub)
 	ed.start()
 	sm.connections["conn1"] = &connection{
-		ei: mei,
-		id: "conn1",
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
 		matcher: func(sr fftypes.SubscriptionRef) bool {
 			return sr.Namespace == "ns1" && sr.Name == "sub1"
 		},

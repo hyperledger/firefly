@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -66,14 +67,18 @@ func (jd JSONObject) GetBool(key string) bool {
 }
 
 func (jd JSONObject) GetStringOk(key string) (string, bool) {
-	vInterace, ok := jd[key]
-	if ok && vInterace != nil {
-		if vString, ok := vInterace.(string); ok {
-			return vString, true
-		}
-		log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterace, key)
+	vInterface := jd[key]
+	switch vt := vInterface.(type) {
+	case string:
+		return vt, true
+	case bool:
+		return strconv.FormatBool(vt), true
+	case float64:
+		return strconv.FormatFloat(vt, 'f', -1, 64), true
+	default:
+		log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterface, key)
+		return "", false
 	}
-	return "", false
 }
 
 func (jd JSONObject) GetObject(key string) JSONObject {

@@ -107,12 +107,12 @@ func (_m *Manager) GetMessageData(ctx context.Context, msg *fftypes.Message, wit
 	return r0, r1, r2
 }
 
-// ResolveInputDataBroadcast provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInputDataBroadcast(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error) {
+// ResolveInlineDataBroadcast provides a mock function with given fields: ctx, ns, inData
+func (_m *Manager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, []*fftypes.DataAndBlob, error) {
 	ret := _m.Called(ctx, ns, inData)
 
 	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InputData) fftypes.DataRefs); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataRefs); ok {
 		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
@@ -121,7 +121,7 @@ func (_m *Manager) ResolveInputDataBroadcast(ctx context.Context, ns string, inD
 	}
 
 	var r1 []*fftypes.DataAndBlob
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InputData) []*fftypes.DataAndBlob); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InlineData) []*fftypes.DataAndBlob); ok {
 		r1 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(1) != nil {
@@ -130,7 +130,7 @@ func (_m *Manager) ResolveInputDataBroadcast(ctx context.Context, ns string, inD
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.InputData) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, string, fftypes.InlineData) error); ok {
 		r2 = rf(ctx, ns, inData)
 	} else {
 		r2 = ret.Error(2)
@@ -139,12 +139,12 @@ func (_m *Manager) ResolveInputDataBroadcast(ctx context.Context, ns string, inD
 	return r0, r1, r2
 }
 
-// ResolveInputDataPrivate provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) ResolveInputDataPrivate(ctx context.Context, ns string, inData fftypes.InputData) (fftypes.DataRefs, error) {
+// ResolveInlineDataPrivate provides a mock function with given fields: ctx, ns, inData
+func (_m *Manager) ResolveInlineDataPrivate(ctx context.Context, ns string, inData fftypes.InlineData) (fftypes.DataRefs, error) {
 	ret := _m.Called(ctx, ns, inData)
 
 	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InputData) fftypes.DataRefs); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.InlineData) fftypes.DataRefs); ok {
 		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
@@ -153,7 +153,7 @@ func (_m *Manager) ResolveInputDataPrivate(ctx context.Context, ns string, inDat
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InputData) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.InlineData) error); ok {
 		r1 = rf(ctx, ns, inData)
 	} else {
 		r1 = ret.Error(1)

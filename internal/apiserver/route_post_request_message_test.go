@@ -22,26 +22,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostBroadcastMessage(t *testing.T) {
+func TestPostRequestMessage(t *testing.T) {
 	o, r := newTestAPIServer()
-	mbm := &broadcastmocks.Manager{}
-	o.On("Broadcast").Return(mbm)
+	msa := &syncasyncmocks.Bridge{}
+	o.On("SyncAsyncBridge").Return(msa)
 	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/broadcast/message", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/request/message", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
-		Return(&fftypes.Message{}, nil)
+	msa.On("RequestReply", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
+		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 202, res.Result().StatusCode)
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

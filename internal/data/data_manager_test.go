@@ -251,17 +251,17 @@ func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
 	assert.Regexp(t, "FF10196", err)
 }
 
-func TestResolveInputDataEmpty(t *testing.T) {
+func TestResolveInlineDataEmpty(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{})
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{})
 	assert.NoError(t, err)
 	assert.Empty(t, refs)
 
 }
 
-func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
+func TestResolveInlineDataRefIDOnlyOK(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -275,7 +275,7 @@ func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
 		Hash:      dataHash,
 	}, nil)
 
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID}},
 	})
 	assert.NoError(t, err)
@@ -284,7 +284,7 @@ func TestResolveInputDataRefIDOnlyOK(t *testing.T) {
 	assert.Equal(t, dataHash, refs[0].Hash)
 }
 
-func TestResolveInputDataBroadcastDataToPublish(t *testing.T) {
+func TestResolveInlineDataBroadcastDataToPublish(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -306,7 +306,7 @@ func TestResolveInputDataBroadcastDataToPublish(t *testing.T) {
 		PayloadRef: "blob/1",
 	}, nil)
 
-	refs, dtp, err := dm.ResolveInputDataBroadcast(ctx, "ns1", fftypes.InputData{
+	refs, dtp, err := dm.ResolveInlineDataBroadcast(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID}},
 	})
 	assert.NoError(t, err)
@@ -318,7 +318,7 @@ func TestResolveInputDataBroadcastDataToPublish(t *testing.T) {
 	assert.Equal(t, "blob/1", dtp[0].Blob.PayloadRef)
 }
 
-func TestResolveInputDataBroadcastResolveBlobFail(t *testing.T) {
+func TestResolveInlineDataBroadcastResolveBlobFail(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -337,13 +337,13 @@ func TestResolveInputDataBroadcastResolveBlobFail(t *testing.T) {
 	}, nil)
 	mdi.On("GetBlobMatchingHash", ctx, blobHash).Return(nil, fmt.Errorf("pop"))
 
-	_, _, err := dm.ResolveInputDataBroadcast(ctx, "ns1", fftypes.InputData{
+	_, _, err := dm.ResolveInlineDataBroadcast(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID}},
 	})
 	assert.EqualError(t, err, "pop")
 }
 
-func TestResolveInputDataRefBadNamespace(t *testing.T) {
+func TestResolveInlineDataRefBadNamespace(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -357,14 +357,14 @@ func TestResolveInputDataRefBadNamespace(t *testing.T) {
 		Hash:      dataHash,
 	}, nil)
 
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID, Hash: dataHash}},
 	})
 	assert.Regexp(t, "FF10204", err)
 	assert.Empty(t, refs)
 }
 
-func TestResolveInputDataRefBadHash(t *testing.T) {
+func TestResolveInlineDataRefBadHash(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -378,14 +378,14 @@ func TestResolveInputDataRefBadHash(t *testing.T) {
 		Hash:      dataHash,
 	}, nil)
 
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID, Hash: fftypes.NewRandB32()}},
 	})
 	assert.Regexp(t, "FF10204", err)
 	assert.Empty(t, refs)
 }
 
-func TestResolveInputDataRefLookkupFail(t *testing.T) {
+func TestResolveInlineDataRefLookkupFail(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -394,20 +394,20 @@ func TestResolveInputDataRefLookkupFail(t *testing.T) {
 
 	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
 
-	_, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	_, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{DataRef: fftypes.DataRef{ID: dataID, Hash: fftypes.NewRandB32()}},
 	})
 	assert.EqualError(t, err, "pop")
 }
 
-func TestResolveInputDataValueNoValidatorOK(t *testing.T) {
+func TestResolveInlineDataValueNoValidatorOK(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(nil)
 
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{Value: fftypes.Byteable(`{"some":"json"}`)},
 	})
 	assert.NoError(t, err)
@@ -416,20 +416,20 @@ func TestResolveInputDataValueNoValidatorOK(t *testing.T) {
 	assert.NotNil(t, refs[0].Hash)
 }
 
-func TestResolveInputDataValueNoValidatorStoreFail(t *testing.T) {
+func TestResolveInlineDataValueNoValidatorStoreFail(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("UpsertData", ctx, mock.Anything, false, false).Return(fmt.Errorf("pop"))
 
-	_, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	_, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{Value: fftypes.Byteable(`{"some":"json"}`)},
 	})
 	assert.EqualError(t, err, "pop")
 }
 
-func TestResolveInputDataValueWithValidation(t *testing.T) {
+func TestResolveInlineDataValueWithValidation(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -451,7 +451,7 @@ func TestResolveInputDataValueWithValidation(t *testing.T) {
 		}`),
 	}, nil)
 
-	refs, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	refs, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{
 			Datatype: &fftypes.DatatypeRef{
 				Name:    "customer",
@@ -465,7 +465,7 @@ func TestResolveInputDataValueWithValidation(t *testing.T) {
 	assert.NotNil(t, refs[0].ID)
 	assert.NotNil(t, refs[0].Hash)
 
-	_, err = dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	_, err = dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{
 			Datatype: &fftypes.DatatypeRef{
 				Name:    "customer",
@@ -477,11 +477,11 @@ func TestResolveInputDataValueWithValidation(t *testing.T) {
 	assert.Regexp(t, "FF10198", err)
 }
 
-func TestResolveInputDataNoRefOrValue(t *testing.T) {
+func TestResolveInlineDataNoRefOrValue(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 
-	_, err := dm.ResolveInputDataPrivate(ctx, "ns1", fftypes.InputData{
+	_, err := dm.ResolveInlineDataPrivate(ctx, "ns1", fftypes.InlineData{
 		{ /* missing */ },
 	})
 	assert.Regexp(t, "FF10205", err)

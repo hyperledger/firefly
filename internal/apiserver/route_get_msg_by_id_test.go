@@ -32,7 +32,7 @@ func TestGetMessageByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", false).
-		Return(&fftypes.MessageInput{}, nil)
+		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -45,7 +45,7 @@ func TestGetMessageByIDWithData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345", true).
-		Return(&fftypes.MessageInput{}, nil)
+		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

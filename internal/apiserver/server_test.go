@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
@@ -37,18 +38,23 @@ import (
 
 const configDir = "../../test/data/config"
 
-func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
+func newTestServer() (*orchestratormocks.Orchestrator, *apiServer) {
 	InitConfig()
 	mor := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	as := &apiServer{
+		apiTimeout: 5 * time.Second,
+	}
+	return mor, as
+}
+
+func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
+	mor, as := newTestServer()
 	r := as.createMuxRouter(mor)
 	return mor, r
 }
 
 func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
-	InitConfig()
-	mor := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mor, as := newTestServer()
 	r := as.createAdminMuxRouter(mor)
 	return mor, r
 }
@@ -97,8 +103,7 @@ func TestStartAdminFail(t *testing.T) {
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -124,8 +129,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 }
 
 func TestJSONHTTPResponseEncodeFail(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -150,8 +154,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 }
 
 func TestJSONHTTPNilResponseNon204(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -176,8 +179,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 }
 
 func TestJSONHTTPDefault500Error(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -202,8 +204,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 }
 
 func TestStatusCodeHintMapping(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -228,8 +229,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 }
 
 func TestStatusInvalidContentType(t *testing.T) {
-	mo := &orchestratormocks.Orchestrator{}
-	as := &apiServer{}
+	mo, as := newTestServer()
 	handler := as.routeHandler(mo, &oapispec.Route{
 		Name:            "testRoute",
 		Path:            "/test",
@@ -253,7 +253,7 @@ func TestStatusInvalidContentType(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
-	as := &apiServer{}
+	_, as := newTestServer()
 	handler := as.apiWrapper(as.notFoundHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
@@ -266,8 +266,58 @@ func TestNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10109", resJSON["error"])
 }
 
+func TestTimeout(t *testing.T) {
+	mo, as := newTestServer()
+	handler := as.routeHandler(mo, &oapispec.Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "POST",
+		JSONInputValue:  nil,
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONOutputCode:  204,
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+			<-r.Ctx.Done()
+			return nil, fmt.Errorf("timeout error")
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://%s/test", s.Listener.Addr()), bytes.NewReader([]byte(``)))
+	assert.NoError(t, err)
+	req.Header.Set("Request-Timeout", "250us")
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, 408, res.StatusCode)
+	var resJSON map[string]interface{}
+	json.NewDecoder(res.Body).Decode(&resJSON)
+	assert.Regexp(t, "FF10260.*timeout error", resJSON["error"])
+}
+
+func TestBadTimeout(t *testing.T) {
+	mo, as := newTestServer()
+	handler := as.routeHandler(mo, &oapispec.Route{
+		Name:            "testRoute",
+		Path:            "/test",
+		Method:          "POST",
+		JSONInputValue:  nil,
+		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+		JSONOutputCode:  204,
+		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+			return nil, nil
+		},
+	})
+	s := httptest.NewServer(http.HandlerFunc(handler))
+	defer s.Close()
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://%s/test", s.Listener.Addr()), bytes.NewReader([]byte(``)))
+	assert.NoError(t, err)
+	req.Header.Set("Request-Timeout", "bad timeout")
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, 204, res.StatusCode)
+}
+
 func TestSwaggerUI(t *testing.T) {
-	as := &apiServer{}
+	_, as := newTestServer()
 	handler := as.apiWrapper(as.swaggerUIHandler("http://localhost:5000/api/v1"))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
@@ -280,7 +330,7 @@ func TestSwaggerUI(t *testing.T) {
 }
 
 func TestSwaggerYAML(t *testing.T) {
-	as := &apiServer{}
+	_, as := newTestServer()
 	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345/api/v1"))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
@@ -335,4 +385,14 @@ func TestWaitForServerStop(t *testing.T) {
 	err = as.waitForServerStop(chl1, chl2)
 	assert.EqualError(t, err, "pop2")
 
+}
+
+func TestGetTimeoutMax(t *testing.T) {
+	_, as := newTestServer()
+	as.apiMaxTimeout = 1 * time.Second
+	req, err := http.NewRequest("GET", "http://test.example.com", bytes.NewReader([]byte(``)))
+	req.Header.Set("Request-Timeout", "1h")
+	assert.NoError(t, err)
+	timeout := as.getTimeout(req)
+	assert.Equal(t, 1*time.Second, timeout)
 }

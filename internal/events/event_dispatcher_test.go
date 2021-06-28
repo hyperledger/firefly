@@ -38,6 +38,7 @@ import (
 func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
 	mei := &eventsmocks.Plugin{}
+	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
 	rs := &replySender{
 		broadcast: &broadcastmocks.Manager{},
@@ -347,6 +348,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic1"},
 					Tag:    "tag1",
 					Group:  nil,
+					Author: "0x12345",
 				},
 			},
 		},
@@ -360,6 +362,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic1"},
 					Tag:    "tag2",
 					Group:  gid1,
+					Author: "0x23456",
 				},
 			},
 		},
@@ -373,6 +376,7 @@ func TestFilterEventsMatch(t *testing.T) {
 					Topics: fftypes.FFNameArray{"topic2"},
 					Tag:    "tag1",
 					Group:  nil,
+					Author: "0x12345",
 				},
 			},
 		},
@@ -411,6 +415,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	assert.Equal(t, *id2, *matched[0].ID)
 
 	ed.subscription.topicsFilter = nil
+	ed.subscription.authorFilter = nil
 	ed.subscription.groupFilter = regexp.MustCompile(gid1.String())
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
@@ -419,6 +424,14 @@ func TestFilterEventsMatch(t *testing.T) {
 	ed.subscription.groupFilter = regexp.MustCompile("^$")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 0, len(matched))
+
+	ed.subscription.groupFilter = nil
+	ed.subscription.topicsFilter = nil
+	ed.subscription.tagFilter = nil
+	ed.subscription.authorFilter = regexp.MustCompile("0x23456")
+	matched = ed.filterEvents(events)
+	assert.Equal(t, 1, len(matched))
+	assert.Equal(t, *id2, *matched[0].ID)
 
 }
 
@@ -773,7 +786,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
 		ID: event1,
-		Reply: &fftypes.MessageInput{
+		Reply: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Tag:  "myreplytag1",
@@ -781,14 +794,14 @@ func TestEventDispatcherWithReply(t *testing.T) {
 					Type: fftypes.MessageTypeBroadcast,
 				},
 			},
-			InputData: fftypes.InputData{
+			InlineData: fftypes.InlineData{
 				{Value: fftypes.Byteable(`"my reply"`)},
 			},
 		},
 	})
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
 		ID: event2,
-		Reply: &fftypes.MessageInput{
+		Reply: &fftypes.MessageInOut{
 			Message: fftypes.Message{
 				Header: fftypes.MessageHeader{
 					Tag:   "myreplytag2",
@@ -797,7 +810,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 					Group: fftypes.NewRandB32(),
 				},
 			},
-			InputData: fftypes.InputData{
+			InlineData: fftypes.InlineData{
 				{Value: fftypes.Byteable(`"my reply"`)},
 			},
 		},

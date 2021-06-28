@@ -43,7 +43,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -70,8 +70,8 @@ func TestSendMessageE2EOk(t *testing.T) {
 	}, nil).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
-	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
+	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
@@ -102,7 +102,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	nodeID1 := fftypes.NewUUID()
 	nodeID2 := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
@@ -135,14 +135,14 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
 
-	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
+	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				TxType: fftypes.TransactionTypeNone,
 				Group:  groupID,
 			},
 		},
-		InputData: fftypes.InputData{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
@@ -168,8 +168,8 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	mii := pm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", pm.ctx, "localorg").Return(nil, fmt.Errorf("pop"))
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
@@ -195,14 +195,14 @@ func TestSendMessageFail(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
-		InputData: fftypes.InputData{
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
@@ -220,8 +220,8 @@ func TestResolveAndSendBadMembers(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
-		InputData: fftypes.InputData{
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 	})
@@ -229,7 +229,7 @@ func TestResolveAndSendBadMembers(t *testing.T) {
 
 }
 
-func TestResolveAndSendBadInputData(t *testing.T) {
+func TestResolveAndSendBadInlineData(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -246,9 +246,9 @@ func TestResolveAndSendBadInputData(t *testing.T) {
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -277,11 +277,11 @@ func TestResolveAndSendSealFail(t *testing.T) {
 	}, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ /* missing */ },
 	}, nil)
 
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInput{
+	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -456,7 +456,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInputDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
@@ -468,14 +468,14 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	}
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInput{
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				TxType: fftypes.TransactionTypeNone,
 				Group:  groupID,
 			},
 		},
-		InputData: fftypes.InputData{
+		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{

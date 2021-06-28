@@ -25,7 +25,12 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInput) (out *fftypes.Message, err error) {
+func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+	in.Header.ID = nil
+	return pm.SendMessageWithID(ctx, ns, in)
+}
+
+func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {
@@ -51,14 +56,14 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	return &in.Message, err
 }
 
-func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInput) (err error) {
+func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) (err error) {
 	// Resolve the member list into a group
 	if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
 		return err
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	in.Message.Data, err = pm.data.ResolveInputDataPrivate(ctx, in.Header.Namespace, in.InputData)
+	in.Message.Data, err = pm.data.ResolveInlineDataPrivate(ctx, in.Header.Namespace, in.InlineData)
 	if err != nil {
 		return err
 	}
