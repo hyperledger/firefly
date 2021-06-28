@@ -103,7 +103,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		newPinNotifier:       newPinNotifier,
 		aggregator:           newAggregator(ctx, di, bm, pm, dm, newPinNotifier),
 	}
-	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsName)
+	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
 
 	var err error
@@ -154,6 +154,7 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 	if subDef.Transport == "" {
 		subDef.Transport = em.defaultTransport
 	}
+
 	// Check it can be parsed before inserting (the submanager will check again when processing the creation, so we discard the result)
 	if _, err = em.subManager.parseSubscriptionDef(ctx, subDef); err != nil {
 		return err

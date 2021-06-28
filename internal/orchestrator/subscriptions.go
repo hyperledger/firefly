@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -35,6 +36,10 @@ func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	if err := fftypes.ValidateFFNameField(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
 	}
+	if subDef.Transport == system.SystemEventsTransport {
+		return nil, i18n.NewError(ctx, i18n.MsgSystemTransportInternal)
+	}
+
 	return subDef, or.events.CreateDurableSubscription(ctx, subDef)
 }
 

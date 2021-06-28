@@ -106,7 +106,7 @@ func (sm *subscriptionManager) loadTransports() error {
 		uniqueTransports[transport] = true
 	}
 	// Cannot disable the internal listener
-	uniqueTransports[system.SystemEventsName] = true
+	uniqueTransports[system.SystemEventsTransport] = true
 	for transport := range uniqueTransports {
 		sm.transports[transport], err = eifactory.GetPlugin(sm.ctx, transport)
 		if err != nil {

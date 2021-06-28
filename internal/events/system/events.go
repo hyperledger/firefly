@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	SystemEventsName = "system"
+	SystemEventsTransport = "system"
 )
 
 // Events the system events listener is used for system components that need access to confirmed events,
@@ -43,7 +43,7 @@ type Events struct {
 
 type EventListener func(event *fftypes.EventDelivery) error
 
-func (se *Events) Name() string { return SystemEventsName }
+func (se *Events) Name() string { return SystemEventsTransport }
 
 func (se *Events) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) (err error) {
 	*se = Events{

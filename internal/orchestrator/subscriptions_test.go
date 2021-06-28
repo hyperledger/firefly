@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -51,6 +52,18 @@ func TestCreateSubscriptionBadName(t *testing.T) {
 		},
 	})
 	assert.Regexp(t, "FF10131", err)
+}
+
+func TestCreateSubscriptionSystemTransport(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
+	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
+		Transport: system.SystemEventsTransport,
+		SubscriptionRef: fftypes.SubscriptionRef{
+			Name: "sub1",
+		},
+	})
+	assert.Regexp(t, "FF10266", err)
 }
 
 func TestCreateSubscriptionOk(t *testing.T) {

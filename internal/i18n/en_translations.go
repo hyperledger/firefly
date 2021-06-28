@@ -183,4 +183,5 @@ var (
 	MsgRequestTimeoutDesc          = ffm("FF10263", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")
 	MsgWebhooksOptInputPath        = ffm("FF10264", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
 	MsgWebhooksOptInputReplyTx     = ffm("FF10265", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
+	MsgSystemTransportInternal     = ffm("FF10266", "You cannot create subscriptions on the system events transport")
 )
