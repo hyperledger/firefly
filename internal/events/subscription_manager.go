@@ -46,6 +46,7 @@ type subscription struct {
 
 type connection struct {
 	id          string
+	transport   string
 	matcher     events.SubscriptionMatcher
 	dispatchers map[fftypes.UUID]*eventDispatcher
 	ei          events.Plugin
@@ -191,9 +192,7 @@ func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
 	if sm.durableSubs[*subDef.ID] == nil {
 		sm.durableSubs[*subDef.ID] = newSub
 		for _, conn := range sm.connections {
-			if conn.matcher != nil && conn.matcher(subDef.SubscriptionRef) {
-				sm.matchedSubscriptionWithLock(conn, newSub)
-			}
+			sm.matchSubToConnLocked(conn, newSub)
 		}
 	}
 }
@@ -305,10 +304,12 @@ func (sm *subscriptionManager) getCreateConnLocked(ei events.Plugin, connID stri
 	if !ok {
 		conn = &connection{
 			id:          connID,
+			transport:   ei.Name(),
 			dispatchers: make(map[fftypes.UUID]*eventDispatcher),
 			ei:          ei,
 		}
 		sm.connections[connID] = conn
+		log.L(sm.ctx).Debugf("Registered connection %s for %s", conn.id, ei.Name())
 	}
 	return conn
 }
@@ -335,24 +336,19 @@ func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID strin
 	}
 	// Make new dispatchers for all durable subscriptions that match
 	for _, sub := range sm.durableSubs {
-		if conn.matcher(sub.definition.SubscriptionRef) {
-			sm.matchedSubscriptionWithLock(conn, sub)
-		}
+		sm.matchSubToConnLocked(conn, sub)
 	}
 
 	return nil
 }
 
-func (sm *subscriptionManager) matchedSubscriptionWithLock(conn *connection, sub *subscription) {
-	ei, foundTransport := sm.transports[sub.definition.Transport]
-	if foundTransport {
+func (sm *subscriptionManager) matchSubToConnLocked(conn *connection, sub *subscription) {
+	if conn.transport == sub.definition.Transport && conn.matcher(sub.definition.SubscriptionRef) {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
+			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
-	} else {
-		log.L(sm.ctx).Warnf("Subscription %s:%s [%s] defined for unknown transport '%s", sub.definition.Namespace, sub.definition.Name, sub.definition.ID, sub.definition.Transport)
 	}
 }
 
@@ -390,6 +386,9 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher
+
+	log.L(sm.ctx).Infof("Created new %s ephemeral subscription %s:%s for connID=%s", ei.Name(), namespace, subID, connID)
+
 	return nil
 }
 
@@ -421,18 +420,18 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	if ok && inflight.Subscription.ID != nil {
 		dispatcher = conn.dispatchers[*inflight.Subscription.ID]
 	}
-	sm.mux.Unlock()
-
 	if ok && conn.ei != ei {
 		err := i18n.NewError(sm.ctx, i18n.MsgMismatchedTransport, connID, ei.Name(), conn.ei.Name())
 		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		sm.mux.Unlock()
 		return
 	}
 	if dispatcher == nil {
 		err := i18n.NewError(sm.ctx, i18n.MsgConnSubscriptionNotStarted, inflight.Subscription.ID)
 		log.L(sm.ctx).Errorf("Invalid DeliveryResponse callback from plugin: %s", err)
+		sm.mux.Unlock()
 		return
 	}
-
+	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
 }

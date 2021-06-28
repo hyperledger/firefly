@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/mattn/go-isatty"
 	image2ascii "github.com/qeesung/image2ascii/convert"
 )
 
@@ -390,16 +389,15 @@ func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 	assert.NotNil(t, reply)
 
 	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")
-	t.Logf(bodyData)
-	b, err := base64.RawStdEncoding.DecodeString(bodyData)
+	b, err := base64.StdEncoding.DecodeString(bodyData)
 	assert.NoError(t, err)
 	ffImg, err := png.Decode(bytes.NewReader(b))
 	assert.NoError(t, err)
 
 	convertOptions := image2ascii.DefaultOptions
-	convertOptions.FixedWidth = 32
-	convertOptions.FixedHeight = 32
-	convertOptions.Colored = isatty.IsTerminal(os.Stdout.Fd())
+	convertOptions.FixedWidth = 80
+	convertOptions.FixedHeight = 60
+	convertOptions.Colored = true
 
 	converter := image2ascii.NewImageConverter()
 	fmt.Print(converter.Image2ASCIIString(ffImg, &convertOptions))

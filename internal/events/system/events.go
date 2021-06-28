@@ -43,10 +43,10 @@ type Events struct {
 
 type EventListener func(event *fftypes.EventDelivery) error
 
-func (ie *Events) Name() string { return SystemEventsName }
+func (se *Events) Name() string { return SystemEventsName }
 
-func (ie *Events) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) (err error) {
-	*ie = Events{
+func (se *Events) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) (err error) {
+	*se = Events{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
@@ -55,44 +55,44 @@ func (ie *Events) Init(ctx context.Context, prefix config.Prefix, callbacks even
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection(ie.connID, func(sr fftypes.SubscriptionRef) bool { return true })
+	return callbacks.RegisterConnection(se.connID, func(sr fftypes.SubscriptionRef) bool { return true })
 }
 
-func (ie *Events) Capabilities() *events.Capabilities {
-	return ie.capabilities
+func (se *Events) Capabilities() *events.Capabilities {
+	return se.capabilities
 }
 
-func (ie *Events) GetOptionsSchema(ctx context.Context) string {
+func (se *Events) GetOptionsSchema(ctx context.Context) string {
 	return `{}`
 }
 
-func (ie *Events) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+func (se *Events) ValidateOptions(options *fftypes.SubscriptionOptions) error {
 	return nil
 }
 
-func (ie *Events) AddListener(ns string, el EventListener) error {
+func (se *Events) AddListener(ns string, el EventListener) error {
 	no := false
 	newest := fftypes.SubOptsFirstEventNewest
-	err := ie.callbacks.EphemeralSubscription(ie.connID, ns, &fftypes.SubscriptionFilter{ /* all events */ }, &fftypes.SubscriptionOptions{
+	err := se.callbacks.EphemeralSubscription(se.connID, ns, &fftypes.SubscriptionFilter{ /* all events */ }, &fftypes.SubscriptionOptions{
 		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
 			WithData:   &no,
-			ReadAhead:  &ie.readAhead,
+			ReadAhead:  &se.readAhead,
 			FirstEvent: &newest,
 		},
 	})
 	if err != nil {
 		return err
 	}
-	ie.mux.Lock()
-	ie.listeners[ns] = append(ie.listeners[ns], el)
-	ie.mux.Unlock()
+	se.mux.Lock()
+	se.listeners[ns] = append(se.listeners[ns], el)
+	se.mux.Unlock()
 	return nil
 }
 
-func (ie *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
-	ie.mux.Lock()
-	defer ie.mux.Unlock()
-	for ns, listeners := range ie.listeners {
+func (se *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error {
+	se.mux.Lock()
+	defer se.mux.Unlock()
+	for ns, listeners := range se.listeners {
 		if event.Event.Namespace == ns {
 			for _, el := range listeners {
 				if err := el(event); err != nil {
@@ -101,7 +101,7 @@ func (ie *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, even
 			}
 		}
 	}
-	ie.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+	se.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
 		ID:           event.ID,
 		Rejected:     false,
 		Subscription: event.Subscription,

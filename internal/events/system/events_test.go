@@ -1,6 +1,6 @@
 // Copyright © 2021 Kaleido, Inc.
 //
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifser: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,7 +10,7 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implsed.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestEvents(t *testing.T) (ie *Events, cancel func()) {
+func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	config.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
@@ -37,42 +37,42 @@ func newTestEvents(t *testing.T) (ie *Events, cancel func()) {
 	rc.RunFn = func(a mock.Arguments) {
 		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(fftypes.SubscriptionRef{}))
 	}
-	ie = &Events{}
+	se = &Events{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	svrPrefix := config.NewPluginConfig("ut.events")
-	ie.InitPrefix(svrPrefix)
-	ie.Init(ctx, svrPrefix, cbs)
-	assert.Equal(t, "system", ie.Name())
-	assert.NotNil(t, ie.Capabilities())
-	assert.NotNil(t, ie.GetOptionsSchema(ie.ctx))
-	assert.Nil(t, ie.ValidateOptions(&fftypes.SubscriptionOptions{}))
-	return ie, cancelCtx
+	se.InitPrefix(svrPrefix)
+	se.Init(ctx, svrPrefix, cbs)
+	assert.Equal(t, "system", se.Name())
+	assert.NotNil(t, se.Capabilities())
+	assert.NotNil(t, se.GetOptionsSchema(se.ctx))
+	assert.Nil(t, se.ValidateOptions(&fftypes.SubscriptionOptions{}))
+	return se, cancelCtx
 }
 
 func TestDeliveryRequestOk(t *testing.T) {
 
-	ie, cancel := newTestEvents(t)
+	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := ie.callbacks.(*eventsmocks.Callbacks)
+	cbs := se.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
-	cbs.On("DeliveryResponse", ie.connID, mock.Anything).Return(nil)
+	cbs.On("DeliveryResponse", se.connID, mock.Anything).Return(nil)
 
 	called := 0
-	err := ie.AddListener("ns1", func(event *fftypes.EventDelivery) error {
+	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error {
 		called++
 		return nil
 	})
 	assert.NoError(t, err)
 
-	err = ie.DeliveryRequest(ie.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
+	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns1",
 		},
 	}, nil)
 	assert.NoError(t, err)
 
-	err = ie.DeliveryRequest(ie.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
+	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns2",
 		},
@@ -86,18 +86,18 @@ func TestDeliveryRequestOk(t *testing.T) {
 
 func TestDeliveryRequestFail(t *testing.T) {
 
-	ie, cancel := newTestEvents(t)
+	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := ie.callbacks.(*eventsmocks.Callbacks)
+	cbs := se.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 
-	err := ie.AddListener("ns1", func(event *fftypes.EventDelivery) error {
+	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error {
 		return fmt.Errorf("pop")
 	})
 	assert.NoError(t, err)
 
-	err = ie.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
+	err = se.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
 		Event: fftypes.Event{
 			Namespace: "ns1",
 		},
@@ -108,13 +108,13 @@ func TestDeliveryRequestFail(t *testing.T) {
 
 func TestAddListenerFail(t *testing.T) {
 
-	ie, cancel := newTestEvents(t)
+	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := ie.callbacks.(*eventsmocks.Callbacks)
+	cbs := se.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := ie.AddListener("ns1", func(event *fftypes.EventDelivery) error { return nil })
+	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error { return nil })
 	assert.EqualError(t, err, "pop")
 
 }
