@@ -386,3 +386,13 @@ func TestWaitForServerStop(t *testing.T) {
 	assert.EqualError(t, err, "pop2")
 
 }
+
+func TestGetTimeoutMax(t *testing.T) {
+	_, as := newTestServer()
+	as.apiMaxTimeout = 1 * time.Second
+	req, err := http.NewRequest("GET", "http://test.example.com", bytes.NewReader([]byte(``)))
+	req.Header.Set("Request-Timeout", "1h")
+	assert.NoError(t, err)
+	timeout := as.getTimeout(req)
+	assert.Equal(t, 1*time.Second, timeout)
+}

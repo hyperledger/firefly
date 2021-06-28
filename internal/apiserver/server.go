@@ -60,6 +60,7 @@ type apiServer struct {
 	maxFilterLimit     uint64
 	maxFilterSkip      uint64
 	apiTimeout         time.Duration
+	apiMaxTimeout      time.Duration
 }
 
 func InitConfig() {
@@ -73,6 +74,7 @@ func NewAPIServer() Server {
 		maxFilterLimit:     uint64(config.GetUint(config.APIMaxFilterLimit)),
 		maxFilterSkip:      uint64(config.GetUint(config.APIMaxFilterSkip)),
 		apiTimeout:         config.GetDuration(config.APIRequestTimeout),
+		apiMaxTimeout:      config.GetDuration(config.APIRequestMaxTimeout),
 	}
 }
 
@@ -284,25 +286,33 @@ func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, 
 	return status, nil
 }
 
+func (as *apiServer) getTimeout(req *http.Request) time.Duration {
+	// Configure a server-side timeout on each request, to try and avoid cases where the API requester
+	// times out, and we continue to churn indefinitely processing the request.
+	// Long-running processes should be dispatched asynchronously (API returns 202 Accepted asap),
+	// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
+	// This is dependent on the context being passed down through to all blocking operations down the stack
+	// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
+	reqTimeout := as.apiTimeout
+	reqTimeoutHeader := req.Header.Get("Request-Timeout")
+	if reqTimeoutHeader != "" {
+		customTimeout, err := fftypes.ParseDurationString(reqTimeoutHeader, time.Second /* default is seconds */)
+		if err != nil {
+			log.L(req.Context()).Warnf("Invalid Request-Timeout header '%s': %s", reqTimeoutHeader, err)
+		} else {
+			reqTimeout = time.Duration(customTimeout)
+			if reqTimeout > as.apiMaxTimeout {
+				reqTimeout = as.apiMaxTimeout
+			}
+		}
+	}
+	return reqTimeout
+}
+
 func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 
-		// Configure a server-side timeout on each request, to try and avoid cases where the API requester
-		// times out, and we continue to churn indefinitely processing the request.
-		// Long-running processes should be dispatched asynchronously (API returns 202 Accepted asap),
-		// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
-		// This is dependent on the context being passed down through to all blocking operations down the stack
-		// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-		reqTimeout := as.apiTimeout
-		reqTimeoutHeader := req.Header.Get("Request-Timeout")
-		if reqTimeoutHeader != "" {
-			customTimeout, err := fftypes.ParseDurationString(reqTimeoutHeader, time.Second /* default is seconds */)
-			if err != nil {
-				log.L(req.Context()).Warnf("Invalid Request-Timeout header '%s': %s", reqTimeoutHeader, err)
-			} else {
-				reqTimeout = time.Duration(customTimeout)
-			}
-		}
+		reqTimeout := as.getTimeout(req)
 		ctx, cancel := context.WithTimeout(req.Context(), reqTimeout)
 		httpReqID := fftypes.ShortID()
 		ctx = log.WithLogField(ctx, "httpreq", httpReqID)
