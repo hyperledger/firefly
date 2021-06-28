@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -228,9 +229,12 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 		// Choose to add an additional dynamic path
 		inputPath := input.GetString("path")
 		if inputPath != "" {
-			extraPath := firstData.GetString(inputPath)
+			extraPath := strings.TrimPrefix(firstData.GetString(inputPath), "/")
 			if len(extraPath) > 0 {
-				req.url = strings.TrimSuffix(req.url, "/") + "/" + strings.TrimPrefix(extraPath, "/")
+				pathSegments := strings.Split(extraPath, "/")
+				for _, ps := range pathSegments {
+					req.url = strings.TrimSuffix(req.url, "/") + "/" + url.PathEscape(ps)
+				}
 			}
 		}
 		// Choose to add an additional dynamic path

@@ -122,7 +122,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	defer cancel()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/myapi/my/sub/path", func(res http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/myapi/my/sub/path?escape_query", func(res http.ResponseWriter, req *http.Request) {
 		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
 		assert.Equal(t, "dynamicheaderval", req.Header.Get("Dynamic-Header"))
 		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
@@ -199,7 +199,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 			"in_headers": {
 				"dynamic-header": "dynamicheaderval"
 			},
-			"in_path": "/my/sub/path",
+			"in_path": "/my/sub/path?escape_query",
 			"in_replytx": true
 		}`),
 	}
