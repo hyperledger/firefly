@@ -32,6 +32,7 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 
 - CLI / Developer experience - https://github.com/hyperledger-labs/firefly-cli
 - UI Explorer - https://github.com/hyperledger-labs/firefly-ui
+- Sample applications - https://github.com/hyperledger-labs/firefly-samples
 - Core (this repo) - https://github.com/hyperledger-labs/firefly
 - HTTP Data Exchange - https://github.com/hyperledger-labs/firefly-dataexchange-https
 - Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger-labs/firefly-ethconnect
