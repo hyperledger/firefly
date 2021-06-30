@@ -7,4 +7,4 @@ has_children: true
 
 # Key Concepts
 
-Use this section to familiarize yourself with the core tenets and runtimes underpinning FireFly. 
+Use this section to find out what FireFly is, and the problem it is designed to solve in a modern multi-party system.
