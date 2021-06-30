@@ -13,6 +13,7 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210521165626-8a1a8534dc64
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -48,7 +49,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
-	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
+	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/text v0.3.6
 	golang.org/x/tools v0.1.3 // indirect
