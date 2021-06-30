@@ -2,6 +2,7 @@
 
 [![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger-labs/firefly)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger-labs/firefly)](https://goreportcard.com/report/github.com/hyperledger-labs/firefly)
+[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://labs.hyperledger.org/firefly/)
 
 FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
 
@@ -10,7 +11,7 @@ FireFly focusses on:
 - Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
 - Making proven multi-party system patterns easy for new projects to adopt
 - Providing developer friendly access to custom transactions+events in the underlying blockchain platforms
-- Giving visbility and control on the private data exchange that occurs between businesses in a multi-party system
+- Giving visibility and control on the private data exchange that occurs between businesses in a multi-party system
 - Simplifying the journey of building multi-party business processes, by empowering non-blockchain developers to build great APIs+UX
 
 You will see enterprise focussed code in FireFly solving hard "plumbing" problems like on-chain/off-chain event sequencing and aggregation, and enough smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin, NodeRED etc.
@@ -19,9 +20,9 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
 
-Please see the
-[Hyperledger FireFly proposal document](https://github.com/hyperledger-labs/hyperledger-hip/blob/gh-pages/HIPs/firefly.md)
-for more information about the project goals and architecture.
+## Documentation
+
+https://labs.hyperledger.org/firefly/
 
 ## FireFly repos
 
