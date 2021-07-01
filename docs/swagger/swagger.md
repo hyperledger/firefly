@@ -13,13 +13,6 @@ Note: The 'Try it out' buttons will not work on this page, because it's not runn
 
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
 
-<style>
-
-.topbar {
-    display:none;
-}
-</style>
-
 <div id="swagger-ui"></div>
 
 <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
@@ -38,7 +31,7 @@ window.onload = function() {
     plugins: [
         SwaggerUIBundle.plugins.DownloadUrl
     ],
-    layout: "StandaloneLayout"
+    layout: "BaseLayout"
     });
 
     window.ui = ui;
