@@ -1,11 +1,11 @@
 ---
 layout: default
-title: Simplest Transaction Flow - Ping Pong
+title: Example Transaction Flow
 parent: Architecture
 nav_order: 3
 ---
 
-# Simplest Transaction Flow - Ping Pong
+# Example Transaction Flow (Ping Pong)
 {: .no_toc }
 
 ## Table of contents
@@ -18,7 +18,7 @@ nav_order: 3
 
 ## Overview 
 
-![Simple Ping Pong Tx Flow](../images/ping_pong.jpg "Simple Ping Pong Tx Flow")
+[![Simple Ping Pong Tx Flow](../images/ping_pong.svg "Simple Ping Pong Tx Flow")](../images/ping_pong.svg)
 
 This demonstrates the problem that at its core FireFly is there to solve. The internal plumbing complexity of just a very simple set of Enterprise blockchain / multi-party system interactions.
 

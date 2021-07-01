@@ -16,7 +16,7 @@ nav_order: 2
 
 ---
 
-![Multiparty Event Sequencing](../images/multiparty_event_sequencing.jpg "Multiparty Event Sequencing")
+[![Multiparty Event Sequencing](../images/global_sequencing.svg "Multiparty Event Sequencing")](../images/global_sequencing.svg)
 
 ## Transaction Submission
 

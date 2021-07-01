@@ -44,4 +44,3 @@ party retains sovereignty over:
   - Their business processes
   - Their proprietary business logic
   - Their internal business processes and IT controls
-

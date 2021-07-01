@@ -19,8 +19,8 @@ members, and also need to be available to new members that join the network
 ## Blockchain backed broadcast
 
 In order to maintain a complete history of all broadcast data for new members
-joining the network, FireFly uses the blockchain as the authoritative source
-of truth for broadcast data.
+joining the network, FireFly uses the blockchain to sequence the broadcasts
+with pinning transactions referring to the data itself.
 
 Using the blockchain also gives a global order of events for these broadcasts,
 which allows them to be processed by each member in a way that allows them
@@ -60,6 +60,14 @@ all parties in the network:
   - See _Agreed datatypes_ for more information
 - Namespaces
   - See _Namespaces_ for more information
+
+These definitions rely on the same assurances provided by blockchain backed
+broadcast that FireFly applications do.
+
+- Verification of the identity of the party in the network that performed the broadcast
+- Deterministic assignment of a namespace+name to an unique item of data
+  - If two parties in the network broadcast the same data at similar times, the
+    same one "wins" for all parties in the network (including the broadcaster)
 
 ## Network Registry
 
