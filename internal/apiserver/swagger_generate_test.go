@@ -46,6 +46,6 @@ func TestDownloadSwaggerYAML(t *testing.T) {
 	assert.NoError(t, err)
 	err = doc.Validate(context.Background())
 	assert.NoError(t, err)
-	err = os.WriteFile(filepath.Join("..", "..", "docs", "swagger.yaml"), b, 0644)
+	err = os.WriteFile(filepath.Join("..", "..", "docs", "swagger", "swagger.yaml"), b, 0644)
 	assert.NoError(t, err)
 }
