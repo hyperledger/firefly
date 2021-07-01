@@ -74,7 +74,3 @@ automation or efficiency you need in your multi-party process. Here making the i
 bespoke on-chain logic, or apply advanced cryptographic techniques, is the linchpin to a successful
 multi-party ecosystem.
 
-## How it works
-
-[![Global Event Sequencing](../images/global_sequencing.svg "Global Event Sequencing")](../images/global_sequencing.svg)
-
