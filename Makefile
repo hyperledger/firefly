@@ -59,3 +59,5 @@ builddeps:
 		$(VGO) get github.com/golangci/golangci-lint/cmd/golangci-lint
 deps: builddeps
 		$(VGO) get
+swagger:
+		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
