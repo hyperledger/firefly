@@ -13,6 +13,16 @@ Note: The 'Try it out' buttons will not work on this page, because it's not runn
 
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
 
+<style>
+code {
+    background-color: inherit;
+    border: inherit;
+}
+td, th {
+    background-color: inherit;
+}
+</style>
+
 <div id="swagger-ui"></div>
 
 <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
