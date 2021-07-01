@@ -3,7 +3,7 @@ RUN apk add make gcc build-base curl git
 WORKDIR /firefly
 ADD go.mod go.sum ./
 RUN go mod download
-ENV UI_RELEASE "https://github.com/hyperledger-labs/firefly-ui/releases/download/v0.1.0/v0.1.0_3d0e531.tgz"
+ENV UI_RELEASE "https://github.com/hyperledger-labs/firefly-ui/releases/download/v0.1.2/v0.1.2_a1c8039.tgz"
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
@@ -16,7 +16,7 @@ RUN npm install
 RUN npm config set user 0
 RUN npx truffle compile
 
-FROM alpine:latest  
+FROM alpine:latest
 WORKDIR /firefly
 COPY --from=firefly-builder /firefly/firefly ./firefly
 COPY --from=firefly-builder /firefly/frontend/ /firefly/frontend/
