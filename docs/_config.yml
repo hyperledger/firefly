@@ -8,4 +8,4 @@ aux_links:
   "Chat":
     - "https://chat.hyperledger.org/channel/firefly-lab"
 
-theme: jekyll-theme-cayman
+theme: just-the-docs
