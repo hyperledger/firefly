@@ -50,9 +50,9 @@ However, the on-chain logic can be anything supported by the blockchain itself.
 
 FireFly is deliberately one step detached from the deployment, upgrade, and maintenance of this
 on-chain logic. This approach applies to both the foundational constructs, and the fully custom
-on-chain logic. We leave the best practice on this specialist activity is left to the domain of
-the individual blockchain communities. However, the CLI automation for developers does automate
-deployment of  building blocks to get you started.
+on-chain logic. We leave the best practice on this specialist activity to the the individual
+blockchain communities. However, the CLI for developers does automate deployment of a reference
+set of contracts to get you started.
 
 A popular approach to innovation in enterprise use cases, is to make small internal customizations
 to the operation of standardized peer-reviewed logic (such as token contracts), without updating
