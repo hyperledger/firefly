@@ -6,8 +6,17 @@ nav_order: 7
 ---
 
 # Broadcast / shared data
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Introduction
 
 Multi-party systems are about establishing a shared source of truth, and
 often that needs to include certain reference data that is available

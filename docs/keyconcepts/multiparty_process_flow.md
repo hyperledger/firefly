@@ -6,8 +6,17 @@ nav_order: 8
 ---
 
 # Multi-party process flow
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Building multi-party flows
 
 The ability to globally sequence events _across parties_ is a game changing capability of multi-party
 systems. FireFly is designed to allow developers to harnesses that power in the application layer, to build

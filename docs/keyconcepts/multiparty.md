@@ -6,8 +6,17 @@ nav_order: 1
 ---
 
 # Enterprise multi-party systems
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Introduction
 
 Multi-party systems are a class of application empowered by the technology revolution
 of blockchain digital ledger technology (DLT), and emerging cryptographic proof technologies
@@ -32,6 +41,8 @@ The technology is most powerful in ecosystems of "coopetition", where privacy an
 requirements are high. Multi-party systems establish new models of trust, with easy to
 prove outcomes that minimize the need for third party arbitration, and costly investigation
 into disputes.
+
+## Points of difference
 
 Integration with existing systems of record is critical to unlock the potential
 of these new ecosystems. So multi-party systems embrace the existing investments of

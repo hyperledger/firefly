@@ -6,8 +6,17 @@ nav_order: 2
 ---
 
 # The FireFly problem statement
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## The importance of the application layer
 
 Multi-party systems always have an application layer, and what makes them different to a third party
 as-a-service centralized solution, is that each member runs a copy of that application layer.

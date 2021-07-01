@@ -6,8 +6,17 @@ nav_order: 6
 ---
 
 # Private data exchange
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Introduction
 
 Private data exchange is the way most enterprise business-to-business communication
 happens today. One party private sends data to another, over a pipe that has been

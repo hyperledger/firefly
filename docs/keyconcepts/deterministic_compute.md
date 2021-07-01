@@ -6,8 +6,17 @@ nav_order: 5
 ---
 
 # Deterministic compute
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Introduction
 
 A critical aspect of designing a multi-party systems, is choosing where you exploit
 the blockchain and other advanced cryptography technology to automate agreement
@@ -37,7 +46,7 @@ Also that multi-party systems include a mixture of approaches in addition to det
 compute, including traditional off-chain secure HTTP/Messaging, documents, private
 non-deterministic logic, and human workflows.
 
-## The fundamentals
+## The fundamental building blocks
 
 There are some fundamental types of deterministic computation, that can be proved with
 mature blockchain technology, and all multi-party systems should consider exploiting:

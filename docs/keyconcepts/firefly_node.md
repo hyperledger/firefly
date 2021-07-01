@@ -6,8 +6,17 @@ nav_order: 3
 ---
 
 # The FireFly node
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## FireFly node runtimes
 
 A FireFly node is a collection of multiple microservice runtimes with a single unified HTTPS/Websocket API (exposed by the Core).
 

@@ -6,8 +6,17 @@ nav_order: 4
 ---
 
 # Blockchain protocols
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ---
+
+## Supporting multiple blockchain protocols
 
 A blockchain DLT technology is usually the beating heart of a multi-party system, critical to the
 new trust and privacy models being established.
@@ -19,6 +28,8 @@ non-functional requirements of your business network, and still benefit from the
 friendly APIs, event-driven programming model, and on-chain/off-chain coordination provided by FireFly.
 
 ![FireFly Multiple Blockchain Protocols](../images/multi_protocol.png "FireFly Multiple Blockchain Protocols")
+
+## Core constructs and custom on-chain logic
 
 Core blockchain programming patterns like pinning proofs to the chain, fungible tokens,
 and non-fungible tokens are abstracted into a common API, so that higher level services can
@@ -79,7 +90,8 @@ There are sub-communities building the blockchain interfaces for each of the "bi
   - Repo: [hyperledger-labs/firefly-fabricconnect](https://github.com/hyperledger-labs/firefly-fabricconnect)
 
 > _Each FireFly network is tied to a single blockchain technology. Watch this space for
-> evolution of pluggable bridges for tokens, assets and data between FireFly networks._
+> evolution of pluggable bridges for tokens, assets and data between networks through
+> FireFly plugins._
 
 ## Need help choosing the right blockchain ledger technology?
 

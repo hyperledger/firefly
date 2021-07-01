@@ -1,11 +1,11 @@
 ---
 layout: default
-title: FireFly CLI
+title: Install the FireFly CLI
 parent: Getting Started
 nav_order: 1
 ---
 
-# FireFly CLI
+# Install the FireFly CLI
 {: .no_toc }
 
 ## Table of contents
@@ -16,7 +16,23 @@ nav_order: 1
 
 ---
 
-The quickest way to get started with a local FireFly stack is through the [FireFly CLI](https://github.com/hyperledger-labs/firefly-cli).  This will provide you with a set of Docker containers encapsulating the core FireFly componentry, all of which you can easily start, stop and remove from your machine with simple `ff` commands and the associatedflags.  
+## FireFly CLI
 
-Once you have successfully installed and interacted with the FireFly CLI, you can extend your usage with the lightweight 
-[Private Data Transfer](https://github.com/hyperledger-labs/firefly-samples/tree/main/private-data-transfer-cli) sample application which implements a basic CLI workflow, along with same flow hosted on a React frontend.
+The FireFly CLI helps you start and administer a local FireFly development environment.
+
+## References and Dependencies
+
+* [CLI Repo README](https://github.com/hyperledger-labs/firefly-cli)
+* [Go](https://golang.org/doc/install) - latest version recommended (v1.16.5)
+  - If you haven't installed Go previously, make sure to add to your `$PATH` env variable - `$HOME/go/bin`
+* [Docker](https://docs.docker.com/docker-for-mac/install/) - the CLI will download the requisite FireFly images and bootstrap a collection of containers (Ethereum adapter, FireFly Core, IPFS, local Ganache blockchain, postgres, etc.)
+
+## Get the CLI
+
+> Binary distributions coming soon - see https://github.com/hyperledger-labs/firefly/issues/77
+
+* On Go 1.16 or newer
+  - `go install github.com/hyperledger-labs/firefly-cli/ff@latest`
+* On earlier versions of Go
+  - `go get github.com/hyperledger-labs/firefly-cli/ff`
+
