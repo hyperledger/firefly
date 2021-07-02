@@ -1,0 +1,111 @@
+{{- if .Values.dataexchange.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "firefly.fullname" . }}-dx
+  labels:
+    {{- include "firefly.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "firefly.fullname" . }}-dx
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "firefly.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/dataexchange/secret.yaml") . | sha256sum }}
+        {{- if .Values.dataexchange.certificate.enabled }}
+        checksum/certificate: {{ include (print $.Template.BasePath "/dataexchange/certificate.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.dataexchange.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "firefly.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.dataexchange.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.dataexchange.podSecurityContext | nindent 8 }}
+      containers:
+        - name: dx
+          securityContext:
+            {{- toYaml .Values.dataexchange.securityContext | nindent 12 }}
+          image: "{{ .Values.dataexchange.image.repository }}:{{ .Values.dataexchange.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.dataexchange.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: p2p
+              containerPort: 3001
+              protocol: TCP
+{{/*          livenessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+{{/*          readinessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+          resources:
+            {{- toYaml .Values.dataexchange.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /data/peer-certs
+              name: {{ include "firefly.fullname" . }}-dx-peer-certs
+            - mountPath: /data/peers
+              name: {{ include "firefly.fullname" . }}-dx-peers
+            - mountPath: /data/config.json
+              name: config
+              subPath: config.json
+            - mountPath: /data/key.pem
+              name: tls
+              subPath: tls.key
+            - mountPath: /data/cert.pem
+              name: tls
+              subPath: tls.crt
+            - mountPath: /data/ca.pem
+              name: tls
+              subPath: ca.crt
+      {{- with .Values.dataexchange.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dataexchange.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.dataexchange.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          secret:
+            secretName: "{{ include "firefly.fullname" . }}-dx-config"
+        - name: tls
+          secret:
+            secretName: {{ if and .Values.dataexchange.certificate.enabled (not .Values.dataexchange.tlsSecret.enabled) }}"{{ include "firefly.fullname" . }}-dx-tls"{{ else }}{{ .Values.dataexchange.tlsSecret.name }}{{ end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ include "firefly.fullname" . }}-dx-peer-certs
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: {{ include "firefly.fullname" . }}-dx-peers
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+{{- end }}

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "firefly.fullname" . }}
+  labels:
+    {{- include "firefly.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.core.service.type }}
+  clusterIP: None
+  ports:
+    {{- if .Values.config.debugEnabled }}
+    - port: {{ .Values.core.service.debugPort }}
+      targetPort: debug
+      protocol: TCP
+      name: debug
+    {{- end }}
+    - port: {{ .Values.core.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.config.adminEnabled }}
+    - port: {{ .Values.core.service.adminPort }}
+      targetPort: admin
+      protocol: TCP
+      name: admin
+    {{- end }}
+  selector:
+    {{- include "firefly.selectorLabels" . | nindent 4 }}

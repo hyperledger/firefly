@@ -1,0 +1,25 @@
+config:
+  debugEnabled: true
+  adminEnabled: true
+  preInit: false
+
+  organizationName: "firefly-os"
+  organizationIdentity: "0xeb7284ce905e0665b7d42cabe31c76c45da1d331"
+  fireflyContractAddress: "0xeb7284ce905e0665b7d42cabe31c76c45da1d254"
+
+  ethconnectUrl: "http://ethconnect.firefly-os"
+
+  postgresUrl: "postgres://postgres:firef1y@postgresql:5432?sslmode=disable"
+
+  ipfsApiUrl: "http://ipfs.firefly-os:5001"
+  ipfsGatewayUrl: "http://ipfs.firefly-os:8080"
+
+dataexchange:
+  certificate:
+    enabled: true
+    issuerRef:
+      kind: ClusterIssuer
+      name: selfsigned-ca
+
+  tlsSecret:
+    enabled: false

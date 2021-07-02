@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "firefly.fullname" . }}
+  labels:
+    {{- include "firefly.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "firefly.fullname" . }}
+  updateStrategy:
+    type: RollingUpdate
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "firefly.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/core/secret.yaml") . | sha256sum }}
+        {{- with .Values.core.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "firefly.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.core.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.core.podSecurityContext | nindent 8 }}
+{{/*      initContainers:*/}}
+{{/*        - name: psql-ready*/}}
+{{/*          image: "{{ .Values.postgresql.image.registry }}/{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"*/}}
+{{/*          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}*/}}
+{{/*          command:*/}}
+{{/*            - sh*/}}
+{{/*            - -c*/}}
+{{/*            {{- if .Values.postgresql.enabled }}*/}}
+{{/*            - 'until pg_isready -h {{ .Values.postgresql.fullnameOverride }} -p 5432; do echo "waiting for database"; sleep 2; done;'*/}}
+{{/*            {{- else }}*/}}
+{{/*            - 'until pg_isready -h {{ .Values.config.postgresHostname }} -p {{ .Values.config.postgresPort }}; do echo "waiting for database"; sleep 2; done;'*/}}
+{{/*            {{- end }}*/}}
+      containers:
+        - name: firefly
+          securityContext:
+            {{- toYaml .Values.core.securityContext | nindent 12 }}
+          image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          ports:
+            {{- if .Values.config.debugEnabled }}
+            - name: debug
+              containerPort: 6060
+              protocol: TCP
+            {{- end }}
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+            {{- if .Values.config.adminEnabled }}
+            - name: admin
+              containerPort: 5001
+              protocol: TCP
+            {{- end }}
+{{/*          livenessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+{{/*          readinessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+          volumeMounts:
+            - mountPath: /etc/firefly/
+              name: firefly-config
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+      {{- with .Values.core.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.core.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.core.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: firefly-config
+          secret:
+            secretName: {{ include "firefly.fullname" . }}-config

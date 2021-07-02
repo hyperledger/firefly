@@ -1,0 +1,32 @@
+{{- if and .Values.dataexchange.enabled .Values.dataexchange.certificate.enabled }}
+{{- if not (.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
+{{- fail "dataexchange.certificate.enabled is true, however the required cert-manager APIs are not installed onto the cluster" }}
+{{- end }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: "{{ include "firefly.fullname" . }}-dx"
+  labels:
+    {{- include "firefly.labels" . | nindent 4 }}
+spec:
+  issuerRef:
+    {{- toYaml .Values.dataexchange.certificate.issuerRef | nindent 4 }}
+  secretName: "{{ include "firefly.fullname" . }}-dx-tls"
+  subject:
+    organizations:
+      - {{ .Values.config.organizationName }}
+  commonName: {{ include "firefly.fullname" . }}-dx
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    {{- if .Values.dataexchange.ingress.enabled }}
+    {{- range .Values.dataexchange.ingress.hosts }}
+    - {{ .host }}
+    {{- end }}
+    {{- else }}
+    - {{ include "firefly.fullname" . }}-dx
+    - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc
+    - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc.cluster.local
+    {{- end }}
+{{- end }}
