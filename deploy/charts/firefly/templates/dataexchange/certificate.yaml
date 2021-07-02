@@ -1,7 +1,32 @@
 {{- if and .Values.dataexchange.enabled .Values.dataexchange.certificate.enabled }}
 {{- if not (.Capabilities.APIVersions.Has "cert-manager.io/v1") }}
-{{- fail "dataexchange.certificate.enabled is true, however the required cert-manager APIs are not installed onto the cluster" }}
-{{- end }}
+# WARNING: cert-manager is not installed, so this Secret will generate a cert but it will not work bc an "Organization" cannot be used
+#          This Secret is made rather than using fail so that we can still do templates and lints due to https://github.com/helm/helm/issues/3377
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "{{ include "firefly.fullname" . }}-dx-tls"
+  labels:
+    {{- include "firefly.labels" . | nindent 4 }}
+data:
+  {{- $hosts := list }}
+  {{- if .Values.dataexchange.ingress.enabled }}
+  {{- range .Values.dataexchange.ingress.hosts }}
+  {{- $newHosts := append $hosts .host }}
+  {{- $hosts = $newHosts }}
+  {{- end }}
+  {{- else }}
+  {{- $shorterSvc := printf "%s-dx" (include "firefly.fullname" .) }}
+  {{- $shortSvc := printf "%s.%s.svc" $shorterSvc .Release.Namespace }}
+  {{- $svc := printf "%s.cluster.local" $shortSvc }}
+  {{- $hosts := list $shorterSvc $shortSvc $svc }}
+  {{- end }}
+  {{- $cn := printf "%s-dx" (include "firefly.fullname" .) }}
+  {{- $cert := genSelfSignedCert $cn (list) $hosts 365 }}
+  ca.crt: {{ $cert.Cert | b64enc }}
+  tls.key: {{ $cert.Key | b64enc }}
+  tls.crt: {{ $cert.Cert | b64enc }}
+{{- else }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -29,4 +54,5 @@ spec:
     - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc
     - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc.cluster.local
     {{- end }}
+{{- end }}
 {{- end }}

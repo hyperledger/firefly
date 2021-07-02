@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - "deploy/charts/**/*"
+  push: # TODO remove
+    branches:
+      - helm-chart-os
 jobs:
   helm:
     runs-on: ubuntu-latest
