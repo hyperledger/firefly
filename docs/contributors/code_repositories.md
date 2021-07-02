@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Code Repositories
-parent: Developers
+parent: Contributors
 nav_order: 4
 ---
 

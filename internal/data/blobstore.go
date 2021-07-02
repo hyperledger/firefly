@@ -103,6 +103,7 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 		do["mimetype"] = blob.Mimetype
 		do["size"] = float64(written)
 		data.Value, _ = json.Marshal(&do)
+		data.Validator = fftypes.ValidatorTypeJSON
 	}
 
 	data.Blob = &fftypes.BlobRef{

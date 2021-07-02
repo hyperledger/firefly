@@ -1,8 +1,8 @@
 ---
 layout: default
 title: API Query Syntax
-parent: Developers
-nav_order: 3
+parent: Reference
+nav_order: 1
 ---
 
 # API Query Syntax

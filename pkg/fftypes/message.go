@@ -65,7 +65,7 @@ type MessageHeader struct {
 type Message struct {
 	Header    MessageHeader `json:"header"`
 	Hash      *Bytes32      `json:"hash,omitempty"`
-	BatchID   *UUID         `json:"batchID,omitempty"`
+	BatchID   *UUID         `json:"batch,omitempty"`
 	Local     bool          `json:"local,omitempty"`
 	Rejected  bool          `json:"rejected,omitempty"`
 	Pending   SortableBool  `json:"pending"`

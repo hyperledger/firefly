@@ -35,7 +35,7 @@ import (
 
 func TestDiffSwaggerYAML(t *testing.T) {
 	as := &apiServer{}
-	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345/api/v1"))
+	handler := as.apiWrapper(as.swaggerHandler(routes, "http://localhost:12345"))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
 

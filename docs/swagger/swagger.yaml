@@ -32,7 +32,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -364,7 +364,7 @@ paths:
                         messages:
                           items:
                             properties:
-                              batchID: {}
+                              batch: {}
                               confirmed: {}
                               data:
                                 items:
@@ -498,7 +498,7 @@ paths:
                       messages:
                         items:
                           properties:
-                            batchID: {}
+                            batch: {}
                             confirmed: {}
                             data:
                               items:
@@ -596,7 +596,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -709,7 +709,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -1339,7 +1339,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -1835,7 +1835,7 @@ paths:
               schema:
                 items:
                   properties:
-                    batchID: {}
+                    batch: {}
                     confirmed: {}
                     data:
                       items:
@@ -1917,7 +1917,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -2555,7 +2555,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -2715,7 +2715,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -3826,7 +3826,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -3894,7 +3894,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -3974,7 +3974,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  batchID: {}
+                  batch: {}
                   confirmed: {}
                   data:
                     items:
@@ -4065,4 +4065,4 @@ paths:
         default:
           description: ""
 servers:
-- url: http://localhost:12345/api/v1/api/v1
+- url: http://localhost:12345/api/v1

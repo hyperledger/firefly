@@ -43,18 +43,6 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 > of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
 > more information on the landscape of plugins and components.
 
-## Architecture
-
-Architecture discussions are currently facilitated by the following Git issues, but as the community evolves (within
-the Hyperledger foundation) we expect these documents and conversations to move to a better collaboration system.
-
-- [Node Component Architecture - Periodic Table of Elements](https://github.com/hyperledger-labs/firefly/issues/6)
-- [Multi-party Event Sequencing for Multi-Party Business Processes](https://github.com/hyperledger-labs/firefly/issues/10)
-- [Simplest Transaction Flow - Ping Pong](https://github.com/hyperledger-labs/firefly/issues/5)
-- [Plugin Architecture](https://github.com/hyperledger-labs/firefly/issues/7)
-- [Internal Event Sequencing Model - The FireFly Stream of Consciousness](https://github.com/hyperledger-labs/firefly/issues/11)
-- [Private messaging architecture](https://github.com/hyperledger-labs/firefly/issues/68)
-
 ## Getting Started
 
 Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger-labs/firefly-cli

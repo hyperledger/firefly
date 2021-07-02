@@ -1,7 +1,7 @@
 ---
 layout: default
 title: FireFly Code Overview
-parent: Developers
+parent: Contributors
 nav_order: 1
 ---
 
