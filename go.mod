@@ -7,20 +7,12 @@ require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
-	github.com/bombsimon/wsl/v2 v2.0.0 // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/getkin/kin-openapi v0.62.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-lintpack/lintpack v0.5.2 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210521165626-8a1a8534dc64
-	github.com/golangci/errcheck v0.0.0-20181223084120-ef45e06d44b6 // indirect
-	github.com/golangci/goconst v0.0.0-20180610141641-041c5f2b40f3 // indirect
-	github.com/golangci/gocyclo v0.0.0-20180528134321-2becd97e67ee // indirect
-	github.com/golangci/golangci-lint v1.41.1 // indirect
-	github.com/golangci/ineffassign v0.0.0-20190609212857-42439a7714cc // indirect
-	github.com/golangci/prealloc v0.0.0-20180630174525-215b22d4de21 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
@@ -30,7 +22,6 @@ require (
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.8 // indirect
-	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/lib/pq v1.10.2
 	github.com/likexian/gokit v0.24.7
 	github.com/magiconair/properties v1.8.5 // indirect
@@ -47,8 +38,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/qeesung/image2ascii v1.0.1
 	github.com/rs/cors v1.7.0
-	github.com/securego/gosec v0.0.0-20191002120514-e680875ea14d // indirect
-	github.com/shirou/gopsutil v0.0.0-20190901111213-e4ec7b275ada // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -56,8 +45,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tommy-muehle/go-mnd v1.1.1 // indirect
-	github.com/ugorji/go v1.1.4 // indirect
 	github.com/wayneashleyberry/terminal-dimensions v1.0.0 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -80,5 +67,4 @@ require (
 	modernc.org/sqlite v1.10.7
 	modernc.org/strutil v1.1.1 // indirect
 	modernc.org/zappy v1.0.3 // indirect
-	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
 )
