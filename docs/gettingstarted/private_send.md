@@ -55,7 +55,7 @@ nav_order: 4
 
 `POST` `/api/v1/namespaces/default/send/message`
 
-```js
+```json
 {
   "data": [
     {
@@ -78,7 +78,7 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 
-```js
+```json
 {
   "header": {
     "id": "c387e9d2-bdac-44cc-9dd5-5e7f0b6b0e58", // uniquely identifies this private message
@@ -116,7 +116,7 @@ The message is sent immediately (no batching) over the private data exchange.
 
 `POST` `/api/v1/namespaces/default/send/message`
 
-```js
+```json
 {
   "header": {
     "txtype": "none"
@@ -224,7 +224,7 @@ Status: `200 OK` - your data is uploaded to your local FireFly node
 
 At this point the data has not be shared with anyone else in the network 
 
-```javascript
+```json
 {
   // A uniquely generated ID, we can refer to when sending this data to other parties
   "id": "97eb750f-0d0b-4c1d-9e37-1e92d1a22bb8",

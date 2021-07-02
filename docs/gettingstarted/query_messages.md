@@ -51,7 +51,7 @@ are complete.
 
 ## Example response
 
-```js
+```json
 [
   {
     "header": {

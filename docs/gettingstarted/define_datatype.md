@@ -71,7 +71,7 @@ datatype will be created (unless it conflicts with another definition with the s
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 
-```javascript
+```json
 {
   "header": {
     "id": "727f7d3a-d07e-4e80-95af-59f8d2ac7531", // this is the ID of the message, not the data type
@@ -102,7 +102,7 @@ datatype will be created (unless it conflicts with another definition with the s
 
 `GET` `/api/v1/namespaces/default/datatypes?name=widget&version=0.0.2`
 
-```javascript
+```json
 [
   {
     "id": "421c94b1-66ce-4ba0-9794-7e03c63df29d", // an ID allocated to the datatype

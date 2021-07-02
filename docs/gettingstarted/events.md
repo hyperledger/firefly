@@ -65,7 +65,7 @@ the full data.
 
 > _There are server-side filters provided on events as well_
 
-```js
+```json
 {
   "id": "8f0da4d7-8af7-48da-912d-187979bf60ed",
   "sequence": 61,

@@ -28,7 +28,7 @@ nav_order: 4
 - Sequenced via the blockchain
   - The blockchain does not contain any data, just a hash pin
 - Batched for efficiency
-  - One `batch` can pin hundreds of private `message` sends
+  - One `batch` can pin hundreds of `message` broadcasts
   - The whole batch is written to the shared storage
 
 ## Additional info
@@ -40,7 +40,7 @@ nav_order: 4
 
 `POST` `/api/v1/namespaces/default/broadcast/message`
 
-```js
+```json
 {
   "data": [
     {
@@ -58,14 +58,14 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 
-```js
+```json
 {
   "header": {
     "id": "607e22ad-04fa-434a-a073-54f528ca14fb", // uniquely identifies this broadcast message
-    "type": "broadcast", // set automatically 
+    "type": "broadcast", // set automatically
     "txtype": "batch_pin", // message will be batched, and sequenced via the blockchain
     "author": "0x0a65365587a65ce44938eab5a765fe8bc6532bdf", // set automatically in this example to the node org
-    "created": "2021-07-01T18:06:24.5817016Z", // set automatically 
+    "created": "2021-07-01T18:06:24.5817016Z", // set automatically
     "namespace": "default", // the 'default' namespace was set in the URL
     "topic": [
       "default" // the default topic that the message is published on, if no topic is set
@@ -90,12 +90,11 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
 It is very good practice to set a `tag` and `topic` in each of your messages:
 
 - `tag` should tell the apps receiving the broadcast (including the local app), what
-   to do when it receives the message. Its the reason for the broadcast - an
-   application specific type for the message.
+  to do when it receives the message. Its the reason for the broadcast - an
+  application specific type for the message.
 - `topic` should be something like a well known identifier that relates to the
-   information you are publishing. It is used as an ordering context, so all
-   broadcasts on a given topic are assured to be processed in order.
-
+  information you are publishing. It is used as an ordering context, so all
+  broadcasts on a given topic are assured to be processed in order.
 
 `POST` `/api/v1/namespaces/default/broadcast/message`
 
@@ -103,7 +102,7 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
 {
   "header": {
     "tag": "new_widget_created",
-    "topic": [ "widget_id_12345" ]
+    "topic": ["widget_id_12345"]
   },
   "data": [
     {
@@ -120,12 +119,12 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
 
 Here we make two API calls.
 1. Create the `data` object explicitly, using a multi-party form upload
-  - You can also just post JSON to this endpoint
+- You can also just post JSON to this endpoint
 2. Broadcast a message referring to that data
-  - The BLOB attachment gets published to shared storage
-    - This happens the first time a broadcast happens on a data attachment
-  - A pin goes to the blockchain
-  - The metadata goes into a batch with the message
+- The BLOB attachment gets published to shared storage
+  - This happens the first time a broadcast happens on a data attachment
+- A pin goes to the blockchain
+- The metadata goes into a batch with the message
 
 ### Multipart form post of a file
 
@@ -145,9 +144,9 @@ curl -sLo - https://github.com/hyperledger-labs/firefly/raw/main/docs/firefly_lo
 
 Status: `200 OK` - your data is uploaded to your local FireFly node
 
-At this point the data has not be shared with anyone else in the network 
+At this point the data has not be shared with anyone else in the network
 
-```javascript
+```json
 {
   // A uniquely generated ID, we can refer to when sending this data to other parties
   "id": "97eb750f-0d0b-4c1d-9e37-1e92d1a22bb8",
