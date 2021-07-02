@@ -9,7 +9,7 @@ config:
 
   ethconnectUrl: "http://ethconnect.firefly-os"
 
-  postgresUrl: "postgres://postgres:firef1y@postgresql:5432?sslmode=disable"
+  postgresUrl: "postgres://postgres:firef1y@postgresql.default.svc:5432?sslmode=disable"
 
   ipfsApiUrl: "http://ipfs.firefly-os:5001"
   ipfsGatewayUrl: "http://ipfs.firefly-os:8080"
