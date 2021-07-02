@@ -2,10 +2,10 @@
 layout: default
 title: Run a sample
 parent: Getting Started
-nav_order: 
+nav_order: 3
 ---
 
-# SRun a sample
+# Run a sample
 {: .no_toc }
 
 ## Table of contents

@@ -32,7 +32,7 @@ type DataRef struct {
 
 type BlobRef struct {
 	Hash   *Bytes32 `json:"hash"`
-	Public string   `json:"public"`
+	Public string   `json:"public,omitempty"`
 }
 
 type Data struct {
