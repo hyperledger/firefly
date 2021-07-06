@@ -7,7 +7,9 @@ metadata:
     {{- include "firefly.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.dataexchange.service.type }}
+  {{- if eq .Values.dataexchange.service.type "ClusterIP" }}
   clusterIP: None
+  {{- end }}
   ports:
     - port: {{ .Values.dataexchange.service.apiPort }}
       targetPort: http

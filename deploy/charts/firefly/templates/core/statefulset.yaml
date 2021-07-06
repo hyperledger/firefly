@@ -49,15 +49,15 @@ spec:
           ports:
             {{- if .Values.config.debugEnabled }}
             - name: debug
-              containerPort: 6060
+              containerPort:  {{ .Values.core.service.debugPort }}
               protocol: TCP
             {{- end }}
             - name: http
-              containerPort: 5000
+              containerPort:  {{ .Values.core.service.httpPort }}
               protocol: TCP
             {{- if .Values.config.adminEnabled }}
             - name: admin
-              containerPort: 5001
+              containerPort:  {{ .Values.core.service.adminPort }}
               protocol: TCP
             {{- end }}
 {{/*          livenessProbe:*/}}

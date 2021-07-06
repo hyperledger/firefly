@@ -1,20 +1,27 @@
 # Templates the firefly.core configuration file of FireFly, and in some cases configures which ports are exposed.
 config:
+
+  # Instead of using the provided config template from _helpers.tpl, users can use to customize the config using their own global values, etc.
   templateOverride: ""
 
   # Enables the FireFly debug port on 6060 and `DEBUG` level logs
   debugEnabled: false
 
   # Enables the Admin API for dynamic configuration
-  adminEnabled: false
+  adminEnabled: true
 
   # Puts a fresh FireFly node into the preinit state, allowing an operator to then setup smart contracts, apply database migrations, etc. before re-configuring the node to proceed.
   # It is _not_ recommended to configure FireFly nodes in a preinit state for non-development scenarios.
   preInit: false
 
+  # The name of the organization the FireFly node belongs to
   organizationName: ""
+
+  # The blockchain identity of the organization e.g. the Ethereum account address
   organizationIdentity: ""
-  fireflyContractAddress: ""
+
+  # The Ethereum address of the pre-deployed FireFly smart contract
+  fireflyContractAddress: "/instances/contractAddress"
 
   # used for more open ended configuration of firefly core i.e. future plugins, production scenarios, etc.
   dataexchange: {}
@@ -36,6 +43,8 @@ config:
   #
   ipfsApiUrl: ""
   ipfsGatewayUrl: ""
+  ipfsUsername: ""
+  ipfsPassword: ""
 
   ethconnectUrl: ""
   ethconnectUsername: ""
@@ -107,15 +116,15 @@ core:
 dataexchange:
   enabled: true
 
-  certificate:
-    enabled: false
-    issuerRef: {}
-     # name: interal-ca
-     # kind: ClusterIssuer
-
   tlsSecret:
     enabled: true
     name: ""
+
+  certificate:
+    enabled: false
+    issuerRef: {}
+     # name: internal-ca
+     # kind: ClusterIssuer
 
   apiKey: ""
 

@@ -74,13 +74,13 @@ Create the name of the service account to use
 log:
   level: debug
 debug:
-  port: 6060
+  port: {{ .Values.core.service.debugPort }}
 {{- end }}
 http:
-  port: 5000
+  port: {{ .Values.core.service.httpPort }}
   address: 0.0.0.0
 admin:
-  port: 5001
+  port:  {{ .Values.core.service.adminPort }}
   address: 0.0.0.0
   enabled: {{ .Values.config.adminEnabled }}
   preinit: {{ and .Values.config.adminEnabled .Values.config.preInit }}
@@ -104,8 +104,8 @@ blockchain:
       topic: "0" # TODO should likely be configurable
       {{- if and .Values.config.ethconnectUsername .Values.config.ethconnectPassword }}
       auth:
-        username: {{ .Values.config.ethconnectUsername }}
-        password: {{ .Values.config.ethconnectPassword }}
+        username: {{ .Values.config.ethconnectUsername | quote }}
+        password: {{ .Values.config.ethconnectPassword | quote }}
       {{- end }}
       {{- if .Values.config.ethconnectPrefixShort }}
       prefixShort: {{ .Values.config.ethconnectPrefixShort }}
@@ -136,6 +136,11 @@ publicstorage:
       url: {{ tpl .Values.config.ipfsApiUrl . }}
     gateway:
       url: {{ tpl .Values.config.ipfsGatewayUrl . }}
+    {{- if and .Values.config.ipfsUsername .Values.config.ipfsPassword }}
+    auth:
+      username: {{ .Values.config.ipfsUsername |quote }}
+      password:  {{ .Values.config.ipfsPassword | quote }}
+    {{- end }}
 {{- end }}
 {{- if and .Values.config.dataexchange (not .Values.dataexchange.enabled) }}
 dataexchange:

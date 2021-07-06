@@ -26,6 +26,7 @@ $ helm install acme-firefly ./deploy/charts/firefly \
 * Kubernetes 1.14+
 * Helm 3.6.0
 * PV provisioner support in the underlying infrastructure
+* _Recommended:_ cert-manager 1.4+
 
 ## Installing the Chart
 
