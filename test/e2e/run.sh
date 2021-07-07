@@ -12,13 +12,16 @@ if [ -z "${BUILD_FIREFLY}" ]; then
   BUILD_FIREFLY=true
 fi
 
+if [ -z "${STACK_FILE}" ]; then
+  STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
+fi
+
 set -euo pipefail
 
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
 STACK_NAME=firefly-e2e
-STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 
 cd $CWD
 
