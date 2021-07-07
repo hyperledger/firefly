@@ -50,22 +50,11 @@ app.kubernetes.io/name: {{ include "firefly.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "firefly.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "firefly.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
-
 {{- define "firefly.dataexchangeP2PHost" -}}
 {{- if .Values.dataexchange.ingress.enabled }}
 {{- index .Values.dataexchange.ingress.hosts 0 }}
 {{- else }}
-{{- printf "%s-dx:%d" (include "firefly.fullname" .) (.Values.dataexchange.service.p2pPort | int64) }}
+{{- printf "%s-dx.%s.svc:%d" (include "firefly.fullname" .) .Release.Namespace (.Values.dataexchange.service.p2pPort | int64) }}
 {{- end }}
 {{- end }}
 
