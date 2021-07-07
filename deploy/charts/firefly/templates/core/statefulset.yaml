@@ -46,6 +46,14 @@ spec:
             {{- toYaml .Values.core.securityContext | nindent 12 }}
           image: "{{ .Values.core.image.repository }}:{{ .Values.core.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.core.image.pullPolicy }}
+          env:
+            - name: FIREFLY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          {{- if .Values.core.extraEnv }}
+            {{- toYaml .Values.core.extraEnv | nindent 12 }}
+          {{- end }}
           ports:
             {{- if .Values.config.debugEnabled }}
             - name: debug

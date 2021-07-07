@@ -42,9 +42,11 @@ config:
 
   #
   ipfsApiUrl: ""
+  ipfsApiUsername: ""
+  ipfsApiPassword: ""
   ipfsGatewayUrl: ""
-  ipfsUsername: ""
-  ipfsPassword: ""
+  ipfsGatewayUsername: ""
+  ipfsGatewayPassword: ""
 
   ethconnectUrl: ""
   ethconnectUsername: ""
@@ -58,6 +60,10 @@ core:
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
     tag: latest
+
+  extraEnv: []
+    # - name: FIREFLY_LOG_LEVEL
+    #   value: debug
 
   imagePullSecrets: []
   nameOverride: ""
@@ -127,6 +133,10 @@ dataexchange:
      # kind: ClusterIssuer
 
   apiKey: ""
+
+  extraEnv: []
+    # - name: LOG_LEVEL
+    #   value: DEBUG
 
   image:
     repository: ghcr.io/hyperledger-labs/firefly-dataexchange-https

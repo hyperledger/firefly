@@ -38,6 +38,10 @@ spec:
             {{- toYaml .Values.dataexchange.securityContext | nindent 12 }}
           image: "{{ .Values.dataexchange.image.repository }}:{{ .Values.dataexchange.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.dataexchange.image.pullPolicy }}
+          {{- if .Values.dataexchange.extraEnv }}
+          env:
+            {{- toYaml .Values.dataexchange.extraEnv | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 3000

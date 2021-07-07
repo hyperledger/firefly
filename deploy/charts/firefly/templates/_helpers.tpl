@@ -86,8 +86,6 @@ admin:
   preinit: {{ and .Values.config.adminEnabled .Values.config.preInit }}
 ui:
   path: ./frontend
-node:
-  name: {{ .Values.config.organizationName }}-{{ include "firefly.fullname" . }}
 org:
   name: {{ .Values.config.organizationName }}
   identity: {{ .Values.config.organizationIdentity }}
@@ -134,13 +132,18 @@ publicstorage:
   ipfs:
     api:
       url: {{ tpl .Values.config.ipfsApiUrl . }}
+      {{- if and .Values.config.ipfsApiUsername .Values.config.ipfsApiPassword }}
+      auth:
+        username: {{ .Values.config.ipfsApiUsername |quote }}
+        password:  {{ .Values.config.ipfsApiPassword | quote }}
+      {{- end }}
     gateway:
       url: {{ tpl .Values.config.ipfsGatewayUrl . }}
-    {{- if and .Values.config.ipfsUsername .Values.config.ipfsPassword }}
-    auth:
-      username: {{ .Values.config.ipfsUsername |quote }}
-      password:  {{ .Values.config.ipfsPassword | quote }}
-    {{- end }}
+      {{- if and .Values.config.ipfsGatewayUsername .Values.config.ipfsGatewayPassword }}
+      auth:
+        username: {{ .Values.config.ipfsGatewayUsername |quote }}
+        password:  {{ .Values.config.ipfsGatewayPassword | quote }}
+      {{- end }}
 {{- end }}
 {{- if and .Values.config.dataexchange (not .Values.dataexchange.enabled) }}
 dataexchange:
