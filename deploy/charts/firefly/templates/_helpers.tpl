@@ -58,7 +58,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- end }}
 
-{{- define "firefly.core.config" -}}
+{{- define "firefly.coreConfig" -}}
 {{- if .Values.config.debugEnabled }}
 log:
   level: debug
@@ -78,9 +78,9 @@ ui:
 org:
   name: {{ .Values.config.organizationName }}
   identity: {{ .Values.config.organizationIdentity }}
-{{- if .Values.config.blockchain }}
+{{- if .Values.config.blockchainOverride }}
 blockchain:
-  {{- toYaml (tpl .Values.config.blockchain .) | nindent 2 }}
+  {{- toYaml (tpl .Values.config.blockchainOverride .) | nindent 2 }}
 {{- else if .Values.config.ethconnectUrl }}
 blockchain:
   type: ethereum
@@ -101,9 +101,9 @@ blockchain:
       prefixLong: {{ .Values.config.ethconnectPrefixLong }}
       {{- end }}
 {{- end }}
-{{- if .Values.config.database }}
+{{- if .Values.config.databaseOverride }}
 database:
-  {{- toYaml (tpl .Values.config.database .) | nindent 2 }}
+  {{- toYaml (tpl .Values.config.databaseOverride .) | nindent 2 }}
 {{- else if .Values.config.postgresUrl }}
 database:
   type: postgres
@@ -112,9 +112,9 @@ database:
     migrations:
       auto: {{ .Values.config.postgresAutomigrate }}
 {{- end }}
-{{- if .Values.config.publicstorage }}
+{{- if .Values.config.publicstorageOverride }}
 publicstorage:
-  {{- toYaml (tpl .Values.config.publicstorage .) | nindent 2 }}
+  {{- toYaml (tpl .Values.config.publicstorageOverride .) | nindent 2 }}
 {{- else if and .Values.config.ipfsApiUrl .Values.config.ipfsGatewayUrl }}
 publicstorage:
   type: ipfs
@@ -131,20 +131,28 @@ publicstorage:
       {{- if and .Values.config.ipfsGatewayUsername .Values.config.ipfsGatewayPassword }}
       auth:
         username: {{ .Values.config.ipfsGatewayUsername |quote }}
-        password:  {{ .Values.config.ipfsGatewayPassword | quote }}
+        password: {{ .Values.config.ipfsGatewayPassword | quote }}
       {{- end }}
 {{- end }}
-{{- if and .Values.config.dataexchange (not .Values.dataexchange.enabled) }}
+{{- if and .Values.config.dataexchangeOverride (not .Values.dataexchange.enabled) }}
 dataexchange:
-  {{- toYaml (tpl .Values.config.dataexchange .) | nindent 2 }}
+  {{- toYaml (tpl .Values.config.dataexchangeOverride .) | nindent 2 }}
 {{- else }}
 dataexchange:
   {{- if .Values.dataexchange.enabled }}
   https:
     url: http://{{ include "firefly.fullname" . }}-dx:{{ .Values.dataexchange.service.apiPort }}
+    {{- if .Values.dataexchange.apiKey }}
+    headers:
+      x-api-key: {{ .Values.dataexchange.apiKey | quote }}
+    {{- end }}
   {{- else }}
   https:
     url: {{ tpl .Values.config.dataexchangeUrl . }}
+    {{- if .Values.config.dataexchangeAPIKey }}
+    headers:
+      x-api-key: {{ .Values.config.dataexchangeAPIKey | quote }}
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}

@@ -28,18 +28,6 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.core.podSecurityContext | nindent 8 }}
-{{/*      initContainers:*/}}
-{{/*        - name: psql-ready*/}}
-{{/*          image: "{{ .Values.postgresql.image.registry }}/{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"*/}}
-{{/*          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}*/}}
-{{/*          command:*/}}
-{{/*            - sh*/}}
-{{/*            - -c*/}}
-{{/*            {{- if .Values.postgresql.enabled }}*/}}
-{{/*            - 'until pg_isready -h {{ .Values.postgresql.fullnameOverride }} -p 5432; do echo "waiting for database"; sleep 2; done;'*/}}
-{{/*            {{- else }}*/}}
-{{/*            - 'until pg_isready -h {{ .Values.config.postgresHostname }} -p {{ .Values.config.postgresPort }}; do echo "waiting for database"; sleep 2; done;'*/}}
-{{/*            {{- end }}*/}}
       containers:
         - name: firefly
           securityContext:
@@ -55,27 +43,32 @@ spec:
             {{- toYaml .Values.core.extraEnv | nindent 12 }}
           {{- end }}
           ports:
+            - name: http
+              containerPort:  {{ .Values.core.service.httpPort }}
+              protocol: TCP
             {{- if .Values.config.debugEnabled }}
             - name: debug
               containerPort:  {{ .Values.core.service.debugPort }}
               protocol: TCP
             {{- end }}
-            - name: http
-              containerPort:  {{ .Values.core.service.httpPort }}
-              protocol: TCP
             {{- if .Values.config.adminEnabled }}
             - name: admin
               containerPort:  {{ .Values.core.service.adminPort }}
               protocol: TCP
             {{- end }}
-{{/*          livenessProbe:*/}}
-{{/*            httpGet:*/}}
-{{/*              path: /*/}}
-{{/*              port: http*/}}
-{{/*          readinessProbe:*/}}
-{{/*            httpGet:*/}}
-{{/*              path: /*/}}
-{{/*              port: http*/}}
+          livenessProbe:
+            tcpSocket:
+              port: {{ if and .Values.config.adminEnabled .Values.config.preInit }}admin{{ else }}http{{ end }}
+            initialDelaySeconds: 10
+            failureThreshold: 5
+            successThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: {{ if and .Values.config.adminEnabled .Values.config.preInit }}admin{{ else }}http{{ end }}
+            failureThreshold: 6
+            successThreshold: 3
+            periodSeconds: 5
           volumeMounts:
             - mountPath: /etc/firefly/
               name: firefly-config

@@ -1,13 +1,9 @@
 # Templates the firefly.core configuration file of FireFly, and in some cases configures which ports are exposed.
 config:
-
-  # Instead of using the provided config template from _helpers.tpl, users can use to customize the config using their own global values, etc.
-  templateOverride: ""
-
   # Enables the FireFly debug port on 6060 and `DEBUG` level logs
   debugEnabled: false
 
-  # Enables the Admin API for dynamic configuration
+  # Enables the Admin API port for dynamic configuration
   adminEnabled: true
 
   # Puts a fresh FireFly node into the preinit state, allowing an operator to then setup smart contracts, apply database migrations, etc. before re-configuring the node to proceed.
@@ -23,11 +19,62 @@ config:
   # The Ethereum address of the pre-deployed FireFly smart contract
   fireflyContractAddress: "/instances/contractAddress"
 
-  # used for more open ended configuration of firefly core i.e. future plugins, production scenarios, etc.
-  dataexchange: {}
-  database: {}
-  publicstorage: {}
-  blockchain: {}
+  # The Postgres URL (including credentials and DB) for FireFly to for the database plugin
+  postgresUrl: ""
+
+  # Whether or not to apply schema migrations automatically on startup, not recommended for production
+  postgresAutomigrate: false
+
+  # The URL of the HTTPS DataExchange for the node to use for the dataexchange plugin i.e. private messaging, only needed if `dataexchange.enabled` is set to false
+  dataexchangeUrl: ""
+
+  # The API key used to authenticate to HTTPS DataExchange, only needed if `dataexchange.enabled` is set to false
+  dataexchangeAPIKey: ""
+
+  # The URL of the IPFS API server to use for the publicstorage plugin, in some cases this is the same as the Gateway URL, see below
+  ipfsApiUrl: ""
+
+  # The basic auth username to use for authenticating to the IPFS API server
+  ipfsApiUsername: ""
+
+  # The basic auth password to use for authenticating to the IPFS API server
+  ipfsApiPassword: ""
+
+  # The URL of the IPFS Gateway server, in some cases this is the same as the API URL
+  ipfsGatewayUrl: ""
+
+  # The basic auth username to use for authenticating to the IPFS Gateway server
+  ipfsGatewayUsername: ""
+
+  # The basic auth password to use for authenticating to the IPFS Gateway server
+  ipfsGatewayPassword: ""
+
+  # The URL of the Ethconnect API and WS server to use for the blockchain plugin of type `ethereum`
+  ethconnectUrl: ""
+
+  # The basic auth username to use for authenticating to Ethconnect
+  ethconnectUsername: ""
+
+  # The basic auth password to use for authenticating to Ethconnect
+  ethconnectPassword: ""
+
+  # The short prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. ff or kld
+  ethconnectPrefixShort: ""
+
+  # The long prefix FireFly will prepend to certain headers it sends to Ethconnect i.e. FireFly or Kaleido
+  ethconnectPrefixLong: ""
+
+  # The following values can be used to override the templating of specific plugin sections, in the case where
+  # the user wants greater control to template the sections using global values, additional helpers, etc. OR if they
+  # want to use other plugin types i.e. `fabric` which currently do not exist at the time of writing.
+
+  dataexchangeOverride: {}
+
+  databaseOverride: {}
+
+  publicstorageOverride: {}
+
+  blockchainOverride: {}
    # type: ethereum
    # ethereum:
    #   ethconnect:
@@ -35,25 +82,11 @@ config:
    #     instance: /contracts/firefly
    #     topic: "0"
 
-  postgresUrl: ""
-  postgresAutomigrate: false
+  # Instead of using the provided config template from _helpers.tpl, users can use to customize the config using their own global values, etc.
+  # See the firefly.coreConfig helper for an example of a Go-templated config file that could be provided here as a multiline string.
+  templateOverride: ""
 
-  dataexchangeUrl: ""
-
-  #
-  ipfsApiUrl: ""
-  ipfsApiUsername: ""
-  ipfsApiPassword: ""
-  ipfsGatewayUrl: ""
-  ipfsGatewayUsername: ""
-  ipfsGatewayPassword: ""
-
-  ethconnectUrl: ""
-  ethconnectUsername: ""
-  ethconnectPassword: ""
-  ethconnectPrefixShort: ""
-  ethconnectPrefixLong: ""
-
+# Configures the properties of the StatefulSet, Service, and optionally Ingress used to deploy and expose FireFly
 core:
   image:
     repository: ghcr.io/hyperledger-labs/firefly
@@ -88,6 +121,7 @@ core:
     adminPort: 5001
     debugPort: 6060
 
+  # NOTE: The Ingress will only expose the HTTP API and never the Admin or Debug APIs
   ingress:
     enabled: false
     className: ""
@@ -119,20 +153,27 @@ core:
 
   affinity: {}
 
+# Configures the properties of the StatefulSet, Service, and optionally Ingress used to deploy and expose FireFly HTTPS DataExchange
 dataexchange:
+
+  # Toggles whether or not to deploy HTTPS DataExchange alongside FireFly, and therefore how the dataexchange section of its config will be templated
   enabled: true
 
+  # The API key the HTTPS DataExchange will use to secure its API and WS server for communication from FireFly
+  apiKey: ""
+
+  # A Secret providing the mTLS certificate the HTTPS DataExchange will use to authenticate to peers
   tlsSecret:
     enabled: true
     name: ""
 
+  # Configures whether or not to generate a mTLS certificate for peer-to-peer communications
+  # using cert-manager's Certificate resource, recommended
   certificate:
     enabled: false
     issuerRef: {}
      # name: internal-ca
      # kind: ClusterIssuer
-
-  apiKey: ""
 
   extraEnv: []
     # - name: LOG_LEVEL
@@ -166,6 +207,8 @@ dataexchange:
     apiPort: 5000
     p2pPort: 5001
 
+  # The Ingress templated will only expose the HTTPS DataExchange P2P endpoint, as its API will only need to be accessible to FireFly
+  # NOTE: tls is not templatable for the Ingress since it is provided as part of the mTLS certificate above.
   ingress:
     enabled: false
     className: ""

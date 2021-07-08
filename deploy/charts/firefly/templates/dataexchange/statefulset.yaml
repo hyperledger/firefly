@@ -49,14 +49,20 @@ spec:
             - name: p2p
               containerPort: 3001
               protocol: TCP
-{{/*          livenessProbe:*/}}
-{{/*            httpGet:*/}}
-{{/*              path: /*/}}
-{{/*              port: http*/}}
-{{/*          readinessProbe:*/}}
-{{/*            httpGet:*/}}
-{{/*              path: /*/}}
-{{/*              port: http*/}}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            failureThreshold: 5
+            successThreshold: 1
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: p2p
+            initialDelaySeconds: 5
+            failureThreshold: 6
+            successThreshold: 3
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.dataexchange.resources | nindent 12 }}
           volumeMounts:
