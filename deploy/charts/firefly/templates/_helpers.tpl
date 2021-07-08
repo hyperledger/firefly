@@ -33,21 +33,45 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "firefly.labels" -}}
+{{- define "firefly.coreLabels" -}}
 helm.sh/chart: {{ include "firefly.chart" . }}
-{{ include "firefly.selectorLabels" . }}
+{{ include "firefly.coreSelectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kuberentes.io/part-of: {{ .Chart.Name }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "firefly.dataexchangeLabels" -}}
+helm.sh/chart: {{ include "firefly.chart" . }}
+{{ include "firefly.dataexchangeSelectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kuberentes.io/part-of: {{ .Chart.Name }}
 {{- end }}
 
 {{/*
 Selector labels
 */}}
-{{- define "firefly.selectorLabels" -}}
+{{- define "firefly.coreSelectorLabels" -}}
 app.kubernetes.io/name: {{ include "firefly.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: core
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "firefly.dataexchangeSelectorLabels" -}}
+app.kubernetes.io/name: {{ include "firefly.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: dx
 {{- end }}
 
 {{- define "firefly.dataexchangeP2PHost" -}}

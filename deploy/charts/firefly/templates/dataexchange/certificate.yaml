@@ -8,7 +8,7 @@ kind: Certificate
 metadata:
   name: "{{ include "firefly.fullname" . }}-dx"
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
 spec:
   issuerRef:
     {{- toYaml .Values.dataexchange.certificate.issuerRef | nindent 4 }}

@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: {{ include "firefly.fullname" . }}
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.coreLabels" . | nindent 4 }}
 spec:
   type: {{ .Values.core.service.type }}
   ports:
@@ -24,4 +24,4 @@ spec:
       name: admin
     {{- end }}
   selector:
-    {{- include "firefly.selectorLabels" . | nindent 4 }}
+    {{- include "firefly.coreSelectorLabels" . | nindent 4 }}

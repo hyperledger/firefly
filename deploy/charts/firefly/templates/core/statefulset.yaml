@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: {{ include "firefly.fullname" . }}
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.coreLabels" . | nindent 4 }}
 spec:
   serviceName: {{ include "firefly.fullname" . }}
   updateStrategy:
@@ -11,7 +11,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "firefly.selectorLabels" . | nindent 6 }}
+      {{- include "firefly.coreSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -20,7 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "firefly.selectorLabels" . | nindent 8 }}
+        {{- include "firefly.coreSelectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.core.imagePullSecrets }}
       imagePullSecrets:

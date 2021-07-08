@@ -4,7 +4,7 @@ kind: StatefulSet
 metadata:
   name: {{ include "firefly.fullname" . }}-dx
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
 spec:
   replicas: 1
   serviceName: {{ include "firefly.fullname" . }}-dx
@@ -12,7 +12,7 @@ spec:
     type: RollingUpdate
   selector:
     matchLabels:
-      {{- include "firefly.selectorLabels" . | nindent 6 }}
+      {{- include "firefly.dataexchangeSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -24,7 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "firefly.selectorLabels" . | nindent 8 }}
+        {{- include "firefly.dataexchangeSelectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.dataexchange.imagePullSecrets }}
       imagePullSecrets:

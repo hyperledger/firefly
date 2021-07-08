@@ -17,7 +17,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}-dx
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
   {{- with .Values.dataexchange.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}

@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: {{ include "firefly.fullname" . }}-dx
   labels:
-    {{- include "firefly.labels" . | nindent 4 }}
+    {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
 spec:
   type: {{ .Values.dataexchange.service.type }}
   ports:
@@ -17,5 +17,5 @@ spec:
       protocol: TCP
       name: p2p
   selector:
-    {{- include "firefly.selectorLabels" . | nindent 4 }}
+    {{- include "firefly.dataexchangeSelectorLabels" . | nindent 4 }}
 {{- end }}
