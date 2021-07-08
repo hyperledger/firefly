@@ -141,7 +141,7 @@ dataexchange:
 dataexchange:
   {{- if .Values.dataexchange.enabled }}
   https:
-    url: http://{{ include "firefly.fullname" . }}-dx:{{ .Values.dataexchange.service.apiPort }}
+    url: http://{{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc:{{ .Values.dataexchange.service.apiPort }}
     {{- if .Values.dataexchange.apiKey }}
     headers:
       x-api-key: {{ .Values.dataexchange.apiKey | quote }}
