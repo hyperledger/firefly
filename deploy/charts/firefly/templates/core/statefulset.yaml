@@ -44,16 +44,16 @@ spec:
           {{- end }}
           ports:
             - name: http
-              containerPort:  {{ .Values.core.service.httpPort }}
+              containerPort: {{ .Values.core.service.httpPort }}
               protocol: TCP
             {{- if .Values.config.debugEnabled }}
             - name: debug
-              containerPort:  {{ .Values.core.service.debugPort }}
+              containerPort: {{ .Values.core.service.debugPort }}
               protocol: TCP
             {{- end }}
             {{- if .Values.config.adminEnabled }}
             - name: admin
-              containerPort:  {{ .Values.core.service.adminPort }}
+              containerPort: {{ .Values.core.service.adminPort }}
               protocol: TCP
             {{- end }}
           livenessProbe:
@@ -66,9 +66,9 @@ spec:
           readinessProbe:
             tcpSocket:
               port: {{ if and .Values.config.adminEnabled .Values.config.preInit }}admin{{ else }}http{{ end }}
-            failureThreshold: 6
+            failureThreshold: 10
             successThreshold: 3
-            periodSeconds: 5
+            periodSeconds: 3
           volumeMounts:
             - mountPath: /etc/firefly/
               name: firefly-config

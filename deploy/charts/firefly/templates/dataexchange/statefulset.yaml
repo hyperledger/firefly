@@ -44,10 +44,10 @@ spec:
           {{- end }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ .Values.dataexchange.service.apiPort }}
               protocol: TCP
             - name: p2p
-              containerPort: 3001
+              containerPort: {{ .Values.dataexchange.service.p2pPort }}
               protocol: TCP
           livenessProbe:
             tcpSocket:
@@ -60,9 +60,9 @@ spec:
             tcpSocket:
               port: p2p
             initialDelaySeconds: 5
-            failureThreshold: 6
+            failureThreshold: 10
             successThreshold: 3
-            periodSeconds: 5
+            periodSeconds: 3
           resources:
             {{- toYaml .Values.dataexchange.resources | nindent 12 }}
           volumeMounts:
