@@ -117,8 +117,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	stack, err := ReadStack(stackFile)
 	assert.NoError(t, err)
 
-	var authHeader1 *http.Header
-	var authHeader2 *http.Header
+	var authHeader1 http.Header
+	var authHeader2 http.Header
 
 	ts := &testState{
 		t:         t,
@@ -145,7 +145,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
 		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
-		authHeader1 = &http.Header{
+		authHeader1 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[0].Username, stack.Members[0].Password))))},
 		}
 	}
@@ -153,7 +153,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	if stack.Members[1].Username != "" && stack.Members[1].Password != "" {
 		t.Log("Setting auth for user 2")
 		ts.client2.SetBasicAuth(stack.Members[1].Username, stack.Members[1].Password)
-		authHeader2 = &http.Header{
+		authHeader2 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[1].Username, stack.Members[1].Password))))},
 		}
 	}
@@ -191,13 +191,13 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Websocket 1: " + wsUrl1.String())
 	t.Logf("Websocket 2: " + wsUrl2.String())
 
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), *authHeader1)
+	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
 	if err != nil {
 		t.Logf(err.Error())
 	}
 	require.NoError(t, err)
 
-	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), *authHeader2)
+	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), authHeader2)
 	require.NoError(t, err)
 
 	ts.done = func() {

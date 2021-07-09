@@ -131,7 +131,7 @@ func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx 
 	tx = &txWrapper{
 		sqlTX: sqlTX,
 	}
-	ctx1 = context.WithValue(ctx, txContextKey{}, tx)
+	ctx1 = context.WithValue(ctx1, txContextKey{}, tx)
 	l.Debugf("SQL<- begin")
 	return ctx1, tx, false, err
 }
