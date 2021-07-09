@@ -43,15 +43,10 @@ func TestSQLite3GoProvider(t *testing.T) {
 	assert.Equal(t, "sqlite3", sqlite.Name())
 	assert.Equal(t, sq.Dollar, sqlite.PlaceholderFormat())
 
-	assert.Equal(t, "seq", sqlite.SequenceField(""))
-	assert.Equal(t, "m.seq", sqlite.SequenceField("m"))
-
 	insert := sq.Insert("test").Columns("col1").Values("val1")
 	insert, query := sqlite.UpdateInsertForSequenceReturn(insert)
 	sql, _, err := insert.ToSql()
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)", sql)
 	assert.False(t, query)
-
-	assert.True(t, sqlite.IndividualSort())
 }

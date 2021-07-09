@@ -18,7 +18,6 @@ package sqlitego
 
 import (
 	"context"
-	"fmt"
 
 	"database/sql"
 
@@ -58,21 +57,10 @@ func (sqlite *SQLiteGo) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (
 	return insert, false
 }
 
-func (sqlite *SQLiteGo) SequenceField(tableName string) string {
-	if tableName != "" {
-		return fmt.Sprintf("%s.seq", tableName)
-	}
-	return "seq"
-}
-
 func (sqlite *SQLiteGo) Open(url string) (*sql.DB, error) {
 	return sql.Open("sqlite", url)
 }
 
 func (sqlite *SQLiteGo) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return migratesqlite.WithInstance(db, &migratesqlite.Config{})
-}
-
-func (sqlite *SQLiteGo) IndividualSort() bool {
-	return true
 }

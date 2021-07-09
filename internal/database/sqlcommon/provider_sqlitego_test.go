@@ -19,7 +19,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -80,21 +79,10 @@ func (tp *sqliteGoTestProvider) UpdateInsertForSequenceReturn(insert sq.InsertBu
 	return insert, false
 }
 
-func (tp *sqliteGoTestProvider) SequenceField(tableName string) string {
-	if tableName != "" {
-		return fmt.Sprintf("%s.seq", tableName)
-	}
-	return "seq"
-}
-
 func (tp *sqliteGoTestProvider) Open(url string) (*sql.DB, error) {
 	return sql.Open("sqlite", url)
 }
 
 func (tp *sqliteGoTestProvider) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return sqlite.WithInstance(db, &sqlite.Config{})
-}
-
-func (tp *sqliteGoTestProvider) IndividualSort() bool {
-	return false // QL does not support individual column sorting
 }

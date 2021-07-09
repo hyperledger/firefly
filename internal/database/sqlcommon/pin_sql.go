@@ -51,7 +51,7 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 
 	// Do a select within the transaction to detemine if the UUID already exists
 	pinRows, err := s.queryTx(ctx, tx,
-		sq.Select(s.provider.SequenceField(""), "masked", "dispatched").
+		sq.Select("seq", "masked", "dispatched").
 			From("pins").
 			Where(sq.Eq{
 				"hash":     pin.Hash,
@@ -117,7 +117,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (message []*fftypes.Pin, err error) {
 
 	cols := append([]string{}, pinColumns...)
-	cols = append(cols, s.provider.SequenceField(""))
+	cols = append(cols, "seq")
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("pins"), filter, pinFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err e
 		Update("pins").
 		Set("dispatched", true).
 		Where(sq.Eq{
-			s.provider.SequenceField(""): sequence,
+			"seq": sequence,
 		}))
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	err = s.deleteTx(ctx, tx, sq.Delete("pins").Where(sq.Eq{
-		s.provider.SequenceField(""): sequence,
+		"seq": sequence,
 	}))
 	if err != nil {
 		return err

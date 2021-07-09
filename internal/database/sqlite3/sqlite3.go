@@ -20,7 +20,6 @@ package sqlite3
 
 import (
 	"context"
-	"fmt"
 
 	"database/sql"
 
@@ -60,21 +59,10 @@ func (sqlite *SQLite3) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (s
 	return insert, false
 }
 
-func (sqlite *SQLite3) SequenceField(tableName string) string {
-	if tableName != "" {
-		return fmt.Sprintf("%s.seq", tableName)
-	}
-	return "seq"
-}
-
 func (sqlite *SQLite3) Open(url string) (*sql.DB, error) {
 	return sql.Open("sqlite3", url)
 }
 
 func (sqlite *SQLite3) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return migratesqlite3.WithInstance(db, &migratesqlite3.Config{})
-}
-
-func (sqlite *SQLite3) IndividualSort() bool {
-	return true
 }

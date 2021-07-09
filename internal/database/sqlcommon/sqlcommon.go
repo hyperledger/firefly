@@ -50,7 +50,7 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 	s.capabilities = capabilities
 	s.callbacks = callbacks
 	s.provider = provider
-	if s.provider == nil || s.provider.PlaceholderFormat() == nil || s.provider.SequenceField("") == "" {
+	if s.provider == nil || s.provider.PlaceholderFormat() == nil || "seq" == "" {
 		log.L(ctx).Errorf("Invalid SQL options from provider '%T'", s.provider)
 		return i18n.NewError(ctx, i18n.MsgDBInitFailed)
 	}

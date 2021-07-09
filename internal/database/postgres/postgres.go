@@ -18,7 +18,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 
 	"database/sql"
 
@@ -58,21 +57,10 @@ func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq
 	return insert.Suffix(" RETURNING seq"), true
 }
 
-func (psql *Postgres) SequenceField(tableName string) string {
-	if tableName != "" {
-		return fmt.Sprintf("%s.seq", tableName)
-	}
-	return "seq"
-}
-
 func (psql *Postgres) Open(url string) (*sql.DB, error) {
 	return sql.Open(psql.Name(), url)
 }
 
 func (psql *Postgres) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return postgres.WithInstance(db, &postgres.Config{})
-}
-
-func (psql *Postgres) IndividualSort() bool {
-	return true
 }

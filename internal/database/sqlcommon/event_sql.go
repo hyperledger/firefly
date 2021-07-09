@@ -121,7 +121,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.provider.SequenceField(""))
+	cols = append(cols, "seq")
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("events").
@@ -148,7 +148,7 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
-	cols = append(cols, s.provider.SequenceField(""))
+	cols = append(cols, "seq")
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err

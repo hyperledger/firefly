@@ -23,6 +23,10 @@ import (
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 )
 
+const (
+	sequenceColumn = "seq"
+)
+
 // Provider defines the interface an individual provider muse implement to customize the SQLCommon implementation
 type Provider interface {
 
@@ -43,11 +47,4 @@ type Provider interface {
 
 	// UpdateInsertForReturn updates the insert query for returning the Sequenc, and returns whether it needs to be run as a query to return the Sequence field
 	UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (updatedInsert sq.InsertBuilder, runAsQuery bool)
-
-	// SequenceField must be auto added by the database to each table, via appropriate DDL in the migrations
-	// Different formats exist for putting a table prefix. QL is "id(prefix)" rather than "prefix.seq"
-	SequenceField(tableName string) string
-
-	// IndividualSort returns true if individual column sorting is supported in "ORDER BY" clauses
-	IndividualSort() bool
 }
