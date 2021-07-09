@@ -1,7 +1,7 @@
 config:
   debugEnabled: true
   adminEnabled: true
-  preInit: false
+  preInit: true
 
   organizationName: "firefly-os"
   organizationIdentity: "0xeb7284ce905e0665b7d42cabe31c76c45da1d331"
@@ -10,6 +10,7 @@ config:
   ethconnectUrl: "http://ethconnect.firefly-os"
 
   postgresUrl: "postgres://postgres:firef1y@postgresql.default.svc:5432?sslmode=disable"
+  postgresAutomigrate: true
 
   ipfsApiUrl: "http://ipfs.firefly-os:5001"
   ipfsGatewayUrl: "http://ipfs.firefly-os:8080"
