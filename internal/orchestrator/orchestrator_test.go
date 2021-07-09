@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
@@ -54,6 +55,7 @@ type testOrchestrator struct {
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
 	mdx *dataexchangemocks.Plugin
+	mam *assetmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -87,6 +89,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
+	tor.orchestrator.assets = tor.mam
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -414,5 +417,6 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())
+	assert.Equal(t, or.mam, or.Assets())
 	assert.NotNil(t, or.SyncAsyncBridge())
 }

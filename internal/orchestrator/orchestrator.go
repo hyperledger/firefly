@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger-labs/firefly/internal/assets"
 	"github.com/hyperledger-labs/firefly/internal/batch"
 	"github.com/hyperledger-labs/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
@@ -62,6 +63,7 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
 	SyncAsyncBridge() syncasync.Bridge
+	Assets() assets.Manager
 	IsPreInit() bool
 
 	// Status
@@ -123,6 +125,7 @@ type orchestrator struct {
 	messaging     privatemessaging.Manager
 	data          data.Manager
 	syncasync     syncasync.Bridge
+	assets        assets.Manager
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -223,6 +226,10 @@ func (or *orchestrator) Data() data.Manager {
 
 func (or *orchestrator) SyncAsyncBridge() syncasync.Bridge {
 	return or.syncasync
+}
+
+func (or *orchestrator) Assets() assets.Manager {
+	return or.assets
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -334,6 +341,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.networkmap == nil {
 		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.assets == nil {
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.blockchain)
 		if err != nil {
 			return err
 		}
