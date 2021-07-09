@@ -42,7 +42,7 @@ jobs:
       - name: install postgres
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami || true
-          helm install --set postgresPassword=firef1y --set extraEnv[0].name=POSTGRES_DATABASE --set extraEnv[0].value=firefly postgresql bitnami/postgresql
+          helm install --set postgresqlPassword=firef1y --set extraEnv[0].name=POSTGRES_DATABASE --set extraEnv[0].value=firefly postgresql bitnami/postgresql
 
       - name: run chart integration test
         run: ct install --charts deploy/charts/firefly
