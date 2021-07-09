@@ -45,6 +45,7 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir internal/syshandlers      --name SystemHandlers   --output mocks/syshandlersmocks      --outpkg syshandlersmocks
 		${MOCKERY} --case underscore --dir internal/events           --name EventManager     --output mocks/eventmocks            --outpkg eventmocks
 		${MOCKERY} --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
+		${MOCKERY} --case underscore --dir internal/assets           --name Manager          --output mocks/assetmocks            --outpkg assetmocks
 		${MOCKERY} --case underscore --dir internal/wsclient         --name WSClient         --output mocks/wsmocks               --outpkg wsmocks
 		${MOCKERY} --case underscore --dir internal/orchestrator     --name Orchestrator     --output mocks/orchestratormocks     --outpkg orchestratormocks
 		${MOCKERY} --case underscore --dir internal/apiserver        --name Server           --output mocks/apiservermocks        --outpkg apiservermocks

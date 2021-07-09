@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
@@ -54,6 +55,7 @@ type testOrchestrator struct {
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
 	mdx *dataexchangemocks.Plugin
+	mam *assetmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -75,6 +77,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
 		mdx: &dataexchangemocks.Plugin{},
+		mam: &assetmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -87,12 +90,14 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
+	tor.orchestrator.assets = tor.mam
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
 	tor.mbi.On("Name").Return("mock-bi").Maybe()
 	tor.mii.On("Name").Return("mock-ii").Maybe()
 	tor.mdx.On("Name").Return("mock-dx").Maybe()
+	tor.mam.On("Name").Return("mock-am").Maybe()
 	return tor
 }
 
@@ -324,10 +329,12 @@ func TestStartStopOk(t *testing.T) {
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
+	or.mam.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
+	or.mam.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -414,5 +421,6 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())
+	assert.Equal(t, or.mam, or.Assets())
 	assert.NotNil(t, or.SyncAsyncBridge())
 }
