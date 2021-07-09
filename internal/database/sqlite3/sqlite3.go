@@ -14,7 +14,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package postgres
+// +build cgo
+
+package sqlite3
 
 import (
 	"context"
@@ -24,55 +26,55 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	migratesqlite3 "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/database/sqlcommon"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 
-	// Import pq driver
-	_ "github.com/lib/pq"
+	// Import the derivation of SQLite3 CGO suported by golang-migrate
+	_ "github.com/mattn/go-sqlite3"
 )
 
-type Postgres struct {
+type SQLite3 struct {
 	sqlcommon.SQLCommon
 }
 
-func (psql *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+func (sqlite *SQLite3) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
 	capabilities := &database.Capabilities{}
-	return psql.SQLCommon.Init(ctx, psql, prefix, callbacks, capabilities)
+	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
 }
 
-func (psql *Postgres) Name() string {
-	return "postgres"
+func (sqlite *SQLite3) Name() string {
+	return "sqlite3"
 }
 
-func (psql *Postgres) MigrationsDir() string {
-	return psql.Name()
+func (sqlite *SQLite3) MigrationsDir() string {
+	return "sqlite"
 }
 
-func (psql *Postgres) PlaceholderFormat() sq.PlaceholderFormat {
+func (sqlite *SQLite3) PlaceholderFormat() sq.PlaceholderFormat {
 	return sq.Dollar
 }
 
-func (psql *Postgres) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
-	return insert.Suffix(" RETURNING seq"), true
+func (sqlite *SQLite3) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (sq.InsertBuilder, bool) {
+	return insert, false
 }
 
-func (psql *Postgres) SequenceField(tableName string) string {
+func (sqlite *SQLite3) SequenceField(tableName string) string {
 	if tableName != "" {
 		return fmt.Sprintf("%s.seq", tableName)
 	}
 	return "seq"
 }
 
-func (psql *Postgres) Open(url string) (*sql.DB, error) {
-	return sql.Open(psql.Name(), url)
+func (sqlite *SQLite3) Open(url string) (*sql.DB, error) {
+	return sql.Open("sqlite3", url)
 }
 
-func (psql *Postgres) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
-	return postgres.WithInstance(db, &postgres.Config{})
+func (sqlite *SQLite3) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
+	return migratesqlite3.WithInstance(db, &migratesqlite3.Config{})
 }
 
-func (psql *Postgres) IndividualSort() bool {
+func (sqlite *SQLite3) IndividualSort() bool {
 	return true
 }

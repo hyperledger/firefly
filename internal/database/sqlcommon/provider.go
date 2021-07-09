@@ -29,6 +29,9 @@ type Provider interface {
 	// Name is the name of the database driver
 	Name() string
 
+	// MigrationDir is the subdirectory for migrations
+	MigrationsDir() string
+
 	// Open creates the DB instances
 	Open(url string) (*sql.DB, error)
 

@@ -28,6 +28,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-sqlite3 v1.14.7
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.9
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
@@ -58,13 +59,6 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gotest.tools v2.2.0+incompatible
-	modernc.org/b v1.0.1 // indirect
-	modernc.org/db v1.0.1 // indirect
-	modernc.org/file v1.0.2 // indirect
-	modernc.org/golex v1.0.1 // indirect
-	modernc.org/lldb v1.0.1 // indirect
-	modernc.org/ql v1.3.1
 	modernc.org/sqlite v1.10.7
 	modernc.org/strutil v1.1.1 // indirect
-	modernc.org/zappy v1.0.3 // indirect
 )

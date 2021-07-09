@@ -64,6 +64,10 @@ func (mp *mockProvider) Name() string {
 	return "mockdb"
 }
 
+func (mp *mockProvider) MigrationsDir() string {
+	return mp.Name()
+}
+
 func (mp *mockProvider) PlaceholderFormat() sq.PlaceholderFormat {
 	return sq.Dollar
 }

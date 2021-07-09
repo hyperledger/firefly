@@ -90,7 +90,7 @@ func (s *SQLCommon) applyDBMigrations(ctx context.Context, prefix config.Prefix,
 		var m *migrate.Migrate
 		m, err = migrate.NewWithDatabaseInstance(
 			"file://"+prefix.GetString(SQLConfMigrationsDirectory),
-			provider.Name(), driver)
+			provider.MigrationsDir(), driver)
 		if err == nil {
 			err = m.Up()
 		}
