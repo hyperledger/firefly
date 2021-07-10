@@ -32,8 +32,8 @@ import (
 func TestPinsE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	s.callbacks.On("PinCreated", mock.Anything).Return()

@@ -31,8 +31,8 @@ import (
 
 func TestEventE2EWithDB(t *testing.T) {
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	s.callbacks.On("EventCreated", mock.Anything).Return()

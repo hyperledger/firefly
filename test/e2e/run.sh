@@ -12,6 +12,11 @@ if [ -z "${BUILD_FIREFLY}" ]; then
   BUILD_FIREFLY=true
 fi
 
+if [ -z "${DATABASE_TYPE}" ]; then
+  # Can also set to "postgres" or "sqlitego" etc.
+  DATABASE_TYPE=sqlite3
+fi
+
 set -euo pipefail
 
 CWD=$(dirname "$0")
@@ -35,7 +40,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-	$CLI init $STACK_NAME 2
+	$CLI init --database $DATABASE_TYPE $STACK_NAME 2
 	$CLI start -n $STACK_NAME
 fi
 

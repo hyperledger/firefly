@@ -34,8 +34,8 @@ import (
 func TestOffsetsE2EWithDB(t *testing.T) {
 	log.SetLevel("debug")
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	// Create a new offset entry

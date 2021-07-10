@@ -30,8 +30,8 @@ import (
 
 func TestTransactionE2EWithDB(t *testing.T) {
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	// Create a new transaction entry

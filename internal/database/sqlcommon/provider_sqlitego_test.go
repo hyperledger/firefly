@@ -19,6 +19,9 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
@@ -44,7 +47,7 @@ type sqliteGoTestProvider struct {
 }
 
 // newTestProvider creates a real in-memory database provider for e2e testing
-func newQLTestProvider(t *testing.T) *sqliteGoTestProvider {
+func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 	tp := &sqliteGoTestProvider{
 		t:            t,
 		callbacks:    &databasemocks.Callbacks{},
@@ -52,14 +55,19 @@ func newQLTestProvider(t *testing.T) *sqliteGoTestProvider {
 		prefix:       config.NewPluginConfig("unittest.db"),
 	}
 	tp.SQLCommon.InitPrefix(tp, tp.prefix)
-	tp.prefix.Set(SQLConfDatasourceURL, "file::memory:")
+	dir, err := ioutil.TempDir("", "")
+	assert.NoError(t, err)
+	tp.prefix.Set(SQLConfDatasourceURL, fmt.Sprintf("file:%s/testdb", dir))
 	tp.prefix.Set(SQLConfMigrationsAuto, true)
 	tp.prefix.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
 
-	err := tp.Init(context.Background(), tp, tp.prefix, tp.callbacks, tp.capabilities)
+	err = tp.Init(context.Background(), tp, tp.prefix, tp.callbacks, tp.capabilities)
 	assert.NoError(tp.t, err)
 
-	return tp
+	return tp, func() {
+		tp.Close()
+		_ = os.RemoveAll(dir)
+	}
 }
 
 func (tp *sqliteGoTestProvider) Name() string {
