@@ -26,14 +26,14 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 
-	// Import the pure Go SQLite driver
-	_ "modernc.org/sqlite"
+	// Import SQLite driver
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // sqliteGoTestProvider uses QL in-memory database
@@ -71,7 +71,7 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 }
 
 func (tp *sqliteGoTestProvider) Name() string {
-	return "sqlitego"
+	return "sqlite3"
 }
 
 func (tp *sqliteGoTestProvider) MigrationsDir() string {
@@ -88,9 +88,9 @@ func (tp *sqliteGoTestProvider) UpdateInsertForSequenceReturn(insert sq.InsertBu
 }
 
 func (tp *sqliteGoTestProvider) Open(url string) (*sql.DB, error) {
-	return sql.Open("sqlite", url)
+	return sql.Open("sqlite3", url)
 }
 
 func (tp *sqliteGoTestProvider) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
-	return sqlite.WithInstance(db, &sqlite.Config{})
+	return sqlite3.WithInstance(db, &sqlite3.Config{})
 }

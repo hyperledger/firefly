@@ -21,12 +21,10 @@ package difactory
 import (
 	"github.com/hyperledger-labs/firefly/internal/database/postgres"
 	"github.com/hyperledger-labs/firefly/internal/database/sqlite3"
-	"github.com/hyperledger-labs/firefly/internal/database/sqlitego"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
 var plugins = []database.Plugin{
 	&postgres.Postgres{},
-	&sqlite3.SQLite3{},   // wrapper to the SQLite 3 C library
-	&sqlitego.SQLiteGo{}, // the modernc implementation of SQLite that does not require CGO
+	&sqlite3.SQLite3{}, // wrapper to the SQLite 3 C library
 }

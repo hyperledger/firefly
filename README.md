@@ -299,7 +299,7 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └─────┬─────────┘
   │                 ├───────────────────────┬───────── ... extensible other SQL databases
   │           ┌─────┴─────────┐     ┌───────┴────────┐
-  │           │ postgres      │     │ sqlite (go/cgo)│
+  │           │ postgres      │     │ sqlite3        │
   │           └───────────────┘     └────────────────┘
   │
   │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications

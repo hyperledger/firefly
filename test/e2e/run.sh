@@ -13,7 +13,7 @@ if [ -z "${BUILD_FIREFLY}" ]; then
 fi
 
 if [ -z "${DATABASE_TYPE}" ]; then
-  # Can also set to "postgres" or "sqlitego" etc.
+  # Can also set to "postgres"
   DATABASE_TYPE=sqlite3
 fi
 

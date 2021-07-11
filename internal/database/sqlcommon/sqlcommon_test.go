@@ -205,6 +205,15 @@ func TestTXConcurrency(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 
+	// This test exercise our transaction begin/use/end code for parallel execution.
+	// It was originally written to validate the pure Go implementation of SQLite:
+	// https://gitlab.com/cznic/sqlite
+	// Sadly we found problems with that implementation, and are now only using
+	// the well adopted CGO implementation.
+	// When the e2e DB tests move to being able to be run against any database, this
+	// test should be included.
+	// (additional refactor required - see https://github.com/hyperledger-labs/firefly/issues/119)
+
 	_, err := s.db.Exec(`
 		CREATE TABLE testconc ( seq INTEGER PRIMARY KEY AUTOINCREMENT, val VARCHAR(256) );
 	`)
