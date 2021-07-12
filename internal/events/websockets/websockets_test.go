@@ -360,6 +360,105 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 	assert.Regexp(t, "FF10179", err)
 }
 
+func TestHandleStartWithChangeEvents(t *testing.T) {
+	mcb := &eventsmocks.Callbacks{}
+	wsc := &websocketConnection{
+		ctx:          context.Background(),
+		connID:       "conn1",
+		startedCount: 1,
+		sendMessages: make(chan interface{}, 1),
+		ws: &WebSockets{
+			callbacks: mcb,
+		},
+	}
+	wsc.ws.connections = map[string]*websocketConnection{
+		"conn1": wsc,
+	}
+	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
+		return opts.ChangeEvents // expect change events to be enabled
+	})).Return(nil)
+	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
+		Namespace:    "ns1",
+		Ephemeral:    true,
+		ChangeEvents: ".*",
+	})
+	assert.NoError(t, err)
+
+	wsc.ws.ChangeEvent("conn1", &fftypes.ChangeEvent{
+		Collection: "ut1",
+	})
+	wscn := (<-wsc.sendMessages).(*fftypes.WSChangeNotification)
+	assert.Equal(t, fftypes.WSClientActionChangeNotifcation, wscn.Type)
+	assert.Equal(t, "ut1", wscn.ChangeEvent.Collection)
+
+	mcb.AssertExpectations(t)
+}
+
+func TestHandleChangeEventsDispatchFail(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // already closed
+	mcb := &eventsmocks.Callbacks{}
+	wsc := &websocketConnection{
+		ctx:          ctx,
+		connID:       "conn1",
+		startedCount: 1,
+		sendMessages: make(chan interface{}), // wil block
+		ws: &WebSockets{
+			ctx:       ctx,
+			callbacks: mcb,
+		},
+	}
+	wsc.ws.connections = map[string]*websocketConnection{
+		"conn1": wsc,
+	}
+	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
+		return opts.ChangeEvents // expect change events to be enabled
+	})).Return(nil)
+	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
+		Namespace:    "ns1",
+		Ephemeral:    true,
+		ChangeEvents: ".*",
+	})
+	assert.NoError(t, err)
+
+	wsc.ws.ChangeEvent("conn1", &fftypes.ChangeEvent{
+		Collection: "ut1",
+	})
+	mcb.AssertExpectations(t)
+}
+
+func TestHandleStartWithBadChangeEventsRegex(t *testing.T) {
+	eventUUID := fftypes.NewUUID()
+	mcb := &eventsmocks.Callbacks{}
+	wsc := &websocketConnection{
+		ctx:          context.Background(),
+		connID:       "conn1",
+		startedCount: 1,
+		sendMessages: make(chan interface{}, 1),
+		inflight: []*fftypes.EventDeliveryResponse{
+			{ID: eventUUID},
+		},
+		autoAck: true,
+		ws: &WebSockets{
+			callbacks: mcb,
+		},
+	}
+	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
+		return !opts.ChangeEvents // expect change events to be disabled due to bad regex
+	})).Return(nil)
+	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
+		Namespace:    "ns1",
+		Ephemeral:    true,
+		ChangeEvents: "!!!!(not a regex",
+	})
+	assert.NoError(t, err)
+
+	// no-op
+	wsc.dispatchChangeEvent(&fftypes.ChangeEvent{})
+
+	mcb.AssertExpectations(t)
+}
+
 func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
