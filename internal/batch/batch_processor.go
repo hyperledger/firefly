@@ -267,7 +267,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 					Type: fftypes.TransactionTypeBatchPin,
 					ID:   fftypes.NewUUID(),
 				}
-				contexts, err = bp.maskContexts(bp.ctx, batch)
+				contexts, err = bp.maskContexts(ctx, batch)
 				batch.Hash = batch.Payload.Hash()
 				log.L(ctx).Debugf("Batch %s sealed. Hash=%s", batch.ID, batch.Hash)
 			}
