@@ -240,7 +240,7 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 		if err != nil {
 			log.L(wc.ctx).Errorf("Unable to compile change events regular expression '%s': %s", start.ChangeEvents, err)
 		} else {
-			start.Options.WebsocketChangeEvents = true
+			start.Options.ChangeEvents = true
 		}
 	}
 

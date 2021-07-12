@@ -42,10 +42,12 @@ func (ws *WebSockets) Name() string { return "websockets" }
 
 func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
 	*ws = WebSockets{
-		ctx:          ctx,
-		connections:  make(map[string]*websocketConnection),
-		capabilities: &events.Capabilities{},
-		callbacks:    callbacks,
+		ctx:         ctx,
+		connections: make(map[string]*websocketConnection),
+		capabilities: &events.Capabilities{
+			ChangeEvents: true,
+		},
+		callbacks: callbacks,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(prefix.GetByteSize(ReadBufferSize)),
 			WriteBufferSize: int(prefix.GetByteSize(WriteBufferSize)),

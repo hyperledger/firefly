@@ -25,6 +25,7 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir pkg/publicstorage         --name Plugin           --output mocks/publicstoragemocks    --outpkg publicstoragemocks
 		${MOCKERY} --case underscore --dir pkg/publicstorage         --name Callbacks        --output mocks/publicstoragemocks    --outpkg publicstoragemocks
 		${MOCKERY} --case underscore --dir pkg/events                --name Plugin           --output mocks/eventsmocks           --outpkg eventsmocks
+		${MOCKERY} --case underscore --dir pkg/events                --name PluginAll        --output mocks/eventsmocks           --outpkg eventsmocks
 		${MOCKERY} --case underscore --dir pkg/events                --name Callbacks        --output mocks/eventsmocks           --outpkg eventsmocks
 		${MOCKERY} --case underscore --dir pkg/identity              --name Plugin           --output mocks/identitymocks         --outpkg identitymocks
 		${MOCKERY} --case underscore --dir pkg/identity              --name Callbacks        --output mocks/identitymocks         --outpkg identitymocks

@@ -54,8 +54,8 @@ type SubscriptionCoreOptions struct {
 type SubscriptionOptions struct {
 	SubscriptionCoreOptions
 
-	// Ephemeral WebSocket subscriptions only can add this option to enable change events
-	WebsocketChangeEvents bool `json:"-"`
+	// Ephemeral subscriptions only can add this option to enable change events
+	ChangeEvents bool `json:"-"`
 
 	// Extenisble by the specific transport - so we serialize/de-serialize via map
 	additionalOptions JSONObject

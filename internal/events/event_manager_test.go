@@ -65,6 +65,7 @@ func TestStartStop(t *testing.T) {
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
 	em.NewPins() <- 12345
+	assert.Equal(t, chan<- *fftypes.ChangeEvent(em.subManager.cel.changeEvents), em.ChangeEvents())
 	cancel()
 	em.WaitStop()
 }

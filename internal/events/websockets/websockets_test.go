@@ -64,6 +64,10 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	err = wsc.Connect()
 	assert.NoError(t, err)
 
+	var wsi interface{} = ws
+	_, ok := wsi.(events.PluginAll)
+	assert.True(t, ok)
+
 	return ws, wsc, func() {
 		cancelCtx()
 		wsc.Close()
