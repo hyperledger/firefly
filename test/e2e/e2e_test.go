@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image/png"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -113,10 +114,11 @@ func beforeE2ETest(t *testing.T) *testState {
 		t.Fatal("STACK_FILE must be set")
 	}
 
-	port1, err := GetMemberPort(stackFile, 0)
-	require.NoError(t, err)
-	port2, err := GetMemberPort(stackFile, 1)
-	require.NoError(t, err)
+	stack, err := ReadStack(stackFile)
+	assert.NoError(t, err)
+
+	var authHeader1 http.Header
+	var authHeader2 http.Header
 
 	ts := &testState{
 		t:         t,
@@ -125,8 +127,36 @@ func beforeE2ETest(t *testing.T) *testState {
 		client2:   NewResty(t),
 	}
 
-	ts.client1.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port1))
-	ts.client2.SetHostURL(fmt.Sprintf("http://localhost:%d/api/v1", port2))
+	httpProtocolClient1 := "http"
+	websocketProtocolClient1 := "ws"
+	httpProtocolClient2 := "http"
+	websocketProtocolClient2 := "ws"
+	if stack.Members[0].UseHTTPS {
+		httpProtocolClient1 = "https"
+		websocketProtocolClient1 = "wss"
+	}
+	if stack.Members[1].UseHTTPS {
+		httpProtocolClient2 = "https"
+		websocketProtocolClient2 = "wss"
+	}
+	ts.client1.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort))
+	ts.client2.SetHostURL(fmt.Sprintf("%s://%s:%d/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort))
+
+	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
+		t.Log("Setting auth for user 1")
+		ts.client1.SetBasicAuth(stack.Members[0].Username, stack.Members[0].Password)
+		authHeader1 = http.Header{
+			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[0].Username, stack.Members[0].Password))))},
+		}
+	}
+
+	if stack.Members[1].Username != "" && stack.Members[1].Password != "" {
+		t.Log("Setting auth for user 2")
+		ts.client2.SetBasicAuth(stack.Members[1].Username, stack.Members[1].Password)
+		authHeader2 = http.Header{
+			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[1].Username, stack.Members[1].Password))))},
+		}
+	}
 
 	t.Logf("Client 1: " + ts.client1.HostURL)
 	t.Logf("Client 2: " + ts.client2.HostURL)
@@ -146,14 +176,14 @@ func beforeE2ETest(t *testing.T) *testState {
 	}
 
 	wsUrl1 := url.URL{
-		Scheme:   "ws",
-		Host:     fmt.Sprintf("localhost:%d", port1),
+		Scheme:   websocketProtocolClient1,
+		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
 		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
 	}
 	wsUrl2 := url.URL{
-		Scheme:   "ws",
-		Host:     fmt.Sprintf("localhost:%d", port2),
+		Scheme:   websocketProtocolClient2,
+		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
 		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
 	}
@@ -161,14 +191,19 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Websocket 1: " + wsUrl1.String())
 	t.Logf("Websocket 2: " + wsUrl2.String())
 
-	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), nil)
+	ts.ws1, _, err = websocket.DefaultDialer.Dial(wsUrl1.String(), authHeader1)
+	if err != nil {
+		t.Logf(err.Error())
+	}
 	require.NoError(t, err)
-	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), nil)
+
+	ts.ws2, _, err = websocket.DefaultDialer.Dial(wsUrl2.String(), authHeader2)
 	require.NoError(t, err)
 
 	ts.done = func() {
 		ts.ws1.Close()
 		ts.ws2.Close()
+		t.Log("WebSockets closed")
 	}
 	return ts
 }

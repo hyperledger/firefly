@@ -1,5 +1,12 @@
 #!/bin/bash -x
 
+set -eo pipefail
+
+CWD=$(dirname "$0")
+CLI="ff -v --ansi never"
+STACK_DIR=~/.firefly/stacks
+STACK_NAME=firefly-e2e
+
 if [ -z "${DOWNLOAD_CLI}" ]; then
   DOWNLOAD_CLI=true
 fi
@@ -12,13 +19,10 @@ if [ -z "${BUILD_FIREFLY}" ]; then
   BUILD_FIREFLY=true
 fi
 
-set -euo pipefail
+if [ -z "${STACK_FILE}" ]; then
+  STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
+fi
 
-CWD=$(dirname "$0")
-CLI="ff -v --ansi never"
-STACK_DIR=~/.firefly/stacks
-STACK_NAME=firefly-e2e
-STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
 
 cd $CWD
 
