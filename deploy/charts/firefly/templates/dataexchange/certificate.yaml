@@ -10,6 +10,8 @@ metadata:
   labels:
     {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
 spec:
+  # NOTE: issuer should always be an internal / self-signed CA so that the subject is included
+  #       LetsEncrypt will not work w/ DX currently
   issuerRef:
     {{- toYaml .Values.dataexchange.certificate.issuerRef | nindent 4 }}
   secretName: "{{ include "firefly.fullname" . }}-dx-tls"
@@ -25,9 +27,8 @@ spec:
     {{- range .Values.dataexchange.ingress.hosts }}
     - {{ .host }}
     {{- end }}
-    {{- else }}
+    {{- end }}
     - {{ include "firefly.fullname" . }}-dx
     - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc
     - {{ include "firefly.fullname" . }}-dx.{{ .Release.Namespace }}.svc.cluster.local
-    {{- end }}
 {{- end }}
