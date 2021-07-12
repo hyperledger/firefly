@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
+	"github.com/hyperledger-labs/firefly/internal/events/websockets"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
@@ -39,26 +40,29 @@ type ackNack struct {
 }
 
 type eventDispatcher struct {
-	acksNacks     chan ackNack
-	cancelCtx     func()
-	closed        chan struct{}
-	connID        string
-	ctx           context.Context
-	data          data.Manager
-	database      database.Plugin
-	transport     events.Plugin
-	rs            *replySender
-	elected       bool
-	eventPoller   *eventPoller
-	inflight      map[fftypes.UUID]*fftypes.Event
-	eventDelivery chan *fftypes.EventDelivery
-	mux           sync.Mutex
-	namespace     string
-	readAhead     int
-	subscription  *subscription
+	acksNacks              chan ackNack
+	cancelCtx              func()
+	closed                 chan struct{}
+	connID                 string
+	ctx                    context.Context
+	data                   data.Manager
+	database               database.Plugin
+	transport              events.Plugin
+	rs                     *replySender
+	elected                bool
+	eventPoller            *eventPoller
+	inflight               map[fftypes.UUID]*fftypes.Event
+	eventDelivery          chan *fftypes.EventDelivery
+	mux                    sync.Mutex
+	namespace              string
+	readAhead              int
+	subscription           *subscription
+	cel                    *changeEventListener
+	changeEvents           chan *fftypes.ChangeEvent
+	changeEventsRegistered bool
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
@@ -75,9 +79,11 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
 		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
+		changeEvents:  make(chan *fftypes.ChangeEvent),
 		readAhead:     readAhead,
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
+		cel:           cel,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -136,6 +142,10 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 	// Unelect ourselves on close, to let another dispatcher in
 	<-ed.subscription.dispatcherElection
+	// Clean up any change event listener we had
+	if ed.changeEventsRegistered {
+		ed.cel.removeDispatcher(*ed.subscription.definition.ID)
+	}
 }
 
 func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
@@ -345,7 +355,21 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 	return nil
 }
 
+func (ed *eventDispatcher) dispatchChangeEvent(ce *fftypes.ChangeEvent) {
+	select {
+	case ed.changeEvents <- ce:
+		log.L(ed.ctx).Tracef("Dispatched change event %+v", ce)
+		break
+	case <-ed.eventPoller.closed:
+		log.L(ed.ctx).Warnf("Dispatcher closed before dispatching change event")
+	}
+}
+
 func (ed *eventDispatcher) deliverEvents() {
+	if ed.subscription.definition.Options.WebsocketChangeEvents {
+		ed.cel.addDispatcher(*ed.subscription.definition.ID, ed)
+		ed.changeEventsRegistered = true
+	}
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
 		select {
@@ -365,6 +389,13 @@ func (ed *eventDispatcher) deliverEvents() {
 			if err != nil {
 				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 			}
+		case changeEvent := <-ed.changeEvents:
+			ws, ok := ed.transport.(*websockets.WebSockets)
+			if !ok {
+				log.L(ed.ctx).Warnf("Change event received for non-websocket transport '%s'", ed.transport.Name())
+				break
+			}
+			ws.ChangeEvent(ed.connID, changeEvent)
 		case <-ed.ctx.Done():
 			return
 		}

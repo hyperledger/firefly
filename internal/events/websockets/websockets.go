@@ -86,6 +86,18 @@ func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, 
 	return conn.dispatch(event)
 }
 
+func (ws *WebSockets) ChangeEvent(connID string, ce *fftypes.ChangeEvent) {
+	ws.connMux.Lock()
+	conn, ok := ws.connections[connID]
+	ws.connMux.Unlock()
+	if ok {
+		err := conn.dispatchChangeEvent(ce)
+		if err != nil {
+			log.L(ws.ctx).Errorf("WebSocket delivery of change notification failed: %s", err)
+		}
+	}
+}
+
 func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	wsConn, err := ws.upgrader.Upgrade(res, req, nil)
 	if err != nil {

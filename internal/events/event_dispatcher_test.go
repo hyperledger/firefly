@@ -46,7 +46,7 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
+	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {

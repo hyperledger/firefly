@@ -143,7 +143,7 @@ func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 }
 
 func (em *eventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
-	return em.subManager.changeEvents
+	return em.subManager.cel.changeEvents
 }
 
 func (em *eventManager) WaitStop() {
