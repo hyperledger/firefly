@@ -16,7 +16,7 @@ spec:
   subject:
     organizations:
       - {{ .Values.config.organizationName }}
-  commonName: {{ include "firefly.fullname" . }}-dx
+  commonName: {{ if .Values.dataexchange.ingress.enabled }}{{ (index .Values.dataexchange.ingress.hosts 0).host }}{{ else }}{{ include "firefly.fullname" . }}-dx{{ end }}
   usages:
     - server auth
     - client auth
