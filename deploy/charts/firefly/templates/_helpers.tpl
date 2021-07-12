@@ -76,7 +76,7 @@ app.kubernetes.io/component: dx
 
 {{- define "firefly.dataexchangeP2PHost" -}}
 {{- if .Values.dataexchange.ingress.enabled }}
-{{- index .Values.dataexchange.ingress.hosts 0 }}
+{{- (index .Values.dataexchange.ingress.hosts 0).host }}
 {{- else }}
 {{- printf "%s-dx.%s.svc:%d" (include "firefly.fullname" .) .Release.Namespace (.Values.dataexchange.service.p2pPort | int64) }}
 {{- end }}
