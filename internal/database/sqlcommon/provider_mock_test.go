@@ -19,7 +19,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
@@ -64,6 +63,10 @@ func (mp *mockProvider) Name() string {
 	return "mockdb"
 }
 
+func (mp *mockProvider) MigrationsDir() string {
+	return mp.Name()
+}
+
 func (mp *mockProvider) PlaceholderFormat() sq.PlaceholderFormat {
 	return sq.Dollar
 }
@@ -75,21 +78,10 @@ func (mp *mockProvider) UpdateInsertForSequenceReturn(insert sq.InsertBuilder) (
 	return insert, false
 }
 
-func (mp *mockProvider) SequenceField(tableName string) string {
-	if tableName != "" {
-		return fmt.Sprintf("%s.seq", tableName)
-	}
-	return "seq"
-}
-
 func (mp *mockProvider) Open(url string) (*sql.DB, error) {
 	return mp.mockDB, mp.openError
 }
 
 func (mp *mockProvider) GetMigrationDriver(db *sql.DB) (migratedb.Driver, error) {
 	return nil, mp.getMigrationDriverError
-}
-
-func (mp *mockProvider) IndividualSort() bool {
-	return mp.individualSort
 }

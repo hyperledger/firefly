@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger-labs/firefly/internal/blockchain/ethereum"
-	"github.com/hyperledger-labs/firefly/internal/blockchain/utdbql"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
@@ -28,7 +27,6 @@ import (
 
 var plugins = []blockchain.Plugin{
 	&ethereum.Ethereum{},
-	&utdbql.UTDBQL{},
 }
 
 var pluginsByName = make(map[string]blockchain.Plugin)

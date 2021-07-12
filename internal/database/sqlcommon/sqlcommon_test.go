@@ -28,8 +28,8 @@ import (
 )
 
 func TestInitSQLCommon(t *testing.T) {
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	assert.NotNil(t, s.Capabilities())
 	assert.NotNil(t, s.DB())
 }
@@ -56,7 +56,8 @@ func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 }
 
 func TestQueryTxBadSQL(t *testing.T) {
-	tp := newQLTestProvider(t)
+	tp, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	_, err := tp.queryTx(context.Background(), nil, sq.SelectBuilder{})
 	assert.Regexp(t, "FF10113", err)
 }
@@ -198,4 +199,48 @@ func TestRollbackFail(t *testing.T) {
 	mock.ExpectRollback().WillReturnError(fmt.Errorf("pop"))
 	s.rollbackTx(context.Background(), &txWrapper{sqlTX: tx}, false)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestTXConcurrency(t *testing.T) {
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+
+	// This test exercise our transaction begin/use/end code for parallel execution.
+	// It was originally written to validate the pure Go implementation of SQLite:
+	// https://gitlab.com/cznic/sqlite
+	// Sadly we found problems with that implementation, and are now only using
+	// the well adopted CGO implementation.
+	// When the e2e DB tests move to being able to be run against any database, this
+	// test should be included.
+	// (additional refactor required - see https://github.com/hyperledger-labs/firefly/issues/119)
+
+	_, err := s.db.Exec(`
+		CREATE TABLE testconc ( seq INTEGER PRIMARY KEY AUTOINCREMENT, val VARCHAR(256) );
+	`)
+	assert.NoError(t, err)
+
+	racer := func(done chan struct{}, name string) func() {
+		return func() {
+			defer close(done)
+			for i := 0; i < 100; i++ {
+				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
+				assert.NoError(t, err)
+				val := fmt.Sprintf("%s/%d", name, i)
+				sequence, err := s.insertTx(ctx, tx, sq.Insert("testconc").Columns("val").Values(val))
+				assert.NoError(t, err)
+				t.Logf("%s = %d", val, sequence)
+				err = s.commitTx(ctx, tx, ac)
+				assert.NoError(t, err)
+			}
+		}
+	}
+	flags := make([]chan struct{}, 5)
+	for i := 0; i < len(flags); i++ {
+		flags[i] = make(chan struct{})
+		go racer(flags[i], fmt.Sprintf("racer_%d", i))()
+	}
+	for i := 0; i < len(flags); i++ {
+		<-flags[i]
+		t.Logf("Racer %d complete", i)
+	}
 }

@@ -39,26 +39,14 @@ func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.S
 	sel, err = s.filterSelectFinalized(ctx, tableName, sel, fi, typeMap, preconditions...)
 	sort := make([]string, len(fi.Sort))
 	var sortString string
-	if s.provider.IndividualSort() {
-		for i, sf := range fi.Sort {
-			direction := ""
-			if sf.Descending {
-				direction = " DESC"
-			}
-			sort[i] = fmt.Sprintf("%s%s", s.mapField(tableName, sf.Field, typeMap), direction)
-		}
-		sortString = strings.Join(sort, ", ")
-	} else {
+	for i, sf := range fi.Sort {
 		direction := ""
-		for i, sf := range fi.Sort {
-			if sf.Descending {
-				// If any are descending, they all become descending
-				direction = " DESC"
-			}
-			sort[i] = s.mapField(tableName, sf.Field, typeMap)
+		if sf.Descending {
+			direction = " DESC"
 		}
-		sortString = strings.Join(sort, ", ") + direction
+		sort[i] = fmt.Sprintf("%s%s", s.mapField(tableName, sf.Field, typeMap), direction)
 	}
+	sortString = strings.Join(sort, ", ")
 	sel = sel.OrderBy(sortString)
 	if err == nil {
 		if fi.Skip > 0 {
@@ -122,7 +110,10 @@ func (s *SQLCommon) escapeLike(value database.FieldSerialization) string {
 
 func (s *SQLCommon) mapField(tableName, fieldName string, tm map[string]string) string {
 	if fieldName == "sequence" {
-		return s.provider.SequenceField(tableName)
+		if tableName == "" {
+			return sequenceColumn
+		}
+		return fmt.Sprintf("%s.seq", tableName)
 	}
 	var field = fieldName
 	if tm != nil {

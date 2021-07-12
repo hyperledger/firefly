@@ -32,8 +32,8 @@ import (
 func TestNoncesE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	// Create a new nonce entry

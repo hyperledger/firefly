@@ -34,8 +34,8 @@ import (
 func TestUpsertE2EWithDB(t *testing.T) {
 	log.SetLevel("trace")
 
-	s := newQLTestProvider(t)
-	defer s.Close()
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
 	ctx := context.Background()
 
 	s.callbacks.On("MessageCreated", mock.Anything).Return()

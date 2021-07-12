@@ -38,5 +38,5 @@ const (
 func (s *SQLCommon) InitPrefix(provider Provider, prefix config.Prefix) {
 	prefix.AddKnownKey(SQLConfMigrationsAuto, false)
 	prefix.AddKnownKey(SQLConfDatasourceURL)
-	prefix.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.Name()))
+	prefix.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))
 }

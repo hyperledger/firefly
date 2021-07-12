@@ -81,7 +81,7 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blo
 
 func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Blob, err error) {
 	cols := append([]string{}, blobColumns...)
-	cols = append(cols, s.provider.SequenceField(""))
+	cols = append(cols, sequenceColumn)
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("blobs").
@@ -115,7 +115,7 @@ func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes
 func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*fftypes.Blob, err error) {
 
 	cols := append([]string{}, blobColumns...)
-	cols = append(cols, s.provider.SequenceField(""))
+	cols = append(cols, sequenceColumn)
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("blobs"), filter, blobFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (s *SQLCommon) DeleteBlob(ctx context.Context, sequence int64) (err error) 
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	err = s.deleteTx(ctx, tx, sq.Delete("blobs").Where(sq.Eq{
-		s.provider.SequenceField(""): sequence,
+		sequenceColumn: sequence,
 	}))
 	if err != nil {
 		return err

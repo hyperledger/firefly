@@ -242,10 +242,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ interface     │    * Standardized operations, and custom on-chain coupling
   │           └─────┬─────────┘
   │                 │
-  │                 ├─────────────────────┬───────────────────┬────────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐
-  │           │ ethereum      │   │ corda         │   │ fabric         │   │ utdbql [1]     │
-  │           └───────────────┘   └───────────────┘   └────────────────┘   └────────────────┘
+  │                 ├─────────────────────┬───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
+  │           │ ethereum      │   │ corda         │   │ fabric         │
+  │           └───────────────┘   └───────────────┘   └────────────────┘
   │
   │           ┌───────────────┐  - P2P Content Addresssed Filesystem
   ├───────────┤ public    [Pi]│    * Payload upload / download
@@ -297,10 +297,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           ┌─────┴─────────┐
   │           │ sqlcommon     │
   │           └─────┬─────────┘
-  │                 ├─────────────────────┬───────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ postgres      │   │ ql            │   │ sqlite         │
-  │           └───────────────┘   └───────────────┘   └────────────────┘
+  │                 ├───────────────────────┬───────── ... extensible other SQL databases
+  │           ┌─────┴─────────┐     ┌───────┴────────┐
+  │           │ postgres      │     │ sqlite3        │
+  │           └───────────────┘     └────────────────┘
   │
   │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications
   ├───────────┤ event     [Ei]│    * Supports long-lived (durable) and ephemeral event subscriptions
@@ -339,9 +339,6 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               │ config    [Co]│    * File and Environment Variable based logging framework (viper)
               │               │    * Primary config keys all defined centrally
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
-
-[1] The "utdbql" blockchain plugin is a simple standalone ordering service, that uses the an in-process database
-    It does NOT provide a multi-party blockchain, and does NOT provide broadcast to all members in the network
 
 ```
 
