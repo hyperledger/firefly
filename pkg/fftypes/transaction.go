@@ -57,7 +57,6 @@ type Transaction struct {
 	ID         *UUID              `json:"id,omitempty"`
 	Hash       *Bytes32           `json:"hash"`
 	Subject    TransactionSubject `json:"subject"`
-	Sequence   int64              `json:"sequence,omitempty"`
 	Created    *FFTime            `json:"created"`
 	Status     OpStatus           `json:"status"`
 	ProtocolID string             `json:"protocolID,omitempty"`

@@ -87,6 +87,9 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 				Set("description", namespace.Description).
 				Set("created", namespace.Created).
 				Where(sq.Eq{"name": namespace.Name}),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, fftypes.ChangeEventTypeUpdated, namespace.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -106,6 +109,9 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 					namespace.Description,
 					namespace.Created,
 				),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, fftypes.ChangeEventTypeCreated, namespace.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -181,28 +187,6 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 
 }
 
-func (s *SQLCommon) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update("namespaces"), update, namespaceFilterFieldMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"id": id})
-
-	err = s.updateTx(ctx, tx, query)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
-}
-
 func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
@@ -213,7 +197,10 @@ func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err 
 
 	err = s.deleteTx(ctx, tx, sq.Delete("namespaces").Where(sq.Eq{
 		"id": id,
-	}))
+	}),
+		func() {
+			s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, fftypes.ChangeEventTypeDeleted, id)
+		})
 	if err != nil {
 		return err
 	}

@@ -66,6 +66,7 @@ type subscriptionManager struct {
 	cancelCtx            func()
 	newSubscriptions     chan *fftypes.UUID
 	deletedSubscriptions chan *fftypes.UUID
+	changeEvents         chan *fftypes.ChangeEvent
 	retry                retry.Retry
 }
 
@@ -79,6 +80,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		connections:          make(map[string]*connection),
 		durableSubs:          make(map[fftypes.UUID]*subscription),
 		newSubscriptions:     make(chan *fftypes.UUID),
+		changeEvents:         make(chan *fftypes.ChangeEvent),
 		deletedSubscriptions: make(chan *fftypes.UUID),
 		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
 		cancelCtx:            cancelCtx,

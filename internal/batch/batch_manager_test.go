@@ -494,7 +494,7 @@ func TestAssembleMessageDataClosed(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
 	bm.(*batchManager).retry.MaximumDelay = 1 * time.Microsecond
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := bm.(*batchManager).updateOffset(false, 10)
 	assert.EqualError(t, err, "pop")
 }

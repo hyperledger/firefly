@@ -35,8 +35,6 @@ func TestEventE2EWithDB(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	s.callbacks.On("EventCreated", mock.Anything).Return()
-
 	// Create a new event entry
 	eventID := fftypes.NewUUID()
 	event := &fftypes.Event{
@@ -46,7 +44,10 @@ func TestEventE2EWithDB(t *testing.T) {
 		Reference: fftypes.NewUUID(),
 		Created:   fftypes.Now(),
 	}
-	err := s.UpsertEvent(ctx, event, true)
+
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", eventID, mock.Anything).Return()
+
+	err := s.InsertEvent(ctx, event)
 	assert.NoError(t, err)
 
 	// Check we get the exact same event back
@@ -59,32 +60,11 @@ func TestEventE2EWithDB(t *testing.T) {
 	eventReadJson, _ := json.Marshal(&eventRead)
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
-	// Update the event (this is testing what's possible at the database layer,
-	// and does not account for the verification that happens at the higher level)
-	eventUpdated := &fftypes.Event{
-		ID:        eventID,
-		Namespace: "ns1",
-		Type:      fftypes.EventTypeMessageConfirmed,
-		Reference: fftypes.NewUUID(),
-		Created:   fftypes.Now(),
-	}
-	err = s.UpsertEvent(context.Background(), eventUpdated, true)
-	assert.NoError(t, err)
-
-	// Check we get the exact same message back - note the removal of one of the event elements
-	eventRead, err = s.GetEventByID(ctx, eventID)
-	assert.NoError(t, err)
-	// The generated sequence will have been added
-	eventUpdated.Sequence = event.Sequence
-	eventJson, _ = json.Marshal(&eventUpdated)
-	eventReadJson, _ = json.Marshal(&eventRead)
-	assert.Equal(t, string(eventJson), string(eventReadJson))
-
 	// Query back the event
 	fb := database.EventQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("id", eventUpdated.ID.String()),
-		fb.Eq("reference", eventUpdated.Reference.String()),
+		fb.Eq("id", eventRead.ID.String()),
+		fb.Eq("reference", eventRead.Reference.String()),
 	)
 	events, err := s.GetEvents(ctx, filter)
 	assert.NoError(t, err)
@@ -94,7 +74,7 @@ func TestEventE2EWithDB(t *testing.T) {
 
 	// Negative test on filter
 	filter = fb.And(
-		fb.Eq("id", eventUpdated.ID.String()),
+		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", fftypes.NewUUID().String()),
 	)
 	events, err = s.GetEvents(ctx, filter)
@@ -105,12 +85,12 @@ func TestEventE2EWithDB(t *testing.T) {
 	newUUID := fftypes.NewUUID()
 	up := database.EventQueryFactory.NewUpdate(ctx).
 		Set("reference", newUUID)
-	err = s.UpdateEvent(ctx, eventUpdated.ID, up)
+	err = s.UpdateEvent(ctx, eventRead.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
-		fb.Eq("id", eventUpdated.ID.String()),
+		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", newUUID),
 	)
 	events, err = s.GetEvents(ctx, filter)
@@ -120,57 +100,32 @@ func TestEventE2EWithDB(t *testing.T) {
 	s.callbacks.AssertExpectations(t)
 }
 
-func TestUpsertEventFailBegin(t *testing.T) {
+func TestInsertEventFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{}, true)
+	err := s.InsertEvent(context.Background(), &fftypes.Event{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertEventFailSelect(t *testing.T) {
+func TestInsertEventFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	eventID := fftypes.NewUUID()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: eventID}, true)
-	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertEventFailInsert(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventID := fftypes.NewUUID()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: eventID}, true)
+	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertEventFailUpdate(t *testing.T) {
+func TestInsertEventFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(eventID.String()))
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: eventID}, true)
-	assert.Regexp(t, "FF10117", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertEventFailCommit(t *testing.T) {
-	s, mock := newMockProvider().init()
-	eventID := fftypes.NewUUID()
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertEvent(context.Background(), &fftypes.Event{ID: eventID}, true)
+	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

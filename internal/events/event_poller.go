@@ -145,7 +145,7 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
 		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", ep.pollingOffset)
-		if err := ep.database.UpdateOffset(ctx, ep.offsetID, u); err != nil {
+		if err := ep.database.UpdateOffset(ctx, ep.conf.offsetNamespace, ep.offsetID, u); err != nil {
 			return err
 		}
 	}

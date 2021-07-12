@@ -119,9 +119,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
-	mdi.On("UpsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
-	}), false).Return(nil)
+	})).Return(nil)
 	// Update member2 to nonce 1
 	mdi.On("UpdateNextPin", ag.ctx, mock.MatchedBy(func(seq int64) bool {
 		return seq == 10012
@@ -161,7 +161,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		return true
 	})).Return(nil)
 	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -231,9 +231,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
-	mdi.On("UpsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
-	}), false).Return(nil)
+	})).Return(nil)
 	// Update member2 to nonce 1
 	mdi.On("UpdateNextPin", ag.ctx, mock.MatchedBy(func(seq int64) bool {
 		return seq == 424
@@ -252,7 +252,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -311,15 +311,15 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	// Insert the confirmed event
-	mdi.On("UpsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
-	}), false).Return(nil)
+	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("SetPinDispatched", ag.ctx, int64(10001)).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Confirm the offset
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
@@ -394,7 +394,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
@@ -416,7 +416,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
@@ -442,7 +442,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
@@ -472,7 +472,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 1111}, // blocks the context
 	}, nil)
-	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
@@ -585,7 +585,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	}, nil)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
-	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -890,7 +890,7 @@ func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 
 		return true
 	})).Return(nil)
-	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -937,7 +937,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{ID: fftypes.NewUUID()},
@@ -955,7 +955,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("UpdateMessage", ag.ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertEvent", ag.ctx, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 
 	_, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{

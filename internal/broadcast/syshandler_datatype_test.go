@@ -53,7 +53,7 @@ func TestHandleSystemBroadcastDatatypeOk(t *testing.T) {
 	mbi := bm.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
-	mbi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),
@@ -90,7 +90,7 @@ func TestHandleSystemBroadcastDatatypeEventFail(t *testing.T) {
 	mbi := bm.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
-	mbi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineDatatype),

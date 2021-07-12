@@ -63,6 +63,22 @@ func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain
 	return r0
 }
 
+// ChangeEvents provides a mock function with given fields:
+func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
+	ret := _m.Called()
+
+	var r0 chan<- *fftypes.ChangeEvent
+	if rf, ok := ret.Get(0).(func() chan<- *fftypes.ChangeEvent); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan<- *fftypes.ChangeEvent)
+		}
+	}
+
+	return r0
+}
+
 // CreateDurableSubscription provides a mock function with given fields: ctx, subDef
 func (_m *EventManager) CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) error {
 	ret := _m.Called(ctx, subDef)

@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestUpsertGroupE2EWithDB(t *testing.T) {
@@ -51,6 +52,10 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		Hash:    groupHash,
 		Created: fftypes.Now(),
 	}
+
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeCreated, "ns1", groupHash, mock.Anything).Return()
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeUpdated, "ns1", groupHash, mock.Anything).Return()
+
 	err := s.UpsertGroup(ctx, group, true)
 	assert.NoError(t, err)
 

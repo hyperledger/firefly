@@ -90,6 +90,9 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("error", operation.Error).
 				Set("info", operation.Info).
 				Where(sq.Eq{"id": operation.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, operation.Namespace, operation.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -111,6 +114,9 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Error,
 					operation.Info,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -206,7 +212,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 	query = query.Set("updated", fftypes.Now())
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

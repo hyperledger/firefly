@@ -19,7 +19,7 @@ mockery: .ALWAYS
 mocks: mockery ${GOFILES}
 		$(eval MOCKERY := $(shell go list -f '{{.Target}}' github.com/vektra/mockery/cmd/mockery))
 		${MOCKERY} --case underscore --dir pkg/blockchain            --name Plugin           --output mocks/blockchainmocks       --outpkg blockchainmocks
-		${MOCKERY} --case underscore --dir pkg/blockchain            --name Callbacks        --output mocks/blockchainmocks      --outpkg blockchainmocks
+		${MOCKERY} --case underscore --dir pkg/blockchain            --name Callbacks        --output mocks/blockchainmocks       --outpkg blockchainmocks
 		${MOCKERY} --case underscore --dir pkg/database              --name Plugin           --output mocks/databasemocks         --outpkg databasemocks
 		${MOCKERY} --case underscore --dir pkg/database              --name Callbacks        --output mocks/databasemocks         --outpkg databasemocks
 		${MOCKERY} --case underscore --dir pkg/publicstorage         --name Plugin           --output mocks/publicstoragemocks    --outpkg publicstoragemocks

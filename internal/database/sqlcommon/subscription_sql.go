@@ -104,6 +104,9 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					"namespace": subscription.Namespace,
 					"name":      subscription.Name,
 				}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -127,13 +130,12 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.Options,
 					subscription.Created,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, subscription.Namespace, subscription.ID)
+			},
 		); err != nil {
 			return err
 		}
-
-		s.postCommitEvent(tx, func() {
-			s.callbacks.SubscriptionCreated(subscription.ID)
-		})
 
 	}
 
@@ -227,16 +229,24 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
+	subscription, err := s.GetSubscriptionByName(ctx, namespace, name)
+	if err != nil {
+		return err
+	}
+	if subscription == nil {
+		return i18n.NewError(ctx, i18n.Msg404NoResult)
+	}
+
 	query, err := s.buildUpdate(sq.Update("subscriptions"), update, subscriptionFilterFieldMap)
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{
-		"namespace": namespace,
-		"name":      name,
-	})
+	query = query.Where(sq.Eq{"id": subscription.ID})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query,
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
+		})
 	if err != nil {
 		return err
 	}
@@ -252,16 +262,18 @@ func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{
-		"id": id,
-	}))
-	if err != nil {
-		return err
+	subscription, err := s.GetSubscriptionByID(ctx, id)
+	if err == nil && subscription != nil {
+		err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{
+			"id": id,
+		}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, subscription.Namespace, subscription.ID)
+			})
+		if err != nil {
+			return err
+		}
 	}
-
-	s.postCommitEvent(tx, func() {
-		s.callbacks.SubscriptionDeleted(id)
-	})
 
 	return s.commitTx(ctx, tx, autoCommit)
 }

@@ -84,13 +84,12 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 					pin.Dispatched,
 					pin.Created,
 				),
+			func() {
+				s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
+			},
 		); err != nil {
 			return err
 		}
-
-		s.postCommitEvent(tx, func() {
-			s.callbacks.PinCreated(pin.Sequence)
-		})
 
 	}
 
@@ -155,7 +154,11 @@ func (s *SQLCommon) SetPinDispatched(ctx context.Context, sequence int64) (err e
 		Set("dispatched", true).
 		Where(sq.Eq{
 			"seq": sequence,
-		}))
+		}),
+		func() {
+			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeUpdated, sequence)
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -173,7 +176,10 @@ func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
 
 	err = s.deleteTx(ctx, tx, sq.Delete("pins").Where(sq.Eq{
 		"seq": sequence,
-	}))
+	}),
+		func() {
+			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeDeleted, sequence)
+		})
 	if err != nil {
 		return err
 	}

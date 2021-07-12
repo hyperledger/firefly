@@ -160,9 +160,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	// Capture offset commits
 	offsetUpdates := make(chan int64)
-	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		f, err := a.Get(2).(database.Update).Finalize()
+		f, err := a.Get(3).(database.Update).Finalize()
 		assert.NoError(t, err)
 		v, _ := f.SetOperations[0].Value.Value()
 		offsetUpdates <- v.(int64)
@@ -500,7 +500,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -542,7 +542,7 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	delivered := make(chan bool)
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -590,7 +590,7 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -634,7 +634,7 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ev1 := fftypes.NewUUID()
 	ev2 := fftypes.NewUUID()

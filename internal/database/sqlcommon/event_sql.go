@@ -42,60 +42,29 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertEvent(ctx context.Context, event *fftypes.Event, allowExisting bool) (err error) {
+func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
-		// Do a select within the event to detemine if the UUID already exists
-		eventRows, err := s.queryTx(ctx, tx,
-			sq.Select("id").
-				From("events").
-				Where(sq.Eq{"id": event.ID}),
-		)
-		if err != nil {
-			return err
-		}
-		existing = eventRows.Next()
-		eventRows.Close()
-	}
-
-	if existing {
-		// Update the event
-		if err = s.updateTx(ctx, tx,
-			sq.Update("events").
-				Set("etype", string(event.Type)).
-				Set("namespace", event.Namespace).
-				Set("ref", event.Reference).
-				Set("created", event.Created).
-				Where(sq.Eq{"id": event.ID}),
-		); err != nil {
-			return err
-		}
-	} else {
-		sequence, err := s.insertTx(ctx, tx,
-			sq.Insert("events").
-				Columns(eventColumns...).
-				Values(
-					event.ID,
-					string(event.Type),
-					event.Namespace,
-					event.Reference,
-					event.Created,
-				),
-		)
-		if err != nil {
-			return err
-		}
-
-		s.postCommitEvent(tx, func() {
-			s.callbacks.EventCreated(sequence)
-		})
-
+	event.Sequence, err = s.insertTx(ctx, tx,
+		sq.Insert("events").
+			Columns(eventColumns...).
+			Values(
+				event.ID,
+				string(event.Type),
+				event.Namespace,
+				event.Reference,
+				event.Created,
+			),
+		func() {
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+		},
+	)
+	if err != nil {
+		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
@@ -187,7 +156,7 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update da
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events on filter based update */)
 	if err != nil {
 		return err
 	}

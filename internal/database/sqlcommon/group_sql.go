@@ -75,6 +75,9 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 				Set("hash", group.Hash).
 				Set("created", group.Created).
 				Where(sq.Eq{"hash": group.Hash}),
+			func() {
+				s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeUpdated, group.Namespace, group.Hash)
+			},
 		); err != nil {
 			return err
 		}
@@ -90,6 +93,9 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 					group.Hash,
 					group.Created,
 				),
+			func() {
+				s.callbacks.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeCreated, group.Namespace, group.Hash)
+			},
 		)
 		if err != nil {
 			return err
@@ -112,6 +118,7 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 				Where(sq.And{
 					sq.Eq{"group_hash": group.Hash},
 				}),
+			nil, // no db change event for this sub update
 		); err != nil {
 			return err
 		}
@@ -139,6 +146,7 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 					requiredMember.Node,
 					requiredIdx,
 				),
+			nil, // no db change event for this sub update
 		); err != nil {
 			return err
 		}
@@ -298,7 +306,7 @@ func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, up
 		return err
 	}
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change event for filter based update */)
 	if err != nil {
 		return err
 	}

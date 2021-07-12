@@ -17,21 +17,25 @@
 package orchestrator
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func TestMessageCreated(t *testing.T) {
 	mb := &batchmocks.Manager{}
+	mem := &eventmocks.EventManager{}
 	o := &orchestrator{
-		batch: mb,
+		batch:  mb,
+		events: mem,
 	}
-	c := make(chan int64, 1)
-	mb.On("NewMessages").Return((chan<- int64)(c))
-	o.MessageCreated(12345)
+	mb.On("NewMessages").Return((chan<- int64)(make(chan int64, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID(), 12345)
 	mb.AssertExpectations(t)
 }
 
@@ -40,9 +44,9 @@ func TestPinCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan int64, 1)
-	mem.On("NewPins").Return((chan<- int64)(c))
-	o.PinCreated(12345)
+	mem.On("NewPins").Return((chan<- int64)(make(chan int64, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, 12345)
 	mem.AssertExpectations(t)
 }
 
@@ -51,9 +55,9 @@ func TestEventCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan int64, 1)
-	mem.On("NewEvents").Return((chan<- int64)(c))
-	o.EventCreated(12345)
+	mem.On("NewEvents").Return((chan<- int64)(make(chan int64, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID(), 12345)
 	mem.AssertExpectations(t)
 }
 
@@ -62,9 +66,9 @@ func TestSubscriptionCreated(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan *fftypes.UUID, 1)
-	mem.On("NewSubscriptions").Return((chan<- *fftypes.UUID)(c))
-	o.SubscriptionCreated(fftypes.NewUUID())
+	mem.On("NewSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID())
 	mem.AssertExpectations(t)
 }
 
@@ -73,8 +77,30 @@ func TestSubscriptionDeleted(t *testing.T) {
 	o := &orchestrator{
 		events: mem,
 	}
-	c := make(chan *fftypes.UUID, 1)
-	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(c))
-	o.SubscriptionDeleted(fftypes.NewUUID())
+	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", fftypes.NewUUID())
+	mem.AssertExpectations(t)
+}
+
+func TestUUIDCollectionEventFull(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		ctx:    context.Background(),
+		events: mem,
+	}
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 0)))
+	o.UUIDCollectionEvent(database.CollectionNamespaces, fftypes.ChangeEventTypeDeleted, fftypes.NewUUID())
+	mem.AssertExpectations(t)
+}
+
+func TestHashCollectionNSEventOk(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		ctx:    context.Background(),
+		events: mem,
+	}
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeDeleted, "ns1", fftypes.NewRandB32())
 	mem.AssertExpectations(t)
 }

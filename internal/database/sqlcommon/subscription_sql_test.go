@@ -45,8 +45,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		Created: fftypes.Now(),
 	}
 
-	s.callbacks.On("SubscriptionCreated", mock.Anything).Return()
-	s.callbacks.On("SubscriptionDeleted", mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, "ns1", mock.Anything).Return()
 
 	err := s.UpsertSubscription(ctx, subscription, true)
 	assert.NoError(t, err)
@@ -92,6 +91,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, database.IDMismatch, err)
 
 	// Blank out the ID and retry
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", uuidMatches(subscription.ID)).Return()
 	subscriptionUpdated.ID = nil
 	err = s.UpsertSubscription(context.Background(), subscriptionUpdated, true)
 	assert.NoError(t, err)
@@ -132,6 +132,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subscriptions))
 
 	// Test delete, and refind no return
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", uuidMatches(subscription.ID)).Return()
 	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
 	assert.NoError(t, err)
 	subscriptions, err = s.GetSubscriptions(ctx, filter)
@@ -254,14 +255,40 @@ func TestSubscriptionUpdateBeginFail(t *testing.T) {
 func TestSubscriptionUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now()),
+	)
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
 	assert.Regexp(t, "FF10149.*name", err)
 }
 
+func TestSubscriptionUpdateSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
+	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
+	assert.Regexp(t, "FF10115", err)
+}
+
+func TestSubscriptionUpdateSelectNotFound(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns))
+	mock.ExpectRollback()
+	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
+	err := s.UpdateSubscription(context.Background(), "ns1", "name1", u)
+	assert.Regexp(t, "FF10143", err)
+}
+
 func TestSubscriptionUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now()),
+	)
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.SubscriptionQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
@@ -279,6 +306,9 @@ func TestSubscriptionDeleteBeginFail(t *testing.T) {
 func TestSubscriptionDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(subscriptionColumns).AddRow(
+		fftypes.NewUUID(), "ns1", "sub1", "websockets", "", "", "", "", `{}`, fftypes.Now()),
+	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)

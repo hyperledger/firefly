@@ -81,6 +81,9 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 				Set("created", datatype.Created).
 				Set("value", datatype.Value).
 				Where(sq.Eq{"id": datatype.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionDataTypes, fftypes.ChangeEventTypeUpdated, datatype.Namespace, datatype.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -99,6 +102,9 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 					datatype.Created,
 					datatype.Value,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionDataTypes, fftypes.ChangeEventTypeCreated, datatype.Namespace, datatype.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -199,7 +205,7 @@ func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

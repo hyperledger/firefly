@@ -1192,6 +1192,20 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 	return r0
 }
 
+// InsertEvent provides a mock function with given fields: ctx, data
+func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
+	ret := _m.Called(ctx, data)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
+		r0 = rf(ctx, data)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertMessageLocal provides a mock function with given fields: ctx, message
 func (_m *Plugin) InsertMessageLocal(ctx context.Context, message *fftypes.Message) error {
 	ret := _m.Called(ctx, message)
@@ -1360,20 +1374,6 @@ func (_m *Plugin) UpdateMessages(ctx context.Context, filter database.Filter, up
 	return r0
 }
 
-// UpdateNamespace provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateNamespace(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdateNextPin provides a mock function with given fields: ctx, sequence, update
 func (_m *Plugin) UpdateNextPin(ctx context.Context, sequence int64, update database.Update) error {
 	ret := _m.Called(ctx, sequence, update)
@@ -1402,13 +1402,13 @@ func (_m *Plugin) UpdateNode(ctx context.Context, id *fftypes.UUID, update datab
 	return r0
 }
 
-// UpdateOffset provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateOffset(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateOffset provides a mock function with given fields: ctx, ns, id, update
+func (_m *Plugin) UpdateOffset(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, ns, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, ns, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1521,20 +1521,6 @@ func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype,
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Datatype, bool) error); ok {
 		r0 = rf(ctx, datadef, allowExisting)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertEvent provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) error {
-	ret := _m.Called(ctx, data, allowExisting)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
 	}

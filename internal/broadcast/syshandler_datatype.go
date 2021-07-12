@@ -56,7 +56,7 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 	}
 
 	event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
-	if err = bm.database.UpsertEvent(ctx, event, false); err != nil {
+	if err = bm.database.InsertEvent(ctx, event); err != nil {
 		return false, err
 	}
 

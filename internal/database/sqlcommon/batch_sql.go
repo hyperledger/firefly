@@ -100,6 +100,9 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 				Set("tx_type", batch.Payload.TX.Type).
 				Set("tx_id", batch.Payload.TX.ID).
 				Where(sq.Eq{"id": batch.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -122,6 +125,9 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 					batch.Payload.TX.Type,
 					batch.Payload.TX.ID,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeCreated, batch.Namespace, batch.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -217,7 +223,7 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
 	if err != nil {
 		return err
 	}

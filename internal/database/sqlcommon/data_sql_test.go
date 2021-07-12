@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestDataE2EWithDB(t *testing.T) {
@@ -52,6 +53,10 @@ func TestDataE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     []byte(val.String()),
 	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeCreated, "ns1", dataID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionData, fftypes.ChangeEventTypeUpdated, "ns1", dataID, mock.Anything).Return()
+
 	err := s.UpsertData(ctx, data, true, false)
 	assert.NoError(t, err)
 
@@ -80,7 +85,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataUpdated := &fftypes.Data{
 		ID:        dataID,
 		Validator: fftypes.ValidatorTypeJSON,
-		Namespace: "ns2",
+		Namespace: "ns1",
 		Datatype: &fftypes.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
@@ -150,6 +155,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(dataRes))
 
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertDataFailBegin(t *testing.T) {
