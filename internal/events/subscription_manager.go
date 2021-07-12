@@ -67,6 +67,7 @@ type subscriptionManager struct {
 	newSubscriptions     chan *fftypes.UUID
 	deletedSubscriptions chan *fftypes.UUID
 	changeEvents         chan *fftypes.ChangeEvent
+	ceDispatchers        map[fftypes.UUID]*eventDispatcher
 	retry                retry.Retry
 }
 
@@ -80,7 +81,8 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		connections:          make(map[string]*connection),
 		durableSubs:          make(map[fftypes.UUID]*subscription),
 		newSubscriptions:     make(chan *fftypes.UUID),
-		changeEvents:         make(chan *fftypes.ChangeEvent),
+		changeEvents:         make(chan *fftypes.ChangeEvent, config.GetInt(config.EventDBEventsBufferSize)),
+		ceDispatchers:        make(map[fftypes.UUID]*eventDispatcher),
 		deletedSubscriptions: make(chan *fftypes.UUID),
 		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
 		cancelCtx:            cancelCtx,
@@ -150,6 +152,7 @@ func (sm *subscriptionManager) start() error {
 		sm.durableSubs[*subDef.ID] = newSub
 	}
 	go sm.subscriptionEventListener()
+	go sm.changeEventListener()
 	return nil
 }
 
@@ -160,6 +163,17 @@ func (sm *subscriptionManager) subscriptionEventListener() {
 			go sm.newDurableSubscription(id)
 		case id := <-sm.deletedSubscriptions:
 			go sm.deletedDurableSubscription(id)
+		case <-sm.ctx.Done():
+			return
+		}
+	}
+}
+
+func (sm *subscriptionManager) changeEventListener() {
+	for {
+		select {
+		case <-sm.changeEvents:
+			// TODO: Process the events
 		case <-sm.ctx.Done():
 			return
 		}
