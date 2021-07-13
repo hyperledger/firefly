@@ -271,6 +271,7 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
 	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
+	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
 	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")
