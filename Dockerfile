@@ -11,9 +11,10 @@ RUN make build
 
 FROM node:14-alpine3.11 AS solidity-builder
 WORKDIR /firefly/solidity_firefly
-ADD solidity_firefly .
+ADD solidity_firefly/package*.json .
 RUN npm install
 RUN npm config set user 0
+ADD solidity_firefly .
 RUN npx truffle compile
 
 FROM alpine:latest
