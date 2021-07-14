@@ -257,7 +257,8 @@ func (ep *eventPoller) shoulderTap() {
 func (ep *eventPoller) waitForShoulderTapOrPollTimeout(lastEventCount int) bool {
 	l := log.L(ep.ctx)
 	longTimeoutDuration := ep.conf.eventPollTimeout
-	// We avoid a tight spin with the eventBatchingTimeout to allow messages to arrive
+	// For throughput optimized environments, we can set an eventBatchingTimeout to allow messages to arrive
+	// between polling cycles (at the cost of some dispatch latency)
 	if ep.conf.eventBatchTimeout > 0 && lastEventCount > 0 && lastEventCount < ep.conf.eventBatchSize {
 		shortTimeout := time.NewTimer(ep.conf.eventBatchTimeout)
 		select {
