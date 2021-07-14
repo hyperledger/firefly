@@ -54,7 +54,7 @@ type MessageHeader struct {
 	Created   *FFTime         `json:"created,omitempty"`
 	Namespace string          `json:"namespace,omitempty"`
 	Group     *Bytes32        `json:"group,omitempty"`
-	Topics    FFNameArray     `json:"topic,omitempty"`
+	Topics    FFNameArray     `json:"topics,omitempty"`
 	Tag       string          `json:"tag,omitempty"`
 	DataHash  *Bytes32        `json:"datahash,omitempty"`
 }
