@@ -91,7 +91,7 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
     // The first time a group is used, the participant list is sent privately along with the
     // batch of messages in a `groupinit` message.
     "group": "2aa5297b5eed0c3a612a667c727ca38b54fb3b5cc245ebac4c2c7abe490bdf6c",
-    "topic": [
+    "topics": [
       "default" // the default topic that the message is published on, if no topic is set
     ],
     // datahash is calculated from the data array below
@@ -151,7 +151,7 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
 {
   "header": {
     "tag": "new_widget_created",
-    "topic": [ "widget_id_12345" ]
+    "topics": ["widget_id_12345"]
   },
   "group": {
     "members": [{

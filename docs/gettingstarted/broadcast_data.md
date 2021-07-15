@@ -67,7 +67,7 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
     "author": "0x0a65365587a65ce44938eab5a765fe8bc6532bdf", // set automatically in this example to the node org
     "created": "2021-07-01T18:06:24.5817016Z", // set automatically
     "namespace": "default", // the 'default' namespace was set in the URL
-    "topic": [
+    "topics": [
       "default" // the default topic that the message is published on, if no topic is set
     ],
     // datahash is calculated from the data array below
@@ -102,7 +102,7 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
 {
   "header": {
     "tag": "new_widget_created",
-    "topic": ["widget_id_12345"]
+    "topics": ["widget_id_12345"]
   },
   "data": [
     {

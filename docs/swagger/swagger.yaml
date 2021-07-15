@@ -55,7 +55,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -387,7 +387,7 @@ paths:
                                     type: string
                                   tag:
                                     type: string
-                                  topic:
+                                  topics:
                                     items:
                                       type: string
                                     type: array
@@ -521,7 +521,7 @@ paths:
                                   type: string
                                 tag:
                                   type: string
-                                topic:
+                                topics:
                                   items:
                                     type: string
                                   type: array
@@ -619,7 +619,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -732,7 +732,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -1362,7 +1362,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -1858,7 +1858,7 @@ paths:
                           type: string
                         tag:
                           type: string
-                        topic:
+                        topics:
                           items:
                             type: string
                           type: array
@@ -1973,7 +1973,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -2611,7 +2611,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -2738,7 +2738,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -3849,7 +3849,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -3917,7 +3917,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array
@@ -3997,7 +3997,7 @@ paths:
                         type: string
                       tag:
                         type: string
-                      topic:
+                      topics:
                         items:
                           type: string
                         type: array

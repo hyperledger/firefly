@@ -162,10 +162,10 @@ func TestSealKnownMessage(t *testing.T) {
 
 	// Header contains the data hash, and is hashed into the message hash
 	actualHeader, _ := json.Marshal(&msg.Header)
-	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","txtype":"batch_pin","author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae","topic":["topic1","topic2"],"tag":"tag1","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
+	expectedHeader := `{"id":"2cd37805-5f40-4e12-962e-67868cde3049","cid":"39296b6e-91b9-4a61-b279-833c85b04d94","type":"private","txtype":"batch_pin","author":"0x12345","created":"2021-05-04T04:55:03.123456789Z","namespace":"ns1","group":"3fcc7e07069e441f07c9f6b26f16fcb2dc896222d72888675082fd308440d9ae","topics":["topic1","topic2"],"tag":"tag1","datahash":"2468d5c26cc85968acaf8b96d09476453916ea4eab41632a31d09efc7ab297d2"}`
 	var msgHash Bytes32 = sha256.Sum256([]byte(expectedHeader))
 	assert.Equal(t, expectedHeader, string(actualHeader))
-	assert.Equal(t, `95f0a6a16ba67df7f24c5403733faebb89c304d66d55c21e149213d8ec7e2633`, msgHash.String())
+	assert.Equal(t, `b5b9da88ed83403754bf78ed596eab70b803fd02108635fb932c2416d9e379b7`, msgHash.String())
 	assert.Equal(t, msgHash, *msg.Hash)
 
 	// Verify also returns good
