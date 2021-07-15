@@ -80,6 +80,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 			}
 			node.ID = &id // Update on returned object
 		}
+		nodeRows.Close()
 	}
 
 	if existing {
