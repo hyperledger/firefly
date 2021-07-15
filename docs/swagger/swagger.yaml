@@ -2260,9 +2260,6 @@ paths:
                     type: object
                   protocolID:
                     type: string
-                  sequence:
-                    format: int64
-                    type: integer
                   status:
                     type: string
                   subject:
@@ -3294,9 +3291,6 @@ paths:
                       type: object
                     protocolID:
                       type: string
-                    sequence:
-                      format: int64
-                      type: integer
                     status:
                       type: string
                     subject:
@@ -3431,9 +3425,6 @@ paths:
                     type: object
                   protocolID:
                     type: string
-                  sequence:
-                    format: int64
-                    type: integer
                   status:
                     type: string
                   subject:
@@ -3489,9 +3480,6 @@ paths:
                       type: object
                     protocolID:
                       type: string
-                    sequence:
-                      format: int64
-                      type: integer
                     status:
                       type: string
                     subject:

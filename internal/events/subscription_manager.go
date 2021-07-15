@@ -66,6 +66,7 @@ type subscriptionManager struct {
 	cancelCtx            func()
 	newSubscriptions     chan *fftypes.UUID
 	deletedSubscriptions chan *fftypes.UUID
+	cel                  *changeEventListener
 	retry                retry.Retry
 }
 
@@ -90,6 +91,7 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 			Factor:       config.GetFloat64(config.SubscriptionsRetryFactor),
 		},
 	}
+	sm.cel = newChangeEventListener(ctx)
 
 	err := sm.loadTransports()
 	if err == nil {
@@ -148,6 +150,7 @@ func (sm *subscriptionManager) start() error {
 		sm.durableSubs[*subDef.ID] = newSub
 	}
 	go sm.subscriptionEventListener()
+	go sm.cel.changeEventListener()
 	return nil
 }
 
@@ -345,7 +348,7 @@ func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID strin
 func (sm *subscriptionManager) matchSubToConnLocked(conn *connection, sub *subscription) {
 	if conn.transport == sub.definition.Transport && conn.matcher(sub.definition.SubscriptionRef) {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
-			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier)
+			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier, sm.cel)
 			conn.dispatchers[*sub.definition.ID] = dispatcher
 			dispatcher.start()
 		}
@@ -382,7 +385,7 @@ func (sm *subscriptionManager) ephemeralSubscription(ei events.Plugin, connID, n
 	}
 
 	// Create the dispatcher, and start immediately
-	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, connID, newSub, sm.eventNotifier)
+	dispatcher := newEventDispatcher(sm.ctx, ei, sm.database, sm.data, sm.rs, connID, newSub, sm.eventNotifier, sm.cel)
 	dispatcher.start()
 
 	conn.dispatchers[*subID] = dispatcher

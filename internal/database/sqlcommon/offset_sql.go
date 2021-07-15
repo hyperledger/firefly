@@ -86,6 +86,9 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 				Set("name", offset.Name).
 				Set("current", offset.Current).
 				Where(sq.Eq{"id": offset.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOffsets, fftypes.ChangeEventTypeUpdated, offset.Namespace, offset.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -100,6 +103,9 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 					offset.Name,
 					offset.Current,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOffsets, fftypes.ChangeEventTypeCreated, offset.Namespace, offset.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -176,7 +182,7 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 
 }
 
-func (s *SQLCommon) UpdateOffset(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOffset(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -188,9 +194,12 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, id *fftypes.UUID, update d
 	if err != nil {
 		return err
 	}
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.Eq{"id": id, "namespace": ns})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query,
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionOffsets, fftypes.ChangeEventTypeUpdated, ns, id)
+		})
 	if err != nil {
 		return err
 	}
@@ -206,13 +215,17 @@ func (s *SQLCommon) DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("offsets").Where(sq.Eq{
-		"otype":     t,
-		"namespace": ns,
-		"name":      name,
-	}))
-	if err != nil {
-		return err
+	offset, err := s.GetOffset(ctx, t, ns, name)
+	if err == nil && offset != nil {
+		err = s.deleteTx(ctx, tx, sq.Delete("offsets").Where(sq.Eq{
+			"id": offset.ID,
+		}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionOffsets, fftypes.ChangeEventTypeDeleted, offset.Namespace, offset.ID)
+			})
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

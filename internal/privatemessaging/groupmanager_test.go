@@ -240,7 +240,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
-	mdi.On("UpsertEvent", pm.ctx, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(nil)
 
 	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{

@@ -38,8 +38,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	s.callbacks.On("MessageCreated", mock.Anything).Return()
-
 	// Create a new message
 	msgID := fftypes.NewUUID()
 	dataID1 := fftypes.NewUUID()
@@ -67,6 +65,10 @@ func TestUpsertE2EWithDB(t *testing.T) {
 			{ID: dataID2, Hash: rand2},
 		},
 	}
+
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns12345", msgID, mock.Anything).Return()
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, fftypes.ChangeEventTypeUpdated, "ns12345", msgID, mock.Anything).Return()
+
 	err := s.InsertMessageLocal(ctx, msg)
 	assert.NoError(t, err)
 

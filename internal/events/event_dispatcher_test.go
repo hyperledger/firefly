@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
 	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,7 +38,8 @@ import (
 
 func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
-	mei := &eventsmocks.Plugin{}
+	mei := &eventsmocks.PluginAll{}
+	mei.On("Capabilities").Return(&events.Capabilities{ChangeEvents: true}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
 	rs := &replySender{
@@ -46,7 +48,7 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut")), cancel
+	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), cancel
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -140,7 +142,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	defer cancel()
 	go ed.deliverEvents()
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -160,9 +162,9 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 
 	// Capture offset commits
 	offsetUpdates := make(chan int64)
-	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		f, err := a.Get(2).(database.Update).Finalize()
+		f, err := a.Get(3).(database.Update).Finalize()
 		assert.NoError(t, err)
 		v, _ := f.SetOperations[0].Value.Value()
 		offsetUpdates <- v.(int64)
@@ -241,7 +243,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -306,6 +308,72 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mei.AssertExpectations(t)
+}
+
+func TestEventDispatcherChangeEvents(t *testing.T) {
+	log.SetLevel("debug")
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options: fftypes.SubscriptionOptions{
+				ChangeEvents: true,
+			},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+	go ed.deliverEvents()
+
+	mdi := ed.database.(*databasemocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
+
+	changeEvents := make(chan *fftypes.ChangeEvent)
+	deliveryRequestMock := mei.On("ChangeEvent", mock.Anything, mock.Anything).Return()
+	deliveryRequestMock.RunFn = func(a mock.Arguments) {
+		changeEvents <- a.Get(1).(*fftypes.ChangeEvent)
+	}
+
+	go func() {
+		ed.dispatchChangeEvent(&fftypes.ChangeEvent{
+			Collection: "widgets",
+		})
+	}()
+
+	ce := <-changeEvents
+	assert.Equal(t, "widgets", ce.Collection)
+
+	mdi.AssertExpectations(t)
+	mei.AssertExpectations(t)
+}
+
+func TestEventDispatcherChangeEventsNotSupported(t *testing.T) {
+	log.SetLevel("debug")
+	sub := &subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options: fftypes.SubscriptionOptions{
+				ChangeEvents: true,
+			},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	defer cancel()
+
+	mei := &eventsmocks.Plugin{}
+	mei.On("Name").Return("ut")
+	mei.On("Capabilities").Return(&events.Capabilities{})
+	ed.transport = mei
+	go ed.deliverEvents()
+
+	ed.dispatchChangeEvent(&fftypes.ChangeEvent{
+		Collection: "widgets",
+	})
 }
 
 func TestEnrichEventsFailGetMessages(t *testing.T) {
@@ -476,7 +544,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -497,10 +565,10 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -539,10 +607,10 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	delivered := make(chan bool)
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -587,10 +655,10 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.Plugin)
+	mei := ed.transport.(*eventsmocks.PluginAll)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
 	deliver := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -634,7 +702,7 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	mdi := ed.database.(*databasemocks.Plugin)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ev1 := fftypes.NewUUID()
 	ev2 := fftypes.NewUUID()
@@ -818,4 +886,23 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 	mbm.AssertExpectations(t)
 	mpm.AssertExpectations(t)
+}
+
+func TestDispatchChangeEventBlockedClose(t *testing.T) {
+	yes := true
+	sub := &subscription{
+		definition: &fftypes.Subscription{
+			Options: fftypes.SubscriptionOptions{
+				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+					WithData: &yes,
+				},
+			},
+		},
+	}
+
+	ed, cancel := newTestEventDispatcher(sub)
+	cancel()
+	close(ed.eventPoller.closed)
+
+	ed.dispatchChangeEvent(&fftypes.ChangeEvent{})
 }

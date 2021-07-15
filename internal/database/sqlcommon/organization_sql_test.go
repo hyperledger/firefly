@@ -37,13 +37,18 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new organization entry
+	orgID := fftypes.NewUUID()
 	organization := &fftypes.Organization{
-		ID:       fftypes.NewUUID(),
+		ID:       orgID,
 		Message:  fftypes.NewUUID(),
 		Name:     "org1",
 		Identity: "0x12345",
 		Created:  fftypes.Now(),
 	}
+
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionOrganizations, fftypes.ChangeEventTypeCreated, orgID).Return()
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionOrganizations, fftypes.ChangeEventTypeUpdated, orgID).Return()
+
 	err := s.UpsertOrganization(ctx, organization, true)
 	assert.NoError(t, err)
 
@@ -110,6 +115,8 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	organizations, err := s.GetOrganizations(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(organizations))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertOrganizationFailBegin(t *testing.T) {

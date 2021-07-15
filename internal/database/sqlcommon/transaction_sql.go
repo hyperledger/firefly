@@ -94,6 +94,9 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 				Set("status", transaction.Status).
 				Set("info", transaction.Info).
 				Where(sq.Eq{"id": transaction.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, transaction.Subject.Namespace, transaction.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -114,6 +117,9 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 					transaction.Status,
 					transaction.Info,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, transaction.Subject.Namespace, transaction.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -135,8 +141,6 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.ProtocolID,
 		&transaction.Status,
 		&transaction.Info,
-		// Must be added to the list of columns in all selects
-		&transaction.Sequence,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "transactions")
@@ -146,10 +150,8 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 
 func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
-	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, "seq")
 	rows, err := s.query(ctx,
-		sq.Select(cols...).
+		sq.Select(transactionColumns...).
 			From("transactions").
 			Where(sq.Eq{"id": id}),
 	)
@@ -173,9 +175,7 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (m
 
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
 
-	cols := append([]string{}, transactionColumns...)
-	cols = append(cols, "seq")
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("transactions"), filter, transactionFilterFieldMap, []string{"sequence"})
+	query, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change evnents for filter based updates */)
 	if err != nil {
 		return err
 	}

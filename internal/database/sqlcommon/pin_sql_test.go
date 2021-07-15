@@ -36,8 +36,6 @@ func TestPinsE2EWithDB(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	s.callbacks.On("PinCreated", mock.Anything).Return()
-
 	// Create a new pin entry
 	pin := &fftypes.Pin{
 		Masked:     true,
@@ -47,6 +45,11 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Created:    fftypes.Now(),
 		Dispatched: false,
 	}
+
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, mock.Anything).Return()
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeUpdated, mock.Anything).Return()
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeDeleted, mock.Anything).Return()
+
 	err := s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
 

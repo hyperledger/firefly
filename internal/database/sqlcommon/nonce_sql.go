@@ -74,6 +74,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 			sq.Update("nonces").
 				Set("nonce", nonce.Nonce).
 				Where(sq.Eq{"seq": sequence}),
+			nil, // no change events for nonces
 		); err != nil {
 			return err
 		}
@@ -90,6 +91,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 					nonce.Group,
 					nonce.Topic,
 				),
+			nil, // no change events for nonces
 		); err != nil {
 			return err
 		}
@@ -173,7 +175,7 @@ func (s *SQLCommon) DeleteNonce(ctx context.Context, context *fftypes.Bytes32) (
 
 	err = s.deleteTx(ctx, tx, sq.Delete("nonces").Where(sq.Eq{
 		"context": context,
-	}))
+	}), nil /* no change events for nonces */)
 	if err != nil {
 		return err
 	}

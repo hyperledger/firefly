@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"image/png"
 	"net/http"
@@ -179,13 +180,13 @@ func beforeE2ETest(t *testing.T) *testState {
 		Scheme:   websocketProtocolClient1,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed&changeevents=.*",
 	}
 	wsUrl2 := url.URL{
 		Scheme:   websocketProtocolClient2,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed&changeevents=.*",
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())
@@ -208,8 +209,9 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(t *testing.T, conn *websocket.Conn) chan []byte {
-	receiver := make(chan []byte)
+func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+	events := make(chan *fftypes.EventDelivery, 100)
+	changeEvents := make(chan *fftypes.ChangeEvent, 100)
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
@@ -218,10 +220,28 @@ func wsReader(t *testing.T, conn *websocket.Conn) chan []byte {
 				return
 			}
 			t.Logf("Websocket %s receive: %s", conn.RemoteAddr(), b)
-			receiver <- b
+			var wsa fftypes.WSClientActionBase
+			err = json.Unmarshal(b, &wsa)
+			assert.NoError(t, err)
+			switch wsa.Type {
+			case fftypes.WSClientActionChangeNotifcation:
+				var wscn fftypes.WSChangeNotification
+				err = json.Unmarshal(b, &wscn)
+				assert.NoError(t, err)
+				if err == nil {
+					changeEvents <- wscn.ChangeEvent
+				}
+			default:
+				var ed fftypes.EventDelivery
+				err = json.Unmarshal(b, &ed)
+				assert.NoError(t, err)
+				if err == nil {
+					events <- &ed
+				}
+			}
 		}
 	}()
-	return receiver
+	return events, changeEvents
 }
 
 func TestE2EBroadcast(t *testing.T) {
@@ -229,8 +249,8 @@ func TestE2EBroadcast(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
+	received1, changes1 := wsReader(t, ts.ws1)
+	received2, changes2 := wsReader(t, ts.ws2)
 
 	var resp *resty.Response
 	value := fftypes.Byteable(`"Hello"`)
@@ -243,10 +263,12 @@ func TestE2EBroadcast(t *testing.T) {
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
+	<-changes1 // also expect database change events
 	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(t, data.Value, val1)
 
 	<-received2
+	<-changes2 // also expect database change events
 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(t, data.Value, val2)
 
@@ -257,8 +279,8 @@ func TestE2EPrivate(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
+	received1, _ := wsReader(t, ts.ws1)
+	received2, _ := wsReader(t, ts.ws2)
 
 	var resp *resty.Response
 	value := fftypes.Byteable(`"Hello"`)
@@ -287,8 +309,8 @@ func TestE2EBroadcastBlob(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
+	received1, _ := wsReader(t, ts.ws1)
+	received2, _ := wsReader(t, ts.ws2)
 
 	var resp *resty.Response
 
@@ -311,8 +333,8 @@ func TestE2EPrivateBlob(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
+	received1, _ := wsReader(t, ts.ws1)
+	received2, _ := wsReader(t, ts.ws2)
 
 	var resp *resty.Response
 
@@ -337,8 +359,8 @@ func TestE2EWebhookExchange(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1 := wsReader(t, ts.ws1)
-	received2 := wsReader(t, ts.ws2)
+	received1, _ := wsReader(t, ts.ws1)
+	received2, _ := wsReader(t, ts.ws2)
 
 	subJSON := `{
 		"transport": "webhooks",

@@ -42,6 +42,7 @@ type EventManager interface {
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
+	ChangeEvents() chan<- *fftypes.ChangeEvent
 	DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
 	Start() error
@@ -139,6 +140,10 @@ func (em *eventManager) NewSubscriptions() chan<- *fftypes.UUID {
 
 func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return em.subManager.deletedSubscriptions
+}
+
+func (em *eventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
+	return em.subManager.cel.changeEvents
 }
 
 func (em *eventManager) WaitStop() {

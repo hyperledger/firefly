@@ -24,8 +24,16 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+func uuidMatches(id1 *fftypes.UUID) interface{} {
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool {
+		return id1.Equals(id2)
+	})
+}
 
 func TestInitSQLCommon(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)
@@ -70,7 +78,7 @@ func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	sequence, err := s.insertTx(ctx, tx, sb)
+	sequence, err := s.insertTx(ctx, tx, sb, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), sequence)
 }
@@ -83,25 +91,25 @@ func TestInsertTxPostgreSQLReturnedSyntaxFail(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	_, err = s.insertTx(ctx, tx, sb)
+	_, err = s.insertTx(ctx, tx, sb, nil)
 	assert.Regexp(t, "FF10116", err)
 }
 
 func TestInsertTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{})
+	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestUpdateTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{})
+	err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestDeleteTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{})
+	err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
@@ -113,7 +121,7 @@ func TestDeleteTxZeroRowsAffected(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Delete("table")
-	err = s.deleteTx(ctx, tx, sb)
+	err = s.deleteTx(ctx, tx, sb, nil)
 	assert.Regexp(t, "FF10109", err)
 }
 
@@ -129,7 +137,7 @@ func TestRunAsGroup(t *testing.T) {
 		// First insert
 		ctx, tx, ac, err := s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		err = s.commitTx(ctx, tx, ac)
 		assert.NoError(t, err)
@@ -137,7 +145,7 @@ func TestRunAsGroup(t *testing.T) {
 		// Second insert
 		ctx, tx, ac, err = s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		err = s.commitTx(ctx, tx, ac)
 		assert.NoError(t, err)
@@ -170,7 +178,7 @@ func TestRunAsGroupFunctionFails(t *testing.T) {
 	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
 		ctx, tx, ac, err := s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"))
+		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		s.rollbackTx(ctx, tx, ac) // won't actually rollback
 		assert.NoError(t, err)
@@ -226,7 +234,7 @@ func TestTXConcurrency(t *testing.T) {
 				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
 				assert.NoError(t, err)
 				val := fmt.Sprintf("%s/%d", name, i)
-				sequence, err := s.insertTx(ctx, tx, sq.Insert("testconc").Columns("val").Values(val))
+				sequence, err := s.insertTx(ctx, tx, sq.Insert("testconc").Columns("val").Values(val), nil)
 				assert.NoError(t, err)
 				t.Logf("%s = %d", val, sequence)
 				err = s.commitTx(ctx, tx, ac)

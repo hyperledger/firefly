@@ -17,25 +17,77 @@
 package orchestrator
 
 import (
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (or *orchestrator) MessageCreated(sequence int64) {
-	or.batch.NewMessages() <- sequence
+func (or *orchestrator) attemptChangeEventDispatch(ev *fftypes.ChangeEvent) {
+	// For change events we're not processing as a system, we don't block our processing to dispatch
+	// them remotely. So if the queue is full, we discard the event rather than blocking.
+	select {
+	case or.events.ChangeEvents() <- ev:
+	default:
+		log.L(or.ctx).Warnf("Database change event queue is exhausted")
+	}
 }
 
-func (or *orchestrator) PinCreated(sequence int64) {
-	or.events.NewPins() <- sequence
+func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
+	switch {
+	case eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionMessages:
+		or.batch.NewMessages() <- sequence
+	case eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionEvents:
+		or.events.NewEvents() <- sequence
+	}
+	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+		Collection: string(resType),
+		Type:       eventType,
+		Namespace:  ns,
+		ID:         id,
+		Sequence:   &sequence,
+	})
 }
 
-func (or *orchestrator) EventCreated(sequence int64) {
-	or.events.NewEvents() <- sequence
+func (or *orchestrator) OrderedCollectionEvent(resType database.OrderedCollection, eventType fftypes.ChangeEventType, sequence int64) {
+	if eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionPins {
+		or.events.NewPins() <- sequence
+	}
+	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+		Collection: string(resType),
+		Type:       eventType,
+		Sequence:   &sequence,
+	})
 }
 
-func (or *orchestrator) SubscriptionCreated(id *fftypes.UUID) {
-	or.events.NewSubscriptions() <- id
+func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID) {
+	switch {
+	case eventType == fftypes.ChangeEventTypeCreated && resType == database.CollectionSubscriptions:
+		or.events.NewSubscriptions() <- id
+	case eventType == fftypes.ChangeEventTypeDeleted && resType == database.CollectionSubscriptions:
+		or.events.DeletedSubscriptions() <- id
+	}
+	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+		Collection: string(resType),
+		Type:       eventType,
+		Namespace:  ns,
+		ID:         id,
+	})
 }
 
-func (or *orchestrator) SubscriptionDeleted(id *fftypes.UUID) {
-	or.events.DeletedSubscriptions() <- id
+func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eventType fftypes.ChangeEventType, id *fftypes.UUID) {
+	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+		Collection: string(resType),
+		Type:       eventType,
+		ID:         id,
+	})
+}
+
+func (or *orchestrator) HashCollectionNSEvent(resType database.HashCollectionNS, eventType fftypes.ChangeEventType, ns string, hash *fftypes.Bytes32) {
+	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
+		Collection: string(resType),
+		Type:       eventType,
+		Namespace:  ns,
+		Hash:       hash,
+	})
+
 }

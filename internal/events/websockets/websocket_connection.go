@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -30,18 +31,19 @@ import (
 )
 
 type websocketConnection struct {
-	ctx          context.Context
-	ws           *WebSockets
-	wsConn       *websocket.Conn
-	cancelCtx    func()
-	connID       string
-	sendMessages chan interface{}
-	senderDone   chan struct{}
-	autoAck      bool
-	startedCount int
-	inflight     []*fftypes.EventDeliveryResponse
-	mux          sync.Mutex
-	closed       bool
+	ctx                context.Context
+	ws                 *WebSockets
+	wsConn             *websocket.Conn
+	cancelCtx          func()
+	connID             string
+	sendMessages       chan interface{}
+	senderDone         chan struct{}
+	autoAck            bool
+	startedCount       int
+	inflight           []*fftypes.EventDeliveryResponse
+	mux                sync.Mutex
+	closed             bool
+	changeEventMatcher *regexp.Regexp
 }
 
 func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn) *websocketConnection {
@@ -82,6 +84,7 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 				Group:  query.Get("filter.group"),
 				Tag:    query.Get("filter.tag"),
 			},
+			ChangeEvents: query.Get("changeevents"),
 		})
 		if err != nil {
 			wc.protocolError(err)
@@ -163,6 +166,19 @@ func (wc *websocketConnection) receiveLoop() {
 	}
 }
 
+func (wc *websocketConnection) dispatchChangeEvent(ce *fftypes.ChangeEvent) error {
+	if wc.changeEventMatcher == nil || !wc.changeEventMatcher.MatchString(ce.Collection) {
+		return nil
+	}
+	// Change events do *NOT* require an ack
+	return wc.send(&fftypes.WSChangeNotification{
+		WSClientActionBase: fftypes.WSClientActionBase{
+			Type: fftypes.WSClientActionChangeNotifcation,
+		},
+		ChangeEvent: ce,
+	})
+}
+
 func (wc *websocketConnection) dispatch(event *fftypes.EventDelivery) error {
 	inflight := &fftypes.EventDeliveryResponse{
 		ID:           event.ID,
@@ -218,6 +234,15 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 		wc.autoAck = *start.AutoAck
 	}
 	wc.mux.Unlock()
+
+	if start.ChangeEvents != "" {
+		wc.changeEventMatcher, err = regexp.Compile(start.ChangeEvents)
+		if err != nil {
+			log.L(wc.ctx).Errorf("Unable to compile change events regular expression '%s': %s", start.ChangeEvents, err)
+		} else {
+			start.Options.ChangeEvents = true
+		}
+	}
 
 	err = wc.ws.start(wc.connID, start)
 	if err != nil {

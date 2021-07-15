@@ -55,6 +55,7 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err err
 				blob.Peer,
 				blob.Created,
 			),
+		nil, // no change events for blobs
 	)
 	if err != nil {
 		return err
@@ -150,7 +151,7 @@ func (s *SQLCommon) DeleteBlob(ctx context.Context, sequence int64) (err error) 
 
 	err = s.deleteTx(ctx, tx, sq.Delete("blobs").Where(sq.Eq{
 		sequenceColumn: sequence,
-	}))
+	}), nil /* no change events for blobs */)
 	if err != nil {
 		return err
 	}

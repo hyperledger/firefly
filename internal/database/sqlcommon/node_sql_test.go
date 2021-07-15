@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNodesE2EWithDB(t *testing.T) {
@@ -37,13 +38,18 @@ func TestNodesE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new node entry
+	nodeID := fftypes.NewUUID()
 	node := &fftypes.Node{
-		ID:      fftypes.NewUUID(),
+		ID:      nodeID,
 		Message: fftypes.NewUUID(),
 		Owner:   "0x23456",
 		Name:    "node1",
 		Created: fftypes.Now(),
 	}
+
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionNodes, fftypes.ChangeEventTypeCreated, nodeID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionNodes, fftypes.ChangeEventTypeUpdated, nodeID, mock.Anything).Return()
+
 	err := s.UpsertNode(ctx, node, true)
 	assert.NoError(t, err)
 
@@ -113,6 +119,8 @@ func TestNodesE2EWithDB(t *testing.T) {
 	nodes, err := s.GetNodes(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodes))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertNodeFailBegin(t *testing.T) {

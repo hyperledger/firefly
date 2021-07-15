@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestDatatypeE2EWithDB(t *testing.T) {
@@ -54,6 +55,10 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		Created:   fftypes.Now(),
 		Value:     []byte(val.String()),
 	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, fftypes.ChangeEventTypeCreated, "ns1", datatypeID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, fftypes.ChangeEventTypeUpdated, "ns1", datatypeID, mock.Anything).Return()
+
 	err := s.UpsertDatatype(ctx, datatype, true)
 	assert.NoError(t, err)
 
@@ -77,7 +82,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		ID:        datatypeID,
 		Message:   fftypes.NewUUID(),
 		Validator: fftypes.ValidatorTypeJSON,
-		Namespace: "ns2",
+		Namespace: "ns1",
 		Name:      "customer",
 		Version:   "0.0.1",
 		Hash:      randB32,
@@ -124,6 +129,8 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	datatypes, err = s.GetDatatypes(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(datatypes))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertDatatypeFailBegin(t *testing.T) {

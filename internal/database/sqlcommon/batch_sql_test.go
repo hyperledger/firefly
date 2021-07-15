@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestBatch2EWithDB(t *testing.T) {
@@ -38,11 +39,12 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchID := fftypes.NewUUID()
 	msgID1 := fftypes.NewUUID()
 	batch := &fftypes.Batch{
-		ID:      batchID,
-		Type:    fftypes.MessageTypeBroadcast,
-		Author:  "0x12345",
-		Hash:    fftypes.NewRandB32(),
-		Created: fftypes.Now(),
+		ID:        batchID,
+		Type:      fftypes.MessageTypeBroadcast,
+		Author:    "0x12345",
+		Namespace: "ns1",
+		Hash:      fftypes.NewRandB32(),
+		Created:   fftypes.Now(),
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{ID: msgID1}},
@@ -52,6 +54,10 @@ func TestBatch2EWithDB(t *testing.T) {
 			},
 		},
 	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBatches, fftypes.ChangeEventTypeCreated, "ns1", batchID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBatches, fftypes.ChangeEventTypeUpdated, "ns1", batchID, mock.Anything).Return()
+
 	err := s.UpsertBatch(ctx, batch, true, true)
 	assert.NoError(t, err)
 
@@ -141,6 +147,8 @@ func TestBatch2EWithDB(t *testing.T) {
 	batches, err = s.GetBatches(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(batches))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertBatchFailBegin(t *testing.T) {

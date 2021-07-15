@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNamespacesE2EWithDB(t *testing.T) {
@@ -44,6 +45,9 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		Name:    "namespace1",
 		Created: fftypes.Now(),
 	}
+
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, fftypes.ChangeEventTypeCreated, mock.Anything, mock.Anything).Return()
+
 	err := s.UpsertNamespace(ctx, namespace, true)
 	assert.NoError(t, err)
 
@@ -72,6 +76,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		Description: "description1",
 		Created:     fftypes.Now(),
 	}
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, fftypes.ChangeEventTypeUpdated, namespace.ID, mock.Anything).Return()
 	err = s.UpsertNamespace(context.Background(), namespaceUpdated, true)
 	assert.NoError(t, err)
 
@@ -94,27 +99,15 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaceReadJson, _ = json.Marshal(namespaceRes[0])
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 
-	// Update
-	updateTime := fftypes.Now()
-	up := database.NamespaceQueryFactory.NewUpdate(ctx).Set("created", updateTime)
-	err = s.UpdateNamespace(ctx, namespaceUpdated.ID, up)
-	assert.NoError(t, err)
-
-	// Test find updated value
-	filter = fb.And(
-		fb.Eq("name", namespaceUpdated.Name),
-		fb.Eq("created", updateTime.String()),
-	)
-	namespaces, err := s.GetNamespaces(ctx, filter)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(namespaces))
-
 	// Delete
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, fftypes.ChangeEventTypeDeleted, namespace.ID, mock.Anything).Return()
 	err = s.DeleteNamespace(ctx, namespaceUpdated.ID)
 	assert.NoError(t, err)
-	namespaces, err = s.GetNamespaces(ctx, filter)
+	namespaces, err := s.GetNamespaces(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(namespaces))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertNamespaceFailBegin(t *testing.T) {
@@ -217,32 +210,6 @@ func TestGetNamespaceReadMessageFail(t *testing.T) {
 	_, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestNamespaceUpdateBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
-	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestNamespaceUpdateBuildQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
-	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*name", err)
-}
-
-func TestNamespaceUpdateFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	u := database.NamespaceQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
-	err := s.UpdateNamespace(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err)
 }
 
 func TestNamespaceDeleteBeginFail(t *testing.T) {

@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestOffsetsE2EWithDB(t *testing.T) {
@@ -39,14 +40,20 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new offset entry
+	offsetID := fftypes.NewUUID()
 	rand1, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
 	offset := &fftypes.Offset{
-		ID:        fftypes.NewUUID(),
+		ID:        offsetID,
 		Type:      fftypes.OffsetTypeBatch,
 		Namespace: "ns1",
 		Name:      "offset1",
 		Current:   rand1.Int64(),
 	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOffsets, fftypes.ChangeEventTypeCreated, "ns1", offsetID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOffsets, fftypes.ChangeEventTypeUpdated, "ns1", offsetID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOffsets, fftypes.ChangeEventTypeDeleted, "ns1", offsetID, mock.Anything).Return()
+
 	err := s.UpsertOffset(ctx, offset, true)
 	assert.NoError(t, err)
 
@@ -102,7 +109,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	// Update
 	rand3, _ := rand.Int(rand.Reader, big.NewInt(10000000000000))
 	up := database.OffsetQueryFactory.NewUpdate(ctx).Set("current", rand3.Int64())
-	err = s.UpdateOffset(ctx, offsetUpdated.ID, up)
+	err = s.UpdateOffset(ctx, offsetUpdated.Namespace, offsetUpdated.ID, up)
 	assert.NoError(t, err)
 
 	// Test find updated value
@@ -121,6 +128,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(offsets))
 
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertOffsetFailBegin(t *testing.T) {
@@ -229,7 +237,7 @@ func TestOffsetUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", "anything")
-	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOffset(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -237,7 +245,7 @@ func TestOffsetUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
-	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOffset(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10149.*name", err)
 }
 
@@ -247,7 +255,7 @@ func TestOffsetUpdateFail(t *testing.T) {
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", fftypes.NewUUID())
-	err := s.UpdateOffset(context.Background(), fftypes.NewUUID(), u)
+	err := s.UpdateOffset(context.Background(), "ns1", fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
 }
 
@@ -261,6 +269,9 @@ func TestOffsetDeleteBeginFail(t *testing.T) {
 func TestOffsetDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(offsetColumns).AddRow(
+		fftypes.NewUUID(), fftypes.OffsetTypeSubscription, "ns1", "sub1", int64(12345),
+	))
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.DeleteOffset(context.Background(), fftypes.OffsetTypeSubscription, "ns1", "sub1")

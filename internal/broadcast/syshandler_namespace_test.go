@@ -45,7 +45,7 @@ func TestHandleSystemBroadcastNSOk(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
@@ -74,7 +74,7 @@ func TestHandleSystemBroadcastNSEventFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),
@@ -210,7 +210,7 @@ func TestHandleSystemBroadcastDuplicateOverrideLocal(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, "ns1").Return(ns, nil)
 	mdi.On("DeleteNamespace", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertNamespace", mock.Anything, mock.Anything, false).Return(nil)
-	mdi.On("UpsertEvent", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: string(fftypes.SystemTagDefineNamespace),

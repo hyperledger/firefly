@@ -51,6 +51,18 @@ type Plugin interface {
 	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) error
 }
 
+// ChangeEventListener is an optional interface for delivering database change events, only supported for ephemeral connections
+type ChangeEventListener interface {
+	// ChangeEvent delivers a change event - no ack for these
+	ChangeEvent(connID string, ce *fftypes.ChangeEvent)
+}
+
+// PluginAll is a combined interface for easy mocking, with all optional features
+type PluginAll interface {
+	Plugin
+	ChangeEventListener
+}
+
 type SubscriptionMatcher func(fftypes.SubscriptionRef) bool
 
 type Callbacks interface {
@@ -78,4 +90,7 @@ type Callbacks interface {
 	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse)
 }
 
-type Capabilities struct{}
+type Capabilities struct {
+	// ChangeEvents is whether change events are supported
+	ChangeEvents bool
+}

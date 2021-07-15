@@ -89,6 +89,9 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 				Set("profile", organization.Profile).
 				Set("created", organization.Created).
 				Where(sq.Eq{"identity": organization.Identity}),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionOrganizations, fftypes.ChangeEventTypeUpdated, organization.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -106,6 +109,9 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 					organization.Profile,
 					organization.Created,
 				),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionOrganizations, fftypes.ChangeEventTypeCreated, organization.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -209,7 +215,7 @@ func (s *SQLCommon) UpdateOrganization(ctx context.Context, id *fftypes.UUID, up
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

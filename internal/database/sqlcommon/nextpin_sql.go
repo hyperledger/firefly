@@ -54,6 +54,7 @@ func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin)
 				nextpin.Hash,
 				nextpin.Nonce,
 			),
+		nil, // no change events for next pins
 	)
 	if err != nil {
 		return err
@@ -160,7 +161,7 @@ func (s *SQLCommon) UpdateNextPin(ctx context.Context, sequence int64, update da
 	}
 	query = query.Where(sq.Eq{"seq": sequence})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for next pins */)
 	if err != nil {
 		return err
 	}
@@ -178,7 +179,7 @@ func (s *SQLCommon) DeleteNextPin(ctx context.Context, sequence int64) (err erro
 
 	err = s.deleteTx(ctx, tx, sq.Delete("nextpins").Where(sq.Eq{
 		"seq": sequence,
-	}))
+	}), nil /* no change events for next pins */)
 	if err != nil {
 		return err
 	}

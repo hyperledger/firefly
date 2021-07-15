@@ -168,7 +168,7 @@ func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, e
 	return s.queryTx(ctx, nil, q)
 }
 
-func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder) (int64, error) {
+func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func()) (int64, error) {
 	l := log.L(ctx)
 	q, useQuery := s.provider.UpdateInsertForSequenceReturn(q)
 
@@ -194,10 +194,14 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 		sequence, _ = res.LastInsertId()
 	}
 	l.Debugf(`SQL<- inserted sequence=%d`, sequence)
+
+	if postCommit != nil {
+		s.postCommitEvent(tx, postCommit)
+	}
 	return sequence, nil
 }
 
-func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder) error {
+func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder, postCommit func()) error {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
@@ -215,10 +219,14 @@ func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuil
 	if ra < 1 {
 		return database.DeleteRecordNotFound
 	}
+
+	if postCommit != nil {
+		s.postCommitEvent(tx, postCommit)
+	}
 	return nil
 }
 
-func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder) error {
+func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuilder, postCommit func()) error {
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
@@ -233,6 +241,10 @@ func (s *SQLCommon) updateTx(ctx context.Context, tx *txWrapper, q sq.UpdateBuil
 	}
 	ra, _ := res.RowsAffected() // currently only used for debugging
 	l.Debugf(`SQL<- update affected=%d`, ra)
+
+	if postCommit != nil {
+		s.postCommitEvent(tx, postCommit)
+	}
 	return nil
 }
 

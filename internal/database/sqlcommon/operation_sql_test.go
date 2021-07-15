@@ -44,6 +44,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Status:      fftypes.OpStatusPending,
 		Created:     fftypes.Now(),
 	}
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeUpdated, "ns1", operationID).Return()
 	err := s.UpsertOperation(ctx, operation, true)
 	assert.NoError(t, err)
 
@@ -129,6 +131,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operations, err = s.GetOperations(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(operations))
+
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestUpsertOperationFailBegin(t *testing.T) {

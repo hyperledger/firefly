@@ -42,10 +42,12 @@ func (ws *WebSockets) Name() string { return "websockets" }
 
 func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
 	*ws = WebSockets{
-		ctx:          ctx,
-		connections:  make(map[string]*websocketConnection),
-		capabilities: &events.Capabilities{},
-		callbacks:    callbacks,
+		ctx:         ctx,
+		connections: make(map[string]*websocketConnection),
+		capabilities: &events.Capabilities{
+			ChangeEvents: true,
+		},
+		callbacks: callbacks,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(prefix.GetByteSize(ReadBufferSize)),
 			WriteBufferSize: int(prefix.GetByteSize(WriteBufferSize)),
@@ -84,6 +86,18 @@ func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, 
 		return i18n.NewError(ws.ctx, i18n.MsgWSConnectionNotActive, connID)
 	}
 	return conn.dispatch(event)
+}
+
+func (ws *WebSockets) ChangeEvent(connID string, ce *fftypes.ChangeEvent) {
+	ws.connMux.Lock()
+	conn, ok := ws.connections[connID]
+	ws.connMux.Unlock()
+	if ok {
+		err := conn.dispatchChangeEvent(ce)
+		if err != nil {
+			log.L(ws.ctx).Errorf("WebSocket delivery of change notification failed: %s", err)
+		}
+	}
 }
 
 func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {

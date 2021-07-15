@@ -80,6 +80,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 			}
 			node.ID = &id // Update on returned object
 		}
+		nodeRows.Close()
 	}
 
 	if existing {
@@ -95,6 +96,9 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 				Set("dx_endpoint", node.DX.Endpoint).
 				Set("created", node.Created).
 				Where(sq.Eq{"id": node.ID}),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionNodes, fftypes.ChangeEventTypeUpdated, node.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -112,6 +116,9 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 					node.DX.Endpoint,
 					node.Created,
 				),
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionNodes, fftypes.ChangeEventTypeCreated, node.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -211,7 +218,7 @@ func (s *SQLCommon) UpdateNode(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

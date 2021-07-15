@@ -77,7 +77,7 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
 		msgRows, err := s.queryTx(ctx, tx,
-			sq.Select("hash").
+			sq.Select("hash", sequenceColumn).
 				From("messages").
 				Where(sq.Eq{"id": message.Header.ID}),
 		)
@@ -88,7 +88,7 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 		existing = msgRows.Next()
 		if existing && !allowHashUpdate {
 			var hash *fftypes.Bytes32
-			_ = msgRows.Scan(&hash)
+			_ = msgRows.Scan(&hash, &message.Sequence)
 			if !fftypes.SafeHashCompare(hash, message.Hash) {
 				msgRows.Close()
 				log.L(ctx).Errorf("Existing=%s New=%s", hash, message.Hash)
@@ -121,11 +121,14 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("batch_id", message.BatchID).
 				// Intentionally does NOT include the "local" column
 				Where(sq.Eq{"id": message.Header.ID}),
+			func() {
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			},
 		); err != nil {
 			return err
 		}
 	} else {
-		sequence, err := s.insertTx(ctx, tx,
+		message.Sequence, err = s.insertTx(ctx, tx,
 			sq.Insert("messages").
 				Columns(msgColumns...).
 				Values(
@@ -148,15 +151,13 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 					message.BatchID,
 					isLocal,
 				),
+			func() {
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			},
 		)
 		if err != nil {
 			return err
 		}
-
-		s.postCommitEvent(tx, func() {
-			s.callbacks.MessageCreated(sequence)
-		})
-
 	}
 
 	if err = s.updateMessageDataRefs(ctx, tx, message, existing); err != nil {
@@ -174,6 +175,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 				Where(sq.And{
 					sq.Eq{"message_id": message.Header.ID},
 				}),
+			nil, // no change event
 		); err != nil {
 			return err
 		}
@@ -202,6 +204,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 					msgDataRef.Hash,
 					msgDataRefIDx,
 				),
+			nil, // no change event
 		); err != nil {
 			return err
 		}
@@ -427,7 +430,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 		return err
 	}
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
 	if err != nil {
 		return err
 	}

@@ -48,6 +48,308 @@ type Plugin interface {
 	Capabilities() *Capabilities
 }
 
+type iNamespaceCollection interface {
+	// UpsertNamespace - Upsert a namespace
+	// Throws IDMismatch error if updating and ids don't match
+	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
+
+	// DeleteNamespace - Delete namespace
+	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
+
+	// GetNamespace - Get an namespace by name
+	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
+
+	// GetNamespaces - Get namespaces
+	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
+}
+
+type iMessageCollection interface {
+	// UpsertMessage - Upsert a message, with all the embedded data references.
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
+
+	// InsertMessageLocal - sets a boolean flag on inserting a new message (cannot be an update) to state it is local.
+	// Only time this flag is ever set. Subsequent updates can affect other fields, but not the local flag. Important to stop infinite message propagation.
+	InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error)
+
+	// UpdateMessage - Update message
+	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// UpdateMessages - Update messages
+	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
+
+	// GetMessageByID - Get a message by ID
+	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
+
+	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
+	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
+
+	// GetMessageRefs - Lighter weight query to just get the reference info of messages
+	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
+
+	// GetMessagesForData - List messages where there is a data reference to the specified ID
+	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
+}
+
+type iDataCollection interface {
+	// UpsertData - Upsert a data record
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
+
+	// UpdateData - Update data
+	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetDataByID - Get a data record by ID
+	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
+
+	// GetData - Get data
+	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
+
+	// GetDataRefs - Get data references only (no data)
+	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
+}
+
+type iBatchCollection interface {
+	// UpsertBatch - Upsert a batch
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
+
+	// UpdateBatch - Update data
+	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetBatchByID - Get a batch by ID
+	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
+
+	// GetBatches - Get batches
+	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
+}
+
+type iTransactionCollection interface {
+	// UpsertTransaction - Upsert a transaction
+	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
+
+	// UpdateTransaction - Update transaction
+	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetTransactionByID - Get a transaction by ID
+	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
+
+	// GetTransactions - Get transactions
+	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
+}
+
+type iDatatypeCollection interface {
+	// UpsertDatatype - Upsert a data definitino
+	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
+
+	// UpdateDatatype - Update data definition
+	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetDatatypeByID - Get a data definition by ID
+	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
+
+	// GetDatatypeByName - Get a data definition by name
+	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *fftypes.Datatype, err error)
+
+	// GetDatatypes - Get data definitions
+	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
+}
+
+type iOffsetCollection interface {
+	// UpsertOffset - Upsert an offset
+	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
+
+	// UpdateOffset - Update offset
+	UpdateOffset(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)
+
+	// GetOffset - Get an offset by name
+	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
+
+	// GetOffsets - Get offsets
+	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
+
+	// DeleteOffset - Delete an offset by name
+	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
+}
+
+type iPinCollection interface {
+	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
+	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
+
+	// GetPins - Get pins
+	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
+
+	// SetPinDispatched - Set the dispatched flag to true on the specified pins
+	SetPinDispatched(ctx context.Context, sequence int64) (err error)
+
+	// DeletePin - Delete a pin
+	DeletePin(ctx context.Context, sequence int64) (err error)
+}
+
+type iOperationCollection interface {
+	// UpsertOperation - Upsert an operation
+	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
+
+	// UpdateOperation - Update operation by ID
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetOperationByID - Get an operation by ID
+	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
+
+	// GetOperations - Get operation
+	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
+}
+
+type iSubscriptionCollection interface {
+	// UpsertSubscription - Upsert a subscription
+	UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) (err error)
+
+	// UpdateSubscription - Update subscription
+	// Throws IDMismatch error if updating and ids don't match
+	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
+
+	// GetSubscriptionByName - Get an subscription by name
+	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
+
+	// GetSubscriptionByID - Get an subscription by id
+	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Subscription, err error)
+
+	// GetSubscriptions - Get subscriptions
+	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
+
+	// DeleteSubscriptionByID - Delete a subscription
+	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+}
+
+type iEventCollection interface {
+	// InsertEvent - Insert an event
+	InsertEvent(ctx context.Context, data *fftypes.Event) (err error)
+
+	// UpdateEvent - Update event
+	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetEventByID - Get a event by ID
+	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
+
+	// GetEvents - Get events
+	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
+}
+
+type iOrganizationsCollection interface {
+	// UpsertOrganization - Upsert an organization
+	UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) (err error)
+
+	// UpdateOrganization - Update organization
+	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetOrganizationByIdentity - Get a organization by identity
+	GetOrganizationByIdentity(ctx context.Context, identity string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByName - Get a organization by name
+	GetOrganizationByName(ctx context.Context, name string) (org *fftypes.Organization, err error)
+
+	// GetOrganizationByID - Get a organization by ID
+	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
+
+	// GetOrganizations - Get organizations
+	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
+}
+
+type iNodeCollection interface {
+	// UpsertNode - Upsert a node
+	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
+
+	// UpdateNode - Update node
+	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+
+	// GetNode - Get a node by ID
+	GetNode(ctx context.Context, owner, name string) (node *fftypes.Node, err error)
+
+	// GetNodeByID- Get a node by ID
+	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
+
+	// GetNodes - Get nodes
+	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
+}
+
+type iGroupCollection interface {
+	// UpserGroup - Upsert a group
+	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
+
+	// UpdateGroup - Update group
+	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
+
+	// GetGroupByHash - Get a group by ID
+	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *fftypes.Group, err error)
+
+	// GetGroups - Get groups
+	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
+}
+
+type iNonceCollection interface {
+	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
+	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
+
+	// GetNonce - Get a context by hash
+	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
+
+	// GetNonces - Get contexts
+	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, err error)
+
+	// DeleteNonce - Delete context by hash
+	DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err error)
+}
+
+type iNextPinCollection interface {
+	// InsertNextPin - insert a nextpin
+	InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error)
+
+	// GetNextPinByContextAndIdentity - lookup nextpin by context+identity
+	GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error)
+
+	// GetNextPinByHash - lookup nextpin by its hash
+	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error)
+
+	// GetNextPins - get nextpins
+	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, err error)
+
+	// UpdateNextPin - update a next hash using its local database ID
+	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
+
+	// DeleteNextPin - delete a next hash, using its local database ID
+	DeleteNextPin(ctx context.Context, sequence int64) (err error)
+}
+
+type iBlobCollection interface {
+	// InsertBlob - insert a blob
+	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
+
+	// GetBlobMatchingHash - lookup first blob batching a hash
+	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
+
+	// GetBlobs - get blobs
+	GetBlobs(ctx context.Context, filter Filter) (message []*fftypes.Blob, err error)
+
+	// DeleteBlob - delete a blob, using its local database ID
+	DeleteBlob(ctx context.Context, sequence int64) (err error)
+}
+
+type iConfigRecordCollection interface {
+	// UpsertConfigRecord - Upsert a config record
+	// Throws IDMismatch error if updating and ids don't match
+	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
+
+	// GetConfigRecord - Get an config record by key
+	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
+
+	// GetConfigRecords - Get config records
+	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, err error)
+
+	// DeleteConfigRecord - Delete config record
+	DeleteConfigRecord(ctx context.Context, key string) (err error)
+}
+
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -80,275 +382,92 @@ type PeristenceInterface interface {
 	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
-	// UpsertNamespace - Upsert a namespace
-	// Throws IDMismatch error if updating and ids don't match
-	UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) (err error)
-
-	// UpdateNamespace - Update namespace
-	UpdateNamespace(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// DeleteNamespace - Delete namespace
-	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
-
-	// GetNamespace - Get an namespace by name
-	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
-
-	// GetNamespaces - Get namespaces
-	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
-
-	// UpsertMessage - Upsert a message, with all the embedded data references.
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertMessage(ctx context.Context, message *fftypes.Message, allowExisting, allowHashUpdate bool) (err error)
-
-	// InsertMessageLocal - sets a boolean flag on inserting a new message (cannot be an update) to state it is local.
-	// Only time this flag is ever set. Subsequent updates can affect other fields, but not the local flag. Important to stop infinite message propagation.
-	InsertMessageLocal(ctx context.Context, message *fftypes.Message) (err error)
-
-	// UpdateMessage - Update message
-	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// UpdateMessages - Update messages
-	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
-
-	// GetMessageByID - Get a message by ID
-	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
-
-	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
-
-	// GetMessageRefs - Lighter weight query to just get the reference info of messages
-	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
-
-	// GetMessagesForData - List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
-
-	// UpsertData - Upsert a data record
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertData(ctx context.Context, data *fftypes.Data, allowExisting, allowHashUpdate bool) (err error)
-
-	// UpdateData - Update data
-	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetDataByID - Get a data record by ID
-	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
-
-	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
-
-	// GetDataRefs - Get data references only (no data)
-	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
-
-	// UpsertBatch - Upsert a batch
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
-
-	// UpdateBatch - Update data
-	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetBatchByID - Get a batch by ID
-	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
-
-	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
-
-	// UpsertTransaction - Upsert a transaction
-	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
-
-	// UpdateTransaction - Update transaction
-	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetTransactionByID - Get a transaction by ID
-	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
-
-	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
-
-	// UpsertDatatype - Upsert a data definitino
-	UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) (err error)
-
-	// UpdateDatatype - Update data definition
-	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetDatatypeByID - Get a data definition by ID
-	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *fftypes.Datatype, err error)
-
-	// GetDatatypeByName - Get a data definition by name
-	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *fftypes.Datatype, err error)
-
-	// GetDatatypes - Get data definitions
-	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
-
-	// UpsertOffset - Upsert an offset
-	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
-
-	// UpdateOffset - Update offset
-	UpdateOffset(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetOffset - Get an offset by name
-	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
-
-	// GetOffsets - Get offsets
-	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
-
-	// DeleteOffset - Delete an offset by name
-	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
-
-	// UpsertPin - Will insert a pin at the end of the sequence, unless the batch+hash+index sequence already exists
-	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
-
-	// GetPins - Get pins
-	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
-
-	// SetPinDispatched - Set the dispatched flag to true on the specified pins
-	SetPinDispatched(ctx context.Context, sequence int64) (err error)
-
-	// DeletePin - Delete a pin
-	DeletePin(ctx context.Context, sequence int64) (err error)
-
-	// UpsertOperation - Upsert an operation
-	UpsertOperation(ctx context.Context, operation *fftypes.Operation, allowExisting bool) (err error)
-
-	// UpdateOperation - Update operation by ID
-	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetOperationByID - Get an operation by ID
-	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
-
-	// GetOperations - Get operation
-	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
-
-	// UpsertSubscription - Upsert a subscription
-	UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) (err error)
-
-	// UpdateSubscription - Update subscription
-	// Throws IDMismatch error if updating and ids don't match
-	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
-
-	// GetSubscriptionByName - Get an subscription by name
-	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *fftypes.Subscription, err error)
-
-	// GetSubscriptionByID - Get an subscription by id
-	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Subscription, err error)
-
-	// GetSubscriptions - Get subscriptions
-	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
-
-	// DeleteSubscriptionByID - Delete a subscription
-	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
-
-	// UpsertEvent - Upsert an event
-	UpsertEvent(ctx context.Context, data *fftypes.Event, allowExisting bool) (err error)
-
-	// UpdateEvent - Update event
-	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetEventByID - Get a event by ID
-	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
-
-	// GetEvents - Get events
-	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
-
-	// UpsertOrganization - Upsert an organization
-	UpsertOrganization(ctx context.Context, data *fftypes.Organization, allowExisting bool) (err error)
-
-	// UpdateOrganization - Update organization
-	UpdateOrganization(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetOrganizationByIdentity - Get a organization by identity
-	GetOrganizationByIdentity(ctx context.Context, identity string) (org *fftypes.Organization, err error)
-
-	// GetOrganizationByName - Get a organization by name
-	GetOrganizationByName(ctx context.Context, name string) (org *fftypes.Organization, err error)
-
-	// GetOrganizationByID - Get a organization by ID
-	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
-
-	// GetOrganizations - Get organizations
-	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
-
-	// UpsertNode - Upsert a node
-	UpsertNode(ctx context.Context, data *fftypes.Node, allowExisting bool) (err error)
-
-	// UpdateNode - Update node
-	UpdateNode(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
-	// GetNode - Get a node by ID
-	GetNode(ctx context.Context, owner, name string) (node *fftypes.Node, err error)
-
-	// GetNodeByID- Get a node by ID
-	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
-
-	// GetNodes - Get nodes
-	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
-
-	// UpserGroup - Upsert a group
-	UpsertGroup(ctx context.Context, data *fftypes.Group, allowExisting bool) (err error)
-
-	// UpdateGroup - Update group
-	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
-
-	// GetGroupByHash - Get a group by ID
-	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *fftypes.Group, err error)
-
-	// GetGroups - Get groups
-	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
-
-	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
-
-	// GetNonce - Get a context by hash
-	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
-
-	// GetNonces - Get contexts
-	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, err error)
-
-	// DeleteNonce - Delete context by hash
-	DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err error)
-
-	// InsertNextPin - insert a nextpin
-	InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error)
-
-	// GetNextPinByContextAndIdentity - lookup nextpin by context+identity
-	GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error)
-
-	// GetNextPinByHash - lookup nextpin by its hash
-	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error)
-
-	// GetNextPins - get nextpins
-	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, err error)
-
-	// UpdateNextPin - update a next hash using its local database ID
-	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
-
-	// DeleteNextPin - delete a next hash, using its local database ID
-	DeleteNextPin(ctx context.Context, sequence int64) (err error)
-
-	// InsertBlob - insert a blob
-	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
-
-	// GetBlobMatchingHash - lookup first blob batching a hash
-	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
-
-	// GetBlobs - get blobs
-	GetBlobs(ctx context.Context, filter Filter) (message []*fftypes.Blob, err error)
-
-	// DeleteBlob - delete a blob, using its local database ID
-	DeleteBlob(ctx context.Context, sequence int64) (err error)
-
-	// UpsertConfigRecord - Upsert a config record
-	// Throws IDMismatch error if updating and ids don't match
-	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
-
-	// GetConfigRecord - Get an config record by key
-	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
-
-	// GetConfigRecords - Get config records
-	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, err error)
-
-	// DeleteConfigRecord - Delete config record
-	DeleteConfigRecord(ctx context.Context, key string) (err error)
+	iNamespaceCollection
+	iMessageCollection
+	iDataCollection
+	iBatchCollection
+	iTransactionCollection
+	iDatatypeCollection
+	iOffsetCollection
+	iPinCollection
+	iOperationCollection
+	iSubscriptionCollection
+	iEventCollection
+	iOrganizationsCollection
+	iNodeCollection
+	iGroupCollection
+	iNonceCollection
+	iNextPinCollection
+	iBlobCollection
+	iConfigRecordCollection
 }
+
+// CollectionName represents all collections
+type CollectionName string
+
+// OrderedUUIDCollectionNS collections have a strong order that includes a sequence integer
+// that uniquely identifies the entry in a sequence. The sequence is LOCAL to this
+// FireFly node. We try to minimize adding new collections of this type, as they have
+// implementation complexity in some databases (such as NoSQL databases)
+type OrderedUUIDCollectionNS CollectionName
+
+const (
+	CollectionMessages OrderedUUIDCollectionNS = "message"
+	CollectionEvents   OrderedUUIDCollectionNS = "events"
+)
+
+// OrderedCollection is a collection that is ordrered, and that sequence is the only key
+type OrderedCollection CollectionName
+
+const (
+	CollectionPins OrderedCollection = "pins"
+)
+
+// UUIDCollectionNS is the most common type of collection - each entry has a UUID that
+// is globally unique, and used externally by apps to address entries in the collection.
+// Objects in these collections are all namespaced,.
+type UUIDCollectionNS CollectionName
+
+const (
+	CollectionBatches       UUIDCollectionNS = "batches"
+	CollectionData          UUIDCollectionNS = "data"
+	CollectionDataTypes     UUIDCollectionNS = "datatypes"
+	CollectionOffsets       UUIDCollectionNS = "offsets"
+	CollectionOperations    UUIDCollectionNS = "operations"
+	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
+	CollectionTransactions  UUIDCollectionNS = "transactions"
+)
+
+// HashCollectionNS is a collection where the primary key is a hash, such that it can
+// by identifed by any member of the network at any time, without it first having
+// been broadcast.
+type HashCollectionNS CollectionName
+
+const (
+	CollectionGroups HashCollectionNS = "groups"
+)
+
+// UUIDCollection is like UUIDCollectionNS, but for objects that do not reside within a namespace
+type UUIDCollection CollectionName
+
+const (
+	CollectionNamespaces    UUIDCollection = "namespaces"
+	CollectionNodes         UUIDCollection = "nodes"
+	CollectionOrganizations UUIDCollection = "organizations"
+)
+
+// OtherCollection are odd balls, that don't fit any of the categories above.
+// These collections do not support change events, and generally their
+// creation is coordinated with creation of another object that does support change events.
+// Mainly they are entries that require lookup by compound IDs.
+type OtherCollection CollectionName
+
+const (
+	CollectionConfigrecords OtherCollection = "configrecords"
+	CollectionBlobs         OtherCollection = "blobs"
+	CollectionNextpins      OtherCollection = "nextpins"
+	CollectionNonces        OtherCollection = "nonces"
+)
 
 // Callbacks are the methods for passing data from plugin to core
 //
@@ -364,14 +483,16 @@ type PeristenceInterface interface {
 // a subsequent database query as the source of truth of the latest set/order of data, and it will periodically
 // check for new messages even if it does not receive any events.
 //
-// TODO: Clarify the relationship between Leader Election capabilities and Event capabilities
+// Events are emitted locally to the individual FireFly core process. However, a WebSocket interface is
+// available for remote listening to these events. That allows the UI to listen to the events, as well as
+// providing a building block for a cluster of FireFly servers to directly propgate events to each other.
 //
 type Callbacks interface {
-	MessageCreated(sequence int64)
-	PinCreated(sequence int64)
-	EventCreated(sequence int64)
-	SubscriptionCreated(id *fftypes.UUID)
-	SubscriptionDeleted(id *fftypes.UUID)
+	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
+	OrderedCollectionEvent(resType OrderedCollection, eventType fftypes.ChangeEventType, sequence int64)
+	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID)
+	UUIDCollectionEvent(resType UUIDCollection, eventType fftypes.ChangeEventType, id *fftypes.UUID)
+	HashCollectionNSEvent(resType HashCollectionNS, eventType fftypes.ChangeEventType, ns string, hash *fftypes.Bytes32)
 }
 
 // Capabilities defines the capabilities a plugin can report as implementing or not

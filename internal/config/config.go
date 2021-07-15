@@ -136,6 +136,8 @@ var (
 	EventDispatcherRetryInitDelay = rootKey("event.dispatcher.retry.initDelay")
 	// EventDispatcherRetryMaxDelay he maximum delay to use for retry of data base operations
 	EventDispatcherRetryMaxDelay = rootKey("event.dispatcher.retry.maxDelay")
+	// EventDBEventsBufferSize the size of the buffer of change events
+	EventDBEventsBufferSize = rootKey("event.dbevents.bufferSize")
 	// GroupCacheSize cache size for private group addresses
 	GroupCacheSize = rootKey("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
@@ -269,6 +271,7 @@ func Reset() {
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
 	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
+	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
 	viper.SetDefault(string(EventDispatcherBatchTimeout), "0")
 	viper.SetDefault(string(EventDispatcherPollTimeout), "30s")

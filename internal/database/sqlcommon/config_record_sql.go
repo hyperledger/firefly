@@ -66,6 +66,7 @@ func (s *SQLCommon) UpsertConfigRecord(ctx context.Context, configRecord *fftype
 			sq.Update("config").
 				Set("config_value", configRecord.Value).
 				Where(sq.Eq{"config_key": configRecord.Key}),
+			nil, // no change events for config records
 		); err != nil {
 			return err
 		}
@@ -77,6 +78,7 @@ func (s *SQLCommon) UpsertConfigRecord(ctx context.Context, configRecord *fftype
 					configRecord.Key,
 					configRecord.Value,
 				),
+			nil, // no change events for config records
 		); err != nil {
 			return err
 		}
@@ -155,7 +157,7 @@ func (s *SQLCommon) DeleteConfigRecord(ctx context.Context, key string) (err err
 
 	err = s.deleteTx(ctx, tx, sq.Delete("config").Where(sq.Eq{
 		"config_key": key,
-	}))
+	}), nil /* no change events for config records */)
 	if err != nil {
 		return err
 	}

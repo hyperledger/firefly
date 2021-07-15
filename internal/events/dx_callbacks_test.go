@@ -787,7 +787,7 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(nil)
-	mdi.On("UpsertEvent", em.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)

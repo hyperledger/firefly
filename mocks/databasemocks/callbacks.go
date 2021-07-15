@@ -3,7 +3,9 @@
 package databasemocks
 
 import (
+	database "github.com/hyperledger-labs/firefly/pkg/database"
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -12,27 +14,27 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// EventCreated provides a mock function with given fields: sequence
-func (_m *Callbacks) EventCreated(sequence int64) {
-	_m.Called(sequence)
+// HashCollectionNSEvent provides a mock function with given fields: resType, eventType, ns, hash
+func (_m *Callbacks) HashCollectionNSEvent(resType database.HashCollectionNS, eventType fftypes.ChangeEventType, ns string, hash *fftypes.Bytes32) {
+	_m.Called(resType, eventType, ns, hash)
 }
 
-// MessageCreated provides a mock function with given fields: sequence
-func (_m *Callbacks) MessageCreated(sequence int64) {
-	_m.Called(sequence)
+// OrderedCollectionEvent provides a mock function with given fields: resType, eventType, sequence
+func (_m *Callbacks) OrderedCollectionEvent(resType database.OrderedCollection, eventType fftypes.ChangeEventType, sequence int64) {
+	_m.Called(resType, eventType, sequence)
 }
 
-// PinCreated provides a mock function with given fields: sequence
-func (_m *Callbacks) PinCreated(sequence int64) {
-	_m.Called(sequence)
+// OrderedUUIDCollectionNSEvent provides a mock function with given fields: resType, eventType, ns, id, sequence
+func (_m *Callbacks) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
+	_m.Called(resType, eventType, ns, id, sequence)
 }
 
-// SubscriptionCreated provides a mock function with given fields: id
-func (_m *Callbacks) SubscriptionCreated(id *fftypes.UUID) {
-	_m.Called(id)
+// UUIDCollectionEvent provides a mock function with given fields: resType, eventType, id
+func (_m *Callbacks) UUIDCollectionEvent(resType database.UUIDCollection, eventType fftypes.ChangeEventType, id *fftypes.UUID) {
+	_m.Called(resType, eventType, id)
 }
 
-// SubscriptionDeleted provides a mock function with given fields: id
-func (_m *Callbacks) SubscriptionDeleted(id *fftypes.UUID) {
-	_m.Called(id)
+// UUIDCollectionNSEvent provides a mock function with given fields: resType, eventType, ns, id
+func (_m *Callbacks) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType fftypes.ChangeEventType, ns string, id *fftypes.UUID) {
+	_m.Called(resType, eventType, ns, id)
 }

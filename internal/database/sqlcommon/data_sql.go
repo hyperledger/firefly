@@ -105,6 +105,9 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 				Set("blob_public", blob.Public).
 				Set("value", data.Value).
 				Where(sq.Eq{"id": data.ID}),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeUpdated, data.Namespace, data.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -124,6 +127,9 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 					blob.Public,
 					data.Value,
 				),
+			func() {
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
+			},
 		); err != nil {
 			return err
 		}
@@ -265,7 +271,7 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	err = s.updateTx(ctx, tx, query)
+	err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

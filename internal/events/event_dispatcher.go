@@ -56,9 +56,11 @@ type eventDispatcher struct {
 	namespace     string
 	readAhead     int
 	subscription  *subscription
+	cel           *changeEventListener
+	changeEvents  chan *fftypes.ChangeEvent
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
 	ed := &eventDispatcher{
@@ -75,9 +77,11 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
 		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
+		changeEvents:  make(chan *fftypes.ChangeEvent),
 		readAhead:     readAhead,
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
+		cel:           cel,
 	}
 
 	pollerConf := &eventPollerConf{
@@ -345,7 +349,21 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) error {
 	return nil
 }
 
+func (ed *eventDispatcher) dispatchChangeEvent(ce *fftypes.ChangeEvent) {
+	select {
+	case ed.changeEvents <- ce:
+		log.L(ed.ctx).Tracef("Dispatched change event %+v", ce)
+		break
+	case <-ed.eventPoller.closed:
+		log.L(ed.ctx).Warnf("Dispatcher closed before dispatching change event")
+	}
+}
+
 func (ed *eventDispatcher) deliverEvents() {
+	if ed.transport.Capabilities().ChangeEvents && ed.subscription.definition.Options.ChangeEvents {
+		ed.cel.addDispatcher(*ed.subscription.definition.ID, ed)
+		defer ed.cel.removeDispatcher(*ed.subscription.definition.ID)
+	}
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
 		select {
@@ -365,6 +383,13 @@ func (ed *eventDispatcher) deliverEvents() {
 			if err != nil {
 				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 			}
+		case changeEvent := <-ed.changeEvents:
+			ws, ok := ed.transport.(events.ChangeEventListener)
+			if !ok {
+				log.L(ed.ctx).Warnf("Change event received for transport that does not support change events '%s'", ed.transport.Name())
+				break
+			}
+			ws.ChangeEvent(ed.connID, changeEvent)
 		case <-ed.ctx.Done():
 			return
 		}

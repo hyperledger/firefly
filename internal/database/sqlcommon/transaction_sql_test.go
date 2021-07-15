@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestTransactionE2EWithDB(t *testing.T) {
@@ -48,13 +49,15 @@ func TestTransactionE2EWithDB(t *testing.T) {
 		Created: fftypes.Now(),
 		Status:  fftypes.OpStatusPending,
 	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeCreated, "ns1", transactionID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, "ns1", transactionID, mock.Anything).Return()
+
 	err := s.UpsertTransaction(ctx, transaction, true, false)
 	assert.NoError(t, err)
 
 	// Check we get the exact same transaction back
 	transactionRead, err := s.GetTransactionByID(ctx, transactionID)
-	// The generated sequence will have been added
-	transaction.Sequence = transactionRead.Sequence
 	assert.NoError(t, err)
 	assert.NotNil(t, transactionRead)
 	transactionJson, _ := json.Marshal(&transaction)
@@ -90,8 +93,6 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	// Check we get the exact same message back - note the removal of one of the transaction elements
 	transactionRead, err = s.GetTransactionByID(ctx, transactionID)
 	assert.NoError(t, err)
-	// The generated sequence will have been added
-	transactionUpdated.Sequence = transaction.Sequence
 	transactionJson, _ = json.Marshal(&transactionUpdated)
 	transactionReadJson, _ = json.Marshal(&transactionRead)
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
