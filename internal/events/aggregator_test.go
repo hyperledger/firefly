@@ -345,8 +345,7 @@ func TestShutdownOnCancel(t *testing.T) {
 		Current:   12345,
 	}, nil)
 	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
-	err := ag.start()
-	assert.NoError(t, err)
+	ag.start()
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.eventNotifier.newEvents <- 12345
 	cancel()

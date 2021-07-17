@@ -112,13 +112,16 @@ func (ep *eventPoller) restoreOffset() error {
 	})
 }
 
-func (ep *eventPoller) start() error {
-	if err := ep.restoreOffset(); err != nil {
-		return err
+func (ep *eventPoller) start() {
+	err := ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
+		return true, ep.restoreOffset()
+	})
+	if err != nil {
+		log.L(ep.ctx).Errorf("Event poller context closed before we successfully restored offset: %s", err)
+		return
 	}
 	go ep.newEventNotifications()
 	go ep.eventLoop()
-	return nil
 }
 
 func (ep *eventPoller) rewindPollingOffset(offset int64) {

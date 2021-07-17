@@ -121,7 +121,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 func (em *eventManager) Start() (err error) {
 	err = em.subManager.start()
 	if err == nil {
-		err = em.aggregator.start()
+		em.aggregator.start()
 	}
 	return err
 }

@@ -71,8 +71,7 @@ func TestStartStopEventPoller(t *testing.T) {
 		Current:   12345,
 	}, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	err := ep.start()
-	assert.NoError(t, err)
+	ep.start()
 	assert.Equal(t, int64(12345), ep.pollingOffset)
 	ep.eventNotifier.newEvents <- 12345
 	cancel()
@@ -160,10 +159,9 @@ func TestRestoreOffsetSpecific(t *testing.T) {
 func TestRestoreOffsetFailRead(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
-	defer cancel()
+	cancel() // to avoid infinite retry
 	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "unit", "test").Return(nil, fmt.Errorf("pop"))
-	err := ep.start()
-	assert.EqualError(t, err, "pop")
+	ep.start()
 	mdi.AssertExpectations(t)
 }
 
