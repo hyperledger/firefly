@@ -144,6 +144,16 @@ func (ft FFTime) String() string {
 	return time.Time(ft).UTC().Format(time.RFC3339Nano)
 }
 
+func (ft *FFTime) Equal(ft2 *FFTime) bool {
+	if ft == nil && ft2 == nil {
+		return true
+	}
+	if ft == nil || ft2 == nil {
+		return false
+	}
+	return *ft == *ft2
+}
+
 // ParseToDuration is a standard handling of any duration string, in config or API options
 func ParseToDuration(durationString string) time.Duration {
 	if durationString == "" {

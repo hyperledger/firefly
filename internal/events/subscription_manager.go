@@ -53,38 +53,38 @@ type connection struct {
 }
 
 type subscriptionManager struct {
-	ctx                  context.Context
-	database             database.Plugin
-	data                 data.Manager
-	eventNotifier        *eventNotifier
-	rs                   *replySender
-	transports           map[string]events.Plugin
-	connections          map[string]*connection
-	mux                  sync.Mutex
-	maxSubs              uint64
-	durableSubs          map[fftypes.UUID]*subscription
-	cancelCtx            func()
-	newSubscriptions     chan *fftypes.UUID
-	deletedSubscriptions chan *fftypes.UUID
-	cel                  *changeEventListener
-	retry                retry.Retry
+	ctx                       context.Context
+	database                  database.Plugin
+	data                      data.Manager
+	eventNotifier             *eventNotifier
+	rs                        *replySender
+	transports                map[string]events.Plugin
+	connections               map[string]*connection
+	mux                       sync.Mutex
+	maxSubs                   uint64
+	durableSubs               map[fftypes.UUID]*subscription
+	cancelCtx                 func()
+	newOrUpdatedSubscriptions chan *fftypes.UUID
+	deletedSubscriptions      chan *fftypes.UUID
+	cel                       *changeEventListener
+	retry                     retry.Retry
 }
 
 func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier, rs *replySender) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
-		ctx:                  ctx,
-		database:             di,
-		data:                 dm,
-		transports:           make(map[string]events.Plugin),
-		connections:          make(map[string]*connection),
-		durableSubs:          make(map[fftypes.UUID]*subscription),
-		newSubscriptions:     make(chan *fftypes.UUID),
-		deletedSubscriptions: make(chan *fftypes.UUID),
-		maxSubs:              uint64(config.GetUint(config.SubscriptionMax)),
-		cancelCtx:            cancelCtx,
-		eventNotifier:        en,
-		rs:                   rs,
+		ctx:                       ctx,
+		database:                  di,
+		data:                      dm,
+		transports:                make(map[string]events.Plugin),
+		connections:               make(map[string]*connection),
+		durableSubs:               make(map[fftypes.UUID]*subscription),
+		newOrUpdatedSubscriptions: make(chan *fftypes.UUID),
+		deletedSubscriptions:      make(chan *fftypes.UUID),
+		maxSubs:                   uint64(config.GetUint(config.SubscriptionMax)),
+		cancelCtx:                 cancelCtx,
+		eventNotifier:             en,
+		rs:                        rs,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.SubscriptionsRetryInitialDelay),
 			MaximumDelay: config.GetDuration(config.SubscriptionsRetryMaxDelay),
@@ -157,8 +157,8 @@ func (sm *subscriptionManager) start() error {
 func (sm *subscriptionManager) subscriptionEventListener() {
 	for {
 		select {
-		case id := <-sm.newSubscriptions:
-			go sm.newDurableSubscription(id)
+		case id := <-sm.newOrUpdatedSubscriptions:
+			go sm.newOrUpdatedDurableSubscription(id)
 		case id := <-sm.deletedSubscriptions:
 			go sm.deletedDurableSubscription(id)
 		case <-sm.ctx.Done():
@@ -167,7 +167,7 @@ func (sm *subscriptionManager) subscriptionEventListener() {
 	}
 }
 
-func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
+func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID) {
 	var subDef *fftypes.Subscription
 	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
 		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
@@ -192,16 +192,29 @@ func (sm *subscriptionManager) newDurableSubscription(id *fftypes.UUID) {
 	// in-memory table, and creating any missing dispatchers
 	sm.mux.Lock()
 	defer sm.mux.Unlock()
-	if sm.durableSubs[*subDef.ID] == nil {
-		sm.durableSubs[*subDef.ID] = newSub
-		for _, conn := range sm.connections {
-			sm.matchSubToConnLocked(conn, newSub)
+	if existingSub, ok := sm.durableSubs[*subDef.ID]; ok {
+		if existingSub.definition.Updated.Equal(newSub.definition.Updated) {
+			log.L(sm.ctx).Infof("Subscription already active")
+			return
 		}
+		// Need to close the old one
+		loaded, dispatchers := sm.closeDurabeSubscriptionLocked(subDef.ID)
+		if loaded {
+			// Outside the lock, close out the active dispatchers
+			sm.mux.Unlock()
+			for _, dispatcher := range dispatchers {
+				dispatcher.close()
+			}
+			sm.mux.Lock()
+		}
+	}
+	sm.durableSubs[*subDef.ID] = newSub
+	for _, conn := range sm.connections {
+		sm.matchSubToConnLocked(conn, newSub)
 	}
 }
 
-func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
-	sm.mux.Lock()
+func (sm *subscriptionManager) closeDurabeSubscriptionLocked(id *fftypes.UUID) (bool, []*eventDispatcher) {
 	var dispatchers []*eventDispatcher
 	// Remove it from the list of durable subs (if there)
 	_, loaded := sm.durableSubs[*id]
@@ -216,6 +229,12 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 			}
 		}
 	}
+	return loaded, dispatchers
+}
+
+func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
+	sm.mux.Lock()
+	loaded, dispatchers := sm.closeDurabeSubscriptionLocked(id)
 	sm.mux.Unlock()
 
 	log.L(sm.ctx).Infof("Cleaning up subscription %s loaded=%t dispatchers=%d", id, loaded, len(dispatchers))
@@ -224,6 +243,11 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 	for _, dispatcher := range dispatchers {
 		dispatcher.close()
 	}
+	// Delete the offsets, as the durable subscriptions are gone
+	for _, dispatcher := range dispatchers {
+		dispatcher.deleteOffset(sm.ctx)
+	}
+
 }
 
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *fftypes.Subscription) (sub *subscription, err error) {

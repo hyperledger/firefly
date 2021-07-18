@@ -430,6 +430,15 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	}
 }
 
+// deleteOffset can, and should, be used after a dispatcher is closed (hence needing a context passed in)
+func (ed *eventDispatcher) deleteOffset(ctx context.Context) {
+	pollerConf := ed.eventPoller.conf
+	err := ed.database.DeleteOffset(ctx, pollerConf.offsetType, pollerConf.offsetNamespace, pollerConf.offsetName)
+	if err != nil {
+		log.L(ed.ctx).Errorf("Failed to clean up '%s' offset for '%s:%s': %s", pollerConf.offsetType, pollerConf.offsetNamespace, pollerConf.offsetName, err)
+	}
+}
+
 func (ed *eventDispatcher) close() {
 	log.L(ed.ctx).Infof("Dispatcher closing for conn=%s subscription=%s", ed.connID, ed.subscription.definition.ID)
 	ed.cancelCtx()

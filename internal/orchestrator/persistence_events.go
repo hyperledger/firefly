@@ -65,6 +65,8 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 		or.events.NewSubscriptions() <- id
 	case eventType == fftypes.ChangeEventTypeDeleted && resType == database.CollectionSubscriptions:
 		or.events.DeletedSubscriptions() <- id
+	case eventType == fftypes.ChangeEventTypeUpdated && resType == database.CollectionSubscriptions:
+		or.events.SubscriptionUpdates() <- id
 	}
 	or.attemptChangeEventDispatch(&fftypes.ChangeEvent{
 		Collection: string(resType),

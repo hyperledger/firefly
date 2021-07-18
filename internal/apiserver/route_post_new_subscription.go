@@ -30,6 +30,70 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
+func newSubscriptionSchemaGenerator(ctx context.Context) string {
+	baseSchema, _, _ := openapi3gen.NewSchemaRefForValue(&fftypes.Subscription{})
+	baseProps := baseSchema.Value.Properties
+	delete(baseProps, "id")
+	delete(baseProps, "namespace")
+	delete(baseProps, "created")
+	delete(baseProps, "ephemeral")
+	var schemas openapi3.SchemaRefs
+	for _, t := range config.GetStringSlice(config.EventTransportsEnabled) {
+		transport, _ := eifactory.GetPlugin(context.Background(), t)
+		if transport != nil {
+			var schema openapi3.SchemaRef
+			_ = json.Unmarshal([]byte(transport.GetOptionsSchema(ctx)), &schema)
+			if schema.Value.Properties == nil {
+				schema.Value.Properties = openapi3.Schemas{}
+			}
+			schema.Value.Properties["type"] = &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Type:    "string",
+					Pattern: t,
+				},
+			}
+			schema.Value.Properties["withData"] = &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Type: "boolean",
+				},
+			}
+			var minUint16 float64
+			var maxUint16 float64 = 65536
+			schema.Value.Properties["readAhead"] = &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					Type: "integer",
+					Min:  &minUint16,
+					Max:  &maxUint16,
+				},
+			}
+			schema.Value.Properties["firstEvent"] = &openapi3.SchemaRef{
+				Value: &openapi3.Schema{
+					AnyOf: openapi3.SchemaRefs{
+						{
+							Value: &openapi3.Schema{
+								Type: "string",
+								Enum: []interface{}{
+									"oldest",
+									"newest",
+								},
+							},
+						},
+						{Value: &openapi3.Schema{Type: "integer"}},
+					},
+				},
+			}
+			schemas = append(schemas, &schema)
+		}
+	}
+	baseProps["options"] = &openapi3.SchemaRef{
+		Value: &openapi3.Schema{
+			OneOf: schemas,
+		},
+	}
+	b, _ := json.Marshal(&baseSchema)
+	return string(b)
+}
+
 var postNewSubscription = &oapispec.Route{
 	Name:   "postNewSubscription",
 	Path:   "namespaces/{ns}/subscriptions",
@@ -43,69 +107,7 @@ var postNewSubscription = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputCode:  http.StatusCreated, // Sync operation
-	JSONInputSchema: func(ctx context.Context) string {
-		baseSchema, _, _ := openapi3gen.NewSchemaRefForValue(&fftypes.Subscription{})
-		baseProps := baseSchema.Value.Properties
-		delete(baseProps, "id")
-		delete(baseProps, "namespace")
-		delete(baseProps, "created")
-		delete(baseProps, "ephemeral")
-		var schemas openapi3.SchemaRefs
-		for _, t := range config.GetStringSlice(config.EventTransportsEnabled) {
-			transport, _ := eifactory.GetPlugin(context.Background(), t)
-			if transport != nil {
-				var schema openapi3.SchemaRef
-				_ = json.Unmarshal([]byte(transport.GetOptionsSchema(ctx)), &schema)
-				if schema.Value.Properties == nil {
-					schema.Value.Properties = openapi3.Schemas{}
-				}
-				schema.Value.Properties["type"] = &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						Type:    "string",
-						Pattern: t,
-					},
-				}
-				schema.Value.Properties["withData"] = &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						Type: "boolean",
-					},
-				}
-				var minUint16 float64 = 0
-				var maxUint16 float64 = 65536
-				schema.Value.Properties["readAhead"] = &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						Type: "integer",
-						Min:  &minUint16,
-						Max:  &maxUint16,
-					},
-				}
-				schema.Value.Properties["firstEvent"] = &openapi3.SchemaRef{
-					Value: &openapi3.Schema{
-						AnyOf: openapi3.SchemaRefs{
-							{
-								Value: &openapi3.Schema{
-									Type: "string",
-									Enum: []interface{}{
-										"oldest",
-										"newest",
-									},
-								},
-							},
-							{Value: &openapi3.Schema{Type: "integer"}},
-						},
-					},
-				}
-				schemas = append(schemas, &schema)
-			}
-		}
-		baseProps["options"] = &openapi3.SchemaRef{
-			Value: &openapi3.Schema{
-				OneOf: schemas,
-			},
-		}
-		b, _ := json.Marshal(&baseSchema)
-		return string(b)
-	},
+	JSONInputSchema: newSubscriptionSchemaGenerator,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.CreateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
 		return output, err

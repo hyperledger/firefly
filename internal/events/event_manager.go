@@ -17,7 +17,9 @@
 package events
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"strconv"
 
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
@@ -41,10 +43,11 @@ type EventManager interface {
 	NewPins() chan<- int64
 	NewEvents() chan<- int64
 	NewSubscriptions() chan<- *fftypes.UUID
+	SubscriptionUpdates() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	ChangeEvents() chan<- *fftypes.ChangeEvent
 	DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
-	CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
+	CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error)
 	Start() error
 	WaitStop()
 
@@ -135,7 +138,11 @@ func (em *eventManager) NewPins() chan<- int64 {
 }
 
 func (em *eventManager) NewSubscriptions() chan<- *fftypes.UUID {
-	return em.subManager.newSubscriptions
+	return em.subManager.newOrUpdatedSubscriptions
+}
+
+func (em *eventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
+	return em.subManager.newOrUpdatedSubscriptions
 }
 
 func (em *eventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
@@ -151,7 +158,7 @@ func (em *eventManager) WaitStop() {
 	<-em.aggregator.eventPoller.closed
 }
 
-func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {
+func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error) {
 	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
 		return i18n.NewError(ctx, i18n.MsgInvalidSubscription)
 	}
@@ -168,20 +175,34 @@ func (em *eventManager) CreateDurableSubscription(ctx context.Context, subDef *f
 	// Do a check first for existence, to give a nice 409 if we find one
 	existing, _ := em.database.GetSubscriptionByName(ctx, subDef.Namespace, subDef.Name)
 	if existing != nil {
-		return i18n.NewError(ctx, i18n.MsgAlreadyExists, "subscription", subDef.Namespace, subDef.Name)
+		if mustNew {
+			return i18n.NewError(ctx, i18n.MsgAlreadyExists, "subscription", subDef.Namespace, subDef.Name)
+		}
+		// Copy over the generated fields, so we can do a compare
+		subDef.Created = existing.Created
+		subDef.ID = existing.ID
+		subDef.Updated = fftypes.Now()
+		subDef.Options.FirstEvent = existing.Options.FirstEvent // we do not reset the sub position
+		existing.Updated = subDef.Updated
+		def1, _ := json.Marshal(existing)
+		def2, _ := json.Marshal(subDef)
+		if bytes.Equal(def1, def2) {
+			log.L(ctx).Infof("Subscription already exists, and is identical")
+			return nil
+		}
+	} else {
+		// We lock in the starting sequence at creation time, rather than when the first dispatcher
+		// starts, as that's a more obvious behavior for users
+		sequence, err := calcFirstOffset(ctx, em.database, subDef.Options.FirstEvent)
+		if err != nil {
+			return err
+		}
+		lockedInFirstEvent := fftypes.SubOptsFirstEvent(strconv.FormatInt(sequence, 10))
+		subDef.Options.FirstEvent = &lockedInFirstEvent
 	}
-
-	// We lock in the starting sequence at creation time, rather than when the first dispatcher
-	// starts, as that's a more obvious behavior for users
-	sequence, err := calcFirstOffset(ctx, em.database, subDef.Options.FirstEvent)
-	if err != nil {
-		return err
-	}
-	lockedInFirstEvent := fftypes.SubOptsFirstEvent(strconv.FormatInt(sequence, 10))
-	subDef.Options.FirstEvent = &lockedInFirstEvent
 
 	// The event in the database for the creation of the susbscription, will asynchronously update the submanager
-	return em.database.UpsertSubscription(ctx, subDef, false)
+	return em.database.UpsertSubscription(ctx, subDef, !mustNew)
 }
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {

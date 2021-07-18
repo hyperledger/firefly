@@ -230,7 +230,7 @@ func TestTXConcurrency(t *testing.T) {
 	racer := func(done chan struct{}, name string) func() {
 		return func() {
 			defer close(done)
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 5; i++ {
 				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
 				assert.NoError(t, err)
 				val := fmt.Sprintf("%s/%d", name, i)

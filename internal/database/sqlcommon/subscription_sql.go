@@ -40,6 +40,7 @@ var (
 		"filter_group",
 		"options",
 		"created",
+		"updated",
 	}
 	subscriptionFilterFieldMap = map[string]string{
 		"filter.events": "filter_events",
@@ -100,6 +101,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 				Set("filter_group", subscription.Filter.Group).
 				Set("options", subscription.Options).
 				Set("created", subscription.Created).
+				Set("updated", subscription.Updated).
 				Where(sq.Eq{
 					"namespace": subscription.Namespace,
 					"name":      subscription.Name,
@@ -129,6 +131,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.Filter.Group,
 					subscription.Options,
 					subscription.Created,
+					subscription.Updated,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, subscription.Namespace, subscription.ID)
@@ -155,6 +158,7 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.Filter.Group,
 		&subscription.Options,
 		&subscription.Created,
+		&subscription.Updated,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "subscriptions")

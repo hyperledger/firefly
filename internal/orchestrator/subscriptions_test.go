@@ -74,13 +74,27 @@ func TestCreateSubscriptionOk(t *testing.T) {
 		},
 	}
 	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	or.mem.On("CreateDurableSubscription", mock.Anything, mock.Anything).Return(nil)
+	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, true).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, "ns1", sub)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, sub)
 	assert.Equal(t, "ns1", sub.Namespace)
 }
 
+func TestCreateUpdateSubscriptionOk(t *testing.T) {
+	or := newTestOrchestrator()
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			Name: "sub1",
+		},
+	}
+	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
+	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, false).Return(nil)
+	s1, err := or.CreateUpdateSubscription(or.ctx, "ns1", sub)
+	assert.NoError(t, err)
+	assert.Equal(t, s1, sub)
+	assert.Equal(t, "ns1", sub.Namespace)
+}
 func TestDeleteSubscriptionBadUUID(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))

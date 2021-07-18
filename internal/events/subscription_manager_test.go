@@ -419,7 +419,7 @@ func TestNewDurableSubscriptionBadSub(t *testing.T) {
 			Events: "![[[[badness",
 		},
 	}, nil)
-	sm.newDurableSubscription(subID)
+	sm.newOrUpdatedDurableSubscription(subID)
 
 	assert.Empty(t, sm.durableSubs)
 }
@@ -449,7 +449,7 @@ func TestNewDurableSubscriptionUnknownTransport(t *testing.T) {
 		},
 		Transport: "unknown",
 	}, nil)
-	sm.newDurableSubscription(subID)
+	sm.newOrUpdatedDurableSubscription(subID)
 
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
 	assert.Empty(t, sm.durableSubs)
@@ -481,8 +481,97 @@ func TestNewDurableSubscriptionOK(t *testing.T) {
 		},
 		Transport: "ut",
 	}, nil)
-	sm.newDurableSubscription(subID)
+	sm.newOrUpdatedDurableSubscription(subID)
 
+	assert.NotEmpty(t, sm.connections["conn1"].dispatchers)
+	assert.NotEmpty(t, sm.durableSubs)
+}
+
+func TestUpdatedDurableSubscriptionNoOp(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mdi := sm.database.(*databasemocks.Plugin)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+
+	subID := fftypes.NewUUID()
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        subID,
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Transport: "ut",
+	}
+	s := &subscription{
+		definition: sub,
+	}
+	sm.durableSubs[*subID] = s
+
+	ed, cancelEd := newTestEventDispatcher(s)
+	defer cancelEd()
+	sm.connections["conn1"] = &connection{
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
+		matcher: func(sr fftypes.SubscriptionRef) bool {
+			return sr.Namespace == "ns1" && sr.Name == "sub1"
+		},
+		dispatchers: map[fftypes.UUID]*eventDispatcher{
+			*subID: ed,
+		},
+	}
+
+	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(sub, nil)
+	sm.newOrUpdatedDurableSubscription(subID)
+
+	assert.Equal(t, ed, sm.connections["conn1"].dispatchers[*subID])
+	assert.Equal(t, s, sm.durableSubs[*subID])
+}
+
+func TestUpdatedDurableSubscriptionOK(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+	mdi := sm.database.(*databasemocks.Plugin)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+
+	subID := fftypes.NewUUID()
+	sub := &fftypes.Subscription{
+		SubscriptionRef: fftypes.SubscriptionRef{
+			ID:        subID,
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+		Transport: "ut",
+	}
+	sub2 := *sub
+	sub2.Updated = fftypes.Now()
+	s := &subscription{
+		definition: sub,
+	}
+	sm.durableSubs[*subID] = s
+
+	ed, cancelEd := newTestEventDispatcher(s)
+	cancelEd()
+	close(ed.closed)
+	sm.connections["conn1"] = &connection{
+		ei:        mei,
+		id:        "conn1",
+		transport: "ut",
+		matcher: func(sr fftypes.SubscriptionRef) bool {
+			return sr.Namespace == "ns1" && sr.Name == "sub1"
+		},
+		dispatchers: map[fftypes.UUID]*eventDispatcher{
+			*subID: ed,
+		},
+	}
+
+	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&sub2, nil)
+	sm.newOrUpdatedDurableSubscription(subID)
+
+	assert.NotEqual(t, ed, sm.connections["conn1"].dispatchers[*subID])
+	assert.NotEqual(t, s, sm.durableSubs[*subID])
 	assert.NotEmpty(t, sm.connections["conn1"].dispatchers)
 	assert.NotEmpty(t, sm.durableSubs)
 }
@@ -497,7 +586,7 @@ func TestMatchedSubscriptionWithLockUnknownTransport(t *testing.T) {
 	assert.Nil(t, conn.dispatchers)
 }
 
-func TestDeletewDurableSubscriptionOk(t *testing.T) {
+func TestDeleteDurableSubscriptionOk(t *testing.T) {
 	subID := fftypes.NewUUID()
 	subDef := &fftypes.Subscription{
 		SubscriptionRef: fftypes.SubscriptionRef{
@@ -519,6 +608,7 @@ func TestDeletewDurableSubscriptionOk(t *testing.T) {
 
 	sm.durableSubs[*subID] = sub
 	ed, _ := newTestEventDispatcher(sub)
+	ed.database = mdi
 	ed.start()
 	sm.connections["conn1"] = &connection{
 		ei:        mei,
@@ -533,6 +623,7 @@ func TestDeletewDurableSubscriptionOk(t *testing.T) {
 	}
 
 	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(subDef, nil)
+	mdi.On("DeleteOffset", mock.Anything, fftypes.LowerCasedType("subscription"), "ns1", "sub1").Return(fmt.Errorf("this error is logged and swallowed"))
 	sm.deletedDurableSubscription(subID)
 
 	assert.Empty(t, sm.connections["conn1"].dispatchers)

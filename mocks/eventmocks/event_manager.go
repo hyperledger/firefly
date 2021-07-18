@@ -79,13 +79,13 @@ func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
 	return r0
 }
 
-// CreateDurableSubscription provides a mock function with given fields: ctx, subDef
-func (_m *EventManager) CreateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) error {
-	ret := _m.Called(ctx, subDef)
+// CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
+func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) error {
+	ret := _m.Called(ctx, subDef, mustNew)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription) error); ok {
-		r0 = rf(ctx, subDef)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
+		r0 = rf(ctx, subDef, mustNew)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -194,6 +194,22 @@ func (_m *EventManager) Start() error {
 		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubscriptionUpdates provides a mock function with given fields:
+func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
+	ret := _m.Called()
+
+	var r0 chan<- *fftypes.UUID
+	if rf, ok := ret.Get(0).(func() chan<- *fftypes.UUID); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan<- *fftypes.UUID)
+		}
 	}
 
 	return r0

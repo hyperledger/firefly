@@ -77,6 +77,7 @@ type Subscription struct {
 	Options   SubscriptionOptions `json:"options"`
 	Ephemeral bool                `json:"ephemeral,omitempty"`
 	Created   *FFTime             `json:"created"`
+	Updated   *FFTime             `json:"updated"`
 }
 
 func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
