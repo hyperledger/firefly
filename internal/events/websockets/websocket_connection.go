@@ -30,6 +30,12 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
+type websocketStartedSub struct {
+	ephemeral bool
+	name      string
+	namespace string
+}
+
 type websocketConnection struct {
 	ctx                context.Context
 	ws                 *WebSockets
@@ -39,7 +45,7 @@ type websocketConnection struct {
 	sendMessages       chan interface{}
 	senderDone         chan struct{}
 	autoAck            bool
-	startedCount       int
+	started            []*websocketStartedSub
 	inflight           []*fftypes.EventDeliveryResponse
 	mux                sync.Mutex
 	closed             bool
@@ -228,7 +234,7 @@ func (wc *websocketConnection) send(msg interface{}) error {
 func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPayload) (err error) {
 	wc.mux.Lock()
 	if start.AutoAck != nil {
-		if *start.AutoAck != wc.autoAck && wc.startedCount > 0 {
+		if *start.AutoAck != wc.autoAck && len(wc.started) > 0 {
 			return i18n.NewError(wc.ctx, i18n.MsgWSAutoAckChanged)
 		}
 		wc.autoAck = *start.AutoAck
@@ -244,14 +250,29 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 		}
 	}
 
-	err = wc.ws.start(wc.connID, start)
+	wc.mux.Lock()
+	wc.started = append(wc.started, &websocketStartedSub{
+		ephemeral: start.Ephemeral,
+		namespace: start.Namespace,
+		name:      start.Name,
+	})
+	wc.mux.Unlock()
+	err = wc.ws.start(wc, start)
 	if err != nil {
 		return err
 	}
-	wc.mux.Lock()
-	wc.startedCount++
-	wc.mux.Unlock()
 	return nil
+}
+
+func (wc *websocketConnection) durableSubMatcher(sr fftypes.SubscriptionRef) bool {
+	wc.mux.Lock()
+	defer wc.mux.Unlock()
+	for _, startedSub := range wc.started {
+		if !startedSub.ephemeral && startedSub.namespace == sr.Namespace && startedSub.name == sr.Name {
+			return true
+		}
+	}
+	return false
 }
 
 func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (*fftypes.EventDeliveryResponse, error) {
@@ -277,7 +298,7 @@ func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (
 					}
 				} else {
 					// If there's more than one started subscription, that's a problem
-					if wc.startedCount != 1 {
+					if len(wc.started) != 1 {
 						l.Errorf("No subscription specified on ack, and there is not exactly one started subscription")
 						return nil, i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
 					}

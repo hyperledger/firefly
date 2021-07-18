@@ -329,7 +329,7 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
 		ctx:          context.Background(),
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*fftypes.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -346,7 +346,7 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
 		ctx:          context.Background(),
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*fftypes.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -365,7 +365,7 @@ func TestHandleStartWithChangeEvents(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx:          context.Background(),
 		connID:       "conn1",
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		ws: &WebSockets{
 			callbacks: mcb,
@@ -401,7 +401,7 @@ func TestHandleChangeEventsDispatchFail(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx:          ctx,
 		connID:       "conn1",
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}), // wil block
 		ws: &WebSockets{
 			ctx:       ctx,
@@ -433,7 +433,7 @@ func TestHandleStartWithBadChangeEventsRegex(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx:          context.Background(),
 		connID:       "conn1",
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*fftypes.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -462,8 +462,12 @@ func TestHandleStartWithBadChangeEventsRegex(t *testing.T) {
 func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{
-		ctx:          context.Background(),
-		startedCount: 3,
+		ctx: context.Background(),
+		started: []*websocketStartedSub{
+			{ephemeral: false, name: "name1", namespace: "ns1"},
+			{ephemeral: false, name: "name2", namespace: "ns1"},
+			{ephemeral: false, name: "name3", namespace: "ns1"},
+		},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*fftypes.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -486,7 +490,7 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 			ctx:       context.Background(),
 			callbacks: cbs,
 		},
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		inflight: []*fftypes.EventDeliveryResponse{
 			{ID: eventUUID},
@@ -587,7 +591,7 @@ func TestDispatchAutoAck(t *testing.T) {
 			callbacks:   cbs,
 			connections: make(map[string]*websocketConnection),
 		},
-		startedCount: 1,
+		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
 		autoAck:      true,
 	}
