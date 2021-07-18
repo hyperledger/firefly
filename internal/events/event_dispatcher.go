@@ -94,9 +94,9 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
 		},
-		offsetType:      fftypes.OffsetTypeSubscription,
-		offsetNamespace: sub.definition.Namespace,
-		offsetName:      sub.definition.Name,
+		namespace:  sub.definition.Namespace,
+		offsetType: fftypes.OffsetTypeSubscription,
+		offsetName: sub.definition.ID.String(),
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
 		},
@@ -427,15 +427,6 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	case <-ed.ctx.Done():
 		l.Debugf("Delivery response will not be delivered: closing")
 		return
-	}
-}
-
-// deleteOffset can, and should, be used after a dispatcher is closed (hence needing a context passed in)
-func (ed *eventDispatcher) deleteOffset(ctx context.Context) {
-	pollerConf := ed.eventPoller.conf
-	err := ed.database.DeleteOffset(ctx, pollerConf.offsetType, pollerConf.offsetNamespace, pollerConf.offsetName)
-	if err != nil {
-		log.L(ed.ctx).Errorf("Failed to clean up '%s' offset for '%s:%s': %s", pollerConf.offsetType, pollerConf.offsetNamespace, pollerConf.offsetName, err)
 	}
 }
 

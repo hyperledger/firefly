@@ -244,10 +244,10 @@ func (sm *subscriptionManager) deletedDurableSubscription(id *fftypes.UUID) {
 		dispatcher.close()
 	}
 	// Delete the offsets, as the durable subscriptions are gone
-	for _, dispatcher := range dispatchers {
-		dispatcher.deleteOffset(sm.ctx)
+	err := sm.database.DeleteOffset(sm.ctx, fftypes.OffsetTypeSubscription, id.String())
+	if err != nil {
+		log.L(sm.ctx).Errorf("Failed to cleanup subscription offset: %s", err)
 	}
-
 }
 
 func (sm *subscriptionManager) parseSubscriptionDef(ctx context.Context, subDef *fftypes.Subscription) (sub *subscription, err error) {

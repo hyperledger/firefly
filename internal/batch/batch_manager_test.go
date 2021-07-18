@@ -37,11 +37,11 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(nil, nil).Once()
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
-		ID: fftypes.NewUUID(),
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(&fftypes.Offset{
+		RowID: 12345,
 	}, nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
@@ -138,11 +138,11 @@ func TestE2EDispatchPrivate(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(nil, nil).Once()
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
-		ID: fftypes.NewUUID(),
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(&fftypes.Offset{
+		RowID: 12345,
 	}, nil)
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *fftypes.Batch)
@@ -251,11 +251,10 @@ func TestInitFailNoPersistence(t *testing.T) {
 func TestInitRestoreExistingOffset(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
-		Type:      fftypes.OffsetTypeBatch,
-		Namespace: fftypes.SystemNamespace,
-		Name:      msgBatchOffsetName,
-		Current:   12345,
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(&fftypes.Offset{
+		Type:    fftypes.OffsetTypeBatch,
+		Name:    msgBatchOffsetName,
+		Current: 12345,
 	}, nil)
 	bm, err := NewBatchManager(context.Background(), mdi, mdm)
 	assert.NoError(t, err)
@@ -268,7 +267,7 @@ func TestInitRestoreExistingOffset(t *testing.T) {
 func TestInitFailCannotRestoreOffset(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mdi, mdm)
 	assert.NoError(t, err)
 	defer bm.Close()
@@ -280,9 +279,9 @@ func TestInitFailCannotRestoreOffset(t *testing.T) {
 func TestInitFailCannotCreateOffset(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, nil).Once()
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(nil, nil).Once()
 	mdi.On("UpsertOffset", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(nil, fmt.Errorf("pop"))
 	bm, err := NewBatchManager(context.Background(), mdi, mdm)
 	assert.NoError(t, err)
 	defer bm.Close()
@@ -295,7 +294,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName).Return(&fftypes.Offset{
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeBatch, msgBatchOffsetName).Return(&fftypes.Offset{
 		Current: 12345,
 	}, nil)
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)

@@ -34,7 +34,7 @@ type eventPoller struct {
 	shoulderTaps  chan bool
 	eventNotifier *eventNotifier
 	closed        chan struct{}
-	offsetID      *fftypes.UUID
+	offsetID      int64
 	pollingOffset int64
 	mux           sync.Mutex
 	conf          *eventPollerConf
@@ -53,8 +53,8 @@ type eventPollerConf struct {
 	getItems                   func(context.Context, database.Filter) ([]fftypes.LocallySequenced, error)
 	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
+	namespace                  string
 	offsetName                 string
-	offsetNamespace            string
 	offsetType                 fftypes.OffsetType
 	retry                      retry.Retry
 	startupOffsetRetryAttempts int
@@ -62,7 +62,7 @@ type eventPollerConf struct {
 
 func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, conf *eventPollerConf) *eventPoller {
 	ep := &eventPoller{
-		ctx:           log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.offsetName, conf.offsetNamespace)),
+		ctx:           log.WithLogField(ctx, "role", fmt.Sprintf("ep[%s:%s]", conf.namespace, conf.offsetName)),
 		database:      di,
 		shoulderTaps:  make(chan bool, 1),
 		eventNotifier: en,
@@ -84,7 +84,7 @@ func (ep *eventPoller) restoreOffset() error {
 			return retry, err
 		}
 		for offset == nil {
-			offset, err = ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetNamespace, ep.conf.offsetName)
+			offset, err = ep.database.GetOffset(ep.ctx, ep.conf.offsetType, ep.conf.offsetName)
 			if err != nil {
 				return retry, err
 			}
@@ -94,18 +94,16 @@ func (ep *eventPoller) restoreOffset() error {
 					return retry, err
 				}
 				err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
-					ID:        fftypes.NewUUID(),
-					Type:      ep.conf.offsetType,
-					Namespace: ep.conf.offsetNamespace,
-					Name:      ep.conf.offsetName,
-					Current:   firstOffset,
+					Type:    ep.conf.offsetType,
+					Name:    ep.conf.offsetName,
+					Current: firstOffset,
 				}, false)
 				if err != nil {
 					return retry, err
 				}
 			}
 		}
-		ep.offsetID = offset.ID
+		ep.offsetID = offset.RowID
 		ep.pollingOffset = offset.Current
 		log.L(ep.ctx).Infof("Event offset restored %d", ep.pollingOffset)
 		return false, nil
@@ -149,7 +147,7 @@ func (ep *eventPoller) commitOffset(ctx context.Context, offset int64) error {
 	// No persistence for ephemeral (non-durable) subscriptions
 	if !ep.conf.ephemeral {
 		u := database.OffsetQueryFactory.NewUpdate(ep.ctx).Set("current", ep.pollingOffset)
-		if err := ep.database.UpdateOffset(ctx, ep.conf.offsetNamespace, ep.offsetID, u); err != nil {
+		if err := ep.database.UpdateOffset(ctx, ep.offsetID, u); err != nil {
 			return err
 		}
 	}

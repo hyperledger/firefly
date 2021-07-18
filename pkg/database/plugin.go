@@ -161,16 +161,16 @@ type iOffsetCollection interface {
 	UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) (err error)
 
 	// UpdateOffset - Update offset
-	UpdateOffset(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)
+	UpdateOffset(ctx context.Context, rowID int64, update Update) (err error)
 
 	// GetOffset - Get an offset by name
-	GetOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (offset *fftypes.Offset, err error)
+	GetOffset(ctx context.Context, t fftypes.OffsetType, name string) (offset *fftypes.Offset, err error)
 
 	// GetOffsets - Get offsets
 	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
 
 	// DeleteOffset - Delete an offset by name
-	DeleteOffset(ctx context.Context, t fftypes.OffsetType, ns, name string) (err error)
+	DeleteOffset(ctx context.Context, t fftypes.OffsetType, name string) (err error)
 }
 
 type iPinCollection interface {
@@ -432,7 +432,6 @@ const (
 	CollectionBatches       UUIDCollectionNS = "batches"
 	CollectionData          UUIDCollectionNS = "data"
 	CollectionDataTypes     UUIDCollectionNS = "datatypes"
-	CollectionOffsets       UUIDCollectionNS = "offsets"
 	CollectionOperations    UUIDCollectionNS = "operations"
 	CollectionSubscriptions UUIDCollectionNS = "subscriptions"
 	CollectionTransactions  UUIDCollectionNS = "transactions"
@@ -467,6 +466,7 @@ const (
 	CollectionBlobs         OtherCollection = "blobs"
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
+	CollectionOffsets       OtherCollection = "offsets"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -588,10 +588,9 @@ var DatatypeQueryFactory = &queryFields{
 
 // OffsetQueryFactory filter fields for data offsets
 var OffsetQueryFactory = &queryFields{
-	"namespace": &StringField{},
-	"name":      &StringField{},
-	"type":      &StringField{},
-	"current":   &Int64Field{},
+	"name":    &StringField{},
+	"type":    &StringField{},
+	"current": &Int64Field{},
 }
 
 // OperationQueryFactory filter fields for data operations

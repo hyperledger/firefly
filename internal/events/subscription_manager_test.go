@@ -46,7 +46,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 	mei.On("InitPrefix", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil).Maybe()
-	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{ID: fftypes.NewUUID(), Current: 0}, nil).Maybe()
+	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
 	rs := &replySender{
 		broadcast: &broadcastmocks.Manager{},
 		messaging: &privatemessagingmocks.Manager{},
@@ -623,7 +623,7 @@ func TestDeleteDurableSubscriptionOk(t *testing.T) {
 	}
 
 	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(subDef, nil)
-	mdi.On("DeleteOffset", mock.Anything, fftypes.LowerCasedType("subscription"), "ns1", "sub1").Return(fmt.Errorf("this error is logged and swallowed"))
+	mdi.On("DeleteOffset", mock.Anything, fftypes.LowerCasedType("subscription"), subID.String()).Return(fmt.Errorf("this error is logged and swallowed"))
 	sm.deletedDurableSubscription(subID)
 
 	assert.Empty(t, sm.connections["conn1"].dispatchers)

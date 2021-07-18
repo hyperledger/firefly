@@ -77,7 +77,7 @@ type batchManager struct {
 	newMessages                chan int64
 	sequencerClosed            chan struct{}
 	retry                      *retry.Retry
-	offsetID                   *fftypes.UUID
+	offsetID                   int64
 	offset                     int64
 	closed                     bool
 	readPageSize               uint64
@@ -127,21 +127,19 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 func (bm *batchManager) restoreOffset() (err error) {
 	var offset *fftypes.Offset
 	for offset == nil {
-		offset, err = bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, fftypes.SystemNamespace, msgBatchOffsetName)
+		offset, err = bm.database.GetOffset(bm.ctx, fftypes.OffsetTypeBatch, msgBatchOffsetName)
 		if err != nil {
 			return err
 		}
 		if offset == nil {
 			_ = bm.database.UpsertOffset(bm.ctx, &fftypes.Offset{
-				ID:        fftypes.NewUUID(),
-				Type:      fftypes.OffsetTypeBatch,
-				Namespace: fftypes.SystemNamespace,
-				Name:      msgBatchOffsetName,
-				Current:   0,
+				Type:    fftypes.OffsetTypeBatch,
+				Name:    msgBatchOffsetName,
+				Current: 0,
 			}, false)
 		}
 	}
-	bm.offsetID = offset.ID
+	bm.offsetID = offset.RowID
 	bm.offset = offset.Current
 	log.L(bm.ctx).Infof("Batch manager restored offset %d", bm.offset)
 	return nil
@@ -334,7 +332,7 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 	return bm.retry.Do(bm.ctx, "update offset", func(attempt int) (retry bool, err error) {
 		bm.offset = newOffset
 		u := database.OffsetQueryFactory.NewUpdate(bm.ctx).Set("current", bm.offset)
-		err = bm.database.UpdateOffset(bm.ctx, fftypes.SystemNamespace, bm.offsetID, u)
+		err = bm.database.UpdateOffset(bm.ctx, bm.offsetID, u)
 		if err != nil {
 			l.Errorf("Batch persist attempt %d failed: %s", attempt, err)
 			stillRetrying := infiniteRetry || (attempt <= bm.startupOffsetRetryAttempts)

@@ -54,11 +54,11 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 func TestStartStop(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:      fftypes.OffsetTypeAggregator,
-		Namespace: fftypes.SystemNamespace,
-		Name:      aggregatorOffsetName,
-		Current:   12345,
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
+		Type:    fftypes.OffsetTypeAggregator,
+		Name:    aggregatorOffsetName,
+		Current: 12345,
+		RowID:   333333,
 	}, nil)
 	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
@@ -93,11 +93,11 @@ func TestStartStopBadTransports(t *testing.T) {
 func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:      fftypes.OffsetTypeAggregator,
-		Namespace: fftypes.SystemNamespace,
-		Name:      aggregatorOffsetName,
-		Current:   12345,
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
+		Type:    fftypes.OffsetTypeAggregator,
+		Name:    aggregatorOffsetName,
+		Current: 12345,
+		RowID:   333333,
 	}, nil)
 	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
@@ -108,6 +108,12 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	getSub.RunFn = func(a mock.Arguments) {
 		<-getSubCallReady
 		getSubCalled <- true
+	}
+
+	delOffsetCalled := make(chan bool)
+	delOffsetMock := mdi.On("DeleteOffset", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	delOffsetMock.RunFn = func(a mock.Arguments) {
+		delOffsetCalled <- true
 	}
 
 	assert.NoError(t, em.Start())
@@ -121,6 +127,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 
 	em.DeletedSubscriptions() <- fftypes.NewUUID()
 	close(getSubCallReady)
+	<-delOffsetCalled
 }
 
 func TestCreateDurableSubscriptionBadSub(t *testing.T) {

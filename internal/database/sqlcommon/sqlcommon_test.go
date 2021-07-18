@@ -73,7 +73,7 @@ func TestQueryTxBadSQL(t *testing.T) {
 func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectBegin()
-	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow(12345))
+	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(12345))
 	ctx, tx, _, err := s.beginOrUseTx(context.Background())
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
