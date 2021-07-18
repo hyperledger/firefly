@@ -118,6 +118,7 @@ func (ep *eventPoller) start() {
 	})
 	if err != nil {
 		log.L(ep.ctx).Errorf("Event poller context closed before we successfully restored offset: %s", err)
+		close(ep.closed)
 		return
 	}
 	go ep.newEventNotifications()
