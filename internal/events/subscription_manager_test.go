@@ -581,6 +581,18 @@ func TestMatchedSubscriptionWithLockUnknownTransport(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 
+	conn := &connection{
+		matcher: func(sr fftypes.SubscriptionRef) bool { return true },
+	}
+	sm.matchSubToConnLocked(conn, &subscription{definition: &fftypes.Subscription{Transport: "Wrong!"}})
+	assert.Nil(t, conn.dispatchers)
+}
+
+func TestMatchedSubscriptionWithBadMatcherRegisteredt(t *testing.T) {
+	mei := &eventsmocks.PluginAll{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+
 	conn := &connection{}
 	sm.matchSubToConnLocked(conn, &subscription{definition: &fftypes.Subscription{Transport: "Wrong!"}})
 	assert.Nil(t, conn.dispatchers)

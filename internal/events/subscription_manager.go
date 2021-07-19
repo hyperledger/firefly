@@ -370,6 +370,10 @@ func (sm *subscriptionManager) registerConnection(ei events.Plugin, connID strin
 }
 
 func (sm *subscriptionManager) matchSubToConnLocked(conn *connection, sub *subscription) {
+	if conn == nil || sub == nil || sub.definition == nil || conn.matcher == nil {
+		log.L(sm.ctx).Warnf("Invalid connection/subscription registered: conn=%+v sub=%+v", conn, sub)
+		return
+	}
 	if conn.transport == sub.definition.Transport && conn.matcher(sub.definition.SubscriptionRef) {
 		if _, ok := conn.dispatchers[*sub.definition.ID]; !ok {
 			dispatcher := newEventDispatcher(sm.ctx, conn.ei, sm.database, sm.data, sm.rs, conn.id, sub, sm.eventNotifier, sm.cel)
