@@ -24,6 +24,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -61,6 +62,21 @@ func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	mp.getMigrationDriverError = fmt.Errorf("pop")
 	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
 	assert.Regexp(t, "FF10163.*pop", err)
+}
+
+func TestMigrationUpDown(t *testing.T) {
+	tp, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+
+	driver, err := tp.GetMigrationDriver(tp.db)
+	assert.NoError(t, err)
+	var m *migrate.Migrate
+	m, err = migrate.NewWithDatabaseInstance(
+		"file://../../../db/migrations/sqlite",
+		tp.MigrationsDir(), driver)
+	assert.NoError(t, err)
+	err = m.Down()
+	assert.NoError(t, err)
 }
 
 func TestQueryTxBadSQL(t *testing.T) {

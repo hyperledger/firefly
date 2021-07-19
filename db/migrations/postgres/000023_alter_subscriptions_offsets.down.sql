@@ -6,7 +6,6 @@ ALTER TABLE subscriptions DROP COLUMN updated;
 -- Meaning offsets for subscriptions will be reset going down
 DELETE FROM offsets;
 
-DROP INDEX offsets_id;
 DROP INDEX offsets_unique;
 
 ALTER TABLE offsets ADD id UUID NOT NULL;
