@@ -47,8 +47,10 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 		messaging: &privatemessagingmocks.Manager{},
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	config.Reset()
-	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), cancel
+	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), func() {
+		cancel()
+		config.Reset()
+	}
 }
 
 func TestEventDispatcherStartStop(t *testing.T) {
@@ -81,6 +83,20 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	close(confirmedElected)
 	ed.eventPoller.eventNotifier.newEvents <- 12345
 	ed.close()
+}
+
+func TestMaxReadAhead(t *testing.T) {
+	config.Set(config.SubscriptionDefaultsReadAhead, 65537)
+	ed, cancel := newTestEventDispatcher(&subscription{
+		dispatcherElection: make(chan bool, 1),
+		definition: &fftypes.Subscription{
+			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
+			Ephemeral:       true,
+			Options:         fftypes.SubscriptionOptions{},
+		},
+	})
+	defer cancel()
+	assert.Equal(t, int(65536), ed.readAhead)
 }
 
 func TestEventDispatcherLeaderElection(t *testing.T) {

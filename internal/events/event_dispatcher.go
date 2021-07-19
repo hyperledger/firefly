@@ -32,6 +32,10 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
+const (
+	maxReadAhead = 65536
+)
+
 type ackNack struct {
 	id     fftypes.UUID
 	isNack bool
@@ -62,9 +66,12 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
+	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
-		readAhead = int(*sub.definition.Options.ReadAhead)
+		readAhead = uint(*sub.definition.Options.ReadAhead)
+	}
+	if readAhead > maxReadAhead {
+		readAhead = maxReadAhead
 	}
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
@@ -81,7 +88,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
 		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
 		changeEvents:  make(chan *fftypes.ChangeEvent),
-		readAhead:     readAhead,
+		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
