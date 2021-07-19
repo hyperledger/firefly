@@ -63,6 +63,7 @@ type eventDispatcher struct {
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
+	buffLen := config.GetInt(config.EventDispatcherBufferLength)
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
@@ -76,7 +77,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		subscription:  sub,
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
-		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
+		eventDelivery: make(chan *fftypes.EventDelivery, buffLen),
 		changeEvents:  make(chan *fftypes.ChangeEvent),
 		readAhead:     readAhead,
 		acksNacks:     make(chan ackNack),
@@ -85,7 +86,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 	}
 
 	pollerConf := &eventPollerConf{
-		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
+		eventBatchSize:             buffLen,
 		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
 		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
 		startupOffsetRetryAttempts: 0, // We need to keep trying to start indefinitely
