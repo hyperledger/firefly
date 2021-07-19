@@ -131,6 +131,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
@@ -467,6 +468,132 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{err}
 	}
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				TxType: fftypes.TransactionTypeNone,
+				Group:  groupID,
+			},
+		},
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
+		Identifier: "localorg",
+		OnChain:    "0x12345",
+	}, nil)
+
+	dataID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32()},
+	}, nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		err := a[1].(func(context.Context) error)(a[0].(context.Context))
+		rag.ReturnArguments = mock.Arguments{err}
+	}
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				TxType: fftypes.TransactionTypeNone,
+				Group:  groupID,
+			},
+		},
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestSendUnpinnedMessageEventFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mii := pm.identity.(*identitymocks.Plugin)
+	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
+		Identifier: "localorg",
+		OnChain:    "0x12345",
+	}, nil)
+
+	dataID := fftypes.NewUUID()
+	groupID := fftypes.NewRandB32()
+	nodeID1 := fftypes.NewUUID()
+	nodeID2 := fftypes.NewUUID()
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32()},
+	}, nil)
+	mdm.On("GetMessageData", pm.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: dataID, Value: fftypes.Byteable(`{"some": "data"}`)},
+	}, true, nil).Once()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		err := a[1].(func(context.Context) error)(a[0].(context.Context))
+		rag.ReturnArguments = mock.Arguments{err}
+	}
+	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
+		Hash: groupID,
+		GroupIdentity: fftypes.GroupIdentity{
+			Members: fftypes.Members{
+				{Node: nodeID1, Identity: "localorg"},
+				{Node: nodeID2, Identity: "remoteorg"},
+			},
+		},
+	}, nil).Once()
+	mdi.On("GetNodeByID", pm.ctx, nodeID1).Return(&fftypes.Node{
+		ID: nodeID1, Name: "node1", Owner: "localorg", DX: fftypes.DXInfo{Peer: "peer1-local"},
+	}, nil).Once()
+	mdi.On("GetNodeByID", pm.ctx, nodeID2).Return(&fftypes.Node{
+		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
+	}, nil).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
+
+	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mdx.On("SendMessage", pm.ctx, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

@@ -84,7 +84,14 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 	}
 
 	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
-		return pm.sendUnpinnedMessage(ctx, &in.Message)
+		err = pm.sendUnpinnedMessage(ctx, &in.Message)
+		if err != nil {
+			return err
+		}
+
+		// Emit a confirmation event locally immediately
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, in.Message.Header.Namespace, in.Message.Header.ID)
+		return pm.database.InsertEvent(ctx, event)
 	}
 
 	return nil
