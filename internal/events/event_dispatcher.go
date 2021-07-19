@@ -94,9 +94,9 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
 		},
-		offsetType:      fftypes.OffsetTypeSubscription,
-		offsetNamespace: sub.definition.Namespace,
-		offsetName:      sub.definition.Name,
+		namespace:  sub.definition.Namespace,
+		offsetType: fftypes.OffsetTypeSubscription,
+		offsetName: sub.definition.ID.String(),
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
 		},
@@ -125,21 +125,20 @@ func (ed *eventDispatcher) electAndStart() {
 	select {
 	case ed.subscription.dispatcherElection <- true:
 		l.Debugf("Dispatcher became leader")
+		defer func() {
+			// Unelect ourselves on close, to let another dispatcher in
+			<-ed.subscription.dispatcherElection
+		}()
 	case <-ed.ctx.Done():
 		l.Debugf("Closed before we became leader")
 		return
 	}
 	// We're ready to go - not
 	ed.elected = true
+	ed.eventPoller.start()
 	go ed.deliverEvents()
-	go func() {
-		err := ed.eventPoller.start()
-		l.Debugf("Event dispatcher completed: %v", err)
-	}()
-	// Wait until we close
+	// Wait until the event poller closes
 	<-ed.eventPoller.closed
-	// Unelect ourselves on close, to let another dispatcher in
-	<-ed.subscription.dispatcherElection
 }
 
 func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
@@ -436,7 +435,6 @@ func (ed *eventDispatcher) close() {
 	ed.cancelCtx()
 	<-ed.closed
 	if ed.elected {
-		<-ed.eventPoller.closed
 		close(ed.eventDelivery)
 		ed.elected = false
 	}

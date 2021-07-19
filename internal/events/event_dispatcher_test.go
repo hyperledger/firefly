@@ -86,10 +86,11 @@ func TestEventDispatcherStartStop(t *testing.T) {
 func TestEventDispatcherLeaderElection(t *testing.T) {
 	log.SetLevel("debug")
 
+	subID := fftypes.NewUUID()
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{
-			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"},
+			SubscriptionRef: fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1", ID: subID},
 		},
 	}
 
@@ -100,11 +101,11 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 	gev1Done := make(chan struct{})
 	mdi1 := ed1.database.(*databasemocks.Plugin)
 	gev1 := mdi1.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
-	mdi1.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, "ns1", "sub1").Return(&fftypes.Offset{
-		Type:      fftypes.OffsetTypeSubscription,
-		Namespace: "ns1",
-		Name:      "sub1",
-		Current:   12345,
+	mdi1.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, subID.String()).Return(&fftypes.Offset{
+		Type:    fftypes.OffsetTypeSubscription,
+		Name:    subID.String(),
+		Current: 12345,
+		RowID:   333333,
 	}, nil)
 	gev1.RunFn = func(a mock.Arguments) {
 		gev1Wait <- true
@@ -125,10 +126,11 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	log.SetLevel("debug")
 	var five = uint16(5)
+	subID := fftypes.NewUUID()
 	sub := &subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{
-			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+			SubscriptionRef: fftypes.SubscriptionRef{ID: subID, Namespace: "ns1", Name: "sub1"},
 			Options: fftypes.SubscriptionOptions{
 				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
 					ReadAhead: &five,
@@ -164,7 +166,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	offsetUpdates := make(chan int64)
 	uof := mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	uof.RunFn = func(a mock.Arguments) {
-		f, err := a.Get(3).(database.Update).Finalize()
+		f, err := a.Get(2).(database.Update).Finalize()
 		assert.NoError(t, err)
 		v, _ := f.SetOperations[0].Value.Value()
 		offsetUpdates <- v.(int64)

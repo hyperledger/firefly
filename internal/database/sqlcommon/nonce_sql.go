@@ -49,7 +49,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 	existing := false
 	// Do a select within the transaction to detemine if the UUID already exists
 	nonceRows, err := s.queryTx(ctx, tx,
-		sq.Select("nonce", "seq").
+		sq.Select("nonce", sequenceColumn).
 			From("nonces").
 			Where(
 				sq.Eq{"context": nonce.Context}),
@@ -73,7 +73,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 		if err = s.updateTx(ctx, tx,
 			sq.Update("nonces").
 				Set("nonce", nonce.Nonce).
-				Where(sq.Eq{"seq": sequence}),
+				Where(sq.Eq{sequenceColumn: sequence}),
 			nil, // no change events for nonces
 		); err != nil {
 			return err

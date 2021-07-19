@@ -304,7 +304,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
-	cols = append(cols, "seq")
+	cols = append(cols, sequenceColumn)
 	rows, err := s.query(ctx,
 		sq.Select(cols...).
 			From("messages").
@@ -361,7 +361,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, err error) {
 	cols := append([]string{}, msgColumns...)
-	cols = append(cols, "seq")
+	cols = append(cols, sequenceColumn)
 	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
 		[]string{"pending", "confirmed", "created"}) // put unconfirmed messages first, then order by confirmed
 	if err != nil {
@@ -387,7 +387,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID
 }
 
 func (s *SQLCommon) GetMessageRefs(ctx context.Context, filter database.Filter) ([]*fftypes.MessageRef, error) {
-	query, err := s.filterSelect(ctx, "", sq.Select("id", "seq", "hash").From("messages"), filter, msgFilterFieldMap, []string{"sequence"})
+	query, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn, "hash").From("messages"), filter, msgFilterFieldMap, []string{"sequence"})
 	if err != nil {
 		return nil, err
 	}

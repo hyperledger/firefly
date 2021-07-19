@@ -29,9 +29,9 @@ const (
 
 // Offset is a simple stored data structure that records a sequence position within another collection
 type Offset struct {
-	ID        *UUID      `json:"id"`
-	Type      OffsetType `json:"type"`
-	Namespace string     `json:"namespace"`
-	Name      string     `json:"name"`
-	Current   int64      `json:"current,omitempty"`
+	Type    OffsetType `json:"type"`
+	Name    string     `json:"name"`
+	Current int64      `json:"current,omitempty"`
+
+	RowID int64 `json:"-"`
 }

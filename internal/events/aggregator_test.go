@@ -338,15 +338,14 @@ func TestAggregationBroadcast(t *testing.T) {
 func TestShutdownOnCancel(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, fftypes.SystemNamespace, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:      fftypes.OffsetTypeAggregator,
-		Namespace: fftypes.SystemNamespace,
-		Name:      aggregatorOffsetName,
-		Current:   12345,
+	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
+		Type:    fftypes.OffsetTypeAggregator,
+		Name:    aggregatorOffsetName,
+		Current: 12345,
+		RowID:   333333,
 	}, nil)
 	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
-	err := ag.start()
-	assert.NoError(t, err)
+	ag.start()
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.eventNotifier.newEvents <- 12345
 	cancel()

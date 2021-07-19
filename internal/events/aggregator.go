@@ -73,8 +73,8 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
+		namespace:        fftypes.SystemNamespace,
 		offsetType:       fftypes.OffsetTypeAggregator,
-		offsetNamespace:  fftypes.SystemNamespace,
 		offsetName:       aggregatorOffsetName,
 		newEventsHandler: ag.processPinsDBGroup,
 		getItems:         ag.getPins,
@@ -88,9 +88,9 @@ func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager
 	return ag
 }
 
-func (ag *aggregator) start() error {
+func (ag *aggregator) start() {
 	go ag.offchainListener()
-	return ag.eventPoller.start()
+	ag.eventPoller.start()
 }
 
 func (ag *aggregator) offchainListener() {

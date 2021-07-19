@@ -26,6 +26,14 @@ import (
 )
 
 func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+	return or.createUpdateSubscription(ctx, ns, subDef, true)
+}
+
+func (or *orchestrator) CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+	return or.createUpdateSubscription(ctx, ns, subDef, false)
+}
+
+func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription, mustNew bool) (*fftypes.Subscription, error) {
 	subDef.ID = fftypes.NewUUID()
 	subDef.Created = fftypes.Now()
 	subDef.Namespace = ns
@@ -40,7 +48,7 @@ func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 		return nil, i18n.NewError(ctx, i18n.MsgSystemTransportInternal)
 	}
 
-	return subDef, or.events.CreateDurableSubscription(ctx, subDef)
+	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)
 }
 
 func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) error {

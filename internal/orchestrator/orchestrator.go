@@ -71,6 +71,7 @@ type Orchestrator interface {
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
 	GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error)
 	CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
+	CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
 	DeleteSubscription(ctx context.Context, ns, id string) error
 
 	// Data Query

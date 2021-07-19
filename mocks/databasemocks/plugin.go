@@ -105,13 +105,13 @@ func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error 
 	return r0
 }
 
-// DeleteOffset provides a mock function with given fields: ctx, t, ns, name
-func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) error {
-	ret := _m.Called(ctx, t, ns, name)
+// DeleteOffset provides a mock function with given fields: ctx, t, name
+func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, name string) error {
+	ret := _m.Called(ctx, t, name)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string, string) error); ok {
-		r0 = rf(ctx, t, ns, name)
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string) error); ok {
+		r0 = rf(ctx, t, name)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -837,13 +837,13 @@ func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fft
 	return r0, r1
 }
 
-// GetOffset provides a mock function with given fields: ctx, t, ns, name
-func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, ns string, name string) (*fftypes.Offset, error) {
-	ret := _m.Called(ctx, t, ns, name)
+// GetOffset provides a mock function with given fields: ctx, t, name
+func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, name string) (*fftypes.Offset, error) {
+	ret := _m.Called(ctx, t, name)
 
 	var r0 *fftypes.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string, string) *fftypes.Offset); ok {
-		r0 = rf(ctx, t, ns, name)
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string) *fftypes.Offset); ok {
+		r0 = rf(ctx, t, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Offset)
@@ -851,8 +851,8 @@ func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, ns st
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.LowerCasedType, string, string) error); ok {
-		r1 = rf(ctx, t, ns, name)
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.LowerCasedType, string) error); ok {
+		r1 = rf(ctx, t, name)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1402,13 +1402,13 @@ func (_m *Plugin) UpdateNode(ctx context.Context, id *fftypes.UUID, update datab
 	return r0
 }
 
-// UpdateOffset provides a mock function with given fields: ctx, ns, id, update
-func (_m *Plugin) UpdateOffset(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, ns, id, update)
+// UpdateOffset provides a mock function with given fields: ctx, rowID, update
+func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database.Update) error {
+	ret := _m.Called(ctx, rowID, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, ns, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, database.Update) error); ok {
+		r0 = rf(ctx, rowID, update)
 	} else {
 		r0 = ret.Error(0)
 	}

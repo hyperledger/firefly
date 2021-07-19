@@ -24,6 +24,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -63,6 +64,21 @@ func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	assert.Regexp(t, "FF10163.*pop", err)
 }
 
+func TestMigrationUpDown(t *testing.T) {
+	tp, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+
+	driver, err := tp.GetMigrationDriver(tp.db)
+	assert.NoError(t, err)
+	var m *migrate.Migrate
+	m, err = migrate.NewWithDatabaseInstance(
+		"file://../../../db/migrations/sqlite",
+		tp.MigrationsDir(), driver)
+	assert.NoError(t, err)
+	err = m.Down()
+	assert.NoError(t, err)
+}
+
 func TestQueryTxBadSQL(t *testing.T) {
 	tp, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
@@ -73,7 +89,7 @@ func TestQueryTxBadSQL(t *testing.T) {
 func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectBegin()
-	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow(12345))
+	mdb.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).AddRow(12345))
 	ctx, tx, _, err := s.beginOrUseTx(context.Background())
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
@@ -230,7 +246,7 @@ func TestTXConcurrency(t *testing.T) {
 	racer := func(done chan struct{}, name string) func() {
 		return func() {
 			defer close(done)
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 5; i++ {
 				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
 				assert.NoError(t, err)
 				val := fmt.Sprintf("%s/%d", name, i)

@@ -2896,6 +2896,7 @@ paths:
                       type: object
                     transport:
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success
@@ -3040,6 +3041,7 @@ paths:
                         type: boolean
                 transport:
                   type: string
+                updated: {}
               type: object
       responses:
         "201":
@@ -3081,6 +3083,193 @@ paths:
                     type: object
                   transport:
                     type: string
+                  updated: {}
+                type: object
+          description: Success
+        default:
+          description: ""
+    put:
+      description: 'TODO: Description'
+      operationId: putSubscription
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                filter:
+                  properties:
+                    author:
+                      type: string
+                    events:
+                      type: string
+                    group:
+                      type: string
+                    tag:
+                      type: string
+                    topics:
+                      type: string
+                  type: object
+                name:
+                  type: string
+                options:
+                  oneOf:
+                  - properties:
+                      firstEvent:
+                        anyOf:
+                        - enum:
+                          - oldest
+                          - newest
+                          type: string
+                        - type: integer
+                      readAhead:
+                        maximum: 65536
+                        minimum: 0
+                        type: integer
+                      type:
+                        pattern: websockets
+                        type: string
+                      withData:
+                        type: boolean
+                  - properties:
+                      fastack:
+                        description: When true the event will be acknowledged before
+                          the webhook is invoked, allowing parallel invocations
+                        type: boolean
+                      firstEvent:
+                        anyOf:
+                        - enum:
+                          - oldest
+                          - newest
+                          type: string
+                        - type: integer
+                      headers:
+                        additionalProperties:
+                          type: string
+                        description: Static headers to set on the webhook request
+                        type: object
+                      input:
+                        description: A set of options to extract data from the first
+                          JSON input data in the incoming message. Only applies if
+                          withData=true
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: Whether to assume the response body is JSON,
+                          regardless of the returned Content-Type
+                        type: boolean
+                      method:
+                        description: Webhook method to invoke. Default=POST
+                        type: string
+                      query:
+                        additionalProperties:
+                          type: string
+                        description: Static query params to set on the webhook request
+                        type: object
+                      readAhead:
+                        maximum: 65536
+                        minimum: 0
+                        type: integer
+                      reply:
+                        description: Whether to automatically send a reply event,
+                          using the body returned by the webhook
+                        type: boolean
+                      replytag:
+                        description: The tag to set on the reply message
+                        type: string
+                      replytx:
+                        description: The transaction type to set on the reply message
+                        type: string
+                      type:
+                        pattern: webhooks
+                        type: string
+                      url:
+                        description: Webhook url to invoke. Can be relative if a base
+                          URL is set in the webhook plugin config
+                        type: string
+                      withData:
+                        type: boolean
+                transport:
+                  type: string
+                updated: {}
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  ephemeral:
+                    type: boolean
+                  filter:
+                    properties:
+                      author:
+                        type: string
+                      events:
+                        type: string
+                      group:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        type: string
+                    type: object
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  options:
+                    properties:
+                      firstEvent:
+                        type: string
+                      readAhead:
+                        maximum: 65535
+                        minimum: 0
+                        type: integer
+                      withData:
+                        type: boolean
+                    type: object
+                  transport:
+                    type: string
+                  updated: {}
                 type: object
           description: Success
         default:
@@ -3175,6 +3364,7 @@ paths:
                     type: object
                   transport:
                     type: string
+                  updated: {}
                 type: object
           description: Success
         default:

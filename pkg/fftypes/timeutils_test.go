@@ -108,6 +108,20 @@ func TestStringZero(t *testing.T) {
 	assert.Equal(t, "", ft.String()) // empty string rather than epoch 1970 time
 }
 
+func TestSafeEqual(t *testing.T) {
+	var ft1 *FFTime
+	var ft2 *FFTime
+	assert.True(t, ft1.Equal(ft2))
+	ft1 = Now()
+	assert.False(t, ft1.Equal(ft2))
+	ft1 = nil
+	ft2 = Now()
+	assert.False(t, ft1.Equal(ft2))
+	ft1 = Now()
+	*ft2 = *ft1
+	assert.True(t, ft1.Equal(ft2))
+}
+
 func TestFFTimeParseValue(t *testing.T) {
 
 	var ft FFTime

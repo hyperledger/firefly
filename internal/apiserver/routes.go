@@ -62,4 +62,5 @@ var routes = []*oapispec.Route{
 	postRegisterNodeOrg,
 	postRequestMessage,
 	postSendMessage,
+	putSubscription,
 }

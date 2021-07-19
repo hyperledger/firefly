@@ -72,6 +72,17 @@ func TestSubscriptionCreated(t *testing.T) {
 	mem.AssertExpectations(t)
 }
 
+func TestSubscriptionUpdated(t *testing.T) {
+	mem := &eventmocks.EventManager{}
+	o := &orchestrator{
+		events: mem,
+	}
+	mem.On("SubscriptionUpdates").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
+	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", fftypes.NewUUID())
+	mem.AssertExpectations(t)
+}
+
 func TestSubscriptionDeleted(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	o := &orchestrator{

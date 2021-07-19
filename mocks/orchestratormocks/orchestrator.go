@@ -68,6 +68,29 @@ func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	return r0, r1
 }
 
+// CreateUpdateSubscription provides a mock function with given fields: ctx, ns, subDef
+func (_m *Orchestrator) CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+	ret := _m.Called(ctx, ns, subDef)
+
+	var r0 *fftypes.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Subscription) *fftypes.Subscription); ok {
+		r0 = rf(ctx, ns, subDef)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Subscription)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Subscription) error); ok {
+		r1 = rf(ctx, ns, subDef)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Data provides a mock function with given fields:
 func (_m *Orchestrator) Data() data.Manager {
 	ret := _m.Called()
