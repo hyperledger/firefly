@@ -43,7 +43,7 @@ nav_order: 4
   - If the send is unpinned:
     - No data is written to the blockchain at all
     - The message is marked confirmed immediately
-    - The sender does **not** get a `message_confirmed` event
+      - The sender receives a `message_confirmed` event immediately
     - The other parties in the group get `message_confirmed` events as soon as the data arrives
 
 ## Additional info
