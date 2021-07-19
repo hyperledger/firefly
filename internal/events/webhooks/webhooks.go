@@ -403,6 +403,11 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, ev
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
 		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
+		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+			ID:           event.ID,
+			Rejected:     false,
+			Subscription: event.Subscription,
+		})
 		return nil
 	}
 

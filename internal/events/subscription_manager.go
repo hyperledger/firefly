@@ -148,7 +148,11 @@ func (sm *subscriptionManager) start() error {
 			continue
 		}
 		sm.durableSubs[*subDef.ID] = newSub
+		for _, conn := range sm.connections {
+			sm.matchSubToConnLocked(conn, newSub)
+		}
 	}
+	log.L(sm.ctx).Infof("Subscription manager started - loaded %d durable subscriptions", len(sm.durableSubs))
 	go sm.subscriptionEventListener()
 	go sm.cel.changeEventListener()
 	return nil
