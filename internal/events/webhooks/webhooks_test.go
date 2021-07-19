@@ -598,6 +598,11 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		},
 	}
 
+	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+		return !response.Rejected // should be accepted as a no-op so we can move on to other events
+	}))
+
 	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
 }
