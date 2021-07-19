@@ -32,6 +32,10 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
+const (
+	maxReadAhead = 65536
+)
+
 type ackNack struct {
 	id     fftypes.UUID
 	isNack bool
@@ -62,7 +66,13 @@ type eventDispatcher struct {
 
 func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := int(config.GetUint(config.SubscriptionDefaultsReadAhead))
+	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
+	if sub.definition.Options.ReadAhead != nil {
+		readAhead = uint(*sub.definition.Options.ReadAhead)
+	}
+	if readAhead > maxReadAhead {
+		readAhead = maxReadAhead
+	}
 	ed := &eventDispatcher{
 		ctx: log.WithLogField(log.WithLogField(ctx,
 			"role", fmt.Sprintf("ed[%s]", connID)),
@@ -78,7 +88,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
 		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
 		changeEvents:  make(chan *fftypes.ChangeEvent),
-		readAhead:     readAhead,
+		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
 		cel:           cel,
@@ -105,9 +115,6 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		newEventsHandler: ed.bufferedDelivery,
 		ephemeral:        sub.definition.Ephemeral,
 		firstEvent:       sub.definition.Options.FirstEvent,
-	}
-	if sub.definition.Options.ReadAhead != nil {
-		ed.readAhead = int(*sub.definition.Options.ReadAhead)
 	}
 
 	ed.eventPoller = newEventPoller(ctx, di, en, pollerConf)
@@ -273,8 +280,8 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 		}
 		ed.mux.Unlock()
 
-		l.Debugf("Dispatcher event state: candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d nacks=%d highest=%d",
-			len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, nacks, highestOffset)
+		l.Debugf("Dispatcher event state: readahead=%d candidates=%d matched=%d inflight=%d queued=%d dispatched=%d dispatchable=%d lastAck=%d nacks=%d highest=%d",
+			ed.readAhead, len(candidates), matchCount, inflightCount, len(matching), dispatched, len(disapatchable), lastAck, nacks, highestOffset)
 
 		for _, event := range disapatchable {
 			ed.mux.Lock()
