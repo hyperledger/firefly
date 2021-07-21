@@ -18,8 +18,16 @@
 
 package sqlite3
 
-import "github.com/hyperledger-labs/firefly/internal/config"
+import (
+	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/database/sqlcommon"
+)
+
+const (
+	defaultConnectionLimitSQLite = 1
+)
 
 func (sqlite *SQLite3) InitPrefix(prefix config.Prefix) {
 	sqlite.SQLCommon.InitPrefix(sqlite, prefix)
+	prefix.SetDefault(sqlcommon.SQLConfMaxConnections, defaultConnectionLimitSQLite)
 }
