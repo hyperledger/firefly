@@ -65,12 +65,12 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 
 }
 
-func (em *eventManager) checkReceivedIdentity(peerID string, author string) (node *fftypes.Node, err error) {
+func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID string, author string) (node *fftypes.Node, err error) {
 	l := log.L(em.ctx)
 
 	// Find the node associated with the peer
-	filter := database.NodeQueryFactory.NewFilter(em.ctx).Eq("dx.peer", peerID)
-	nodes, err := em.database.GetNodes(em.ctx, filter)
+	filter := database.NodeQueryFactory.NewFilter(ctx).Eq("dx.peer", peerID)
+	nodes, err := em.database.GetNodes(ctx, filter)
 	if err != nil {
 		l.Errorf("Failed to retrieve node: %v", err)
 		return nil, err // retry for persistence error
@@ -82,7 +82,7 @@ func (em *eventManager) checkReceivedIdentity(peerID string, author string) (nod
 	node = nodes[0]
 
 	// Find the identity in the mesage
-	org, err := em.database.GetOrganizationByIdentity(em.ctx, author)
+	org, err := em.database.GetOrganizationByIdentity(ctx, author)
 	if err != nil {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retry for persistence error
@@ -97,7 +97,7 @@ func (em *eventManager) checkReceivedIdentity(peerID string, author string) (nod
 	foundNodeOrg := author == node.Owner
 	for !foundNodeOrg && candidate.Parent != "" {
 		parent := candidate.Parent
-		candidate, err = em.database.GetOrganizationByIdentity(em.ctx, parent)
+		candidate, err = em.database.GetOrganizationByIdentity(ctx, parent)
 		if err != nil {
 			l.Errorf("Failed to retrieve node org '%s': %v", parent, err)
 			return nil, err // retry for persistence error
@@ -117,30 +117,32 @@ func (em *eventManager) checkReceivedIdentity(peerID string, author string) (nod
 }
 
 func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) error {
-	l := log.L(em.ctx)
 
 	// Retry for persistence errors (not validation errors)
 	return em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
+		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+			l := log.L(ctx)
 
-		node, err := em.checkReceivedIdentity(peerID, batch.Author)
-		if err != nil {
-			return true, err
-		}
-		if node == nil {
-			l.Errorf("Batch received from invalid author '%s' for peer ID '%s'", batch.Author, peerID)
-			return false, nil
-		}
+			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author)
+			if err != nil {
+				return err
+			}
+			if node == nil {
+				l.Errorf("Batch received from invalid author '%s' for peer ID '%s'", batch.Author, peerID)
+				return nil
+			}
 
-		valid, err := em.persistBatch(em.ctx, batch)
-		if err != nil {
-			l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
-			return true, err // retry - persistBatch only returns retryable errors
-		}
+			valid, err := em.persistBatch(ctx, batch)
+			if err != nil {
+				l.Errorf("Batch received from %s/%s invalid: %s", node.Owner, node.Name, err)
+				return err // retry - persistBatch only returns retryable errors
+			}
 
-		if valid {
-			em.aggregator.offchainBatches <- batch.ID
-		}
-		return false, nil
+			if valid {
+				em.aggregator.offchainBatches <- batch.ID
+			}
+			return nil
+		})
 	})
 
 }
@@ -277,7 +279,7 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 				return err
 			}
 
-			node, err := em.checkReceivedIdentity(peerID, message.Header.Author)
+			node, err := em.checkReceivedIdentity(ctx, peerID, message.Header.Author)
 			if err != nil {
 				return err
 			}

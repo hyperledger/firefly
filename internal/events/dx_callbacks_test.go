@@ -17,7 +17,6 @@
 package events
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -368,10 +367,6 @@ func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
@@ -406,10 +401,6 @@ func TestBLOBReceivedGetMessagesFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
@@ -430,10 +421,6 @@ func TestBLOBReceivedGetDataRefsFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
@@ -451,10 +438,6 @@ func TestBLOBReceivedInsertBlobFails(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
@@ -597,10 +580,6 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
@@ -635,10 +614,6 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
 
 	err = em.MessageReceived(mdx, "peer1", b)
@@ -673,10 +648,6 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
 	}, nil)
@@ -724,10 +695,6 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
 	}, nil)
@@ -775,10 +742,6 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
 	}, nil)
@@ -828,11 +791,6 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
-
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 
@@ -871,11 +829,6 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
-
-	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
-	}
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
