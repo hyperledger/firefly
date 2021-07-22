@@ -214,6 +214,7 @@ var (
 // customization. Rather for global initialization of plugins.
 type Prefix interface {
 	AddKnownKey(key string, defValue ...interface{})
+	SetDefault(key string, defValue interface{})
 	SubPrefix(suffix string) Prefix
 	Set(key string, value interface{})
 	Resolve(key string) string
@@ -408,11 +409,16 @@ func (c *configPrefix) SubPrefix(suffix string) Prefix {
 func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
 	key := c.prefix + k
 	if len(defValue) == 1 {
-		viper.SetDefault(key, defValue[0])
+		c.SetDefault(k, defValue[0])
 	} else if len(defValue) > 0 {
-		viper.SetDefault(key, defValue)
+		c.SetDefault(k, defValue)
 	}
 	c.keys[key] = true
+}
+
+func (c *configPrefix) SetDefault(k string, defValue interface{}) {
+	key := c.prefix + k
+	viper.SetDefault(key, defValue)
 }
 
 func GetConfig() fftypes.JSONObject {

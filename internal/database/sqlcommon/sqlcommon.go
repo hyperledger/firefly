@@ -58,6 +58,10 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 	if s.db, err = provider.Open(prefix.GetString(SQLConfDatasourceURL)); err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgDBInitFailed)
 	}
+	connLimit := prefix.GetInt(SQLConfMaxConnections)
+	if connLimit > 0 {
+		s.db.SetMaxOpenConns(connLimit)
+	}
 
 	if prefix.GetBool(SQLConfMigrationsAuto) {
 		if err = s.applyDBMigrations(ctx, prefix, provider); err != nil {

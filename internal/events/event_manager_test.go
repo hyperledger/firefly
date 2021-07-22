@@ -46,9 +46,14 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mpm := &privatemessagingmocks.Manager{}
 	mdm := &datamocks.Manager{}
 	met.On("Name").Return("ut").Maybe()
-	em, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mpm, mdm)
+	emi, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mpm, mdm)
+	em := emi.(*eventManager)
+	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
 	assert.NoError(t, err)
-	return em.(*eventManager), cancel
+	return em, cancel
 }
 
 func TestStartStop(t *testing.T) {

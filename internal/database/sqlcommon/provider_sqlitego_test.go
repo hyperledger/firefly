@@ -60,6 +60,7 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 	tp.prefix.Set(SQLConfDatasourceURL, fmt.Sprintf("file:%s/testdb", dir))
 	tp.prefix.Set(SQLConfMigrationsAuto, true)
 	tp.prefix.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
+	tp.prefix.Set(SQLConfMaxConnections, 1)
 
 	err = tp.Init(context.Background(), tp, tp.prefix, tp.callbacks, tp.capabilities)
 	assert.NoError(tp.t, err)

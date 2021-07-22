@@ -29,6 +29,8 @@ const (
 	SQLConfMigrationsDirectory = "migrations.directory"
 	// SQLConfDatasourceURL is the datasource connection URL string
 	SQLConfDatasourceURL = "url"
+	// SQLConfMaxConnections maximum connections to the database
+	SQLConfMaxConnections = "maxConns"
 )
 
 const (
@@ -39,4 +41,5 @@ func (s *SQLCommon) InitPrefix(provider Provider, prefix config.Prefix) {
 	prefix.AddKnownKey(SQLConfMigrationsAuto, false)
 	prefix.AddKnownKey(SQLConfDatasourceURL)
 	prefix.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))
+	prefix.AddKnownKey(SQLConfMaxConnections) // some providers may set a default
 }
