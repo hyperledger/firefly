@@ -158,8 +158,11 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
 			if err == nil {
-				err = em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
-				if err == nil {
+				var valid bool
+				valid, err = em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
+				// Note that in the case of a bad batch broadcast, we don't store the pin. Because we know we
+				// are never going to be able to process it (we retrieved it successfully, it's just invalid).
+				if valid && err == nil {
 					err = em.persistContexts(ctx, batchPin, false)
 				}
 			}
