@@ -47,5 +47,4 @@ func TestPostgresProvider(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)  RETURNING seq", sql)
 	assert.True(t, query)
-
 }
