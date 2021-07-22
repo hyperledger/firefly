@@ -49,5 +49,4 @@ func TestSQLite3GoProvider(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO test (col1) VALUES (?)", sql)
 	assert.False(t, query)
-
 }
