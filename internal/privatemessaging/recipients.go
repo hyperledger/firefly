@@ -168,8 +168,18 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	if err != nil {
 		return nil, false, err
 	}
-	hash := gi.Hash()
-	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", hash)
+
+	// Create the group structure, and seal it - which will sort the members, and
+	// generate the deterministic hash. We then search on that group to see if it
+	// exists. If it doesn't, we go ahead and create it. If it does - we don't return
+	// this candidate - we return the existing group.
+	newCandidate := &fftypes.Group{
+		GroupIdentity: *gi,
+		Created:       fftypes.Now(),
+	}
+	newCandidate.Seal()
+
+	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", newCandidate.Hash)
 	groups, err := pm.database.GetGroups(ctx, filter)
 	if err != nil {
 		return nil, false, err
@@ -177,14 +187,5 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	if len(groups) > 0 {
 		return groups[0], false, nil
 	}
-
-	// Generate a new group on the fly here.
-	// It will need to be sent to the group ahead of the message the user is trying to send.
-	group = &fftypes.Group{
-		GroupIdentity: *gi,
-		Hash:          hash,
-		Created:       fftypes.Now(),
-	}
-	group.Seal()
-	return group, true, nil
+	return newCandidate, true, nil
 }
