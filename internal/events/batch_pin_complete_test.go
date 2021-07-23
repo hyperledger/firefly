@@ -343,8 +343,9 @@ func TestPersistBatchGetTransactionBadNamespace(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
 
-	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.NoError(t, err)
+	assert.False(t, valid)
 	mdi.AssertExpectations(t)
 }
 
@@ -363,8 +364,9 @@ func TestPersistBatchGetTransactionFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.EqualError(t, err, "pop")
+	assert.False(t, valid)
 	mdi.AssertExpectations(t)
 }
 
@@ -385,8 +387,9 @@ func TestPersistBatchGetTransactionInvalidMatch(t *testing.T) {
 		ID: fftypes.NewUUID(), // wrong
 	}, nil)
 
-	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.NoError(t, err)
+	assert.False(t, valid)
 	mdi.AssertExpectations(t)
 }
 
@@ -406,8 +409,9 @@ func TestPersistBatcNewTXUpsertFail(t *testing.T) {
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.EqualError(t, err, "pop")
+	assert.False(t, valid)
 	mdi.AssertExpectations(t)
 }
 
@@ -434,8 +438,9 @@ func TestPersistBatcExistingTXHashMismatch(t *testing.T) {
 	}, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
 
-	err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
+	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.NoError(t, err)
+	assert.False(t, valid)
 	mdi.AssertExpectations(t)
 }
 
