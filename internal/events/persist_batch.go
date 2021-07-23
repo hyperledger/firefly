@@ -24,27 +24,27 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, author string) error {
+func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, author string) (valid bool, err error) {
 	l := log.L(ctx)
 
 	// Verify the author matches
 	id, err := em.identity.Resolve(ctx, batch.Author)
 	if err != nil {
 		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 	if author != id.OnChain {
 		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 
 	if !onchainHash.Equals(batch.Hash) {
 		l.Errorf("Invalid batch '%s'. Hash in batch '%s' does not match transaction hash '%s'", batch.ID, batch.Hash, onchainHash)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 
-	_, err = em.persistBatch(ctx, batch)
-	return err
+	valid, err = em.persistBatch(ctx, batch)
+	return valid, err
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

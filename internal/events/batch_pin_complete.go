@@ -54,8 +54,8 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, 
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
-			if err == nil {
+			valid, err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
+			if valid && err == nil {
 				err = em.persistContexts(ctx, batchPin, true)
 			}
 			return err
@@ -64,15 +64,15 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, 
 	})
 }
 
-func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
 	// Get any existing record for the batch transaction record
 	tx, err := em.database.GetTransactionByID(ctx, batchPin.TransactionID)
 	if err != nil {
-		return err // a peristence failure here is considered retryable (so returned)
+		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 	if err := fftypes.ValidateFFNameField(ctx, batchPin.Namespace, "namespace"); err != nil {
 		log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' invalid namespace '%s': %a", batchPin.BatchID, batchPin.TransactionID, batchPin.Namespace, err)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 	if tx == nil {
 		// We're the first to write the transaction record on this node
@@ -93,7 +93,7 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 		*tx.Subject.Reference != *batchPin.BatchID ||
 		tx.Subject.Namespace != batchPin.Namespace {
 		log.L(ctx).Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batchPin.BatchID, tx.ID)
-		return nil // This is not retryable. skip this batch
+		return false, nil // This is not retryable. skip this batch
 	}
 
 	// Set the updates on the transaction
@@ -106,13 +106,13 @@ func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *b
 	if err != nil {
 		if err == database.HashMismatch {
 			log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batchPin.BatchID, tx.Hash)
-			return nil // This is not retryable. skip this batch
+			return false, nil // This is not retryable. skip this batch
 		}
 		log.L(ctx).Errorf("Failed to insert transaction for batch '%s': %s", batchPin.BatchID, err)
-		return err // a peristence failure here is considered retryable (so returned)
+		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, private bool) error {
@@ -156,10 +156,12 @@ func (em *eventManager) handleBroadcastPinComplete(batchPin *blockchain.BatchPin
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
-			if err == nil {
-				err = em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
-				if err == nil {
+			valid, err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
+			// Note that in the case of a bad batch broadcast, we don't store the pin. Because we know we
+			// are never going to be able to process it (we retrieved it successfully, it's just invalid).
+			if valid && err == nil {
+				valid, err = em.persistBatchFromBroadcast(ctx, batch, batchPin.BatchHash, signingIdentity)
+				if valid && err == nil {
 					err = em.persistContexts(ctx, batchPin, false)
 				}
 			}

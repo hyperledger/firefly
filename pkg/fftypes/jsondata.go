@@ -75,6 +75,8 @@ func (jd JSONObject) GetStringOk(key string) (string, bool) {
 		return strconv.FormatBool(vt), true
 	case float64:
 		return strconv.FormatFloat(vt, 'f', -1, 64), true
+	case nil:
+		return "", false // no need to log for nil
 	default:
 		log.L(context.Background()).Errorf("Invalid string value '%+v' for key '%s'", vInterface, key)
 		return "", false

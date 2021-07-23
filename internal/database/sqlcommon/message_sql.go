@@ -176,7 +176,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 					sq.Eq{"message_id": message.Header.ID},
 				}),
 			nil, // no change event
-		); err != nil {
+		); err != nil && err != database.DeleteRecordNotFound {
 			return err
 		}
 	}
