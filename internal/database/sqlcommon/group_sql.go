@@ -119,7 +119,7 @@ func (s *SQLCommon) updateMembers(ctx context.Context, tx *txWrapper, group *fft
 					sq.Eq{"group_hash": group.Hash},
 				}),
 			nil, // no db change event for this sub update
-		); err != nil {
+		); err != nil && err != database.DeleteRecordNotFound {
 			return err
 		}
 	}
