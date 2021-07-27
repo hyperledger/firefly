@@ -16,9 +16,9 @@ If you're looking for somewhere to get started in the FireFly project and want s
 
 ## Making changes
 
-To contribute to the repository, please [fork the repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo) that you want to change. Then clone your fork locally on your machine and make your changes. As you commit your changes, push them to your fork.
+To contribute to the repository, please [fork the repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo) that you want to change. Then clone your fork locally on your machine and make your changes. As you commit your changes, push them to your fork. More information on making commits below.
 
-## Developer Certificate of Origin
+## Commit with Developer Certificate of Origin
 
 As with all Hyperledger repositories, FireFly requires proper sign-off on every commit that is merged into the `main` branch. The sign-off indicates that you certify the changes you are submitting in accordance with the [Developer Certificate of Origin](https://developercertificate.org/). To sign-off on your commit, you can use the `-s` flag when you commit changes.
 
