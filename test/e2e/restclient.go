@@ -110,6 +110,7 @@ func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedSta
 func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Organization) {
 	path := urlGetOrganizations
 	resp, err := client.R().
+		SetQueryParam("sort", "created").
 		SetResult(&orgs).
 		Get(path)
 	require.NoError(t, err)
