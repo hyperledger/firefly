@@ -28,7 +28,7 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, in *fftypes.TokenPool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error)
 	Start() error
 	WaitStop()
 }
@@ -62,7 +62,7 @@ func (am *assetManager) getNodeSigningIdentity(ctx context.Context) (*fftypes.Id
 	return id, nil
 }
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPool) (*fftypes.TokenPool, error) {
+func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error) {
 	id, err := am.getNodeSigningIdentity(ctx)
 	if err == nil {
 		err = am.blockchain.VerifyIdentitySyntax(ctx, id)
@@ -71,8 +71,23 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPo
 		return nil, err
 	}
 
-	// TODO: create token pool
-	return in, nil
+	blockchainTrackingID, err := am.blockchain.CreateTokenPool(ctx, nil, id, &blockchain.TokenPool{
+		BaseURI: in.BaseURI,
+		Type:    in.Type,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	op := fftypes.NewTXOperation(
+		am.blockchain,
+		"",
+		fftypes.NewUUID(),
+		blockchainTrackingID,
+		fftypes.OpTypeBlockchainBatchPin,
+		fftypes.OpStatusPending,
+		"")
+	return in, am.database.UpsertOperation(ctx, op, false)
 }
 
 func (am *assetManager) Start() error {

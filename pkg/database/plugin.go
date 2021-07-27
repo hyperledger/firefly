@@ -350,6 +350,11 @@ type iConfigRecordCollection interface {
 	DeleteConfigRecord(ctx context.Context, key string) (err error)
 }
 
+type iTokenPoolCollection interface {
+	// UpsertTokenPool - Upsert a token pool
+	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) (err error)
+}
+
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
 // The database mechanism of Firefly is designed to provide the balance between being able
 // to query the data a member of the network has transferred/received via Firefly efficiently,
@@ -400,6 +405,7 @@ type PeristenceInterface interface {
 	iNextPinCollection
 	iBlobCollection
 	iConfigRecordCollection
+	iTokenPoolCollection
 }
 
 // CollectionName represents all collections
@@ -453,6 +459,7 @@ const (
 	CollectionNamespaces    UUIDCollection = "namespaces"
 	CollectionNodes         UUIDCollection = "nodes"
 	CollectionOrganizations UUIDCollection = "organizations"
+	CollectionTokenPools    UUIDCollection = "tokenpool"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.

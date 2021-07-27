@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"regexp"
 	"strings"
 
@@ -36,12 +37,15 @@ import (
 
 const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
+	uriEventSignture             = "URI(string,uint256)"
+	transferSingleEventSignature = "TransferSingle(address,address,address,uint256,uint256)"
 )
 
 type Ethereum struct {
 	ctx          context.Context
 	topic        string
 	instancePath string
+	tokenPath    string
 	prefixShort  string
 	prefixLong   string
 	capabilities *blockchain.Capabilities
@@ -95,11 +99,22 @@ type ethWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
-var requiredSubscriptions = map[string]string{
-	"BatchPin": "Batch pin",
+type ethCreateTokenPoolInput struct {
+	BaseURI    string `json:"uri"`
+	IsFungible bool   `json:"is_fungible"`
+}
+
+var fireflySubscriptions = []string{
+	"BatchPin",
+}
+
+var tokenSubscriptions = []string{
+	"URI",
+	"TransferSingle",
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
+var zeroAddress = "0x0000000000000000000000000000000000000000"
 
 func (e *Ethereum) Name() string {
 	return "ethereum"
@@ -108,6 +123,7 @@ func (e *Ethereum) Name() string {
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) (err error) {
 
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
+	tokenConf := prefix.SubPrefix(TokenConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
@@ -118,6 +134,10 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
 	if e.instancePath == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
+	}
+	e.tokenPath = tokenConf.GetString(EthconnectConfigInstancePath)
+	if e.tokenPath == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.tokens")
 	}
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
@@ -192,7 +212,11 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
 
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
 
-	return e.ensureSusbscriptions(e.initInfo.stream.ID)
+	err = e.ensureSubscriptions(e.instancePath, e.initInfo.stream.ID, fireflySubscriptions)
+	if err != nil {
+		return err
+	}
+	return e.ensureSubscriptions(e.tokenPath, e.initInfo.stream.ID, tokenSubscriptions)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -211,8 +235,8 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 	return err
 }
 
-func (e *Ethereum) ensureSusbscriptions(streamID string) error {
-	for eventType, subDesc := range requiredSubscriptions {
+func (e *Ethereum) ensureSubscriptions(instancePath string, streamID string, requiredSubscriptions []string) error {
+	for _, eventType := range requiredSubscriptions {
 
 		var existingSubs []*subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
@@ -229,17 +253,16 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 
 		if sub == nil {
 			newSub := subscription{
-				Name:        eventType,
-				Description: subDesc,
-				StreamID:    streamID,
-				Stream:      e.initInfo.stream.ID,
-				FromBlock:   "0",
+				Name:      eventType,
+				StreamID:  streamID,
+				Stream:    e.initInfo.stream.ID,
+				FromBlock: "0",
 			}
 			res, err = e.client.R().
 				SetContext(e.ctx).
 				SetBody(&newSub).
 				SetResult(&newSub).
-				Post(fmt.Sprintf("%s/%s", e.instancePath, eventType))
+				Post(fmt.Sprintf("%s/%s", instancePath, eventType))
 			if err != nil || !res.IsSuccess() {
 				return restclient.WrapRestErr(e.ctx, res, err, i18n.MsgEthconnectRESTErr)
 			}
@@ -329,6 +352,81 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
 }
 
+func (e *Ethereum) handleURIEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	sBlockNumber := msgJSON.GetString("blockNumber")
+	sTransactionIndex := msgJSON.GetString("transactionIndex")
+	sTransactionHash := msgJSON.GetString("transactionHash")
+	dataJSON := msgJSON.GetObject("data")
+	poolID := dataJSON.GetString("id")
+	uri := dataJSON.GetString("value")
+
+	if sBlockNumber == "" ||
+		sTransactionIndex == "" ||
+		sTransactionHash == "" ||
+		poolID == "" ||
+		uri == "" {
+		log.L(ctx).Errorf("URI event is not valid - missing data: %+v", msgJSON)
+		return nil // move on
+	}
+
+	id := new(big.Int)
+	id.SetString(poolID, 10)
+	poolType := fftypes.TokenTypeFungible
+	if id.Bit(255) == 1 {
+		poolType = fftypes.TokenTypeNonFungible
+	}
+
+	pool := &blockchain.TokenPool{
+		PoolID:  poolID,
+		Type:    poolType,
+		BaseURI: uri,
+	}
+	return e.callbacks.TokenPoolCreated(pool)
+}
+
+func (e *Ethereum) handleTransferSingleEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	sBlockNumber := msgJSON.GetString("blockNumber")
+	sTransactionIndex := msgJSON.GetString("transactionIndex")
+	sTransactionHash := msgJSON.GetString("transactionHash")
+	dataJSON := msgJSON.GetObject("data")
+	fromAddress := dataJSON.GetString("from")
+	toAddress := dataJSON.GetString("to")
+
+	if sBlockNumber == "" ||
+		sTransactionIndex == "" ||
+		sTransactionHash == "" ||
+		fromAddress == "" ||
+		toAddress == "" {
+		log.L(ctx).Errorf("TransferSingle event is not valid - missing data: %+v", msgJSON)
+		return nil // move on
+	}
+
+	fromAddress, err = e.validateEthAddress(ctx, fromAddress)
+	if err != nil {
+		log.L(ctx).Errorf("TransferSingle event is not valid - bad from address (%s): %+v", err, msgJSON)
+		return nil // move on
+	}
+
+	toAddress, err = e.validateEthAddress(ctx, toAddress)
+	if err != nil {
+		log.L(ctx).Errorf("TransferSingle event is not valid - bad to address (%s): %+v", err, msgJSON)
+		return nil // move on
+	}
+
+	switch {
+	case fromAddress == zeroAddress && toAddress == zeroAddress:
+		// pool creation - handled by URI event
+	case fromAddress == zeroAddress:
+		// TODO: handle mint
+	case toAddress == zeroAddress:
+		// TODO: handle burn
+	default:
+		// TODO: handle transfer
+	}
+
+	return nil
+}
+
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) error {
 	l := log.L(ctx)
 
@@ -371,6 +469,17 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
 				return err
 			}
+
+		case uriEventSignture:
+			if err := e.handleURIEvent(ctx1, msgJSON); err != nil {
+				return err
+			}
+
+		case transferSingleEventSignature:
+			if err := e.handleTransferSingleEvent(ctx1, msgJSON); err != nil {
+				return err
+			}
+
 		default:
 			l.Infof("Ignoring event with unknown signature: %s", signature)
 		}
@@ -463,6 +572,19 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 		Contexts:   ethHashes,
 	}
 	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", identity, input, tx)
+	if err != nil || !res.IsSuccess() {
+		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return tx.ID, nil
+}
+
+func (e *Ethereum) CreateTokenPool(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, pool *blockchain.TokenPool) (txTrackingID string, err error) {
+	tx := &asyncTXSubmission{}
+	input := &ethCreateTokenPoolInput{
+		BaseURI:    pool.BaseURI,
+		IsFungible: pool.Type.Equals(fftypes.TokenTypeFungible),
+	}
+	res, err := e.invokeContractMethod(ctx, e.tokenPath, "create", identity, input, tx)
 	if err != nil || !res.IsSuccess() {
 		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}

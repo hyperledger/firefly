@@ -34,6 +34,27 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
+// CreateTokenPool provides a mock function with given fields: ctx, ledgerID, identity, pool
+func (_m *Plugin) CreateTokenPool(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, pool *blockchain.TokenPool) (string, error) {
+	ret := _m.Called(ctx, ledgerID, identity, pool)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.TokenPool) string); ok {
+		r0 = rf(ctx, ledgerID, identity, pool)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.TokenPool) error); ok {
+		r1 = rf(ctx, ledgerID, identity, pool)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, prefix, callbacks
 func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks) error {
 	ret := _m.Called(ctx, prefix, callbacks)

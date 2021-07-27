@@ -28,6 +28,20 @@ func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentit
 	return r0
 }
 
+// TokenPoolCreated provides a mock function with given fields: pool
+func (_m *Callbacks) TokenPoolCreated(pool *blockchain.TokenPool) error {
+	ret := _m.Called(pool)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*blockchain.TokenPool) error); ok {
+		r0 = rf(pool)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TxSubmissionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
 func (_m *Callbacks) TxSubmissionUpdate(txTrackingID string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)

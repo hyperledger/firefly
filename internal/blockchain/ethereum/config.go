@@ -47,6 +47,11 @@ const (
 	EthconnectPrefixShort = "prefixShort"
 	// EthconnectPrefixLong is used in HTTP headers in requests to ethconnect
 	EthconnectPrefixLong = "prefixLong"
+
+	// TokenConfigKey is a sub-key in the config to contain all the token specific config
+	// This is assumed to be another ethconnect interface, so most values are inherited from the ethconnect sub-key
+	// (but some can be overridden)
+	TokenConfigKey = "tokens"
 )
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
@@ -59,4 +64,8 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
+
+	tokenConf := prefix.SubPrefix(TokenConfigKey)
+	wsclient.InitPrefix(tokenConf)
+	tokenConf.AddKnownKey(EthconnectConfigInstancePath)
 }

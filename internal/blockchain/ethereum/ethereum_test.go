@@ -40,6 +40,7 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
+var utTokenConf = utConfPrefix.SubPrefix(TokenConfigKey)
 
 func resetConf() {
 	config.Reset()
@@ -95,6 +96,7 @@ func TestInitMissingTopic(t *testing.T) {
 	resetConf()
 	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*topic", err)
@@ -128,7 +130,21 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, "es12345", body["streamID"])
-			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub1"})(req)
+		})
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x67890/URI", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["streamID"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub2"})(req)
+		})
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/instances/0x67890/TransferSingle", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "es12345", body["streamID"])
+			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub3"})(req)
 		})
 
 	resetConf()
@@ -136,14 +152,17 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ethereum", e.Name())
-	assert.Equal(t, 4, httpmock.GetTotalCallCount())
+	assert.Equal(t, 8, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub1", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub2", e.initInfo.subs[1].ID)
+	assert.Equal(t, "sub3", e.initInfo.subs[2].ID)
 	assert.True(t, e.Capabilities().GlobalSequencer)
 
 	err = e.Start()
@@ -174,6 +193,7 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utEthconnectConf.Set(EthconnectConfigSkipEventstreamInit, true)
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
@@ -206,7 +226,9 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Name: "BatchPin"},
+			{ID: "sub1", Name: "BatchPin"},
+			{ID: "sub2", Name: "URI"},
+			{ID: "sub3", Name: "TransferSingle"},
 		}))
 
 	resetConf()
@@ -214,12 +236,15 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub1", e.initInfo.subs[0].ID)
+	assert.Equal(t, "sub2", e.initInfo.subs[1].ID)
+	assert.Equal(t, "sub3", e.initInfo.subs[2].ID)
 
 	assert.NoError(t, err)
 
@@ -243,6 +268,7 @@ func TestStreamQueryError(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
@@ -271,6 +297,7 @@ func TestStreamCreateError(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
@@ -301,6 +328,7 @@ func TestSubQueryError(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
@@ -333,6 +361,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utTokenConf.Set(EthconnectConfigInstancePath, "/instances/0x67890")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 

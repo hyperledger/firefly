@@ -215,6 +215,20 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
+// TokenPoolCreated provides a mock function with given fields: bi, pool
+func (_m *EventManager) TokenPoolCreated(bi blockchain.Plugin, pool *blockchain.TokenPool) error {
+	ret := _m.Called(bi, pool)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.TokenPool) error); ok {
+		r0 = rf(bi, pool)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TransferResult provides a mock function with given fields: dx, trackingID, status, info, additionalInfo
 func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
 	ret := _m.Called(dx, trackingID, status, info, additionalInfo)

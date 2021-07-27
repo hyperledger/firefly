@@ -4284,5 +4284,43 @@ paths:
           description: Success
         default:
           description: ""
+  /tokens:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokens
+      parameters:
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                baseURI:
+                  type: string
+                type:
+                  enum:
+                  - fungible
+                  - nonfungible
+                  type: string
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  baseURI:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
 servers:
 - url: http://localhost:12345/api/v1

@@ -47,6 +47,10 @@ type Plugin interface {
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
 	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *BatchPin) (txTrackingID string, err error)
+
+	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
+	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
+	CreateTokenPool(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, pool *TokenPool) (txTrackingID string, err error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -71,6 +75,9 @@ type Callbacks interface {
 	//
 	// Error should will only be returned in shutdown scenarios
 	BatchPinComplete(batch *BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
+	// TokenPoolCreated notifies on the creation of a token pool.
+	TokenPoolCreated(pool *TokenPool) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -121,4 +128,15 @@ type BatchPin struct {
 	//   - The hashes contain a sender specific nonce that is a monotomically increasing number
 	//     for batches sent by that sender, within the context (maintined by the sender FireFly node)
 	Contexts []*fftypes.Bytes32
+}
+
+type TokenPool struct {
+	// PoolID is the unique ID generated for this pool by the smart contract.
+	PoolID string
+
+	// BaseURI is the user-supplied URI for this pool.
+	BaseURI string
+
+	// Type is the type of token (fungible or non-fungible).
+	Type fftypes.TokenType
 }

@@ -15,20 +15,20 @@ type Manager struct {
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, in
-func (_m *Manager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPool) (*fftypes.TokenPool, error) {
+func (_m *Manager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error) {
 	ret := _m.Called(ctx, in)
 
-	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) *fftypes.TokenPool); ok {
+	var r0 *fftypes.TokenPoolCreate
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPoolCreate) *fftypes.TokenPoolCreate); ok {
 		r0 = rf(ctx, in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenPool)
+			r0 = ret.Get(0).(*fftypes.TokenPoolCreate)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.TokenPool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.TokenPoolCreate) error); ok {
 		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)

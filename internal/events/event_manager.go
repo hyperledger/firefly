@@ -54,6 +54,7 @@ type EventManager interface {
 	// Bound blockchain callbacks
 	TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(bi blockchain.Plugin, pool *blockchain.TokenPool) error
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error

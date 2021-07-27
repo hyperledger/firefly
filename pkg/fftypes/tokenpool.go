@@ -23,7 +23,13 @@ const (
 	TokenTypeNonFungible TokenType = "nonfungible"
 )
 
+type TokenPoolCreate struct {
+	BaseURI string    `json:"baseURI"`
+	Type    TokenType `json:"type"`
+}
+
 type TokenPool struct {
 	BaseURI string    `json:"baseURI"`
 	Type    TokenType `json:"type"`
+	PoolID  string    `json:"poolID"`
 }

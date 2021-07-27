@@ -37,6 +37,10 @@ func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingId
 	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity, protocolTxID, additionalInfo)
 }
 
+func (bc *boundCallbacks) TokenPoolCreated(pool *blockchain.TokenPool) error {
+	return bc.ei.TokenPoolCreated(bc.bi, pool)
+}
+
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.TransferResult(bc.dx, trackingID, status, info, additionalInfo)
 }
