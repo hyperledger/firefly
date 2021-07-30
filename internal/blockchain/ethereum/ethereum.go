@@ -578,7 +578,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 	return tx.ID, nil
 }
 
-func (e *Ethereum) CreateTokenPool(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, pool *blockchain.TokenPool) (txTrackingID string, err error) {
+func (e *Ethereum) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *blockchain.TokenPool) (txTrackingID string, err error) {
 	tx := &asyncTXSubmission{}
 	input := &ethCreateTokenPoolInput{
 		BaseURI:    pool.BaseURI,

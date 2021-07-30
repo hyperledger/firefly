@@ -18,8 +18,12 @@ package sqlcommon
 
 import (
 	"context"
+	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
@@ -87,4 +91,75 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)
+}
+
+func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenPool, error) {
+	pool := fftypes.TokenPool{
+		Type: fftypes.TokenTypeNonFungible,
+	}
+	var isFungible int
+	err := row.Scan(
+		&pool.PoolID,
+		&pool.BaseURI,
+		&isFungible,
+	)
+	if isFungible == 1 {
+		pool.Type = fftypes.TokenTypeFungible
+	}
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenpool")
+	}
+	return &pool, nil
+}
+
+func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.TokenPool, err error) {
+	rows, err := s.query(ctx,
+		sq.Select(tokenPoolColumns...).
+			From("tokenpool").
+			Where(pred),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		log.L(ctx).Debugf("Token pool '%s' not found", desc)
+		return nil, nil
+	}
+
+	pool, err := s.tokenPoolResult(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, poolID string) (message *fftypes.TokenPool, err error) {
+	return s.getTokenPoolPred(ctx, poolID, sq.Eq{"pool_id": poolID})
+}
+
+func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, err error) {
+	query, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, nil, []string{"seq"})
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	pools := []*fftypes.TokenPool{}
+	for rows.Next() {
+		d, err := s.tokenPoolResult(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
+		pools = append(pools, d)
+	}
+
+	return pools, err
 }

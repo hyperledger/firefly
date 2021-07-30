@@ -5,7 +5,9 @@ package assetmocks
 import (
 	context "context"
 
+	database "github.com/hyperledger-labs/firefly/pkg/database"
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,22 +39,22 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCre
 	return r0, r1
 }
 
-// GetNodeSigningIdentity provides a mock function with given fields: ctx
-func (_m *Manager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx)
+// GetTokenPools provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, filter)
 
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Identity); ok {
-		r0 = rf(ctx)
+	var r0 []*fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.TokenPool); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
+			r0 = ret.Get(0).([]*fftypes.TokenPool)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		r1 = ret.Error(1)
 	}

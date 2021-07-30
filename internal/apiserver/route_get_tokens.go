@@ -17,40 +17,27 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var createPoolSchema = `{
-	"type": "object",
-	"properties": {
-		"type": {
-			"type": "string",
-			"enum": ["fungible", "nonfungible"]
-		},
-		"base_uri": {
-			"type": "string"
-		}
-	}
-}`
-
-var postTokens = &oapispec.Route{
-	Name:            "postTokens",
+var getTokens = &oapispec.Route{
+	Name:            "getTokens",
 	Path:            "tokens",
-	Method:          http.MethodPost,
+	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.TokenPoolQueryFactory,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.TokenPoolCreate{} },
-	JSONInputSchema: func(ctx context.Context) string { return createPoolSchema },
-	JSONOutputValue: func() interface{} { return &fftypes.TokenPoolCreate{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*fftypes.TokenPool{} },
+	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		return r.Or.Assets().CreateTokenPool(r.Ctx, r.Input.(*fftypes.TokenPoolCreate))
+		output, err = r.Or.Assets().GetTokenPools(r.Ctx, r.Filter)
+		return output, err
 	},
 }

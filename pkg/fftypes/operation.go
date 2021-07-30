@@ -30,6 +30,8 @@ const (
 	OpTypeDataExchangeBatchSend OpType = "dataexchange_batch_send"
 	// OpTypeDataExchangeBlobSend is a private send
 	OpTypeDataExchangeBlobSend OpType = "dataexchange_blob_send"
+	// OpTypePoolCreate is a token pool creation
+	OpTypePoolCreate OpType = "token_pool_create"
 )
 
 // OpStatus is the current status of an operation

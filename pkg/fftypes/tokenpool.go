@@ -24,12 +24,12 @@ const (
 )
 
 type TokenPoolCreate struct {
-	BaseURI string    `json:"baseURI"`
+	BaseURI string    `json:"base_uri"`
 	Type    TokenType `json:"type"`
 }
 
 type TokenPool struct {
-	BaseURI string    `json:"baseURI"`
+	BaseURI string    `json:"base_uri"`
 	Type    TokenType `json:"type"`
-	PoolID  string    `json:"poolID"`
+	PoolID  string    `json:"pool_id"`
 }

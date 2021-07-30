@@ -28,6 +28,7 @@ import (
 )
 
 type Manager interface {
+	GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*fftypes.TokenPool, error)
 	CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error)
 	Start() error
 	WaitStop()
@@ -62,6 +63,10 @@ func (am *assetManager) getNodeSigningIdentity(ctx context.Context) (*fftypes.Id
 	return id, nil
 }
 
+func (am *assetManager) GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*fftypes.TokenPool, error) {
+	return am.database.GetTokenPools(ctx, filter)
+}
+
 func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error) {
 	id, err := am.getNodeSigningIdentity(ctx)
 	if err == nil {
@@ -71,7 +76,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPo
 		return nil, err
 	}
 
-	blockchainTrackingID, err := am.blockchain.CreateTokenPool(ctx, nil, id, &blockchain.TokenPool{
+	blockchainTrackingID, err := am.blockchain.CreateTokenPool(ctx, id, &blockchain.TokenPool{
 		BaseURI: in.BaseURI,
 		Type:    in.Type,
 	})
@@ -84,7 +89,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPo
 		"",
 		fftypes.NewUUID(),
 		blockchainTrackingID,
-		fftypes.OpTypeBlockchainBatchPin,
+		fftypes.OpTypePoolCreate,
 		fftypes.OpStatusPending,
 		"")
 	return in, am.database.UpsertOperation(ctx, op, false)

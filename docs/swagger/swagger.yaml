@@ -4285,6 +4285,63 @@ paths:
         default:
           description: ""
   /tokens:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokens
+      parameters:
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    base_uri:
+                      type: string
+                    pool_id:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
     post:
       description: 'TODO: Description'
       operationId: postTokens
@@ -4314,7 +4371,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  baseURI:
+                  base_uri:
                     type: string
                   type:
                     type: string

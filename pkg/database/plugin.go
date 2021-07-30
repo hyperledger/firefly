@@ -353,6 +353,12 @@ type iConfigRecordCollection interface {
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
 	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) (err error)
+
+	// GetTokenPoolByID - Get a token pool by pool ID
+	GetTokenPoolByID(ctx context.Context, poolID string) (message *fftypes.TokenPool, err error)
+
+	// GetTokenPools - Get token pools
+	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -422,7 +428,7 @@ const (
 	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
-// OrderedCollection is a collection that is ordrered, and that sequence is the only key
+// OrderedCollection is a collection that is ordered, and that sequence is the only key
 type OrderedCollection CollectionName
 
 const (
@@ -713,3 +719,6 @@ var BlobQueryFactory = &queryFields{
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
 }
+
+// TokenPoolQueryFactory filter fields for token pools
+var TokenPoolQueryFactory = &queryFields{}

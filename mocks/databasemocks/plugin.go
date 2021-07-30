@@ -1113,6 +1113,52 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	return r0, r1
 }
 
+// GetTokenPoolByID provides a mock function with given fields: ctx, poolID
+func (_m *Plugin) GetTokenPoolByID(ctx context.Context, poolID string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, poolID)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, poolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, poolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenPools provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenPool); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTransactionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, id)
