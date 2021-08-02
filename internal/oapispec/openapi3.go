@@ -211,7 +211,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		}
 		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description)
 	}
-	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgFilterAscendingDesc)
+	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgRequestTimeoutDesc)
 	if route.FilterFactory != nil {
 		fields := route.FilterFactory.NewFilter(ctx).Fields()
 		sort.Strings(fields)
