@@ -1,9 +1,14 @@
 VGO=go
 BINARY_NAME=firefly
 GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
+GOBIN := $(shell $(VGO) env GOPATH)/bin
+LINT := $(GOBIN)/golangci-lint
+MOCKERY := $(GOBIN)/mockery
+
 # Expect that FireFly compiles with CGO disabled
 CGO_ENABLED=0
 GOGC=30
+
 .DELETE_ON_ERROR:
 
 all: build test go-mod-tidy
@@ -12,12 +17,11 @@ test: deps lint
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
-lint:
-		GOGC=20 $(shell go list -f '{{.Target}}' github.com/golangci/golangci-lint/cmd/golangci-lint) run -v --timeout 5m
+lint: builddeps
+		GOGC=20 $(LINT) run -v --timeout 5m
 mockery: .ALWAYS
-		go get github.com/vektra/mockery/cmd/mockery
+		$(VGO) install github.com/vektra/mockery/cmd/mockery@latest
 mocks: mockery ${GOFILES}
-		$(eval MOCKERY := $(shell go list -f '{{.Target}}' github.com/vektra/mockery/cmd/mockery))
 		${MOCKERY} --case underscore --dir pkg/blockchain            --name Plugin           --output mocks/blockchainmocks       --outpkg blockchainmocks
 		${MOCKERY} --case underscore --dir pkg/blockchain            --name Callbacks        --output mocks/blockchainmocks       --outpkg blockchainmocks
 		${MOCKERY} --case underscore --dir pkg/database              --name Plugin           --output mocks/databasemocks         --outpkg databasemocks
@@ -46,7 +50,7 @@ firefly-nocgo: ${GOFILES}
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 go-mod-tidy: .ALWAYS
-		go mod tidy
+		$(VGO) mod tidy
 build: firefly-nocgo firefly
 e2e: build
 		./test/e2e/run.sh
@@ -57,7 +61,7 @@ clean:
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}
 builddeps:
-		$(VGO) get github.com/golangci/golangci-lint/cmd/golangci-lint
+		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 deps: builddeps
 		$(VGO) get
 swagger:
