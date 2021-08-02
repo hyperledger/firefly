@@ -215,6 +215,20 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
+// TokenBalanceChanged provides a mock function with given fields: bi, poolID, identity, amount
+func (_m *EventManager) TokenBalanceChanged(bi blockchain.Plugin, poolID string, identity string, amount int) error {
+	ret := _m.Called(bi, poolID, identity, amount)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, string, string, int) error); ok {
+		r0 = rf(bi, poolID, identity, amount)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // TokenPoolCreated provides a mock function with given fields: bi, pool
 func (_m *EventManager) TokenPoolCreated(bi blockchain.Plugin, pool *blockchain.TokenPool) error {
 	ret := _m.Called(bi, pool)

@@ -33,3 +33,9 @@ type TokenPool struct {
 	Type    TokenType `json:"type"`
 	PoolID  string    `json:"pool_id"`
 }
+
+type TokenMint struct {
+	PoolID    string `json:"pool_id"`
+	Recipient string `json:"recipient"`
+	Amount    int    `json:"amount,omitempty"`
+}

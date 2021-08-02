@@ -33,6 +33,11 @@ var (
 		"base_uri",
 		"is_fungible",
 	}
+	tokenAccountColumns = []string{
+		"pool_id",
+		"member",
+		"balance",
+	}
 )
 
 func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool, allowExisting bool) (err error) {
@@ -162,4 +167,54 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (
 	}
 
 	return pools, err
+}
+
+func (s *SQLCommon) UpdateTokenBalance(ctx context.Context, poolID string, identity string, amount int) error {
+	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.rollbackTx(ctx, tx, autoCommit)
+
+	transactionRows, err := s.queryTx(ctx, tx,
+		sq.Select("pool_id").
+			From("tokenaccount").
+			Where(sq.Eq{"pool_id": poolID, "member": identity}),
+	)
+	if err != nil {
+		return err
+	}
+	existing := transactionRows.Next()
+	transactionRows.Close()
+
+	if existing {
+		if err = s.updateTx(ctx, tx,
+			sq.Update("tokenaccount").
+				Set("pool_id", poolID).
+				Set("member", identity).
+				Set("balance", sq.Expr("balance + ?", amount)),
+			func() {
+				// s.callbacks.UUIDCollectionEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, pool.ID)
+			},
+		); err != nil {
+			return err
+		}
+	} else {
+		if _, err = s.insertTx(ctx, tx,
+			sq.Insert("tokenaccount").
+				Columns(tokenAccountColumns...).
+				Values(
+					poolID,
+					identity,
+					amount,
+				),
+			func() {
+				// s.callbacks.UUIDCollectionEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, pool.ID)
+			},
+		); err != nil {
+			return err
+		}
+	}
+
+	return s.commitTx(ctx, tx, autoCommit)
 }

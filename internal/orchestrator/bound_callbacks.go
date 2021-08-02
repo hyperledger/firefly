@@ -41,6 +41,10 @@ func (bc *boundCallbacks) TokenPoolCreated(pool *blockchain.TokenPool) error {
 	return bc.ei.TokenPoolCreated(bc.bi, pool)
 }
 
+func (bc *boundCallbacks) TokenBalanceChanged(poolID string, identity string, amount int) error {
+	return bc.ei.TokenBalanceChanged(bc.bi, poolID, identity, amount)
+}
+
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.TransferResult(bc.dx, trackingID, status, info, additionalInfo)
 }

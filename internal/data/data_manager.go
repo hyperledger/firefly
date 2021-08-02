@@ -290,7 +290,7 @@ func (dm *dataManager) ResolveInlineDataPrivate(ctx context.Context, ns string, 
 
 // ResolveInlineDataBroadcast ensures the data object are stored, and returns a list of any data that does not currently
 // have a public storage reference, and hence must be published to publicstorage before a broadcast message can be sent.
-// We deliberately do NOT perform those publishes inside of this action, as we expect to be in a RunAsGroup (trnasaction)
+// We deliberately do NOT perform those publishes inside of this action, as we expect to be in a RunAsGroup (transaction)
 // at this point, and hence expensive things like a multi-megabyte upload should be decoupled by our caller.
 func (dm *dataManager) ResolveInlineDataBroadcast(ctx context.Context, ns string, inData fftypes.InlineData) (refs fftypes.DataRefs, dataToPublish []*fftypes.DataAndBlob, err error) {
 	return dm.resolveInlineData(ctx, ns, inData, true)

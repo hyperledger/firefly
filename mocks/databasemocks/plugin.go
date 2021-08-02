@@ -1504,6 +1504,20 @@ func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string
 	return r0
 }
 
+// UpdateTokenBalance provides a mock function with given fields: ctx, poolID, identity, amount
+func (_m *Plugin) UpdateTokenBalance(ctx context.Context, poolID string, identity string, amount int) error {
+	ret := _m.Called(ctx, poolID, identity, amount)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int) error); ok {
+		r0 = rf(ctx, poolID, identity, amount)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateTransaction provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateTransaction(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)

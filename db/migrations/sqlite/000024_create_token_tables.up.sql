@@ -6,4 +6,11 @@ CREATE TABLE tokenpool (
 );
 
 CREATE UNIQUE INDEX tokenpool_id ON tokenpool(pool_id);
-CREATE UNIQUE INDEX tokenpool_uri ON tokenpool(base_uri);
+
+CREATE TABLE tokenaccount (
+  seq            INTEGER         DEFAULT 0,
+  member         VARCHAR(1024)   NOT NULL,
+  pool_id        VARCHAR(80)     NOT NULL,
+  balance        INTEGER         DEFAULT 0,
+  PRIMARY KEY(member, pool_id)
+);

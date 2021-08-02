@@ -18,6 +18,7 @@ package assets
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -30,6 +31,7 @@ import (
 type Manager interface {
 	GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*fftypes.TokenPool, error)
 	CreateTokenPool(ctx context.Context, in *fftypes.TokenPoolCreate) (*fftypes.TokenPoolCreate, error)
+	MintTokens(ctx context.Context, in *fftypes.TokenMint) (*fftypes.TokenMint, error)
 	Start() error
 	WaitStop()
 }
@@ -90,6 +92,44 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, in *fftypes.TokenPo
 		fftypes.NewUUID(),
 		blockchainTrackingID,
 		fftypes.OpTypePoolCreate,
+		fftypes.OpStatusPending,
+		"")
+	return in, am.database.UpsertOperation(ctx, op, false)
+}
+
+func (am *assetManager) MintTokens(ctx context.Context, in *fftypes.TokenMint) (*fftypes.TokenMint, error) {
+	id, err := am.getNodeSigningIdentity(ctx)
+	if err == nil {
+		err = am.blockchain.VerifyIdentitySyntax(ctx, id)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	pool, err := am.database.GetTokenPoolByID(ctx, in.PoolID)
+	if err != nil {
+		return nil, err
+	}
+	if pool == nil {
+		return nil, fmt.Errorf("token pool not found")
+	}
+
+	blockchainTrackingID, err := am.blockchain.MintTokens(ctx, id, &blockchain.TokenMint{
+		PoolID:    pool.PoolID,
+		Type:      pool.Type,
+		Recipient: in.Recipient,
+		Amount:    in.Amount,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	op := fftypes.NewTXOperation(
+		am.blockchain,
+		"",
+		fftypes.NewUUID(),
+		blockchainTrackingID,
+		fftypes.OpTypePoolMint,
 		fftypes.OpStatusPending,
 		"")
 	return in, am.database.UpsertOperation(ctx, op, false)

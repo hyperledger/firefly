@@ -1,1 +1,2 @@
 DROP TABLE IF EXISTS tokenpool;
+DROP TABLE IF EXISTS tokenaccount;

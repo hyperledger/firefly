@@ -62,6 +62,29 @@ func (_m *Manager) GetTokenPools(ctx context.Context, filter database.AndFilter)
 	return r0, r1
 }
 
+// MintTokens provides a mock function with given fields: ctx, in
+func (_m *Manager) MintTokens(ctx context.Context, in *fftypes.TokenMint) (*fftypes.TokenMint, error) {
+	ret := _m.Called(ctx, in)
+
+	var r0 *fftypes.TokenMint
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenMint) *fftypes.TokenMint); ok {
+		r0 = rf(ctx, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenMint)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.TokenMint) error); ok {
+		r1 = rf(ctx, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Start provides a mock function with given fields:
 func (_m *Manager) Start() error {
 	ret := _m.Called()

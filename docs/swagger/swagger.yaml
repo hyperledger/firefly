@@ -4289,7 +4289,8 @@ paths:
       description: 'TODO: Description'
       operationId: getTokens
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -4346,7 +4347,8 @@ paths:
       description: 'TODO: Description'
       operationId: postTokens
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -4357,7 +4359,7 @@ paths:
           application/json:
             schema:
               properties:
-                baseURI:
+                base_uri:
                   type: string
                 type:
                   enum:
@@ -4374,6 +4376,46 @@ paths:
                   base_uri:
                     type: string
                   type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /tokens/mint:
+    post:
+      description: 'TODO: Description'
+      operationId: mintTokens
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount:
+                  type: integer
+                pool_id:
+                  type: string
+                recipient:
+                  type: string
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount:
+                    type: integer
+                  pool_id:
+                    type: string
+                  recipient:
                     type: string
                 type: object
           description: Success

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -102,6 +103,19 @@ type ethWSCommandPayload struct {
 type ethCreateTokenPoolInput struct {
 	BaseURI    string `json:"uri"`
 	IsFungible bool   `json:"is_fungible"`
+}
+
+type ethMintFungibleInput struct {
+	PoolID     string   `json:"type_id"`
+	Recipients []string `json:"to"`
+	Amounts    []int    `json:"amounts"`
+	Data       []byte   `json:"data"`
+}
+
+type ethMintNonFungibleInput struct {
+	PoolID     string   `json:"type_id"`
+	Recipients []string `json:"to"`
+	Data       []byte   `json:"data"`
 }
 
 var fireflySubscriptions = []string{
@@ -391,6 +405,11 @@ func (e *Ethereum) handleTransferSingleEvent(ctx context.Context, msgJSON fftype
 	dataJSON := msgJSON.GetObject("data")
 	fromAddress := dataJSON.GetString("from")
 	toAddress := dataJSON.GetString("to")
+	poolID := dataJSON.GetString("id")
+	value, err := strconv.Atoi(dataJSON.GetString("value"))
+	if err != nil {
+		return err
+	}
 
 	if sBlockNumber == "" ||
 		sTransactionIndex == "" ||
@@ -417,7 +436,7 @@ func (e *Ethereum) handleTransferSingleEvent(ctx context.Context, msgJSON fftype
 	case fromAddress == zeroAddress && toAddress == zeroAddress:
 		// pool creation - handled by URI event
 	case fromAddress == zeroAddress:
-		// TODO: handle mint
+		return e.callbacks.TokenBalanceChanged(poolID, toAddress, value)
 	case toAddress == zeroAddress:
 		// TODO: handle burn
 	default:
@@ -585,6 +604,33 @@ func (e *Ethereum) CreateTokenPool(ctx context.Context, identity *fftypes.Identi
 		IsFungible: pool.Type.Equals(fftypes.TokenTypeFungible),
 	}
 	res, err := e.invokeContractMethod(ctx, e.tokenPath, "create", identity, input, tx)
+	if err != nil || !res.IsSuccess() {
+		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+	}
+	return tx.ID, nil
+}
+
+func (e *Ethereum) MintTokens(ctx context.Context, identity *fftypes.Identity, mint *blockchain.TokenMint) (txTrackingID string, err error) {
+	tx := &asyncTXSubmission{}
+	var res *resty.Response
+
+	if mint.Type == fftypes.TokenTypeFungible {
+		input := &ethMintFungibleInput{
+			PoolID:     mint.PoolID,
+			Recipients: []string{mint.Recipient},
+			Amounts:    []int{mint.Amount},
+			Data:       []byte{0},
+		}
+		res, err = e.invokeContractMethod(ctx, e.tokenPath, "mintFungible", identity, input, tx)
+	} else {
+		input := &ethMintNonFungibleInput{
+			PoolID:     mint.PoolID,
+			Recipients: []string{mint.Recipient},
+			Data:       []byte{0},
+		}
+		res, err = e.invokeContractMethod(ctx, e.tokenPath, "mintNonFungible", identity, input, tx)
+	}
+
 	if err != nil || !res.IsSuccess() {
 		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}

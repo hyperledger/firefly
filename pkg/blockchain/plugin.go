@@ -51,6 +51,9 @@ type Plugin interface {
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
 	CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *TokenPool) (txTrackingID string, err error)
+
+	// MintTokens mints some amount of new tokens in a particular pool
+	MintTokens(ctx context.Context, identity *fftypes.Identity, mint *TokenMint) (txTrackingID string, err error)
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -78,6 +81,9 @@ type Callbacks interface {
 
 	// TokenPoolCreated notifies on the creation of a token pool.
 	TokenPoolCreated(pool *TokenPool) error
+
+	// TokenBalanceChanged notifies when the balance of tokens in a particular account is changed.
+	TokenBalanceChanged(poolID string, identity string, amount int) error
 }
 
 // Capabilities the supported featureset of the blockchain
@@ -139,4 +145,18 @@ type TokenPool struct {
 
 	// Type is the type of token (fungible or non-fungible).
 	Type fftypes.TokenType
+}
+
+type TokenMint struct {
+	// PoolID refers to an existing TokenPool.
+	PoolID string
+
+	// Type is the type of token in the selected TokenPool.
+	Type fftypes.TokenType
+
+	// Recipient is the on-chain account address to receive minted tokens.
+	Recipient string
+
+	// Amount is the number of tokens to mint.
+	Amount int
 }

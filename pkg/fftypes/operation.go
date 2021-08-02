@@ -32,6 +32,8 @@ const (
 	OpTypeDataExchangeBlobSend OpType = "dataexchange_blob_send"
 	// OpTypePoolCreate is a token pool creation
 	OpTypePoolCreate OpType = "token_pool_create"
+	// OpTypePoolMint is a token mint
+	OpTypePoolMint OpType = "token_pool_mint"
 )
 
 // OpStatus is the current status of an operation

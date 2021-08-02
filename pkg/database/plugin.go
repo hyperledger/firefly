@@ -359,6 +359,9 @@ type iTokenPoolCollection interface {
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, error)
+
+	// UpdateTokenBalance - Add/subtract an amount from a token account balance
+	UpdateTokenBalance(ctx context.Context, poolID string, identity string, amount int) error
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
