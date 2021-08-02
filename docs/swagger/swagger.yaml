@@ -10,7 +10,8 @@ paths:
       description: 'TODO: Description'
       operationId: postBroadcastNamespace
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -83,7 +84,8 @@ paths:
       description: 'TODO: Description'
       operationId: getNamespaces
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -186,7 +188,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -223,7 +226,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -442,7 +446,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -569,7 +574,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -654,7 +660,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -767,7 +774,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -893,7 +901,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -998,7 +1007,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1055,7 +1065,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1208,7 +1219,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1397,7 +1409,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1512,7 +1525,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1555,7 +1569,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1665,7 +1680,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1703,7 +1719,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -1905,7 +1922,8 @@ paths:
         name: data
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2014,7 +2032,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2073,7 +2092,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2183,7 +2203,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2240,7 +2261,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2288,7 +2310,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2434,7 +2457,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2483,7 +2507,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2643,7 +2668,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2770,7 +2796,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -2913,7 +2940,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3099,7 +3127,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3292,7 +3321,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3318,7 +3348,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3381,7 +3412,8 @@ paths:
         schema:
           example: default
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3516,7 +3548,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3649,7 +3682,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3692,7 +3726,8 @@ paths:
       description: 'TODO: Description'
       operationId: getNetworkNodes
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3807,7 +3842,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3845,7 +3881,8 @@ paths:
       description: 'TODO: Description'
       operationId: getNetworkOrgs
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3952,7 +3989,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -3987,7 +4025,8 @@ paths:
       description: 'TODO: Description'
       operationId: postRegisterNode
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -4055,7 +4094,8 @@ paths:
       description: 'TODO: Description'
       operationId: postRegisterNodeOrg
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -4123,7 +4163,8 @@ paths:
       description: 'TODO: Description'
       operationId: postRegisterOrg
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
@@ -4203,7 +4244,8 @@ paths:
       description: 'TODO: Description'
       operationId: getStatus
       parameters:
-      - description: Ascending sort order (overrides all fields in a multi-field sort)
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
         in: header
         name: Request-Timeout
         schema:
