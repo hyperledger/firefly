@@ -59,7 +59,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, allowExi
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		dataRows, err := s.queryTx(ctx, tx,
+		dataRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("data").
 				Where(sq.Eq{"id": data.ID}),
@@ -178,7 +178,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	} else {
 		cols = dataColumnsNoValue
 	}
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
 			From("data").
 			Where(sq.Eq{"id": id}),
@@ -201,16 +201,16 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message []*fftypes.Data, res *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -218,25 +218,25 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 	for rows.Next() {
 		d, err := s.dataResult(ctx, rows, true)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		data = append(data, d)
 	}
 
-	return data, err
+	return data, s.queryRes(ctx, tx, "data", fop, fi), err
 
 }
 
-func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, err error) {
+func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, res *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -248,12 +248,12 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 			&ref.Hash,
 		)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
 		}
 		refs = append(refs, &ref)
 	}
 
-	return refs, err
+	return refs, s.queryRes(ctx, tx, "data", fop, fi), err
 
 }
 

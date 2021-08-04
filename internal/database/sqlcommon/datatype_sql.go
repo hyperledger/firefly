@@ -55,7 +55,7 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		datatypeRows, err := s.queryTx(ctx, tx,
+		datatypeRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("datatypes").
 				Where(sq.Eq{"id": datatype.ID}),
@@ -134,7 +134,7 @@ func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*fftypes
 
 func (s *SQLCommon) getDatatypeEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Datatype, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(datatypeColumns...).
 			From("datatypes").
 			Where(eq),
@@ -165,16 +165,16 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version str
 	return s.getDatatypeEq(ctx, sq.Eq{"namespace": ns, "name": name, "version": version}, fmt.Sprintf("%s:%s", ns, name))
 }
 
-func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, err error) {
+func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, res *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -182,12 +182,12 @@ func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (m
 	for rows.Next() {
 		datatype, err := s.datatypeResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		datatypes = append(datatypes, datatype)
 	}
 
-	return datatypes, err
+	return datatypes, s.queryRes(ctx, tx, "datatypes", fop, fi), err
 
 }
 

@@ -56,7 +56,7 @@ func (s *SQLCommon) UpsertNode(ctx context.Context, node *fftypes.Node, allowExi
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		nodeRows, err := s.queryTx(ctx, tx,
+		nodeRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("nodes").
 				Where(sq.Eq{
@@ -147,7 +147,7 @@ func (s *SQLCommon) nodeResult(ctx context.Context, row *sql.Rows) (*fftypes.Nod
 
 func (s *SQLCommon) getNodePred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Node, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(nodeColumns...).
 			From("nodes").
 			Where(pred),
@@ -178,16 +178,16 @@ func (s *SQLCommon) GetNodeByID(ctx context.Context, id *fftypes.UUID) (message 
 	return s.getNodePred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetNodes(ctx context.Context, filter database.Filter) (message []*fftypes.Node, err error) {
+func (s *SQLCommon) GetNodes(ctx context.Context, filter database.Filter) (message []*fftypes.Node, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(nodeColumns...).From("nodes"), filter, nodeFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(nodeColumns...).From("nodes"), filter, nodeFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -195,12 +195,12 @@ func (s *SQLCommon) GetNodes(ctx context.Context, filter database.Filter) (messa
 	for rows.Next() {
 		d, err := s.nodeResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		node = append(node, d)
 	}
 
-	return node, err
+	return node, s.queryRes(ctx, tx, "nodes", fop, fi), err
 
 }
 

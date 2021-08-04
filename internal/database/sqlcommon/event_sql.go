@@ -91,7 +91,7 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
 			From("events").
 			Where(sq.Eq{"id": id}),
@@ -114,18 +114,18 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 	return event, nil
 }
 
-func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, err error) {
+func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, res *database.FilterResult, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -133,12 +133,12 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 	for rows.Next() {
 		event, err := s.eventResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		events = append(events, event)
 	}
 
-	return events, err
+	return events, s.queryRes(ctx, tx, "events", fop, fi), err
 
 }
 

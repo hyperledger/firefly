@@ -61,7 +61,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allow
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		batchRows, err := s.queryTx(ctx, tx,
+		batchRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("batches").
 				Where(sq.Eq{"id": batch.ID}),
@@ -160,7 +160,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 
 func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(batchColumns...).
 			From("batches").
 			Where(sq.Eq{"id": id}),
@@ -183,16 +183,16 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.Batch, res *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -200,12 +200,12 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 	for rows.Next() {
 		batch, err := s.batchResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		batches = append(batches, batch)
 	}
 
-	return batches, err
+	return batches, s.queryRes(ctx, tx, "batches", fop, fi), err
 
 }
 

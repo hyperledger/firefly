@@ -109,9 +109,10 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		fb.Eq("version", datatypeUpdated.Version),
 		fb.Gt("created", "0"),
 	)
-	datatypes, err := s.GetDatatypes(ctx, filter)
+	datatypes, res, err := s.GetDatatypes(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(datatypes))
+	assert.Equal(t, int64(1), res.Count)
 	datatypeReadJson, _ = json.Marshal(datatypes[0])
 	assert.Equal(t, string(datatypeJson), string(datatypeReadJson))
 
@@ -126,7 +127,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 		fb.Eq("id", datatypeUpdated.ID.String()),
 		fb.Eq("version", v2),
 	)
-	datatypes, err = s.GetDatatypes(ctx, filter)
+	datatypes, _, err = s.GetDatatypes(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(datatypes))
 
@@ -228,7 +229,7 @@ func TestGetDatatypesQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetDatatypes(context.Background(), f)
+	_, _, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -236,7 +237,7 @@ func TestGetDatatypesQueryFail(t *testing.T) {
 func TestGetDatatypesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetDatatypes(context.Background(), f)
+	_, _, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -244,7 +245,7 @@ func TestGetDatatypesReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.DatatypeQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetDatatypes(context.Background(), f)
+	_, _, err := s.GetDatatypes(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

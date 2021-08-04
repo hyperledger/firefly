@@ -111,9 +111,10 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		fb.Eq("namespace", subscriptionUpdated.Namespace),
 		fb.Eq("name", subscriptionUpdated.Name),
 	)
-	subscriptionRes, err := s.GetSubscriptions(ctx, filter)
+	subscriptionRes, res, err := s.GetSubscriptions(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptionRes))
+	assert.Equal(t, int64(1), res.Count)
 	subscriptionReadJson, _ = json.Marshal(subscriptionRes[0])
 	assert.Equal(t, string(subscriptionJson), string(subscriptionReadJson))
 
@@ -128,7 +129,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		fb.Eq("name", subscriptionUpdated.Name),
 		fb.Eq("created", updateTime.String()),
 	)
-	subscriptions, err := s.GetSubscriptions(ctx, filter)
+	subscriptions, _, err := s.GetSubscriptions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptions))
 
@@ -136,7 +137,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", uuidMatches(subscription.ID)).Return()
 	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
 	assert.NoError(t, err)
-	subscriptions, err = s.GetSubscriptions(ctx, filter)
+	subscriptions, _, err = s.GetSubscriptions(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(subscriptions))
 
@@ -224,7 +225,7 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -232,7 +233,7 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 func TestGetSubscriptionBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
-	_, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -240,7 +241,7 @@ func TestGetSubscriptionReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

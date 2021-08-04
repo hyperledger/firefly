@@ -99,9 +99,10 @@ func TestNodesE2EWithDB(t *testing.T) {
 		fb.Eq("description", string(nodeUpdated.Description)),
 		fb.Eq("name", nodeUpdated.Name),
 	)
-	nodeRes, err := s.GetNodes(ctx, filter)
+	nodeRes, res, err := s.GetNodes(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodeRes))
+	assert.Equal(t, int64(1), res.Count)
 	nodeReadJson, _ = json.Marshal(nodeRes[0])
 	assert.Equal(t, string(nodeJson), string(nodeReadJson))
 
@@ -116,7 +117,7 @@ func TestNodesE2EWithDB(t *testing.T) {
 		fb.Eq("name", nodeUpdated.Name),
 		fb.Eq("created", updateTime.String()),
 	)
-	nodes, err := s.GetNodes(ctx, filter)
+	nodes, _, err := s.GetNodes(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodes))
 
@@ -204,7 +205,7 @@ func TestGetNodeQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, err := s.GetNodes(context.Background(), f)
+	_, _, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -212,7 +213,7 @@ func TestGetNodeQueryFail(t *testing.T) {
 func TestGetNodeBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
-	_, err := s.GetNodes(context.Background(), f)
+	_, _, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -220,7 +221,7 @@ func TestGetNodeReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("only one"))
 	f := database.NodeQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, err := s.GetNodes(context.Background(), f)
+	_, _, err := s.GetNodes(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

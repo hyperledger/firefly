@@ -26,17 +26,18 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
-func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {
 	fi, err := filter.Finalize()
 	if err != nil {
-		return sel, err
+		return sel, nil, nil, err
 	}
 	if len(fi.Sort) == 0 {
 		for _, s := range defaultSort {
 			fi.Sort = append(fi.Sort, &database.SortField{Field: s, Descending: true})
 		}
 	}
-	sel, err = s.filterSelectFinalized(ctx, tableName, sel, fi, typeMap, preconditions...)
+	fop, err := s.filterSelectFinalized(ctx, tableName, fi, typeMap, preconditions...)
+	sel = sel.Where(fop)
 	sort := make([]string, len(fi.Sort))
 	var sortString string
 	for i, sf := range fi.Sort {
@@ -56,13 +57,13 @@ func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.S
 			sel = sel.Limit(fi.Limit)
 		}
 	}
-	return sel, err
+	return sel, fop, fi, err
 }
 
-func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string, sel sq.SelectBuilder, fi *database.FilterInfo, tm map[string]string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, error) {
+func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string, fi *database.FilterInfo, tm map[string]string, preconditions ...sq.Sqlizer) (sq.Sqlizer, error) {
 	fop, err := s.filterOp(ctx, tableName, fi, tm)
 	if err != nil {
-		return sel, err
+		return nil, err
 	}
 	if len(preconditions) > 0 {
 		and := make(sq.And, len(preconditions)+1)
@@ -72,7 +73,7 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string,
 		and[len(preconditions)] = fop
 		fop = and
 	}
-	return sel.Where(fop), nil
+	return fop, nil
 }
 
 func (s *SQLCommon) buildUpdate(sel sq.UpdateBuilder, update database.Update, typeMap map[string]string) (sq.UpdateBuilder, error) {

@@ -140,7 +140,7 @@ func (s *SQLCommon) beginOrUseTx(ctx context.Context) (ctx1 context.Context, tx 
 	return ctx1, tx, false, err
 }
 
-func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuilder) (*sql.Rows, error) {
+func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuilder) (*sql.Rows, *txWrapper, error) {
 	if tx == nil {
 		// If there is a transaction in the context, we should use it to provide consistency
 		// in the read operations (read after insert for example).
@@ -150,7 +150,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuild
 	l := log.L(ctx)
 	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+		return nil, tx, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> query: %s`, sqlQuery)
 	l.Tracef(`SQL-> query args: %+v`, args)
@@ -162,14 +162,48 @@ func (s *SQLCommon) queryTx(ctx context.Context, tx *txWrapper, q sq.SelectBuild
 	}
 	if err != nil {
 		l.Errorf(`SQL query failed: %s sql=[ %s ]`, err, sqlQuery)
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBQueryFailed)
+		return nil, tx, i18n.WrapError(ctx, err, i18n.MsgDBQueryFailed)
 	}
 	l.Debugf(`SQL<- query`)
-	return rows, nil
+	return rows, tx, nil
 }
 
-func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, error) {
+func (s *SQLCommon) query(ctx context.Context, q sq.SelectBuilder) (*sql.Rows, *txWrapper, error) {
 	return s.queryTx(ctx, nil, q)
+}
+
+func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer) (count int64, err error) {
+	count = -1
+	l := log.L(ctx)
+	if tx == nil {
+		// If there is a transaction in the context, we should use it to provide consistency
+		// in the read operations (read after insert for example).
+		tx = getTXFromContext(ctx)
+	}
+	q := sq.Select("COUNT(*)").From(tableName).Where(fop)
+	sqlQuery, args, err := q.PlaceholderFormat(s.provider.PlaceholderFormat()).ToSql()
+	if err != nil {
+		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
+	}
+	l.Debugf(`SQL-> count query: %s`, sqlQuery)
+	l.Tracef(`SQL-> count query args: %+v`, args)
+	var rows *sql.Rows
+	if tx != nil {
+		rows, err = tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
+	} else {
+		rows, err = s.db.QueryContext(ctx, sqlQuery, args...)
+	}
+	if err != nil {
+		l.Errorf(`SQL count query failed: %s sql=[ %s ]`, err, sqlQuery)
+		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryFailed)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		if err = rows.Scan(&count); err != nil {
+			return count, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, tableName)
+		}
+	}
+	return count, nil
 }
 
 func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func()) (int64, error) {
@@ -203,6 +237,19 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 		s.postCommitEvent(tx, postCommit)
 	}
 	return sequence, nil
+}
+
+func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer, fi *database.FilterInfo) *database.FilterResult {
+	fr := &database.FilterResult{}
+	if !fi.Count {
+		return fr
+	}
+	var err error
+	if fr.Count, err = s.countQuery(ctx, tx, tableName, fop); err != nil {
+		// Log, but continue
+		log.L(ctx).Warnf("Unable to return count for query: %s", err)
+	}
+	return fr
 }
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder, postCommit func()) error {

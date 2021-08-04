@@ -81,16 +81,17 @@ func TestNoncesE2EWithDB(t *testing.T) {
 		fb.Eq("group", nonceUpdated.Group),
 		fb.Eq("topic", nonceUpdated.Topic),
 	)
-	nonceRes, err := s.GetNonces(ctx, filter)
+	nonceRes, res, err := s.GetNonces(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nonceRes))
+	assert.Equal(t, int64(1), res.Count)
 	nonceReadJson, _ = json.Marshal(nonceRes[0])
 	assert.Equal(t, string(nonceJson), string(nonceReadJson))
 
 	// Test delete
 	err = s.DeleteNonce(ctx, nonceUpdated.Context)
 	assert.NoError(t, err)
-	nonces, err := s.GetNonces(ctx, filter)
+	nonces, _, err := s.GetNonces(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nonces))
 
@@ -175,7 +176,7 @@ func TestGetNonceQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("context", "")
-	_, err := s.GetNonces(context.Background(), f)
+	_, _, err := s.GetNonces(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -183,7 +184,7 @@ func TestGetNonceQueryFail(t *testing.T) {
 func TestGetNonceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("context", map[bool]bool{true: false})
-	_, err := s.GetNonces(context.Background(), f)
+	_, _, err := s.GetNonces(context.Background(), f)
 	assert.Regexp(t, "FF10149.*context", err)
 }
 
@@ -191,7 +192,7 @@ func TestGetNonceReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
 	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("topic", "")
-	_, err := s.GetNonces(context.Background(), f)
+	_, _, err := s.GetNonces(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

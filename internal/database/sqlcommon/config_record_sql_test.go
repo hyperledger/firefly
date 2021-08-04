@@ -71,16 +71,17 @@ func TestConfigRecordE2EWithDB(t *testing.T) {
 	// Query back the config record
 	fb := database.ConfigRecordQueryFactory.NewFilter(ctx)
 	filter := fb.And()
-	configRecordRes, err := s.GetConfigRecords(ctx, filter)
+	configRecordRes, res, err := s.GetConfigRecords(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configRecordRes))
+	assert.Equal(t, int64(1), res.Count)
 	configRecordReadJson, _ = json.Marshal(configRecordRes[0])
 	assert.Equal(t, string(configRecordJson), string(configRecordReadJson))
 
 	// Delete the record
 	err = s.DeleteConfigRecord(ctx, "foo")
 	assert.NoError(t, err)
-	configRecordRes, err = s.GetConfigRecords(ctx, filter)
+	configRecordRes, _, err = s.GetConfigRecords(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(configRecordRes))
 }
@@ -166,7 +167,7 @@ func TestGetConfigRecordsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.ConfigRecordQueryFactory.NewFilter(context.Background()).Eq("key", "")
-	_, err := s.GetConfigRecords(context.Background(), f)
+	_, _, err := s.GetConfigRecords(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -174,7 +175,7 @@ func TestGetConfigRecordsQueryFail(t *testing.T) {
 func TestGetConfigRecordsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.ConfigRecordQueryFactory.NewFilter(context.Background()).Eq("key", map[bool]bool{true: false})
-	_, err := s.GetConfigRecords(context.Background(), f)
+	_, _, err := s.GetConfigRecords(context.Background(), f)
 	assert.Regexp(t, "FF10149.*key", err)
 }
 
@@ -182,7 +183,7 @@ func TestGettConfigRecordsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"key"}).AddRow("only one"))
 	f := database.ConfigRecordQueryFactory.NewFilter(context.Background()).Eq("key", "")
-	_, err := s.GetConfigRecords(context.Background(), f)
+	_, _, err := s.GetConfigRecords(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

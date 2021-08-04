@@ -82,7 +82,7 @@ func TestMigrationUpDown(t *testing.T) {
 func TestQueryTxBadSQL(t *testing.T) {
 	tp, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
-	_, err := tp.queryTx(context.Background(), nil, sq.SelectBuilder{})
+	_, _, err := tp.queryTx(context.Background(), nil, sq.SelectBuilder{})
 	assert.Regexp(t, "FF10113", err)
 }
 
@@ -167,7 +167,7 @@ func TestRunAsGroup(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Query, not specifying a transaction
-		_, err = s.query(ctx, sq.Select("test").From("test"))
+		_, _, err = s.query(ctx, sq.Select("test").From("test"))
 		assert.NoError(t, err)
 		return
 	})
