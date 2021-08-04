@@ -25,6 +25,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -267,4 +268,35 @@ func TestTXConcurrency(t *testing.T) {
 		<-flags[i]
 		t.Logf("Racer %d complete", i)
 	}
+}
+
+func TestCountQueryBadSQL(t *testing.T) {
+	s, _ := newMockProvider().init()
+	_, err := s.countQuery(context.Background(), nil, "", sq.Insert("wrong"))
+	assert.Regexp(t, "FF10113", err)
+}
+
+func TestCountQueryQueryFailed(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectQuery("SELECT COUNT.*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"})
+	assert.Regexp(t, "FF10115.*pop", err)
+}
+
+func TestCountQueryScanFailTx(t *testing.T) {
+	s, mdb := newMockProvider().init()
+	mdb.ExpectBegin()
+	mdb.ExpectQuery("SELECT COUNT.*").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow("not a number"))
+	ctx, tx, _, err := s.beginOrUseTx(context.Background())
+	assert.NoError(t, err)
+	_, err = s.countQuery(ctx, tx, "table1", sq.Eq{"col1": "val1"})
+	assert.Regexp(t, "FF10121", err)
+}
+
+func TestQueryResSwallowError(t *testing.T) {
+	s, _ := newMockProvider().init()
+	res := s.queryRes(context.Background(), nil, "", sq.Insert("wrong"), &database.FilterInfo{
+		Count: true,
+	})
+	assert.Equal(t, int64(-1), res.Count)
 }
