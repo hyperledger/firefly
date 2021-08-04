@@ -1,18 +1,13 @@
 # Maintainers
 
-The following is the list of current maintainers for all [FireFly code repositories](https://github.com/hyperledger-labs?q=firefly):
+The following is the list of current maintainers this repo:
 
 | Name              | GitHub          | Email                        | LFID              |
 | ----------------- | --------------- | ---------------------------- | ----------------- |
-| Nicko Guyer       | nguyer          | nicko.guyer@kaleido.io       | nguyer            |
 | Peter Broadhurst  | peterbroadhurst | peter.broadhurst@kaleido.io  | peterbroadhurst   |
-| Jim Zhang         | jimthematrix    | jim.zhang@kaleido.io         | jimthematrix      |
-| Gabriel Indik     | gabriel-indik   | gabriel.indik@kaleido.io     | gabriel.indik     |
+| Nicko Guyer       | nguyer          | nicko.guyer@kaleido.io       | nguyer            |
 | Andrew Richardson | awrichar        | andrew.richardson@kaleido.io | Andrew.Richardson |
-| Alex Shorsher     | shorsher        | alex.shorsher@kaleido.io     | shorsher          |
-| Amit Panghal      | panghalamit     | amit.panghal@kaleido.io      | shantaraam        |
-| Vinod Damle       | vdamle          | vinod.damle@kaleido.io       | reddevil          |
-| Nick Gaski        | nickgaski       | nick.gaski@kaleido.io        | nickgaski         |
+
 
 This list is to be kept up to date as maintainers are added or removed.
 
