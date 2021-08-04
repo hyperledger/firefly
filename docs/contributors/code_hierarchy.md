@@ -2,7 +2,7 @@
 layout: default
 title: FireFly Code Hierarchy
 parent: Contributors
-nav_order: 2
+nav_order: 3
 ---
 
 # Firefly Code Hierarchy
