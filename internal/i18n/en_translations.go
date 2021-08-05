@@ -185,4 +185,5 @@ var (
 	MsgWebhooksOptInputReplyTx     = ffm("FF10265", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
 	MsgSystemTransportInternal     = ffm("FF10266", "You cannot create subscriptions on the system events transport")
 	MsgFilterCountNotSupported     = ffm("FF10267", "This query does not support generating a count of all results")
+	MsgFilterCountDesc             = ffm("FF10268", "Return a total count of values as well as items (adds extra database processing)")
 )
