@@ -12,7 +12,7 @@
       "program": "${workspaceFolder}/main.go",
       "args": [
         "-f",
-        "/Users/peterbroadhurst/.firefly/stacks/dev/configs/firefly_core_0.yml"
+        "${env:HOME}/.firefly/stacks/dev/configs/firefly_core_0.yml"
       ]
     }
   ]
