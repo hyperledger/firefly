@@ -147,7 +147,7 @@ func TestBatch2EWithDB(t *testing.T) {
 	batches, res, err := s.GetBatches(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(batches))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
 }

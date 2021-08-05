@@ -152,7 +152,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgs, res, err := s.GetMessages(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
@@ -160,7 +160,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgRefs, res, err := s.GetMessageRefs(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	assert.Equal(t, msgUpdated.Header.ID, msgRefs[0].ID)
 	assert.Equal(t, msgUpdated.Hash, msgRefs[0].Hash)
 	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)

@@ -84,7 +84,7 @@ func TestNoncesE2EWithDB(t *testing.T) {
 	nonceRes, res, err := s.GetNonces(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nonceRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	nonceReadJson, _ = json.Marshal(nonceRes[0])
 	assert.Equal(t, string(nonceJson), string(nonceReadJson))
 

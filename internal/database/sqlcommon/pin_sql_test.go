@@ -64,7 +64,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	pinRes, res, err := s.GetPins(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pinRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 
 	// Set it dispatched
 	err = s.SetPinDispatched(ctx, pin.Sequence)

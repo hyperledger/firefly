@@ -112,7 +112,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 	datatypes, res, err := s.GetDatatypes(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(datatypes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	datatypeReadJson, _ = json.Marshal(datatypes[0])
 	assert.Equal(t, string(datatypeJson), string(datatypeReadJson))
 

@@ -19,6 +19,7 @@ package apiserver
 import (
 	"net/http"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,15 +31,19 @@ import (
 
 type filterResultsWithCount struct {
 	Count int64       `json:"count"`
+	Total int64       `json:"total"`
 	Items interface{} `json:"items"`
 }
 
 func filterResult(items interface{}, res *database.FilterResult, err error) (interface{}, error) {
-	if err != nil || res == nil || res.Count == nil {
+	itemsVal := reflect.ValueOf(items)
+	if err != nil || res == nil || res.TotalCount == nil || itemsVal.Kind() != reflect.Slice {
 		return items, err
 	}
 	return &filterResultsWithCount{
-		Count: *res.Count,
+		Total: *res.TotalCount,
+		Count: int64(itemsVal.Len()),
+		Items: items,
 	}, nil
 }
 

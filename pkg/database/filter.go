@@ -155,7 +155,7 @@ type FilterInfo struct {
 
 // FilterResult is has additional info if requested on the query - currently only the total count
 type FilterResult struct {
-	Count *int64
+	TotalCount *int64
 }
 
 func valueString(f FieldSerialization) string {

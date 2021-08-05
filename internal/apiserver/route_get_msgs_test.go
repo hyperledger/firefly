@@ -49,7 +49,7 @@ func TestGetMessagesWithCount(t *testing.T) {
 	var ten int64 = 10
 	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
 		Return([]*fftypes.Message{}, &database.FilterResult{
-			Count: &ten,
+			TotalCount: &ten,
 		}, nil)
 	r.ServeHTTP(res, req)
 
@@ -57,5 +57,7 @@ func TestGetMessagesWithCount(t *testing.T) {
 	var resWithCount filterResultsWithCount
 	err := json.NewDecoder(res.Body).Decode(&resWithCount)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(10), resWithCount.Count)
+	assert.NotNil(t, resWithCount.Items)
+	assert.Equal(t, int64(0), resWithCount.Count)
+	assert.Equal(t, int64(10), resWithCount.Total)
 }

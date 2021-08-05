@@ -131,7 +131,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	groups, res, err := s.GetGroups(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(groups))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
 }

@@ -114,7 +114,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	subscriptionRes, res, err := s.GetSubscriptions(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptionRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	subscriptionReadJson, _ = json.Marshal(subscriptionRes[0])
 	assert.Equal(t, string(subscriptionJson), string(subscriptionReadJson))
 

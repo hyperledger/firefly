@@ -69,7 +69,7 @@ func TestEventE2EWithDB(t *testing.T) {
 	events, res, err := s.GetEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	eventReadJson, _ = json.Marshal(events[0])
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 

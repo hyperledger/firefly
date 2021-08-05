@@ -96,7 +96,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaceRes, res, err := s.GetNamespaces(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(namespaceRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	namespaceReadJson, _ = json.Marshal(namespaceRes[0])
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 

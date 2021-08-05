@@ -154,7 +154,7 @@ func TestDataE2EWithDB(t *testing.T) {
 	dataRes, res, err := s.GetData(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(dataRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
 }

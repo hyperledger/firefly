@@ -298,5 +298,5 @@ func TestQueryResSwallowError(t *testing.T) {
 	res := s.queryRes(context.Background(), nil, "", sq.Insert("wrong"), &database.FilterInfo{
 		Count: true,
 	})
-	assert.Equal(t, int64(-1), *res.Count)
+	assert.Equal(t, int64(-1), *res.TotalCount)
 }

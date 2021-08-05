@@ -64,7 +64,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	blobRes, res, err := s.GetBlobs(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(blobRes))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	blobReadJson, _ = json.Marshal(blobRes[0])
 	assert.Equal(t, string(blobJson), string(blobReadJson))
 	assert.Equal(t, blob.Sequence, blobRes[0].Sequence)

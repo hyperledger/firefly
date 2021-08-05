@@ -217,7 +217,7 @@ func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName strin
 		// Log, but continue
 		log.L(ctx).Warnf("Unable to return count for query: %s", err)
 	}
-	fr.Count = &count // could be -1 if the count extract fails - we still return the result
+	fr.TotalCount = &count // could be -1 if the count extract fails - we still return the result
 	return fr
 }
 

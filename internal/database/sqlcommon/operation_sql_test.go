@@ -101,7 +101,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	operations, res, err := s.GetOperations(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(operations))
-	assert.Equal(t, int64(1), *res.Count)
+	assert.Equal(t, int64(1), *res.TotalCount)
 	operationReadJson, _ = json.Marshal(operations[0])
 	assert.Equal(t, string(operationJson), string(operationReadJson))
 
