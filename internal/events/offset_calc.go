@@ -51,7 +51,7 @@ func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *fftypes.SubOp
 	}
 	if useNewest {
 		f := database.EventQueryFactory.NewFilter(ctx).And().Sort("sequence").Descending().Limit(1)
-		newestEvents, err := di.GetEvents(ctx, f)
+		newestEvents, _, err := di.GetEvents(ctx, f)
 		if err != nil {
 			return firstOffset, err
 		}

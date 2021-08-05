@@ -123,7 +123,7 @@ func TestBadDatabasePreInitMode(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.AdminPreinit, true)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
@@ -133,7 +133,7 @@ func TestBadDatabasePreInitMode(t *testing.T) {
 
 func TestBadIdentityPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	config.Set(config.IdentityType, "wrong")
 	or.identity = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -144,7 +144,7 @@ func TestBadIdentityPlugin(t *testing.T) {
 
 func TestBadIdentityInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -156,7 +156,7 @@ func TestBadBlockchainPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.BlockchainType, "wrong")
 	or.blockchain = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -166,7 +166,7 @@ func TestBadBlockchainPlugin(t *testing.T) {
 
 func TestBlockchaiInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -177,7 +177,7 @@ func TestBlockchaiInitFail(t *testing.T) {
 
 func TestBlockchaiInitGetConfigRecordsFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -193,7 +193,7 @@ func TestBlockchaiInitMergeConfigRecordsFail(t *testing.T) {
 			Key:   "pizza.toppings",
 			Value: []byte("cheese, pepperoni, mushrooms"),
 		},
-	}, nil)
+	}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -207,7 +207,7 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.PublicStorageType, "wrong")
 	or.publicstorage = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -219,7 +219,7 @@ func TestBadPublicStoragePlugin(t *testing.T) {
 
 func TestBadPublicStorageInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -234,7 +234,7 @@ func TestBadDataExchangePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(config.DataexchangeType, "wrong")
 	or.dataexchange = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -247,7 +247,7 @@ func TestBadDataExchangePlugin(t *testing.T) {
 
 func TestBadPDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -393,7 +393,7 @@ func TestInitNamespacesDupName(t *testing.T) {
 
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil)
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)

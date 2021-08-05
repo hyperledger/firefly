@@ -124,7 +124,7 @@ func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
 				fb.Eq("dispatched", false),
 				fb.In("batch", batchIDs),
 			).Sort("sequence").Limit(1) // only need the one oldest sequence
-			sequences, err := ag.database.GetPins(ag.ctx, filter)
+			sequences, _, err := ag.database.GetPins(ag.ctx, filter)
 			if err != nil {
 				return true, err
 			}
@@ -152,7 +152,7 @@ func (ag *aggregator) processPinsDBGroup(items []fftypes.LocallySequenced) (repo
 }
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
-	pins, err := ag.database.GetPins(ctx, filter)
+	pins, _, err := ag.database.GetPins(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(pins))
 	for i, p := range pins {
 		ls[i] = p
@@ -266,7 +266,7 @@ func (ag *aggregator) processMessage(ctx context.Context, batch *fftypes.Batch, 
 			fb.In("hash", unmaskedContexts),
 			fb.Lt("sequence", pinnedSequence),
 		)
-		earlier, err := ag.database.GetPins(ctx, filter)
+		earlier, _, err := ag.database.GetPins(ctx, filter)
 		if err != nil {
 			return err
 		}
@@ -311,7 +311,7 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.
 	h.Write((*msg.Header.Group)[:])
 	contextUnmasked := fftypes.HashResult(h)
 	filter := database.NextPinQueryFactory.NewFilter(ctx).Eq("context", contextUnmasked)
-	nextPins, err := ag.database.GetNextPins(ctx, filter)
+	nextPins, _, err := ag.database.GetNextPins(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +383,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 		fb.In("hash", zeroHashes),
 		fb.Lt("sequence", pinnedSequence),
 	)
-	earlier, err := ag.database.GetPins(ctx, filter)
+	earlier, _, err := ag.database.GetPins(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -175,7 +175,7 @@ func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) 
 }
 
 // GetBatches provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
+func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Batch
@@ -187,14 +187,23 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetConfig provides a mock function with given fields: ctx
@@ -237,7 +246,7 @@ func (_m *Orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftyp
 }
 
 // GetConfigRecords provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error) {
+func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.ConfigRecord
@@ -249,18 +258,27 @@ func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.An
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetData provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error) {
+func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Data
@@ -272,14 +290,23 @@ func (_m *Orchestrator) GetData(ctx context.Context, ns string, filter database.
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetDataByID provides a mock function with given fields: ctx, ns, id
@@ -329,7 +356,7 @@ func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, ns string, id strin
 }
 
 // GetDatatypes provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error) {
+func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Datatype
@@ -341,14 +368,23 @@ func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter data
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetEventByID provides a mock function with given fields: ctx, ns, id
@@ -375,7 +411,7 @@ func (_m *Orchestrator) GetEventByID(ctx context.Context, ns string, id string) 
 }
 
 // GetEvents provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error) {
+func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Event
@@ -387,14 +423,23 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetMessageByID provides a mock function with given fields: ctx, ns, id, withValues
@@ -444,7 +489,7 @@ func (_m *Orchestrator) GetMessageData(ctx context.Context, ns string, id string
 }
 
 // GetMessageEvents provides a mock function with given fields: ctx, ns, id, filter
-func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
+func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, id, filter)
 
 	var r0 []*fftypes.Event
@@ -456,18 +501,27 @@ func (_m *Orchestrator) GetMessageEvents(ctx context.Context, ns string, id stri
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, id, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, id, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetMessageOperations provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, error) {
+func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 []*fftypes.Operation
@@ -479,14 +533,23 @@ func (_m *Orchestrator) GetMessageOperations(ctx context.Context, ns string, id 
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, id)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, ns, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetMessageTransaction provides a mock function with given fields: ctx, ns, id
@@ -513,7 +576,7 @@ func (_m *Orchestrator) GetMessageTransaction(ctx context.Context, ns string, id
 }
 
 // GetMessages provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
+func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Message
@@ -525,18 +588,27 @@ func (_m *Orchestrator) GetMessages(ctx context.Context, ns string, filter datab
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetMessagesForData provides a mock function with given fields: ctx, ns, dataID, filter
-func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataID string, filter database.AndFilter) ([]*fftypes.Message, error) {
+func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataID string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, dataID, filter)
 
 	var r0 []*fftypes.Message
@@ -548,14 +620,23 @@ func (_m *Orchestrator) GetMessagesForData(ctx context.Context, ns string, dataI
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, dataID, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, dataID, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetNamespace provides a mock function with given fields: ctx, ns
@@ -582,7 +663,7 @@ func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*fftypes.N
 }
 
 // GetNamespaces provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {
+func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Namespace
@@ -594,14 +675,23 @@ func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFi
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetOperationByID provides a mock function with given fields: ctx, ns, id
@@ -628,7 +718,7 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id stri
 }
 
 // GetOperations provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Operation
@@ -640,14 +730,23 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, ns string, filter dat
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetStatus provides a mock function with given fields: ctx
@@ -697,7 +796,7 @@ func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id s
 }
 
 // GetSubscriptions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error) {
+func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Subscription
@@ -709,14 +808,23 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter 
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetTransactionByID provides a mock function with given fields: ctx, ns, id
@@ -743,7 +851,7 @@ func (_m *Orchestrator) GetTransactionByID(ctx context.Context, ns string, id st
 }
 
 // GetTransactionOperations provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, error) {
+func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, ns string, id string) ([]*fftypes.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 []*fftypes.Operation
@@ -755,18 +863,27 @@ func (_m *Orchestrator) GetTransactionOperations(ctx context.Context, ns string,
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, id)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+		r2 = rf(ctx, ns, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetTransactions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error) {
+func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
 	var r0 []*fftypes.Transaction
@@ -778,14 +895,23 @@ func (_m *Orchestrator) GetTransactions(ctx context.Context, ns string, filter d
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, ns, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
+		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // Init provides a mock function with given fields: ctx, cancelCtx

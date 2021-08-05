@@ -50,10 +50,10 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	return or.database.GetTransactionByID(ctx, u)
 }
 
-func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
+func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -142,7 +142,7 @@ func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*fftyp
 	return or.database.GetEventByID(ctx, u)
 }
 
-func (or *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error) {
+func (or *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error) {
 	return or.database.GetNamespaces(ctx, filter)
 }
 
@@ -150,12 +150,12 @@ func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.A
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (or *orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error) {
+func (or *orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetTransactions(ctx, filter)
 }
 
-func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error) {
+func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetMessages(ctx, filter)
 }
@@ -204,19 +204,19 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string
 	return or.database.GetTransactionByID(ctx, txID)
 }
 
-func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error) {
+func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error) {
 	txID, err := or.getMessageTransactionID(ctx, ns, id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
 	return or.database.GetOperations(ctx, filter)
 }
 
-func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error) {
+func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
 	if err != nil || msg == nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// Events can refer to the message, or any data in the message
 	// So scope the event down to those referred UUIDs, in addition to any and conditions passed in
@@ -230,36 +230,36 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, fil
 	return or.database.GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error) {
+func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetBatches(ctx, filter)
 }
 
-func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error) {
+func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetData(ctx, filter)
 }
 
-func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error) {
+func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	u, err := or.verifyIDAndNamespace(ctx, ns, dataID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return or.database.GetMessagesForData(ctx, u, filter)
 }
 
-func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error) {
+func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetDatatypes(ctx, filter)
 }
 
-func (or *orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error) {
+func (or *orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetOperations(ctx, filter)
 }
 
-func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error) {
+func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetEvents(ctx, filter)
 }

@@ -185,7 +185,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 	if err != nil {
 		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Debugf(`SQL-> count query: %s`, sqlQuery)
+	l.Tracef(`SQL-> count query: %s`, sqlQuery)
 	l.Tracef(`SQL-> count query args: %+v`, args)
 	var rows *sql.Rows
 	if tx != nil {
@@ -203,7 +203,21 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 			return count, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, tableName)
 		}
 	}
+	l.Tracef(`SQL<- count query: %d`, count)
 	return count, nil
+}
+
+func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer, fi *database.FilterInfo) *database.FilterResult {
+	fr := &database.FilterResult{}
+	if !fi.Count {
+		return fr
+	}
+	var err error
+	if fr.Count, err = s.countQuery(ctx, tx, tableName, fop); err != nil {
+		// Log, but continue
+		log.L(ctx).Warnf("Unable to return count for query: %s", err)
+	}
+	return fr
 }
 
 func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuilder, postCommit func()) (int64, error) {
@@ -237,19 +251,6 @@ func (s *SQLCommon) insertTx(ctx context.Context, tx *txWrapper, q sq.InsertBuil
 		s.postCommitEvent(tx, postCommit)
 	}
 	return sequence, nil
-}
-
-func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName string, fop sq.Sqlizer, fi *database.FilterInfo) *database.FilterResult {
-	fr := &database.FilterResult{}
-	if !fi.Count {
-		return fr
-	}
-	var err error
-	if fr.Count, err = s.countQuery(ctx, tx, tableName, fop); err != nil {
-		// Log, but continue
-		log.L(ctx).Warnf("Unable to return count for query: %s", err)
-	}
-	return fr
 }
 
 func (s *SQLCommon) deleteTx(ctx context.Context, tx *txWrapper, q sq.DeleteBuilder, postCommit func()) error {

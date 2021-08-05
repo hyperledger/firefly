@@ -71,7 +71,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 	})
 	defer cancel()
 	mdi := ed.database.(*databasemocks.Plugin)
-	ge := mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	ge := mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
 	confirmedElected := make(chan bool)
 	ge.RunFn = func(a mock.Arguments) {
 		<-confirmedElected
@@ -116,7 +116,7 @@ func TestEventDispatcherLeaderElection(t *testing.T) {
 	gev1Wait := make(chan bool)
 	gev1Done := make(chan struct{})
 	mdi1 := ed1.database.(*databasemocks.Plugin)
-	gev1 := mdi1.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil)
+	gev1 := mdi1.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
 	mdi1.On("GetOffset", mock.Anything, fftypes.OffsetTypeSubscription, subID.String()).Return(&fftypes.Offset{
 		Type:    fftypes.OffsetTypeSubscription,
 		Name:    subID.String(),
@@ -198,7 +198,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 		{Header: fftypes.MessageHeader{ID: ref2}},
 		{Header: fftypes.MessageHeader{ID: ref3}},
 		{Header: fftypes.MessageHeader{ID: ref4}},
-	}, nil)
+	}, nil, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -285,7 +285,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 		{Header: fftypes.MessageHeader{ID: ref2}},
 		{Header: fftypes.MessageHeader{ID: ref3}},
 		{Header: fftypes.MessageHeader{ID: ref4}},
-	}, nil)
+	}, nil, nil)
 
 	// Deliver a batch of messages
 	batch1Done := make(chan struct{})
@@ -403,7 +403,7 @@ func TestEnrichEventsFailGetMessages(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]fftypes.LocallySequenced{&fftypes.Event{ID: id1}})
@@ -544,7 +544,7 @@ func TestBufferedDeliveryEnrichFail(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
 	assert.False(t, repoll)
@@ -563,8 +563,8 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	repoll, err := ed.bufferedDelivery([]fftypes.LocallySequenced{&fftypes.Event{ID: fftypes.NewUUID()}})
@@ -584,8 +584,8 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	delivered := make(chan struct{})
@@ -626,8 +626,8 @@ func TestBufferedDeliveryAckFail(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	delivered := make(chan bool)
@@ -674,8 +674,8 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mei := ed.transport.(*eventsmocks.PluginAll)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	failNacked := make(chan bool)
@@ -718,8 +718,8 @@ func TestBufferedFinalAckFail(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ev1 := fftypes.NewUUID()
@@ -787,7 +787,7 @@ func TestGetEvents(t *testing.T) {
 
 	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*fftypes.Event{
 		{Sequence: 12345},
-	}, nil)
+	}, nil, nil)
 
 	lc, err := ed.getEvents(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
 	assert.NoError(t, err)

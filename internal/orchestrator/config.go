@@ -32,7 +32,7 @@ func (or *orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftyp
 	return or.database.GetConfigRecord(ctx, key)
 }
 
-func (or *orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error) {
+func (or *orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error) {
 	return or.database.GetConfigRecords(ctx, filter)
 }
 

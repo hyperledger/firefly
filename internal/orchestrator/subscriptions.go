@@ -66,7 +66,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) e
 	return or.events.DeleteDurableSubscription(ctx, sub)
 }
 
-func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error) {
+func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetSubscriptions(ctx, filter)
 }

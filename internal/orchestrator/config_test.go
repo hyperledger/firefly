@@ -46,9 +46,9 @@ func TestGetConfigRecords(t *testing.T) {
 			Key:   "foobar",
 			Value: []byte(`{"foo": "bar"}`),
 		},
-	}, nil)
+	}, nil, nil)
 	ctx := context.Background()
-	configRecords, err := or.GetConfigRecords(ctx, nil)
+	configRecords, _, err := or.GetConfigRecords(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, fftypes.Byteable(`{"foo": "bar"}`), configRecords[0].Value)
 }

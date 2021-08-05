@@ -31,7 +31,7 @@ func (nm *networkMap) GetOrganizationByID(ctx context.Context, id string) (*ffty
 	return nm.database.GetOrganizationByID(ctx, u)
 }
 
-func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, error) {
+func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, *database.FilterResult, error) {
 	return nm.database.GetOrganizations(ctx, filter)
 }
 
@@ -43,6 +43,6 @@ func (nm *networkMap) GetNodeByID(ctx context.Context, id string) (*fftypes.Node
 	return nm.database.GetNodeByID(ctx, u)
 }
 
-func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, error) {
+func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, *database.FilterResult, error) {
 	return nm.database.GetNodes(ctx, filter)
 }
