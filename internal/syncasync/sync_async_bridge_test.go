@@ -108,6 +108,129 @@ func TestRequestReplyOk(t *testing.T) {
 
 }
 
+func TestAwaitConfirmationOk(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+	dataID := fftypes.NewUUID()
+
+	mei := sa.events.(*eventmocks.EventManager)
+	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	var msgSent *fftypes.MessageInOut
+
+	mpm := sa.messaging.(*privatemessagingmocks.Manager)
+	send := mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	send.RunFn = func(a mock.Arguments) {
+		msgSent = a[2].(*fftypes.MessageInOut)
+		assert.NotNil(t, msgSent.Header.ID)
+		requestID = msgSent.Header.ID
+		assert.Equal(t, "mytag", msgSent.Header.Tag)
+		send.ReturnArguments = mock.Arguments{&msgSent.Message, nil}
+
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypeMessageConfirmed,
+					Reference: msgSent.Header.ID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		msgSent.Confirmed = fftypes.Now()
+		msgSent.Rejected = false
+		gmid.ReturnArguments = mock.Arguments{
+			&msgSent.Message, nil,
+		}
+	}
+
+	mdm := sa.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+	}, true, nil)
+
+	reply, err := sa.SendConfirm(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag: "mytag",
+			},
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, *msgSent.Header.ID, *reply.Header.ID)
+
+}
+
+func TestAwaitConfirmationRejected(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+	dataID := fftypes.NewUUID()
+
+	mei := sa.events.(*eventmocks.EventManager)
+	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	var msgSent *fftypes.MessageInOut
+
+	mpm := sa.messaging.(*privatemessagingmocks.Manager)
+	send := mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	send.RunFn = func(a mock.Arguments) {
+		msgSent = a[2].(*fftypes.MessageInOut)
+		assert.NotNil(t, msgSent.Header.ID)
+		requestID = msgSent.Header.ID
+		assert.Equal(t, "mytag", msgSent.Header.Tag)
+		send.ReturnArguments = mock.Arguments{&msgSent.Message, nil}
+
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypeMessageRejected,
+					Reference: msgSent.Header.ID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		msgSent.Confirmed = fftypes.Now()
+		msgSent.Rejected = false
+		gmid.ReturnArguments = mock.Arguments{
+			&msgSent.Message, nil,
+		}
+	}
+
+	mdm := sa.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+	}, true, nil)
+
+	_, err := sa.SendConfirm(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag: "mytag",
+			},
+		},
+	})
+	assert.Regexp(t, "FF10267", err)
+
+}
+
 func TestRequestReplyTimeout(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
@@ -232,7 +355,7 @@ func TestEventCallbackWrongType(t *testing.T) {
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeMessageRejected,
+			Type:      fftypes.EventTypeGroupConfirmed,
 		},
 	})
 	assert.NoError(t, err)
@@ -307,7 +430,7 @@ func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 			ID:  fftypes.NewUUID(),
 			CID: fftypes.NewUUID(),
 		},
-	})
+	}, true, nil)
 
 	mdm.AssertExpectations(t)
 }

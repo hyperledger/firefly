@@ -36,3 +36,26 @@ func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.
 
 	return r0, r1
 }
+
+// SendConfirm provides a mock function with given fields: ctx, ns, request
+func (_m *Bridge) SendConfirm(ctx context.Context, ns string, request *fftypes.MessageInOut) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, request)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
+		r1 = rf(ctx, ns, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
