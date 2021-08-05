@@ -32,7 +32,7 @@ func TestGetTxnOps(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetTransactionOperations", mock.Anything, "mynamespace", "abcd12345").
-		Return([]*fftypes.Operation{}, nil)
+		Return([]*fftypes.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

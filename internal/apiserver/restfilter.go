@@ -28,6 +28,20 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
 
+type filterResultsWithCount struct {
+	Count int64       `json:"count"`
+	Items interface{} `json:"items"`
+}
+
+func filterResult(items interface{}, res *database.FilterResult, err error) (interface{}, error) {
+	if err != nil || res == nil || res.Count == nil {
+		return items, err
+	}
+	return &filterResultsWithCount{
+		Count: *res.Count,
+	}, nil
+}
+
 func (as *apiServer) getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
 		// We choose to be case insensitive for our filters, so protocolID and protocolid can be used interchangeably
@@ -92,6 +106,8 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	} else if len(ascendingVals) > 0 && (ascendingVals[0] == "" || strings.EqualFold(ascendingVals[0], "true")) {
 		filter.Ascending()
 	}
+	countVals := as.getValues(req.Form, "count")
+	filter.Count(len(countVals) > 0 && (countVals[0] == "" || strings.EqualFold(countVals[0], "true")))
 	return filter, nil
 }
 

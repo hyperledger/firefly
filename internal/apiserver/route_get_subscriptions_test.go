@@ -32,7 +32,7 @@ func TestGetSubscriptions(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetSubscriptions", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Subscription{}, nil)
+		Return([]*fftypes.Subscription{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

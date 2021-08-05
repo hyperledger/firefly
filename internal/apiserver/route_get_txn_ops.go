@@ -40,7 +40,6 @@ var getTxnOps = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &[]*fftypes.Transaction{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetTransactionOperations(r.Ctx, r.PP["ns"], r.PP["txnid"])
-		return output, err
+		return filterResult(r.Or.GetTransactionOperations(r.Ctx, r.PP["ns"], r.PP["txnid"]))
 	},
 }

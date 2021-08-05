@@ -87,7 +87,7 @@ func TestOffsetsE2EWithDB(t *testing.T) {
 	offsetRes, res, err := s.GetOffsets(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(offsetRes))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	offsetReadJson, _ = json.Marshal(offsetRes[0])
 	assert.Equal(t, string(offsetJson), string(offsetReadJson))
 

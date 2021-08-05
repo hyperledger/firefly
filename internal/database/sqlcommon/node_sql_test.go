@@ -102,7 +102,7 @@ func TestNodesE2EWithDB(t *testing.T) {
 	nodeRes, res, err := s.GetNodes(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nodeRes))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	nodeReadJson, _ = json.Marshal(nodeRes[0])
 	assert.Equal(t, string(nodeJson), string(nodeReadJson))
 

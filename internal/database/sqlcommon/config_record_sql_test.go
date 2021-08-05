@@ -74,7 +74,7 @@ func TestConfigRecordE2EWithDB(t *testing.T) {
 	configRecordRes, res, err := s.GetConfigRecords(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(configRecordRes))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	configRecordReadJson, _ = json.Marshal(configRecordRes[0])
 	assert.Equal(t, string(configRecordJson), string(configRecordReadJson))
 

@@ -99,8 +99,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Hash: dataHash,
 	}
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -204,8 +204,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		Hash: dataHash,
 	}
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil).Once()
-	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil)
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
+	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -307,7 +307,7 @@ func TestGetInvalidBatchTypeMsg(t *testing.T) {
 func TestMessageSequencerCancelledContext(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	bm, _ := NewBatchManager(context.Background(), mdi, mdm)
 	defer bm.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -332,7 +332,7 @@ func TestMessageSequencerMissingMessageData(t *testing.T) {
 			Data: []*fftypes.DataRef{
 				{ID: dataID},
 			}},
-	}, nil)
+	}, nil, nil)
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
@@ -359,7 +359,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 			Data: []*fftypes.DataRef{
 				{ID: dataID},
 			}},
-	}, nil)
+	}, nil, nil)
 	gmMock.RunFn = func(a mock.Arguments) {
 		bm.Close() // so we only go round once
 	}
@@ -390,7 +390,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 			Data: []*fftypes.DataRef{
 				{ID: dataID},
 			}},
-	}, nil)
+	}, nil, nil)
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
@@ -430,7 +430,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 			Data: []*fftypes.DataRef{
 				{ID: dataID},
 			}},
-	}, nil)
+	}, nil, nil)
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, mock.Anything).Return(fmt.Errorf("fizzle"))

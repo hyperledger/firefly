@@ -185,7 +185,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 	if err != nil {
 		return count, i18n.WrapError(ctx, err, i18n.MsgDBQueryBuildFailed)
 	}
-	l.Tracef(`SQL-> count query: %s`, sqlQuery)
+	l.Debugf(`SQL-> count query: %s`, sqlQuery)
 	l.Tracef(`SQL-> count query args: %+v`, args)
 	var rows *sql.Rows
 	if tx != nil {
@@ -203,7 +203,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, tx *txWrapper, tableName str
 			return count, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, tableName)
 		}
 	}
-	l.Tracef(`SQL<- count query: %d`, count)
+	l.Debugf(`SQL<- count query: %d`, count)
 	return count, nil
 }
 
@@ -212,11 +212,12 @@ func (s *SQLCommon) queryRes(ctx context.Context, tx *txWrapper, tableName strin
 	if !fi.Count {
 		return fr
 	}
-	var err error
-	if fr.Count, err = s.countQuery(ctx, tx, tableName, fop); err != nil {
+	count, err := s.countQuery(ctx, tx, tableName, fop)
+	if err != nil {
 		// Log, but continue
 		log.L(ctx).Warnf("Unable to return count for query: %s", err)
 	}
+	fr.Count = &count // could be -1 if the count extract fails - we still return the result
 	return fr
 }
 

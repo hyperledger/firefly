@@ -108,7 +108,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 	transactions, res, err := s.GetTransactions(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(transactions))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	transactionReadJson, _ = json.Marshal(transactions[0])
 	assert.Equal(t, string(transactionJson), string(transactionReadJson))
 

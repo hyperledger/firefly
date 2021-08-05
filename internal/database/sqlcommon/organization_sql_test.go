@@ -98,7 +98,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 	organizationRes, res, err := s.GetOrganizations(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(organizationRes))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	organizationReadJson, _ = json.Marshal(organizationRes[0])
 	assert.Equal(t, string(organizationJson), string(organizationReadJson))
 

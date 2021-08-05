@@ -82,7 +82,7 @@ func TestNextPinsE2EWithDB(t *testing.T) {
 	nextpinRes, res, err := s.GetNextPins(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nextpinRes))
-	assert.Equal(t, int64(1), res.Count)
+	assert.Equal(t, int64(1), *res.Count)
 	nextpinReadJson, _ = json.Marshal(nextpinRes[0])
 	assert.Equal(t, string(nextpinJson), string(nextpinReadJson))
 

@@ -32,7 +32,7 @@ func TestGetBatches(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetBatches", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Batch{}, nil)
+		Return([]*fftypes.Batch{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
