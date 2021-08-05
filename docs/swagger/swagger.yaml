@@ -155,8 +155,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -323,8 +322,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -867,8 +865,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -1209,8 +1206,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -1369,8 +1365,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -1510,8 +1505,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -1676,8 +1670,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -1887,8 +1880,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -2211,8 +2203,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -2460,8 +2451,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -2942,8 +2932,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -3564,8 +3553,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -3706,8 +3694,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -3880,8 +3867,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
@@ -4036,8 +4022,7 @@ paths:
         schema:
           example: "25"
           type: string
-      - description: Return a total count of values as well as items (adds extra database
-          processing)
+      - description: Return a total count as well as items (adds extra database processing)
         in: query
         name: count
         schema:
