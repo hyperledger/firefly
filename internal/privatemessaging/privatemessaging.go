@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
@@ -53,6 +54,7 @@ type privateMessaging struct {
 	blockchain           blockchain.Plugin
 	batch                batch.Manager
 	data                 data.Manager
+	syncasync            syncasync.Bridge
 	retry                retry.Retry
 	localNodeName        string
 	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
@@ -60,7 +62,7 @@ type privateMessaging struct {
 	opCorrelationRetries int
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || ii == nil || dx == nil || bi == nil || ba == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -73,6 +75,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 		blockchain:       bi,
 		batch:            ba,
 		data:             dm,
+		syncasync:        sa,
 		localNodeName:    config.GetString(config.NodeName),
 		localOrgIdentity: config.GetString(config.OrgIdentity),
 		groupManager: groupManager{

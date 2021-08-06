@@ -35,7 +35,8 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	mdm := &datamocks.Manager{}
 	mse := &sysmessagingmocks.SystemEvents{}
 	msd := &sysmessagingmocks.MessageSender{}
-	sa := NewSyncAsyncBridge(ctx, mdi, mdm, mse, msd)
+	sa := NewSyncAsyncBridge(ctx, mdi, mdm)
+	sa.Init(mse, msd)
 	return sa.(*syncAsyncBridge), cancel
 }
 

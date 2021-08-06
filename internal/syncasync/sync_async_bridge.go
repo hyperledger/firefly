@@ -32,6 +32,8 @@ import (
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
 type Bridge interface {
+	// Init is required as there's a bi-directional relationship between private messaging and syncasync bridge
+	Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender)
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
@@ -58,16 +60,19 @@ type syncAsyncBridge struct {
 	inflight    map[string]map[fftypes.UUID]*inflightRequest
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
-		database:  di,
-		data:      dm,
-		sysevents: sysevents,
-		sender:    sender,
-		inflight:  make(map[string]map[fftypes.UUID]*inflightRequest),
+		ctx:      log.WithLogField(ctx, "role", "sync-async-bridge"),
+		database: di,
+		data:     dm,
+		inflight: make(map[string]map[fftypes.UUID]*inflightRequest),
 	}
 	return sa
+}
+
+func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) {
+	sa.sysevents = sysevents
+	sa.sender = sender
 }
 
 func (sa *syncAsyncBridge) addInFlight(ns string, waitForReply, withData bool) (*inflightRequest, error) {

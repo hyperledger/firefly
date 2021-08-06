@@ -851,7 +851,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	cancel()
 	ed.acksNacks = make(chan ackNack, 2)
 	msh := ed.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("SendReply", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	msh.On("SendReply", ed.ctx, mock.Anything, mock.Anything).Return(&fftypes.Message{}, nil)
 
 	event1 := fftypes.NewUUID()
 	event2 := fftypes.NewUUID()

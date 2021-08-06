@@ -314,8 +314,10 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
+
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync); err != nil {
 			return err
 		}
 	}
@@ -342,7 +344,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.syshandlers)
+	or.syncasync.Init(or.events, or.syshandlers)
 
 	return nil
 }
