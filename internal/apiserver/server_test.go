@@ -49,7 +49,7 @@ func newTestServer() (*orchestratormocks.Orchestrator, *apiServer) {
 
 func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 	mor, as := newTestServer()
-	r := as.createMuxRouter(mor)
+	r := as.createMuxRouter(context.Background(), mor)
 	return mor, r
 }
 

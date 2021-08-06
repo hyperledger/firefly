@@ -47,19 +47,24 @@ func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return pm.resolveAndSend(ctx, sender, in)
+		err = pm.resolveMessage(ctx, sender, in)
+		if err == nil && !waitConfirm {
+			// We can safely optimize the send into the same DB transaction
+			out, err = pm.sendOrWaitMessage(ctx, in, false)
+		}
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
 	if waitConfirm {
-		// TODO: wait for confirmation
+		// perform the send and wait for the confirmation after closing the original DB transaction
+		out, err = pm.sendOrWaitMessage(ctx, in, true)
 	}
-	// The broadcastMessage function modifies the input message to create all the refs
-	return &in.Message, err
+	return out, err
 }
 
-func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) (err error) {
+func (pm *privateMessaging) resolveMessage(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) (err error) {
 	// Resolve the member list into a group
 	if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
 		return err
@@ -67,37 +72,49 @@ func (pm *privateMessaging) resolveAndSend(ctx context.Context, sender *fftypes.
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
 	in.Message.Data, err = pm.data.ResolveInlineDataPrivate(ctx, in.Header.Namespace, in.InlineData)
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	// Seal the message
-	if err := in.Message.Seal(ctx); err != nil {
-		return err
-	}
+func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 
-	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
+	immediateConfirm := in.Message.Header.TxType == fftypes.TransactionTypeNone
+
+	if immediateConfirm {
 		in.Message.Confirmed = fftypes.Now()
 		in.Message.Pending = false
 	}
 
-	// Store the message - this asynchronously triggers the next step in process
-	if err = pm.database.InsertMessageLocal(ctx, &in.Message); err != nil {
-		return err
-	}
+	if immediateConfirm || !waitConfirm {
 
-	if in.Message.Header.TxType == fftypes.TransactionTypeNone {
-		err = pm.sendUnpinnedMessage(ctx, &in.Message)
-		if err != nil {
-			return err
+		// Seal the message
+		if err := in.Message.Seal(ctx); err != nil {
+			return nil, err
 		}
 
-		// Emit a confirmation event locally immediately
-		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, in.Message.Header.Namespace, in.Message.Header.ID)
-		return pm.database.InsertEvent(ctx, event)
+		// Store the message - this asynchronously triggers the next step in process
+		if err = pm.database.InsertMessageLocal(ctx, &in.Message); err != nil {
+			return nil, err
+		}
+
+		if immediateConfirm {
+			err = pm.sendUnpinnedMessage(ctx, &in.Message)
+			if err != nil {
+				return nil, err
+			}
+
+			// Emit a confirmation event locally immediately
+			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, in.Message.Header.Namespace, in.Message.Header.ID)
+			err = pm.database.InsertEvent(ctx, event)
+		}
+
+		return &in.Message, err
+
 	}
 
-	return nil
+	// Pass it to the sync-async handler to wait for the confirmation to come back in.
+	// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
+	return pm.syncasync.SendConfirm(ctx, in.Header.Namespace, in)
+
 }
 
 func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *fftypes.Message) (err error) {

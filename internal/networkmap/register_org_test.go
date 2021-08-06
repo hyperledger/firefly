@@ -48,7 +48,7 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineOrganization).Return(mockMsg, nil)
+	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineOrganization, false).Return(mockMsg, nil)
 
 	msg, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Name:        "org1",
@@ -76,7 +76,7 @@ func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization).Return(mockMsg, nil)
+	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization, false).Return(mockMsg, nil)
 
 	msg, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
