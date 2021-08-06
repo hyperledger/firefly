@@ -19,6 +19,7 @@ package apiserver
 import (
 	"net/http"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,6 +28,24 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 )
+
+type filterResultsWithCount struct {
+	Count int64       `json:"count"`
+	Total int64       `json:"total"`
+	Items interface{} `json:"items"`
+}
+
+func filterResult(items interface{}, res *database.FilterResult, err error) (interface{}, error) {
+	itemsVal := reflect.ValueOf(items)
+	if err != nil || res == nil || res.TotalCount == nil || itemsVal.Kind() != reflect.Slice {
+		return items, err
+	}
+	return &filterResultsWithCount{
+		Total: *res.TotalCount,
+		Count: int64(itemsVal.Len()),
+		Items: items,
+	}, nil
+}
 
 func (as *apiServer) getValues(values url.Values, key string) (results []string) {
 	for queryName, queryValues := range values {
@@ -92,6 +111,8 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	} else if len(ascendingVals) > 0 && (ascendingVals[0] == "" || strings.EqualFold(ascendingVals[0], "true")) {
 		filter.Ascending()
 	}
+	countVals := as.getValues(req.Form, "count")
+	filter.Count(len(countVals) > 0 && (countVals[0] == "" || strings.EqualFold(countVals[0], "true")))
 	return filter, nil
 }
 

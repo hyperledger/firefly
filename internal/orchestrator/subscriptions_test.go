@@ -141,10 +141,10 @@ func TestDeleteSubscription(t *testing.T) {
 func TestGetSubscriptions(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	or.mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
 	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, err := or.GetSubscriptions(context.Background(), "ns1", f)
+	_, _, err := or.GetSubscriptions(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
 

@@ -40,7 +40,6 @@ var getData = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Data{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetData(r.Ctx, r.PP["ns"], r.Filter)
-		return output, err
+		return filterResult(r.Or.GetData(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

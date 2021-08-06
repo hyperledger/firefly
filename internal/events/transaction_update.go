@@ -37,7 +37,7 @@ func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID st
 		fb.Eq("plugin", bi.Name()),
 	)
 	err := em.retry.Do(em.ctx, fmt.Sprintf("correlate tx %s", txTrackingID), func(attempt int) (retry bool, err error) {
-		operations, err = em.database.GetOperations(em.ctx, filter)
+		operations, _, err = em.database.GetOperations(em.ctx, filter)
 		if err == nil && len(operations) == 0 {
 			err = i18n.NewError(em.ctx, i18n.Msg404NotFound)
 		}

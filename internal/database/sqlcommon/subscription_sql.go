@@ -60,7 +60,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		subscriptionRows, err := s.queryTx(ctx, tx,
+		subscriptionRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("subscriptions").
 				Where(sq.Eq{
@@ -168,7 +168,7 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 
 func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Subscription, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(subscriptionColumns...).
 			From("subscriptions").
 			Where(eq),
@@ -199,16 +199,16 @@ func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) 
 	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
 }
 
-func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, err error) {
+func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From("subscriptions"), filter, subscriptionFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From("subscriptions"), filter, subscriptionFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -216,12 +216,12 @@ func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter
 	for rows.Next() {
 		d, err := s.subscriptionResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		subscription = append(subscription, d)
 	}
 
-	return subscription, err
+	return subscription, s.queryRes(ctx, tx, "subscriptions", fop, fi), err
 
 }
 

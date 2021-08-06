@@ -118,7 +118,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		fb.Gt("created", "0"),
 		fb.Gt("confirmed", "0"),
 	)
-	batches, err := s.GetBatches(ctx, filter)
+	batches, _, err := s.GetBatches(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(batches))
 	batchReadJson, _ = json.Marshal(batches[0])
@@ -129,7 +129,7 @@ func TestBatch2EWithDB(t *testing.T) {
 		fb.Eq("id", batchUpdated.ID.String()),
 		fb.Eq("created", "0"),
 	)
-	batches, err = s.GetBatches(ctx, filter)
+	batches, _, err = s.GetBatches(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(batches))
 
@@ -144,9 +144,10 @@ func TestBatch2EWithDB(t *testing.T) {
 		fb.Eq("id", batchUpdated.ID.String()),
 		fb.Eq("author", author2),
 	)
-	batches, err = s.GetBatches(ctx, filter)
+	batches, res, err := s.GetBatches(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(batches))
+	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -238,7 +239,7 @@ func TestGetBatchesQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetBatches(context.Background(), f)
+	_, _, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -246,7 +247,7 @@ func TestGetBatchesQueryFail(t *testing.T) {
 func TestGetBatchesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetBatches(context.Background(), f)
+	_, _, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -254,7 +255,7 @@ func TestGetBatchesReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetBatches(context.Background(), f)
+	_, _, err := s.GetBatches(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -42,11 +42,11 @@ func TestTxSubmissionUpdateRetryThenFound(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, fmt.Errorf("will retry")).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil).Once() // retry again
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("will retry")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, nil).Once() // retry again
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
 		{ID: opID},
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
@@ -62,7 +62,7 @@ func TestTransactionLookupNotFound(t *testing.T) {
 	em.opCorrelationRetries = 0
 
 	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
@@ -80,7 +80,7 @@ func TestTxSubmissionUpdateError(t *testing.T) {
 	mbi.On("Name").Return("ut")
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
 		{ID: opID},
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}

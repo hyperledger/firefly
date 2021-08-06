@@ -41,7 +41,6 @@ var getMsgEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
 	JSONOutputCode:  http.StatusOK,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetMessageEvents(r.Ctx, r.PP["ns"], r.PP["msgid"], r.Filter)
-		return output, err
+		return filterResult(r.Or.GetMessageEvents(r.Ctx, r.PP["ns"], r.PP["msgid"], r.Filter))
 	},
 }

@@ -32,7 +32,7 @@ func TestGetMessageEvents(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageEvents", mock.Anything, "mynamespace", "uuid1", mock.Anything).
-		Return([]*fftypes.Event{}, nil)
+		Return([]*fftypes.Event{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

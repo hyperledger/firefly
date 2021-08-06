@@ -79,16 +79,17 @@ func TestNextPinsE2EWithDB(t *testing.T) {
 		fb.Eq("identity", nextpinUpdated.Identity),
 		fb.Eq("nonce", nextpinUpdated.Nonce),
 	)
-	nextpinRes, err := s.GetNextPins(ctx, filter)
+	nextpinRes, res, err := s.GetNextPins(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(nextpinRes))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	nextpinReadJson, _ = json.Marshal(nextpinRes[0])
 	assert.Equal(t, string(nextpinJson), string(nextpinReadJson))
 
 	// Test delete
 	err = s.DeleteNextPin(ctx, nextpinUpdated.Sequence)
 	assert.NoError(t, err)
-	nextpins, err := s.GetNextPins(ctx, filter)
+	nextpins, _, err := s.GetNextPins(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(nextpins))
 
@@ -151,7 +152,7 @@ func TestGetNextPinQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NextPinQueryFactory.NewFilter(context.Background()).Eq("context", "")
-	_, err := s.GetNextPins(context.Background(), f)
+	_, _, err := s.GetNextPins(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -159,7 +160,7 @@ func TestGetNextPinQueryFail(t *testing.T) {
 func TestGetNextPinBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NextPinQueryFactory.NewFilter(context.Background()).Eq("context", map[bool]bool{true: false})
-	_, err := s.GetNextPins(context.Background(), f)
+	_, _, err := s.GetNextPins(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -167,7 +168,7 @@ func TestGetNextPinReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"context"}).AddRow("only one"))
 	f := database.NextPinQueryFactory.NewFilter(context.Background()).Eq("context", "")
-	_, err := s.GetNextPins(context.Background(), f)
+	_, _, err := s.GetNextPins(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

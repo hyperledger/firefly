@@ -37,12 +37,12 @@ func TestBuildMessageFilter(t *testing.T) {
 		Condition(fb.Eq("confirmed", nil)).
 		Skip(50).
 		Limit(25).
+		Count(true).
 		Sort("namespace").
 		Descending().
 		Finalize()
-
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25", f.String())
+	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence > 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25 count=true", f.String())
 }
 
 func TestBuildMessageFilter2(t *testing.T) {

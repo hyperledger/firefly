@@ -52,7 +52,7 @@ func TestMessageReceiveOK(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -84,7 +84,7 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -121,7 +121,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -206,7 +206,7 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 }
@@ -223,7 +223,7 @@ func TestMessageReceiveNodeNotFound(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, nil)
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 }
@@ -242,7 +242,7 @@ func TestMessageReceiveAuthorLookupError(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "org1"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -262,7 +262,7 @@ func TestMessageReceiveAuthorNotFound(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "org1"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, mock.Anything).Return(nil, nil)
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
@@ -285,7 +285,7 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -314,7 +314,7 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -343,7 +343,7 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "another"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg", Parent: "parentOrg",
 	}, nil)
@@ -370,10 +370,10 @@ func TestBLOBReceivedTriggersRewindOk(t *testing.T) {
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return([]*fftypes.Message{
 		{BatchID: batchID},
-	}, nil)
+	}, nil, nil)
 
 	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
 	assert.NoError(t, err)
@@ -404,8 +404,8 @@ func TestBLOBReceivedGetMessagesFail(t *testing.T) {
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID},
-	}, nil)
-	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	}, nil, nil)
+	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
 	assert.Regexp(t, "FF10158", err)
@@ -422,7 +422,7 @@ func TestBLOBReceivedGetDataRefsFail(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := em.BLOBReceived(mdx, "peer1", *hash, "ns1/path1")
 	assert.Regexp(t, "FF10158", err)
@@ -457,7 +457,7 @@ func TestTransferResultOk(t *testing.T) {
 			ID:        id,
 			BackendID: "tracking12345",
 		},
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
@@ -473,7 +473,7 @@ func TestTransferResultNotCorrelated(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	id := fftypes.NewUUID()
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(nil)
 
 	mdx := &dataexchangemocks.Plugin{}
@@ -488,7 +488,7 @@ func TestTransferResultNotFound(t *testing.T) {
 	cancel() // avoid retries
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -502,7 +502,7 @@ func TestTransferGetOpFail(t *testing.T) {
 	cancel() // retryable error
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
@@ -522,7 +522,7 @@ func TestTransferUpdateFail(t *testing.T) {
 			ID:        id,
 			BackendID: "tracking12345",
 		},
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpdateOperation", mock.Anything, id, mock.Anything).Return(fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
@@ -580,7 +580,7 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetNodes", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
@@ -614,7 +614,7 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mpm := em.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
-	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
+	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
 
 	err = em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
@@ -650,7 +650,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg",
 	}, nil)
@@ -697,7 +697,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg",
 	}, nil)
@@ -744,7 +744,7 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "signingOrg"},
-	}, nil)
+	}, nil, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
 		Identity: "signingOrg",
 	}, nil)

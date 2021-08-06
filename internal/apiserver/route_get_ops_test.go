@@ -32,7 +32,7 @@ func TestGetOperations(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetOperations", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Operation{}, nil)
+		Return([]*fftypes.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

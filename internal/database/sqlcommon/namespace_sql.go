@@ -52,7 +52,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		namespaceRows, err := s.queryTx(ctx, tx,
+		namespaceRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("namespaces").
 				Where(sq.Eq{"name": namespace.Name}),
@@ -138,7 +138,7 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*fftype
 
 func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fftypes.Namespace, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(namespaceColumns...).
 			From("namespaces").
 			Where(sq.Eq{"name": name}),
@@ -161,16 +161,16 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *fft
 	return namespace, nil
 }
 
-func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, err error) {
+func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -178,12 +178,12 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 	for rows.Next() {
 		d, err := s.namespaceResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		namespace = append(namespace, d)
 	}
 
-	return namespace, err
+	return namespace, s.queryRes(ctx, tx, "namespaces", fop, fi), err
 
 }
 

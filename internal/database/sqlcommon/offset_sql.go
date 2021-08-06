@@ -48,7 +48,7 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		offsetRows, err := s.queryTx(ctx, tx,
+		offsetRows, _, err := s.queryTx(ctx, tx,
 			sq.Select(sequenceColumn).
 				From("offsets").
 				Where(
@@ -118,7 +118,7 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, name st
 
 	cols := append([]string{}, offsetColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
 			From("offsets").
 			Where(sq.Eq{
@@ -144,18 +144,18 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, name st
 	return offset, nil
 }
 
-func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, err error) {
+func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, offsetColumns...)
 	cols = append(cols, sequenceColumn)
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("offsets"), filter, offsetFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("offsets"), filter, offsetFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -163,12 +163,12 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 	for rows.Next() {
 		d, err := s.offsetResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		offset = append(offset, d)
 	}
 
-	return offset, err
+	return offset, s.queryRes(ctx, tx, "offsets", fop, fi), err
 
 }
 

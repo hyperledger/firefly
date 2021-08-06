@@ -47,7 +47,7 @@ func TestSQLQueryFactory(t *testing.T) {
 		Sort("-sequence")
 
 	sel := squirrel.Select("*").From("mytable")
-	sel, err := s.filterSelect(context.Background(), "", sel, f, map[string]string{
+	sel, _, _, err := s.filterSelect(context.Background(), "", sel, f, map[string]string{
 		"namespace": "ns",
 	}, []string{"sequence"})
 	assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestSQLQueryFactoryExtraOps(t *testing.T) {
 		Descending()
 
 	sel := squirrel.Select("*").From("mytable AS mt")
-	sel, err := s.filterSelect(context.Background(), "mt", sel, f, nil, []string{"sequence"})
+	sel, _, _, err := s.filterSelect(context.Background(), "mt", sel, f, nil, []string{"sequence"})
 	assert.NoError(t, err)
 
 	sqlFilter, _, err := sel.ToSql()
@@ -97,15 +97,14 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil, []string{"sequence"})
+	_, _, _, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil, []string{"sequence"})
 	assert.Regexp(t, "FF10149.*namespace", err)
 }
 
 func TestSQLQueryFactoryBadOp(t *testing.T) {
 
 	s, _ := newMockProvider().init()
-	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", &database.FilterInfo{
 		Op: database.FilterOp("wrong"),
 	}, nil)
 	assert.Regexp(t, "FF10150.*wrong", err)
@@ -114,8 +113,7 @@ func TestSQLQueryFactoryBadOp(t *testing.T) {
 func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 
 	s, _ := newMockProvider().init()
-	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", &database.FilterInfo{
 		Op: database.FilterOpOr,
 		Children: []*database.FilterInfo{
 			{Op: database.FilterOp("wrong")},
@@ -127,8 +125,7 @@ func TestSQLQueryFactoryBadOpInOr(t *testing.T) {
 func TestSQLQueryFactoryBadOpInAnd(t *testing.T) {
 
 	s, _ := newMockProvider().init()
-	sel := squirrel.Select("*").From("mytable")
-	_, err := s.filterSelectFinalized(context.Background(), "", sel, &database.FilterInfo{
+	_, err := s.filterSelectFinalized(context.Background(), "", &database.FilterInfo{
 		Op: database.FilterOpAnd,
 		Children: []*database.FilterInfo{
 			{Op: database.FilterOp("wrong")},

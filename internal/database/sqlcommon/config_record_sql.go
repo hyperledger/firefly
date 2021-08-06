@@ -48,7 +48,7 @@ func (s *SQLCommon) UpsertConfigRecord(ctx context.Context, configRecord *fftype
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to determine if the key already exists
-		configRows, err := s.queryTx(ctx, tx,
+		configRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("config_key").
 				From("config").
 				Where(sq.Eq{"config_key": configRecord.Key}),
@@ -100,7 +100,7 @@ func (s *SQLCommon) configRecordResult(ctx context.Context, row *sql.Rows) (*fft
 }
 
 func (s *SQLCommon) GetConfigRecord(ctx context.Context, key string) (result *fftypes.ConfigRecord, err error) {
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(configRecordColumns...).
 			From("config").
 			Where(sq.Eq{"config_key": key}),
@@ -123,15 +123,15 @@ func (s *SQLCommon) GetConfigRecord(ctx context.Context, key string) (result *ff
 	return configRecord, nil
 }
 
-func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter) (result []*fftypes.ConfigRecord, err error) {
-	query, err := s.filterSelect(ctx, "", sq.Select(configRecordColumns...).From("config"), filter, configRecordFilterFieldMap, []string{"sequence"})
+func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter) (result []*fftypes.ConfigRecord, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(configRecordColumns...).From("config"), filter, configRecordFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -139,12 +139,12 @@ func (s *SQLCommon) GetConfigRecords(ctx context.Context, filter database.Filter
 	for rows.Next() {
 		d, err := s.configRecordResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		configRecord = append(configRecord, d)
 	}
 
-	return configRecord, err
+	return configRecord, s.queryRes(ctx, tx, "config", fop, fi), err
 
 }
 

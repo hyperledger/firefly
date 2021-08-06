@@ -134,7 +134,7 @@ func (sm *subscriptionManager) initTransports() error {
 func (sm *subscriptionManager) start() error {
 	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
 	filter := fb.And().Limit(sm.maxSubs)
-	persistedSubs, err := sm.database.GetSubscriptions(sm.ctx, filter)
+	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, filter)
 	if err != nil {
 		return err
 	}

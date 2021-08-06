@@ -82,7 +82,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 		originalOrgName := fmt.Sprintf("%s/%s", org.Name, org.Identity)
 		for org != nil && node == nil {
 			filter := database.NodeQueryFactory.NewFilterLimit(ctx, 1).Eq("owner", org.Identity)
-			nodes, err = pm.database.GetNodes(ctx, filter)
+			nodes, _, err = pm.database.GetNodes(ctx, filter)
 			switch {
 			case err == nil && len(nodes) > 0:
 				// This org owns a node
@@ -152,7 +152,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context) (*fftypes.UUID
 		fb.Eq("owner", pm.localOrgIdentity),
 		fb.Eq("name", pm.localNodeName),
 	)
-	nodes, err := pm.database.GetNodes(ctx, filter)
+	nodes, _, err := pm.database.GetNodes(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	newCandidate.Seal()
 
 	filter := database.GroupQueryFactory.NewFilterLimit(ctx, 1).Eq("hash", newCandidate.Hash)
-	groups, err := pm.database.GetGroups(ctx, filter)
+	groups, _, err := pm.database.GetGroups(ctx, filter)
 	if err != nil {
 		return nil, false, err
 	}

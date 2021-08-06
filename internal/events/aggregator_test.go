@@ -92,7 +92,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		},
 	}, nil)
 	// Look for existing nextpins - none found, first on context
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil).Once()
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil, nil).Once()
 	// Get the group members
 	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
@@ -103,7 +103,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		},
 	}, nil)
 	// Look for any earlier pins - none found
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil).Once()
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil).Once()
 	// Insert all the zero pins
 	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *fftypes.NextPin) bool {
 		assert.Equal(t, *np.Context, *contextUnmasked)
@@ -226,7 +226,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
 		{Context: contextUnmasked, Identity: member1, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
 		{Context: contextUnmasked, Identity: member2, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
-	}, nil).Once()
+	}, nil, nil).Once()
 	// Validate the message is ok
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
@@ -306,7 +306,7 @@ func TestAggregationBroadcast(t *testing.T) {
 		},
 	}, nil)
 	// Do not resolve any pins earlier
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	// Validate the message is ok
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
@@ -335,6 +335,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
 }
+
 func TestShutdownOnCancel(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
@@ -344,7 +345,7 @@ func TestShutdownOnCancel(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	ag.start()
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.eventNotifier.newEvents <- 12345
@@ -380,7 +381,7 @@ func TestGetPins(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 12345},
-	}, nil)
+	}, nil, nil)
 
 	lc, err := ag.getPins(ag.ctx, database.EventQueryFactory.NewFilter(ag.ctx).Gte("sequence", 12345))
 	assert.NoError(t, err)
@@ -470,7 +471,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	}, nil).Once()
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 1111}, // blocks the context
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpdateOffset", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
@@ -499,7 +500,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 			},
 		},
 	}, nil).Once()
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetPins", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
@@ -538,7 +539,7 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &fftypes.Batch{}, true, 12345, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -557,7 +558,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 
@@ -581,7 +582,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin},
-	}, nil)
+	}, nil, nil)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
@@ -608,7 +609,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin},
-	}, nil)
+	}, nil, nil)
 
 	_, err := ag.checkMaskedContextReady(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -723,7 +724,7 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -753,7 +754,7 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 12345},
-	}, nil)
+	}, nil, nil)
 
 	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -782,7 +783,7 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 	mdi.On("InsertNextPin", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -1008,7 +1009,7 @@ func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
 	ag.offchainBatches <- fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
@@ -1030,7 +1031,7 @@ func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
 		{Sequence: 12345},
-	}, nil)
+	}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.True(t, rewind)
@@ -1046,7 +1047,7 @@ func TestRewindOffchainBatchesBatchesError(t *testing.T) {
 	ag.queuedRewinds <- fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	rewind, _ := ag.rewindOffchainBatches()
 	assert.False(t, rewind)

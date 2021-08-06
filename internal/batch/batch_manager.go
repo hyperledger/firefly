@@ -218,7 +218,7 @@ func (bm *batchManager) readPage() ([]*fftypes.Message, error) {
 	var msgs []*fftypes.Message
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		msgs, err = bm.database.GetMessages(bm.ctx, fb.And(
+		msgs, _, err = bm.database.GetMessages(bm.ctx, fb.And(
 			fb.Gt("sequence", bm.offset),
 			fb.Eq("local", true),
 			fb.Eq("txtype", fftypes.TransactionTypeBatchPin),

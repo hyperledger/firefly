@@ -66,9 +66,10 @@ func TestEventE2EWithDB(t *testing.T) {
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", eventRead.Reference.String()),
 	)
-	events, err := s.GetEvents(ctx, filter)
+	events, res, err := s.GetEvents(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	eventReadJson, _ = json.Marshal(events[0])
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
@@ -77,7 +78,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", fftypes.NewUUID().String()),
 	)
-	events, err = s.GetEvents(ctx, filter)
+	events, _, err = s.GetEvents(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(events))
 
@@ -93,7 +94,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", newUUID),
 	)
-	events, err = s.GetEvents(ctx, filter)
+	events, _, err = s.GetEvents(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 
@@ -162,7 +163,7 @@ func TestGetEventsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -170,7 +171,7 @@ func TestGetEventsQueryFail(t *testing.T) {
 func TestGetEventsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -178,7 +179,7 @@ func TestGettEventsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
