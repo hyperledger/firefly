@@ -35,12 +35,11 @@ import (
 )
 
 type Manager interface {
-	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error)
-	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace) (msg *fftypes.Message, err error)
-	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag) (msg *fftypes.Message, err error)
-	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error)
+	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
+	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
-	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 	Start() error
 	WaitStop()
 }
@@ -183,15 +182,19 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	return bm.database.UpsertOperation(ctx, op, false)
 }
 
-func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message) (err error) {
+func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (retMsg *fftypes.Message, err error) {
 
 	// Seal the message
 	if err = msg.Seal(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
+	if waitConfirm {
+		// TODO: Do the wait
+		return nil, nil
+	}
 	// Store the message - this asynchronously triggers the next step in process
-	return bm.database.InsertMessageLocal(ctx, msg)
+	return msg, bm.database.InsertMessageLocal(ctx, msg)
 }
 
 func (bm *broadcastManager) Start() error {

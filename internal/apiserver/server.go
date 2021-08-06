@@ -217,7 +217,10 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		}
 
 		if err == nil {
-			status = route.JSONOutputCode
+			status = http.StatusOK
+			if len(route.JSONOutputCodes) > 0 {
+				status = route.JSONOutputCodes[0]
+			}
 			r := oapispec.APIRequest{
 				Ctx:    req.Context(),
 				Or:     o,

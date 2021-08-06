@@ -59,7 +59,7 @@ var putConfigRecord = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
 	JSONOutputValue: nil,
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONInputSchema: func(ctx context.Context) string { return anyJSONSchema },
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.PutConfigRecord(r.Ctx, r.PP["key"], *r.Input.(*fftypes.Byteable))

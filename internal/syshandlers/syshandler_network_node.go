@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package syshandlers
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var node fftypes.Node
-	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &node)
+	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &node)
 	if !valid {
 		return false, nil
 	}
@@ -37,7 +37,7 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	owner, err := bm.database.GetOrganizationByIdentity(ctx, node.Owner)
+	owner, err := sh.database.GetOrganizationByIdentity(ctx, node.Owner)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -46,7 +46,7 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	id, err := bm.identity.Resolve(ctx, node.Owner)
+	id, err := sh.identity.Resolve(ctx, node.Owner)
 	if err != nil {
 		l.Warnf("Unable to process node broadcast %s - resolve owner identity failed: %s", msg.Header.ID, err)
 		return false, nil
@@ -57,9 +57,9 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		return false, nil
 	}
 
-	existing, err := bm.database.GetNode(ctx, node.Owner, node.Name)
+	existing, err := sh.database.GetNode(ctx, node.Owner, node.Name)
 	if err == nil && existing == nil {
-		existing, err = bm.database.GetNodeByID(ctx, node.ID)
+		existing, err = sh.database.GetNodeByID(ctx, node.ID)
 	}
 	if err != nil {
 		return false, err // We only return database errors
@@ -72,12 +72,12 @@ func (bm *broadcastManager) handleNodeBroadcast(ctx context.Context, msg *fftype
 		node.ID = nil // we keep the existing ID
 	}
 
-	if err = bm.database.UpsertNode(ctx, &node, true); err != nil {
+	if err = sh.database.UpsertNode(ctx, &node, true); err != nil {
 		return false, err
 	}
 
 	// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
-	if err = bm.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint); err != nil {
+	if err = sh.exchange.AddPeer(ctx, node.DX.Peer, node.DX.Endpoint); err != nil {
 		return false, err
 	}
 

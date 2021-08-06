@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package events
+package syshandlers
 
 import (
 	"context"
@@ -22,20 +22,15 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestSendreplyFail(t *testing.T) {
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	rs := &replySender{
-		broadcast: mbm,
-		messaging: mpm,
-	}
+	sh := newTestSystemHandlers(t)
+	mbm := sh.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	rs.sendReply(context.Background(), &fftypes.Event{
+	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{})

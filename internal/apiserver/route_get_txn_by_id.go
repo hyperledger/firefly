@@ -39,7 +39,7 @@ var getTxnByID = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Transaction{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetTransactionByID(r.Ctx, r.PP["ns"], r.PP["txnid"])
 		return output, err

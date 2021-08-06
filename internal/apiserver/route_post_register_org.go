@@ -35,9 +35,10 @@ var postRegisterOrg = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Organization{} },
 	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
+	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization))
+		// This (old) route is always async, and returns the message
+		output, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
 		return output, err
 	},
 }

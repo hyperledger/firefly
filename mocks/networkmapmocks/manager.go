@@ -108,13 +108,13 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 	return r0, r1
 }
 
-// RegisterNode provides a mock function with given fields: ctx
-func (_m *Manager) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
-	ret := _m.Called(ctx)
+// RegisterNode provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNode(ctx context.Context, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Message); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -122,8 +122,8 @@ func (_m *Manager) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,13 +131,13 @@ func (_m *Manager) RegisterNode(ctx context.Context) (*fftypes.Message, error) {
 	return r0, r1
 }
 
-// RegisterNodeOrganization provides a mock function with given fields: ctx
-func (_m *Manager) RegisterNodeOrganization(ctx context.Context) (*fftypes.Message, error) {
-	ret := _m.Called(ctx)
+// RegisterNodeOrganization provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Message); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -145,8 +145,8 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context) (*fftypes.Messa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -154,13 +154,13 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context) (*fftypes.Messa
 	return r0, r1
 }
 
-// RegisterOrganization provides a mock function with given fields: ctx, org
-func (_m *Manager) RegisterOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, org)
+// RegisterOrganization provides a mock function with given fields: ctx, org, waitConfirm
+func (_m *Manager) RegisterOrganization(ctx context.Context, org *fftypes.Organization, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, org, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization) *fftypes.Message); ok {
-		r0 = rf(ctx, org)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Organization, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, org, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -168,8 +168,8 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, org *fftypes.Organi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Organization) error); ok {
-		r1 = rf(ctx, org)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Organization, bool) error); ok {
+		r1 = rf(ctx, org, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

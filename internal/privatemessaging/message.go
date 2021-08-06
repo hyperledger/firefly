@@ -25,12 +25,12 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	in.Header.ID = nil
-	return pm.SendMessageWithID(ctx, ns, in)
+	return pm.SendMessageWithID(ctx, ns, in, waitConfirm)
 }
 
-func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypePrivate
 	if in.Header.Author == "" {
@@ -51,6 +51,9 @@ func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in
 	})
 	if err != nil {
 		return nil, err
+	}
+	if waitConfirm {
+		// TODO: wait for confirmation
 	}
 	// The broadcastMessage function modifies the input message to create all the refs
 	return &in.Message, err

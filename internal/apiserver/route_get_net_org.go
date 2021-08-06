@@ -36,7 +36,7 @@ var getNetworkOrg = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Organization{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.NetworkMap().GetOrganizationByID(r.Ctx, r.PP["oid"])
 		return output, err

@@ -36,7 +36,7 @@ func TestBroadcastNamespaceBadName(t *testing.T) {
 	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name: "!ns",
-	})
+	}, false)
 	assert.Regexp(t, "FF10131.*name", err)
 }
 
@@ -54,7 +54,7 @@ func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
 	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name:        "ns1",
 		Description: buff.String(),
-	})
+	}, false)
 	assert.Regexp(t, "FF10188.*description", err)
 }
 
@@ -76,6 +76,6 @@ func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
 	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name:        "ns1",
 		Description: "my namespace",
-	})
+	}, false)
 	assert.NoError(t, err)
 }

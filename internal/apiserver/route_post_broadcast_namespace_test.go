@@ -39,7 +39,7 @@ func TestPostBroadcastNamespace(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace")).
+	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

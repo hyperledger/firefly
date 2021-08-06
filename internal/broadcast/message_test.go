@@ -62,7 +62,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
 		},
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)
@@ -128,7 +128,7 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 				Hash: blobHash,
 			}},
 		},
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)
@@ -158,7 +158,7 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"hello": "world"}`)},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -199,7 +199,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -238,7 +238,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -276,7 +276,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -307,7 +307,7 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	})
+	}, false)
 	assert.Regexp(t, "FF10240", err)
 
 	mdi.AssertExpectations(t)

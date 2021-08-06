@@ -91,9 +91,10 @@ var postBroadcastMessage = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 	JSONInputSchema: func(ctx context.Context) string { return broadcastSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
+	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
+		// This (old) route is always async, and returns the message
+		output, err = r.Or.Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut), false)
 		return output, err
 	},
 }

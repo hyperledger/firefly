@@ -79,7 +79,7 @@ func TestSendMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *dataID, *msg.Data[0].ID)
 	assert.NotNil(t, msg.Header.Group)
@@ -151,7 +151,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *dataID, *msg.Data[0].ID)
 	assert.NotNil(t, msg.Header.Group)
@@ -178,7 +178,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.Regexp(t, "FF10206.*pop", err)
 
 }
@@ -211,7 +211,7 @@ func TestSendMessageFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -484,7 +484,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -537,7 +537,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -610,7 +610,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)

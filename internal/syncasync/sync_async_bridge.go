@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/events"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
+	"github.com/hyperledger-labs/firefly/internal/syshandlers"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
@@ -54,19 +54,19 @@ type syncAsyncBridge struct {
 	database    database.Plugin
 	data        data.Manager
 	events      events.EventManager
-	messaging   privatemessaging.Manager
+	syshandlers syshandlers.SystemHandlers
 	inflightMux sync.Mutex
 	inflight    map[string]map[fftypes.UUID]*inflightRequest
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, ei events.EventManager, pm privatemessaging.Manager) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, ei events.EventManager, sh syshandlers.SystemHandlers) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
-		database:  di,
-		data:      dm,
-		events:    ei,
-		messaging: pm,
-		inflight:  make(map[string]map[fftypes.UUID]*inflightRequest),
+		ctx:         log.WithLogField(ctx, "role", "sync-async-bridge"),
+		database:    di,
+		data:        dm,
+		events:      ei,
+		syshandlers: sh,
+		inflight:    make(map[string]map[fftypes.UUID]*inflightRequest),
 	}
 	return sa
 }
@@ -209,7 +209,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, inRequest
 	}()
 
 	inRequest.Header.ID = inflight.id
-	_, err = sa.messaging.SendMessageWithID(ctx, ns, inRequest)
+	_, err = sa.syshandlers.SendMessageWithID(ctx, ns, inRequest, false)
 	if err != nil {
 		return nil, err
 	}

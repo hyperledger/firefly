@@ -37,7 +37,7 @@ var getNamespace = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetNamespace(r.Ctx, r.PP["ns"])
 		return output, err

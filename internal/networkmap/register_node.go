@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	node := &fftypes.Node{
 		ID:          fftypes.NewUUID(),
@@ -59,5 +59,5 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode)
+	return nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode, waitConfirm)
 }

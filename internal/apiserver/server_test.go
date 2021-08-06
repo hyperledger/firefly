@@ -110,7 +110,7 @@ func TestJSONHTTPServePOST201(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  func() interface{} { return make(map[string]interface{}) },
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  201,
+		JSONOutputCodes: []int{201},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			assert.Equal(t, "value1", r.Input.(map[string]interface{})["input1"])
 			return map[string]interface{}{"output1": "value2"}, nil
@@ -136,7 +136,7 @@ func TestJSONHTTPResponseEncodeFail(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  200,
+		JSONOutputCodes: []int{200},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			v := map[string]interface{}{"unserializable": map[bool]interface{}{true: "not in JSON"}}
 			return v, nil
@@ -161,7 +161,7 @@ func TestJSONHTTPNilResponseNon204(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  200,
+		JSONOutputCodes: []int{200},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, nil
 		},
@@ -186,7 +186,7 @@ func TestJSONHTTPDefault500Error(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  200,
+		JSONOutputCodes: []int{200},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, fmt.Errorf("pop")
 		},
@@ -211,7 +211,7 @@ func TestStatusCodeHintMapping(t *testing.T) {
 		Method:          "GET",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  200,
+		JSONOutputCodes: []int{200},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, i18n.NewError(r.Ctx, i18n.MsgResponseMarshalError)
 		},
@@ -236,7 +236,7 @@ func TestStatusInvalidContentType(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  204,
+		JSONOutputCodes: []int{204},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, nil
 		},
@@ -274,7 +274,7 @@ func TestTimeout(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  204,
+		JSONOutputCodes: []int{204},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			<-r.Ctx.Done()
 			return nil, fmt.Errorf("timeout error")
@@ -301,7 +301,7 @@ func TestBadTimeout(t *testing.T) {
 		Method:          "POST",
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
-		JSONOutputCode:  204,
+		JSONOutputCodes: []int{204},
 		JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 			return nil, nil
 		},

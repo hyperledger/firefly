@@ -39,7 +39,7 @@ func TestPostDatatypes(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype")).
+	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

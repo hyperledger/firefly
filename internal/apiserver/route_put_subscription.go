@@ -37,7 +37,7 @@ var putSubscription = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
-	JSONOutputCode:  http.StatusOK, // Sync operation
+	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONInputSchema: newSubscriptionSchemaGenerator,
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.CreateUpdateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))

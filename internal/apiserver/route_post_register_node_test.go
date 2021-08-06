@@ -39,7 +39,7 @@ func TestPostRegisterNode(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterNode", mock.Anything).
+	mnm.On("RegisterNode", mock.Anything, false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

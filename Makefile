@@ -39,6 +39,7 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir internal/batch            --name Manager          --output mocks/batchmocks            --outpkg batchmocks
 		${MOCKERY} --case underscore --dir internal/broadcast        --name Manager          --output mocks/broadcastmocks        --outpkg broadcastmocks
 		${MOCKERY} --case underscore --dir internal/privatemessaging --name Manager          --output mocks/privatemessagingmocks --outpkg privatemessagingmocks
+		${MOCKERY} --case underscore --dir internal/syshandlers      --name SystemHandlers   --output mocks/syshandlersmocks      --outpkg syshandlersmocks
 		${MOCKERY} --case underscore --dir internal/events           --name EventManager     --output mocks/eventmocks            --outpkg eventmocks
 		${MOCKERY} --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
 		${MOCKERY} --case underscore --dir internal/syncasync        --name Bridge           --output mocks/syncasyncmocks        --outpkg syncasyncmocks

@@ -14,20 +14,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package syshandlers
 
 import (
 	"context"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
+	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/datamocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
+func newTestSystemHandlers(t *testing.T) *systemHandlers {
+	mdi := &databasemocks.Plugin{}
+	mii := &identitymocks.Plugin{}
+	mdx := &dataexchangemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	return NewSystemHandlers(mdi, mii, mdx, mdm, mbm, mpm).(*systemHandlers)
+}
+
 func TestHandleSystemBroadcastUnknown(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	sh := newTestSystemHandlers(t)
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
 		},
@@ -37,9 +52,8 @@ func TestHandleSystemBroadcastUnknown(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	sh := newTestSystemHandlers(t)
+	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
 		},
@@ -48,9 +62,8 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	valid := bm.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
+	sh := newTestSystemHandlers(t)
+	valid := sh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "uknown",
 		},

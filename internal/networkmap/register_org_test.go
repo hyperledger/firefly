@@ -55,7 +55,7 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 		Identity:    "0x12345",
 		Parent:      "0x23456",
 		Description: "my organization",
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
 
@@ -78,7 +78,7 @@ func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization).Return(mockMsg, nil)
 
-	msg, err := nm.RegisterNodeOrganization(nm.ctx)
+	msg, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
 
@@ -91,7 +91,7 @@ func TestRegisterNodeOrganizationMissingConfig(t *testing.T) {
 
 	config.Set(config.OrgIdentity, nil)
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 }
@@ -104,7 +104,7 @@ func TestRegisterOrganizationBadObject(t *testing.T) {
 	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Name:        "org1",
 		Description: string(make([]byte, 4097)),
-	})
+	}, false)
 	assert.Regexp(t, "FF10188", err)
 
 }
@@ -120,7 +120,7 @@ func TestRegisterOrganizationBadIdentity(t *testing.T) {
 	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Name:     "org1",
 		Identity: "!wrong",
-	})
+	}, false)
 	assert.Regexp(t, "FF10215.*pop", err)
 
 }
@@ -140,7 +140,7 @@ func TestRegisterOrganizationBadParent(t *testing.T) {
 		Name:     "org1",
 		Identity: "0x12345",
 		Parent:   "wrongun",
-	})
+	}, false)
 	assert.Regexp(t, "FF10214", err)
 
 }
@@ -157,7 +157,7 @@ func TestRegisterOrganizationChildResolveFail(t *testing.T) {
 		Name:     "org1",
 		Identity: "0x12345",
 		Parent:   "0x23456",
-	})
+	}, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -177,7 +177,7 @@ func TestRegisterOrganizationParentLookupFail(t *testing.T) {
 		Name:     "org1",
 		Identity: "0x12345",
 		Parent:   "0x23456",
-	})
+	}, false)
 	assert.Regexp(t, "pop", err)
 
 }

@@ -38,7 +38,7 @@ var getDataDefByID = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
 		return output, err

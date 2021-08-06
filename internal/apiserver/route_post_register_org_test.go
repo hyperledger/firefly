@@ -39,7 +39,7 @@ func TestPostRegisterOrganization(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.Organization")).
+	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.Organization"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

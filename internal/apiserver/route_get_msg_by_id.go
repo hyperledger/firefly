@@ -41,7 +41,7 @@ var getMsgByID = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} }, // can include full values
-	JSONOutputCode:  http.StatusOK,
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"], strings.EqualFold(r.QP["data"], "true"))
 		return output, err

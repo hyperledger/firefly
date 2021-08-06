@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	in.Header.ID = nil
 	in.Header.Namespace = ns
 	in.Header.Type = fftypes.MessageTypeBroadcast
@@ -52,7 +52,8 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 			return nil
 		}
 
-		return bm.broadcastMessageCommon(ctx, &in.Message)
+		out, err = bm.broadcastMessageCommon(ctx, &in.Message, waitConfirm)
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -60,14 +61,14 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 
 	// Perform deferred processing
 	if len(dataToPublish) > 0 {
-		return bm.publishBlobsAndSend(ctx, &in.Message, dataToPublish)
+		return bm.publishBlobsAndSend(ctx, &in.Message, dataToPublish, waitConfirm)
 	}
 
 	// The broadcastMessage function modifies the input message to create all the refs
-	return &in.Message, err
+	return out, err
 }
 
-func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob) (*fftypes.Message, error) {
+func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob, waitConfirm bool) (*fftypes.Message, error) {
 
 	for _, d := range dataToPublish {
 
@@ -96,8 +97,5 @@ func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftype
 	}
 
 	// Now we broadcast the message, as all data has been published
-	if err := bm.broadcastMessageCommon(ctx, msg); err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
 }

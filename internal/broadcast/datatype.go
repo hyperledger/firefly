@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
@@ -44,5 +44,5 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	if err != nil {
 		return nil, err
 	}
-	return bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype)
+	return bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype, waitConfirm)
 }

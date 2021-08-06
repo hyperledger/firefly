@@ -39,7 +39,7 @@ func TestPostSendMessage(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mpm.On("SendMessage", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
+	mpm.On("SendMessage", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

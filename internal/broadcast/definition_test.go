@@ -35,7 +35,7 @@ func TestBroadcastDefinitionAsNodeBadId(t *testing.T) {
 	config.Set(config.OrgIdentity, "wrong")
 	mii := bm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "wrong").Return(nil, fmt.Errorf("pop"))
-	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace)
+	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -49,6 +49,6 @@ func TestBroadcastDefinitionAsNodeBadSigningId(t *testing.T) {
 	badID := &fftypes.Identity{OnChain: "0x99999"}
 	mii.On("Resolve", mock.Anything, "wrong").Return(badID, nil)
 	mbi.On("VerifyIdentitySyntax", mock.Anything, badID).Return(fmt.Errorf("pop"))
-	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace)
+	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }

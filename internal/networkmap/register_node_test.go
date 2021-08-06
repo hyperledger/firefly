@@ -57,7 +57,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineNode).Return(mockMsg, nil)
 
-	msg, err := nm.RegisterNode(nm.ctx)
+	msg, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
 
@@ -72,7 +72,7 @@ func TestRegisterNodeMissingConfig(t *testing.T) {
 	config.Set(config.NodeName, nil)
 	config.Set(config.OrgIdentity, nil)
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 }
@@ -98,7 +98,7 @@ func TestRegisterNodeBadParentID(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10215", err)
 
 }
@@ -124,7 +124,7 @@ func TestRegisterNodeBadNodeID(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -148,7 +148,7 @@ func TestRegisterNodeParentNotFound(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10214", err)
 
 }
@@ -165,7 +165,7 @@ func TestRegisterNodeParentBadNode(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "FF10188", err)
 
 }
@@ -182,7 +182,7 @@ func TestRegisterNodeParentDXEndpointFail(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("", nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNode(nm.ctx)
+	_, err := nm.RegisterNode(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }

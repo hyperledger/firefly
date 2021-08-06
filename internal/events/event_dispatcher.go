@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
+	"github.com/hyperledger-labs/firefly/internal/syshandlers"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -51,7 +52,7 @@ type eventDispatcher struct {
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
-	rs            *replySender
+	syshandlers   syshandlers.SystemHandlers
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*fftypes.Event
@@ -64,7 +65,7 @@ type eventDispatcher struct {
 	changeEvents  chan *fftypes.ChangeEvent
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, rs *replySender, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh syshandlers.SystemHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
@@ -79,7 +80,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:      di,
 		transport:     ei,
-		rs:            rs,
+		syshandlers:   sh,
 		data:          dm,
 		connID:        connID,
 		cancelCtx:     cancelCtx,
@@ -423,7 +424,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	// We might have a message to send, do that before we dispatch the ack
 	// Note a failure to send the reply does not invalidate the ack
 	if response.Reply != nil {
-		ed.rs.sendReply(ed.ctx, event, response.Reply)
+		ed.syshandlers.SendReply(ed.ctx, event, response.Reply)
 	}
 
 	l.Debugf("Response for %s event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)

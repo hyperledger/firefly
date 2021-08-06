@@ -23,13 +23,12 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/events/system"
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -42,11 +41,10 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	mii := &identitymocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
 	mdm := &datamocks.Manager{}
+	msh := &syshandlersmocks.SystemHandlers{}
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mpi, mdi, mii, mbm, mpm, mdm)
+	emi, err := NewEventManager(ctx, mpi, mdi, mii, msh, mdm)
 	em := emi.(*eventManager)
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -76,7 +74,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -87,10 +85,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
 	mdm := &datamocks.Manager{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mii, mbm, mpm, mdm)
+	msh := &syshandlersmocks.SystemHandlers{}
+	_, err := NewEventManager(context.Background(), mpi, mdi, mii, msh, mdm)
 	assert.Regexp(t, "FF10172", err)
 
 }

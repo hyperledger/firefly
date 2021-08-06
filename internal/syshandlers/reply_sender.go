@@ -14,29 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package events
+package syshandlers
 
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-type replySender struct {
-	broadcast broadcast.Manager
-	messaging privatemessaging.Manager
-}
-
-func (rs *replySender) sendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
+func (sh *systemHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
 	var err error
 	var msg *fftypes.Message
 	if reply.Header.Group != nil {
-		msg, err = rs.messaging.SendMessage(ctx, event.Namespace, reply)
+		msg, err = sh.messaging.SendMessage(ctx, event.Namespace, reply, false)
 	} else {
-		msg, err = rs.broadcast.BroadcastMessage(ctx, event.Namespace, reply)
+		msg, err = sh.broadcast.BroadcastMessage(ctx, event.Namespace, reply, false)
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)
