@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
 	"github.com/hyperledger-labs/firefly/internal/syshandlers"
+	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -60,7 +61,7 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 
 	// Internal events
-	AddSystemEventListener(ns string, el system.EventListener) error
+	sysmessaging.SystemEvents
 }
 
 type eventManager struct {

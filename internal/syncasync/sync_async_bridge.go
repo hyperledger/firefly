@@ -22,10 +22,9 @@ import (
 	"time"
 
 	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/events"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/syshandlers"
+	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
@@ -53,20 +52,20 @@ type syncAsyncBridge struct {
 	ctx         context.Context
 	database    database.Plugin
 	data        data.Manager
-	events      events.EventManager
-	syshandlers syshandlers.SystemHandlers
+	sysevents   sysmessaging.SystemEvents
+	sender      sysmessaging.MessageSender
 	inflightMux sync.Mutex
 	inflight    map[string]map[fftypes.UUID]*inflightRequest
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, ei events.EventManager, sh syshandlers.SystemHandlers) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager, sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:         log.WithLogField(ctx, "role", "sync-async-bridge"),
-		database:    di,
-		data:        dm,
-		events:      ei,
-		syshandlers: sh,
-		inflight:    make(map[string]map[fftypes.UUID]*inflightRequest),
+		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
+		database:  di,
+		data:      dm,
+		sysevents: sysevents,
+		sender:    sender,
+		inflight:  make(map[string]map[fftypes.UUID]*inflightRequest),
 	}
 	return sa
 }
@@ -88,7 +87,7 @@ func (sa *syncAsyncBridge) addInFlight(ns string, waitForReply, withData bool) (
 
 	inflightNS := sa.inflight[ns]
 	if inflightNS == nil {
-		err := sa.events.AddSystemEventListener(ns, sa.eventCallback)
+		err := sa.sysevents.AddSystemEventListener(ns, sa.eventCallback)
 		if err != nil {
 			return nil, err
 		}
@@ -209,7 +208,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, inRequest
 	}()
 
 	inRequest.Header.ID = inflight.id
-	_, err = sa.syshandlers.SendMessageWithID(ctx, ns, inRequest, false)
+	_, err = sa.sender.SendMessageWithID(ctx, ns, inRequest, false)
 	if err != nil {
 		return nil, err
 	}

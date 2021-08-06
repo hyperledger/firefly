@@ -158,8 +158,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging)
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.syshandlers)
 	return err
 }
 
@@ -316,17 +314,19 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.messaging == nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data); err != nil {
+			return err
+		}
+	}
+
 	if or.broadcast == nil {
 		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch); err != nil {
 			return err
 		}
 	}
 
-	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data); err != nil {
-			return err
-		}
-	}
+	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data)
@@ -341,6 +341,8 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.syshandlers)
 
 	return nil
 }

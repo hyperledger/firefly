@@ -23,8 +23,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
-	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
+	"github.com/hyperledger-labs/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,9 +33,9 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mei := &eventmocks.EventManager{}
-	msh := &syshandlersmocks.SystemHandlers{}
-	sa := NewSyncAsyncBridge(ctx, mdi, mdm, mei, msh)
+	mse := &sysmessagingmocks.SystemEvents{}
+	msd := &sysmessagingmocks.MessageSender{}
+	sa := NewSyncAsyncBridge(ctx, mdi, mdm, mse, msd)
 	return sa.(*syncAsyncBridge), cancel
 }
 
@@ -49,11 +48,11 @@ func TestRequestReplyOk(t *testing.T) {
 	replyID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	msh := sa.syshandlers.(*syshandlersmocks.SystemHandlers)
-	send := msh.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
 	send.RunFn = func(a mock.Arguments) {
 		msg := a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msg.Header.ID)
@@ -116,13 +115,13 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	var requestID *fftypes.UUID
 	dataID := fftypes.NewUUID()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	var msgSent *fftypes.MessageInOut
 
-	msh := sa.syshandlers.(*syshandlersmocks.SystemHandlers)
-	send := msh.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
 	send.RunFn = func(a mock.Arguments) {
 		msgSent = a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msgSent.Header.ID)
@@ -178,13 +177,13 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	var requestID *fftypes.UUID
 	dataID := fftypes.NewUUID()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	var msgSent *fftypes.MessageInOut
 
-	msh := sa.syshandlers.(*syshandlersmocks.SystemHandlers)
-	send := msh.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
 	send.RunFn = func(a mock.Arguments) {
 		msgSent = a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msgSent.Header.ID)
@@ -236,11 +235,11 @@ func TestRequestReplyTimeout(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	msh := sa.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -258,11 +257,11 @@ func TestRequestReplySendFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	msh := sa.syshandlers.(*syshandlersmocks.SystemHandlers)
-	msh.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -280,8 +279,8 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

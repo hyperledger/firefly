@@ -35,6 +35,8 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir pkg/identity              --name Callbacks        --output mocks/identitymocks         --outpkg identitymocks
 		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Plugin           --output mocks/dataexchangemocks     --outpkg dataexchangemocks
 		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Callbacks        --output mocks/dataexchangemocks     --outpkg dataexchangemocks
+		${MOCKERY} --case underscore --dir internal/sysmessaging     --name MessageSender    --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
+		${MOCKERY} --case underscore --dir internal/sysmessaging     --name SystemEvents     --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
 		${MOCKERY} --case underscore --dir internal/data             --name Manager          --output mocks/datamocks             --outpkg datamocks
 		${MOCKERY} --case underscore --dir internal/batch            --name Manager          --output mocks/batchmocks            --outpkg batchmocks
 		${MOCKERY} --case underscore --dir internal/broadcast        --name Manager          --output mocks/broadcastmocks        --outpkg broadcastmocks
