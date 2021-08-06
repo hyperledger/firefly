@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func newTestSystemHandlers(t *testing.T) *systemHandlers {
@@ -69,4 +70,25 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 		},
 	}, []*fftypes.Data{}, nil)
 	assert.False(t, valid)
+}
+
+func TestPrivateMessagingPassthroughs(t *testing.T) {
+	ctx := context.Background()
+
+	sh := newTestSystemHandlers(t)
+	mpm := sh.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
+	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil)
+	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
+	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
+	mpm.On("SendMessageWithID", ctx, "ns1", mock.Anything, mock.Anything).Return(nil, nil)
+
+	_, _ = sh.GetGroupByID(ctx, fftypes.NewUUID().String())
+	_, _ = sh.GetGroups(ctx, nil)
+	_, _ = sh.ResolveInitGroup(ctx, nil)
+	_, _ = sh.EnsureLocalGroup(ctx, nil)
+	_, _ = sh.SendMessageWithID(ctx, "ns1", nil, false)
+
+	mpm.AssertExpectations(t)
+
 }

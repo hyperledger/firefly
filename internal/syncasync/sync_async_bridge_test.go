@@ -52,7 +52,7 @@ func TestRequestReplyOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
 		msg := a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msg.Header.ID)
@@ -121,7 +121,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	var msgSent *fftypes.MessageInOut
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
 		msgSent = a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msgSent.Header.ID)
@@ -183,7 +183,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	var msgSent *fftypes.MessageInOut
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
 		msgSent = a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msgSent.Header.ID)
@@ -239,7 +239,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false).Return(&fftypes.Message{}, nil)
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -261,7 +261,7 @@ func TestRequestReplySendFail(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
