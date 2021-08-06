@@ -155,6 +155,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -316,6 +321,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -860,6 +870,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1196,6 +1211,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1350,6 +1370,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -1484,6 +1509,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -1644,6 +1674,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -1849,6 +1884,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -2168,6 +2208,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2410,6 +2455,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -2886,6 +2936,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -3503,6 +3558,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -3638,6 +3698,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":
@@ -3807,6 +3872,11 @@ paths:
         schema:
           example: "25"
           type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -3956,6 +4026,11 @@ paths:
         name: limit
         schema:
           example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
           type: string
       responses:
         "200":

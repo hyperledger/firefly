@@ -59,16 +59,16 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil).Once()
+	}, nil, nil).Once()
 	mdi.On("GetOrganizationByName", pm.ctx, "org1").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "org1"},
-	}, nil).Once()
+	}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
-	}, nil).Once()
+	}, nil, nil).Once()
 
 	retMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -77,6 +77,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("SendConfirm", pm.ctx, mock.Anything).Return(retMsg, nil).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -248,10 +249,10 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	}, nil)
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
 		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil).Once()
+	}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
-	}, nil).Once()
+	}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))

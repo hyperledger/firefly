@@ -42,7 +42,7 @@ func TestGetConfigRecords(t *testing.T) {
 				Key:   "foo",
 				Value: fftypes.Byteable(`{"foo": "bar"}`),
 			},
-		}, nil)
+		}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

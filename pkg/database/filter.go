@@ -43,6 +43,9 @@ type Filter interface {
 	// Limit for pagination
 	Limit(uint64) Filter
 
+	// Request a count to be returned on the total number that match the query
+	Count(c bool) Filter
+
 	// Finalize completes the filter, and for the plugin to validated output structure to convert
 	Finalize() (*FilterInfo, error)
 
@@ -142,11 +145,17 @@ type FilterInfo struct {
 	Sort     []*SortField
 	Skip     uint64
 	Limit    uint64
+	Count    bool
 	Field    string
 	Op       FilterOp
 	Values   []FieldSerialization
 	Value    FieldSerialization
 	Children []*FilterInfo
+}
+
+// FilterResult is has additional info if requested on the query - currently only the total count
+type FilterResult struct {
+	TotalCount *int64
 }
 
 func valueString(f FieldSerialization) string {
@@ -209,6 +218,9 @@ func (f *FilterInfo) String() string {
 	if f.Limit > 0 {
 		val.WriteString(fmt.Sprintf(" limit=%d", f.Limit))
 	}
+	if f.Count {
+		val.WriteString(" count=true")
+	}
 
 	return val.String()
 }
@@ -229,6 +241,7 @@ type filterBuilder struct {
 	sort            []*SortField
 	skip            uint64
 	limit           uint64
+	count           bool
 	forceAscending  bool
 	forceDescending bool
 }
@@ -303,6 +316,7 @@ func (f *baseFilter) Finalize() (fi *FilterInfo, err error) {
 		Sort:     f.fb.sort,
 		Skip:     f.fb.skip,
 		Limit:    f.fb.limit,
+		Count:    f.fb.count,
 	}, nil
 }
 
@@ -330,6 +344,11 @@ func (f *baseFilter) Skip(skip uint64) Filter {
 
 func (f *baseFilter) Limit(limit uint64) Filter {
 	f.fb.limit = limit
+	return f
+}
+
+func (f *baseFilter) Count(c bool) Filter {
+	f.fb.count = c
 	return f
 }
 

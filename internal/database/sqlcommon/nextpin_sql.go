@@ -82,7 +82,7 @@ func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.
 func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.NextPin, err error) {
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
 			From("nextpins").
 			Where(pred).
@@ -119,18 +119,18 @@ func (s *SQLCommon) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32)
 	})
 }
 
-func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (message []*fftypes.NextPin, err error) {
+func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (message []*fftypes.NextPin, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("nextpins"), filter, nextpinFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("nextpins"), filter, nextpinFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -138,12 +138,12 @@ func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (me
 	for rows.Next() {
 		d, err := s.nextpinResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		nextpin = append(nextpin, d)
 	}
 
-	return nextpin, err
+	return nextpin, s.queryRes(ctx, tx, "nextpins", fop, fi), err
 
 }
 

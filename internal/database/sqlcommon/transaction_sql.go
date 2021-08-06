@@ -57,7 +57,7 @@ func (s *SQLCommon) UpsertTransaction(ctx context.Context, transaction *fftypes.
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		transactionRows, err := s.queryTx(ctx, tx,
+		transactionRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("transactions").
 				Where(sq.Eq{"id": transaction.ID}),
@@ -150,7 +150,7 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 
 func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(transactionColumns...).
 			From("transactions").
 			Where(sq.Eq{"id": id}),
@@ -173,16 +173,16 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (m
 	return transaction, nil
 }
 
-func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, err error) {
+func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -190,12 +190,12 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter)
 	for rows.Next() {
 		transaction, err := s.transactionResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		transactions = append(transactions, transaction)
 	}
 
-	return transactions, err
+	return transactions, s.queryRes(ctx, tx, "transactions", fop, fi), err
 
 }
 

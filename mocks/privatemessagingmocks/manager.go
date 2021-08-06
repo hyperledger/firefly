@@ -61,7 +61,7 @@ func (_m *Manager) GetGroupByID(ctx context.Context, id string) (*fftypes.Group,
 }
 
 // GetGroups provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error) {
+func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Group
@@ -73,14 +73,23 @@ func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // ResolveInitGroup provides a mock function with given fields: ctx, msg

@@ -63,7 +63,7 @@ func (sh *systemHandlers) GetGroupByID(ctx context.Context, id string) (*fftypes
 	return sh.messaging.GetGroupByID(ctx, id)
 }
 
-func (sh *systemHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error) {
+func (sh *systemHandlers) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
 	return sh.messaging.GetGroups(ctx, filter)
 }
 

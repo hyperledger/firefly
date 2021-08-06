@@ -67,8 +67,8 @@ func TestGetNodeByIDBadUUID(t *testing.T) {
 func TestGetOrganizations(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetOrganizations", nm.ctx, mock.Anything).Return([]*fftypes.Organization{}, nil)
-	res, err := nm.GetOrganizations(nm.ctx, database.OrganizationQueryFactory.NewFilter(nm.ctx).And())
+	nm.database.(*databasemocks.Plugin).On("GetOrganizations", nm.ctx, mock.Anything).Return([]*fftypes.Organization{}, nil, nil)
+	res, _, err := nm.GetOrganizations(nm.ctx, database.OrganizationQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
 }
@@ -76,8 +76,8 @@ func TestGetOrganizations(t *testing.T) {
 func TestGetNodes(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetNodes", nm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil)
-	res, err := nm.GetNodes(nm.ctx, database.NodeQueryFactory.NewFilter(nm.ctx).And())
+	nm.database.(*databasemocks.Plugin).On("GetNodes", nm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
+	res, _, err := nm.GetNodes(nm.ctx, database.NodeQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
 }

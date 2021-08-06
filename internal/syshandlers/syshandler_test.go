@@ -78,7 +78,7 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
-	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil)
+	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)
 	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
 	mpm.On("SendMessageWithID", ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, nil)
@@ -86,7 +86,7 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 	mbm.On("BroadcastMessageWithID", ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, nil)
 
 	_, _ = sh.GetGroupByID(ctx, fftypes.NewUUID().String())
-	_, _ = sh.GetGroups(ctx, nil)
+	_, _, _ = sh.GetGroups(ctx, nil)
 	_, _ = sh.ResolveInitGroup(ctx, nil)
 	_, _ = sh.EnsureLocalGroup(ctx, nil)
 	_, _ = sh.SendMessageWithID(ctx, "ns1", nil, &fftypes.Message{

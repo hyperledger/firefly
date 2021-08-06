@@ -225,6 +225,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc)
 		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, config.GetUint(config.APIMaxFilterSkip))
 		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, config.GetUint(config.APIMaxFilterLimit))
+		addParam(ctx, op, "query", "count", "", "", i18n.MsgFilterCountDesc)
 	}
 	switch route.Method {
 	case http.MethodGet:

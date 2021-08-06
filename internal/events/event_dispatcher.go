@@ -150,7 +150,7 @@ func (ed *eventDispatcher) electAndStart() {
 }
 
 func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter) ([]fftypes.LocallySequenced, error) {
-	events, err := ed.database.GetEvents(ctx, filter)
+	events, _, err := ed.database.GetEvents(ctx, filter)
 	ls := make([]fftypes.LocallySequenced, len(events))
 	for i, e := range events {
 		ls[i] = e
@@ -173,7 +173,7 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 		mfb.In("id", refIDs),
 		mfb.Eq("namespace", ed.namespace),
 	)
-	msgs, err := ed.database.GetMessages(ed.ctx, msgFilter)
+	msgs, _, err := ed.database.GetMessages(ed.ctx, msgFilter)
 	if err != nil {
 		return nil, err
 	}

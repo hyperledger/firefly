@@ -51,7 +51,7 @@ func (s *SQLCommon) UpsertGroup(ctx context.Context, group *fftypes.Group, allow
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		groupRows, err := s.queryTx(ctx, tx,
+		groupRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("groups").
 				Where(sq.Eq{"hash": group.Hash}),
@@ -165,7 +165,7 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 		}
 	}
 
-	members, err := s.query(ctx,
+	members, _, err := s.query(ctx,
 		sq.Select(
 			"group_hash",
 			"identity",
@@ -222,7 +222,7 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 
 func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (group *fftypes.Group, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(groupColumns...).
 			From("groups").
 			Where(sq.Eq{"hash": hash}),
@@ -250,10 +250,15 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (
 	return group, nil
 }
 
-func (s *SQLCommon) getGroupsQuery(ctx context.Context, query sq.SelectBuilder) (group []*fftypes.Group, err error) {
-	rows, err := s.query(ctx, query)
+func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (group []*fftypes.Group, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From("groups"), filter, groupFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	rows, tx, err := s.query(ctx, query)
+	if err != nil {
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -261,7 +266,7 @@ func (s *SQLCommon) getGroupsQuery(ctx context.Context, query sq.SelectBuilder) 
 	for rows.Next() {
 		group, err := s.groupResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		groups = append(groups, group)
 	}
@@ -269,19 +274,11 @@ func (s *SQLCommon) getGroupsQuery(ctx context.Context, query sq.SelectBuilder) 
 	rows.Close()
 	if len(groups) > 0 {
 		if err = s.loadMembers(ctx, groups); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return groups, err
-}
-
-func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (group []*fftypes.Group, err error) {
-	query, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From("groups"), filter, groupFilterFieldMap, []string{"sequence"})
-	if err != nil {
-		return nil, err
-	}
-	return s.getGroupsQuery(ctx, query)
+	return groups, s.queryRes(ctx, tx, "groups", fop, fi), err
 }
 
 func (s *SQLCommon) UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update database.Update) (err error) {

@@ -31,7 +31,7 @@ import (
 
 type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error)
-	GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error)
+	GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error)
 	ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error)
 	EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error)
 }
@@ -143,7 +143,7 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*fftypes
 	return gm.database.GetGroupByHash(ctx, h)
 }
 
-func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, error) {
+func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
 	return gm.database.GetGroups(ctx, filter)
 }
 

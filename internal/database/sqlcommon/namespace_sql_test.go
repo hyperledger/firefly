@@ -93,9 +93,10 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		fb.Eq("type", string(namespaceUpdated.Type)),
 		fb.Eq("name", namespaceUpdated.Name),
 	)
-	namespaceRes, err := s.GetNamespaces(ctx, filter)
+	namespaceRes, res, err := s.GetNamespaces(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(namespaceRes))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	namespaceReadJson, _ = json.Marshal(namespaceRes[0])
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 
@@ -103,7 +104,7 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, fftypes.ChangeEventTypeDeleted, namespace.ID, mock.Anything).Return()
 	err = s.DeleteNamespace(ctx, namespaceUpdated.ID)
 	assert.NoError(t, err)
-	namespaces, err := s.GetNamespaces(ctx, filter)
+	namespaces, _, err := s.GetNamespaces(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(namespaces))
 
@@ -191,7 +192,7 @@ func TestGetNamespaceQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
-	_, err := s.GetNamespaces(context.Background(), f)
+	_, _, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -199,7 +200,7 @@ func TestGetNamespaceQueryFail(t *testing.T) {
 func TestGetNamespaceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
-	_, err := s.GetNamespaces(context.Background(), f)
+	_, _, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -207,7 +208,7 @@ func TestGetNamespaceReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", "")
-	_, err := s.GetNamespaces(context.Background(), f)
+	_, _, err := s.GetNamespaces(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

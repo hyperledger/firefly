@@ -63,8 +63,8 @@ func TestStartStop(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
 	em.NewPins() <- 12345
@@ -101,8 +101,8 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
 
 	getSubCallReady := make(chan bool, 1)
 	getSubCalled := make(chan bool)
@@ -230,7 +230,7 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	err := em.CreateUpdateDurableSubscription(em.ctx, sub, true)
 	assert.EqualError(t, err, "pop")
 }
@@ -249,7 +249,7 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
 		{Sequence: 12345},
-	}, nil)
+	}, nil, nil)
 	mdi.On("UpsertSubscription", mock.Anything, mock.Anything, false).Return(nil)
 	err := em.CreateUpdateDurableSubscription(em.ctx, sub, true)
 	assert.NoError(t, err)

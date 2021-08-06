@@ -60,7 +60,7 @@ type iNamespaceCollection interface {
 	GetNamespace(ctx context.Context, name string) (offset *fftypes.Namespace, err error)
 
 	// GetNamespaces - Get namespaces
-	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, err error)
+	GetNamespaces(ctx context.Context, filter Filter) (offset []*fftypes.Namespace, res *FilterResult, err error)
 }
 
 type iMessageCollection interface {
@@ -82,13 +82,13 @@ type iMessageCollection interface {
 	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error)
 
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, err error)
+	GetMessages(ctx context.Context, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 
 	// GetMessageRefs - Lighter weight query to just get the reference info of messages
-	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, error)
+	GetMessageRefs(ctx context.Context, filter Filter) ([]*fftypes.MessageRef, *FilterResult, error)
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, err error)
+	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
 }
 
 type iDataCollection interface {
@@ -103,10 +103,10 @@ type iDataCollection interface {
 	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error)
 
 	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, err error)
+	GetData(ctx context.Context, filter Filter) (message []*fftypes.Data, res *FilterResult, err error)
 
 	// GetDataRefs - Get data references only (no data)
-	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, err error)
+	GetDataRefs(ctx context.Context, filter Filter) (message fftypes.DataRefs, res *FilterResult, err error)
 }
 
 type iBatchCollection interface {
@@ -121,7 +121,7 @@ type iBatchCollection interface {
 	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Batch, err error)
 
 	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, err error)
+	GetBatches(ctx context.Context, filter Filter) (message []*fftypes.Batch, res *FilterResult, err error)
 }
 
 type iTransactionCollection interface {
@@ -136,7 +136,7 @@ type iTransactionCollection interface {
 	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error)
 
 	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, err error)
+	GetTransactions(ctx context.Context, filter Filter) (message []*fftypes.Transaction, res *FilterResult, err error)
 }
 
 type iDatatypeCollection interface {
@@ -153,7 +153,7 @@ type iDatatypeCollection interface {
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *fftypes.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
-	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, err error)
+	GetDatatypes(ctx context.Context, filter Filter) (datadef []*fftypes.Datatype, res *FilterResult, err error)
 }
 
 type iOffsetCollection interface {
@@ -167,7 +167,7 @@ type iOffsetCollection interface {
 	GetOffset(ctx context.Context, t fftypes.OffsetType, name string) (offset *fftypes.Offset, err error)
 
 	// GetOffsets - Get offsets
-	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, err error)
+	GetOffsets(ctx context.Context, filter Filter) (offset []*fftypes.Offset, res *FilterResult, err error)
 
 	// DeleteOffset - Delete an offset by name
 	DeleteOffset(ctx context.Context, t fftypes.OffsetType, name string) (err error)
@@ -178,7 +178,7 @@ type iPinCollection interface {
 	UpsertPin(ctx context.Context, parked *fftypes.Pin) (err error)
 
 	// GetPins - Get pins
-	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, err error)
+	GetPins(ctx context.Context, filter Filter) (offset []*fftypes.Pin, res *FilterResult, err error)
 
 	// SetPinDispatched - Set the dispatched flag to true on the specified pins
 	SetPinDispatched(ctx context.Context, sequence int64) (err error)
@@ -198,7 +198,7 @@ type iOperationCollection interface {
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)
 
 	// GetOperations - Get operation
-	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, err error)
+	GetOperations(ctx context.Context, filter Filter) (operation []*fftypes.Operation, res *FilterResult, err error)
 }
 
 type iSubscriptionCollection interface {
@@ -216,7 +216,7 @@ type iSubscriptionCollection interface {
 	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *fftypes.Subscription, err error)
 
 	// GetSubscriptions - Get subscriptions
-	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, err error)
+	GetSubscriptions(ctx context.Context, filter Filter) (offset []*fftypes.Subscription, res *FilterResult, err error)
 
 	// DeleteSubscriptionByID - Delete a subscription
 	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
@@ -233,7 +233,7 @@ type iEventCollection interface {
 	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error)
 
 	// GetEvents - Get events
-	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, err error)
+	GetEvents(ctx context.Context, filter Filter) (message []*fftypes.Event, res *FilterResult, err error)
 }
 
 type iOrganizationsCollection interface {
@@ -253,7 +253,7 @@ type iOrganizationsCollection interface {
 	GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (org *fftypes.Organization, err error)
 
 	// GetOrganizations - Get organizations
-	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, err error)
+	GetOrganizations(ctx context.Context, filter Filter) (org []*fftypes.Organization, res *FilterResult, err error)
 }
 
 type iNodeCollection interface {
@@ -270,7 +270,7 @@ type iNodeCollection interface {
 	GetNodeByID(ctx context.Context, id *fftypes.UUID) (node *fftypes.Node, err error)
 
 	// GetNodes - Get nodes
-	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, err error)
+	GetNodes(ctx context.Context, filter Filter) (node []*fftypes.Node, res *FilterResult, err error)
 }
 
 type iGroupCollection interface {
@@ -284,7 +284,7 @@ type iGroupCollection interface {
 	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *fftypes.Group, err error)
 
 	// GetGroups - Get groups
-	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, err error)
+	GetGroups(ctx context.Context, filter Filter) (node []*fftypes.Group, res *FilterResult, err error)
 }
 
 type iNonceCollection interface {
@@ -295,7 +295,7 @@ type iNonceCollection interface {
 	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
 
 	// GetNonces - Get contexts
-	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, err error)
+	GetNonces(ctx context.Context, filter Filter) (node []*fftypes.Nonce, res *FilterResult, err error)
 
 	// DeleteNonce - Delete context by hash
 	DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err error)
@@ -312,7 +312,7 @@ type iNextPinCollection interface {
 	GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error)
 
 	// GetNextPins - get nextpins
-	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, err error)
+	GetNextPins(ctx context.Context, filter Filter) (message []*fftypes.NextPin, res *FilterResult, err error)
 
 	// UpdateNextPin - update a next hash using its local database ID
 	UpdateNextPin(ctx context.Context, sequence int64, update Update) (err error)
@@ -329,7 +329,7 @@ type iBlobCollection interface {
 	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
 
 	// GetBlobs - get blobs
-	GetBlobs(ctx context.Context, filter Filter) (message []*fftypes.Blob, err error)
+	GetBlobs(ctx context.Context, filter Filter) (message []*fftypes.Blob, res *FilterResult, err error)
 
 	// DeleteBlob - delete a blob, using its local database ID
 	DeleteBlob(ctx context.Context, sequence int64) (err error)
@@ -344,7 +344,7 @@ type iConfigRecordCollection interface {
 	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
 
 	// GetConfigRecords - Get config records
-	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, err error)
+	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, res *FilterResult, err error)
 
 	// DeleteConfigRecord - Delete config record
 	DeleteConfigRecord(ctx context.Context, key string) (err error)

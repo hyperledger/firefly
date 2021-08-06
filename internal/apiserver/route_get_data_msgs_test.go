@@ -32,7 +32,7 @@ func TestGetMessagesForData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessagesForData", mock.Anything, "mynamespace", "abcd1234", mock.Anything).
-		Return([]*fftypes.Message{}, nil)
+		Return([]*fftypes.Message{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

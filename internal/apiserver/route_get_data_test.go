@@ -32,7 +32,7 @@ func TestGetData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetData", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Data{}, nil)
+		Return([]*fftypes.Data{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

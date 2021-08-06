@@ -95,9 +95,10 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 		fb.Eq("description", string(organizationUpdated.Description)),
 		fb.Eq("identity", organizationUpdated.Identity),
 	)
-	organizationRes, err := s.GetOrganizations(ctx, filter)
+	organizationRes, res, err := s.GetOrganizations(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(organizationRes))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	organizationReadJson, _ = json.Marshal(organizationRes[0])
 	assert.Equal(t, string(organizationJson), string(organizationReadJson))
 
@@ -112,7 +113,7 @@ func TestOrganizationsE2EWithDB(t *testing.T) {
 		fb.Eq("identity", organizationUpdated.Identity),
 		fb.Eq("created", updateTime.String()),
 	)
-	organizations, err := s.GetOrganizations(ctx, filter)
+	organizations, _, err := s.GetOrganizations(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(organizations))
 
@@ -216,7 +217,7 @@ func TestGetOrganizationQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", "")
-	_, err := s.GetOrganizations(context.Background(), f)
+	_, _, err := s.GetOrganizations(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -224,7 +225,7 @@ func TestGetOrganizationQueryFail(t *testing.T) {
 func TestGetOrganizationBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", map[bool]bool{true: false})
-	_, err := s.GetOrganizations(context.Background(), f)
+	_, _, err := s.GetOrganizations(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -232,7 +233,7 @@ func TestGetOrganizationReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
 	f := database.OrganizationQueryFactory.NewFilter(context.Background()).Eq("identity", "")
-	_, err := s.GetOrganizations(context.Background(), f)
+	_, _, err := s.GetOrganizations(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

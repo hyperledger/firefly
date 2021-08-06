@@ -61,7 +61,7 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		opRows, err := s.queryTx(ctx, tx,
+		opRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("operations").
 				Where(sq.Eq{"id": operation.ID}),
@@ -149,7 +149,7 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 
 func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(opColumns...).
 			From("operations").
 			Where(sq.Eq{"id": id}),
@@ -172,16 +172,16 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 	return op, nil
 }
 
-func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, err error) {
+func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -189,12 +189,12 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	for rows.Next() {
 		op, err := s.opResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		ops = append(ops, op)
 	}
 
-	return ops, err
+	return ops, s.queryRes(ctx, tx, "operations", fop, fi), err
 }
 
 func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {

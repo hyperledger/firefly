@@ -32,7 +32,7 @@ func TestGetNamespaces(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetNamespaces", mock.Anything, mock.Anything).
-		Return([]*fftypes.Namespace{}, nil)
+		Return([]*fftypes.Namespace{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

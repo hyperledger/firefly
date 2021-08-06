@@ -53,7 +53,7 @@ func (s *SQLCommon) UpsertOrganization(ctx context.Context, organization *fftype
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		organizationRows, err := s.queryTx(ctx, tx,
+		organizationRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("id").
 				From("orgs").
 				Where(sq.Eq{"identity": organization.Identity}),
@@ -140,7 +140,7 @@ func (s *SQLCommon) organizationResult(ctx context.Context, row *sql.Rows) (*fft
 
 func (s *SQLCommon) getOrganizationPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Organization, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(organizationColumns...).
 			From("orgs").
 			Where(pred),
@@ -175,16 +175,16 @@ func (s *SQLCommon) GetOrganizationByID(ctx context.Context, id *fftypes.UUID) (
 	return s.getOrganizationPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter) (message []*fftypes.Organization, err error) {
+func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter) (message []*fftypes.Organization, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(organizationColumns...).From("orgs"), filter, organizationFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -192,12 +192,12 @@ func (s *SQLCommon) GetOrganizations(ctx context.Context, filter database.Filter
 	for rows.Next() {
 		d, err := s.organizationResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		organization = append(organization, d)
 	}
 
-	return organization, err
+	return organization, s.queryRes(ctx, tx, "orgs", fop, fi), err
 
 }
 

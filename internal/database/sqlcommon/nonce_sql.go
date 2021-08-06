@@ -48,7 +48,7 @@ func (s *SQLCommon) UpsertNonceNext(ctx context.Context, nonce *fftypes.Nonce) (
 
 	existing := false
 	// Do a select within the transaction to detemine if the UUID already exists
-	nonceRows, err := s.queryTx(ctx, tx,
+	nonceRows, _, err := s.queryTx(ctx, tx,
 		sq.Select("nonce", sequenceColumn).
 			From("nonces").
 			Where(
@@ -116,7 +116,7 @@ func (s *SQLCommon) nonceResult(ctx context.Context, row *sql.Rows) (*fftypes.No
 
 func (s *SQLCommon) GetNonce(ctx context.Context, context *fftypes.Bytes32) (message *fftypes.Nonce, err error) {
 
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(nonceColumns...).
 			From("nonces").
 			Where(sq.Eq{"context": context}),
@@ -139,16 +139,16 @@ func (s *SQLCommon) GetNonce(ctx context.Context, context *fftypes.Bytes32) (mes
 	return nonce, nil
 }
 
-func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (message []*fftypes.Nonce, err error) {
+func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (message []*fftypes.Nonce, fr *database.FilterResult, err error) {
 
-	query, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -156,12 +156,12 @@ func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (mess
 	for rows.Next() {
 		d, err := s.nonceResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		nonce = append(nonce, d)
 	}
 
-	return nonce, err
+	return nonce, s.queryRes(ctx, tx, "nonces", fop, fi), err
 
 }
 

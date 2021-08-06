@@ -339,10 +339,10 @@ func TestGetGroupsOk(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
-	groups, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
+	groups, _, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
 	assert.NoError(t, err)
 	assert.Empty(t, groups)
 }

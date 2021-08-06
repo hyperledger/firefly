@@ -69,7 +69,7 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context) (*fftypes.NodeStatus, error)
 
 	// Subscription management
-	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, error)
+	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, *database.FilterResult, error)
 	GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error)
 	CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
@@ -77,32 +77,32 @@ type Orchestrator interface {
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
-	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, error)
+	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error)
 	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
-	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, error)
+	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
+	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error)
 	GetMessageByID(ctx context.Context, ns, id string, withValues bool) (*fftypes.MessageInOut, error)
-	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, error)
+	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error)
 	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, error)
-	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, error)
+	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
+	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 	GetMessageData(ctx context.Context, ns, id string) ([]*fftypes.Data, error)
-	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, error)
+	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error)
 	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.Batch, error)
-	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, error)
+	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Batch, *database.FilterResult, error)
 	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
-	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, error)
+	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error)
 	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
-	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, error)
+	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error)
 	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
-	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, error)
+	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
-	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, error)
+	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 
 	// Config Managemnet
 	GetConfig(ctx context.Context) fftypes.JSONObject
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
-	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, error)
+	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error)
 	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)
 	DeleteConfigRecord(ctx context.Context, key string) (err error)
 	ResetConfig(ctx context.Context)
@@ -241,7 +241,7 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 	// Read configuration from DB and merge with existing config
 	var configRecords []*fftypes.ConfigRecord
 	filter := database.ConfigRecordQueryFactory.NewFilter(ctx).And()
-	if configRecords, err = or.GetConfigRecords(ctx, filter); err != nil {
+	if configRecords, _, err = or.GetConfigRecords(ctx, filter); err != nil {
 		return err
 	}
 	if len(configRecords) == 0 && config.GetBool(config.AdminPreinit) {

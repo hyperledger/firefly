@@ -40,7 +40,7 @@ func (_m *Manager) GetNodeByID(ctx context.Context, id string) (*fftypes.Node, e
 }
 
 // GetNodes provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, error) {
+func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Node
@@ -52,14 +52,23 @@ func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // GetOrganizationByID provides a mock function with given fields: ctx, id
@@ -86,7 +95,7 @@ func (_m *Manager) GetOrganizationByID(ctx context.Context, id string) (*fftypes
 }
 
 // GetOrganizations provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, error) {
+func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
 	var r0 []*fftypes.Organization
@@ -98,14 +107,23 @@ func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilt
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) error); ok {
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
 		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // RegisterNode provides a mock function with given fields: ctx, waitConfirm

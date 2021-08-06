@@ -149,22 +149,26 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Gt("created", "0"),
 		fb.Gt("confirmed", "0"),
 	)
-	msgs, err := s.GetMessages(ctx, filter)
+	msgs, res, err := s.GetMessages(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
 	// Check just getting hte refs
-	msgRefs, err := s.GetMessageRefs(ctx, filter)
+	msgRefs, res, err := s.GetMessageRefs(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	assert.Equal(t, msgUpdated.Header.ID, msgRefs[0].ID)
 	assert.Equal(t, msgUpdated.Hash, msgRefs[0].Hash)
 	assert.Equal(t, msgUpdated.Sequence, msgRefs[0].Sequence)
 
 	// Check we can get it with a filter on only mesasges with a particular data ref
-	msgs, err = s.GetMessagesForData(ctx, dataID3, filter)
+	msgs, _, err = s.GetMessagesForData(ctx, dataID3, filter.Count(true))
+	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
+	msgs, _, err = s.GetMessagesForData(ctx, dataID3, filter.Count(false))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
@@ -175,7 +179,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Eq("id", msgUpdated.Header.ID.String()),
 		fb.Eq("created", "0"),
 	)
-	msgs, err = s.GetMessages(ctx, filter)
+	msgs, _, err = s.GetMessages(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(msgs))
 
@@ -193,7 +197,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Eq("id", msgUpdated.Header.ID.String()),
 		fb.Eq("group", gid2),
 	)
-	msgs, err = s.GetMessages(ctx, filter)
+	msgs, _, err = s.GetMessages(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	assert.Equal(t, *bid2, *msgs[0].BatchID)
@@ -406,7 +410,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -414,7 +418,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -422,7 +426,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
-	_, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
+	_, _, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
 	assert.Regexp(t, "FF10148", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -431,7 +435,7 @@ func TestGetMessagesReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -446,7 +450,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 		AddRow(msgID.String(), nil, fftypes.MessageTypeBroadcast, "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), true, true, 0, "pin", nil, false, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
-	_, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -454,7 +458,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 func TestGetMessageRefsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, err := s.GetMessageRefs(context.Background(), f)
+	_, _, err := s.GetMessageRefs(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
@@ -462,7 +466,7 @@ func TestGetMessageRefsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessageRefs(context.Background(), f)
+	_, _, err := s.GetMessageRefs(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -471,7 +475,7 @@ func TestGetMessageRefsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessageRefs(context.Background(), f)
+	_, _, err := s.GetMessageRefs(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

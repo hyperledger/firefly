@@ -61,9 +61,10 @@ func TestBlobsE2EWithDB(t *testing.T) {
 		fb.Eq("payloadref", blob.PayloadRef),
 		fb.Eq("created", blob.Created),
 	)
-	blobRes, err := s.GetBlobs(ctx, filter)
+	blobRes, res, err := s.GetBlobs(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(blobRes))
+	assert.Equal(t, int64(1), *res.TotalCount)
 	blobReadJson, _ = json.Marshal(blobRes[0])
 	assert.Equal(t, string(blobJson), string(blobReadJson))
 	assert.Equal(t, blob.Sequence, blobRes[0].Sequence)
@@ -71,7 +72,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 	// Test delete
 	err = s.DeleteBlob(ctx, blob.Sequence)
 	assert.NoError(t, err)
-	blobs, err := s.GetBlobs(ctx, filter)
+	blobs, _, err := s.GetBlobs(ctx, filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(blobs))
 
@@ -134,7 +135,7 @@ func TestGetBlobQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -142,7 +143,7 @@ func TestGetBlobQueryFail(t *testing.T) {
 func TestGetBlobBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	_, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), f)
 	assert.Regexp(t, "FF10149.*type", err)
 }
 
@@ -150,7 +151,7 @@ func TestGetBlobReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, err := s.GetBlobs(context.Background(), f)
+	_, _, err := s.GetBlobs(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

@@ -70,7 +70,7 @@ func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID string
 
 	// Find the node associated with the peer
 	filter := database.NodeQueryFactory.NewFilter(ctx).Eq("dx.peer", peerID)
-	nodes, err := em.database.GetNodes(ctx, filter)
+	nodes, _, err := em.database.GetNodes(ctx, filter)
 	if err != nil {
 		l.Errorf("Failed to retrieve node: %v", err)
 		return nil, err // retry for persistence error
@@ -179,7 +179,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 			// Find any data associated with this blob
 			var data []*fftypes.DataRef
 			filter := database.DataQueryFactory.NewFilter(ctx).Eq("blob.hash", &hash)
-			data, err = em.database.GetDataRefs(ctx, filter)
+			data, _, err = em.database.GetDataRefs(ctx, filter)
 			if err != nil {
 				return err
 			}
@@ -189,7 +189,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 			for _, data := range data {
 				fb := database.MessageQueryFactory.NewFilter(ctx)
 				filter := fb.And(fb.Eq("pending", true))
-				messages, err = em.database.GetMessagesForData(ctx, data.ID, filter)
+				messages, _, err = em.database.GetMessagesForData(ctx, data.ID, filter)
 				if err != nil {
 					return err
 				}
@@ -233,7 +233,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 			fb.Eq("backendid", trackingID),
 			fb.Eq("plugin", dx.Name()),
 		)
-		operations, err = em.database.GetOperations(em.ctx, filter)
+		operations, _, err = em.database.GetOperations(em.ctx, filter)
 		if err != nil {
 			return true, err
 		}

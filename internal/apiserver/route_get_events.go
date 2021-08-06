@@ -40,7 +40,6 @@ var getEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.GetEvents(r.Ctx, r.PP["ns"], r.Filter)
-		return output, err
+		return filterResult(r.Or.GetEvents(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

@@ -83,7 +83,7 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blo
 func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Blob, err error) {
 	cols := append([]string{}, blobColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, err := s.query(ctx,
+	rows, _, err := s.query(ctx,
 		sq.Select(cols...).
 			From("blobs").
 			Where(pred).
@@ -113,18 +113,18 @@ func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes
 	})
 }
 
-func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*fftypes.Blob, err error) {
+func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*fftypes.Blob, res *database.FilterResult, err error) {
 
 	cols := append([]string{}, blobColumns...)
 	cols = append(cols, sequenceColumn)
-	query, err := s.filterSelect(ctx, "", sq.Select(cols...).From("blobs"), filter, blobFilterFieldMap, []string{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("blobs"), filter, blobFilterFieldMap, []string{"sequence"})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	rows, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
@@ -132,12 +132,12 @@ func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (messa
 	for rows.Next() {
 		d, err := s.blobResult(ctx, rows)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		blob = append(blob, d)
 	}
 
-	return blob, err
+	return blob, s.queryRes(ctx, tx, "blobs", fop, fi), err
 
 }
 

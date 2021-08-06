@@ -225,7 +225,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 			Tag:       "mytag",
 		},
 	})
-	assert.Regexp(t, "FF10267", err)
+	assert.Regexp(t, "FF10269", err)
 
 }
 

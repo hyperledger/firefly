@@ -33,9 +33,9 @@ type Manager interface {
 	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (msg *fftypes.Message, err error)
 
 	GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error)
-	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, error)
+	GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Organization, *database.FilterResult, error)
 	GetNodeByID(ctx context.Context, id string) (*fftypes.Node, error)
-	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, error)
+	GetNodes(ctx context.Context, filter database.AndFilter) ([]*fftypes.Node, *database.FilterResult, error)
 }
 
 type networkMap struct {
