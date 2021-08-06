@@ -27,30 +27,36 @@ import (
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	in.Header.ID = nil
-	return pm.SendMessageWithID(ctx, ns, in, waitConfirm)
+	return pm.SendMessageWithID(ctx, ns, in, nil, waitConfirm)
 }
 
-func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	in.Header.Namespace = ns
-	in.Header.Type = fftypes.MessageTypePrivate
-	if in.Header.Author == "" {
-		in.Header.Author = pm.localOrgIdentity
-	}
-	if in.Header.TxType == "" {
-		in.Header.TxType = fftypes.TransactionTypeBatchPin
+func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+	if unresolved != nil {
+		resolved = &unresolved.Message
 	}
 
-	sender, err := pm.identity.Resolve(ctx, in.Header.Author)
+	resolved.Header.Namespace = ns
+	resolved.Header.Type = fftypes.MessageTypePrivate
+	if resolved.Header.Author == "" {
+		resolved.Header.Author = pm.localOrgIdentity
+	}
+	if resolved.Header.TxType == "" {
+		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
+	}
+
+	sender, err := pm.identity.Resolve(ctx, resolved.Header.Author)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		err = pm.resolveMessage(ctx, sender, in)
+		if unresolved != nil {
+			err = pm.resolveMessage(ctx, sender, unresolved)
+		}
 		if err == nil && !waitConfirm {
 			// We can safely optimize the send into the same DB transaction
-			out, err = pm.sendOrWaitMessage(ctx, in, false)
+			resolved, err = pm.sendOrWaitMessage(ctx, resolved, false)
 		}
 		return err
 	})
@@ -59,9 +65,9 @@ func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, in
 	}
 	if waitConfirm {
 		// perform the send and wait for the confirmation after closing the original DB transaction
-		out, err = pm.sendOrWaitMessage(ctx, in, true)
+		return pm.sendOrWaitMessage(ctx, resolved, true)
 	}
-	return out, err
+	return resolved, err
 }
 
 func (pm *privateMessaging) resolveMessage(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) (err error) {
@@ -75,45 +81,45 @@ func (pm *privateMessaging) resolveMessage(ctx context.Context, sender *fftypes.
 	return err
 }
 
-func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
 
-	immediateConfirm := in.Message.Header.TxType == fftypes.TransactionTypeNone
+	immediateConfirm := msg.Header.TxType == fftypes.TransactionTypeNone
 
 	if immediateConfirm {
-		in.Message.Confirmed = fftypes.Now()
-		in.Message.Pending = false
+		msg.Confirmed = fftypes.Now()
+		msg.Pending = false
 	}
 
 	if immediateConfirm || !waitConfirm {
 
 		// Seal the message
-		if err := in.Message.Seal(ctx); err != nil {
+		if err := msg.Seal(ctx); err != nil {
 			return nil, err
 		}
 
 		// Store the message - this asynchronously triggers the next step in process
-		if err = pm.database.InsertMessageLocal(ctx, &in.Message); err != nil {
+		if err := pm.database.InsertMessageLocal(ctx, msg); err != nil {
 			return nil, err
 		}
 
 		if immediateConfirm {
-			err = pm.sendUnpinnedMessage(ctx, &in.Message)
-			if err != nil {
+			if err := pm.sendUnpinnedMessage(ctx, msg); err != nil {
 				return nil, err
 			}
 
 			// Emit a confirmation event locally immediately
-			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, in.Message.Header.Namespace, in.Message.Header.ID)
-			err = pm.database.InsertEvent(ctx, event)
+			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, msg.Header.Namespace, msg.Header.ID)
+			if err := pm.database.InsertEvent(ctx, event); err != nil {
+				return nil, err
+			}
 		}
 
-		return &in.Message, err
-
+		return msg, nil
 	}
 
 	// Pass it to the sync-async handler to wait for the confirmation to come back in.
 	// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
-	return pm.syncasync.SendConfirm(ctx, in.Header.Namespace, in)
+	return pm.syncasync.SendConfirm(ctx, msg)
 
 }
 

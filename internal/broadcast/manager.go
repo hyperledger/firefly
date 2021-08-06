@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -38,6 +39,7 @@ type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
+	BroadcastMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	Start() error
@@ -53,9 +55,10 @@ type broadcastManager struct {
 	exchange      dataexchange.Plugin
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
+	syncasync     syncasync.Bridge
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || ii == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -68,6 +71,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		exchange:      dx,
 		publicstorage: pi,
 		batch:         ba,
+		syncasync:     sa,
 	}
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
@@ -182,19 +186,19 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	return bm.database.UpsertOperation(ctx, op, false)
 }
 
-func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (retMsg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
 
-	// Seal the message
-	if err = msg.Seal(ctx); err != nil {
-		return nil, err
+	if !waitConfirm {
+		// Seal the message
+		if err := msg.Seal(ctx); err != nil {
+			return nil, err
+		}
+
+		// Store the message - this asynchronously triggers the next step in process
+		return msg, bm.database.InsertMessageLocal(ctx, msg)
 	}
 
-	if waitConfirm {
-		// TODO: Do the wait
-		return nil, nil
-	}
-	// Store the message - this asynchronously triggers the next step in process
-	return msg, bm.database.InsertMessageLocal(ctx, msg)
+	return bm.syncasync.SendConfirm(ctx, msg)
 }
 
 func (bm *broadcastManager) Start() error {

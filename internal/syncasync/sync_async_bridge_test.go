@@ -53,7 +53,7 @@ func TestRequestReplyOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
 		msg := a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msg.Header.ID)
@@ -119,16 +119,16 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	var msgSent *fftypes.MessageInOut
+	var msgSent *fftypes.Message
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
-		msgSent = a[2].(*fftypes.MessageInOut)
+		msgSent = a[3].(*fftypes.Message)
 		assert.NotNil(t, msgSent.Header.ID)
 		requestID = msgSent.Header.ID
 		assert.Equal(t, "mytag", msgSent.Header.Tag)
-		send.ReturnArguments = mock.Arguments{&msgSent.Message, nil}
+		send.ReturnArguments = mock.Arguments{msgSent, nil}
 
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
@@ -149,7 +149,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 		msgSent.Confirmed = fftypes.Now()
 		msgSent.Rejected = false
 		gmid.ReturnArguments = mock.Arguments{
-			&msgSent.Message, nil,
+			msgSent, nil,
 		}
 	}
 
@@ -158,11 +158,10 @@ func TestAwaitConfirmationOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.SendConfirm(sa.ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Tag: "mytag",
-			},
+	reply, err := sa.SendConfirm(sa.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			Tag:       "mytag",
 		},
 	})
 	assert.NoError(t, err)
@@ -181,16 +180,16 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	var msgSent *fftypes.MessageInOut
+	var msgSent *fftypes.Message
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
-		msgSent = a[2].(*fftypes.MessageInOut)
+		msgSent = a[3].(*fftypes.Message)
 		assert.NotNil(t, msgSent.Header.ID)
 		requestID = msgSent.Header.ID
 		assert.Equal(t, "mytag", msgSent.Header.Tag)
-		send.ReturnArguments = mock.Arguments{&msgSent.Message, nil}
+		send.ReturnArguments = mock.Arguments{msgSent, nil}
 
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
@@ -211,7 +210,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 		msgSent.Confirmed = fftypes.Now()
 		msgSent.Rejected = false
 		gmid.ReturnArguments = mock.Arguments{
-			&msgSent.Message, nil,
+			msgSent, nil,
 		}
 	}
 
@@ -220,11 +219,10 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	_, err := sa.SendConfirm(sa.ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Tag: "mytag",
-			},
+	_, err := sa.SendConfirm(sa.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			Tag:       "mytag",
 		},
 	})
 	assert.Regexp(t, "FF10267", err)
@@ -240,7 +238,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false).Return(&fftypes.Message{}, nil)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false).Return(&fftypes.Message{}, nil)
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -262,7 +260,7 @@ func TestRequestReplySendFail(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	msd := sa.sender.(*sysmessagingmocks.MessageSender)
-	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, false).Return(nil, fmt.Errorf("pop"))
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

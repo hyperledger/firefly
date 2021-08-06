@@ -38,7 +38,7 @@ type Bridge interface {
 	// The input message must have a tag, and a group, to be routed appropriately.
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 	// SendConfirm blocks until the message is confirmed (or rejected), but does not look for a reply.
-	SendConfirm(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.Message, err error)
+	SendConfirm(ctx context.Context, request *fftypes.Message) (reply *fftypes.Message, err error)
 }
 
 type inflightRequest struct {
@@ -195,11 +195,14 @@ func (sa *syncAsyncBridge) resolveInflight(inflight *inflightRequest, msg *fftyp
 
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, inRequest *fftypes.MessageInOut, waitForReply, withData bool) (reply interface{}, err error) {
-	if inRequest.Header.Tag == "" {
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitForReply, withData bool) (reply interface{}, err error) {
+	if unresolved != nil {
+		resolved = &unresolved.Message
+	}
+	if resolved.Header.Tag == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
 	}
-	if inRequest.Header.CID != nil {
+	if resolved.Header.CID != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
 
@@ -212,8 +215,8 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, inRequest
 		sa.removeInFlight(inflight, replyID)
 	}()
 
-	inRequest.Header.ID = inflight.id
-	_, err = sa.sender.SendMessageWithID(ctx, ns, inRequest, false)
+	resolved.Header.ID = inflight.id
+	_, err = sa.sender.SendMessageWithID(ctx, ns, unresolved, resolved, false)
 	if err != nil {
 		return nil, err
 	}
@@ -234,16 +237,22 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, inRequest
 	}
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, inRequest *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	reply, err := sa.sendAndWait(ctx, ns, inRequest, true /* wait for a reply */, true /* reply will be MessageInOut */)
+func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	reply, err := sa.sendAndWait(ctx, ns, unresolved, nil,
+		true, // wait for a reply
+		true, // reply will be MessageInOut
+	)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, inRequest *fftypes.MessageInOut) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, ns, inRequest, false /* just wait for confirmation */, false /* reply will be Message */)
+func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
+	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, nil, msg,
+		false, // wait for confirmation, but not a reply
+		false, // do not include the full data in the reply
+	)
 	if err != nil {
 		return nil, err
 	}

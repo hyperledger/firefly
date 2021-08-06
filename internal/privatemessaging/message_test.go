@@ -76,7 +76,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything).Return(retMsg, nil).Once()
+	msa.On("SendConfirm", pm.ctx, mock.Anything).Return(retMsg, nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -268,24 +268,17 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 
 }
 
-func TestResolveAndSendSealFail(t *testing.T) {
+func TestSealFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
 	id1 := fftypes.NewUUID()
-	_, err := pm.sendOrWaitMessage(pm.ctx, &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{Namespace: "ns1"},
-			Data: fftypes.DataRefs{
-				{ID: id1},
-				{ID: id1}, // duplicate
-			},
-		},
-		Group: &fftypes.InputGroup{
-			Members: []fftypes.MemberInput{
-				{Identity: "localorg"},
-			},
+	_, err := pm.sendOrWaitMessage(pm.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{Namespace: "ns1"},
+		Data: fftypes.DataRefs{
+			{ID: id1},
+			{ID: id1}, // duplicate
 		},
 	}, false)
 	assert.Regexp(t, "FF10144", err)

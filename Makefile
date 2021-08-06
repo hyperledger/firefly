@@ -37,6 +37,7 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Callbacks        --output mocks/dataexchangemocks     --outpkg dataexchangemocks
 		${MOCKERY} --case underscore --dir internal/sysmessaging     --name MessageSender    --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
 		${MOCKERY} --case underscore --dir internal/sysmessaging     --name SystemEvents     --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
+		${MOCKERY} --case underscore --dir internal/syncasync        --name Bridge           --output mocks/syncasyncmocks        --outpkg syncasyncmocks
 		${MOCKERY} --case underscore --dir internal/data             --name Manager          --output mocks/datamocks             --outpkg datamocks
 		${MOCKERY} --case underscore --dir internal/batch            --name Manager          --output mocks/batchmocks            --outpkg batchmocks
 		${MOCKERY} --case underscore --dir internal/broadcast        --name Manager          --output mocks/broadcastmocks        --outpkg broadcastmocks
@@ -44,7 +45,6 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir internal/syshandlers      --name SystemHandlers   --output mocks/syshandlersmocks      --outpkg syshandlersmocks
 		${MOCKERY} --case underscore --dir internal/events           --name EventManager     --output mocks/eventmocks            --outpkg eventmocks
 		${MOCKERY} --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
-		${MOCKERY} --case underscore --dir internal/syncasync        --name Bridge           --output mocks/syncasyncmocks        --outpkg syncasyncmocks
 		${MOCKERY} --case underscore --dir internal/wsclient         --name WSClient         --output mocks/wsmocks               --outpkg wsmocks
 		${MOCKERY} --case underscore --dir internal/orchestrator     --name Orchestrator     --output mocks/orchestratormocks     --outpkg orchestratormocks
 		${MOCKERY} --case underscore --dir internal/apiserver        --name Server           --output mocks/apiservermocks        --outpkg apiservermocks

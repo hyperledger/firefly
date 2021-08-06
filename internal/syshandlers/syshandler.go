@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
+	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -33,9 +34,8 @@ import (
 // SystemHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
 type SystemHandlers interface {
 	privatemessaging.GroupManager
+	sysmessaging.MessageSender
 
-	SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
 }
 
@@ -75,8 +75,11 @@ func (sh *systemHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.G
 	return sh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return sh.messaging.SendMessageWithID(ctx, ns, in, waitConfirm)
+func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+	if resolved.Header.Group == nil {
+		return sh.broadcast.BroadcastMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)
+	}
+	return sh.messaging.SendMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)
 }
 
 func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
