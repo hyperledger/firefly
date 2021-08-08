@@ -36,9 +36,10 @@ var postRegisterOrg = &oapispec.Route{
 	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		// This (old) route is always async, and returns the message
 		output, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
 		return output, err
 	},
+	Deprecated: true, // moving to more intutitive route/return structure
 }

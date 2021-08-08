@@ -39,7 +39,7 @@ var getSubscriptions = &oapispec.Route{
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.GetSubscriptions(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

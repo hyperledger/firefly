@@ -38,7 +38,7 @@ var getConfigRecord = &oapispec.Route{
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return fftypes.Byteable{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		configRecord, err := r.Or.GetConfigRecord(r.Ctx, r.PP["key"])
 		return configRecord.Value, err
 	},

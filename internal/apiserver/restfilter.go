@@ -35,6 +35,13 @@ type filterResultsWithCount struct {
 	Items interface{} `json:"items"`
 }
 
+func syncRetcode(isSync bool) int {
+	if isSync {
+		return http.StatusOK
+	}
+	return http.StatusAccepted
+}
+
 func filterResult(items interface{}, res *database.FilterResult, err error) (interface{}, error) {
 	itemsVal := reflect.ValueOf(items)
 	if err != nil || res == nil || res.TotalCount == nil || itemsVal.Kind() != reflect.Slice {

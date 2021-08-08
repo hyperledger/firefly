@@ -17,52 +17,35 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
+	"strings"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-const anyJSONSchema = `{
-	"anyOf": [
-		{
-			"type": "string"
-		},
-		{
-			"type": "number"
-		},
-		{
-			"type": "object",
-			"additionalProperties": true
-		},
-		{
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": true
-			}
-		}
-	]
-}`
-
-var putConfigRecord = &oapispec.Route{
-	Name:   "putConfigRecord",
-	Path:   "config/records/{key}",
-	Method: http.MethodPut,
+var postNewDatatype = &oapispec.Route{
+	Name:   "postNewDatatype",
+	Path:   "namespaces/{ns}/datatypes",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
-	JSONOutputValue: nil,
-	JSONOutputCodes: []int{http.StatusOK},
-	JSONInputSchema: func(ctx context.Context) string { return anyJSONSchema },
+	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
+	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Message"},
+	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
+	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PutConfigRecord(r.Ctx, r.PP["key"], *r.Input.(*fftypes.Byteable))
-		return output, err
+		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+		r.SuccessStatus = syncRetcode(waitConfirm)
+		_, err = r.Or.Broadcast().BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype), waitConfirm)
+		return r.Input, err
 	},
 }

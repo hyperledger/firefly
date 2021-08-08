@@ -39,7 +39,7 @@ var getOpByID = &oapispec.Route{
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.GetOperationByID(r.Ctx, r.PP["ns"], r.PP["opid"])
 		return output, err
 	},

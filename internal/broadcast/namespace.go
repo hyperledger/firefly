@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (*fftypes.Message, error) {
 
 	// Validate the input data definition data
 	ns.ID = fftypes.NewUUID()
@@ -31,5 +31,9 @@ func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.
 	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-	return bm.broadcastDefinitionAsNode(ctx, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
+	msg, err := bm.broadcastDefinitionAsNode(ctx, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
+	if msg != nil {
+		ns.Message = msg.Header.ID
+	}
+	return msg, err
 }

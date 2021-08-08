@@ -37,7 +37,7 @@ var postResetConfig = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},
 	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		r.Or.ResetConfig(r.Ctx)
 		return nil, nil
 	},

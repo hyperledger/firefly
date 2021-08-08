@@ -217,18 +217,18 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		}
 
 		if err == nil {
-			status = http.StatusOK
-			if len(route.JSONOutputCodes) > 0 {
-				status = route.JSONOutputCodes[0]
+			r := &oapispec.APIRequest{
+				Ctx:           req.Context(),
+				Or:            o,
+				Req:           req,
+				PP:            pathParams,
+				QP:            queryParams,
+				Filter:        filter,
+				Input:         jsonInput,
+				SuccessStatus: http.StatusOK,
 			}
-			r := oapispec.APIRequest{
-				Ctx:    req.Context(),
-				Or:     o,
-				Req:    req,
-				PP:     pathParams,
-				QP:     queryParams,
-				Filter: filter,
-				Input:  jsonInput,
+			if len(route.JSONOutputCodes) > 0 {
+				r.SuccessStatus = route.JSONOutputCodes[0]
 			}
 			if multipart != nil {
 				r.FP = multipart.formParams
@@ -237,6 +237,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 			} else {
 				output, err = route.JSONHandler(r)
 			}
+			status = r.SuccessStatus // Can be updated by the route
 		}
 		if err == nil && multipart != nil {
 			// Catch the case that someone puts form fields after the file in a multi-part body.

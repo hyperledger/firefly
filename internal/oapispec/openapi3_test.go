@@ -86,7 +86,7 @@ var testRoutes = []*Route{
 		FormParams: []*FormParam{
 			{Name: "metadata", Description: i18n.MsgTBD},
 		},
-		FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
+		FormUploadHandler: func(r *APIRequest) (output interface{}, err error) { return nil, nil },
 	},
 	{
 		Name:   "op4",

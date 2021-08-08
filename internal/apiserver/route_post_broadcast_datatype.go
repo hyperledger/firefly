@@ -32,18 +32,16 @@ var postBroadcastDatatype = &oapispec.Route{
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgTBD},
-	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
 	JSONInputMask:   []string{"ID", "Namespace", "Hash", "Created", "Message"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		// This (old) route is always async, and returns the message
 		output, err = r.Or.Broadcast().BroadcastDatatype(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Datatype), false)
 		return output, err
 	},
+	Deprecated: true, // moving to more intutitive route/return structure
 }

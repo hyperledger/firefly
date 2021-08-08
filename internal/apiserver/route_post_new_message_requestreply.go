@@ -20,49 +20,28 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-const anyJSONSchema = `{
-	"anyOf": [
-		{
-			"type": "string"
-		},
-		{
-			"type": "number"
-		},
-		{
-			"type": "object",
-			"additionalProperties": true
-		},
-		{
-			"type": "array",
-			"items": {
-				"type": "object",
-				"additionalProperties": true
-			}
-		}
-	]
-}`
-
-var putConfigRecord = &oapispec.Route{
-	Name:   "putConfigRecord",
-	Path:   "config/records/{key}",
-	Method: http.MethodPut,
+var postNewMessageRequestReply = &oapispec.Route{
+	Name:   "postNewMessageRequestReply",
+	Path:   "namespaces/{ns}/messages/requestreply",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.Byteable{} },
-	JSONOutputValue: nil,
-	JSONOutputCodes: []int{http.StatusOK},
-	JSONInputSchema: func(ctx context.Context) string { return anyJSONSchema },
+	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
+	JSONInputSchema: func(ctx context.Context) string { return privateSendSchema },
+	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
+	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PutConfigRecord(r.Ctx, r.PP["key"], *r.Input.(*fftypes.Byteable))
+		output, err = r.Or.SyncAsyncBridge().RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
 		return output, err
 	},
 }

@@ -178,6 +178,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		Description: i18n.Expand(ctx, route.Description),
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
+		Deprecated:  route.Deprecated,
 	}
 	if route.Method != http.MethodGet && route.Method != http.MethodDelete {
 		var input interface{}
