@@ -4617,6 +4617,7 @@ paths:
         in: query
         name: confirm
         schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
@@ -4636,48 +4637,23 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
+                  created: {}
+                  description:
+                    type: string
+                  dx:
                     properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
+                      endpoint:
+                        additionalProperties: {}
+                        type: object
+                      peer:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  owner:
+                    type: string
                 type: object
           description: Success
         "202":
@@ -4685,48 +4661,23 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
+                  created: {}
+                  description:
+                    type: string
+                  dx:
                     properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
+                      endpoint:
+                        additionalProperties: {}
+                        type: object
+                      peer:
                         type: string
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  owner:
+                    type: string
                 type: object
           description: Success
         default:
@@ -4846,6 +4797,7 @@ paths:
         in: query
         name: confirm
         schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
@@ -4877,48 +4829,20 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
-                    properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
-                        type: string
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
                 type: object
           description: Success
         "202":
@@ -4926,48 +4850,20 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
-                    properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
-                        type: string
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
                 type: object
           description: Success
         default:
@@ -5023,6 +4919,7 @@ paths:
         in: query
         name: confirm
         schema:
+          example: "true"
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
@@ -5042,48 +4939,20 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
-                    properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
-                        type: string
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
                 type: object
           description: Success
         "202":
@@ -5091,48 +4960,20 @@ paths:
             application/json:
               schema:
                 properties:
-                  batch: {}
-                  confirmed: {}
-                  data:
-                    items:
-                      properties:
-                        hash: {}
-                        id: {}
-                      type: object
-                    type: array
-                  hash: {}
-                  header:
-                    properties:
-                      author:
-                        type: string
-                      cid: {}
-                      created: {}
-                      datahash: {}
-                      group: {}
-                      id: {}
-                      namespace:
-                        type: string
-                      tag:
-                        type: string
-                      topics:
-                        items:
-                          type: string
-                        type: array
-                      txtype:
-                        type: string
-                      type:
-                        type: string
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
                     type: object
-                  local:
-                    type: boolean
-                  pending:
-                    type: boolean
-                  pins:
-                    items:
-                      type: string
-                    type: array
-                  rejected:
-                    type: boolean
                 type: object
           description: Success
         default:

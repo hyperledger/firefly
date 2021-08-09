@@ -32,14 +32,14 @@ var postNodesSelf = &oapispec.Route{
 	Method:     http.MethodPost,
 	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
 	JSONInputMask:   nil,
 	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Node{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")

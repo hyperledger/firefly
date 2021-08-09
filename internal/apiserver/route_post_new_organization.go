@@ -31,18 +31,18 @@ var postNewOrganization = &oapispec.Route{
 	Method:     http.MethodPost,
 	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.Organization{} },
 	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Organization{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
+		_, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), waitConfirm)
 		return r.Input, err
 	},
 }
