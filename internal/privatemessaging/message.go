@@ -85,16 +85,16 @@ func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.
 
 	immediateConfirm := msg.Header.TxType == fftypes.TransactionTypeNone
 
-	if immediateConfirm {
-		msg.Confirmed = fftypes.Now()
-		msg.Pending = false
-	}
-
 	if immediateConfirm || !waitConfirm {
 
 		// Seal the message
 		if err := msg.Seal(ctx); err != nil {
 			return nil, err
+		}
+
+		if immediateConfirm {
+			msg.Confirmed = fftypes.Now()
+			msg.Pending = false
 		}
 
 		// Store the message - this asynchronously triggers the next step in process
