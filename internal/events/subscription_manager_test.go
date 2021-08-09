@@ -22,11 +22,10 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -39,6 +38,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	msh := &syshandlersmocks.SystemHandlers{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
@@ -47,11 +47,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.PluginAll) (*subscriptionM
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&fftypes.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
-	rs := &replySender{
-		broadcast: &broadcastmocks.Manager{},
-		messaging: &privatemessagingmocks.Manager{},
-	}
-	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), rs)
+	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), msh)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,

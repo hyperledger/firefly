@@ -128,15 +128,17 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 func addOutput(ctx context.Context, route *Route, output interface{}, op *openapi3.Operation) {
 	schemaRef, _, _ := openapi3gen.NewSchemaRefForValue(output)
 	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
-	op.Responses[strconv.FormatInt(int64(route.JSONOutputCode), 10)] = &openapi3.ResponseRef{
-		Value: &openapi3.Response{
-			Description: &s,
-			Content: openapi3.Content{
-				"application/json": &openapi3.MediaType{
-					Schema: schemaRef,
+	for _, code := range route.JSONOutputCodes {
+		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				Description: &s,
+				Content: openapi3.Content{
+					"application/json": &openapi3.MediaType{
+						Schema: schemaRef,
+					},
 				},
 			},
-		},
+		}
 	}
 }
 
@@ -176,6 +178,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		Description: i18n.Expand(ctx, route.Description),
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
+		Deprecated:  route.Deprecated,
 	}
 	if route.Method != http.MethodGet && route.Method != http.MethodDelete {
 		var input interface{}

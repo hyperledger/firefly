@@ -39,7 +39,7 @@ func TestPostBroadcastMessage(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
+	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

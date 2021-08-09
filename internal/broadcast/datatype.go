@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (*fftypes.Message, error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
@@ -34,15 +34,18 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	if err := datatype.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-	if err = bm.data.VerifyNamespaceExists(ctx, datatype.Namespace); err != nil {
+	if err := bm.data.VerifyNamespaceExists(ctx, datatype.Namespace); err != nil {
 		return nil, err
 	}
 	datatype.Hash = datatype.Value.Hash()
 
 	// Verify the data type is now all valid, before we broadcast it
-	err = bm.data.CheckDatatype(ctx, ns, datatype)
-	if err != nil {
+	if err := bm.data.CheckDatatype(ctx, ns, datatype); err != nil {
 		return nil, err
 	}
-	return bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype)
+	msg, err := bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype, waitConfirm)
+	if msg != nil {
+		datatype.Message = msg.Header.ID
+	}
+	return msg, err
 }

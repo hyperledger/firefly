@@ -25,12 +25,13 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestSendMessageE2EOk(t *testing.T) {
+func TestSendConfirmMessageE2EOk(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -68,6 +69,14 @@ func TestSendMessageE2EOk(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
+
+	retMsg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("SendConfirm", pm.ctx, mock.Anything).Return(retMsg, nil).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
@@ -79,10 +88,9 @@ func TestSendMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, true)
 	assert.NoError(t, err)
-	assert.Equal(t, *dataID, *msg.Data[0].ID)
-	assert.NotNil(t, msg.Header.Group)
+	assert.Equal(t, retMsg, msg)
 
 }
 
@@ -151,7 +159,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *dataID, *msg.Data[0].ID)
 	assert.NotNil(t, msg.Header.Group)
@@ -178,7 +186,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.Regexp(t, "FF10206.*pop", err)
 
 }
@@ -211,7 +219,7 @@ func TestSendMessageFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 }
@@ -221,7 +229,7 @@ func TestResolveAndSendBadMembers(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
+	err := pm.resolveMessage(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
@@ -249,7 +257,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
+	err := pm.resolveMessage(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -261,35 +269,19 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 
 }
 
-func TestResolveAndSendSealFail(t *testing.T) {
+func TestSealFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
-		ID: fftypes.NewUUID(),
-	}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
-		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
-	}, nil, nil).Once()
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
-		{Hash: fftypes.NewRandB32()},
-	}, nil, nil).Once()
-
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
-		{ /* missing */ },
-	}, nil)
-
-	err := pm.resolveAndSend(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
-		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Group: &fftypes.InputGroup{
-			Members: []fftypes.MemberInput{
-				{Identity: "localorg"},
-			},
+	id1 := fftypes.NewUUID()
+	_, err := pm.sendOrWaitMessage(pm.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{Namespace: "ns1"},
+		Data: fftypes.DataRefs{
+			{ID: id1},
+			{ID: id1}, // duplicate
 		},
-	})
+	}, false)
 	assert.Regexp(t, "FF10144", err)
 
 }
@@ -484,7 +476,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -537,7 +529,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -610,7 +602,7 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 				{Identity: "org1"},
 			},
 		},
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)

@@ -26,33 +26,45 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
 	in.Header.ID = nil
-	in.Header.Namespace = ns
-	in.Header.Type = fftypes.MessageTypeBroadcast
-	if in.Header.Author == "" {
-		in.Header.Author = config.GetString(config.OrgIdentity)
+	return bm.BroadcastMessageWithID(ctx, ns, in, nil, waitConfirm)
+}
+
+func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+	if unresolved != nil {
+		resolved = &unresolved.Message
 	}
-	if in.Header.TxType == "" {
-		in.Header.TxType = fftypes.TransactionTypeBatchPin
+	resolved.Header.Namespace = ns
+	resolved.Header.Type = fftypes.MessageTypeBroadcast
+	if resolved.Header.Author == "" {
+		resolved.Header.Author = config.GetString(config.OrgIdentity)
+	}
+	if resolved.Header.TxType == "" {
+		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
 	var dataToPublish []*fftypes.DataAndBlob
 	err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-		in.Message.Data, dataToPublish, err = bm.data.ResolveInlineDataBroadcast(ctx, ns, in.InlineData)
-		if err != nil {
-			return err
+		if unresolved != nil {
+			// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+			resolved.Data, dataToPublish, err = bm.data.ResolveInlineDataBroadcast(ctx, ns, unresolved.InlineData)
+			if err != nil {
+				return err
+			}
 		}
 
 		// If we have data to publish, we break out of the DB transaction, do the publishes, then
 		// do the send later - as that could take a long time (multiple seconds) depending on the size
-		if len(dataToPublish) > 0 {
+		//
+		// Same for waiting for confirmation of the send from the blockchain
+		if len(dataToPublish) > 0 || waitConfirm {
 			return nil
 		}
 
-		return bm.broadcastMessageCommon(ctx, &in.Message)
+		out, err = bm.broadcastMessageCommon(ctx, resolved, false)
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -60,14 +72,16 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 
 	// Perform deferred processing
 	if len(dataToPublish) > 0 {
-		return bm.publishBlobsAndSend(ctx, &in.Message, dataToPublish)
+		return bm.publishBlobsAndSend(ctx, resolved, dataToPublish, waitConfirm)
+	} else if waitConfirm {
+		return bm.broadcastMessageCommon(ctx, resolved, true)
 	}
 
 	// The broadcastMessage function modifies the input message to create all the refs
-	return &in.Message, err
+	return out, err
 }
 
-func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob) (*fftypes.Message, error) {
+func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob, waitConfirm bool) (*fftypes.Message, error) {
 
 	for _, d := range dataToPublish {
 
@@ -96,8 +110,5 @@ func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftype
 	}
 
 	// Now we broadcast the message, as all data has been published
-	if err := bm.broadcastMessageCommon(ctx, msg); err != nil {
-		return nil, err
-	}
-	return msg, nil
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
 }

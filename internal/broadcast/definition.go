@@ -24,15 +24,15 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 	signingIdentity, err := bm.GetNodeSigningIdentity(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return bm.BroadcastDefinition(ctx, def, signingIdentity, tag)
+	return bm.BroadcastDefinition(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	err = bm.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
 	if err != nil {
@@ -78,9 +78,5 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 	}
 
 	// Broadcast the message
-	if err = bm.broadcastMessageCommon(ctx, msg); err != nil {
-		return nil, err
-	}
-
-	return msg, nil
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
 }

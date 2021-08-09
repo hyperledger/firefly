@@ -22,12 +22,11 @@ import (
 	"database/sql/driver"
 	"encoding/binary"
 
-	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
 	"github.com/hyperledger-labs/firefly/internal/retry"
+	"github.com/hyperledger-labs/firefly/internal/syshandlers"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
@@ -39,8 +38,7 @@ const (
 type aggregator struct {
 	ctx             context.Context
 	database        database.Plugin
-	broadcast       broadcast.Manager
-	messaging       privatemessaging.Manager
+	syshandlers     syshandlers.SystemHandlers
 	data            data.Manager
 	eventPoller     *eventPoller
 	newPins         chan int64
@@ -49,13 +47,12 @@ type aggregator struct {
 	retry           *retry.Retry
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bm broadcast.Manager, pm privatemessaging.Manager, dm data.Manager, en *eventNotifier) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, sh syshandlers.SystemHandlers, dm data.Manager, en *eventNotifier) *aggregator {
 	batchSize := config.GetInt(config.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:             log.WithLogField(ctx, "role", "aggregator"),
 		database:        di,
-		broadcast:       bm,
-		messaging:       pm,
+		syshandlers:     sh,
 		data:            dm,
 		newPins:         make(chan int64),
 		offchainBatches: make(chan *fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
@@ -343,7 +340,7 @@ func (ag *aggregator) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 	l := log.L(ctx)
 
 	// It might be the system topic/context initializing the group
-	group, err := ag.messaging.ResolveInitGroup(ctx, msg)
+	group, err := ag.syshandlers.ResolveInitGroup(ctx, msg)
 	if err != nil || group == nil {
 		return nil, err
 	}
@@ -422,7 +419,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	case msg.Header.Namespace == fftypes.SystemNamespace:
 		// We handle system events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the system events they depend on.
-		if valid, err = ag.broadcast.HandleSystemBroadcast(ctx, msg, data); err != nil {
+		if valid, err = ag.syshandlers.HandleSystemBroadcast(ctx, msg, data); err != nil {
 			// Should only return errors that are retryable
 			return false, err
 		}

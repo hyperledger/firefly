@@ -35,8 +35,8 @@ var getConfigRecords = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.ConfigRecord{} },
-	JSONOutputCode:  http.StatusOK,
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONOutputCodes: []int{http.StatusOK},
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.GetConfigRecords(r.Ctx, r.Filter))
 	},
 }

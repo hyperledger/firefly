@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package syshandlers
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *systemHandlers) handleDatatypeBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var dt fftypes.Datatype
-	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &dt)
+	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
 		return false, nil
 	}
@@ -37,12 +37,12 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 		return false, nil
 	}
 
-	if err = bm.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
+	if err = sh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
 		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 		return false, nil
 	}
 
-	existing, err := bm.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
+	existing, err := sh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
 	if err != nil {
 		return false, err // We only return database errors
 	}
@@ -51,12 +51,12 @@ func (bm *broadcastManager) handleDatatypeBroadcast(ctx context.Context, msg *ff
 		return false, nil
 	}
 
-	if err = bm.database.UpsertDatatype(ctx, &dt, false); err != nil {
+	if err = sh.database.UpsertDatatype(ctx, &dt, false); err != nil {
 		return false, err
 	}
 
 	event := fftypes.NewEvent(fftypes.EventTypeDatatypeConfirmed, dt.Namespace, dt.ID)
-	if err = bm.database.InsertEvent(ctx, event); err != nil {
+	if err = sh.database.InsertEvent(ctx, event); err != nil {
 		return false, err
 	}
 

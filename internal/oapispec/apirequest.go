@@ -26,13 +26,14 @@ import (
 )
 
 type APIRequest struct {
-	Ctx    context.Context
-	Or     orchestrator.Orchestrator
-	Req    *http.Request
-	QP     map[string]string
-	PP     map[string]string
-	FP     map[string]string
-	Filter database.AndFilter
-	Input  interface{}
-	Part   *fftypes.Multipart
+	Ctx           context.Context
+	Or            orchestrator.Orchestrator
+	Req           *http.Request
+	QP            map[string]string
+	PP            map[string]string
+	FP            map[string]string
+	Filter        database.AndFilter
+	Input         interface{}
+	Part          *fftypes.Multipart
+	SuccessStatus int
 }

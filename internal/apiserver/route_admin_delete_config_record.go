@@ -35,8 +35,8 @@ var deleteConfigRecord = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
-	JSONOutputCode:  http.StatusNoContent,
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONOutputCodes: []int{http.StatusNoContent},
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		err = r.Or.DeleteConfigRecord(r.Ctx, r.PP["key"])
 		return nil, err
 	},

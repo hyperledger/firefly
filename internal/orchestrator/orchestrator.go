@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
+	"github.com/hyperledger-labs/firefly/internal/syshandlers"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -121,6 +122,7 @@ type orchestrator struct {
 	batch         batch.Manager
 	broadcast     broadcast.Manager
 	messaging     privatemessaging.Manager
+	syshandlers   syshandlers.SystemHandlers
 	data          data.Manager
 	syncasync     syncasync.Bridge
 	bc            boundCallbacks
@@ -156,7 +158,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data, or.events, or.messaging)
 	return err
 }
 
@@ -313,20 +314,24 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch); err != nil {
-			return err
-		}
-	}
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync); err != nil {
 			return err
 		}
 	}
 
+	if or.broadcast == nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync); err != nil {
+			return err
+		}
+	}
+
+	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging)
+
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.broadcast, or.messaging, or.data)
+		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data)
 		if err != nil {
 			return err
 		}
@@ -338,6 +343,8 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 			return err
 		}
 	}
+
+	or.syncasync.Init(or.events, or.syshandlers)
 
 	return nil
 }

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package syshandlers
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
+func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {
 	l := log.L(ctx)
 
 	var org fftypes.Organization
-	valid = bm.getSystemBroadcastPayload(ctx, msg, data, &org)
+	valid = sh.getSystemBroadcastPayload(ctx, msg, data, &org)
 	if !valid {
 		return false, nil
 	}
@@ -40,7 +40,7 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 	signingIdentity := org.Identity
 	if org.Parent != "" {
 		signingIdentity = org.Parent
-		parent, err := bm.database.GetOrganizationByIdentity(ctx, org.Parent)
+		parent, err := sh.database.GetOrganizationByIdentity(ctx, org.Parent)
 		if err != nil {
 			return false, err // We only return database errors
 		}
@@ -50,7 +50,7 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 		}
 	}
 
-	id, err := bm.identity.Resolve(ctx, signingIdentity)
+	id, err := sh.identity.Resolve(ctx, signingIdentity)
 	if err != nil {
 		l.Warnf("Unable to process organization broadcast %s - resolve identity failed: %s", msg.Header.ID, err)
 		return false, nil
@@ -61,11 +61,11 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 		return false, nil
 	}
 
-	existing, err := bm.database.GetOrganizationByIdentity(ctx, org.Identity)
+	existing, err := sh.database.GetOrganizationByIdentity(ctx, org.Identity)
 	if err == nil && existing == nil {
-		existing, err = bm.database.GetOrganizationByName(ctx, org.Name)
+		existing, err = sh.database.GetOrganizationByName(ctx, org.Name)
 		if err == nil && existing == nil {
-			existing, err = bm.database.GetOrganizationByID(ctx, org.ID)
+			existing, err = sh.database.GetOrganizationByID(ctx, org.ID)
 		}
 	}
 	if err != nil {
@@ -79,7 +79,7 @@ func (bm *broadcastManager) handleOrganizationBroadcast(ctx context.Context, msg
 		org.ID = nil // we keep the existing ID
 	}
 
-	if err = bm.database.UpsertOrganization(ctx, &org, true); err != nil {
+	if err = sh.database.UpsertOrganization(ctx, &org, true); err != nil {
 		return false, err
 	}
 

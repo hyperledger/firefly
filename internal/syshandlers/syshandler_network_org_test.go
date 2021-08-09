@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package syshandlers
 
 import (
 	"context"
@@ -30,8 +30,7 @@ import (
 )
 
 func TestHandleSystemBroadcastOrgOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -47,15 +46,15 @@ func TestHandleSystemBroadcastOrgOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, nil)
 	mdi.On("GetOrganizationByName", mock.Anything, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByID", mock.Anything, org.ID).Return(nil, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(nil)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -70,8 +69,7 @@ func TestHandleSystemBroadcastOrgOk(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgDupOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -87,13 +85,13 @@ func TestHandleSystemBroadcastOrgDupOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x23456"}, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(nil)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -108,8 +106,7 @@ func TestHandleSystemBroadcastOrgDupOk(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -125,12 +122,12 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x9999"}, nil)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -145,8 +142,7 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -161,14 +157,14 @@ func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, nil)
 	mdi.On("GetOrganizationByName", mock.Anything, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByID", mock.Anything, org.ID).Return(nil, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x12345",
@@ -183,8 +179,7 @@ func TestHandleSystemBroadcastOrgUpsertFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -199,11 +194,11 @@ func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, fmt.Errorf("pop"))
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x12345",
@@ -218,8 +213,7 @@ func TestHandleSystemBroadcastOrgGetOrgFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -234,10 +228,10 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
-	mdi := bm.database.(*databasemocks.Plugin)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	mdi := sh.database.(*databasemocks.Plugin)
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -252,8 +246,7 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastOrgResolveFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -268,10 +261,10 @@ func TestHandleSystemBroadcastOrgResolveFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := bm.identity.(*identitymocks.Plugin)
+	mii := sh.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", mock.Anything, "0x12345").Return(nil, fmt.Errorf("pop"))
-	mdi := bm.database.(*databasemocks.Plugin)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	mdi := sh.database.(*databasemocks.Plugin)
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -286,8 +279,7 @@ func TestHandleSystemBroadcastOrgResolveFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -303,9 +295,9 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -319,8 +311,7 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -336,9 +327,9 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mdi := bm.database.(*databasemocks.Plugin)
+	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, nil)
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -352,8 +343,7 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastValidateFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	org := &fftypes.Organization{
 		ID:          fftypes.NewUUID(),
@@ -367,7 +357,7 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",
@@ -379,14 +369,13 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 }
 
 func TestHandleSystemBroadcastUnmarshalFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
+	sh := newTestSystemHandlers(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.Byteable(`!json`),
 	}
 
-	valid, err := bm.HandleSystemBroadcast(context.Background(), &fftypes.Message{
+	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Author:    "0x23456",

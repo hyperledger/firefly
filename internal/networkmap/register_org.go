@@ -41,19 +41,23 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 }
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context) (msg *fftypes.Message, err error) {
-	org := &fftypes.Organization{
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Organization, msg *fftypes.Message, err error) {
+	org = &fftypes.Organization{
 		Name:        config.GetString(config.OrgName),
 		Identity:    config.GetString(config.OrgIdentity),
 		Description: config.GetString(config.OrgDescription),
 	}
 	if org.Identity == "" || org.Name == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
-	return nm.RegisterOrganization(ctx, org)
+	msg, err = nm.RegisterOrganization(ctx, org, waitConfirm)
+	if msg != nil {
+		org.Message = msg.Header.ID
+	}
+	return org, msg, err
 }
 
-func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization) (*fftypes.Message, error) {
+func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization, waitConfirm bool) (*fftypes.Message, error) {
 
 	err := org.Validate(ctx, false)
 	if err != nil {
@@ -83,5 +87,5 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, org, signingIdentity, fftypes.SystemTagDefineOrganization)
+	return nm.broadcast.BroadcastDefinition(ctx, org, signingIdentity, fftypes.SystemTagDefineOrganization, waitConfirm)
 }

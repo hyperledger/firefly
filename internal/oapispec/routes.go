@@ -53,12 +53,14 @@ type Route struct {
 	JSONInputSchema func(ctx context.Context) string
 	// JSONOutputValue is a function that returns a pointer to a structure to take JSON output
 	JSONOutputValue func() interface{}
-	// JSONOutputCode is the success response code
-	JSONOutputCode int
+	// JSONOutputCodes is the success response code
+	JSONOutputCodes []int
 	// JSONHandler is a function for handling JSON content type input. Input/Ouptut objects are returned by JSONInputValue/JSONOutputValue funcs
-	JSONHandler func(r APIRequest) (output interface{}, err error)
+	JSONHandler func(r *APIRequest) (output interface{}, err error)
 	// FormUploadHandler takes a single file upload, and returns a JSON object
-	FormUploadHandler func(r APIRequest) (output interface{}, err error)
+	FormUploadHandler func(r *APIRequest) (output interface{}, err error)
+	// Deprecated whether this route is deprecated
+	Deprecated bool
 }
 
 // PathParam is a description of a path parameter

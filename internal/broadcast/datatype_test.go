@@ -33,7 +33,7 @@ func TestBroadcastDatatypeBadType(t *testing.T) {
 	defer cancel()
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Validator: fftypes.ValidatorType("wrong"),
-	})
+	}, false)
 	assert.Regexp(t, "FF10132.*validator", err)
 }
 
@@ -47,7 +47,7 @@ func TestBroadcastDatatypeNSGetFail(t *testing.T) {
 		Namespace: "ns1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`{}`),
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -62,7 +62,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`!unparsable`),
-	})
+	}, false)
 	assert.Regexp(t, "FF10137.*value", err)
 }
 
@@ -81,7 +81,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`{"some": "data"}`),
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -100,7 +100,7 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`{"some": "data"}`),
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -120,7 +120,7 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`{"some": "data"}`),
-	})
+	}, false)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -140,6 +140,6 @@ func TestBroadcastOk(t *testing.T) {
 		Name:      "ent1",
 		Version:   "0.0.1",
 		Value:     fftypes.Byteable(`{"some": "data"}`),
-	})
+	}, false)
 	assert.NoError(t, err)
 }

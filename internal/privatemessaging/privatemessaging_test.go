@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -47,11 +48,12 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mbi := &blockchainmocks.Plugin{}
 	mba := &batchmocks.Manager{}
 	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
 
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm)
+	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm, msa)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -183,7 +185,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

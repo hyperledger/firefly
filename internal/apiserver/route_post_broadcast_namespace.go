@@ -35,9 +35,11 @@ var postBroadcastNamespace = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
 	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace))
+	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		// This (old) route is always async, and returns the message
+		output, err = r.Or.Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace), false)
 		return output, err
 	},
+	Deprecated: true, // moving to more intutitive route/return structure
 }

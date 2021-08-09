@@ -84,7 +84,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	adminErrChan := make(chan error)
 
 	if !o.IsPreInit() {
-		apiHTTPServer, err := newHTTPServer(ctx, "api", as.createMuxRouter(o), httpErrChan, apiConfigPrefix)
+		apiHTTPServer, err := newHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix)
 		if err != nil {
 			return err
 		}
@@ -217,15 +217,18 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 		}
 
 		if err == nil {
-			status = route.JSONOutputCode
-			r := oapispec.APIRequest{
-				Ctx:    req.Context(),
-				Or:     o,
-				Req:    req,
-				PP:     pathParams,
-				QP:     queryParams,
-				Filter: filter,
-				Input:  jsonInput,
+			r := &oapispec.APIRequest{
+				Ctx:           req.Context(),
+				Or:            o,
+				Req:           req,
+				PP:            pathParams,
+				QP:            queryParams,
+				Filter:        filter,
+				Input:         jsonInput,
+				SuccessStatus: http.StatusOK,
+			}
+			if len(route.JSONOutputCodes) > 0 {
+				r.SuccessStatus = route.JSONOutputCodes[0]
 			}
 			if multipart != nil {
 				r.FP = multipart.formParams
@@ -234,6 +237,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, route *oapispec.R
 			} else {
 				output, err = route.JSONHandler(r)
 			}
+			status = r.SuccessStatus // Can be updated by the route
 		}
 		if err == nil && multipart != nil {
 			// Catch the case that someone puts form fields after the file in a multi-part body.
@@ -409,7 +413,7 @@ func (as *apiServer) swaggerHandler(routes []*oapispec.Route, url string) func(r
 	}
 }
 
-func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	for _, route := range routes {
 		if route.JSONHandler != nil {
@@ -417,7 +421,7 @@ func (as *apiServer) createMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 				Methods(route.Method)
 		}
 	}
-	ws, _ := eifactory.GetPlugin(context.TODO(), "websockets")
+	ws, _ := eifactory.GetPlugin(ctx, "websockets")
 	publicURL := as.getPublicURL(apiConfigPrefix, "")
 	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(routes, publicURL)))
 	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL)))

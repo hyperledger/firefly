@@ -14,30 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package events
+package syshandlers
 
 import (
 	"context"
-	"fmt"
-	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestSendreplyFail(t *testing.T) {
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	rs := &replySender{
-		broadcast: mbm,
-		messaging: mpm,
+func (sh *systemHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
+	var err error
+	var msg *fftypes.Message
+	if reply.Header.Group != nil {
+		msg, err = sh.messaging.SendMessage(ctx, event.Namespace, reply, false)
+	} else {
+		msg, err = sh.broadcast.BroadcastMessage(ctx, event.Namespace, reply, false)
 	}
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	rs.sendReply(context.Background(), &fftypes.Event{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-	}, &fftypes.MessageInOut{})
-	mbm.AssertExpectations(t)
+	if err != nil {
+		log.L(ctx).Errorf("Failed to send reply: %s", err)
+	} else {
+		log.L(ctx).Infof("Sent reply %s:%s (%s) cid=%s to event '%s'", msg.Header.Namespace, msg.Header.ID, msg.Header.Type, msg.Header.CID, event.ID)
+	}
 }

@@ -26,80 +26,6 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var privateSendSchema = `{
-	"properties": {
-		 "data": {
-				"items": {
-					 "properties": {
-							"validator": {"type": "string"},
-							"datatype": {
-								"type": "object",
-								"properties": {
-									"name": {"type": "string"},
-									"version": {"type": "string"}
-								}
-							},
-							"value": {
-								"type": "object"
-							}
-					 },
-					 "type": "object"
-				},
-				"type": "array"
-		 },
-		 "group": {
-				"properties": {
-					"name": {
-						"type": "string"
-					},
-					"members": {
-						"type": "array",
-						"items": {
-							"properties": {
-								"identity": {
-									"type": "string"
-								},
-								"node": {
-									"type": "string"
-								}
-							},
-							"required": ["identity"],
-							"type": "object"
-						}
-					}
-			},
-			"required": ["members"],
-			"type": "object"
-		 },
-		 "header": {
-				"properties": {
-					 "author": {
-							"type": "string"
-					 },
-					 "cid": {},
-					 "context": {
-							"type": "string"
-					 },
-					 "group": {},
-					 "topic": {
-							"type": "string"
-					 },
-					 "tx": {
-							"properties": {
-								 "type": {
-										"type": "string",
-										"default": "pin"
-								 }
-							},
-							"type": "object"
-					 }
-				},
-				"type": "object"
-		 }
-	},
-	"type": "object"
-}`
-
 var postSendMessage = &oapispec.Route{
 	Name:   "postSendMessage",
 	Path:   "namespaces/{ns}/send/message",
@@ -113,9 +39,11 @@ var postSendMessage = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 	JSONInputSchema: func(ctx context.Context) string { return privateSendSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCode:  http.StatusAccepted, // Async operation
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PrivateMessaging().SendMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
+	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		// This (old) route is always async, and returns the message
+		output, err = r.Or.PrivateMessaging().SendMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut), false)
 		return output, err
 	},
+	Deprecated: true, // moving to more intutitive route/return structure
 }

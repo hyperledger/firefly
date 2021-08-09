@@ -24,11 +24,10 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/events"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -42,12 +41,9 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mei.On("Capabilities").Return(&events.Capabilities{ChangeEvents: true}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
-	rs := &replySender{
-		broadcast: &broadcastmocks.Manager{},
-		messaging: &privatemessagingmocks.Manager{},
-	}
+	msh := &syshandlersmocks.SystemHandlers{}
 	ctx, cancel := context.WithCancel(context.Background())
-	return newEventDispatcher(ctx, mei, mdi, mdm, rs, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), func() {
+	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx)), func() {
 		cancel()
 		config.Reset()
 	}
@@ -854,10 +850,8 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	cancel()
 	ed.acksNacks = make(chan ackNack, 2)
-	mbm := ed.rs.broadcast.(*broadcastmocks.Manager)
-	mpm := ed.rs.messaging.(*privatemessagingmocks.Manager)
-	mbm.On("BroadcastMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
-	mpm.On("SendMessage", ed.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	msh := ed.syshandlers.(*syshandlersmocks.SystemHandlers)
+	msh.On("SendReply", ed.ctx, mock.Anything, mock.Anything).Return(&fftypes.Message{}, nil)
 
 	event1 := fftypes.NewUUID()
 	event2 := fftypes.NewUUID()
@@ -902,8 +896,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 		},
 	})
 
-	mbm.AssertExpectations(t)
-	mpm.AssertExpectations(t)
+	msh.AssertExpectations(t)
 }
 
 func TestDispatchChangeEventBlockedClose(t *testing.T) {

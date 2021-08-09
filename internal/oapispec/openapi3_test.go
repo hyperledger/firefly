@@ -45,7 +45,7 @@ var testRoutes = []*Route{
 		JSONInputValue:  func() interface{} { return &fftypes.Message{} },
 		JSONInputMask:   []string{"id"},
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
-		JSONOutputCode:  http.StatusOK,
+		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
 		Name:           "op2",
@@ -65,7 +65,7 @@ var testRoutes = []*Route{
 		}`
 		},
 		JSONOutputValue: func() interface{} { return []*fftypes.Batch{} },
-		JSONOutputCode:  http.StatusOK,
+		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
 		Name:       "op3",
@@ -82,11 +82,11 @@ var testRoutes = []*Route{
 		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONInputMask:   []string{"id"},
-		JSONOutputCode:  http.StatusNoContent,
+		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
 			{Name: "metadata", Description: i18n.MsgTBD},
 		},
-		FormUploadHandler: func(r APIRequest) (output interface{}, err error) { return nil, nil },
+		FormUploadHandler: func(r *APIRequest) (output interface{}, err error) { return nil, nil },
 	},
 	{
 		Name:   "op4",
@@ -100,7 +100,7 @@ var testRoutes = []*Route{
 		Description:     i18n.MsgTBD,
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return nil },
-		JSONOutputCode:  http.StatusNoContent,
+		JSONOutputCodes: []int{http.StatusNoContent},
 	},
 }
 
@@ -135,7 +135,7 @@ func TestBadCustomSchema(t *testing.T) {
 			Method:          http.MethodPost,
 			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
 			JSONInputMask:   []string{"id"},
-			JSONOutputCode:  http.StatusOK,
+			JSONOutputCodes: []int{http.StatusOK},
 			JSONInputSchema: func(ctx context.Context) string { return `!json` },
 		},
 	}

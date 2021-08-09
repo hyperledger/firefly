@@ -7,6 +7,7 @@ openapi: 3.0.2
 paths:
   /broadcast/namespace:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postBroadcastNamespace
       parameters:
@@ -178,6 +179,68 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewNamespace
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  type: string
+                name:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -574,6 +637,7 @@ paths:
           description: ""
   /namespaces/{ns}/broadcast/datatype:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postBroadcastDatatype
       parameters:
@@ -660,6 +724,7 @@ paths:
           description: ""
   /namespaces/{ns}/broadcast/message:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postBroadcastMessage
       parameters:
@@ -1537,6 +1602,92 @@ paths:
           description: Success
         default:
           description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewDatatype
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                validator:
+                  type: string
+                value:
+                  format: byte
+                  type: string
+                version:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  validator:
+                    type: string
+                  value:
+                    format: byte
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  validator:
+                    type: string
+                  value:
+                    format: byte
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/datatypes/{dtid}:
     get:
       description: 'TODO: Description'
@@ -2343,6 +2494,517 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/messages/broadcast:
+    post:
+      description: 'TODO: Description'
+      operationId: postNewMessageBroadcast
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                data:
+                  items:
+                    properties:
+                      datatype:
+                        properties:
+                          name:
+                            type: string
+                          version:
+                            type: string
+                        type: object
+                      hash:
+                        type: string
+                      id:
+                        type: string
+                      validator:
+                        type: string
+                      value:
+                        type: object
+                    type: object
+                  type: array
+                header:
+                  properties:
+                    author:
+                      type: string
+                    cid: {}
+                    context:
+                      type: string
+                    group: {}
+                    topic:
+                      type: string
+                    tx:
+                      properties:
+                        type:
+                          default: pin
+                          type: string
+                      type: object
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/messages/private:
+    post:
+      description: 'TODO: Description'
+      operationId: postNewMessagePrivate
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                data:
+                  items:
+                    properties:
+                      datatype:
+                        properties:
+                          name:
+                            type: string
+                          version:
+                            type: string
+                        type: object
+                      validator:
+                        type: string
+                      value:
+                        type: object
+                    type: object
+                  type: array
+                group:
+                  properties:
+                    members:
+                      items:
+                        properties:
+                          identity:
+                            type: string
+                          node:
+                            type: string
+                        required:
+                        - identity
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                  required:
+                  - members
+                  type: object
+                header:
+                  properties:
+                    author:
+                      type: string
+                    cid: {}
+                    context:
+                      type: string
+                    group: {}
+                    topic:
+                      type: string
+                    tx:
+                      properties:
+                        type:
+                          default: pin
+                          type: string
+                      type: object
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/messages/requestreply:
+    post:
+      description: 'TODO: Description'
+      operationId: postNewMessageRequestReply
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                data:
+                  items:
+                    properties:
+                      datatype:
+                        properties:
+                          name:
+                            type: string
+                          version:
+                            type: string
+                        type: object
+                      validator:
+                        type: string
+                      value:
+                        type: object
+                    type: object
+                  type: array
+                group:
+                  properties:
+                    members:
+                      items:
+                        properties:
+                          identity:
+                            type: string
+                          node:
+                            type: string
+                        required:
+                        - identity
+                        type: object
+                      type: array
+                    name:
+                      type: string
+                  required:
+                  - members
+                  type: object
+                header:
+                  properties:
+                    author:
+                      type: string
+                    cid: {}
+                    context:
+                      type: string
+                    group: {}
+                    topic:
+                      type: string
+                    tx:
+                      properties:
+                        type:
+                          default: pin
+                          type: string
+                      type: object
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        blob:
+                          properties:
+                            hash: {}
+                            public:
+                              type: string
+                          type: object
+                        datatype:
+                          properties:
+                            name:
+                              type: string
+                            version:
+                              type: string
+                          type: object
+                        hash: {}
+                        id: {}
+                        validator:
+                          type: string
+                        value:
+                          format: byte
+                          type: string
+                      type: object
+                    type: array
+                  group:
+                    properties:
+                      ledger: {}
+                      members:
+                        items:
+                          properties:
+                            identity:
+                              type: string
+                            node:
+                              type: string
+                          type: object
+                        type: array
+                      name:
+                        type: string
+                    type: object
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/operations:
     get:
       description: 'TODO: Description'
@@ -2547,6 +3209,7 @@ paths:
           description: ""
   /namespaces/{ns}/request/message:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postRequestMessage
       parameters:
@@ -2708,6 +3371,7 @@ paths:
           description: ""
   /namespaces/{ns}/send/message:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postSendMessage
       parameters:
@@ -3946,6 +4610,80 @@ paths:
           description: Success
         default:
           description: ""
+  /network/nodes/self:
+    post:
+      description: 'TODO: Description'
+      operationId: postNodesSelf
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  dx:
+                    properties:
+                      endpoint:
+                        additionalProperties: {}
+                        type: object
+                      peer:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  owner:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  dx:
+                    properties:
+                      endpoint:
+                        additionalProperties: {}
+                        type: object
+                      peer:
+                        type: string
+                    type: object
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  owner:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/organizations:
     get:
       description: 'TODO: Description'
@@ -4053,6 +4791,85 @@ paths:
           description: Success
         default:
           description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewOrganization
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  type: string
+                identity:
+                  type: string
+                name:
+                  type: string
+                parent:
+                  type: string
+                profile:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/organizations/{oid}:
     get:
       description: 'TODO: Description'
@@ -4095,8 +4912,77 @@ paths:
           description: Success
         default:
           description: ""
+  /network/organizations/self:
+    post:
+      description: 'TODO: Description'
+      operationId: postNewOrganizationSelf
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  description:
+                    type: string
+                  id: {}
+                  identity:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  parent:
+                    type: string
+                  profile:
+                    additionalProperties: {}
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/register/node:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postRegisterNode
       parameters:
@@ -4166,6 +5052,7 @@ paths:
           description: ""
   /network/register/node/organization:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postRegisterNodeOrg
       parameters:
@@ -4235,6 +5122,7 @@ paths:
           description: ""
   /network/register/organization:
     post:
+      deprecated: true
       description: 'TODO: Description'
       operationId: postRegisterOrg
       parameters:

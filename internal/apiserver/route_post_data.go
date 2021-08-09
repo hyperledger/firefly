@@ -48,12 +48,12 @@ var postData = &oapispec.Route{
 	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
 	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
-	JSONOutputCode:  http.StatusCreated, // Sync operation
-	JSONHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	JSONOutputCodes: []int{http.StatusCreated},
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = r.Or.Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataRefOrValue))
 		return output, err
 	},
-	FormUploadHandler: func(r oapispec.APIRequest) (output interface{}, err error) {
+	FormUploadHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		data := &fftypes.DataRefOrValue{}
 		metadata := r.FP["metadata"]
 		if len(metadata) > 0 {

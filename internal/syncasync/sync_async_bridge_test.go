@@ -23,8 +23,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger-labs/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,9 +33,10 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mei := &eventmocks.EventManager{}
-	mpm := &privatemessagingmocks.Manager{}
-	sa := NewSyncAsyncBridge(ctx, mdi, mdm, mei, mpm)
+	mse := &sysmessagingmocks.SystemEvents{}
+	msd := &sysmessagingmocks.MessageSender{}
+	sa := NewSyncAsyncBridge(ctx, mdi, mdm)
+	sa.Init(mse, msd)
 	return sa.(*syncAsyncBridge), cancel
 }
 
@@ -49,11 +49,11 @@ func TestRequestReplyOk(t *testing.T) {
 	replyID := fftypes.NewUUID()
 	dataID := fftypes.NewUUID()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mpm := sa.messaging.(*privatemessagingmocks.Manager)
-	send := mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
 	send.RunFn = func(a mock.Arguments) {
 		msg := a[2].(*fftypes.MessageInOut)
 		assert.NotNil(t, msg.Header.ID)
@@ -101,10 +101,136 @@ func TestRequestReplyOk(t *testing.T) {
 				Tag: "mytag",
 			},
 		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *replyID, *reply.Header.ID)
 	assert.Equal(t, `"response data"`, string(reply.InlineData[0].Value))
+
+}
+
+func TestAwaitConfirmationOk(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+	dataID := fftypes.NewUUID()
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	var msgSent *fftypes.Message
+
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
+	send.RunFn = func(a mock.Arguments) {
+		msgSent = a[3].(*fftypes.Message)
+		assert.NotNil(t, msgSent.Header.ID)
+		requestID = msgSent.Header.ID
+		assert.Equal(t, "mytag", msgSent.Header.Tag)
+		send.ReturnArguments = mock.Arguments{msgSent, nil}
+
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypeMessageConfirmed,
+					Reference: msgSent.Header.ID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		msgSent.Confirmed = fftypes.Now()
+		msgSent.Rejected = false
+		gmid.ReturnArguments = mock.Arguments{
+			msgSent, nil,
+		}
+	}
+
+	mdm := sa.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+	}, true, nil)
+
+	reply, err := sa.SendConfirm(sa.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			Tag:       "mytag",
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, *msgSent.Header.ID, *reply.Header.ID)
+
+}
+
+func TestAwaitConfirmationRejected(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+	dataID := fftypes.NewUUID()
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	var msgSent *fftypes.Message
+
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	send := msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false)
+	send.RunFn = func(a mock.Arguments) {
+		msgSent = a[3].(*fftypes.Message)
+		assert.NotNil(t, msgSent.Header.ID)
+		requestID = msgSent.Header.ID
+		assert.Equal(t, "mytag", msgSent.Header.Tag)
+		send.ReturnArguments = mock.Arguments{msgSent, nil}
+
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypeMessageRejected,
+					Reference: msgSent.Header.ID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		msgSent.Confirmed = fftypes.Now()
+		msgSent.Rejected = false
+		gmid.ReturnArguments = mock.Arguments{
+			msgSent, nil,
+		}
+	}
+
+	mdm := sa.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return([]*fftypes.Data{
+		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
+	}, true, nil)
+
+	_, err := sa.SendConfirm(sa.ctx, &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: "ns1",
+			Tag:       "mytag",
+		},
+	})
+	assert.Regexp(t, "FF10269", err)
 
 }
 
@@ -113,16 +239,17 @@ func TestRequestReplyTimeout(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mpm := sa.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(&fftypes.Message{}, nil)
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false).Return(&fftypes.Message{}, nil)
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
@@ -135,16 +262,17 @@ func TestRequestReplySendFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	mpm := sa.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msd := sa.sender.(*sysmessagingmocks.MessageSender)
+	msd.On("SendMessageWithID", sa.ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
@@ -157,17 +285,30 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	mei := sa.events.(*eventmocks.EventManager)
-	mei.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
 	assert.Regexp(t, "pop", err)
+
+}
+
+func TestRequestSetupSystemMissingGroup(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Group: &fftypes.InputGroup{},
+	})
+	assert.Regexp(t, "FF10271", err)
 
 }
 
@@ -176,7 +317,13 @@ func TestRequestSetupSystemMissingTag(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{})
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
 	assert.Regexp(t, "FF10261", err)
 
 }
@@ -189,8 +336,9 @@ func TestRequestSetupSystemInvalidCID(t *testing.T) {
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
-				CID: fftypes.NewUUID(),
+				Tag:   "mytag",
+				CID:   fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
@@ -232,7 +380,7 @@ func TestEventCallbackWrongType(t *testing.T) {
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 			Reference: fftypes.NewUUID(),
-			Type:      fftypes.EventTypeMessageRejected,
+			Type:      fftypes.EventTypeGroupConfirmed,
 		},
 	})
 	assert.NoError(t, err)
@@ -307,7 +455,7 @@ func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 			ID:  fftypes.NewUUID(),
 			CID: fftypes.NewUUID(),
 		},
-	})
+	}, true, nil)
 
 	mdm.AssertExpectations(t)
 }

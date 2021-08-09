@@ -186,4 +186,7 @@ var (
 	MsgSystemTransportInternal     = ffm("FF10266", "You cannot create subscriptions on the system events transport")
 	MsgFilterCountNotSupported     = ffm("FF10267", "This query does not support generating a count of all results")
 	MsgFilterCountDesc             = ffm("FF10268", "Return a total count as well as items (adds extra database processing)")
+	MsgRejected                    = ffm("FF10269", "Message with ID '%s' was rejected. Please check the FireFly logs for more information")
+	MsgConfirmQueryParam           = ffm("FF10270", "When true the HTTP request blocks until the message is confirmed")
+	MsgRequestMustBePrivate        = ffm("FF10271", "For request messages you must specify a group of private recipients", 400)
 )

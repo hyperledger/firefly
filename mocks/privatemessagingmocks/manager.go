@@ -115,13 +115,13 @@ func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (
 	return r0, r1
 }
 
-// SendMessage provides a mock function with given fields: ctx, ns, in
-func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, in)
+// SendMessage provides a mock function with given fields: ctx, ns, in, waitConfirm
+func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, in, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, in, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -129,8 +129,8 @@ func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.Messa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
-		r1 = rf(ctx, ns, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut, bool) error); ok {
+		r1 = rf(ctx, ns, in, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -138,13 +138,13 @@ func (_m *Manager) SendMessage(ctx context.Context, ns string, in *fftypes.Messa
 	return r0, r1
 }
 
-// SendMessageWithID provides a mock function with given fields: ctx, ns, in
-func (_m *Manager) SendMessageWithID(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, in)
+// SendMessageWithID provides a mock function with given fields: ctx, ns, unresolved, resolved, waitConfirm
+func (_m *Manager) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, unresolved, resolved, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, in)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut, *fftypes.Message, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, unresolved, resolved, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -152,8 +152,8 @@ func (_m *Manager) SendMessageWithID(ctx context.Context, ns string, in *fftypes
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
-		r1 = rf(ctx, ns, in)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut, *fftypes.Message, bool) error); ok {
+		r1 = rf(ctx, ns, unresolved, resolved, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -21,7 +21,30 @@ import "github.com/hyperledger-labs/firefly/internal/oapispec"
 const emptyObjectSchema = `{"type": "object"}`
 
 var routes = []*oapispec.Route{
+	postNewDatatype,
+	postNewNamespace,
+	postNewMessageBroadcast,
+	postNewMessagePrivate,
+	postNewMessageRequestReply,
+	postNodesSelf,
+	postNewOrganization,
+	postNewOrganizationSelf,
+
+	postBroadcastDatatype,
+	postBroadcastMessage,
+	postBroadcastNamespace,
+	postData,
+	postNewSubscription,
+	postRegisterOrg,
+	postRegisterNode,
+	postRegisterNodeOrg,
+	postRequestMessage,
+	postSendMessage,
+
+	putSubscription,
+
 	deleteSubscription,
+
 	getBatchByID,
 	getBatches,
 	getData,
@@ -52,15 +75,4 @@ var routes = []*oapispec.Route{
 	getTxnByID,
 	getTxnOps,
 	getTxns,
-	postBroadcastDatatype,
-	postBroadcastMessage,
-	postBroadcastNamespace,
-	postData,
-	postNewSubscription,
-	postRegisterOrg,
-	postRegisterNode,
-	postRegisterNodeOrg,
-	postRequestMessage,
-	postSendMessage,
-	putSubscription,
 }

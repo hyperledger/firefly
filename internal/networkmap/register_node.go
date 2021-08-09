@@ -24,9 +24,9 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Node, msg *fftypes.Message, err error) {
 
-	node := &fftypes.Node{
+	node = &fftypes.Node{
 		ID:          fftypes.NewUUID(),
 		Created:     fftypes.Now(),
 		Owner:       config.GetString(config.OrgIdentity),
@@ -37,27 +37,31 @@ func (nm *networkMap) RegisterNode(ctx context.Context) (msg *fftypes.Message, e
 		node.Name = config.GetString(config.OrgIdentity)
 	}
 	if node.Owner == "" || node.Name == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
 
 	node.DX.Peer, node.DX.Endpoint, err = nm.exchange.GetEndpointInfo(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = node.Validate(ctx, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err = nm.findOrgsToRoot(ctx, "node", node.Name, node.Owner); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	signingIdentity, err := nm.identity.Resolve(ctx, node.Owner)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
+		return nil, nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode)
+	msg, err = nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode, waitConfirm)
+	if msg != nil {
+		node.Message = msg.Header.ID
+	}
+	return node, msg, err
 }
