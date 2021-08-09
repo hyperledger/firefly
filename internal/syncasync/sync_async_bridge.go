@@ -232,6 +232,9 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolve
 }
 
 func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	if unresolved.Header.Group == nil && (unresolved.Group == nil || len(unresolved.Group.Members) == 0) {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestMustBePrivate)
+	}
 	if unresolved.Header.Tag == "" {
 		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
 	}

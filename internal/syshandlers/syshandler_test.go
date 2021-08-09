@@ -94,12 +94,14 @@ func TestPrivateMessagingPassthroughs(t *testing.T) {
 			Namespace: "ns1",
 		},
 	}, false)
-	_, _ = sh.SendMessageWithID(ctx, "ns1", nil, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Group:     fftypes.NewRandB32(),
+	_, _ = sh.SendMessageWithID(ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Namespace: "ns1",
+				Group:     fftypes.NewRandB32(),
+			},
 		},
-	}, false)
+	}, nil, false)
 
 	mpm.AssertExpectations(t)
 

@@ -101,6 +101,11 @@ func TestRequestReplyOk(t *testing.T) {
 				Tag: "mytag",
 			},
 		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *replyID, *reply.Header.ID)
@@ -243,7 +248,8 @@ func TestRequestReplyTimeout(t *testing.T) {
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
@@ -265,7 +271,8 @@ func TestRequestReplySendFail(t *testing.T) {
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
@@ -284,11 +291,24 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})
 	assert.Regexp(t, "pop", err)
+
+}
+
+func TestRequestSetupSystemMissingGroup(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Group: &fftypes.InputGroup{},
+	})
+	assert.Regexp(t, "FF10271", err)
 
 }
 
@@ -297,7 +317,13 @@ func TestRequestSetupSystemMissingTag(t *testing.T) {
 	sa, cancel := newTestSyncAsyncBridge(t)
 	defer cancel()
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{})
+	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
 	assert.Regexp(t, "FF10261", err)
 
 }
@@ -310,8 +336,9 @@ func TestRequestSetupSystemInvalidCID(t *testing.T) {
 	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag: "mytag",
-				CID: fftypes.NewUUID(),
+				Tag:   "mytag",
+				CID:   fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
 			},
 		},
 	})

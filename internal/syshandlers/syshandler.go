@@ -76,7 +76,10 @@ func (sh *systemHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.G
 }
 
 func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
-	if resolved.Header.Group == nil {
+	if resolved == nil {
+		resolved = &unresolved.Message
+	}
+	if resolved.Header.Group == nil && (unresolved == nil || unresolved.Group == nil) {
 		return sh.broadcast.BroadcastMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)
 	}
 	return sh.messaging.SendMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)

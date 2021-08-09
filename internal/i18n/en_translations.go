@@ -188,4 +188,5 @@ var (
 	MsgFilterCountDesc             = ffm("FF10268", "Return a total count as well as items (adds extra database processing)")
 	MsgRejected                    = ffm("FF10269", "Message with ID '%s' was rejected. Please check the FireFly logs for more information")
 	MsgConfirmQueryParam           = ffm("FF10270", "When true the HTTP request blocks until the message is confirmed")
+	MsgRequestMustBePrivate        = ffm("FF10271", "For request messages you must specify a group of private recipients", 400)
 )
