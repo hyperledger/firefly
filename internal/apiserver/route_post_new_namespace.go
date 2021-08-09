@@ -30,7 +30,7 @@ var postNewNamespace = &oapispec.Route{
 	Path:   "namespaces",
 	Method: http.MethodPost,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,

@@ -199,12 +199,6 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolve
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
-	if resolved.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
-	}
-	if resolved.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
-	}
 
 	inflight, err := sa.addInFlight(ns, waitForReply, withData)
 	if err != nil {
@@ -238,6 +232,13 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolve
 }
 
 func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	if unresolved.Header.Tag == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
+	}
+	if unresolved.Header.CID != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
+	}
+
 	reply, err := sa.sendAndWait(ctx, ns, unresolved, nil,
 		true, // wait for a reply
 		true, // reply will be MessageInOut
