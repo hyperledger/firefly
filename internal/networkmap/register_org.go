@@ -41,16 +41,20 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 }
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (msg *fftypes.Message, err error) {
-	org := &fftypes.Organization{
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Organization, msg *fftypes.Message, err error) {
+	org = &fftypes.Organization{
 		Name:        config.GetString(config.OrgName),
 		Identity:    config.GetString(config.OrgIdentity),
 		Description: config.GetString(config.OrgDescription),
 	}
 	if org.Identity == "" || org.Name == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
 	}
-	return nm.RegisterOrganization(ctx, org, waitConfirm)
+	msg, err = nm.RegisterOrganization(ctx, org, waitConfirm)
+	if msg != nil {
+		org.Message = msg.Header.ID
+	}
+	return org, msg, err
 }
 
 func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Organization, waitConfirm bool) (*fftypes.Message, error) {

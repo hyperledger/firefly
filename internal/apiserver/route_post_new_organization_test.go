@@ -28,19 +28,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostRegisterNodeOrganization(t *testing.T) {
+func TestNewOrganization(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	input := fftypes.EmptyInput{}
+	input := fftypes.Organization{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/network/register/node/organization", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/network/organizations", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterNodeOrganization", mock.Anything, false).
-		Return(&fftypes.Organization{}, &fftypes.Message{}, nil)
+	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*fftypes.Organization"), false).
+		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

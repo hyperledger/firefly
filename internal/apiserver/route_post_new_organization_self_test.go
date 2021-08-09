@@ -28,14 +28,14 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostRegisterNodeOrganization(t *testing.T) {
+func TestNewOrganizationSelf(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	input := fftypes.EmptyInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/network/register/node/organization", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/network/organizations/self", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

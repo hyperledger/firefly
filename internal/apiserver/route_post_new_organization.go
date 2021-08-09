@@ -17,31 +17,32 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var postRegisterNodeOrg = &oapispec.Route{
-	Name:            "postRegisterNodeOrg",
-	Path:            "network/register/node/organization",
-	Method:          http.MethodPost,
-	PathParams:      nil,
-	QueryParams:     nil,
+var postNewOrganization = &oapispec.Route{
+	Name:       "postNewOrganization",
+	Path:       "network/organizations",
+	Method:     http.MethodPost,
+	PathParams: nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
-	JSONInputMask:   nil,
-	JSONInputSchema: func(ctx context.Context) string { return emptyObjectSchema },
+	JSONInputValue:  func() interface{} { return &fftypes.Organization{} },
+	JSONInputMask:   []string{"ID", "Created", "Message", "Type"},
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
-	JSONOutputCodes: []int{http.StatusAccepted}, // Async operation
+	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		// This (old) route is always async, and returns the message
-		_, output, err = r.Or.NetworkMap().RegisterNodeOrganization(r.Ctx, false)
-		return output, err
+		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+		r.SuccessStatus = syncRetcode(waitConfirm)
+		_, err = r.Or.NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.Organization), false)
+		return r.Input, err
 	},
-	Deprecated: true, // moving to more intutitive route/return structure
 }

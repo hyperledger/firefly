@@ -26,6 +26,9 @@ var routes = []*oapispec.Route{
 	postNewMessageBroadcast,
 	postNewMessagePrivate,
 	postNewMessageRequestReply,
+	postNodesSelf,
+	postNewOrganization,
+	postNewOrganizationSelf,
 
 	postBroadcastDatatype,
 	postBroadcastMessage,

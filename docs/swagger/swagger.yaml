@@ -4608,6 +4608,129 @@ paths:
           description: Success
         default:
           description: ""
+  /network/nodes/self:
+    post:
+      description: 'TODO: Description'
+      operationId: postNodesSelf
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/organizations:
     get:
       description: 'TODO: Description'
@@ -4715,6 +4838,140 @@ paths:
           description: Success
         default:
           description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postNewOrganization
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  type: string
+                identity:
+                  type: string
+                name:
+                  type: string
+                parent:
+                  type: string
+                profile:
+                  additionalProperties: {}
+                  type: object
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
   /network/organizations/{oid}:
     get:
       description: 'TODO: Description'
@@ -4753,6 +5010,129 @@ paths:
                   profile:
                     additionalProperties: {}
                     type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+  /network/organizations/self:
+    post:
+      description: 'TODO: Description'
+      operationId: postNewOrganizationSelf
+      parameters:
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  batch: {}
+                  confirmed: {}
+                  data:
+                    items:
+                      properties:
+                        hash: {}
+                        id: {}
+                      type: object
+                    type: array
+                  hash: {}
+                  header:
+                    properties:
+                      author:
+                        type: string
+                      cid: {}
+                      created: {}
+                      datahash: {}
+                      group: {}
+                      id: {}
+                      namespace:
+                        type: string
+                      tag:
+                        type: string
+                      topics:
+                        items:
+                          type: string
+                        type: array
+                      txtype:
+                        type: string
+                      type:
+                        type: string
+                    type: object
+                  local:
+                    type: boolean
+                  pending:
+                    type: boolean
+                  pins:
+                    items:
+                      type: string
+                    type: array
+                  rejected:
+                    type: boolean
                 type: object
           description: Success
         default:

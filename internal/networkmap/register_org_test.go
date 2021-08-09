@@ -76,11 +76,12 @@ func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization, false).Return(mockMsg, nil)
+	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization, true).Return(mockMsg, nil)
 
-	msg, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	org, msg, err := nm.RegisterNodeOrganization(nm.ctx, true)
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
+	assert.Equal(t, *mockMsg.Header.ID, *org.Message)
 
 }
 
@@ -91,7 +92,7 @@ func TestRegisterNodeOrganizationMissingConfig(t *testing.T) {
 
 	config.Set(config.OrgIdentity, nil)
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	_, _, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 }

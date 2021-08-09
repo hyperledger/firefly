@@ -40,7 +40,7 @@ func TestPostRegisterNode(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mnm.On("RegisterNode", mock.Anything, false).
-		Return(&fftypes.Message{}, nil)
+		Return(&fftypes.Node{}, &fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
