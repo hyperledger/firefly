@@ -19,11 +19,13 @@ package assets
 import (
 	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/identity"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
 type Manager interface {
@@ -37,10 +39,11 @@ type assetManager struct {
 	database database.Plugin
 	identity identity.Plugin
 	data     data.Manager
+	tokens   tokens.Plugin
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager) (Manager, error) {
-	if di == nil || ii == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, tk tokens.Plugin) (Manager, error) {
+	if di == nil || ii == nil || tk == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
@@ -48,8 +51,18 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		database: di,
 		identity: ii,
 		data:     dm,
+		tokens:   tk,
 	}
 	return am, nil
+}
+
+func (am *assetManager) getNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
+	orgIdentity := config.GetString(config.OrgIdentity)
+	id, err := am.identity.Resolve(ctx, orgIdentity)
+	if err != nil {
+		return nil, err
+	}
+	return id, nil
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -60,8 +73,25 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 		return nil, err
 	}
 
-	// TODO: create token pool
-	return pool, nil
+	id, err := am.getNodeSigningIdentity(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	trackingID, err := am.tokens.CreateTokenPool(ctx, id, pool)
+	if err != nil {
+		return nil, err
+	}
+
+	op := fftypes.NewTXOperation(
+		am.tokens,
+		ns,
+		fftypes.NewUUID(),
+		trackingID,
+		fftypes.OpTypeTokensCreatePool,
+		fftypes.OpStatusPending,
+		id.Identifier)
+	return pool, am.database.UpsertOperation(ctx, op, false)
 }
 
 func (am *assetManager) Start() error {

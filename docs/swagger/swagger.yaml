@@ -4119,6 +4119,73 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/tokens:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokens
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                type:
+                  enum:
+                  - fungible
+                  - nonfungible
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  pool_id:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  pool_id:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/transactions:
     get:
       description: 'TODO: Description'

@@ -75,4 +75,5 @@ var routes = []*oapispec.Route{
 	getTxnByID,
 	getTxnOps,
 	getTxns,
+	postTokens,
 }

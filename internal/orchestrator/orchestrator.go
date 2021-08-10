@@ -37,12 +37,14 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/internal/syshandlers"
+	"github.com/hyperledger-labs/firefly/internal/tokens/tkfactory"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
 var (
@@ -51,6 +53,7 @@ var (
 	identityConfig      = config.NewPluginConfig("identity")
 	publicstorageConfig = config.NewPluginConfig("publicstorage")
 	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
+	tokensConfig        = config.NewPluginConfig("tokens")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -128,6 +131,7 @@ type orchestrator struct {
 	data          data.Manager
 	syncasync     syncasync.Bridge
 	assets        assets.Manager
+	tokens        tokens.Plugin
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -140,6 +144,7 @@ func NewOrchestrator() Orchestrator {
 	difactory.InitPrefix(databaseConfig)
 	psfactory.InitPrefix(publicstorageConfig)
 	dxfactory.InitPrefix(dataexchangeConfig)
+	tkfactory.InitPrefix(tokensConfig)
 
 	return or
 }
@@ -181,6 +186,9 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.messaging.Start()
+	}
+	if err == nil {
+		err = or.tokens.Start()
 	}
 	or.started = true
 	return err
@@ -302,7 +310,17 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc)
+	if err = or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc); err != nil {
+		return err
+	}
+
+	if or.tokens == nil {
+		tkType := config.GetString(config.TokensType)
+		if or.tokens, err = tkfactory.GetPlugin(ctx, tkType); err != nil {
+			return err
+		}
+	}
+	return or.tokens.Init(ctx, tokensConfig.SubPrefix(or.tokens.Name()), &or.bc)
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
@@ -354,7 +372,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync.Init(or.events, or.syshandlers)
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.tokens)
 		if err != nil {
 			return err
 		}

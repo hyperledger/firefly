@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,6 +57,7 @@ type testOrchestrator struct {
 	mii *identitymocks.Plugin
 	mdx *dataexchangemocks.Plugin
 	mam *assetmocks.Manager
+	mtk *tokenmocks.Plugin
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -78,6 +80,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mii: &identitymocks.Plugin{},
 		mdx: &dataexchangemocks.Plugin{},
 		mam: &assetmocks.Manager{},
+		mtk: &tokenmocks.Plugin{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -91,6 +94,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
+	tor.orchestrator.tokens = tor.mtk
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -98,6 +102,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mii.On("Name").Return("mock-ii").Maybe()
 	tor.mdx.On("Name").Return("mock-dx").Maybe()
 	tor.mam.On("Name").Return("mock-am").Maybe()
+	tor.mtk.On("Name").Return("mock-tk").Maybe()
 	return tor
 }
 
@@ -330,11 +335,13 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
+	or.mtk.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mam.On("WaitStop").Return(nil)
+	or.mtk.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -409,6 +416,7 @@ func TestInitOK(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mtk.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	err := config.ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 	ctx, cancelCtx := context.WithCancel(context.Background())
