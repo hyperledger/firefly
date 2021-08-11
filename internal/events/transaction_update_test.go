@@ -41,7 +41,7 @@ func TestTransactionLookupSuccess(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err)
 }
 
@@ -57,7 +57,7 @@ func TestTransactionLookupNoResults(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err)
 }
 
@@ -71,7 +71,7 @@ func TestTransactionLookupNotFound(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err) // swallowed after logging
 }
 
@@ -89,6 +89,6 @@ func TestTxSubmissionUpdateError(t *testing.T) {
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
 	assert.EqualError(t, err, "pop")
 }

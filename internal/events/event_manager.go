@@ -37,6 +37,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
 type EventManager interface {
@@ -52,13 +53,16 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	TxSubmissionUpdate(bi blockchain.Plugin, tx string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
+	TxSubmissionUpdate(plugin fftypes.Named, tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
+
+	// Bound token callbacks
+	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents

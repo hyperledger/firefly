@@ -166,6 +166,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.bc.tk = or.tokens
 	return err
 }
 

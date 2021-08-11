@@ -1857,6 +1857,20 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 	return r0
 }
 
+// UpsertTokenPool provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertTransaction provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
 func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting bool, allowHashUpdate bool) error {
 	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)

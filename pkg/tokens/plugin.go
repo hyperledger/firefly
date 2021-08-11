@@ -51,6 +51,19 @@ type Plugin interface {
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
 type Callbacks interface {
+	// TokensTxUpdate notifies firefly of an update to a transaction. Only success/failure and errorMessage (for errors) are modeled.
+	// additionalInfo can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
+	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
+	// Only the party submitting the transaction will see this data.
+	//
+	// Error should will only be returned in shutdown scenarios
+	TokensTxUpdate(txTrackingID string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
+
+	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
+	// submitted by us, or by any other authorized party in the network.
+	//
+	// Error should will only be returned in shutdown scenarios
+	TokenPoolCreated(pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the tokens

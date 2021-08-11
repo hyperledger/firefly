@@ -39,6 +39,19 @@ type HTTPS struct {
 	closed       chan struct{}
 }
 
+type wsEvent struct {
+	Event msgType            `json:"event"`
+	ID    string             `json:"id"`
+	Data  fftypes.JSONObject `json:"data"`
+}
+
+type msgType string
+
+const (
+	messageReceipt   msgType = "receipt"
+	messageTokenPool msgType = "token-pool"
+)
+
 type responseData struct {
 	RequestID string `json:"id"`
 }
@@ -88,6 +101,60 @@ func (h *HTTPS) Capabilities() *tokens.Capabilities {
 	return h.capabilities
 }
 
+func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+	l := log.L(ctx)
+
+	requestID := data.GetString("id")
+	success := data.GetBool("success")
+	message := data.GetString("message")
+	if requestID == "" {
+		l.Errorf("Reply cannot be processed: %+v", data)
+		return nil // Swallow this and move on
+	}
+	updateType := fftypes.OpStatusSucceeded
+	if !success {
+		updateType = fftypes.OpStatusFailed
+	}
+	l.Infof("Tokens '%s' reply (request=%s) %s", updateType, requestID, message)
+	return h.callbacks.TokensTxUpdate(requestID, updateType, message, data)
+}
+
+func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
+	ns := data.GetString("namespace")
+	name := data.GetString("name")
+	clientID := data.GetString("client_id")
+	tokenType := data.GetString("type")
+	poolID := data.GetString("pool_id")
+	authorAddress := data.GetString("author")
+
+	if ns == "" ||
+		name == "" ||
+		clientID == "" ||
+		tokenType == "" ||
+		poolID == "" ||
+		authorAddress == "" {
+		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
+		return nil // move on
+	}
+
+	uuid, err := fftypes.ParseUUID(ctx, clientID)
+	if err != nil {
+		log.L(ctx).Errorf("TokenPool event is not valid - bad uuid (%s): %+v", err, data)
+		return nil // move on
+	}
+
+	pool := &fftypes.TokenPool{
+		ID:        uuid,
+		Namespace: ns,
+		Name:      name,
+		Type:      fftypes.LowerCasedType(tokenType),
+		PoolID:    poolID,
+	}
+
+	// If there's an error dispatching the event, we must return the error and shutdown
+	return h.callbacks.TokenPoolCreated(pool, authorAddress, data)
+}
+
 func (h *HTTPS) eventLoop() {
 	defer close(h.closed)
 	l := log.L(h.ctx).WithField("role", "event-loop")
@@ -103,13 +170,37 @@ func (h *HTTPS) eventLoop() {
 				return
 			}
 
-			var msgParsed interface{}
-			err := json.Unmarshal(msgBytes, &msgParsed)
+			var msg wsEvent
+			err := json.Unmarshal(msgBytes, &msg)
 			if err != nil {
 				l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
 				continue // Swallow this and move on
 			}
-			l.Infof("Received an event: %s", string(msgBytes))
+			l.Debugf("Received %s event %s", msg.Event, msg.ID)
+			switch msg.Event {
+			case messageReceipt:
+				err = h.handleReceipt(ctx, msg.Data)
+			case messageTokenPool:
+				err = h.handleTokenPoolCreate(ctx, msg.Data)
+			default:
+				l.Errorf("Message unexpected: %s", msg.Event)
+			}
+
+			if err == nil {
+				l.Debugf("Sending ack %s", msg.ID)
+				ack, _ := json.Marshal(fftypes.JSONObject{
+					"event": "ack",
+					"data": fftypes.JSONObject{
+						"id": msg.ID,
+					},
+				})
+				err = h.wsconn.Send(ctx, ack)
+			}
+
+			if err != nil {
+				l.Errorf("Event loop exiting: %s", err)
+				return
+			}
 		}
 	}
 }

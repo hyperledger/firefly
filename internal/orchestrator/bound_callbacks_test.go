@@ -42,8 +42,8 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TxSubmissionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TxSubmissionUpdate("tracking12345", fftypes.OpStatusFailed, "tx12345", "error info", info)
+	mei.On("TxSubmissionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainTxUpdate("tracking12345", fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))

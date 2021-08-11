@@ -21,16 +21,22 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
 type boundCallbacks struct {
 	bi blockchain.Plugin
 	dx dataexchange.Plugin
 	ei events.EventManager
+	tk tokens.Plugin
 }
 
-func (bc *boundCallbacks) TxSubmissionUpdate(tx string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, protocolTxID, errorMessage, additionalInfo)
+func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, additionalInfo)
+}
+
+func (bc *boundCallbacks) TokensTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TxSubmissionUpdate(bc.tk, tx, txState, errorMessage, additionalInfo)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
@@ -47,4 +53,8 @@ func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, payl
 
 func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {
 	return bc.ei.MessageReceived(bc.dx, peerID, data)
+}
+
+func (bc *boundCallbacks) TokenPoolCreated(pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TokenPoolCreated(bc.tk, pool, signingIdentity, additionalInfo)
 }
