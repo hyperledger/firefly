@@ -4119,7 +4119,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens:
+  /namespaces/{ns}/tokens/{connector}:
     post:
       description: 'TODO: Description'
       operationId: postTokens
@@ -4130,6 +4130,12 @@ paths:
         required: true
         schema:
           example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: connector
+        required: true
+        schema:
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)

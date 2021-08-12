@@ -14,13 +14,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
-func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	ret := _m.Called(ctx, ns, pool, waitConfirm)
+// CreateTokenPool provides a mock function with given fields: ctx, ns, connector, pool, waitConfirm
+func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, connector, pool, waitConfirm)
 
 	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenPool, bool) *fftypes.TokenPool); ok {
-		r0 = rf(ctx, ns, pool, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.TokenPool, bool) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, connector, pool, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenPool)
@@ -28,8 +28,8 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenPool, bool) error); ok {
-		r1 = rf(ctx, ns, pool, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.TokenPool, bool) error); ok {
+		r1 = rf(ctx, ns, connector, pool, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

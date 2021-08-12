@@ -18,6 +18,7 @@ package assets
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
@@ -29,7 +30,7 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	Start() error
 	WaitStop()
 }
@@ -39,10 +40,10 @@ type assetManager struct {
 	database database.Plugin
 	identity identity.Plugin
 	data     data.Manager
-	tokens   tokens.Plugin
+	tokens   []tokens.Plugin
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, tk tokens.Plugin) (Manager, error) {
+func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, tk []tokens.Plugin) (Manager, error) {
 	if di == nil || ii == nil || tk == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -65,7 +66,16 @@ func (am *assetManager) getNodeSigningIdentity(ctx context.Context) (*fftypes.Id
 	return id, nil
 }
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) selectTokenPlugin(name string) (tokens.Plugin, error) {
+	for _, plugin := range am.tokens {
+		if plugin.Name() == name {
+			return plugin, nil
+		}
+	}
+	return nil, fmt.Errorf("no token connector available with name '%s'", name)
+}
+
+func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	pool.ID = fftypes.NewUUID()
 	pool.Namespace = ns
 
@@ -78,13 +88,18 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 		return nil, err
 	}
 
-	trackingID, err := am.tokens.CreateTokenPool(ctx, id, pool)
+	plugin, err := am.selectTokenPlugin(connector)
+	if err != nil {
+		return nil, err
+	}
+
+	trackingID, err := plugin.CreateTokenPool(ctx, id, pool)
 	if err != nil {
 		return nil, err
 	}
 
 	op := fftypes.NewTXOperation(
-		am.tokens,
+		plugin,
 		ns,
 		fftypes.NewUUID(),
 		trackingID,

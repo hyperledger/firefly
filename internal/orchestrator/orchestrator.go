@@ -19,6 +19,7 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hyperledger-labs/firefly/internal/assets"
 	"github.com/hyperledger-labs/firefly/internal/batch"
@@ -131,7 +132,7 @@ type orchestrator struct {
 	data          data.Manager
 	syncasync     syncasync.Bridge
 	assets        assets.Manager
-	tokens        tokens.Plugin
+	tokens        []tokens.Plugin
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -166,7 +167,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.bc.tk = or.tokens
 	return err
 }
 
@@ -189,7 +189,11 @@ func (or *orchestrator) Start() error {
 		err = or.messaging.Start()
 	}
 	if err == nil {
-		err = or.tokens.Start()
+		for _, el := range or.tokens {
+			if err = el.Start(); err != nil {
+				break
+			}
+		}
 	}
 	or.started = true
 	return err
@@ -315,13 +319,29 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	if or.tokens == nil {
-		tkType := config.GetString(config.TokensType)
-		if or.tokens, err = tkfactory.GetPlugin(ctx, tkType); err != nil {
-			return err
+	if len(or.tokens) == 0 {
+		tokens := config.GetObjectArray(config.TokensList)
+		for i := range tokens {
+			prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
+			name := prefix.GetString("name")
+			connector := prefix.GetString("connector")
+			if name == "" || connector == "" {
+				return fmt.Errorf("invalid tokens configuration - name and connector are required")
+			}
+
+			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
+			plugin, err := tkfactory.GetPlugin(ctx, connector)
+			if err != nil {
+				return err
+			}
+			if err = plugin.Init(ctx, name, prefix, &or.bc); err != nil {
+				return err
+			}
+			or.tokens = append(or.tokens, plugin)
 		}
 	}
-	return or.tokens.Init(ctx, tokensConfig.SubPrefix(or.tokens.Name()), &or.bc)
+
+	return nil
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {

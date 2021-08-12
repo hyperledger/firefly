@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -94,7 +95,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
-	tor.orchestrator.tokens = tor.mtk
+	tor.orchestrator.tokens = []tokens.Plugin{tor.mtk}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()

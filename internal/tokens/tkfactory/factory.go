@@ -18,6 +18,7 @@ package tkfactory
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -33,13 +34,20 @@ var pluginsByName = make(map[string]tokens.Plugin)
 
 func init() {
 	for _, p := range plugins {
-		pluginsByName[p.Name()] = p
+		pluginsByName[p.ConnectorName()] = p
 	}
 }
 
 func InitPrefix(prefix config.Prefix) {
-	for _, plugin := range plugins {
-		plugin.InitPrefix(prefix.SubPrefix(plugin.Name()))
+	// TODO: add better config support for arrays
+	for i := 0; i < 5; i++ {
+		p := prefix.SubPrefix(strconv.Itoa(i))
+		p.AddKnownKey("connector")
+		p.AddKnownKey("name")
+		for _, plugin := range plugins {
+			// Accept a superset of configs allowed by all plugins
+			plugin.InitPrefix(p)
+		}
 	}
 }
 

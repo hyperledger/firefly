@@ -32,6 +32,7 @@ import (
 
 type HTTPS struct {
 	ctx          context.Context
+	name         string
 	capabilities *tokens.Capabilities
 	callbacks    tokens.Callbacks
 	client       *resty.Client
@@ -64,12 +65,17 @@ type createPool struct {
 }
 
 func (h *HTTPS) Name() string {
+	return h.name
+}
+
+func (h *HTTPS) ConnectorName() string {
 	return "https"
 }
 
-func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+func (h *HTTPS) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
 
 	h.ctx = log.WithLogField(ctx, "proto", "https")
+	h.name = name
 	h.callbacks = callbacks
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
@@ -116,7 +122,7 @@ func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) erro
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply (request=%s) %s", updateType, requestID, message)
-	return h.callbacks.TokensTxUpdate(requestID, updateType, message, data)
+	return h.callbacks.TokensTxUpdate(h, requestID, updateType, message, data)
 }
 
 func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -152,7 +158,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(pool, authorAddress, data)
+	return h.callbacks.TokenPoolCreated(h, pool, authorAddress, data)
 }
 
 func (h *HTTPS) eventLoop() {

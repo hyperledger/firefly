@@ -32,7 +32,10 @@ type Plugin interface {
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
+	Init(ctx context.Context, name string, prefix config.Prefix, callbacks Callbacks) error
+
+	// ConnectorName returns the name of the connector plugin
+	ConnectorName() string
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -57,13 +60,13 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokensTxUpdate(txTrackingID string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
+	TokensTxUpdate(plugin Plugin, txTrackingID string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the tokens

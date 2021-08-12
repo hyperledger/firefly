@@ -102,8 +102,8 @@ var (
 	DataexchangeType = rootKey("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = rootKey("database.type")
-	// TokensType is the name of the tokens plugin being used by this firefly node
-	TokensType = rootKey("tokens.type")
+	// TokensList is the root key containing a list of supported token connectors
+	TokensList = rootKey("tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = rootKey("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions
