@@ -319,6 +319,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(nil)
 
 	mbi := pm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
