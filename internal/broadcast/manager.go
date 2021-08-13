@@ -123,7 +123,7 @@ func SubmitPinnedBatch(ctx context.Context, bi blockchain.Plugin, id identity.Pl
 	}
 
 	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := bi.SubmitBatchPin(ctx, nil, signingIdentity, &blockchain.BatchPin{
+	err = bi.SubmitBatchPin(ctx, nil, signingIdentity, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,
@@ -140,7 +140,7 @@ func SubmitPinnedBatch(ctx context.Context, bi blockchain.Plugin, id identity.Pl
 		bi,
 		batch.Namespace,
 		batch.Payload.TX.ID,
-		blockchainTrackingID,
+		"",
 		fftypes.OpTypeBlockchainBatchPin,
 		fftypes.OpStatusPending,
 		"")

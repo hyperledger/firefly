@@ -232,7 +232,7 @@ func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
-	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -277,7 +277,7 @@ func TestSubmitTXAndUpdateDBAddOp2Fail(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(fmt.Errorf("pop"))
-	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
+	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbi.On("Name").Return("ut_blockchain")
 
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
@@ -307,7 +307,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
-	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("blockchain_id", nil)
+	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
@@ -340,6 +340,6 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	op2 := mdi.Calls[3].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *batch.Payload.TX.ID, *op2.Transaction)
 	assert.Equal(t, "ut_blockchain", op2.Plugin)
-	assert.Equal(t, "blockchain_id", op2.BackendID)
+	assert.Equal(t, "", op2.BackendID)
 	assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op2.Type)
 }

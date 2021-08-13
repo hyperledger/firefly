@@ -82,24 +82,17 @@ func (_m *Plugin) Start() error {
 }
 
 // SubmitBatchPin provides a mock function with given fields: ctx, ledgerID, identity, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) (string, error) {
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
 	ret := _m.Called(ctx, ledgerID, identity, batch)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) string); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) error); ok {
 		r0 = rf(ctx, ledgerID, identity, batch)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) error); ok {
-		r1 = rf(ctx, ledgerID, identity, batch)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // VerifyIdentitySyntax provides a mock function with given fields: ctx, identity

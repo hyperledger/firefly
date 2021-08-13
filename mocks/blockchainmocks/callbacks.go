@@ -28,13 +28,13 @@ func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentit
 	return r0
 }
 
-// TxSubmissionUpdate provides a mock function with given fields: txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
-func (_m *Callbacks) TxSubmissionUpdate(txTrackingID string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+// TxSubmissionUpdate provides a mock function with given fields: tx, txState, protocolTxID, errorMessage, additionalInfo
+func (_m *Callbacks) TxSubmissionUpdate(tx string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tx, txState, protocolTxID, errorMessage, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+		r0 = rf(tx, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
