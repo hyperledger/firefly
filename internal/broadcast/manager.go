@@ -122,19 +122,6 @@ func SubmitPinnedBatch(ctx context.Context, bi blockchain.Plugin, id identity.Pl
 		return err
 	}
 
-	// Write the batch pin to the blockchain
-	err = bi.SubmitBatchPin(ctx, nil, signingIdentity, &blockchain.BatchPin{
-		Namespace:      batch.Namespace,
-		TransactionID:  batch.Payload.TX.ID,
-		BatchID:        batch.ID,
-		BatchHash:      batch.Hash,
-		BatchPaylodRef: batch.PayloadRef,
-		Contexts:       contexts,
-	})
-	if err != nil {
-		return err
-	}
-
 	// The pending blockchain transaction
 	op := fftypes.NewTXOperation(
 		bi,
@@ -144,7 +131,20 @@ func SubmitPinnedBatch(ctx context.Context, bi blockchain.Plugin, id identity.Pl
 		fftypes.OpTypeBlockchainBatchPin,
 		fftypes.OpStatusPending,
 		"")
-	return db.UpsertOperation(ctx, op, false)
+	err = db.UpsertOperation(ctx, op, false)
+	if err != nil {
+		return err
+	}
+
+	// Write the batch pin to the blockchain
+	return bi.SubmitBatchPin(ctx, nil, signingIdentity, &blockchain.BatchPin{
+		Namespace:      batch.Namespace,
+		TransactionID:  batch.Payload.TX.ID,
+		BatchID:        batch.ID,
+		BatchHash:      batch.Hash,
+		BatchPaylodRef: batch.PayloadRef,
+		Contexts:       contexts,
+	})
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
