@@ -124,7 +124,6 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{}, []*fftypes.Bytes32{fftypes.NewRandB32()})
@@ -154,10 +153,12 @@ func TestDispatchBatchSubmitBroadcastBadIdentity(t *testing.T) {
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
 	mii.On("Resolve", mock.Anything, "wrong").Return(nil, fmt.Errorf("pop"))
 	mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything).Return(nil)
+	mps.On("Name").Return("ut_publicstorage")
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Author: "wrong"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
@@ -177,10 +178,12 @@ func TestDispatchBatchSubmitBroadcastBadOnchainIdentity(t *testing.T) {
 	badID := &fftypes.Identity{OnChain: "0x99999"}
 	mii.On("Resolve", mock.Anything, "wrong").Return(badID, nil)
 	mbi.On("VerifyIdentitySyntax", mock.Anything, badID).Return(fmt.Errorf("pop"))
+	mps.On("Name").Return("ut_publicstorage")
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Author: "wrong"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
@@ -192,13 +195,16 @@ func TestDispatchBatchSubmitBatchPinFail(t *testing.T) {
 	defer cancel()
 
 	mdi := bm.database.(*databasemocks.Plugin)
+	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-
-	bm.publicstorage.(*publicstoragemocks.Plugin).On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
+	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
+	mps.On("Name").Return("ut_publicstorage")
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	fn := mdi.Calls[0].Arguments[1].(func(ctx context.Context) error)
 	err = fn(context.Background())
@@ -225,7 +231,9 @@ func TestSubmitTXAndUpdateDBSubmitFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Once().Return(nil)
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
@@ -242,6 +250,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
 	mbi.On("Name").Return("unittest")
+	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	batch := &fftypes.Batch{
 		Author: "UTNodeID",
@@ -322,15 +331,15 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	err := bm.submitTXAndUpdateDB(context.Background(), batch, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
-	op1 := mdi.Calls[2].Arguments[1].(*fftypes.Operation)
+	op1 := mdi.Calls[1].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *batch.Payload.TX.ID, *op1.Transaction)
-	assert.Equal(t, "ut_blockchain", op1.Plugin)
-	assert.Equal(t, "blockchain_id", op1.BackendID)
-	assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op1.Type)
+	assert.Equal(t, "ut_publicstorage", op1.Plugin)
+	assert.Equal(t, "ipfs_id", op1.BackendID)
+	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op1.Type)
 
 	op2 := mdi.Calls[3].Arguments[1].(*fftypes.Operation)
 	assert.Equal(t, *batch.Payload.TX.ID, *op2.Transaction)
-	assert.Equal(t, "ut_publicstorage", op2.Plugin)
-	assert.Equal(t, "ipfs_id", op2.BackendID)
-	assert.Equal(t, fftypes.OpTypePublicStorageBatchBroadcast, op2.Type)
+	assert.Equal(t, "ut_blockchain", op2.Plugin)
+	assert.Equal(t, "blockchain_id", op2.BackendID)
+	assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op2.Type)
 }

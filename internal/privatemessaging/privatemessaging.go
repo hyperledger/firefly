@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger-labs/firefly/internal/batch"
+	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -215,63 +216,12 @@ func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fft
 }
 
 func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftypes.Batch, nodes []*fftypes.Node, payload fftypes.Byteable, contexts []*fftypes.Bytes32) (err error) {
-	id, err := pm.identity.Resolve(ctx, batch.Author)
-	if err == nil {
-		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		return err
-	}
-
 	if err = pm.sendData(ctx, "batch", batch.ID, batch.Group, batch.Namespace, nodes, payload, batch.Payload.TX.ID, batch.Payload.Data); err != nil {
 		return err
 	}
-
-	return pm.writeTransaction(ctx, id, batch, contexts)
+	return pm.writeTransaction(ctx, batch, contexts)
 }
 
-func (pm *privateMessaging) writeTransaction(ctx context.Context, signingID *fftypes.Identity, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-
-	tx := &fftypes.Transaction{
-		ID: batch.Payload.TX.ID,
-		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypeBatchPin,
-			Signer:    signingID.OnChain,
-			Namespace: batch.Namespace,
-			Reference: batch.ID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
-	}
-	tx.Hash = tx.Subject.Hash()
-	err := pm.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
-	if err != nil {
-		return err
-	}
-
-	// Write the batch pin to the blockchain
-	blockchainTrackingID, err := pm.blockchain.SubmitBatchPin(ctx, nil, signingID, &blockchain.BatchPin{
-		Namespace:      batch.Namespace,
-		TransactionID:  batch.Payload.TX.ID,
-		BatchID:        batch.ID,
-		BatchPaylodRef: batch.PayloadRef,
-		BatchHash:      batch.Hash,
-		Contexts:       contexts,
-	})
-	if err != nil {
-		return err
-	}
-
-	// The pending blockchain transaction
-	op := fftypes.NewTXOperation(
-		pm.blockchain,
-		batch.Namespace,
-		batch.Payload.TX.ID,
-		blockchainTrackingID,
-		fftypes.OpTypeBlockchainBatchPin,
-		fftypes.OpStatusPending,
-		"")
-
-	return pm.database.UpsertOperation(ctx, op, false)
+func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
+	return broadcast.SubmitPinnedBatch(ctx, pm.blockchain, pm.identity, pm.database, batch, contexts)
 }
