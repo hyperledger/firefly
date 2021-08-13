@@ -436,17 +436,18 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, instancePath string, method string, identity *fftypes.Identity, input interface{}, output interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, method string, identity *fftypes.Identity, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
 		SetQueryParam(e.prefixShort+"-from", identity.OnChain).
 		SetQueryParam(e.prefixShort+"-sync", "false").
+		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(input).
 		SetResult(output).
-		Post(instancePath + "/" + method)
+		Post(e.instancePath + "/" + method)
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) (txTrackingID string, err error) {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
 	tx := &asyncTXSubmission{}
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
@@ -462,9 +463,9 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 		PayloadRef: batch.BatchPaylodRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, e.instancePath, "pinBatch", identity, input, tx)
+	res, err := e.invokeContractMethod(ctx, "pinBatch", identity, batch.TransactionID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}
-	return tx.ID, nil
+	return nil
 }

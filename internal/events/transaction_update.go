@@ -26,17 +26,17 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, tx string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
 
 	// Find a matching operation, for this plugin, with the specified ID.
 	// We retry a few times, as there's an outside possibility of the event arriving before we're finished persisting the operation itself
 	var operations []*fftypes.Operation
 	fb := database.OperationQueryFactory.NewFilter(em.ctx)
 	filter := fb.And(
-		fb.Eq("backendid", txTrackingID),
+		fb.Eq("tx", tx),
 		fb.Eq("plugin", bi.Name()),
 	)
-	err := em.retry.Do(em.ctx, fmt.Sprintf("correlate tx %s", txTrackingID), func(attempt int) (retry bool, err error) {
+	err := em.retry.Do(em.ctx, fmt.Sprintf("correlate tx %s", tx), func(attempt int) (retry bool, err error) {
 		operations, _, err = em.database.GetOperations(em.ctx, filter)
 		if err == nil && len(operations) == 0 {
 			err = i18n.NewError(em.ctx, i18n.Msg404NotFound)
@@ -44,7 +44,7 @@ func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID st
 		return (err != nil && attempt <= em.opCorrelationRetries), err
 	})
 	if err != nil {
-		log.L(em.ctx).Warnf("Failed to correlate tracking ID '%s' with a submitted operation", txTrackingID)
+		log.L(em.ctx).Warnf("Failed to correlate tracking ID '%s' with a submitted operation", tx)
 		return nil
 	}
 
