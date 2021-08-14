@@ -19,9 +19,7 @@ package events
 import (
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/hyperledger-labs/firefly/internal/retry"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -29,24 +27,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestTxSubmissionUpdateRetryThenFound(t *testing.T) {
+func TestTransactionLookupSuccess(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
-	em.retry = retry.Retry{
-		InitialDelay: 1 * time.Microsecond,
-		MaximumDelay: 1 * time.Microsecond,
-	}
-	em.opCorrelationRetries = 2
 
 	opID := fftypes.NewUUID()
 	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("will retry")).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, nil).Once() // retry again
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
 		{ID: opID},
 	}, nil, nil)
+	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
+
+	info := fftypes.JSONObject{"some": "info"}
+	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "tx12345", "some error", info)
+	assert.NoError(t, err)
+}
+
+func TestTransactionLookupNoResults(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mbi := &blockchainmocks.Plugin{}
+
+	opID := fftypes.NewUUID()
+	mbi.On("Name").Return("ut")
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
@@ -59,7 +66,6 @@ func TestTransactionLookupNotFound(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
-	em.opCorrelationRetries = 0
 
 	mbi.On("Name").Return("ut")
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
@@ -74,7 +80,6 @@ func TestTxSubmissionUpdateError(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
-	em.opCorrelationRetries = 0
 
 	opID := fftypes.NewUUID()
 	mbi.On("Name").Return("ut")
