@@ -37,7 +37,7 @@ func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, tx string, txSt
 		err = i18n.NewError(em.ctx, i18n.Msg404NotFound)
 	}
 	if err != nil {
-		log.L(em.ctx).Warnf("Failed to correlate tracking ID '%s' with a submitted operation", tx)
+		log.L(em.ctx).Debugf("TX '%s' submission update ignored, as it was not submitted by this node", tx)
 		return nil
 	}
 
