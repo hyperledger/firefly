@@ -42,7 +42,7 @@ var createPoolSchema = `{
 
 var postTokens = &oapispec.Route{
 	Name:   "postTokens",
-	Path:   "namespaces/{ns}/tokens/{connector}",
+	Path:   "namespaces/{ns}/tokens/{connector}/pools",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},

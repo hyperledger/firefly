@@ -4119,7 +4119,7 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/{connector}:
+  /namespaces/{ns}/tokens/{connector}/pools:
     post:
       description: 'TODO: Description'
       operationId: postTokens
