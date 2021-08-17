@@ -30,7 +30,7 @@ var (
 		"namespace",
 		"name",
 		"pool_id",
-		"is_fungible",
+		"type",
 	}
 )
 
@@ -55,11 +55,6 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 		transactionRows.Close()
 	}
 
-	isFungible := 0
-	if pool.Type == fftypes.TokenTypeFungible {
-		isFungible = 1
-	}
-
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenpool").
@@ -67,7 +62,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("pool_id", pool.PoolID).
-				Set("is_fungible", isFungible),
+				Set("type", pool.Type),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
 			},
@@ -83,7 +78,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Namespace,
 					pool.Name,
 					pool.PoolID,
-					isFungible,
+					pool.Type,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, pool.Namespace, pool.ID)

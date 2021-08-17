@@ -5,7 +5,7 @@ CREATE TABLE tokenpool (
   namespace      VARCHAR(64)     NOT NULL,
   name           VARCHAR(64)     NOT NULL,
   pool_id        VARCHAR(80)     NOT NULL,
-  is_fungible    SMALLINT        DEFAULT 1
+  type           VARCHAR(64)     NOT NULL
 );
 
 CREATE UNIQUE INDEX tokenpool_id ON tokenpool(id);
