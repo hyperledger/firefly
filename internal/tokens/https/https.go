@@ -32,7 +32,6 @@ import (
 
 type HTTPS struct {
 	ctx          context.Context
-	name         string
 	capabilities *tokens.Capabilities
 	callbacks    tokens.Callbacks
 	client       *resty.Client
@@ -65,17 +64,12 @@ type createPool struct {
 }
 
 func (h *HTTPS) Name() string {
-	return h.name
-}
-
-func (h *HTTPS) ConnectorName() string {
 	return "https"
 }
 
-func (h *HTTPS) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
 
 	h.ctx = log.WithLogField(ctx, "proto", "https")
-	h.name = name
 	h.callbacks = callbacks
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {

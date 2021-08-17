@@ -32,10 +32,7 @@ type Plugin interface {
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, name string, prefix config.Prefix, callbacks Callbacks) error
-
-	// ConnectorName returns the name of the connector plugin
-	ConnectorName() string
+	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error

@@ -132,7 +132,7 @@ type orchestrator struct {
 	data          data.Manager
 	syncasync     syncasync.Bridge
 	assets        assets.Manager
-	tokens        []tokens.Plugin
+	tokens        map[string]tokens.Plugin
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -320,14 +320,14 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.tokens == nil {
-		or.tokens = make([]tokens.Plugin, 0)
+		or.tokens = make(map[string]tokens.Plugin)
 		tokens := config.GetObjectArray(config.TokensList)
 		for i := range tokens {
 			prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
 			name := prefix.GetString("name")
 			connector := prefix.GetString("connector")
 			if name == "" || connector == "" {
-				return fmt.Errorf("invalid tokens configuration - name and connector are required")
+				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
 			}
 
 			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
@@ -335,11 +335,16 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			if err != nil {
 				return err
 			}
-			if err = plugin.Init(ctx, name, prefix, &or.bc); err != nil {
-				return err
-			}
-			or.tokens = append(or.tokens, plugin)
+			or.tokens[name] = plugin
 		}
+	}
+	i := 0
+	for _, plugin := range or.tokens {
+		prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
+		if err = plugin.Init(ctx, prefix, &or.bc); err != nil {
+			return err
+		}
+		i++
 	}
 
 	return nil

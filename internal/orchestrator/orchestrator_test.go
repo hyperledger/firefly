@@ -95,7 +95,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
-	tor.orchestrator.tokens = []tokens.Plugin{tor.mtk}
+	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mtk}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()

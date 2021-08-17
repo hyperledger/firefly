@@ -190,5 +190,6 @@ var (
 	MsgConfirmQueryParam           = ffm("FF10270", "When true the HTTP request blocks until the message is confirmed")
 	MsgRequestMustBePrivate        = ffm("FF10271", "For request messages you must specify a group of private recipients", 400)
 	MsgUnknownTokensPlugin         = ffm("FF10272", "Unknown tokens plugin '%s'")
-	MsgTokensRESTErr               = ffm("FF10273", "Error from tokens service: %s")
+	MsgMissingTokensPluginConfig   = ffm("FF10273", "Invalid tokens configuration - name and connector are required")
+	MsgTokensRESTErr               = ffm("FF10274", "Error from tokens service: %s")
 )

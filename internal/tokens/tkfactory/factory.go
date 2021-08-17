@@ -34,7 +34,7 @@ var pluginsByName = make(map[string]tokens.Plugin)
 
 func init() {
 	for _, p := range plugins {
-		pluginsByName[p.ConnectorName()] = p
+		pluginsByName[p.Name()] = p
 	}
 }
 
@@ -51,10 +51,10 @@ func InitPrefix(prefix config.Prefix) {
 	}
 }
 
-func GetPlugin(ctx context.Context, pluginType string) (tokens.Plugin, error) {
-	plugin, ok := pluginsByName[pluginType]
+func GetPlugin(ctx context.Context, connectorName string) (tokens.Plugin, error) {
+	plugin, ok := pluginsByName[connectorName]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, pluginType)
+		return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, connectorName)
 	}
 	return plugin, nil
 }
