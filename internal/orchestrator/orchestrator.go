@@ -319,7 +319,8 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	if len(or.tokens) == 0 {
+	if or.tokens == nil {
+		or.tokens = make([]tokens.Plugin, 0)
 		tokens := config.GetObjectArray(config.TokensList)
 		for i := range tokens {
 			prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
