@@ -24,6 +24,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -216,6 +217,7 @@ type Prefix interface {
 	AddKnownKey(key string, defValue ...interface{})
 	SetDefault(key string, defValue interface{})
 	SubPrefix(suffix string) Prefix
+	Array() PrefixArray
 	Set(key string, value interface{})
 	Resolve(key string) string
 
@@ -230,6 +232,16 @@ type Prefix interface {
 	GetObject(key string) fftypes.JSONObject
 	GetObjectArray(key string) fftypes.JSONObjectArray
 	Get(key string) interface{}
+}
+
+// PrefixArray represents an array of options at a particular layer in the config.
+// This allows specifying the schema of keys that exist for every entry, and the defaults,
+// as well as querying how many entries exist and generating a prefix for each entry
+// (so that you can iterate).
+type PrefixArray interface {
+	ArraySize() int
+	ArrayEntry(i int) Prefix
+	AddKnownKey(key string, defValue ...interface{})
 }
 
 // RootKey key are the known configuration keys
@@ -355,7 +367,8 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 }
 
 var root = &configPrefix{
-	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
+	defaults: make(map[string][]interface{}),
+	keys:     map[string]bool{}, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
@@ -376,8 +389,15 @@ func GetKnownKeys() []string {
 
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
 type configPrefix struct {
-	prefix string
-	keys   map[string]bool
+	prefix   string
+	keys     map[string]bool
+	defaults map[string][]interface{}
+}
+
+// configPrefixArray is a point in the config that supports an array
+type configPrefixArray struct {
+	base     string
+	defaults map[string][]interface{}
 }
 
 // NewPluginConfig creates a new plugin configuration object, at the specified prefix
@@ -386,8 +406,9 @@ func NewPluginConfig(prefix string) Prefix {
 		prefix += "."
 	}
 	return &configPrefix{
-		prefix: prefix,
-		keys:   root.keys,
+		prefix:   prefix,
+		defaults: make(map[string][]interface{}),
+		keys:     root.keys,
 	}
 }
 
@@ -401,9 +422,53 @@ func (c *configPrefix) prefixKey(k string) string {
 
 func (c *configPrefix) SubPrefix(suffix string) Prefix {
 	return &configPrefix{
-		prefix: c.prefix + suffix + ".",
+		prefix:   c.prefix + suffix + ".",
+		defaults: make(map[string][]interface{}),
+		keys:     root.keys,
+	}
+}
+
+func (c *configPrefix) Array() PrefixArray {
+	return &configPrefixArray{
+		base:     strings.TrimSuffix(c.prefix, "."),
+		defaults: make(map[string][]interface{}),
+	}
+}
+
+func (c *configPrefixArray) ArraySize() int {
+	val := viper.Get(c.base)
+	vt := reflect.TypeOf(val)
+	if vt != nil && vt.Kind() == reflect.Slice {
+		return reflect.ValueOf(val).Len()
+	}
+	return 0
+}
+
+// ArrayEntry must only be called after the config has been loaded
+func (c *configPrefixArray) ArrayEntry(i int) Prefix {
+	cp := &configPrefix{
+		prefix: c.base + fmt.Sprintf(".%d.", i),
 		keys:   root.keys,
 	}
+	for knownKey, defValue := range c.defaults {
+		cp.AddKnownKey(knownKey, defValue...)
+		// Sadly Viper can't handle defaults inside the array, when
+		// a value is set. So here we check/set the defaults.
+		if defValue != nil && cp.Get(knownKey) == nil {
+			if len(defValue) == 1 {
+				cp.Set(knownKey, defValue[0])
+			} else if len(defValue) > 0 {
+				cp.Set(knownKey, defValue)
+			}
+		}
+	}
+	return cp
+}
+
+func (c *configPrefixArray) AddKnownKey(k string, defValue ...interface{}) {
+	// Put a simulated key in the known keys array, to pop into the help info.
+	root.keys[fmt.Sprintf("%s[].%s", c.base, k)] = true
+	c.defaults[k] = defValue
 }
 
 func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
