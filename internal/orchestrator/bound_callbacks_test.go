@@ -23,19 +23,22 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
+	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBoundBlockchainCallbacks(t *testing.T) {
+func TestBoundCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
+	mtk := &tokenmocks.Plugin{}
 	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
+	pool := &fftypes.TokenPool{}
 	hash := fftypes.NewRandB32()
 
 	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
@@ -44,6 +47,10 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 
 	mei.On("TxSubmissionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
 	err = bc.BlockchainTxUpdate("tracking12345", fftypes.OpStatusFailed, "error info", info)
+	assert.EqualError(t, err, "pop")
+
+	mei.On("TxSubmissionUpdate", mtk, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TokensTxUpdate(mtk, "tracking12345", fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
@@ -56,5 +63,9 @@ func TestBoundBlockchainCallbacks(t *testing.T) {
 
 	mei.On("MessageReceived", mdx, "peer1", []byte{}).Return(fmt.Errorf("pop"))
 	err = bc.MessageReceived("peer1", []byte{})
+	assert.EqualError(t, err, "pop")
+
+	mei.On("TokenPoolCreated", mtk, pool, "0x12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokenPoolCreated(mtk, pool, "0x12345", info)
 	assert.EqualError(t, err, "pop")
 }

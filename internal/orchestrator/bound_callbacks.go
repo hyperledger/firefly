@@ -34,7 +34,7 @@ func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.Trans
 	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, additionalInfo)
 }
 
-func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
+func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.TxSubmissionUpdate(plugin, tx, txState, errorMessage, additionalInfo)
 }
 
