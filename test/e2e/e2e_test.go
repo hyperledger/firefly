@@ -180,13 +180,13 @@ func beforeE2ETest(t *testing.T) *testState {
 		Scheme:   websocketProtocolClient1,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed&changeevents=.*",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
 	}
 	wsUrl2 := url.URL{
 		Scheme:   websocketProtocolClient2,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed&changeevents=.*",
+		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())
@@ -352,6 +352,32 @@ func TestE2EPrivateBlob(t *testing.T) {
 	<-received2
 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Regexp(t, "myfile.txt", string(val2))
+}
+
+func TestE2ETokenPool(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+	defer ts.done()
+
+	received1, changes1 := wsReader(t, ts.ws1)
+	received2, changes2 := wsReader(t, ts.ws2)
+
+	var resp *resty.Response
+	pool := fftypes.TokenPool{
+		Name: "my-pool",
+	}
+
+	resp, err := CreateTokenPool(ts.client1, &pool)
+	require.NoError(t, err)
+	assert.Equal(t, 202, resp.StatusCode())
+
+	<-received1
+	<-changes1 // also expect database change events
+	// TODO: validate created pool
+
+	<-received2
+	<-changes2 // also expect database change events
+	// TODO: validate created pool
 }
 
 func TestE2EWebhookExchange(t *testing.T) {

@@ -42,6 +42,7 @@ var (
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
+	urlPostTokenPool    = "/namespaces/default/tokens/erc1155/pools"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -275,4 +276,10 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
 	return &replyMsg
+}
+
+func CreateTokenPool(client *resty.Client, pool *fftypes.TokenPool) (*resty.Response, error) {
+	return client.R().
+		SetBody(pool).
+		Post(urlPostTokenPool)
 }
