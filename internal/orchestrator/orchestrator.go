@@ -19,7 +19,6 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/hyperledger-labs/firefly/internal/assets"
 	"github.com/hyperledger-labs/firefly/internal/batch"
@@ -54,7 +53,7 @@ var (
 	identityConfig      = config.NewPluginConfig("identity")
 	publicstorageConfig = config.NewPluginConfig("publicstorage")
 	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
-	tokensConfig        = config.NewPluginConfig("tokens")
+	tokensConfig        = config.NewPluginConfig("tokens").Array()
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -321,9 +320,8 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.tokens == nil {
 		or.tokens = make(map[string]tokens.Plugin)
-		tokens := config.GetObjectArray(config.TokensList)
-		for i := range tokens {
-			prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
+		for i := 0; i < tokensConfig.ArraySize(); i++ {
+			prefix := tokensConfig.ArrayEntry(i)
 			name := prefix.GetString("name")
 			connector := prefix.GetString("connector")
 			if name == "" || connector == "" {
@@ -340,7 +338,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 	i := 0
 	for _, plugin := range or.tokens {
-		prefix := tokensConfig.SubPrefix(strconv.Itoa(i))
+		prefix := tokensConfig.ArrayEntry(i)
 		if err = plugin.Init(ctx, prefix, &or.bc); err != nil {
 			return err
 		}

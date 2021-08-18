@@ -71,7 +71,7 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks toke
 }
 
 // InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.Prefix) {
+func (_m *Plugin) InitPrefix(prefix config.PrefixArray) {
 	_m.Called(prefix)
 }
 

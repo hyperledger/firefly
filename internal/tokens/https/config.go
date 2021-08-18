@@ -21,6 +21,6 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/wsclient"
 )
 
-func (h *HTTPS) InitPrefix(prefix config.Prefix) {
+func (h *HTTPS) InitPrefix(prefix config.PrefixArray) {
 	wsclient.InitPrefix(prefix)
 }

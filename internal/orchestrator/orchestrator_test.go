@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/tokens/tkfactory"
 	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
@@ -256,7 +257,7 @@ func TestBadDataExchangePlugin(t *testing.T) {
 	assert.Regexp(t, "FF10213.*wrong", err)
 }
 
-func TestBadPDataExchangeInitFail(t *testing.T) {
+func TestBadDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -265,6 +266,85 @@ func TestBadPDataExchangeInitFail(t *testing.T) {
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestBadTokensPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig.AddKnownKey("name", "test")
+	tokensConfig.AddKnownKey("connector", "wrong")
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10272.*wrong", err)
+}
+
+func TestBadTokensPluginNoName(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig.AddKnownKey("name")
+	tokensConfig.AddKnownKey("connector", "wrong")
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10273", err)
+}
+
+func TestGoodTokensPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	tkfactory.InitPrefix(tokensConfig)
+	tokensConfig.AddKnownKey("name", "test")
+	tokensConfig.AddKnownKey("connector", "https")
+	tokensConfig.AddKnownKey("url", "test")
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+}
+
+func TestBadTokensInitFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mtk.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.EqualError(t, err, "pop")
@@ -318,13 +398,35 @@ func TestInitDataComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitAssetsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.assets = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestStartBatchFail(t *testing.T) {
 	config.Reset()
 	or := newTestOrchestrator()
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	or.mbi.On("Start").Return(nil)
 	err := or.Start()
-	assert.Regexp(t, "pop", err)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestStartTokensFail(t *testing.T) {
+	config.Reset()
+	or := newTestOrchestrator()
+	or.mbi.On("Start").Return(nil)
+	or.mba.On("Start").Return(nil)
+	or.mem.On("Start").Return(nil)
+	or.mbm.On("Start").Return(nil)
+	or.mpm.On("Start").Return(nil)
+	or.mam.On("Start").Return(nil)
+	or.mtk.On("Start").Return(fmt.Errorf("pop"))
+	err := or.Start()
+	assert.EqualError(t, err, "pop")
 }
 
 func TestStartStopOk(t *testing.T) {

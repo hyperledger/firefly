@@ -28,7 +28,7 @@ type Plugin interface {
 	fftypes.Named
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitPrefix(prefix config.Prefix)
+	InitPrefix(prefix config.PrefixArray)
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
