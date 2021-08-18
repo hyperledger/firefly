@@ -46,7 +46,7 @@ type Plugin interface {
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *BatchPin) (txTrackingID string, err error)
+	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *BatchPin) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
@@ -61,7 +61,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TxSubmissionUpdate(txTrackingID string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
+	TxSubmissionUpdate(tx string, txState TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.

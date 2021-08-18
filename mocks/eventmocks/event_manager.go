@@ -229,13 +229,13 @@ func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 	return r0
 }
 
-// TxSubmissionUpdate provides a mock function with given fields: bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo
-func (_m *EventManager) TxSubmissionUpdate(bi blockchain.Plugin, txTrackingID string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+// TxSubmissionUpdate provides a mock function with given fields: bi, tx, txState, protocolTxID, errorMessage, additionalInfo
+func (_m *EventManager) TxSubmissionUpdate(bi blockchain.Plugin, tx string, txState fftypes.OpStatus, protocolTxID string, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(bi, tx, txState, protocolTxID, errorMessage, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(blockchain.Plugin, string, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+		r0 = rf(bi, tx, txState, protocolTxID, errorMessage, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

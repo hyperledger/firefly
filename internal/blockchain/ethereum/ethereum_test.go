@@ -369,13 +369,12 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", body["payloadRef"])
-			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	txid, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
-	assert.Equal(t, "abcd1234", txid)
 
 }
 
@@ -406,13 +405,12 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
 			assert.Equal(t, ethHexFormatB32(batch.BatchHash), body["batchHash"])
 			assert.Equal(t, "", body["payloadRef"])
-			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{ID: "abcd1234"})(req)
+			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	txid, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
-	assert.Equal(t, "abcd1234", txid)
 
 }
 
@@ -438,7 +436,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	_, err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)

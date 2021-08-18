@@ -29,8 +29,8 @@ type boundCallbacks struct {
 	ei events.EventManager
 }
 
-func (bc *boundCallbacks) TxSubmissionUpdate(txTrackingID string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(bc.bi, txTrackingID, txState, protocolTxID, errorMessage, additionalInfo)
+func (bc *boundCallbacks) TxSubmissionUpdate(tx string, txState blockchain.TransactionStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, protocolTxID, errorMessage, additionalInfo)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {

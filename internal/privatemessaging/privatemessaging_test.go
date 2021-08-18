@@ -63,10 +63,6 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 		Identifier: "org1", OnChain: "0x12345",
 	}, nil).Maybe()
 	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x12345" })).Return(nil).Maybe()
-	mii.On("Resolve", ctx, "org1").Return(&fftypes.Identity{
-		Identifier: "org1", OnChain: "0x23456",
-	}, nil).Maybe()
-	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x23456" })).Return(nil).Maybe()
 
 	return pm.(*privateMessaging), cancel
 }
@@ -158,9 +154,9 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		assert.Equal(t, "ns1", bp.Namespace)
 		assert.Equal(t, []*fftypes.Bytes32{pin1, pin2}, bp.Contexts)
 		return true
-	})).Return("tracking3", nil)
+	})).Return(nil)
 	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.BackendID == "tracking3" && op.Type == fftypes.OpTypeBlockchainBatchPin
+		return op.Type == fftypes.OpTypeBlockchainBatchPin
 	}), false).Return(nil, nil)
 
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
@@ -313,7 +309,7 @@ func TestWriteTransactionUpsertFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
-	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -323,11 +319,12 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(nil)
 
 	mbi := pm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -339,11 +336,11 @@ func TestWriteTransactionUpsertOpFail(t *testing.T) {
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
 
 	mbi := pm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("tracking1", nil)
+	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	err := pm.writeTransaction(pm.ctx, &fftypes.Identity{OnChain: "0x12345"}, &fftypes.Batch{}, []*fftypes.Bytes32{})
+	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
