@@ -35,5 +35,10 @@ func (em *eventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 		return err
 	}
 
-	return em.database.UpsertTokenPool(em.ctx, pool, false)
+	if err := em.database.UpsertTokenPool(em.ctx, pool, false); err != nil {
+		return err
+	}
+
+	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
+	return em.database.InsertEvent(em.ctx, event)
 }
