@@ -18,6 +18,7 @@ package sqlcommon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -28,6 +29,36 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestTokenPoolE2EWithDB(t *testing.T) {
+
+	s, cleanup := newSQLiteTestProvider(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	// Create a new token pool entry
+	poolID := fftypes.NewUUID()
+	pool := &fftypes.TokenPool{
+		ID:        poolID,
+		Namespace: "ns1",
+		Name:      "my-pool",
+		Type:      fftypes.TokenTypeFungible,
+		PoolID:    "12345",
+	}
+
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
+
+	err := s.UpsertTokenPool(ctx, pool, true)
+	assert.NoError(t, err)
+
+	// Check we get the exact same token pool back
+	poolRead, err := s.GetTokenPoolByID(ctx, pool.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolJson, _ := json.Marshal(&pool)
+	poolReadJson, _ := json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+}
 
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
