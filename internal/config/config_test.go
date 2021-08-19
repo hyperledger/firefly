@@ -133,10 +133,10 @@ tokens:
   - arr1
   - arr2
 `))
+	assert.NoError(t, err)
 	assert.Equal(t, 2, tokPlugins.ArraySize())
 	assert.Equal(t, 0, NewPluginConfig("nonexistent").Array().ArraySize())
 	bob := tokPlugins.ArrayEntry(0)
-	assert.NoError(t, err)
 	assert.Equal(t, "bob", bob.GetString("name"))
 	assert.Equal(t, "default value", bob.GetString("key1"))
 	assert.Equal(t, []string{"def1", "def2"}, bob.GetStringSlice("key2"))
