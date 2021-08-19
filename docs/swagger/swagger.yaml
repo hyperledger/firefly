@@ -4149,6 +4149,8 @@ paths:
           application/json:
             schema:
               properties:
+                author:
+                  type: string
                 name:
                   type: string
                 type:
@@ -4163,6 +4165,8 @@ paths:
             application/json:
               schema:
                 properties:
+                  author:
+                    type: string
                   id: {}
                   name:
                     type: string
@@ -4179,6 +4183,8 @@ paths:
             application/json:
               schema:
                 properties:
+                  author:
+                    type: string
                   id: {}
                   name:
                     type: string

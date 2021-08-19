@@ -18,7 +18,6 @@ package assets
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
@@ -57,22 +56,13 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 	return am, nil
 }
 
-func (am *assetManager) getNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
-	orgIdentity := config.GetString(config.OrgIdentity)
-	id, err := am.identity.Resolve(ctx, orgIdentity)
-	if err != nil {
-		return nil, err
-	}
-	return id, nil
-}
-
-func (am *assetManager) selectTokenPlugin(name string) (tokens.Plugin, error) {
+func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tokens.Plugin, error) {
 	for pluginName, plugin := range am.tokens {
 		if pluginName == name {
 			return plugin, nil
 		}
 	}
-	return nil, fmt.Errorf("no token connector available with name '%s'", name)
+	return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, name)
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -83,12 +73,15 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connecto
 		return nil, err
 	}
 
-	id, err := am.getNodeSigningIdentity(ctx)
+	if pool.Author == "" {
+		pool.Author = config.GetString(config.OrgIdentity)
+	}
+	id, err := am.identity.Resolve(ctx, pool.Author)
 	if err != nil {
-		return nil, err
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
-	plugin, err := am.selectTokenPlugin(connector)
+	plugin, err := am.selectTokenPlugin(ctx, connector)
 	if err != nil {
 		return nil, err
 	}

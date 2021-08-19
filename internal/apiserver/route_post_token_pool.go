@@ -36,6 +36,9 @@ var createPoolSchema = `{
 		},
 		"name": {
 			"type": "string"
+		},
+		"author": {
+			"type": "string"
 		}
 	}
 }`
