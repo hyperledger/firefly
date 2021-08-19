@@ -4154,9 +4154,6 @@ paths:
                 name:
                   type: string
                 type:
-                  enum:
-                  - fungible
-                  - nonfungible
                   type: string
               type: object
       responses:

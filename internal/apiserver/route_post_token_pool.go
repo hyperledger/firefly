@@ -17,7 +17,6 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -26,22 +25,6 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
-
-var createPoolSchema = `{
-	"type": "object",
-	"properties": {
-		"type": {
-			"type": "string",
-			"enum": ["fungible", "nonfungible"]
-		},
-		"name": {
-			"type": "string"
-		},
-		"author": {
-			"type": "string"
-		}
-	}
-}`
 
 var postTokens = &oapispec.Route{
 	Name:   "postTokens",
@@ -56,7 +39,6 @@ var postTokens = &oapispec.Route{
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenPool{} },
 	JSONInputMask:   []string{"ID", "Namespace", "PoolID"},
-	JSONInputSchema: func(ctx context.Context) string { return createPoolSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

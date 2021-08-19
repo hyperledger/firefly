@@ -58,11 +58,11 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenpool").
-				Set("id", pool.ID).
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("pool_id", pool.PoolID).
-				Set("type", pool.Type),
+				Set("type", pool.Type).
+				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
 			},
