@@ -371,8 +371,7 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 }
 
 var root = &configPrefix{
-	defaults: make(map[string][]interface{}),
-	keys:     map[string]bool{}, // All keys go here, including those defined in sub prefixies
+	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
@@ -393,9 +392,8 @@ func GetKnownKeys() []string {
 
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
 type configPrefix struct {
-	prefix   string
-	keys     map[string]bool
-	defaults map[string][]interface{}
+	prefix string
+	keys   map[string]bool
 }
 
 // configPrefixArray is a point in the config that supports an array
@@ -410,9 +408,8 @@ func NewPluginConfig(prefix string) Prefix {
 		prefix += "."
 	}
 	return &configPrefix{
-		prefix:   prefix,
-		defaults: make(map[string][]interface{}),
-		keys:     root.keys,
+		prefix: prefix,
+		keys:   root.keys,
 	}
 }
 
@@ -426,9 +423,8 @@ func (c *configPrefix) prefixKey(k string) string {
 
 func (c *configPrefix) SubPrefix(suffix string) Prefix {
 	return &configPrefix{
-		prefix:   c.prefix + suffix + ".",
-		defaults: make(map[string][]interface{}),
-		keys:     root.keys,
+		prefix: c.prefix + suffix + ".",
+		keys:   root.keys,
 	}
 }
 
