@@ -42,7 +42,7 @@ const (
 
 // InitPrefix ensures the prefix is initialized for HTTP too, as WS and HTTP
 // can share the same tree of configuration (and all the HTTP options apply to the initial upgrade)
-func InitPrefix(prefix config.Prefix) {
+func InitPrefix(prefix config.KeySet) {
 	restclient.InitPrefix(prefix)
 	prefix.AddKnownKey(WSConfigKeyWriteBufferSize, defaultBufferSize)
 	prefix.AddKnownKey(WSConfigKeyReadBufferSize, defaultBufferSize)

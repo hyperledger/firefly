@@ -209,12 +209,16 @@ var (
 	ValidatorCacheTTL = rootKey("validator.cache.ttl")
 )
 
+type KeySet interface {
+	AddKnownKey(key string, defValue ...interface{})
+}
+
 // Prefix represents the global configuration, at a nested point in
 // the config hierarchy. This allows plugins to define their
 // Note that all values are GLOBAL so this cannot be used for per-instance
 // customization. Rather for global initialization of plugins.
 type Prefix interface {
-	AddKnownKey(key string, defValue ...interface{})
+	KeySet
 	SetDefault(key string, defValue interface{})
 	SubPrefix(suffix string) Prefix
 	Array() PrefixArray
@@ -239,9 +243,9 @@ type Prefix interface {
 // as well as querying how many entries exist and generating a prefix for each entry
 // (so that you can iterate).
 type PrefixArray interface {
+	KeySet
 	ArraySize() int
 	ArrayEntry(i int) Prefix
-	AddKnownKey(key string, defValue ...interface{})
 }
 
 // RootKey key are the known configuration keys
@@ -367,8 +371,7 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 }
 
 var root = &configPrefix{
-	defaults: make(map[string][]interface{}),
-	keys:     map[string]bool{}, // All keys go here, including those defined in sub prefixies
+	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
@@ -389,9 +392,8 @@ func GetKnownKeys() []string {
 
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
 type configPrefix struct {
-	prefix   string
-	keys     map[string]bool
-	defaults map[string][]interface{}
+	prefix string
+	keys   map[string]bool
 }
 
 // configPrefixArray is a point in the config that supports an array
@@ -406,9 +408,8 @@ func NewPluginConfig(prefix string) Prefix {
 		prefix += "."
 	}
 	return &configPrefix{
-		prefix:   prefix,
-		defaults: make(map[string][]interface{}),
-		keys:     root.keys,
+		prefix: prefix,
+		keys:   root.keys,
 	}
 }
 
@@ -422,9 +423,8 @@ func (c *configPrefix) prefixKey(k string) string {
 
 func (c *configPrefix) SubPrefix(suffix string) Prefix {
 	return &configPrefix{
-		prefix:   c.prefix + suffix + ".",
-		defaults: make(map[string][]interface{}),
-		keys:     root.keys,
+		prefix: c.prefix + suffix + ".",
+		keys:   root.keys,
 	}
 }
 
