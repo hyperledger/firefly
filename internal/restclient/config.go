@@ -52,7 +52,7 @@ const (
 	HTTPCustomClient = "customClient"
 )
 
-func InitPrefix(prefix config.Prefix) {
+func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(HTTPConfigURL)
 	prefix.AddKnownKey(HTTPConfigProxyURL)
 	prefix.AddKnownKey(HTTPConfigHeaders)

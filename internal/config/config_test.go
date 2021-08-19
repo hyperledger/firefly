@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -113,6 +114,36 @@ func TestPluginConfigArrayInit(t *testing.T) {
 	pic := NewPluginConfig("my").SubPrefix("special")
 	pic.AddKnownKey("config", "val1", "val2", "val3")
 	assert.Equal(t, []string{"val1", "val2", "val3"}, pic.GetStringSlice("config"))
+}
+
+func TestArrayOfPlugins(t *testing.T) {
+	defer Reset()
+
+	tokPlugins := NewPluginConfig("tokens").Array()
+	tokPlugins.AddKnownKey("name")
+	tokPlugins.AddKnownKey("key1", "default value")
+	tokPlugins.AddKnownKey("key2", "def1", "def2")
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+tokens:
+- name: bob
+- name: sally
+  key1: explicit value
+  key2:
+  - arr1
+  - arr2
+`))
+	assert.NoError(t, err)
+	assert.Equal(t, 2, tokPlugins.ArraySize())
+	assert.Equal(t, 0, NewPluginConfig("nonexistent").Array().ArraySize())
+	bob := tokPlugins.ArrayEntry(0)
+	assert.Equal(t, "bob", bob.GetString("name"))
+	assert.Equal(t, "default value", bob.GetString("key1"))
+	assert.Equal(t, []string{"def1", "def2"}, bob.GetStringSlice("key2"))
+	sally := tokPlugins.ArrayEntry(1)
+	assert.Equal(t, "sally", sally.GetString("name"))
+	assert.Equal(t, "explicit value", sally.GetString("key1"))
+	assert.Equal(t, []string{"arr1", "arr2"}, sally.GetStringSlice("key2"))
 }
 
 func TestGetKnownKeys(t *testing.T) {
