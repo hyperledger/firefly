@@ -209,12 +209,16 @@ var (
 	ValidatorCacheTTL = rootKey("validator.cache.ttl")
 )
 
+type KeySet interface {
+	AddKnownKey(key string, defValue ...interface{})
+}
+
 // Prefix represents the global configuration, at a nested point in
 // the config hierarchy. This allows plugins to define their
 // Note that all values are GLOBAL so this cannot be used for per-instance
 // customization. Rather for global initialization of plugins.
 type Prefix interface {
-	AddKnownKey(key string, defValue ...interface{})
+	KeySet
 	SetDefault(key string, defValue interface{})
 	SubPrefix(suffix string) Prefix
 	Array() PrefixArray
@@ -239,9 +243,9 @@ type Prefix interface {
 // as well as querying how many entries exist and generating a prefix for each entry
 // (so that you can iterate).
 type PrefixArray interface {
+	KeySet
 	ArraySize() int
 	ArrayEntry(i int) Prefix
-	AddKnownKey(key string, defValue ...interface{})
 }
 
 // RootKey key are the known configuration keys
