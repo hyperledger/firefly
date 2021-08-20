@@ -124,7 +124,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	name := data.GetString("name")
 	clientID := data.GetString("client_id")
 	tokenType := data.GetString("type")
-	protocolID := data.GetString("protocol_id")
+	protocolID := data.GetString("pool_id")
 	authorAddress := data.GetString("author")
 
 	if ns == "" ||
