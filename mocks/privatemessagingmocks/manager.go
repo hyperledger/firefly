@@ -92,6 +92,29 @@ func (_m *Manager) GetGroups(ctx context.Context, filter database.AndFilter) ([]
 	return r0, r1, r2
 }
 
+// RequestReply provides a mock function with given fields: ctx, ns, request
+func (_m *Manager) RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	ret := _m.Called(ctx, ns, request)
+
+	var r0 *fftypes.MessageInOut
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.MessageInOut); ok {
+		r0 = rf(ctx, ns, request)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.MessageInOut)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
+		r1 = rf(ctx, ns, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ResolveInitGroup provides a mock function with given fields: ctx, msg
 func (_m *Manager) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
 	ret := _m.Called(ctx, msg)

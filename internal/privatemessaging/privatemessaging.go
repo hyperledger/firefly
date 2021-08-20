@@ -42,6 +42,7 @@ type Manager interface {
 	Start() error
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
+	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
 
 type privateMessaging struct {
@@ -224,4 +225,8 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 
 func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 	return broadcast.SubmitPinnedBatch(ctx, pm.blockchain, pm.identity, pm.database, batch, contexts)
+}
+
+func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	return pm.syncasync.RequestReply(ctx, ns, unresolved)
 }

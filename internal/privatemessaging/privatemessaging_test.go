@@ -388,6 +388,18 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
 	assert.Regexp(t, "pop", err)
 }
+
+func TestRequestReply(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
+	assert.NoError(t, err)
+}
+
 func TestStart(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()

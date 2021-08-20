@@ -302,18 +302,6 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 
 }
 
-func TestRequestSetupSystemMissingGroup(t *testing.T) {
-
-	sa, cancel := newTestSyncAsyncBridge(t)
-	defer cancel()
-
-	_, err := sa.RequestReply(sa.ctx, "ns1", &fftypes.MessageInOut{
-		Group: &fftypes.InputGroup{},
-	})
-	assert.Regexp(t, "FF10271", err)
-
-}
-
 func TestRequestSetupSystemMissingTag(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
