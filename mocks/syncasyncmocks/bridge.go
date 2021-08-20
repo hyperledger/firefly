@@ -8,6 +8,8 @@ import (
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 	mock "github.com/stretchr/testify/mock"
 
+	syncasync "github.com/hyperledger-labs/firefly/internal/syncasync"
+
 	sysmessaging "github.com/hyperledger-labs/firefly/internal/sysmessaging"
 )
 
@@ -60,6 +62,29 @@ func (_m *Bridge) SendConfirm(ctx context.Context, request *fftypes.Message) (*f
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message) error); ok {
 		r1 = rf(ctx, request)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SendConfirmTokenPool provides a mock function with given fields: ctx, ns, send
+func (_m *Bridge) SendConfirmTokenPool(ctx context.Context, ns string, send syncasync.RequestSender) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, send)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, syncasync.RequestSender) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, send)
 	} else {
 		r1 = ret.Error(1)
 	}

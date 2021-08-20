@@ -416,6 +416,33 @@ func TestEventCallbackMsgLookupFail(t *testing.T) {
 
 }
 
+func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	responseID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*responseID: &inflightRequest{},
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			Reference: fftypes.NewUUID(),
+			Type:      fftypes.EventTypePoolConfirmed,
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
 func TestEventCallbackMsgNotFound(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
@@ -444,6 +471,62 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	responseID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*responseID: &inflightRequest{},
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			Reference: fftypes.NewUUID(),
+			Type:      fftypes.EventTypeMessageRejected,
+		},
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestEventCallbackTokenPoolNotFound(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	responseID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*responseID: &inflightRequest{},
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			Reference: fftypes.NewUUID(),
+			Type:      fftypes.EventTypePoolConfirmed,
+		},
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
@@ -460,4 +543,60 @@ func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 	})
 
 	mdm.AssertExpectations(t)
+}
+
+func TestAwaitTokenPoolConfirmation(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		pool := &fftypes.TokenPool{
+			ID:   requestID,
+			Name: "my-pool",
+		}
+		gmid.ReturnArguments = mock.Arguments{
+			pool, nil,
+		}
+	}
+
+	reply, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", func(id *fftypes.UUID) error {
+		requestID = id
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypePoolConfirmed,
+					Reference: requestID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, *requestID, *reply.ID)
+	assert.Equal(t, "my-pool", reply.Name)
+}
+
+func TestAwaitTokenPoolConfirmationSendFail(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	_, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", func(id *fftypes.UUID) error {
+		return fmt.Errorf("pop")
+	})
+	assert.EqualError(t, err, "pop")
 }
