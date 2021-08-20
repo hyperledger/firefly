@@ -31,7 +31,7 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	mtk := &tokenmocks.Plugin{}
+	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -44,19 +44,19 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 	})).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mtk, pool, "0x12345", info)
+	err := em.TokenPoolCreated(mti, pool, "0x12345", info)
 	assert.NoError(t, err)
 }
 
 func TestTokenPoolBadNamespace(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mtk := &tokenmocks.Plugin{}
+	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{}
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mtk, pool, "0x12345", info)
+	err := em.TokenPoolCreated(mti, pool, "0x12345", info)
 	assert.Regexp(t, "FF10131", err)
 }
 
@@ -64,7 +64,7 @@ func TestTokenPoolUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	mtk := &tokenmocks.Plugin{}
+	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
 		ID:        fftypes.NewUUID(),
@@ -74,6 +74,6 @@ func TestTokenPoolUpsertFail(t *testing.T) {
 	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TokenPoolCreated(mtk, pool, "0x12345", info)
+	err := em.TokenPoolCreated(mti, pool, "0x12345", info)
 	assert.EqualError(t, err, "pop")
 }

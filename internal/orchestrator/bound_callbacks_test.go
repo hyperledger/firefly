@@ -33,7 +33,7 @@ func TestBoundCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
-	mtk := &tokenmocks.Plugin{}
+	mti := &tokenmocks.Plugin{}
 	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
 
 	info := fftypes.JSONObject{"hello": "world"}
@@ -49,8 +49,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BlockchainTxUpdate("tracking12345", fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TxSubmissionUpdate", mtk, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TokensTxUpdate(mtk, "tracking12345", fftypes.OpStatusFailed, "error info", info)
+	mei.On("TxSubmissionUpdate", mti, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TokensTxUpdate(mti, "tracking12345", fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
@@ -65,7 +65,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokenPoolCreated", mtk, pool, "0x12345", info).Return(fmt.Errorf("pop"))
-	err = bc.TokenPoolCreated(mtk, pool, "0x12345", info)
+	mei.On("TokenPoolCreated", mti, pool, "0x12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokenPoolCreated(mti, pool, "0x12345", info)
 	assert.EqualError(t, err, "pop")
 }

@@ -37,7 +37,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/internal/syshandlers"
-	"github.com/hyperledger-labs/firefly/internal/tokens/tkfactory"
+	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
@@ -144,7 +144,7 @@ func NewOrchestrator() Orchestrator {
 	difactory.InitPrefix(databaseConfig)
 	psfactory.InitPrefix(publicstorageConfig)
 	dxfactory.InitPrefix(dataexchangeConfig)
-	tkfactory.InitPrefix(tokensConfig)
+	tifactory.InitPrefix(tokensConfig)
 
 	return or
 }
@@ -329,7 +329,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			}
 
 			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
-			plugin, err := tkfactory.GetPlugin(ctx, connector)
+			plugin, err := tifactory.GetPlugin(ctx, connector)
 			if err != nil {
 				return err
 			}

@@ -42,8 +42,8 @@ type assetManager struct {
 	tokens   map[string]tokens.Plugin
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, tk map[string]tokens.Plugin) (Manager, error) {
-	if di == nil || ii == nil || tk == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, ti map[string]tokens.Plugin) (Manager, error) {
+	if di == nil || ii == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
@@ -51,7 +51,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		database: di,
 		identity: ii,
 		data:     dm,
-		tokens:   tk,
+		tokens:   ti,
 	}
 	return am, nil
 }

@@ -36,12 +36,12 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mtk := &tokenmocks.Plugin{}
-	mtk.On("Name").Return("ut_tokens").Maybe()
+	mti := &tokenmocks.Plugin{}
+	mti.On("Name").Return("ut_tokens").Maybe()
 	defaultIdentity := &fftypes.Identity{Identifier: "UTNodeID", OnChain: "0x12345"}
 	mii.On("Resolve", mock.Anything, "UTNodeID").Return(defaultIdentity, nil).Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mii, mdm, map[string]tokens.Plugin{"magic-tokens": mtk})
+	a, err := NewAssetManager(ctx, mdi, mii, mdm, map[string]tokens.Plugin{"magic-tokens": mti})
 	assert.NoError(t, err)
 	return a.(*assetManager), cancel
 }
@@ -99,9 +99,9 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	defer cancel()
 
 	mdm := am.data.(*datamocks.Manager)
-	mtk := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mtk.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
@@ -113,9 +113,9 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
-	mtk := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mtk.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("tx12345", nil)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("tx12345", nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)

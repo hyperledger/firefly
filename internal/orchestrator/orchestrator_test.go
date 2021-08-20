@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/tokens/tkfactory"
+	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
@@ -59,7 +59,7 @@ type testOrchestrator struct {
 	mii *identitymocks.Plugin
 	mdx *dataexchangemocks.Plugin
 	mam *assetmocks.Manager
-	mtk *tokenmocks.Plugin
+	mti *tokenmocks.Plugin
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -82,7 +82,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mii: &identitymocks.Plugin{},
 		mdx: &dataexchangemocks.Plugin{},
 		mam: &assetmocks.Manager{},
-		mtk: &tokenmocks.Plugin{},
+		mti: &tokenmocks.Plugin{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -96,7 +96,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.identity = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
-	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mtk}
+	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -104,7 +104,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mii.On("Name").Return("mock-ii").Maybe()
 	tor.mdx.On("Name").Return("mock-dx").Maybe()
 	tor.mam.On("Name").Return("mock-am").Maybe()
-	tor.mtk.On("Name").Return("mock-tk").Maybe()
+	tor.mti.On("Name").Return("mock-tk").Maybe()
 	return tor
 }
 
@@ -313,7 +313,7 @@ func TestBadTokensPluginNoName(t *testing.T) {
 
 func TestGoodTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tkfactory.InitPrefix(tokensConfig)
+	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey("name", "test")
 	tokensConfig.AddKnownKey("connector", "https")
 	tokensConfig.AddKnownKey("url", "test")
@@ -344,7 +344,7 @@ func TestBadTokensInitFail(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mtk.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.EqualError(t, err, "pop")
@@ -424,7 +424,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
-	or.mtk.On("Start").Return(fmt.Errorf("pop"))
+	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -438,13 +438,13 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mam.On("Start").Return(nil)
-	or.mtk.On("Start").Return(nil)
+	or.mti.On("Start").Return(nil)
 	or.mbi.On("WaitStop").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
 	or.mem.On("WaitStop").Return(nil)
 	or.mbm.On("WaitStop").Return(nil)
 	or.mam.On("WaitStop").Return(nil)
-	or.mtk.On("WaitStop").Return(nil)
+	or.mti.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -519,7 +519,7 @@ func TestInitOK(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mtk.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	err := config.ReadConfig(configDir + "/firefly.core.yaml")
 	assert.NoError(t, err)
 	ctx, cancelCtx := context.WithCancel(context.Background())
