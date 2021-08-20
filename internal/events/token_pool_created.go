@@ -23,13 +23,6 @@ import (
 )
 
 func (em *eventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error {
-
-	log.L(em.ctx).Infof("-> TokenPoolCreated id=%s author=%s", pool.ID, signingIdentity)
-	defer func() {
-		log.L(em.ctx).Infof("<- TokenPoolCreated id=%s author=%s", pool.ID, signingIdentity)
-	}()
-	log.L(em.ctx).Tracef("TokenPoolCreated info: %+v", additionalInfo)
-
 	if err := fftypes.ValidateFFNameField(em.ctx, pool.Namespace, "namespace"); err != nil {
 		log.L(em.ctx).Errorf("Invalid pool '%s' - invalid namespace '%s': %a", pool.ID, pool.Namespace, err)
 		return err
@@ -38,6 +31,7 @@ func (em *eventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 	if err := em.database.UpsertTokenPool(em.ctx, pool, false); err != nil {
 		return err
 	}
+	log.L(em.ctx).Infof("TokenPoolCreated id=%s author=%s", pool.ID, signingIdentity)
 
 	event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
 	return em.database.InsertEvent(em.ctx, event)
