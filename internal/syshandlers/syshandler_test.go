@@ -75,26 +75,28 @@ func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 func TestPrivateMessagingPassthroughs(t *testing.T) {
 	ctx := context.Background()
 
+	requestID := fftypes.NewUUID()
+
 	sh := newTestSystemHandlers(t)
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("GetGroupByID", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("GetGroups", ctx, mock.Anything).Return(nil, nil, nil)
 	mpm.On("ResolveInitGroup", ctx, mock.Anything).Return(nil, nil)
 	mpm.On("EnsureLocalGroup", ctx, mock.Anything).Return(false, nil)
-	mpm.On("SendMessageWithID", ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, nil)
+	mpm.On("SendMessageWithID", ctx, "ns1", requestID, mock.Anything, mock.Anything, false).Return(nil, nil)
 	mbm := sh.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastMessageWithID", ctx, "ns1", mock.Anything, mock.Anything, false).Return(nil, nil)
+	mbm.On("BroadcastMessageWithID", ctx, "ns1", requestID, mock.Anything, mock.Anything, false).Return(nil, nil)
 
 	_, _ = sh.GetGroupByID(ctx, fftypes.NewUUID().String())
 	_, _, _ = sh.GetGroups(ctx, nil)
 	_, _ = sh.ResolveInitGroup(ctx, nil)
 	_, _ = sh.EnsureLocalGroup(ctx, nil)
-	_, _ = sh.SendMessageWithID(ctx, "ns1", nil, &fftypes.Message{
+	_, _ = sh.SendMessageWithID(ctx, "ns1", requestID, nil, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 		},
 	}, false)
-	_, _ = sh.SendMessageWithID(ctx, "ns1", &fftypes.MessageInOut{
+	_, _ = sh.SendMessageWithID(ctx, "ns1", requestID, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Namespace: "ns1",

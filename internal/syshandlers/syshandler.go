@@ -75,14 +75,14 @@ func (sh *systemHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.G
 	return sh.messaging.EnsureLocalGroup(ctx, group)
 }
 
-func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
 	if resolved == nil {
 		resolved = &unresolved.Message
 	}
 	if resolved.Header.Group == nil && (unresolved == nil || unresolved.Group == nil) {
-		return sh.broadcast.BroadcastMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)
+		return sh.broadcast.BroadcastMessageWithID(ctx, ns, id, unresolved, resolved, waitConfirm)
 	}
-	return sh.messaging.SendMessageWithID(ctx, ns, unresolved, resolved, waitConfirm)
+	return sh.messaging.SendMessageWithID(ctx, ns, id, unresolved, resolved, waitConfirm)
 }
 
 func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {

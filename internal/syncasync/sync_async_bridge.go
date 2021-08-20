@@ -253,8 +253,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 	}
 
 	reply, err := sa.sendAndWait(ctx, ns, messageReply, func(requestID *fftypes.UUID) error {
-		unresolved.Message.Header.ID = requestID
-		_, err := sa.sender.SendMessageWithID(ctx, ns, unresolved, &unresolved.Message, false)
+		_, err := sa.sender.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
 		return err
 	})
 	if err != nil {
@@ -265,8 +264,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 
 func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
 	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, messageConfirm, func(requestID *fftypes.UUID) error {
-		msg.Header.ID = requestID
-		_, err := sa.sender.SendMessageWithID(ctx, msg.Header.Namespace, nil, msg, false)
+		_, err := sa.sender.SendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})
 	if err != nil {

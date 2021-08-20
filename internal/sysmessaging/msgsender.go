@@ -24,6 +24,6 @@ import (
 
 // MessageSender specifies the sending interfaces of performing a send, without creating a cycle.
 type MessageSender interface {
-	SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
+	SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
