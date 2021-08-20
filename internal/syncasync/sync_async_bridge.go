@@ -54,6 +54,7 @@ type inflightRequest struct {
 	response  chan inflightResponse
 	reqType   requestType
 }
+
 type inflightResponse struct {
 	id   *fftypes.UUID
 	data interface{}
@@ -61,6 +62,7 @@ type inflightResponse struct {
 }
 
 type inflightRequestMap map[string]map[fftypes.UUID]*inflightRequest
+type requestSender func(requestID *fftypes.UUID) error
 
 type syncAsyncBridge struct {
 	ctx         context.Context
@@ -210,11 +212,7 @@ func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msg *fftyp
 	inflight.response <- inflightResponse{err: err}
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, reqType requestType) (reply interface{}, err error) {
-	if unresolved != nil {
-		resolved = &unresolved.Message
-	}
-
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType requestType, send requestSender) (interface{}, error) {
 	inflight, err := sa.addInFlight(ns, reqType)
 	if err != nil {
 		return nil, err
@@ -229,8 +227,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolve
 		}
 	}()
 
-	resolved.Header.ID = inflight.id
-	_, err = sa.sender.SendMessageWithID(ctx, ns, unresolved, resolved, false)
+	err = send(inflight.id)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +252,11 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
 
-	reply, err := sa.sendAndWait(ctx, ns, unresolved, nil, messageReply)
+	reply, err := sa.sendAndWait(ctx, ns, messageReply, func(requestID *fftypes.UUID) error {
+		unresolved.Message.Header.ID = requestID
+		_, err := sa.sender.SendMessageWithID(ctx, ns, unresolved, &unresolved.Message, false)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +264,11 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 }
 
 func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, nil, msg, messageConfirm)
+	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, messageConfirm, func(requestID *fftypes.UUID) error {
+		msg.Header.ID = requestID
+		_, err := sa.sender.SendMessageWithID(ctx, msg.Header.Namespace, nil, msg, false)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
