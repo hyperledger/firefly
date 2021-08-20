@@ -28,11 +28,11 @@ import (
 
 var postTokens = &oapispec.Route{
 	Name:   "postTokens",
-	Path:   "namespaces/{ns}/tokens/{connector}/pools",
+	Path:   "namespaces/{ns}/tokens/{type}/pools",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "connector", Description: i18n.MsgTBD},
+		{Name: "type", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -44,6 +44,6 @@ var postTokens = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.PP["connector"], r.Input.(*fftypes.TokenPool), waitConfirm)
+		return r.Or.Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.PP["type"], r.Input.(*fftypes.TokenPool), waitConfirm)
 	},
 }

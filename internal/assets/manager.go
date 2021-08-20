@@ -29,7 +29,7 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	Start() error
 	WaitStop()
 }
@@ -65,7 +65,7 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 	return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, name)
 }
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	pool.ID = fftypes.NewUUID()
 	pool.Namespace = ns
 
@@ -81,7 +81,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connecto
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
-	plugin, err := am.selectTokenPlugin(ctx, connector)
+	plugin, err := am.selectTokenPlugin(ctx, typeName)
 	if err != nil {
 		return nil, err
 	}
