@@ -450,12 +450,12 @@ func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 	mdm := sa.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", sa.ctx, mock.Anything, true).Return(nil, false, fmt.Errorf("pop"))
 
-	sa.resolveInflight(&inflightRequest{}, &fftypes.Message{
+	sa.resolveReply(&inflightRequest{}, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID:  fftypes.NewUUID(),
 			CID: fftypes.NewUUID(),
 		},
-	}, true, nil)
+	})
 
 	mdm.AssertExpectations(t)
 }
