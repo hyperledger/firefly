@@ -46,7 +46,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 
 	existing := false
 	if allowExisting {
-		transactionRows, _, err := s.queryTx(ctx, tx,
+		rows, _, err := s.queryTx(ctx, tx,
 			sq.Select("seq").
 				From("tokenpool").
 				Where(sq.Eq{"id": pool.ID}),
@@ -54,8 +54,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 		if err != nil {
 			return err
 		}
-		existing = transactionRows.Next()
-		transactionRows.Close()
+		existing = rows.Next()
+		rows.Close()
 	}
 
 	if existing {
@@ -67,7 +67,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("type", pool.Type).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
 			},
 		); err != nil {
 			return err
@@ -84,7 +84,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Type,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTransactions, fftypes.ChangeEventTypeCreated, pool.Namespace, pool.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, pool.Namespace, pool.ID)
 			},
 		); err != nil {
 			return err
@@ -160,5 +160,5 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (
 		pools = append(pools, d)
 	}
 
-	return pools, s.queryRes(ctx, tx, "nodes", fop, fi), err
+	return pools, s.queryRes(ctx, tx, "tokenpool", fop, fi), err
 }

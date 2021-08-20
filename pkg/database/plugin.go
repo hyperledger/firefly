@@ -719,3 +719,12 @@ var BlobQueryFactory = &queryFields{
 	"payloadref": &StringField{},
 	"created":    &TimeField{},
 }
+
+// TokenPoolQueryFactory filter fields for token pools
+var TokenPoolQueryFactory = &queryFields{
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"pool_id":   &StringField{},
+}
