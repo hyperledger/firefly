@@ -41,14 +41,26 @@ type Bridge interface {
 	SendConfirm(ctx context.Context, request *fftypes.Message) (reply *fftypes.Message, err error)
 }
 
+type requestType int
+
+const (
+	messageConfirm requestType = iota
+	messageReply
+)
+
 type inflightRequest struct {
-	id           *fftypes.UUID
-	startTime    time.Time
-	namespace    string
-	response     chan interface{}
-	waitForReply bool
-	withData     bool
+	id        *fftypes.UUID
+	startTime time.Time
+	response  chan inflightResponse
+	reqType   requestType
 }
+type inflightResponse struct {
+	id   *fftypes.UUID
+	data interface{}
+	err  error
+}
+
+type inflightRequestMap map[string]map[fftypes.UUID]*inflightRequest
 
 type syncAsyncBridge struct {
 	ctx         context.Context
@@ -57,7 +69,7 @@ type syncAsyncBridge struct {
 	sysevents   sysmessaging.SystemEvents
 	sender      sysmessaging.MessageSender
 	inflightMux sync.Mutex
-	inflight    map[string]map[fftypes.UUID]*inflightRequest
+	inflight    inflightRequestMap
 }
 
 func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager) Bridge {
@@ -65,7 +77,7 @@ func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager
 		ctx:      log.WithLogField(ctx, "role", "sync-async-bridge"),
 		database: di,
 		data:     dm,
-		inflight: make(map[string]map[fftypes.UUID]*inflightRequest),
+		inflight: make(inflightRequestMap),
 	}
 	return sa
 }
@@ -75,14 +87,12 @@ func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents, sender sysm
 	sa.sender = sender
 }
 
-func (sa *syncAsyncBridge) addInFlight(ns string, waitForReply, withData bool) (*inflightRequest, error) {
+func (sa *syncAsyncBridge) addInFlight(ns string, reqType requestType) (*inflightRequest, error) {
 	inflight := &inflightRequest{
-		id:           fftypes.NewUUID(),
-		namespace:    ns,
-		startTime:    time.Now(),
-		response:     make(chan interface{}),
-		waitForReply: waitForReply,
-		withData:     withData,
+		id:        fftypes.NewUUID(),
+		startTime: time.Now(),
+		response:  make(chan inflightResponse),
+		reqType:   reqType,
 	}
 	sa.inflightMux.Lock()
 	defer func() {
@@ -103,19 +113,25 @@ func (sa *syncAsyncBridge) addInFlight(ns string, waitForReply, withData bool) (
 	return inflight, nil
 }
 
-func (sa *syncAsyncBridge) removeInFlight(inflight *inflightRequest, replyID *fftypes.UUID) {
+func (sa *syncAsyncBridge) getInFlight(ns string, reqType requestType, id *fftypes.UUID) *inflightRequest {
+	inflightNS := sa.inflight[ns]
+	if inflightNS != nil && id != nil {
+		inflight := inflightNS[*id]
+		if inflight != nil && inflight.reqType == reqType {
+			return inflight
+		}
+	}
+	return nil
+}
+
+func (sa *syncAsyncBridge) removeInFlight(ns string, id *fftypes.UUID) {
 	sa.inflightMux.Lock()
 	defer func() {
 		sa.inflightMux.Unlock()
-		if replyID != nil {
-			log.L(sa.ctx).Infof("RequestReply '%s' resolved with message '%s' after %.2fms", inflight.id, replyID, inflight.msInflight())
-		} else {
-			log.L(sa.ctx).Infof("RequestReply '%s' resolved with timeout after %.2fms", inflight.id, inflight.msInflight())
-		}
 	}()
-	inflightNS := sa.inflight[inflight.namespace]
+	inflightNS := sa.inflight[ns]
 	if inflightNS != nil {
-		delete(inflightNS, *inflight.id)
+		delete(inflightNS, *id)
 	}
 }
 
@@ -128,7 +144,6 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 	sa.inflightMux.Lock()
 	defer sa.inflightMux.Unlock()
 
-	// Find the right set of potential callbacks
 	inflightNS := sa.inflight[event.Namespace]
 	if len(inflightNS) == 0 || (event.Type != fftypes.EventTypeMessageConfirmed && event.Type != fftypes.EventTypeMessageRejected) {
 		// No need to do any expensive lookups/matching - this could not be a match
@@ -146,67 +161,72 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 		return nil // ..but we need to move on
 	}
 
-	// See if the CID in the message matches an inflight events
-	if msg.Header.CID != nil && event.Type == fftypes.EventTypeMessageConfirmed {
-		inflight := inflightNS[*msg.Header.CID]
-		if inflight != nil && inflight.waitForReply {
-			// No need to block while locked any further here - kick off the data lookup and resolve
-			go sa.resolveInflight(inflight, msg, inflight.withData, nil)
-			return nil
+	switch event.Type {
+	case fftypes.EventTypeMessageConfirmed:
+		// See if the CID marks this as a reply to an inflight event
+		inflightReply := sa.getInFlight(event.Namespace, messageReply, msg.Header.CID)
+		if inflightReply != nil {
+			go sa.resolveReply(inflightReply, msg)
 		}
-	}
 
-	// See if this is a confirmation of the delivery of a message that's in flight
-	inflight := inflightNS[*msg.Header.ID]
-	if inflight != nil && !inflight.waitForReply {
-		var replyErr error
-		if event.Type == fftypes.EventTypeMessageRejected {
-			replyErr = i18n.NewError(sa.ctx, i18n.MsgRejected, msg.Header.ID)
+		// See if this is a confirmation of the delivery of an inflight event
+		inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
+		if inflight != nil {
+			go sa.resolveConfirmed(inflight, msg)
 		}
-		go sa.resolveInflight(inflight, msg, inflight.withData, replyErr)
+
+	case fftypes.EventTypeMessageRejected:
+		// See if this is a rejection of an inflight event
+		inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
+		if inflight != nil {
+			go sa.resolveRejected(inflight, msg)
+		}
 	}
 
 	return nil
 }
 
-func (sa *syncAsyncBridge) resolveInflight(inflight *inflightRequest, msg *fftypes.Message, withData bool, err error) {
+func (sa *syncAsyncBridge) resolveReply(inflight *inflightRequest, msg *fftypes.Message) {
+	log.L(sa.ctx).Debugf("Resolving reply request '%s' with message '%s'", inflight.id, msg.Header.ID)
 
+	response := &fftypes.MessageInOut{Message: *msg}
+	data, _, err := sa.data.GetMessageData(sa.ctx, msg, true)
 	if err != nil {
-		log.L(sa.ctx).Errorf("Resolving RequestReply '%s' with error: %s", inflight.id, err)
-		inflight.response <- err
+		log.L(sa.ctx).Errorf("Failed to read response data for message '%s' on request '%s': %s", msg.Header.ID, inflight.id, err)
 		return
 	}
-
-	log.L(sa.ctx).Debugf("Resolving RequestReply '%s' with message '%s'", inflight.id, msg.Header.ID)
-
-	if withData {
-		response := &fftypes.MessageInOut{Message: *msg}
-		data, _, err := sa.data.GetMessageData(sa.ctx, msg, true)
-		if err != nil {
-			log.L(sa.ctx).Errorf("Failed to read response data for message '%s' on request '%s': %s", msg.Header.ID, inflight.id, err)
-			return
-		}
-		response.SetInlineData(data)
-		// We deliver the full data in the response
-		inflight.response <- response
-	} else {
-		inflight.response <- msg
-	}
-
+	response.SetInlineData(data)
+	inflight.response <- inflightResponse{id: msg.Header.ID, data: response}
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitForReply, withData bool) (reply interface{}, err error) {
+func (sa *syncAsyncBridge) resolveConfirmed(inflight *inflightRequest, msg *fftypes.Message) {
+	log.L(sa.ctx).Debugf("Resolving confirmation request '%s' with message '%s'", inflight.id, msg.Header.ID)
+	inflight.response <- inflightResponse{id: msg.Header.ID, data: msg}
+}
+
+func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msg *fftypes.Message) {
+	err := i18n.NewError(sa.ctx, i18n.MsgRejected, msg.Header.ID)
+	log.L(sa.ctx).Errorf("Resolving confirmation request '%s' with error: %s", inflight.id, err)
+	inflight.response <- inflightResponse{err: err}
+}
+
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, reqType requestType) (reply interface{}, err error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
 
-	inflight, err := sa.addInFlight(ns, waitForReply, withData)
+	inflight, err := sa.addInFlight(ns, reqType)
 	if err != nil {
 		return nil, err
 	}
 	var replyID *fftypes.UUID
 	defer func() {
-		sa.removeInFlight(inflight, replyID)
+		sa.removeInFlight(ns, inflight.id)
+		if replyID != nil {
+			log.L(sa.ctx).Infof("Request '%s' resolved with message '%s' after %.2fms", inflight.id, replyID, inflight.msInflight())
+		} else {
+			log.L(sa.ctx).Infof("Request '%s' resolved with timeout after %.2fms", inflight.id, inflight.msInflight())
+		}
 	}()
 
 	resolved.Header.ID = inflight.id
@@ -218,16 +238,9 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, unresolve
 	select {
 	case <-ctx.Done():
 		return nil, i18n.NewError(ctx, i18n.MsgRequestTimeout, inflight.id, inflight.msInflight())
-	case reply = <-inflight.response:
-		switch rt := reply.(type) {
-		case *fftypes.MessageInOut:
-			replyID = rt.Message.Header.ID
-		case *fftypes.Message:
-			replyID = rt.Header.ID
-		case error:
-			return nil, rt
-		}
-		return reply, nil
+	case reply := <-inflight.response:
+		replyID = reply.id
+		return reply.data, reply.err
 	}
 }
 
@@ -242,10 +255,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
 
-	reply, err := sa.sendAndWait(ctx, ns, unresolved, nil,
-		true, // wait for a reply
-		true, // reply will be MessageInOut
-	)
+	reply, err := sa.sendAndWait(ctx, ns, unresolved, nil, messageReply)
 	if err != nil {
 		return nil, err
 	}
@@ -253,10 +263,7 @@ func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolv
 }
 
 func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, nil, msg,
-		false, // wait for confirmation, but not a reply
-		false, // do not include the full data in the reply
-	)
+	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, nil, msg, messageConfirm)
 	if err != nil {
 		return nil, err
 	}
