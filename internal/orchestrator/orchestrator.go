@@ -330,19 +330,14 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
 			plugin, err := tifactory.GetPlugin(ctx, connector)
+			if plugin != nil {
+				err = plugin.Init(ctx, prefix, &or.bc)
+			}
 			if err != nil {
 				return err
 			}
 			or.tokens[name] = plugin
 		}
-	}
-	i := 0
-	for _, plugin := range or.tokens {
-		prefix := tokensConfig.ArrayEntry(i)
-		if err = plugin.Init(ctx, prefix, &or.bc); err != nil {
-			return err
-		}
-		i++
 	}
 
 	return nil

@@ -328,26 +328,10 @@ func TestGoodTokensPlugin(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.NoError(t, err)
-}
-
-func TestBadTokensInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
-	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.NoError(t, err)
 }
 
 func TestInitMessagingomponentFail(t *testing.T) {
