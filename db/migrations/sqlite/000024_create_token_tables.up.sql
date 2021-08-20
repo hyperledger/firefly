@@ -3,7 +3,7 @@ CREATE TABLE tokenpool (
   id             UUID            NOT NULL,
   namespace      VARCHAR(64)     NOT NULL,
   name           VARCHAR(64)     NOT NULL,
-  pool_id        VARCHAR(1024)   NOT NULL,
+  protocol_id    VARCHAR(1024)   NOT NULL,
   type           VARCHAR(64)     NOT NULL
 );
 

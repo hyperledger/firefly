@@ -124,14 +124,14 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	name := data.GetString("name")
 	clientID := data.GetString("client_id")
 	tokenType := data.GetString("type")
-	poolID := data.GetString("pool_id")
+	protocolID := data.GetString("protocol_id")
 	authorAddress := data.GetString("author")
 
 	if ns == "" ||
 		name == "" ||
 		clientID == "" ||
 		tokenType == "" ||
-		poolID == "" ||
+		protocolID == "" ||
 		authorAddress == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
@@ -144,11 +144,11 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	}
 
 	pool := &fftypes.TokenPool{
-		ID:        uuid,
-		Namespace: ns,
-		Name:      name,
-		Type:      fftypes.LowerCasedType(tokenType),
-		PoolID:    poolID,
+		ID:         uuid,
+		Namespace:  ns,
+		Name:       name,
+		Type:       fftypes.LowerCasedType(tokenType),
+		ProtocolID: protocolID,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown

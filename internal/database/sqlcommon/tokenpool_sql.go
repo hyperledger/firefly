@@ -32,7 +32,7 @@ var (
 		"id",
 		"namespace",
 		"name",
-		"pool_id",
+		"protocol_id",
 		"type",
 	}
 )
@@ -63,7 +63,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 			sq.Update("tokenpool").
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
-				Set("pool_id", pool.PoolID).
+				Set("protocol_id", pool.ProtocolID).
 				Set("type", pool.Type).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
@@ -80,7 +80,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.ID,
 					pool.Namespace,
 					pool.Name,
-					pool.PoolID,
+					pool.ProtocolID,
 					pool.Type,
 				),
 			func() {
@@ -102,7 +102,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
-		&pool.PoolID,
+		&pool.ProtocolID,
 		&pool.Type,
 	)
 	if err != nil {

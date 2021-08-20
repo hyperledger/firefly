@@ -4169,7 +4169,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  pool_id:
+                  protocol_id:
                     type: string
                   type:
                     type: string
@@ -4187,7 +4187,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  pool_id:
+                  protocol_id:
                     type: string
                   type:
                     type: string

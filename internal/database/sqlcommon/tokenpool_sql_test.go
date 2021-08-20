@@ -39,11 +39,11 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	// Create a new token pool entry
 	poolID := fftypes.NewUUID()
 	pool := &fftypes.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-		Name:      "my-pool",
-		Type:      fftypes.TokenTypeFungible,
-		PoolID:    "12345",
+		ID:         poolID,
+		Namespace:  "ns1",
+		Name:       "my-pool",
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "12345",
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()

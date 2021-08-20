@@ -24,10 +24,10 @@ const (
 )
 
 type TokenPool struct {
-	ID        *UUID     `json:"id,omitempty"`
-	Type      TokenType `json:"type"`
-	Namespace string    `json:"namespace,omitempty"`
-	Name      string    `json:"name,omitempty"`
-	PoolID    string    `json:"pool_id,omitempty"`
-	Author    string    `json:"author,omitempty"`
+	ID         *UUID     `json:"id,omitempty"`
+	Type       TokenType `json:"type"`
+	Namespace  string    `json:"namespace,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	ProtocolID string    `json:"protocol_id,omitempty"`
+	Author     string    `json:"author,omitempty"`
 }
