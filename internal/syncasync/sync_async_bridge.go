@@ -32,13 +32,13 @@ import (
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
 type Bridge interface {
-	// Init is required as there's a bi-directional relationship between private messaging and syncasync bridge
-	Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender)
+	// Init is required as there's a bi-directional relationship between sysmessaging and syncasync bridge
+	Init(sysevents sysmessaging.SystemEvents)
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
-	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (*fftypes.MessageInOut, error)
+	RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error)
 	// SendConfirm blocks until the message is confirmed (or rejected), but does not look for a reply.
-	SendConfirm(ctx context.Context, request *fftypes.Message) (*fftypes.Message, error)
+	SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error)
 	// SendConfirmTokenPool blocks until the token pool is confirmed (or rejected)
 	SendConfirmTokenPool(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenPool, error)
 }
@@ -73,7 +73,6 @@ type syncAsyncBridge struct {
 	database    database.Plugin
 	data        data.Manager
 	sysevents   sysmessaging.SystemEvents
-	sender      sysmessaging.MessageSender
 	inflightMux sync.Mutex
 	inflight    inflightRequestMap
 }
@@ -88,9 +87,8 @@ func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager
 	return sa
 }
 
-func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) {
+func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents) {
 	sa.sysevents = sysevents
-	sa.sender = sender
 }
 
 func (sa *syncAsyncBridge) addInFlight(ns string, reqType requestType) (*inflightRequest, error) {
@@ -282,29 +280,16 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType r
 	}
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	if unresolved.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
-	}
-	if unresolved.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
-	}
-
-	reply, err := sa.sendAndWait(ctx, ns, messageReply, func(requestID *fftypes.UUID) error {
-		_, err := sa.sender.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
-		return err
-	})
+func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error) {
+	reply, err := sa.sendAndWait(ctx, ns, messageReply, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, messageConfirm, func(requestID *fftypes.UUID) error {
-		_, err := sa.sender.SendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
-		return err
-	})
+func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error) {
+	reply, err := sa.sendAndWait(ctx, ns, messageConfirm, send)
 	if err != nil {
 		return nil, err
 	}

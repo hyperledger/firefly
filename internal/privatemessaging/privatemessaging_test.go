@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
@@ -389,7 +390,7 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestRequestReply(t *testing.T) {
+func TestRequestReplyMissingTag(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
@@ -397,6 +398,52 @@ func TestRequestReply(t *testing.T) {
 	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
+	assert.Regexp(t, "FF10261", err)
+}
+
+func TestRequestReplyInvalidCID(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:   "mytag",
+				CID:   fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
+			},
+		},
+	})
+	assert.Regexp(t, "FF10262", err)
+}
+
+func TestRequestReplySuccess(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.RequestSender)
+			send(fftypes.NewUUID())
+		}).
+		Return(nil, nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:    "mytag",
+				Group:  fftypes.NewRandB32(),
+				Author: "org1",
+			},
+		},
+	})
 	assert.NoError(t, err)
 }
 

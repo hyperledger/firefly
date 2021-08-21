@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
@@ -70,14 +71,22 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
 
+	requestID := fftypes.NewUUID()
 	retMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("SendConfirm", pm.ctx, mock.Anything).Return(retMsg, nil).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.RequestSender)
+			send(requestID)
+		}).
+		Return(retMsg, nil).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
+		return msg.Header.ID == requestID
+	})).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{

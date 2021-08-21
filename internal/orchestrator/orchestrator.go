@@ -389,7 +389,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync.Init(or.events, or.syshandlers)
+	or.syncasync.Init(or.events)
 
 	if or.assets == nil {
 		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.tokens)

@@ -228,5 +228,14 @@ func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes
 }
 
 func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	return pm.syncasync.RequestReply(ctx, ns, unresolved)
+	if unresolved.Header.Tag == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
+	}
+	if unresolved.Header.CID != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
+	}
+	return pm.syncasync.RequestReply(ctx, ns, func(requestID *fftypes.UUID) error {
+		_, err := pm.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
+		return err
+	})
 }
