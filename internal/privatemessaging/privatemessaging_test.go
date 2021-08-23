@@ -23,13 +23,13 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
+	"github.com/hyperledger-labs/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,11 +49,12 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mba := &batchmocks.Manager{}
 	mdm := &datamocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
+	mbp := &batchpinmocks.Submitter{}
 
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm, msa)
+	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm, msa, mbp)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -88,7 +89,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	blob1 := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mbi := pm.blockchain.(*blockchainmocks.Plugin)
+	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 
 	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Maybe()
@@ -144,20 +145,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		return op.BackendID == "tracking4" && op.Type == fftypes.OpTypeDataExchangeBatchSend
 	}), false).Return(nil, nil)
 
-	mdi.On("UpsertTransaction", pm.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
-		return tx.Subject.Type == fftypes.TransactionTypeBatchPin && tx.ID.Equals(txID)
-	}), true, false).Return(nil, nil)
-	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.MatchedBy(func(bp *blockchain.BatchPin) bool {
-		assert.Equal(t, txID, bp.TransactionID)
-		assert.Equal(t, batchID, bp.BatchID)
-		assert.Equal(t, batchHash, bp.BatchHash)
-		assert.Equal(t, "ns1", bp.Namespace)
-		assert.Equal(t, []*fftypes.Bytes32{pin1, pin2}, bp.Contexts)
-		return true
-	})).Return(nil)
-	mdi.On("UpsertOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeBlockchainBatchPin
-	}), false).Return(nil, nil)
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
 		ID:        batchID,
@@ -181,7 +169,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -220,8 +208,8 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mii := pm.identity.(*identitymocks.Plugin)
 	mii.On("Resolve", pm.ctx, "badauthor").Return(&fftypes.Identity{OnChain: "!badaddress"}, nil)
 
-	mbi := pm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("VerifyIdentitySyntax", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mbp := pm.batchpin.(*batchpinmocks.Submitter)
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
 		Author: "badauthor",
@@ -302,17 +290,6 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestWriteTransactionUpsertFail(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
-
-	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "pop", err)
-}
-
 func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -321,24 +298,8 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(nil)
 
-	mbi := pm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
-	assert.Regexp(t, "pop", err)
-}
-
-func TestWriteTransactionUpsertOpFail(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertTransaction", pm.ctx, mock.Anything, true, false).Return(nil)
-
-	mbi := pm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
+	mbp := pm.batchpin.(*batchpinmocks.Submitter)
+	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
