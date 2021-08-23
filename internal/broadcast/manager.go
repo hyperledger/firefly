@@ -22,10 +22,10 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger-labs/firefly/internal/batch"
+	"github.com/hyperledger-labs/firefly/internal/batchpin"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
@@ -56,9 +56,10 @@ type broadcastManager struct {
 	publicstorage publicstorage.Plugin
 	batch         batch.Manager
 	syncasync     syncasync.Bridge
+	batchpin      batchpin.Submitter
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
 	if di == nil || ii == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -72,6 +73,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		publicstorage: pi,
 		batch:         ba,
 		syncasync:     sa,
+		batchpin:      bp,
 	}
 	bo := batch.Options{
 		BatchMaxSize:   config.GetUint(config.BroadcastBatchSize),
@@ -92,59 +94,6 @@ func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftype
 		return nil, err
 	}
 	return id, nil
-}
-
-func SubmitPinnedBatch(ctx context.Context, bi blockchain.Plugin, id identity.Plugin, db database.Plugin, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-
-	signingIdentity, err := id.Resolve(ctx, batch.Author)
-	if err == nil {
-		err = bi.VerifyIdentitySyntax(ctx, signingIdentity)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		return err
-	}
-
-	tx := &fftypes.Transaction{
-		ID: batch.Payload.TX.ID,
-		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypeBatchPin,
-			Namespace: batch.Namespace,
-			Signer:    signingIdentity.OnChain, // The transaction records on the on-chain identity
-			Reference: batch.ID,
-		},
-		Created: fftypes.Now(),
-		Status:  fftypes.OpStatusPending,
-	}
-	tx.Hash = tx.Subject.Hash()
-	err = db.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
-	if err != nil {
-		return err
-	}
-
-	// The pending blockchain transaction
-	op := fftypes.NewTXOperation(
-		bi,
-		batch.Namespace,
-		batch.Payload.TX.ID,
-		"",
-		fftypes.OpTypeBlockchainBatchPin,
-		fftypes.OpStatusPending,
-		"")
-	err = db.UpsertOperation(ctx, op, false)
-	if err != nil {
-		return err
-	}
-
-	// Write the batch pin to the blockchain
-	return bi.SubmitBatchPin(ctx, nil, signingIdentity, &blockchain.BatchPin{
-		Namespace:      batch.Namespace,
-		TransactionID:  batch.Payload.TX.ID,
-		BatchID:        batch.ID,
-		BatchHash:      batch.Hash,
-		BatchPaylodRef: batch.PayloadRef,
-		Contexts:       contexts,
-	})
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {
@@ -189,7 +138,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 		return err
 	}
 
-	return SubmitPinnedBatch(ctx, bm.blockchain, bm.identity, bm.database, batch, contexts)
+	return bm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
 func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
