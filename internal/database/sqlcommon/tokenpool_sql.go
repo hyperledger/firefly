@@ -138,6 +138,10 @@ func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred inte
 	return pool, nil
 }
 
+func (s *SQLCommon) GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error) {
+	return s.getTokenPoolPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}})
+}
+
 func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error) {
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
 }

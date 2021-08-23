@@ -45,21 +45,28 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "12345",
 	}
+	poolJson, _ := json.Marshal(&pool)
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
 
 	err := s.UpsertTokenPool(ctx, pool, true)
 	assert.NoError(t, err)
 
-	// Check we get the exact same token pool back
+	// Query back the token pool (by ID)
 	poolRead, err := s.GetTokenPoolByID(ctx, pool.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, poolRead)
-	poolJson, _ := json.Marshal(&pool)
 	poolReadJson, _ := json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Query back the token pool
+	// Query back the token pool (by name)
+	poolRead, err = s.GetTokenPool(ctx, pool.Namespace, pool.Name)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolReadJson, _ = json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
+	// Query back the token pool (by query filter)
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", pool.ID.String()),

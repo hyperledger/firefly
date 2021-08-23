@@ -354,6 +354,9 @@ type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
 	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) (err error)
 
+	// GetTokenPool - Get a token pool by name
+	GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error)
+
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error)
 
