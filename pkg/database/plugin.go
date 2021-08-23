@@ -722,9 +722,9 @@ var BlobQueryFactory = &queryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"type":        &StringField{},
-	"namespace":   &StringField{},
-	"name":        &StringField{},
-	"protocol_id": &StringField{},
+	"id":         &UUIDField{},
+	"type":       &StringField{},
+	"namespace":  &StringField{},
+	"name":       &StringField{},
+	"protocolid": &StringField{},
 }

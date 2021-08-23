@@ -65,6 +65,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		fb.Eq("id", pool.ID.String()),
 		fb.Eq("namespace", pool.Namespace),
 		fb.Eq("name", pool.Name),
+		fb.Eq("protocolid", pool.ProtocolID),
 	)
 	pools, res, err := s.GetTokenPools(ctx, filter.Count(true))
 	assert.NoError(t, err)

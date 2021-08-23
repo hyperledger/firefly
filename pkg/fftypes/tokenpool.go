@@ -28,6 +28,6 @@ type TokenPool struct {
 	Type       TokenType `json:"type"`
 	Namespace  string    `json:"namespace,omitempty"`
 	Name       string    `json:"name,omitempty"`
-	ProtocolID string    `json:"protocol_id,omitempty"`
+	ProtocolID string    `json:"protocolID,omitempty"`
 	Author     string    `json:"author,omitempty"`
 }

@@ -35,6 +35,9 @@ var (
 		"protocol_id",
 		"type",
 	}
+	tokenPoolFilterFieldMap = map[string]string{
+		"protocolid": "protocol_id",
+	}
 )
 
 func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool, allowExisting bool) (err error) {
@@ -140,7 +143,7 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (mes
 }
 
 func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, nil, []string{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []string{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
