@@ -186,7 +186,7 @@ func (h *HTTPS) eventLoop() {
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
 
-			if err == nil {
+			if err == nil && msg.Event != messageReceipt {
 				l.Debugf("Sending ack %s", msg.ID)
 				ack, _ := json.Marshal(fftypes.JSONObject{
 					"event": "ack",
