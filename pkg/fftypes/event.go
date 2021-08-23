@@ -33,6 +33,8 @@ const (
 	EventTypeGroupConfirmed EventType = "group_confirmed"
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
 	EventTypePoolConfirmed EventType = "token_pool_confirmed"
+	// EventTypePoolRejected occurs when a new token pool is rejected (due to validation errors, duplicates, etc)
+	EventTypePoolRejected EventType = "token_pool_rejected"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

@@ -166,12 +166,30 @@ func TestUpsertTokenPoolUpdateSuccess(t *testing.T) {
 	}
 
 	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(poolID))
 	db.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).Return()
 	err := s.UpsertTokenPool(context.Background(), pool, true)
 	assert.NoError(t, err)
+	assert.NoError(t, db.ExpectationsWereMet())
+}
+
+func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
+	s, db := newMockProvider().init()
+	callbacks := &databasemocks.Callbacks{}
+	s.SQLCommon.callbacks = callbacks
+	poolID := fftypes.NewUUID()
+	pool := &fftypes.TokenPool{
+		ID:        poolID,
+		Namespace: "ns1",
+	}
+
+	db.ExpectBegin()
+	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	db.ExpectRollback()
+	err := s.UpsertTokenPool(context.Background(), pool, true)
+	assert.Equal(t, database.IDMismatch, err)
 	assert.NoError(t, db.ExpectationsWereMet())
 }
 
