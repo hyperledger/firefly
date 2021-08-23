@@ -44,7 +44,7 @@ fi
 
 if [ "$CREATE_STACK" == "true" ]; then
 	$CLI init --database $DATABASE_TYPE $STACK_NAME 2
-	$CLI start -n $STACK_NAME
+	$CLI start -nb $STACK_NAME
 fi
 
 $CLI info $STACK_NAME

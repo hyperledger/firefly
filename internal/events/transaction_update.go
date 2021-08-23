@@ -19,18 +19,17 @@ package events
 import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) TxSubmissionUpdate(bi blockchain.Plugin, tx string, txState fftypes.OpStatus, protocolTxID, errorMessage string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
 
 	// Find a matching operation, for this plugin, with the specified ID.
 	fb := database.OperationQueryFactory.NewFilter(em.ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
-		fb.Eq("plugin", bi.Name()),
+		fb.Eq("plugin", plugin.Name()),
 	)
 	operations, _, err := em.database.GetOperations(em.ctx, filter)
 	if err == nil && len(operations) == 0 {

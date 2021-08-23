@@ -20,3 +20,6 @@ publicstorage:
       url: http://localhost:8080
     gateway:
       url: http://localhost:8080
+tokens:
+  - name: erc1155
+    connector: https

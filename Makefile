@@ -35,6 +35,8 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir pkg/identity              --name Callbacks        --output mocks/identitymocks         --outpkg identitymocks
 		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Plugin           --output mocks/dataexchangemocks     --outpkg dataexchangemocks
 		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Callbacks        --output mocks/dataexchangemocks     --outpkg dataexchangemocks
+		${MOCKERY} --case underscore --dir pkg/tokens                --name Plugin           --output mocks/tokenmocks            --outpkg tokenmocks
+		${MOCKERY} --case underscore --dir pkg/tokens                --name Callbacks        --output mocks/tokenmocks            --outpkg tokenmocks
 		${MOCKERY} --case underscore --dir internal/sysmessaging     --name MessageSender    --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
 		${MOCKERY} --case underscore --dir internal/sysmessaging     --name SystemEvents     --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
 		${MOCKERY} --case underscore --dir internal/syncasync        --name Bridge           --output mocks/syncasyncmocks        --outpkg syncasyncmocks
@@ -45,6 +47,7 @@ mocks: mockery ${GOFILES}
 		${MOCKERY} --case underscore --dir internal/syshandlers      --name SystemHandlers   --output mocks/syshandlersmocks      --outpkg syshandlersmocks
 		${MOCKERY} --case underscore --dir internal/events           --name EventManager     --output mocks/eventmocks            --outpkg eventmocks
 		${MOCKERY} --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
+		${MOCKERY} --case underscore --dir internal/assets           --name Manager          --output mocks/assetmocks            --outpkg assetmocks
 		${MOCKERY} --case underscore --dir internal/wsclient         --name WSClient         --output mocks/wsmocks               --outpkg wsmocks
 		${MOCKERY} --case underscore --dir internal/orchestrator     --name Orchestrator     --output mocks/orchestratormocks     --outpkg orchestratormocks
 		${MOCKERY} --case underscore --dir internal/apiserver        --name Server           --output mocks/apiservermocks        --outpkg apiservermocks

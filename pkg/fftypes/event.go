@@ -31,6 +31,8 @@ const (
 	EventTypeDatatypeConfirmed EventType = "datatype_confirmed"
 	// EventTypeGroupConfirmed occurs when a new group is ready to use (on the namespace of the group, on all group participants)
 	EventTypeGroupConfirmed EventType = "group_confirmed"
+	// EventTypePoolConfirmed occurs when a new token pool is ready for use
+	EventTypePoolConfirmed EventType = "token_pool_confirmed"
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

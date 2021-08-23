@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger-labs/firefly/internal/assets"
 	"github.com/hyperledger-labs/firefly/internal/batch"
 	"github.com/hyperledger-labs/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
@@ -36,12 +37,14 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/internal/syshandlers"
+	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
+	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
 var (
@@ -50,6 +53,7 @@ var (
 	identityConfig      = config.NewPluginConfig("identity")
 	publicstorageConfig = config.NewPluginConfig("publicstorage")
 	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
+	tokensConfig        = config.NewPluginConfig("tokens").Array()
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -63,6 +67,7 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
 	SyncAsyncBridge() syncasync.Bridge
+	Assets() assets.Manager
 	IsPreInit() bool
 
 	// Status
@@ -125,6 +130,8 @@ type orchestrator struct {
 	syshandlers   syshandlers.SystemHandlers
 	data          data.Manager
 	syncasync     syncasync.Bridge
+	assets        assets.Manager
+	tokens        map[string]tokens.Plugin
 	bc            boundCallbacks
 	preInitMode   bool
 }
@@ -137,6 +144,7 @@ func NewOrchestrator() Orchestrator {
 	difactory.InitPrefix(databaseConfig)
 	psfactory.InitPrefix(publicstorageConfig)
 	dxfactory.InitPrefix(dataexchangeConfig)
+	tifactory.InitPrefix(tokensConfig)
 
 	return or
 }
@@ -178,6 +186,13 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.messaging.Start()
+	}
+	if err == nil {
+		for _, el := range or.tokens {
+			if err = el.Start(); err != nil {
+				break
+			}
+		}
 	}
 	or.started = true
 	return err
@@ -224,6 +239,10 @@ func (or *orchestrator) Data() data.Manager {
 
 func (or *orchestrator) SyncAsyncBridge() syncasync.Bridge {
 	return or.syncasync
+}
+
+func (or *orchestrator) Assets() assets.Manager {
+	return or.assets
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -295,7 +314,33 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc)
+	if err = or.dataexchange.Init(ctx, dataexchangeConfig.SubPrefix(or.dataexchange.Name()), &or.bc); err != nil {
+		return err
+	}
+
+	if or.tokens == nil {
+		or.tokens = make(map[string]tokens.Plugin)
+		for i := 0; i < tokensConfig.ArraySize(); i++ {
+			prefix := tokensConfig.ArrayEntry(i)
+			name := prefix.GetString("name")
+			connector := prefix.GetString("connector")
+			if name == "" || connector == "" {
+				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+			}
+
+			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
+			plugin, err := tifactory.GetPlugin(ctx, connector)
+			if plugin != nil {
+				err = plugin.Init(ctx, prefix, &or.bc)
+			}
+			if err != nil {
+				return err
+			}
+			or.tokens[name] = plugin
+		}
+	}
+
+	return nil
 }
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
@@ -345,6 +390,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync.Init(or.events, or.syshandlers)
+
+	if or.assets == nil {
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.tokens)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

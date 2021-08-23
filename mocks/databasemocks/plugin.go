@@ -1293,6 +1293,61 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
+// GetTokenPoolByID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenPools provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenPool); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.TokenPool)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetTransactionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, id)
@@ -1849,6 +1904,20 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
+		r0 = rf(ctx, data, allowExisting)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertTokenPool provides a mock function with given fields: ctx, data, allowExisting
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) error {
+	ret := _m.Called(ctx, data, allowExisting)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)

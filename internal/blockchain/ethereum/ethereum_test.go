@@ -847,10 +847,9 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "transactionIndex": "0"
   }`)
 
-	em.On("TxSubmissionUpdate",
+	em.On("BlockchainTxUpdate",
 		"4373614c-e0f7-47b0-640e-7eacec417a9e",
 		fftypes.OpStatusSucceeded,
-		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
 		mock.Anything).Return(nil)
 
@@ -885,10 +884,9 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	}`)
 
 	em := e.callbacks.(*blockchainmocks.Callbacks)
-	txsu := em.On("TxSubmissionUpdate",
+	txsu := em.On("BlockchainTxUpdate",
 		"6fb94fff-81d3-4094-567d-e031b1871694",
 		fftypes.OpStatusFailed,
-		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
 	done := make(chan struct{})

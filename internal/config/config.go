@@ -61,7 +61,7 @@ var (
 	BatchRetryInitDelay = rootKey("batch.retry.initDelay")
 	// BatchRetryMaxDelay is the maximum delay between retry attempts
 	BatchRetryMaxDelay = rootKey("batch.retry.maxDelay")
-	// BlockchainType is the name of the blockchain interface plugin being used by this firefly name
+	// BlockchainType is the name of the blockchain interface plugin being used by this firefly node
 	BlockchainType = rootKey("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	BroadcastBatchAgentTimeout = rootKey("broadcast.batch.agentTimeout")
@@ -98,10 +98,12 @@ var (
 	CorsEnabled = rootKey("cors.enabled")
 	// CorsMaxAge is the maximum age a browser should rely on CORS checks
 	CorsMaxAge = rootKey("cors.maxAge")
-	// DataexchangeType is the name of the data exchange plugin being used by this firefly name
+	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
 	DataexchangeType = rootKey("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = rootKey("database.type")
+	// TokensList is the root key containing a list of supported token connectors
+	TokensList = rootKey("tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = rootKey("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions

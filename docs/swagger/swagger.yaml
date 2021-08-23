@@ -4119,6 +4119,82 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/tokens/{type}/pools:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokens
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                author:
+                  type: string
+                name:
+                  type: string
+                type:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  author:
+                    type: string
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolID:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  author:
+                    type: string
+                  id: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolID:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/transactions:
     get:
       description: 'TODO: Description'

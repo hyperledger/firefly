@@ -189,4 +189,7 @@ var (
 	MsgRejected                    = ffm("FF10269", "Message with ID '%s' was rejected. Please check the FireFly logs for more information")
 	MsgConfirmQueryParam           = ffm("FF10270", "When true the HTTP request blocks until the message is confirmed")
 	MsgRequestMustBePrivate        = ffm("FF10271", "For request messages you must specify a group of private recipients", 400)
+	MsgUnknownTokensPlugin         = ffm("FF10272", "Unknown tokens plugin '%s'")
+	MsgMissingTokensPluginConfig   = ffm("FF10273", "Invalid tokens configuration - name and connector are required")
+	MsgTokensRESTErr               = ffm("FF10274", "Error from tokens service: %s")
 )
