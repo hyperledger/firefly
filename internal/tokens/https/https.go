@@ -57,7 +57,7 @@ type responseData struct {
 }
 
 type createPool struct {
-	ID        *fftypes.UUID     `json:"client_id"`
+	ID        *fftypes.UUID     `json:"clientId"`
 	Type      fftypes.TokenType `json:"type"`
 	Namespace string            `json:"namespace"`
 	Name      string            `json:"name"`
@@ -122,9 +122,9 @@ func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) erro
 func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	ns := data.GetString("namespace")
 	name := data.GetString("name")
-	clientID := data.GetString("client_id")
+	clientID := data.GetString("clientId")
 	tokenType := data.GetString("type")
-	protocolID := data.GetString("pool_id")
+	protocolID := data.GetString("poolId")
 	authorAddress := data.GetString("author")
 
 	if ns == "" ||
