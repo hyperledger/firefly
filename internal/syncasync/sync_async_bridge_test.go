@@ -395,6 +395,34 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestEventCallbackTokenPoolRejectedNotFound(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	responseID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*responseID: &inflightRequest{},
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			Namespace: "ns1",
+			ID:        fftypes.NewUUID(),
+			Reference: fftypes.NewUUID(),
+			Type:      fftypes.EventTypePoolRejected,
+		},
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestEventCallbackMsgDataLookupFail(t *testing.T) {
 
 	sa, cancel := newTestSyncAsyncBridge(t)
@@ -467,4 +495,44 @@ func TestAwaitTokenPoolConfirmationSendFail(t *testing.T) {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
+}
+
+func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	var requestID *fftypes.UUID
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
+	gmid.RunFn = func(a mock.Arguments) {
+		assert.NotNil(t, requestID)
+		pool := &fftypes.TokenPool{
+			ID:   requestID,
+			Name: "my-pool",
+		}
+		gmid.ReturnArguments = mock.Arguments{
+			pool, nil,
+		}
+	}
+
+	_, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", func(id *fftypes.UUID) error {
+		requestID = id
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypePoolRejected,
+					Reference: requestID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+		return nil
+	})
+	assert.Regexp(t, "FF10276", err)
 }

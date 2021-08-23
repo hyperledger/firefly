@@ -193,4 +193,5 @@ var (
 	MsgMissingTokensPluginConfig   = ffm("FF10273", "Invalid tokens configuration - name and connector are required")
 	MsgTokensRESTErr               = ffm("FF10274", "Error from tokens service: %s")
 	MsgTokenPoolDuplicate          = ffm("FF10275", "Duplicate token pool")
+	MsgTokenPoolRejected           = ffm("FF10276", "Token pool with ID '%s' was rejected. Please check the FireFly logs for more information")
 )
