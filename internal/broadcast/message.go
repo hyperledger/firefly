@@ -27,14 +27,14 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	in.Header.ID = nil
-	return bm.BroadcastMessageWithID(ctx, ns, in, nil, waitConfirm)
+	return bm.BroadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
+	resolved.Header.ID = id
 	resolved.Header.Namespace = ns
 	resolved.Header.Type = fftypes.MessageTypeBroadcast
 	if resolved.Header.Author == "" {

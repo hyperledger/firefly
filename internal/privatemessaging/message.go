@@ -26,15 +26,15 @@ import (
 )
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	in.Header.ID = nil
-	return pm.SendMessageWithID(ctx, ns, in, nil, waitConfirm)
+	return pm.SendMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
 }
 
-func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
 
+	resolved.Header.ID = id
 	resolved.Header.Namespace = ns
 	resolved.Header.Type = fftypes.MessageTypePrivate
 	if resolved.Header.Author == "" {
