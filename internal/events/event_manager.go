@@ -62,7 +62,7 @@ type EventManager interface {
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 
 	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents

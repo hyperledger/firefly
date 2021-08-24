@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// TokenPoolCreated provides a mock function with given fields: plugin, pool, signingIdentity, additionalInfo
-func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, pool, signingIdentity, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: plugin, pool, signingIdentity, protocolTxID, additionalInfo
+func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, pool, signingIdentity, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

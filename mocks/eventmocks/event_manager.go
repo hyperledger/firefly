@@ -217,13 +217,13 @@ func (_m *EventManager) SubscriptionUpdates() chan<- *fftypes.UUID {
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: tk, pool, signingIdentity, additionalInfo
-func (_m *EventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, pool, signingIdentity, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: tk, pool, signingIdentity, protocolTxID, additionalInfo
+func (_m *EventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tk, pool, signingIdentity, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, pool, signingIdentity, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(tk, pool, signingIdentity, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

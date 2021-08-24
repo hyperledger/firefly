@@ -4176,6 +4176,7 @@ paths:
                     type: string
                   protocolID:
                     type: string
+                  transactionID: {}
                   type:
                     type: string
                 type: object
@@ -4194,6 +4195,7 @@ paths:
                     type: string
                   protocolID:
                     type: string
+                  transactionID: {}
                   type:
                     type: string
                 type: object
