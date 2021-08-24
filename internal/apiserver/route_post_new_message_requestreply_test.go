@@ -22,7 +22,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,42 +29,14 @@ import (
 
 func TestPostNewMessageRequestReply(t *testing.T) {
 	o, r := newTestAPIServer()
-	mpm := &privatemessagingmocks.Manager{}
-	o.On("PrivateMessaging").Return(mpm)
-	input := &fftypes.MessageInOut{
-		Group: &fftypes.InputGroup{
-			Members: []fftypes.MemberInput{
-				{Identity: "org1"},
-			},
-		},
-	}
+	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&fftypes.MessageInOut{}, nil)
+	input := &fftypes.MessageInOut{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/messages/requestreply", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
-
-	mpm.On("RequestReply", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
-		Return(&fftypes.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestPostNewMessageRequestReplyMissingGroup(t *testing.T) {
-	o, r := newTestAPIServer()
-	mpm := &privatemessagingmocks.Manager{}
-	o.On("PrivateMessaging").Return(mpm)
-	input := fftypes.MessageInOut{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/messages/requestreply", &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	mpm.On("RequestReply", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.MessageInOut")).
-		Return(&fftypes.MessageInOut{}, nil)
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

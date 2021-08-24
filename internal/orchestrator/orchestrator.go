@@ -66,7 +66,6 @@ type Orchestrator interface {
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
 	Data() data.Manager
-	SyncAsyncBridge() syncasync.Bridge
 	Assets() assets.Manager
 	IsPreInit() bool
 
@@ -104,13 +103,16 @@ type Orchestrator interface {
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 
-	// Config Managemnet
+	// Config Management
 	GetConfig(ctx context.Context) fftypes.JSONObject
 	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
 	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error)
 	PutConfigRecord(ctx context.Context, key string, configRecord fftypes.Byteable) (outputValue fftypes.Byteable, err error)
 	DeleteConfigRecord(ctx context.Context, key string) (err error)
 	ResetConfig(ctx context.Context)
+
+	// Message Routing
+	RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
 
 type orchestrator struct {
@@ -235,10 +237,6 @@ func (or *orchestrator) NetworkMap() networkmap.Manager {
 
 func (or *orchestrator) Data() data.Manager {
 	return or.data
-}
-
-func (or *orchestrator) SyncAsyncBridge() syncasync.Bridge {
-	return or.syncasync
 }
 
 func (or *orchestrator) Assets() assets.Manager {

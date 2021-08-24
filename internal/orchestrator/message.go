@@ -14,29 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package orchestrator
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http/httptest"
-	"testing"
+	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestPostRequestMessage(t *testing.T) {
-	o, r := newTestAPIServer()
-	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&fftypes.MessageInOut{}, nil)
-	input := &fftypes.MessageInOut{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/request/message", &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 200, res.Result().StatusCode)
+func (or *orchestrator) RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error) {
+	if msg.Header.Group == nil && (msg.Group == nil || len(msg.Group.Members) == 0) {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestMustBePrivate)
+	}
+	return or.PrivateMessaging().RequestReply(ctx, ns, msg)
 }

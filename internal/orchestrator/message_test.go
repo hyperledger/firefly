@@ -14,29 +14,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package orchestrator
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http/httptest"
+	"context"
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestPostRequestMessage(t *testing.T) {
-	o, r := newTestAPIServer()
-	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&fftypes.MessageInOut{}, nil)
+func TestRequestReplyMissingGroup(t *testing.T) {
+	or := newTestOrchestrator()
 	input := &fftypes.MessageInOut{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/request/message", &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-	r.ServeHTTP(res, req)
+	_, err := or.RequestReply(context.Background(), "ns1", input)
+	assert.Regexp(t, "FF10271", err)
+}
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+func TestRequestReply(t *testing.T) {
+	or := newTestOrchestrator()
+	input := &fftypes.MessageInOut{
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	}
+	or.mpm.On("RequestReply", context.Background(), "ns1", input).Return(&fftypes.MessageInOut{}, nil)
+	_, err := or.RequestReply(context.Background(), "ns1", input)
+	assert.NoError(t, err)
 }

@@ -517,5 +517,4 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mnm, or.NetworkMap())
 	assert.Equal(t, or.mdm, or.Data())
 	assert.Equal(t, or.mam, or.Assets())
-	assert.NotNil(t, or.SyncAsyncBridge())
 }
