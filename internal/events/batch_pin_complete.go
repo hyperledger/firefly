@@ -64,55 +64,67 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, 
 	})
 }
 
-func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
-	// Get any existing record for the batch transaction record
-	tx, err := em.database.GetTransactionByID(ctx, batchPin.TransactionID)
+func subjectMatch(a *fftypes.TransactionSubject, b *fftypes.TransactionSubject) bool {
+	return a.Type == b.Type &&
+		a.Signer == b.Signer &&
+		a.Reference != nil && b.Reference != nil &&
+		*a.Reference == *b.Reference &&
+		a.Namespace == b.Namespace
+}
+
+func (em *eventManager) persistTransaction(ctx context.Context, tx *fftypes.Transaction) (valid bool, err error) {
+	if err := fftypes.ValidateFFNameField(ctx, tx.Subject.Namespace, "namespace"); err != nil {
+		log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - invalid namespace '%s': %a", tx.ID, tx.Subject.Reference, tx.Subject.Namespace, err)
+		return false, nil // this is not retryable
+	}
+	existing, err := em.database.GetTransactionByID(ctx, tx.ID)
 	if err != nil {
 		return false, err // a peristence failure here is considered retryable (so returned)
 	}
-	if err := fftypes.ValidateFFNameField(ctx, batchPin.Namespace, "namespace"); err != nil {
-		log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' invalid namespace '%s': %a", batchPin.BatchID, batchPin.TransactionID, batchPin.Namespace, err)
-		return false, nil // This is not retryable. skip this batch
-	}
-	if tx == nil {
-		// We're the first to write the transaction record on this node
-		tx = &fftypes.Transaction{
-			ID: batchPin.TransactionID,
-			Subject: fftypes.TransactionSubject{
-				Namespace: batchPin.Namespace,
-				Type:      fftypes.TransactionTypeBatchPin,
-				Signer:    signingIdentity,
-				Reference: batchPin.BatchID,
-			},
-			Created: fftypes.Now(),
-		}
-		tx.Hash = tx.Subject.Hash()
-	} else if tx.Subject.Type != fftypes.TransactionTypeBatchPin ||
-		tx.Subject.Signer != signingIdentity ||
-		tx.Subject.Reference == nil ||
-		*tx.Subject.Reference != *batchPin.BatchID ||
-		tx.Subject.Namespace != batchPin.Namespace {
-		log.L(ctx).Errorf("Invalid batch '%s'. Existing transaction '%s' does not match batch subject", batchPin.BatchID, tx.ID)
-		return false, nil // This is not retryable. skip this batch
-	}
 
-	// Set the updates on the transaction
-	tx.ProtocolID = protocolTxID
-	tx.Info = additionalInfo
-	tx.Status = fftypes.OpStatusSucceeded
+	switch {
+	case existing == nil:
+		// We're the first to write the transaction record on this node
+		tx.Created = fftypes.Now()
+		tx.Hash = tx.Subject.Hash()
+
+	case subjectMatch(&tx.Subject, &existing.Subject):
+		// This is an update to an existing transaction, but the subject is the same
+		tx.Created = existing.Created
+		tx.Hash = existing.Hash
+
+	default:
+		log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - does not match existing subject", tx.ID, tx.Subject.Reference)
+		return false, nil // this is not retryable
+	}
 
 	// Upsert the transaction, ensuring the hash does not change
+	tx.Status = fftypes.OpStatusSucceeded
 	err = em.database.UpsertTransaction(ctx, tx, true, false)
 	if err != nil {
 		if err == database.HashMismatch {
-			log.L(ctx).Errorf("Invalid batch '%s'. Transaction '%s' hash mismatch with existing record", batchPin.BatchID, tx.Hash)
-			return false, nil // This is not retryable. skip this batch
+			log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - hash mismatch with existing record '%s'", tx.ID, tx.Subject.Reference, tx.Hash)
+			return false, nil // this is not retryable
 		}
-		log.L(ctx).Errorf("Failed to insert transaction for batch '%s': %s", batchPin.BatchID, err)
+		log.L(ctx).Errorf("Failed to insert transaction ID='%s' Reference='%s': %a", tx.ID, tx.Subject.Reference, err)
 		return false, err // a peristence failure here is considered retryable (so returned)
 	}
 
 	return true, nil
+}
+
+func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
+	return em.persistTransaction(ctx, &fftypes.Transaction{
+		ID: batchPin.TransactionID,
+		Subject: fftypes.TransactionSubject{
+			Namespace: batchPin.Namespace,
+			Type:      fftypes.TransactionTypeBatchPin,
+			Signer:    signingIdentity,
+			Reference: batchPin.BatchID,
+		},
+		ProtocolID: protocolTxID,
+		Info:       additionalInfo,
+	})
 }
 
 func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchain.BatchPin, private bool) error {
