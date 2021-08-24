@@ -8,6 +8,8 @@ import (
 	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
 	mock "github.com/stretchr/testify/mock"
 
+	syncasync "github.com/hyperledger-labs/firefly/internal/syncasync"
+
 	sysmessaging "github.com/hyperledger-labs/firefly/internal/sysmessaging"
 )
 
@@ -16,18 +18,18 @@ type Bridge struct {
 	mock.Mock
 }
 
-// Init provides a mock function with given fields: sysevents, sender
-func (_m *Bridge) Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) {
-	_m.Called(sysevents, sender)
+// Init provides a mock function with given fields: sysevents
+func (_m *Bridge) Init(sysevents sysmessaging.SystemEvents) {
+	_m.Called(sysevents)
 }
 
-// RequestReply provides a mock function with given fields: ctx, ns, request
-func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	ret := _m.Called(ctx, ns, request)
+// RequestReply provides a mock function with given fields: ctx, ns, send
+func (_m *Bridge) RequestReply(ctx context.Context, ns string, send syncasync.RequestSender) (*fftypes.MessageInOut, error) {
+	ret := _m.Called(ctx, ns, send)
 
 	var r0 *fftypes.MessageInOut
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.MessageInOut) *fftypes.MessageInOut); ok {
-		r0 = rf(ctx, ns, request)
+	if rf, ok := ret.Get(0).(func(context.Context, string, syncasync.RequestSender) *fftypes.MessageInOut); ok {
+		r0 = rf(ctx, ns, send)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.MessageInOut)
@@ -35,8 +37,8 @@ func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.MessageInOut) error); ok {
-		r1 = rf(ctx, ns, request)
+	if rf, ok := ret.Get(1).(func(context.Context, string, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, send)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -44,13 +46,13 @@ func (_m *Bridge) RequestReply(ctx context.Context, ns string, request *fftypes.
 	return r0, r1
 }
 
-// SendConfirm provides a mock function with given fields: ctx, request
-func (_m *Bridge) SendConfirm(ctx context.Context, request *fftypes.Message) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, request)
+// SendConfirm provides a mock function with given fields: ctx, ns, send
+func (_m *Bridge) SendConfirm(ctx context.Context, ns string, send syncasync.RequestSender) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, send)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) *fftypes.Message); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(context.Context, string, syncasync.RequestSender) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, send)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -58,8 +60,31 @@ func (_m *Bridge) SendConfirm(ctx context.Context, request *fftypes.Message) (*f
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message) error); ok {
-		r1 = rf(ctx, request)
+	if rf, ok := ret.Get(1).(func(context.Context, string, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SendConfirmTokenPool provides a mock function with given fields: ctx, ns, send
+func (_m *Bridge) SendConfirmTokenPool(ctx context.Context, ns string, send syncasync.RequestSender) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, send)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, syncasync.RequestSender) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, send)
 	} else {
 		r1 = ret.Error(1)
 	}

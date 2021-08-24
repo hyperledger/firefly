@@ -37,6 +37,29 @@ func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, typeName stri
 	return r0, r1
 }
 
+// CreateTokenPoolWithID provides a mock function with given fields: ctx, ns, id, typeName, pool, waitConfirm
+func (_m *Manager) CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, id, typeName, pool, waitConfirm)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string, *fftypes.TokenPool, bool) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, id, typeName, pool, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string, *fftypes.TokenPool, bool) error); ok {
+		r1 = rf(ctx, ns, id, typeName, pool, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Start provides a mock function with given fields:
 func (_m *Manager) Start() error {
 	ret := _m.Called()

@@ -14,16 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sysmessaging
+package orchestrator
 
 import (
 	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-// MessageSender specifies the sending interfaces of performing a send, without creating a cycle.
-type MessageSender interface {
-	SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
-	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
+func (or *orchestrator) RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error) {
+	if msg.Header.Group == nil && (msg.Group == nil || len(msg.Group.Members) == 0) {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestMustBePrivate)
+	}
+	return or.PrivateMessaging().RequestReply(ctx, ns, msg)
 }

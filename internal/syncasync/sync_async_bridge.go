@@ -32,20 +32,25 @@ import (
 // Bridge translates synchronous (HTTP API) calls, into asynchronously sending a
 // message and blocking until a correlating response is received, or we hit a timeout.
 type Bridge interface {
-	// Init is required as there's a bi-directional relationship between private messaging and syncasync bridge
-	Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender)
+	// Init is required as there's a bi-directional relationship between sysmessaging and syncasync bridge
+	Init(sysevents sysmessaging.SystemEvents)
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
-	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
+	RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error)
 	// SendConfirm blocks until the message is confirmed (or rejected), but does not look for a reply.
-	SendConfirm(ctx context.Context, request *fftypes.Message) (reply *fftypes.Message, err error)
+	SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error)
+	// SendConfirmTokenPool blocks until the token pool is confirmed (or rejected)
+	SendConfirmTokenPool(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenPool, error)
 }
+
+type RequestSender func(requestID *fftypes.UUID) error
 
 type requestType int
 
 const (
 	messageConfirm requestType = iota
 	messageReply
+	tokenPoolConfirm
 )
 
 type inflightRequest struct {
@@ -62,14 +67,12 @@ type inflightResponse struct {
 }
 
 type inflightRequestMap map[string]map[fftypes.UUID]*inflightRequest
-type requestSender func(requestID *fftypes.UUID) error
 
 type syncAsyncBridge struct {
 	ctx         context.Context
 	database    database.Plugin
 	data        data.Manager
 	sysevents   sysmessaging.SystemEvents
-	sender      sysmessaging.MessageSender
 	inflightMux sync.Mutex
 	inflight    inflightRequestMap
 }
@@ -84,9 +87,8 @@ func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager
 	return sa
 }
 
-func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents, sender sysmessaging.MessageSender) {
+func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents) {
 	sa.sysevents = sysevents
-	sa.sender = sender
 }
 
 func (sa *syncAsyncBridge) addInFlight(ns string, reqType requestType) (*inflightRequest, error) {
@@ -99,7 +101,6 @@ func (sa *syncAsyncBridge) addInFlight(ns string, reqType requestType) (*infligh
 	sa.inflightMux.Lock()
 	defer func() {
 		sa.inflightMux.Unlock()
-		log.L(sa.ctx).Infof("RequestReply '%s' added", inflight.id)
 	}()
 
 	inflightNS := sa.inflight[ns]
@@ -147,41 +148,73 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 	defer sa.inflightMux.Unlock()
 
 	inflightNS := sa.inflight[event.Namespace]
-	if len(inflightNS) == 0 || (event.Type != fftypes.EventTypeMessageConfirmed && event.Type != fftypes.EventTypeMessageRejected) {
+	if len(inflightNS) == 0 {
 		// No need to do any expensive lookups/matching - this could not be a match
 		return nil
 	}
 
-	// Look up the message
-	msg, err := sa.database.GetMessageByID(sa.ctx, event.Reference)
-	if err != nil {
-		return err
+	getMessage := func() (*fftypes.Message, error) {
+		msg, err := sa.database.GetMessageByID(sa.ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		if msg == nil {
+			// This should not happen (but we need to move on)
+			log.L(sa.ctx).Errorf("Unable to resolve message '%s' for %s event '%s'", event.Reference, event.Type, event.ID)
+		}
+		return msg, nil
 	}
-	if msg == nil {
-		// This should not happen...
-		log.L(sa.ctx).Errorf("Unable to resolve message '%s' for %s event '%s'", event.Reference, event.Type, event.ID)
-		return nil // ..but we need to move on
+
+	getPool := func() (*fftypes.TokenPool, error) {
+		pool, err := sa.database.GetTokenPoolByID(sa.ctx, event.Reference)
+		if err != nil {
+			return nil, err
+		}
+		if pool == nil {
+			// This should not happen (but we need to move on)
+			log.L(sa.ctx).Errorf("Unable to resolve token pool '%s' for %s event '%s'", event.Reference, event.Type, event.ID)
+		}
+		return pool, nil
 	}
 
 	switch event.Type {
 	case fftypes.EventTypeMessageConfirmed:
-		// See if the CID marks this as a reply to an inflight event
+		msg, err := getMessage()
+		if err != nil || msg == nil {
+			return err
+		}
+		// See if the CID marks this as a reply to an inflight message
 		inflightReply := sa.getInFlight(event.Namespace, messageReply, msg.Header.CID)
 		if inflightReply != nil {
 			go sa.resolveReply(inflightReply, msg)
 		}
 
-		// See if this is a confirmation of the delivery of an inflight event
+		// See if this is a confirmation of the delivery of an inflight message
 		inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
 		if inflight != nil {
 			go sa.resolveConfirmed(inflight, msg)
 		}
 
 	case fftypes.EventTypeMessageRejected:
-		// See if this is a rejection of an inflight event
+		msg, err := getMessage()
+		if err != nil || msg == nil {
+			return err
+		}
+		// See if this is a rejection of an inflight message
 		inflight := sa.getInFlight(event.Namespace, messageConfirm, msg.Header.ID)
 		if inflight != nil {
 			go sa.resolveRejected(inflight, msg)
+		}
+
+	case fftypes.EventTypePoolConfirmed:
+		pool, err := getPool()
+		if err != nil || pool == nil {
+			return err
+		}
+		// See if this is a confirmation of an inflight token pool
+		inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
+		if inflight != nil {
+			go sa.resolveConfirmedTokenPool(inflight, pool)
 		}
 	}
 
@@ -212,18 +245,24 @@ func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msg *fftyp
 	inflight.response <- inflightResponse{err: err}
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType requestType, send requestSender) (interface{}, error) {
+func (sa *syncAsyncBridge) resolveConfirmedTokenPool(inflight *inflightRequest, pool *fftypes.TokenPool) {
+	log.L(sa.ctx).Debugf("Resolving confirmation request '%s' with pool '%s'", inflight.id, pool.ID)
+	inflight.response <- inflightResponse{id: pool.ID, data: pool}
+}
+
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType requestType, send RequestSender) (interface{}, error) {
 	inflight, err := sa.addInFlight(ns, reqType)
 	if err != nil {
 		return nil, err
 	}
+	log.L(sa.ctx).Infof("Inflight request '%s' added", inflight.id)
 	var replyID *fftypes.UUID
 	defer func() {
 		sa.removeInFlight(ns, inflight.id)
 		if replyID != nil {
-			log.L(sa.ctx).Infof("Request '%s' resolved with message '%s' after %.2fms", inflight.id, replyID, inflight.msInflight())
+			log.L(sa.ctx).Infof("Inflight request '%s' resolved with reply '%s' after %.2fms", inflight.id, replyID, inflight.msInflight())
 		} else {
-			log.L(sa.ctx).Infof("Request '%s' resolved with timeout after %.2fms", inflight.id, inflight.msInflight())
+			log.L(sa.ctx).Infof("Inflight request '%s' resolved with timeout after %.2fms", inflight.id, inflight.msInflight())
 		}
 	}()
 
@@ -241,34 +280,26 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType r
 	}
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	if unresolved.Header.Group == nil && (unresolved.Group == nil || len(unresolved.Group.Members) == 0) {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestMustBePrivate)
-	}
-	if unresolved.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
-	}
-	if unresolved.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
-	}
-
-	reply, err := sa.sendAndWait(ctx, ns, messageReply, func(requestID *fftypes.UUID) error {
-		_, err := sa.sender.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
-		return err
-	})
+func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error) {
+	reply, err := sa.sendAndWait(ctx, ns, messageReply, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, msg.Header.Namespace, messageConfirm, func(requestID *fftypes.UUID) error {
-		_, err := sa.sender.SendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
-		return err
-	})
+func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error) {
+	reply, err := sa.sendAndWait(ctx, ns, messageConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.Message), err
+}
+
+func (sa *syncAsyncBridge) SendConfirmTokenPool(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenPool, error) {
+	reply, err := sa.sendAndWait(ctx, ns, tokenPoolConfirm, send)
+	if err != nil {
+		return nil, err
+	}
+	return reply.(*fftypes.TokenPool), err
 }

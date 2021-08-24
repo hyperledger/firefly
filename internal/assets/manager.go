@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/identity"
@@ -30,28 +31,31 @@ import (
 
 type Manager interface {
 	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	Start() error
 	WaitStop()
 }
 
 type assetManager struct {
-	ctx      context.Context
-	database database.Plugin
-	identity identity.Plugin
-	data     data.Manager
-	tokens   map[string]tokens.Plugin
+	ctx       context.Context
+	database  database.Plugin
+	identity  identity.Plugin
+	data      data.Manager
+	syncasync syncasync.Bridge
+	tokens    map[string]tokens.Plugin
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, ti map[string]tokens.Plugin) (Manager, error) {
-	if di == nil || ii == nil || ti == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
+	if di == nil || ii == nil || sa == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
-		ctx:      ctx,
-		database: di,
-		identity: ii,
-		data:     dm,
-		tokens:   ti,
+		ctx:       ctx,
+		database:  di,
+		identity:  ii,
+		data:      dm,
+		syncasync: sa,
+		tokens:    ti,
 	}
 	return am, nil
 }
@@ -66,7 +70,11 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	pool.ID = fftypes.NewUUID()
+	return am.CreateTokenPoolWithID(ctx, ns, fftypes.NewUUID(), typeName, pool, waitConfirm)
+}
+
+func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	pool.ID = id
 	pool.Namespace = ns
 
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
@@ -76,7 +84,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName
 	if pool.Author == "" {
 		pool.Author = config.GetString(config.OrgIdentity)
 	}
-	id, err := am.identity.Resolve(ctx, pool.Author)
+	author, err := am.identity.Resolve(ctx, pool.Author)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
@@ -86,7 +94,14 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName
 		return nil, err
 	}
 
-	trackingID, err := plugin.CreateTokenPool(ctx, id, pool)
+	if waitConfirm {
+		return am.syncasync.SendConfirmTokenPool(ctx, pool.Namespace, func(requestID *fftypes.UUID) error {
+			_, err := am.CreateTokenPoolWithID(ctx, ns, requestID, typeName, pool, false)
+			return err
+		})
+	}
+
+	trackingID, err := plugin.CreateTokenPool(ctx, author, pool)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +113,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName
 		trackingID,
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
-		id.Identifier)
+		author.Identifier)
 	return pool, am.database.UpsertOperation(ctx, op, false)
 }
 

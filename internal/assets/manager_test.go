@@ -20,9 +20,11 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/tokens"
@@ -36,18 +38,19 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	msa := &syncasyncmocks.Bridge{}
 	mti := &tokenmocks.Plugin{}
 	mti.On("Name").Return("ut_tokens").Maybe()
 	defaultIdentity := &fftypes.Identity{Identifier: "UTNodeID", OnChain: "0x12345"}
 	mii.On("Resolve", mock.Anything, "UTNodeID").Return(defaultIdentity, nil).Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mii, mdm, map[string]tokens.Plugin{"magic-tokens": mti})
+	a, err := NewAssetManager(ctx, mdi, mii, mdm, msa, map[string]tokens.Plugin{"magic-tokens": mti})
 	assert.NoError(t, err)
 	return a.(*assetManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -119,5 +122,33 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
+	assert.NoError(t, err)
+}
+
+func TestCreateTokenPoolConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
+		return pool.ID == requestID
+	})).Return("tx12345", nil).Times(1)
+	mdi.On("UpsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
+		return op.BackendID == "tx12345"
+	}), false).Return(nil).Times(1)
+	msa.On("SendConfirmTokenPool", context.Background(), "ns1", mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.RequestSender)
+			send(requestID)
+		}).
+		Return(nil, nil)
+
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, true)
 	assert.NoError(t, err)
 }

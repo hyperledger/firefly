@@ -42,6 +42,7 @@ type Manager interface {
 	Start() error
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
+	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
 
 type privateMessaging struct {
@@ -226,4 +227,17 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 
 func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
+}
+
+func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	if unresolved.Header.Tag == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
+	}
+	if unresolved.Header.CID != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
+	}
+	return pm.syncasync.RequestReply(ctx, ns, func(requestID *fftypes.UUID) error {
+		_, err := pm.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
+		return err
+	})
 }

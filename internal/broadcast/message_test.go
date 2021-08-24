@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
@@ -92,13 +93,22 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 
+	requestID := fftypes.NewUUID()
 	replyMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 		},
 	}
-	msa.On("SendConfirm", ctx, mock.Anything).Return(replyMsg, nil)
+	msa.On("SendConfirm", ctx, "ns1", mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.RequestSender)
+			send(requestID)
+		}).
+		Return(replyMsg, nil)
+	mdi.On("InsertMessageLocal", ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
+		return msg.Header.ID == requestID
+	})).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{

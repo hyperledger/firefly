@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
-	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -34,9 +33,9 @@ import (
 // SystemHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
 type SystemHandlers interface {
 	privatemessaging.GroupManager
-	sysmessaging.MessageSender
 
 	HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error)
+	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
 type systemHandlers struct {
@@ -73,16 +72,6 @@ func (sh *systemHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Mes
 
 func (sh *systemHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
 	return sh.messaging.EnsureLocalGroup(ctx, group)
-}
-
-func (sh *systemHandlers) SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
-	if resolved == nil {
-		resolved = &unresolved.Message
-	}
-	if resolved.Header.Group == nil && (unresolved == nil || unresolved.Group == nil) {
-		return sh.broadcast.BroadcastMessageWithID(ctx, ns, id, unresolved, resolved, waitConfirm)
-	}
-	return sh.messaging.SendMessageWithID(ctx, ns, id, unresolved, resolved, waitConfirm)
 }
 
 func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftypes.Message, data []*fftypes.Data) (valid bool, err error) {

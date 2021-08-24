@@ -153,7 +153,10 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 		return msg, bm.database.InsertMessageLocal(ctx, msg)
 	}
 
-	return bm.syncasync.SendConfirm(ctx, msg)
+	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
+		_, err := bm.BroadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+		return err
+	})
 }
 
 func (bm *broadcastManager) Start() error {
