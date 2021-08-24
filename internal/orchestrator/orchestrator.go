@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/assets"
 	"github.com/hyperledger-labs/firefly/internal/batch"
+	"github.com/hyperledger-labs/firefly/internal/batchpin"
 	"github.com/hyperledger-labs/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/config"
@@ -132,6 +133,7 @@ type orchestrator struct {
 	syshandlers   syshandlers.SystemHandlers
 	data          data.Manager
 	syncasync     syncasync.Bridge
+	batchpin      batchpin.Submitter
 	assets        assets.Manager
 	tokens        map[string]tokens.Plugin
 	bc            boundCallbacks
@@ -358,15 +360,16 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
+	or.batchpin = batchpin.NewBatchPinSubmitter(or.database, or.identity, or.blockchain)
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.publicstorage, or.batch, or.syncasync, or.batchpin); err != nil {
 			return err
 		}
 	}

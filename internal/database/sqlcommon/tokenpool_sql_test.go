@@ -45,21 +45,28 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "12345",
 	}
+	poolJson, _ := json.Marshal(&pool)
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
 
 	err := s.UpsertTokenPool(ctx, pool, true)
 	assert.NoError(t, err)
 
-	// Check we get the exact same token pool back
+	// Query back the token pool (by ID)
 	poolRead, err := s.GetTokenPoolByID(ctx, pool.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, poolRead)
-	poolJson, _ := json.Marshal(&pool)
 	poolReadJson, _ := json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Query back the token pool
+	// Query back the token pool (by name)
+	poolRead, err = s.GetTokenPool(ctx, pool.Namespace, pool.Name)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolReadJson, _ = json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
+	// Query back the token pool (by query filter)
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", pool.ID.String()),
@@ -159,12 +166,30 @@ func TestUpsertTokenPoolUpdateSuccess(t *testing.T) {
 	}
 
 	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(poolID))
 	db.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).Return()
 	err := s.UpsertTokenPool(context.Background(), pool, true)
 	assert.NoError(t, err)
+	assert.NoError(t, db.ExpectationsWereMet())
+}
+
+func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
+	s, db := newMockProvider().init()
+	callbacks := &databasemocks.Callbacks{}
+	s.SQLCommon.callbacks = callbacks
+	poolID := fftypes.NewUUID()
+	pool := &fftypes.TokenPool{
+		ID:        poolID,
+		Namespace: "ns1",
+	}
+
+	db.ExpectBegin()
+	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	db.ExpectRollback()
+	err := s.UpsertTokenPool(context.Background(), pool, true)
+	assert.Equal(t, database.IDMismatch, err)
 	assert.NoError(t, db.ExpectationsWereMet())
 }
 

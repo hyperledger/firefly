@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger-labs/firefly/internal/batch"
-	"github.com/hyperledger-labs/firefly/internal/broadcast"
+	"github.com/hyperledger-labs/firefly/internal/batchpin"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -56,6 +56,7 @@ type privateMessaging struct {
 	batch                batch.Manager
 	data                 data.Manager
 	syncasync            syncasync.Bridge
+	batchpin             batchpin.Submitter
 	retry                retry.Retry
 	localNodeName        string
 	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
@@ -63,7 +64,7 @@ type privateMessaging struct {
 	opCorrelationRetries int
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
 	if di == nil || ii == nil || dx == nil || bi == nil || ba == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -77,6 +78,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Pl
 		batch:            ba,
 		data:             dm,
 		syncasync:        sa,
+		batchpin:         bp,
 		localNodeName:    config.GetString(config.NodeName),
 		localOrgIdentity: config.GetString(config.OrgIdentity),
 		groupManager: groupManager{
@@ -224,7 +226,7 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 }
 
 func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
-	return broadcast.SubmitPinnedBatch(ctx, pm.blockchain, pm.identity, pm.database, batch, contexts)
+	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
 func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {

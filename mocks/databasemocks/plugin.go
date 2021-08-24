@@ -1293,6 +1293,29 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
+// GetTokenPool provides a mock function with given fields: ctx, ns, name
+func (_m *Plugin) GetTokenPool(ctx context.Context, ns string, name string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, name)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTokenPoolByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error) {
 	ret := _m.Called(ctx, id)

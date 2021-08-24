@@ -50,14 +50,24 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	existing := false
 	if allowExisting {
 		rows, _, err := s.queryTx(ctx, tx,
-			sq.Select("seq").
+			sq.Select("id").
 				From("tokenpool").
-				Where(sq.Eq{"id": pool.ID}),
+				Where(sq.And{sq.Eq{"namespace": pool.Namespace}, sq.Eq{"name": pool.Name}}),
 		)
 		if err != nil {
 			return err
 		}
 		existing = rows.Next()
+
+		if existing {
+			var id fftypes.UUID
+			_ = rows.Scan(&id)
+			if pool.ID != nil && *pool.ID != id {
+				rows.Close()
+				return database.IDMismatch
+			}
+			pool.ID = &id // Update on returned object
+		}
 		rows.Close()
 	}
 
@@ -136,6 +146,10 @@ func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred inte
 	}
 
 	return pool, nil
+}
+
+func (s *SQLCommon) GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error) {
+	return s.getTokenPoolPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}})
 }
 
 func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error) {
