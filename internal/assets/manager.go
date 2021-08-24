@@ -32,6 +32,8 @@ import (
 type Manager interface {
 	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
+	GetTokenPoolByID(ctx context.Context, ns string, typeName string, id string) (*fftypes.TokenPool, error)
 	Start() error
 	WaitStop()
 }
@@ -115,6 +117,44 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		fftypes.OpStatusPending,
 		author.Identifier)
 	return pool, am.database.UpsertOperation(ctx, op, false)
+}
+
+func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+	return filter.Condition(filter.Builder().Eq("namespace", ns))
+}
+
+func (am *assetManager) verifyNamespaceSyntax(ctx context.Context, ns string) error {
+	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
+}
+
+func (am *assetManager) verifyIDAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	err = am.verifyNamespaceSyntax(ctx, ns)
+	return u, err
+}
+
+func (am *assetManager) GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+	_, err := am.selectTokenPlugin(ctx, typeName)
+	if err != nil {
+		return nil, nil, err
+	}
+	filter = am.scopeNS(ns, filter)
+	return am.database.GetTokenPools(ctx, filter)
+}
+
+func (am *assetManager) GetTokenPoolByID(ctx context.Context, ns, typeName, id string) (*fftypes.TokenPool, error) {
+	_, err := am.selectTokenPlugin(ctx, typeName)
+	if err != nil {
+		return nil, err
+	}
+	u, err := am.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	return am.database.GetTokenPoolByID(ctx, u)
 }
 
 func (am *assetManager) Start() error {
