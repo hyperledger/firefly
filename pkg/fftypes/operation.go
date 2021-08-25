@@ -75,7 +75,7 @@ type Operation struct {
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`
-	BackendID   string     `json:"backendID"`
+	BackendID   string     `json:"backendId"`
 	Info        JSONObject `json:"info,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`

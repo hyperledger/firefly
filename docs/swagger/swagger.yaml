@@ -2470,7 +2470,7 @@ paths:
               schema:
                 items:
                   properties:
-                    backendID:
+                    backendId:
                       type: string
                     created: {}
                     error:
@@ -2533,7 +2533,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
-                  protocolID:
+                  protocolId:
                     type: string
                   status:
                     type: string
@@ -3182,7 +3182,7 @@ paths:
               schema:
                 items:
                   properties:
-                    backendID:
+                    backendId:
                       type: string
                     created: {}
                     error:
@@ -3239,7 +3239,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  backendID:
+                  backendId:
                     type: string
                   created: {}
                   error:
@@ -4337,7 +4337,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  protocolID:
+                  protocolId:
                     type: string
                   type:
                     type: string
@@ -4355,7 +4355,7 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  protocolID:
+                  protocolId:
                     type: string
                   type:
                     type: string
@@ -4531,7 +4531,7 @@ paths:
                     info:
                       additionalProperties: {}
                       type: object
-                    protocolID:
+                    protocolId:
                       type: string
                     status:
                       type: string
@@ -4671,7 +4671,7 @@ paths:
                   info:
                     additionalProperties: {}
                     type: object
-                  protocolID:
+                  protocolId:
                     type: string
                   status:
                     type: string
@@ -4727,7 +4727,7 @@ paths:
                     info:
                       additionalProperties: {}
                       type: object
-                    protocolID:
+                    protocolId:
                       type: string
                     status:
                       type: string
