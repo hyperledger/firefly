@@ -26,15 +26,15 @@ import (
 )
 
 func (em *eventManager) persistTokenPoolTransaction(ctx context.Context, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
-	if pool.ID == nil || pool.TransactionID == nil {
-		log.L(ctx).Errorf("Invalid token pool '%s'. Missing ID (%v) or transaction ID (%v)", pool.ID, pool.ID, pool.TransactionID)
+	if pool.ID == nil || pool.TX.ID == nil {
+		log.L(ctx).Errorf("Invalid token pool '%s'. Missing ID (%v) or transaction ID (%v)", pool.ID, pool.ID, pool.TX.ID)
 		return false, nil // this is not retryable
 	}
 	return em.persistTransaction(ctx, &fftypes.Transaction{
-		ID: pool.TransactionID,
+		ID: pool.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Namespace: pool.Namespace,
-			Type:      fftypes.TransactionTypeTokenPool,
+			Type:      pool.TX.Type,
 			Signer:    signingIdentity,
 			Reference: pool.ID,
 		},

@@ -35,13 +35,16 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TransactionID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), true, false).Return(nil)
@@ -81,8 +84,11 @@ func TestTokenPoolBadNamespace(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 	}
 
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -102,12 +108,15 @@ func TestTokenPoolBadName(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TransactionID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), true, false).Return(nil)
@@ -127,10 +136,13 @@ func TestTokenPoolGetTransactionFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -148,10 +160,13 @@ func TestTokenPoolGetTransactionInvalidMatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
@@ -171,10 +186,13 @@ func TestTokenPoolNewTXUpsertFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
@@ -193,10 +211,13 @@ func TestTokenPoolExistingTXHashMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(&fftypes.Transaction{
@@ -223,13 +244,16 @@ func TestTokenPoolIDMismatch(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TransactionID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), true, false).Return(nil)
@@ -251,13 +275,16 @@ func TestTokenPoolUpsertFailAndRetry(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	pool := &fftypes.TokenPool{
-		ID:            fftypes.NewUUID(),
-		TransactionID: fftypes.NewUUID(),
-		Namespace:     "test-ns",
-		Name:          "my-pool",
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace: "test-ns",
+		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TransactionID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(nil).Once()

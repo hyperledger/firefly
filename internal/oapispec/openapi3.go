@@ -245,13 +245,9 @@ func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
 	newFields := make([]reflect.StructField, fieldCount)
 	for i := 0; i < fieldCount; i++ {
 		field := t.FieldByIndex([]int{i})
-		if field.Type.Kind() == reflect.Struct {
-			field.Type = maskFieldsOnStruct(field.Type, mask)
-		} else {
-			for _, m := range mask {
-				if strings.EqualFold(field.Name, m) {
-					field.Tag = "`json:-`"
-				}
+		for _, m := range mask {
+			if strings.EqualFold(field.Name, m) {
+				field.Tag = "`json:-`"
 			}
 		}
 		newFields[i] = field

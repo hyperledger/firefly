@@ -151,12 +151,15 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	copy(id[:], hexUUIDs[16:32])
 
 	pool := &fftypes.TokenPool{
-		ID:            &id,
-		TransactionID: &txnID,
-		Namespace:     ns,
-		Name:          name,
-		Type:          fftypes.LowerCasedType(tokenType),
-		ProtocolID:    protocolID,
+		ID: &id,
+		TX: fftypes.TransactionRef{
+			ID:   &txnID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+		Namespace:  ns,
+		Name:       name,
+		Type:       fftypes.LowerCasedType(tokenType),
+		ProtocolID: protocolID,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -215,7 +218,7 @@ func (h *HTTPS) eventLoop() {
 
 func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) (txTrackingID string, err error) {
 	var uuids fftypes.Bytes32
-	copy(uuids[0:16], (*pool.TransactionID)[:])
+	copy(uuids[0:16], (*pool.TX.ID)[:])
 	copy(uuids[16:32], (*pool.ID)[:])
 
 	var response responseData

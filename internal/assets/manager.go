@@ -101,17 +101,20 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		})
 	}
 
-	pool.TransactionID = fftypes.NewUUID()
+	pool.TX = fftypes.TransactionRef{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.TransactionTypeTokenPool,
+	}
 	trackingID, err := plugin.CreateTokenPool(ctx, author, pool)
 	if err != nil {
 		return nil, err
 	}
 
 	tx := &fftypes.Transaction{
-		ID: pool.TransactionID,
+		ID: pool.TX.ID,
 		Subject: fftypes.TransactionSubject{
-			Type:      fftypes.TransactionTypeTokenPool,
 			Namespace: pool.Namespace,
+			Type:      pool.TX.Type,
 			Signer:    author.OnChain, // The transaction records on the on-chain identity
 			Reference: pool.ID,
 		},
