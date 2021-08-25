@@ -25,14 +25,14 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var getTokenPoolByID = &oapispec.Route{
-	Name:   "getTokenPoolByID",
-	Path:   "namespaces/{ns}/tokens/{type}/pools/{id}",
+var getTokenPoolByName = &oapispec.Route{
+	Name:   "getTokenPoolByName",
+	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "type", Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "name", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
@@ -41,7 +41,7 @@ var getTokenPoolByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.Assets().GetTokenPoolByID(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["id"])
+		output, err = r.Or.Assets().GetTokenPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"])
 		return output, err
 	},
 }

@@ -154,31 +154,38 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetTokenPoolByID(t *testing.T) {
+func TestGetTokenPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), u).Return(nil, nil)
-	_, err := am.GetTokenPoolByID(context.Background(), "ns1", "magic-tokens", u.String())
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, nil)
+	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "abc")
 	assert.NoError(t, err)
 }
 
-func TestGetTokenPoolByIDBadPlugin(t *testing.T) {
+func TestGetTokenPoolBadPlugin(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, err := am.GetTokenPoolByID(context.Background(), "", "", "")
+	_, err := am.GetTokenPool(context.Background(), "", "", "")
 	assert.Regexp(t, "FF10272", err)
 }
 
-func TestGetTokenPoolByIDBadID(t *testing.T) {
+func TestGetTokenPoolBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, err := am.GetTokenPoolByID(context.Background(), "", "magic-tokens", "")
-	assert.Regexp(t, "FF10142", err)
+	_, err := am.GetTokenPool(context.Background(), "", "magic-tokens", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPoolBadName(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "")
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestGetTokenPools(t *testing.T) {

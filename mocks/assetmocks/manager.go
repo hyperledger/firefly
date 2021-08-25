@@ -62,13 +62,13 @@ func (_m *Manager) CreateTokenPoolWithID(ctx context.Context, ns string, id *fft
 	return r0, r1
 }
 
-// GetTokenPoolByID provides a mock function with given fields: ctx, ns, typeName, id
-func (_m *Manager) GetTokenPoolByID(ctx context.Context, ns string, typeName string, id string) (*fftypes.TokenPool, error) {
-	ret := _m.Called(ctx, ns, typeName, id)
+// GetTokenPool provides a mock function with given fields: ctx, ns, typeName, name
+func (_m *Manager) GetTokenPool(ctx context.Context, ns string, typeName string, name string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, typeName, name)
 
 	var r0 *fftypes.TokenPool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.TokenPool); ok {
-		r0 = rf(ctx, ns, typeName, id)
+		r0 = rf(ctx, ns, typeName, name)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenPool)
@@ -77,7 +77,7 @@ func (_m *Manager) GetTokenPoolByID(ctx context.Context, ns string, typeName str
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, typeName, id)
+		r1 = rf(ctx, ns, typeName, name)
 	} else {
 		r1 = ret.Error(1)
 	}

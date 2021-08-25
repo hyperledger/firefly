@@ -4306,10 +4306,10 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/tokens/{type}/pools/{id}:
+  /namespaces/{ns}/tokens/{type}/pools/{name}:
     get:
       description: 'TODO: Description'
-      operationId: getTokenPoolByID
+      operationId: getTokenPoolByName
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -4326,7 +4326,7 @@ paths:
           type: string
       - description: 'TODO: Description'
         in: path
-        name: id
+        name: name
         required: true
         schema:
           type: string

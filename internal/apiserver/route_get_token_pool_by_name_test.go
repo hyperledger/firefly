@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetTokenPoolByID(t *testing.T) {
+func TestGetTokenPoolByName(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
@@ -34,7 +34,7 @@ func TestGetTokenPoolByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenPoolByID", mock.Anything, "ns1", "tok1", "abc").
+	mam.On("GetTokenPool", mock.Anything, "ns1", "tok1", "abc").
 		Return(&fftypes.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 
