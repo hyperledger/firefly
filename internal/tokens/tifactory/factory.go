@@ -38,8 +38,8 @@ func init() {
 }
 
 func InitPrefix(prefix config.PrefixArray) {
-	prefix.AddKnownKey("connector")
-	prefix.AddKnownKey("name")
+	prefix.AddKnownKey(tokens.TokensConfigConnector)
+	prefix.AddKnownKey(tokens.TokensConfigName)
 	for _, plugin := range plugins {
 		// Accept a superset of configs allowed by all plugins
 		plugin.InitPrefix(prefix)
