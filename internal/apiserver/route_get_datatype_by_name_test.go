@@ -25,13 +25,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDatatypeByID(t *testing.T) {
+func TestGetDatatypeByName(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes/abcd12345", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes/abcd/123", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDatatypeByID", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetDatatypeByName", mock.Anything, "mynamespace", "abcd", "123").
 		Return(&fftypes.Datatype{}, nil)
 	r.ServeHTTP(res, req)
 

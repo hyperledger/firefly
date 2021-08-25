@@ -428,7 +428,7 @@ func TestGetData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetDataDefsByID(t *testing.T) {
+func TestGetDatatypeByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
 	or.mdi.On("GetDatatypeByID", mock.Anything, u).Return(nil, nil)
@@ -436,10 +436,29 @@ func TestGetDataDefsByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetDataDefsByIDBadID(t *testing.T) {
+func TestGetDatatypeByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	_, err := or.GetDatatypeByID(context.Background(), "", "")
 	assert.Regexp(t, "FF10142", err)
+}
+
+func TestGetDatatypeByName(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mdi.On("GetDatatypeByName", context.Background(), "ns1", "dt", "1").Return(nil, nil)
+	_, err := or.GetDatatypeByName(context.Background(), "ns1", "dt", "1")
+	assert.NoError(t, err)
+}
+
+func TestGetDatatypeByNameBadNamespace(t *testing.T) {
+	or := newTestOrchestrator()
+	_, err := or.GetDatatypeByName(context.Background(), "", "", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetDatatypeByNameBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	_, err := or.GetDatatypeByName(context.Background(), "ns1", "", "")
+	assert.Regexp(t, "FF10131", err)
 }
 
 func TestGetOperationByID(t *testing.T) {

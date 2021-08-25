@@ -126,6 +126,16 @@ func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*ff
 	return or.database.GetDatatypeByID(ctx, u)
 }
 
+func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error) {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+		return nil, err
+	}
+	return or.database.GetDatatypeByName(ctx, ns, name, version)
+}
+
 func (or *orchestrator) GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {

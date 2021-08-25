@@ -1490,7 +1490,7 @@ paths:
   /namespaces/{ns}/datatypes:
     get:
       description: 'TODO: Description'
-      operationId: getDataDefs
+      operationId: getDatatypes
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -1690,8 +1690,9 @@ paths:
           description: ""
   /namespaces/{ns}/datatypes/{dtid}:
     get:
+      deprecated: true
       description: 'TODO: Description'
-      operationId: getDataDefByID
+      operationId: getDatatypeByID
       parameters:
       - description: 'TODO: Description'
         in: path
@@ -1703,6 +1704,62 @@ paths:
       - description: 'TODO: Description'
         in: path
         name: dtid
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created: {}
+                  hash: {}
+                  id: {}
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  validator:
+                    type: string
+                  value:
+                    format: byte
+                    type: string
+                  version:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/datatypes/{name}/{version}:
+    get:
+      description: 'TODO: Description'
+      operationId: getDatatypeByName
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: version
         required: true
         schema:
           type: string
