@@ -129,7 +129,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 	return &pool, nil
 }
 
-func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.TokenPool, err error) {
+func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred interface{}) (*fftypes.TokenPool, error) {
 	rows, _, err := s.query(ctx,
 		sq.Select(tokenPoolColumns...).
 			From("tokenpool").
