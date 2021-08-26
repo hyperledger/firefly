@@ -352,16 +352,27 @@ type iConfigRecordCollection interface {
 
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool) (err error)
+	UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) error
 
 	// GetTokenPool - Get a token pool by name
-	GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error)
+	GetTokenPool(ctx context.Context, ns, name string) (*fftypes.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
-	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error)
+	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
-	GetTokenPools(ctx context.Context, filter Filter) (message []*fftypes.TokenPool, fr *FilterResult, err error)
+	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
+}
+
+type iTokenAccountCollection interface {
+	// UpsertTokenAccount - Upsert a token account
+	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
+
+	// GetTokenAccount - Get a token account by hash
+	GetTokenAccount(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.TokenAccount, error)
+
+	// GetTokenAccounts - Get all known token accounts in a pool
+	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -415,6 +426,7 @@ type PeristenceInterface interface {
 	iBlobCollection
 	iConfigRecordCollection
 	iTokenPoolCollection
+	iTokenAccountCollection
 }
 
 // CollectionName represents all collections
@@ -459,7 +471,8 @@ const (
 type HashCollectionNS CollectionName
 
 const (
-	CollectionGroups HashCollectionNS = "groups"
+	CollectionGroups        HashCollectionNS = "groups"
+	CollectionTokenAccounts HashCollectionNS = "tokenaccounts"
 )
 
 // UUIDCollection is like UUIDCollectionNS, but for objects that do not reside within a namespace
@@ -730,4 +743,14 @@ var TokenPoolQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"name":       &StringField{},
 	"protocolid": &StringField{},
+}
+
+// TokenAccountQueryFactory filter fields for token accounts
+var TokenAccountQueryFactory = &queryFields{
+	"poolid":     &UUIDField{},
+	"namespace":  &StringField{},
+	"tokenindex": &StringField{},
+	"identity":   &StringField{},
+	"balance":    &Int64Field{},
+	"hash":       &Bytes32Field{},
 }
