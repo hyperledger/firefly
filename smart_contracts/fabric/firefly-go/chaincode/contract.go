@@ -1,6 +1,7 @@
 package chaincode
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -29,6 +30,10 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 	if err != nil {
 		return fmt.Errorf("Failed to obtain client identity's ID: %s", err)
 	}
+	idString, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return fmt.Errorf("Failed to decode client identity ID: %s", err)
+	}
 	mspId, err := cid.GetMSPID()
 	if err != nil {
 		return fmt.Errorf("Failed to obtain client identity's MSP ID: %s", err)
@@ -38,7 +43,7 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 		return fmt.Errorf("Failed to get transaction timestamp: %s", err)
 	}
 	event := BatchPinEvent{
-		Signer:     fmt.Sprintf("%s-%s", id, mspId),
+		Signer:     fmt.Sprintf("%s-%s", mspId, idString),
 		Timestamp:  timestamp,
 		Namespace:  namespace,
 		Uuids:      uuids,
