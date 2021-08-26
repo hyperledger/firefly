@@ -18,7 +18,6 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
@@ -26,26 +25,23 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var postTokenPool = &oapispec.Route{
-	Name:   "postTokenPool",
-	Path:   "namespaces/{ns}/tokens/{type}/pools",
-	Method: http.MethodPost,
+var getTokenPoolByName = &oapispec.Route{
+	Name:   "getTokenPoolByName",
+	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 		{Name: "type", Description: i18n.MsgTBD},
+		{Name: "name", Description: i18n.MsgTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
-	},
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.TokenPool{} },
-	JSONInputMask:   []string{"ID", "Namespace", "ProtocolID"},
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
-	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.PP["type"], r.Input.(*fftypes.TokenPool), waitConfirm)
+		output, err = r.Or.Assets().GetTokenPool(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"])
+		return output, err
 	},
 }
