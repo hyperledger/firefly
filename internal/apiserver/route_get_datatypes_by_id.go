@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var getDataDefByID = &oapispec.Route{
-	Name:   "getDataDefByID",
+var getDatatypeByID = &oapispec.Route{
+	Name:   "getDatatypeByID",
 	Path:   "namespaces/{ns}/datatypes/{dtid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -43,4 +43,5 @@ var getDataDefByID = &oapispec.Route{
 		output, err = r.Or.GetDatatypeByID(r.Ctx, r.PP["ns"], r.PP["dtid"])
 		return output, err
 	},
+	Deprecated: true, // replaced with getDatatypeByName
 }

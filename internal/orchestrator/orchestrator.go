@@ -98,6 +98,7 @@ type Orchestrator interface {
 	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Data, *database.FilterResult, error)
 	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
+	GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error)
 	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
 	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
