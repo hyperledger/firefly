@@ -135,7 +135,8 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 		clientID == "" ||
 		tokenType == "" ||
 		protocolID == "" ||
-		authorAddress == "" {
+		authorAddress == "" ||
+		txHash == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}

@@ -44,6 +44,10 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Name:       "my-pool",
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "12345",
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
+		},
 	}
 	poolJson, _ := json.Marshal(&pool)
 
@@ -141,12 +145,16 @@ func TestUpsertTokenPoolInsertSuccess(t *testing.T) {
 		ID:        poolID,
 		Namespace: "ns1",
 		Type:      fftypes.TokenTypeNonFungible,
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenPool,
+			ID:   fftypes.NewUUID(),
+		},
 	}
 
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs(poolID, "ns1", "", "", "nonfungible").
+		WithArgs(poolID, "ns1", "", "", "nonfungible", pool.TX.Type, pool.TX.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()

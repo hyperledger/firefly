@@ -34,9 +34,13 @@ var (
 		"name",
 		"protocol_id",
 		"type",
+		"tx_type",
+		"tx_id",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
-		"protocolid": "protocol_id",
+		"protocolid":       "protocol_id",
+		"transaction.type": "tx_type",
+		"transaction.id":   "tx_id",
 	}
 )
 
@@ -78,6 +82,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("name", pool.Name).
 				Set("protocol_id", pool.ProtocolID).
 				Set("type", pool.Type).
+				Set("tx_type", pool.TX.Type).
+				Set("tx_id", pool.TX.ID).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -95,6 +101,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Name,
 					pool.ProtocolID,
 					pool.Type,
+					pool.TX.Type,
+					pool.TX.ID,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -108,15 +116,15 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 }
 
 func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenPool, error) {
-	pool := fftypes.TokenPool{
-		Type: fftypes.TokenTypeNonFungible,
-	}
+	pool := fftypes.TokenPool{}
 	err := row.Scan(
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
 		&pool.ProtocolID,
 		&pool.Type,
+		&pool.TX.Type,
+		&pool.TX.ID,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenpool")
