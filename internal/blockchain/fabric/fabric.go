@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -95,6 +96,37 @@ type fabBatchPinInput struct {
 	BatchHash  string   `json:"batchHash"`
 	PayloadRef string   `json:"payloadRef"`
 	Contexts   []string `json:"contexts"`
+}
+
+type fabTxInputHeaders struct {
+	Type string `json:"type"`
+}
+
+func newTxInputHeaders() *fabTxInputHeaders {
+	return &fabTxInputHeaders{
+		Type: "SendTransaction",
+	}
+}
+
+type fabTxInput struct {
+	Headers *fabTxInputHeaders `json:"headers"`
+	Func    string             `json:"func"`
+	Args    []string           `json:"args"`
+}
+
+func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
+	input := &fabTxInput{
+		Headers: newTxInputHeaders(),
+		Func:    "PinBatch",
+		Args: []string{
+			pinInput.Namespace,
+			pinInput.UUIDs,
+			pinInput.BatchHash,
+			pinInput.PayloadRef,
+			fmt.Sprintf("%s", pinInput.Contexts),
+		},
+	}
+	return input
 }
 
 type fabWSCommandPayload struct {
@@ -451,13 +483,14 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, ide
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	input := &fabBatchPinInput{
+	pinInput := &fabBatchPinInput{
 		Namespace:  batch.Namespace,
 		UUIDs:      hexFormatB32(&uuids),
 		BatchHash:  hexFormatB32(batch.BatchHash),
 		PayloadRef: batch.BatchPaylodRef,
 		Contexts:   hashes,
 	}
+	input := newTxInput(pinInput)
 	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, identity, batch.TransactionID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
