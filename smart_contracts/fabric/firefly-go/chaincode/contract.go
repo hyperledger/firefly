@@ -19,7 +19,7 @@ type BatchPinEvent struct {
 	Timestamp  *timestamp.Timestamp `json:"timestamp"`
 	Namespace  string               `json:"namespace"`
 	Uuids      string               `json:"uuids"`
-	BatchHash  string               `json:"batchhash"`
+	BatchHash  string               `json:"batchHash"`
 	PayloadRef string               `json:"payloadRef"`
 	Contexts   []string             `json:"contexts"`
 }
