@@ -20,19 +20,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDatatypeByID(t *testing.T) {
+func TestGetTokenPoolByName(t *testing.T) {
 	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes/abcd12345", nil)
+	mam := &assetmocks.Manager{}
+	o.On("Assets").Return(mam)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/tok1/pools/abc", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDatatypeByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Datatype{}, nil)
+	mam.On("GetTokenPool", mock.Anything, "ns1", "tok1", "abc").
+		Return(&fftypes.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

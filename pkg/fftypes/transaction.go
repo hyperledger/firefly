@@ -61,6 +61,6 @@ type Transaction struct {
 	Subject    TransactionSubject `json:"subject"`
 	Created    *FFTime            `json:"created"`
 	Status     OpStatus           `json:"status"`
-	ProtocolID string             `json:"protocolID,omitempty"`
+	ProtocolID string             `json:"protocolId,omitempty"`
 	Info       JSONObject         `json:"info,omitempty"`
 }

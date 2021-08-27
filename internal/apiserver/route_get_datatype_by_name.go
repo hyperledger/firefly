@@ -22,24 +22,26 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/oapispec"
-	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var getDatatypes = &oapispec.Route{
-	Name:   "getDatatypes",
-	Path:   "namespaces/{ns}/datatypes",
+var getDatatypeByName = &oapispec.Route{
+	Name:   "getDatatypeByName",
+	Path:   "namespaces/{ns}/datatypes/{name}/{version}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "name", Description: i18n.MsgTBD},
+		{Name: "version", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.DatatypeQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Datatype{} },
+	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.GetDatatypes(r.Ctx, r.PP["ns"], r.Filter))
+		output, err = r.Or.GetDatatypeByName(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		return output, err
 	},
 }

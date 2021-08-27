@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetDataDefs(t *testing.T) {
+func TestGetDatatypes(t *testing.T) {
 	o, r := newTestAPIServer()
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

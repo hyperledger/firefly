@@ -14,21 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package apiserver
 
-type TokenType = LowerCasedType
+import (
+	"net/http/httptest"
+	"testing"
 
-const (
-	TokenTypeFungible    TokenType = "fungible"
-	TokenTypeNonFungible TokenType = "nonfungible"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-type TokenPool struct {
-	ID         *UUID          `json:"id,omitempty"`
-	Type       TokenType      `json:"type"`
-	Namespace  string         `json:"namespace,omitempty"`
-	Name       string         `json:"name,omitempty"`
-	ProtocolID string         `json:"protocolId,omitempty"`
-	Author     string         `json:"author,omitempty"`
-	TX         TransactionRef `json:"tx,omitempty"`
+func TestGetDatatypeByName(t *testing.T) {
+	o, r := newTestAPIServer()
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/datatypes/abcd/123", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetDatatypeByName", mock.Anything, "mynamespace", "abcd", "123").
+		Return(&fftypes.Datatype{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

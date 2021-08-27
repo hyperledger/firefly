@@ -26,8 +26,8 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-var postTokens = &oapispec.Route{
-	Name:   "postTokens",
+var postTokenPool = &oapispec.Route{
+	Name:   "postTokenPool",
 	Path:   "namespaces/{ns}/tokens/{type}/pools",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{

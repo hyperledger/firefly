@@ -32,6 +32,8 @@ import (
 type Manager interface {
 	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
+	GetTokenPool(ctx context.Context, ns string, typeName string, name string) (*fftypes.TokenPool, error)
 	Start() error
 	WaitStop()
 }
@@ -136,6 +138,30 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		fftypes.OpStatusPending,
 		author.Identifier)
 	return pool, am.database.UpsertOperation(ctx, op, false)
+}
+
+func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
+	return filter.Condition(filter.Builder().Eq("namespace", ns))
+}
+
+func (am *assetManager) GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
+		return nil, nil, err
+	}
+	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
+}
+
+func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error) {
+	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
+		return nil, err
+	}
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+		return nil, err
+	}
+	return am.database.GetTokenPool(ctx, ns, name)
 }
 
 func (am *assetManager) Start() error {

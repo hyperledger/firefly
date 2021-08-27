@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
+	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/hyperledger-labs/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -172,4 +173,59 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, true)
 	assert.NoError(t, err)
+}
+
+func TestGetTokenPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, nil)
+	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "abc")
+	assert.NoError(t, err)
+}
+
+func TestGetTokenPoolBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPool(context.Background(), "", "", "")
+	assert.Regexp(t, "FF10272", err)
+}
+
+func TestGetTokenPoolBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPool(context.Background(), "", "magic-tokens", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPoolBadName(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPools(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	mdi.On("GetTokenPools", context.Background(), f).Return([]*fftypes.TokenPool{}, nil, nil)
+	_, _, err := am.GetTokenPools(context.Background(), "ns1", "magic-tokens", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenPoolsBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, _, err := am.GetTokenPools(context.Background(), "", "", nil)
+	assert.Regexp(t, "FF10272", err)
 }

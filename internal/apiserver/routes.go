@@ -50,8 +50,9 @@ var routes = []*oapispec.Route{
 	getData,
 	getDataBlob,
 	getDataByID,
-	getDataDefByID,
-	getDataDefs,
+	getDatatypeByID,
+	getDatatypeByName,
+	getDatatypes,
 	getDataMsgs,
 	getEventByID,
 	getEvents,
@@ -75,5 +76,8 @@ var routes = []*oapispec.Route{
 	getTxnByID,
 	getTxnOps,
 	getTxns,
-	postTokens,
+
+	postTokenPool,
+	getTokenPools,
+	getTokenPoolByName,
 }
