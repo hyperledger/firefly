@@ -24,13 +24,13 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/internal/wsclient"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/wsclient"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 const (
@@ -42,7 +42,6 @@ type Fabric struct {
 	topic          string
 	defaultChannel string
 	chaincode      string
-	signer         string
 	prefixShort    string
 	prefixLong     string
 	capabilities   *blockchain.Capabilities
@@ -98,39 +97,6 @@ type fabBatchPinInput struct {
 	Contexts   []string `json:"contexts"`
 }
 
-type fabTxInputHeaders struct {
-	Type string `json:"type"`
-}
-
-func newTxInputHeaders() *fabTxInputHeaders {
-	return &fabTxInputHeaders{
-		Type: "SendTransaction",
-	}
-}
-
-type fabTxInput struct {
-	Headers *fabTxInputHeaders `json:"headers"`
-	Func    string             `json:"func"`
-	Args    []string           `json:"args"`
-}
-
-func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
-	hashesJSON, _ := json.Marshal(pinInput.Contexts)
-	stringifiedHashes := string(hashesJSON)
-	input := &fabTxInput{
-		Headers: newTxInputHeaders(),
-		Func:    "PinBatch",
-		Args: []string{
-			pinInput.Namespace,
-			pinInput.UUIDs,
-			pinInput.BatchHash,
-			pinInput.PayloadRef,
-			stringifiedHashes,
-		},
-	}
-	return input
-}
-
 type fabWSCommandPayload struct {
 	Type  string `json:"type"`
 	Topic string `json:"topic,omitempty"`
@@ -158,10 +124,6 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	f.chaincode = fabconnectConf.GetString(FabconnectConfigChaincode)
 	if f.chaincode == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
-	}
-	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
-	if f.signer == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "signer", "blockchain.fabconnect")
 	}
 	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
@@ -276,9 +238,8 @@ func (f *Fabric) ensureSusbscriptions(streamID string) error {
 				Name:        eventType,
 				Description: subDesc,
 				Channel:     f.defaultChannel,
-				Signer:      f.signer,
 				Stream:      streamID,
-				FromBlock:   "1",
+				FromBlock:   "oldest",
 			}
 			newSub.Filter.ChaincodeID = f.chaincode
 			newSub.Filter.EventFilter = "BatchPin"
@@ -490,14 +451,13 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, ide
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	pinInput := &fabBatchPinInput{
+	input := &fabBatchPinInput{
 		Namespace:  batch.Namespace,
 		UUIDs:      hexFormatB32(&uuids),
 		BatchHash:  hexFormatB32(batch.BatchHash),
 		PayloadRef: batch.BatchPaylodRef,
 		Contexts:   hashes,
 	}
-	input := newTxInput(pinInput)
 	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, identity, batch.TransactionID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)

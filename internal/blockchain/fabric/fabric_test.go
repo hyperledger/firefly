@@ -25,14 +25,14 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/internal/wsclient"
-	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger-labs/firefly/mocks/wsmocks"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/wsclient"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/wsmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -95,8 +95,7 @@ func TestInitMissingTopic(t *testing.T) {
 	defer cancel()
 	resetConf()
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigChaincode, "/instances/0x12345")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*topic", err)
@@ -137,7 +136,6 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigURL, httpURL)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -175,7 +173,6 @@ func TestWSInitFail(t *testing.T) {
 	resetConf()
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utFabconnectConf.Set(FabconnectConfigSkipEventstreamInit, true)
 
@@ -217,7 +214,6 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -247,12 +243,11 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10277", err)
+	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -276,12 +271,11 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10277", err)
+	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -307,12 +301,11 @@ func TestSubQueryError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10277", err)
+	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -340,12 +333,11 @@ func TestSubQueryCreateError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
-	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10277", err)
+	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -375,9 +367,9 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, signer, req.FormValue(defaultPrefixShort+"-signer"))
 			assert.Equal(t, "false", req.FormValue(defaultPrefixShort+"-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].([]interface{}))[1])
-			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].([]interface{}))[2])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", (body["args"].([]interface{}))[3])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
+			assert.Equal(t, hexFormatB32(batch.BatchHash), body["batchHash"])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -411,9 +403,9 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, signer, req.FormValue("fly-signer"))
 			assert.Equal(t, "false", req.FormValue("fly-sync"))
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].([]interface{}))[1])
-			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].([]interface{}))[2])
-			assert.Equal(t, "", (body["args"].([]interface{}))[3])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", body["uuids"])
+			assert.Equal(t, hexFormatB32(batch.BatchHash), body["batchHash"])
+			assert.Equal(t, "", body["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
@@ -447,7 +439,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: signer}, batch)
 
-	assert.Regexp(t, "FF10277", err)
+	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -708,9 +700,10 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "receivedAt": 1630033474675
   }`)
 
-	em.On("BlockchainTxUpdate",
+	em.On("TxSubmissionUpdate",
 		"748e7587-9e72-4244-7351-808f69b88291",
 		fftypes.OpStatusSucceeded,
+		"",
 		"",
 		mock.Anything).Return(nil)
 
