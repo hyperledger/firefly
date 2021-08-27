@@ -36,6 +36,8 @@ const (
 	FabconnectConfigDefaultChannel = "channel"
 	// FabconnectConfigChaincode is the Fabric Firefly chaincode deployed to the Firefly channels
 	FabconnectConfigChaincode = "chaincode"
+	// FabconnectConfigSigner is the signer identity used to subscribe to FireFly chaincode events
+	FabconnectConfigSigner = "signer"
 	// FabconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
 	// nodes using a single fabconnect
 	FabconnectConfigTopic = "topic"
@@ -56,6 +58,7 @@ func (f *Fabric) InitPrefix(prefix config.Prefix) {
 	wsclient.InitPrefix(fabconnectConf)
 	fabconnectConf.AddKnownKey(FabconnectConfigDefaultChannel)
 	fabconnectConf.AddKnownKey(FabconnectConfigChaincode)
+	fabconnectConf.AddKnownKey(FabconnectConfigSigner)
 	fabconnectConf.AddKnownKey(FabconnectConfigTopic)
 	fabconnectConf.AddKnownKey(FabconnectConfigSkipEventstreamInit)
 	fabconnectConf.AddKnownKey(FabconnectConfigBatchSize, defaultBatchSize)

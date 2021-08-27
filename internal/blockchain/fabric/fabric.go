@@ -43,6 +43,7 @@ type Fabric struct {
 	topic          string
 	defaultChannel string
 	chaincode      string
+	signer         string
 	prefixShort    string
 	prefixLong     string
 	capabilities   *blockchain.Capabilities
@@ -270,6 +271,7 @@ func (f *Fabric) ensureSusbscriptions(streamID string) error {
 				Name:        eventType,
 				Description: subDesc,
 				Channel:     f.defaultChannel,
+				Signer:      f.signer,
 				Stream:      streamID,
 				FromBlock:   "1",
 			}
