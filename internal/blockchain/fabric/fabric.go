@@ -158,6 +158,10 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	if f.chaincode == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
 	}
+	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
+	if f.signer == "" {
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "signer", "blockchain.fabconnect")
+	}
 	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.fabconnect")

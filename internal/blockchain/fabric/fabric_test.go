@@ -95,7 +95,8 @@ func TestInitMissingTopic(t *testing.T) {
 	defer cancel()
 	resetConf()
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(FabconnectConfigChaincode, "/instances/0x12345")
+	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 	assert.Regexp(t, "FF10138.*topic", err)
@@ -136,6 +137,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigURL, httpURL)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -173,6 +175,7 @@ func TestWSInitFail(t *testing.T) {
 	resetConf()
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utFabconnectConf.Set(FabconnectConfigSkipEventstreamInit, true)
 
@@ -214,6 +217,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -243,6 +247,7 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -271,6 +276,7 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -301,6 +307,7 @@ func TestSubQueryError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
@@ -333,6 +340,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
