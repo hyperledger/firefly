@@ -73,7 +73,6 @@ type subscription struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	Name        string `json:"name"`
-	StreamID    string `json:"streamID"`
 	Stream      string `json:"stream"`
 	FromBlock   string `json:"fromBlock"`
 }
@@ -192,7 +191,7 @@ func (e *Ethereum) ensureEventStreams(ethconnectConf config.Prefix) error {
 
 	log.L(e.ctx).Infof("Event stream: %s", e.initInfo.stream.ID)
 
-	return e.ensureSusbscriptions(e.initInfo.stream.ID)
+	return e.ensureSubscriptions()
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -211,7 +210,7 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 	return err
 }
 
-func (e *Ethereum) ensureSusbscriptions(streamID string) error {
+func (e *Ethereum) ensureSubscriptions() error {
 	for eventType, subDesc := range requiredSubscriptions {
 
 		var existingSubs []*subscription
@@ -231,7 +230,6 @@ func (e *Ethereum) ensureSusbscriptions(streamID string) error {
 			newSub := subscription{
 				Name:        eventType,
 				Description: subDesc,
-				StreamID:    streamID,
 				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
 			}
