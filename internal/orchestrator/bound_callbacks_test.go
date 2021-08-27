@@ -65,7 +65,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokenPoolCreated", mti, pool, "0x12345", info).Return(fmt.Errorf("pop"))
-	err = bc.TokenPoolCreated(mti, pool, "0x12345", info)
+	mei.On("TokenPoolCreated", mti, pool, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokenPoolCreated(mti, pool, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 }

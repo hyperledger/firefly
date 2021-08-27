@@ -18,6 +18,7 @@ package https
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
@@ -57,7 +58,7 @@ type responseData struct {
 }
 
 type createPool struct {
-	ID        *fftypes.UUID     `json:"clientId"`
+	ID        string            `json:"clientId"`
 	Type      fftypes.TokenType `json:"type"`
 	Namespace string            `json:"namespace"`
 	Name      string            `json:"name"`
@@ -126,25 +127,36 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
 	authorAddress := data.GetString("author")
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash")
 
 	if ns == "" ||
 		name == "" ||
 		clientID == "" ||
 		tokenType == "" ||
 		protocolID == "" ||
-		authorAddress == "" {
+		authorAddress == "" ||
+		txHash == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
 
-	uuid, err := fftypes.ParseUUID(ctx, clientID)
-	if err != nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - bad uuid (%s): %+v", err, data)
+	hexUUIDs, err := hex.DecodeString(clientID)
+	if err != nil || len(hexUUIDs) != 32 {
+		log.L(ctx).Errorf("TokenPool event is not valid - bad uuids (%s): %+v", err, data)
 		return nil // move on
 	}
+	var txnID fftypes.UUID
+	copy(txnID[:], hexUUIDs[0:16])
+	var id fftypes.UUID
+	copy(id[:], hexUUIDs[16:32])
 
 	pool := &fftypes.TokenPool{
-		ID:         uuid,
+		ID: &id,
+		TX: fftypes.TransactionRef{
+			ID:   &txnID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
 		Namespace:  ns,
 		Name:       name,
 		Type:       fftypes.LowerCasedType(tokenType),
@@ -152,7 +164,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, authorAddress, data)
+	return h.callbacks.TokenPoolCreated(h, pool, authorAddress, txHash, data)
 }
 
 func (h *HTTPS) eventLoop() {
@@ -206,10 +218,14 @@ func (h *HTTPS) eventLoop() {
 }
 
 func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) (txTrackingID string, err error) {
+	var uuids fftypes.Bytes32
+	copy(uuids[0:16], (*pool.TX.ID)[:])
+	copy(uuids[16:32], (*pool.ID)[:])
+
 	var response responseData
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&createPool{
-			ID:        pool.ID,
+			ID:        hex.EncodeToString(uuids[0:32]),
 			Type:      pool.Type,
 			Namespace: pool.Namespace,
 			Name:      pool.Name,

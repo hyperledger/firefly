@@ -4274,8 +4274,14 @@ paths:
                       type: string
                     namespace:
                       type: string
-                    protocolID:
+                    protocolId:
                       type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
                     type:
                       type: string
                   type: object
@@ -4339,6 +4345,12 @@ paths:
                     type: string
                   protocolId:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4357,6 +4369,12 @@ paths:
                     type: string
                   protocolId:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4407,8 +4425,14 @@ paths:
                     type: string
                   namespace:
                     type: string
-                  protocolID:
+                  protocolId:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object

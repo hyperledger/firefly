@@ -54,6 +54,6 @@ func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {
 	return bc.ei.MessageReceived(bc.dx, peerID, data)
 }
 
-func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TokenPoolCreated(plugin, pool, signingIdentity, additionalInfo)
+func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.TokenPoolCreated(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
 }

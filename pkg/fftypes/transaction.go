@@ -28,6 +28,8 @@ const (
 	TransactionTypeNone TransactionType = "none"
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
 	TransactionTypeBatchPin TransactionType = "batch_pin"
+	// TransactionTypeTokenPool represents a token pool creation
+	TransactionTypeTokenPool TransactionType = "token_pool"
 )
 
 // TransactionRef refers to a transaction, in other types

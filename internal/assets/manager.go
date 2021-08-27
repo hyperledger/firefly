@@ -103,7 +103,28 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		})
 	}
 
+	pool.TX = fftypes.TransactionRef{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.TransactionTypeTokenPool,
+	}
 	trackingID, err := plugin.CreateTokenPool(ctx, author, pool)
+	if err != nil {
+		return nil, err
+	}
+
+	tx := &fftypes.Transaction{
+		ID: pool.TX.ID,
+		Subject: fftypes.TransactionSubject{
+			Namespace: pool.Namespace,
+			Type:      pool.TX.Type,
+			Signer:    author.OnChain, // The transaction records on the on-chain identity
+			Reference: pool.ID,
+		},
+		Created: fftypes.Now(),
+		Status:  fftypes.OpStatusPending,
+	}
+	tx.Hash = tx.Subject.Hash()
+	err = am.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return nil, err
 	}

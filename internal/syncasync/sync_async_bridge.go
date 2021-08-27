@@ -216,6 +216,17 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 		if inflight != nil {
 			go sa.resolveConfirmedTokenPool(inflight, pool)
 		}
+
+	case fftypes.EventTypePoolRejected:
+		pool, err := getPool()
+		if err != nil || pool == nil {
+			return err
+		}
+		// See if this is a rejection of an inflight token pool
+		inflight := sa.getInFlight(event.Namespace, tokenPoolConfirm, pool.ID)
+		if inflight != nil {
+			go sa.resolveRejectedTokenPool(inflight, pool)
+		}
 	}
 
 	return nil
@@ -235,19 +246,25 @@ func (sa *syncAsyncBridge) resolveReply(inflight *inflightRequest, msg *fftypes.
 }
 
 func (sa *syncAsyncBridge) resolveConfirmed(inflight *inflightRequest, msg *fftypes.Message) {
-	log.L(sa.ctx).Debugf("Resolving confirmation request '%s' with message '%s'", inflight.id, msg.Header.ID)
+	log.L(sa.ctx).Debugf("Resolving message confirmation request '%s' with ID '%s'", inflight.id, msg.Header.ID)
 	inflight.response <- inflightResponse{id: msg.Header.ID, data: msg}
 }
 
 func (sa *syncAsyncBridge) resolveRejected(inflight *inflightRequest, msg *fftypes.Message) {
 	err := i18n.NewError(sa.ctx, i18n.MsgRejected, msg.Header.ID)
-	log.L(sa.ctx).Errorf("Resolving confirmation request '%s' with error: %s", inflight.id, err)
+	log.L(sa.ctx).Errorf("Resolving message confirmation request '%s' with error: %s", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
 }
 
 func (sa *syncAsyncBridge) resolveConfirmedTokenPool(inflight *inflightRequest, pool *fftypes.TokenPool) {
-	log.L(sa.ctx).Debugf("Resolving confirmation request '%s' with pool '%s'", inflight.id, pool.ID)
+	log.L(sa.ctx).Debugf("Resolving token pool confirmation request '%s' with ID '%s'", inflight.id, pool.ID)
 	inflight.response <- inflightResponse{id: pool.ID, data: pool}
+}
+
+func (sa *syncAsyncBridge) resolveRejectedTokenPool(inflight *inflightRequest, pool *fftypes.TokenPool) {
+	err := i18n.NewError(sa.ctx, i18n.MsgTokenPoolRejected, pool.ID)
+	log.L(sa.ctx).Errorf("Resolving token pool confirmation request '%s' with error '%s'", inflight.id, err)
+	inflight.response <- inflightResponse{err: err}
 }
 
 func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType requestType, send RequestSender) (interface{}, error) {

@@ -340,13 +340,9 @@ func TestPersistBatchGetTransactionBadNamespace(t *testing.T) {
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
-
 	valid, err := em.persistBatchTransaction(context.Background(), batchPin, "0x12345", "txid1", fftypes.JSONObject{})
 	assert.NoError(t, err)
 	assert.False(t, valid)
-	mdi.AssertExpectations(t)
 }
 
 func TestPersistBatchGetTransactionFail(t *testing.T) {
