@@ -192,7 +192,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"5"},"event":"ack"}`, string(msg))
 
 	// token-pool: invalid uuids
-	fromServer <- `{"id":"6","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"bad","type":"fungible","poolId":"F1","author":"0x0","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"6","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"bad","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
@@ -206,7 +206,7 @@ func TestEvents(t *testing.T) {
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
 		return pool.Namespace == "ns1" && pool.Name == "test-pool" && pool.Type == fftypes.TokenTypeFungible && pool.ProtocolID == "F1" && *pool.ID == *id2 && *pool.TX.ID == *id1
 	}), "0x0", "abc", mock.Anything).Return(nil)
-	fromServer <- `{"id":"7","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"` + hex.EncodeToString(uuids[0:32]) + `","type":"fungible","poolId":"F1","author":"0x0","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"7","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"` + hex.EncodeToString(uuids[0:32]) + `","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
 
