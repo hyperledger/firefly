@@ -37,7 +37,6 @@ type HTTPS struct {
 	callbacks    tokens.Callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
-	closed       chan struct{}
 }
 
 type wsEvent struct {
@@ -88,7 +87,6 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens
 		return err
 	}
 
-	h.closed = make(chan struct{})
 	go h.eventLoop()
 
 	return nil
@@ -168,7 +166,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 }
 
 func (h *HTTPS) eventLoop() {
-	defer close(h.closed)
+	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
 	for {
@@ -198,7 +196,7 @@ func (h *HTTPS) eventLoop() {
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
 
-			if err == nil && msg.Event != messageReceipt {
+			if err == nil && msg.Event != messageReceipt && msg.ID != "" {
 				l.Debugf("Sending ack %s", msg.ID)
 				ack, _ := json.Marshal(fftypes.JSONObject{
 					"event": "ack",

@@ -323,8 +323,8 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		or.tokens = make(map[string]tokens.Plugin)
 		for i := 0; i < tokensConfig.ArraySize(); i++ {
 			prefix := tokensConfig.ArrayEntry(i)
-			name := prefix.GetString("name")
-			connector := prefix.GetString("connector")
+			name := prefix.GetString(tokens.TokensConfigName)
+			connector := prefix.GetString(tokens.TokensConfigConnector)
 			if name == "" || connector == "" {
 				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
 			}

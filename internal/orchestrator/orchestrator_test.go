@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/internal/restclient"
 	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
 	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
@@ -273,8 +274,8 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig.AddKnownKey("name", "test")
-	tokensConfig.AddKnownKey("connector", "wrong")
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -293,8 +294,8 @@ func TestBadTokensPlugin(t *testing.T) {
 
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig.AddKnownKey("name")
-	tokensConfig.AddKnownKey("connector", "wrong")
+	tokensConfig.AddKnownKey(tokens.TokensConfigName)
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -314,9 +315,9 @@ func TestBadTokensPluginNoName(t *testing.T) {
 func TestGoodTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	tifactory.InitPrefix(tokensConfig)
-	tokensConfig.AddKnownKey("name", "test")
-	tokensConfig.AddKnownKey("connector", "https")
-	tokensConfig.AddKnownKey("url", "test")
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
+	tokensConfig.AddKnownKey(restclient.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
