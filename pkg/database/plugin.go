@@ -112,7 +112,7 @@ type iDataCollection interface {
 type iBatchCollection interface {
 	// UpsertBatch - Upsert a batch
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error)
+	UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) (err error)
 
 	// UpdateBatch - Update data
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -127,7 +127,7 @@ type iBatchCollection interface {
 type iTransactionCollection interface {
 	// UpsertTransaction - Upsert a transaction
 	// allowHashUpdate=false throws HashMismatch error if the updated message has a different hash
-	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting, allowHashUpdate bool) (err error)
+	UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) (err error)
 
 	// UpdateTransaction - Update transaction
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -352,7 +352,7 @@ type iConfigRecordCollection interface {
 
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) (err error)
+	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool) (err error)
 
 	// GetTokenPool - Get a token pool by name
 	GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error)

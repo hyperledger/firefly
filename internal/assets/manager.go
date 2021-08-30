@@ -124,7 +124,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = am.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
+	err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return nil, err
 	}

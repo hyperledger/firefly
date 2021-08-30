@@ -51,37 +51,34 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowExisting, allowHashUpdate bool) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.Batch, allowHashUpdate bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
-		// Do a select within the transaction to detemine if the UUID already exists
-		batchRows, _, err := s.queryTx(ctx, tx,
-			sq.Select("hash").
-				From("batches").
-				Where(sq.Eq{"id": batch.ID}),
-		)
-		if err != nil {
-			return err
-		}
-
-		existing = batchRows.Next()
-		if existing && !allowHashUpdate {
-			var hash *fftypes.Bytes32
-			_ = batchRows.Scan(&hash)
-			if !fftypes.SafeHashCompare(hash, batch.Hash) {
-				batchRows.Close()
-				log.L(ctx).Errorf("Existing=%s New=%s", hash, batch.Hash)
-				return database.HashMismatch
-			}
-		}
-		batchRows.Close()
+	// Do a select within the transaction to detemine if the UUID already exists
+	batchRows, _, err := s.queryTx(ctx, tx,
+		sq.Select("hash").
+			From("batches").
+			Where(sq.Eq{"id": batch.ID}),
+	)
+	if err != nil {
+		return err
 	}
+
+	existing := batchRows.Next()
+	if existing && !allowHashUpdate {
+		var hash *fftypes.Bytes32
+		_ = batchRows.Scan(&hash)
+		if !fftypes.SafeHashCompare(hash, batch.Hash) {
+			batchRows.Close()
+			log.L(ctx).Errorf("Existing=%s New=%s", hash, batch.Hash)
+			return database.HashMismatch
+		}
+	}
+	batchRows.Close()
 
 	if existing {
 

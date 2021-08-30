@@ -101,8 +101,8 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
@@ -206,8 +206,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{data}, true, nil)
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil).Once()
 	mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)
@@ -433,7 +433,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	}, nil, nil)
 	mdm.On("GetMessageData", mock.Anything, mock.Anything, true).Return([]*fftypes.Data{{ID: dataID}}, true, nil)
 	mdi.On("UpdateMessages", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertBatch", mock.Anything, mock.Anything, true, mock.Anything).Return(fmt.Errorf("fizzle"))
+	mdi.On("UpsertBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("fizzle"))
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
 		ctx := a.Get(0).(context.Context)

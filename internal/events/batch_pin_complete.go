@@ -100,7 +100,7 @@ func (em *eventManager) persistTransaction(ctx context.Context, tx *fftypes.Tran
 
 	// Upsert the transaction, ensuring the hash does not change
 	tx.Status = fftypes.OpStatusSucceeded
-	err = em.database.UpsertTransaction(ctx, tx, true, false)
+	err = em.database.UpsertTransaction(ctx, tx, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - hash mismatch with existing record '%s'", tx.ID, tx.Subject.Reference, tx.Hash)

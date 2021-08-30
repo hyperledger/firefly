@@ -53,7 +53,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
 
-	err := s.UpsertTokenPool(ctx, pool, true)
+	err := s.UpsertTokenPool(ctx, pool)
 	assert.NoError(t, err)
 
 	// Query back the token pool (by ID)
@@ -89,7 +89,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{}, true)
+	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -98,7 +98,7 @@ func TestUpsertTokenPoolFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{}, true)
+	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -109,7 +109,7 @@ func TestUpsertTokenPoolFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{}, true)
+	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -120,7 +120,7 @@ func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{}, true)
+	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -131,7 +131,7 @@ func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{}, true)
+	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -158,7 +158,7 @@ func TestUpsertTokenPoolInsertSuccess(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
-	err := s.UpsertTokenPool(context.Background(), pool, true)
+	err := s.UpsertTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 	assert.NoError(t, db.ExpectationsWereMet())
 }
@@ -178,7 +178,7 @@ func TestUpsertTokenPoolUpdateSuccess(t *testing.T) {
 	db.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).Return()
-	err := s.UpsertTokenPool(context.Background(), pool, true)
+	err := s.UpsertTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 	assert.NoError(t, db.ExpectationsWereMet())
 }
@@ -196,7 +196,7 @@ func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 	db.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), pool, true)
+	err := s.UpsertTokenPool(context.Background(), pool)
 	assert.Equal(t, database.IDMismatch, err)
 	assert.NoError(t, db.ExpectationsWereMet())
 }

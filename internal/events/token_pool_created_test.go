@@ -47,8 +47,8 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
-	}), true, false).Return(nil)
-	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(nil)
+	}), false).Return(nil)
+	mdi.On("UpsertTokenPool", em.ctx, pool).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypePoolConfirmed && ev.Reference == pool.ID && ev.Namespace == pool.Namespace
 	})).Return(nil)
@@ -119,7 +119,7 @@ func TestTokenPoolBadName(t *testing.T) {
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
-	}), true, false).Return(nil)
+	}), false).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypePoolRejected && ev.Reference == pool.ID && ev.Namespace == pool.Namespace
 	})).Return(nil)
@@ -196,7 +196,7 @@ func TestTokenPoolNewTXUpsertFail(t *testing.T) {
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
 	valid, err := em.persistTokenPoolTransaction(em.ctx, pool, "0x12345", "tx1", info)
@@ -228,7 +228,7 @@ func TestTokenPoolExistingTXHashMismatch(t *testing.T) {
 			Reference: pool.ID,
 		},
 	}, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(database.HashMismatch)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(database.HashMismatch)
 
 	info := fftypes.JSONObject{"some": "info"}
 	valid, err := em.persistTokenPoolTransaction(em.ctx, pool, "0x12345", "tx1", info)
@@ -256,8 +256,8 @@ func TestTokenPoolIDMismatch(t *testing.T) {
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
-	}), true, false).Return(nil)
-	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(database.IDMismatch)
+	}), false).Return(nil)
+	mdi.On("UpsertTokenPool", em.ctx, pool).Return(database.IDMismatch)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypePoolRejected && ev.Reference == pool.ID && ev.Namespace == pool.Namespace
 	})).Return(nil)
@@ -285,9 +285,9 @@ func TestTokenPoolUpsertFailAndRetry(t *testing.T) {
 	}
 
 	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
-	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpsertTokenPool", em.ctx, pool, false).Return(nil).Once()
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
+	mdi.On("UpsertTokenPool", em.ctx, pool).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertTokenPool", em.ctx, pool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypePoolConfirmed && ev.Reference == pool.ID && ev.Namespace == pool.Namespace
 	})).Return(nil)

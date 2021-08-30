@@ -172,7 +172,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	defer cancel()
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
@@ -186,7 +186,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("txid", nil)
@@ -215,7 +215,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
-	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)

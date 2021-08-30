@@ -67,7 +67,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = bp.database.UpsertTransaction(ctx, tx, true, false /* should be new, or idempotent replay */)
+	err = bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
