@@ -19,38 +19,45 @@ coverage.html:
 coverage: test coverage.html
 lint: builddeps
 		GOGC=20 $(LINT) run -v --timeout 5m
-mockery: .ALWAYS
+${MOCKERY}:
 		$(VGO) install github.com/vektra/mockery/cmd/mockery@latest
-mocks: mockery ${GOFILES}
-		${MOCKERY} --case underscore --dir pkg/blockchain            --name Plugin           --output mocks/blockchainmocks       --outpkg blockchainmocks
-		${MOCKERY} --case underscore --dir pkg/blockchain            --name Callbacks        --output mocks/blockchainmocks       --outpkg blockchainmocks
-		${MOCKERY} --case underscore --dir pkg/database              --name Plugin           --output mocks/databasemocks         --outpkg databasemocks
-		${MOCKERY} --case underscore --dir pkg/database              --name Callbacks        --output mocks/databasemocks         --outpkg databasemocks
-		${MOCKERY} --case underscore --dir pkg/publicstorage         --name Plugin           --output mocks/publicstoragemocks    --outpkg publicstoragemocks
-		${MOCKERY} --case underscore --dir pkg/publicstorage         --name Callbacks        --output mocks/publicstoragemocks    --outpkg publicstoragemocks
-		${MOCKERY} --case underscore --dir pkg/events                --name Plugin           --output mocks/eventsmocks           --outpkg eventsmocks
-		${MOCKERY} --case underscore --dir pkg/events                --name PluginAll        --output mocks/eventsmocks           --outpkg eventsmocks
-		${MOCKERY} --case underscore --dir pkg/events                --name Callbacks        --output mocks/eventsmocks           --outpkg eventsmocks
-		${MOCKERY} --case underscore --dir pkg/identity              --name Plugin           --output mocks/identitymocks         --outpkg identitymocks
-		${MOCKERY} --case underscore --dir pkg/identity              --name Callbacks        --output mocks/identitymocks         --outpkg identitymocks
-		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Plugin           --output mocks/dataexchangemocks     --outpkg dataexchangemocks
-		${MOCKERY} --case underscore --dir pkg/dataexchange          --name Callbacks        --output mocks/dataexchangemocks     --outpkg dataexchangemocks
-		${MOCKERY} --case underscore --dir pkg/tokens                --name Plugin           --output mocks/tokenmocks            --outpkg tokenmocks
-		${MOCKERY} --case underscore --dir pkg/tokens                --name Callbacks        --output mocks/tokenmocks            --outpkg tokenmocks
-		${MOCKERY} --case underscore --dir internal/batchpin         --name Submitter        --output mocks/batchpinmocks         --outpkg batchpinmocks
-		${MOCKERY} --case underscore --dir internal/sysmessaging     --name SystemEvents     --output mocks/sysmessagingmocks     --outpkg sysmessagingmocks
-		${MOCKERY} --case underscore --dir internal/syncasync        --name Bridge           --output mocks/syncasyncmocks        --outpkg syncasyncmocks
-		${MOCKERY} --case underscore --dir internal/data             --name Manager          --output mocks/datamocks             --outpkg datamocks
-		${MOCKERY} --case underscore --dir internal/batch            --name Manager          --output mocks/batchmocks            --outpkg batchmocks
-		${MOCKERY} --case underscore --dir internal/broadcast        --name Manager          --output mocks/broadcastmocks        --outpkg broadcastmocks
-		${MOCKERY} --case underscore --dir internal/privatemessaging --name Manager          --output mocks/privatemessagingmocks --outpkg privatemessagingmocks
-		${MOCKERY} --case underscore --dir internal/syshandlers      --name SystemHandlers   --output mocks/syshandlersmocks      --outpkg syshandlersmocks
-		${MOCKERY} --case underscore --dir internal/events           --name EventManager     --output mocks/eventmocks            --outpkg eventmocks
-		${MOCKERY} --case underscore --dir internal/networkmap       --name Manager          --output mocks/networkmapmocks       --outpkg networkmapmocks
-		${MOCKERY} --case underscore --dir internal/assets           --name Manager          --output mocks/assetmocks            --outpkg assetmocks
-		${MOCKERY} --case underscore --dir internal/wsclient         --name WSClient         --output mocks/wsmocks               --outpkg wsmocks
-		${MOCKERY} --case underscore --dir internal/orchestrator     --name Orchestrator     --output mocks/orchestratormocks     --outpkg orchestratormocks
-		${MOCKERY} --case underscore --dir internal/apiserver        --name Server           --output mocks/apiservermocks        --outpkg apiservermocks
+
+define makemock
+mocks: mocks-$(strip $(1))-$(strip $(2))
+mocks-$(strip $(1))-$(strip $(2)): ${MOCKERY}
+	${MOCKERY} --case underscore --dir $(1) --name $(2) --outpkg $(3) --output mocks/$(strip $(3))
+endef
+
+$(eval $(call makemock, pkg/blockchain,            Plugin,         blockchainmocks))
+$(eval $(call makemock, pkg/blockchain,            Callbacks,      blockchainmocks))
+$(eval $(call makemock, pkg/database,              Plugin,         databasemocks))
+$(eval $(call makemock, pkg/database,              Callbacks,      databasemocks))
+$(eval $(call makemock, pkg/publicstorage,         Plugin,         publicstoragemocks))
+$(eval $(call makemock, pkg/publicstorage,         Callbacks,      publicstoragemocks))
+$(eval $(call makemock, pkg/events,                Plugin,         eventsmocks))
+$(eval $(call makemock, pkg/events,                PluginAll,      eventsmocks))
+$(eval $(call makemock, pkg/events,                Callbacks,      eventsmocks))
+$(eval $(call makemock, pkg/identity,              Plugin,         identitymocks))
+$(eval $(call makemock, pkg/identity,              Callbacks,      identitymocks))
+$(eval $(call makemock, pkg/dataexchange,          Plugin,         dataexchangemocks))
+$(eval $(call makemock, pkg/dataexchange,          Callbacks,      dataexchangemocks))
+$(eval $(call makemock, pkg/tokens,                Plugin,         tokenmocks))
+$(eval $(call makemock, pkg/tokens,                Callbacks,      tokenmocks))
+$(eval $(call makemock, internal/batchpin,         Submitter,      batchpinmocks))
+$(eval $(call makemock, internal/sysmessaging,     SystemEvents,   sysmessagingmocks))
+$(eval $(call makemock, internal/syncasync,        Bridge,         syncasyncmocks))
+$(eval $(call makemock, internal/data,             Manager,        datamocks))
+$(eval $(call makemock, internal/batch,            Manager,        batchmocks))
+$(eval $(call makemock, internal/broadcast,        Manager,        broadcastmocks))
+$(eval $(call makemock, internal/privatemessaging, Manager,        privatemessagingmocks))
+$(eval $(call makemock, internal/syshandlers,      SystemHandlers, syshandlersmocks))
+$(eval $(call makemock, internal/events,           EventManager,   eventmocks))
+$(eval $(call makemock, internal/networkmap,       Manager,        networkmapmocks))
+$(eval $(call makemock, internal/assets,           Manager,        assetmocks))
+$(eval $(call makemock, internal/wsclient,         WSClient,       wsmocks))
+$(eval $(call makemock, internal/orchestrator,     Orchestrator,   orchestratormocks))
+$(eval $(call makemock, internal/apiserver,        Server,         apiservermocks))
+
 firefly-nocgo: ${GOFILES}		
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
