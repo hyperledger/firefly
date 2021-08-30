@@ -30,10 +30,11 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenPool(ctx context.Context, ns string, typeName string, name string) (*fftypes.TokenPool, error)
+	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
+	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
+	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	Start() error
 	WaitStop()
 }
@@ -147,6 +148,9 @@ func (am *assetManager) GetTokenPools(ctx context.Context, ns string, typeName s
 	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
 		return nil, nil, err
 	}
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, nil, err
+	}
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
 }
 
@@ -161,6 +165,14 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name str
 		return nil, err
 	}
 	return am.database.GetTokenPool(ctx, ns, name)
+}
+
+func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	pool, err := am.GetTokenPool(ctx, ns, typeName, name)
+	if err != nil {
+		return nil, nil, err
+	}
+	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("poolid", pool.ID)))
 }
 
 func (am *assetManager) Start() error {

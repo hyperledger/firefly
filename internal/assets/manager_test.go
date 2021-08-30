@@ -246,3 +246,42 @@ func TestGetTokenPoolsBadPlugin(t *testing.T) {
 	_, _, err := am.GetTokenPools(context.Background(), "", "", nil)
 	assert.Regexp(t, "FF10272", err)
 }
+
+func TestGetTokenPoolsBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := am.GetTokenPools(context.Background(), "", "magic-tokens", f)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenAccounts(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+	}
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
+	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", "magic-tokens", "test", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenAccountsBadPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
+	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", "magic-tokens", "test", f)
+	assert.EqualError(t, err, "pop")
+}
