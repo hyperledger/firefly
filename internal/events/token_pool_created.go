@@ -49,7 +49,7 @@ func (em *eventManager) persistTokenPool(ctx context.Context, pool *fftypes.Toke
 		l.Errorf("Invalid token pool '%s' - invalid name '%s': %a", pool.ID, pool.Name, err)
 		return false, nil // This is not retryable
 	}
-	err = em.database.UpsertTokenPool(ctx, pool, false)
+	err = em.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
 		if err == database.IDMismatch {
 			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)

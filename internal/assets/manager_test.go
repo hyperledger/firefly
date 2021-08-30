@@ -120,7 +120,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("tx12345", nil)
-	mdi.On("UpsertTransaction", context.Background(), mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
@@ -137,7 +137,7 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return("tx12345", nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
-	}), true, false).Return(nil)
+	}), false).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
@@ -160,7 +160,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	})).Return("tx12345", nil).Times(1)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
-	}), true, false).Return(nil)
+	}), false).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.BackendID == "tx12345"
 	}), false).Return(nil).Times(1)

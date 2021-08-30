@@ -69,7 +69,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 	batch.Confirmed = now
 
 	// Upsert the batch itself, ensuring the hash does not change
-	err = em.database.UpsertBatch(ctx, batch, true, false)
+	err = em.database.UpsertBatch(ctx, batch, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			l.Errorf("Invalid batch '%s'. Batch hash mismatch with existing record", batch.ID)

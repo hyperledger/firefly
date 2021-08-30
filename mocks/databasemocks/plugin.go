@@ -1739,13 +1739,13 @@ func (_m *Plugin) UpdateTransaction(ctx context.Context, id *fftypes.UUID, updat
 	return r0
 }
 
-// UpsertBatch provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
+// UpsertBatch provides a mock function with given fields: ctx, data, allowHashUpdate
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.Batch, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, data, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Batch, bool) error); ok {
+		r0 = rf(ctx, data, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1935,13 +1935,13 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 	return r0
 }
 
-// UpsertTokenPool provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, allowExisting bool) error {
-	ret := _m.Called(ctx, data, allowExisting)
+// UpsertTokenPool provides a mock function with given fields: ctx, data
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool) error {
+	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) error); ok {
+		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1949,13 +1949,13 @@ func (_m *Plugin) UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool, 
 	return r0
 }
 
-// UpsertTransaction provides a mock function with given fields: ctx, data, allowExisting, allowHashUpdate
-func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowExisting bool, allowHashUpdate bool) error {
-	ret := _m.Called(ctx, data, allowExisting, allowHashUpdate)
+// UpsertTransaction provides a mock function with given fields: ctx, data, allowHashUpdate
+func (_m *Plugin) UpsertTransaction(ctx context.Context, data *fftypes.Transaction, allowHashUpdate bool) error {
+	ret := _m.Called(ctx, data, allowHashUpdate)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, bool, bool) error); ok {
-		r0 = rf(ctx, data, allowExisting, allowHashUpdate)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, bool) error); ok {
+		r0 = rf(ctx, data, allowHashUpdate)
 	} else {
 		r0 = ret.Error(0)
 	}

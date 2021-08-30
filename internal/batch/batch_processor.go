@@ -273,7 +273,7 @@ func (bp *batchProcessor) persistBatch(batch *fftypes.Batch, newWork []*batchWor
 			}
 			if err == nil {
 				// Persist the batch itself
-				err = bp.database.UpsertBatch(ctx, batch, true, seal /* we set the hash as it seals */)
+				err = bp.database.UpsertBatch(ctx, batch, seal /* we set the hash as it seals */)
 			}
 			return err
 		})

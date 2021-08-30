@@ -59,7 +59,7 @@ func TestMessageReceiveOK(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	mdi.On("UpsertBatch", em.ctx, mock.Anything, true, false).Return(nil, nil)
+	mdi.On("UpsertBatch", em.ctx, mock.Anything, false).Return(nil, nil)
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
 	}, nil)
-	mdi.On("UpsertBatch", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertBatch", em.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 	err := em.MessageReceived(mdx, "peer1", b)
 	assert.Regexp(t, "FF10158", err)
 

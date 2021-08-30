@@ -63,7 +63,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 
 	mii.On("Resolve", ctx, "id1").Return(identity, nil)
 	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
-	mdi.On("UpsertTransaction", ctx, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
 	mdi.On("UpsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
@@ -103,7 +103,7 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 
 	mii.On("Resolve", ctx, "id1").Return(identity, nil)
 	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
-	mdi.On("UpsertTransaction", ctx, mock.Anything, true, false).Return(nil)
+	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
 	mdi.On("UpsertOperation", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
@@ -137,7 +137,7 @@ func TestSubmitPinnedBatchTxInsertFail(t *testing.T) {
 
 	mii.On("Resolve", ctx, "id1").Return(identity, nil)
 	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
-	mdi.On("UpsertTransaction", ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)

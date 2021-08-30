@@ -44,36 +44,33 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool, allowExisting bool) (err error) {
+func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	existing := false
-	if allowExisting {
-		rows, _, err := s.queryTx(ctx, tx,
-			sq.Select("id").
-				From("tokenpool").
-				Where(sq.And{sq.Eq{"namespace": pool.Namespace}, sq.Eq{"name": pool.Name}}),
-		)
-		if err != nil {
-			return err
-		}
-		existing = rows.Next()
-
-		if existing {
-			var id fftypes.UUID
-			_ = rows.Scan(&id)
-			if pool.ID != nil && *pool.ID != id {
-				rows.Close()
-				return database.IDMismatch
-			}
-			pool.ID = &id // Update on returned object
-		}
-		rows.Close()
+	rows, _, err := s.queryTx(ctx, tx,
+		sq.Select("id").
+			From("tokenpool").
+			Where(sq.And{sq.Eq{"namespace": pool.Namespace}, sq.Eq{"name": pool.Name}}),
+	)
+	if err != nil {
+		return err
 	}
+	existing := rows.Next()
+
+	if existing {
+		var id fftypes.UUID
+		_ = rows.Scan(&id)
+		if pool.ID != nil && *pool.ID != id {
+			rows.Close()
+			return database.IDMismatch
+		}
+		pool.ID = &id // Update on returned object
+	}
+	rows.Close()
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
