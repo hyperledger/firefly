@@ -17,10 +17,12 @@ test: deps lint
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
-lint: builddeps
+lint: ${LINT}
 		GOGC=20 $(LINT) run -v --timeout 5m
 ${MOCKERY}:
 		$(VGO) install github.com/vektra/mockery/cmd/mockery@latest
+${LINT}:
+		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 define makemock
 mocks: mocks-$(strip $(1))-$(strip $(2))
@@ -73,9 +75,7 @@ e2e-rebuild: .ALWAYS
 clean: 
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}
-builddeps:
-		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-deps: builddeps
+deps:
 		$(VGO) get
 swagger:
 		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
