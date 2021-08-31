@@ -708,10 +708,9 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "receivedAt": 1630033474675
   }`)
 
-	em.On("TxSubmissionUpdate",
+	em.On("BlockchainTxUpdate",
 		"748e7587-9e72-4244-7351-808f69b88291",
 		fftypes.OpStatusSucceeded,
-		"",
 		"",
 		mock.Anything).Return(nil)
 
