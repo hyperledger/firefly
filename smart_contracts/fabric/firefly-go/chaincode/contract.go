@@ -43,7 +43,7 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 		return fmt.Errorf("Failed to get transaction timestamp: %s", err)
 	}
 	event := BatchPinEvent{
-		Signer:     fmt.Sprintf("%s-%s", mspId, idString),
+		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
 		Timestamp:  timestamp,
 		Namespace:  namespace,
 		Uuids:      uuids,
