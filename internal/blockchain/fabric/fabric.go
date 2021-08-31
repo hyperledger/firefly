@@ -375,12 +375,17 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) er
 		l.Errorf("Reply cannot be processed: %+v", reply)
 		return nil // Swallow this and move on
 	}
+	operationID, err := fftypes.ParseUUID(ctx, requestID)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
+		return nil // Swallow this and move on
+	}
 	updateType := fftypes.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = fftypes.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	return f.callbacks.BlockchainTxUpdate(requestID, updateType, message, reply)
+	return f.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -457,14 +462,14 @@ func (f *Fabric) eventLoop() {
 	}
 }
 
-func (f *Fabric) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error {
-	return nil
+func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode string, identity *fftypes.Identity, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
 	return f.client.R().
 		SetContext(ctx).
-		SetQueryParam(f.prefixShort+"-signer", identity.OnChain).
+		SetQueryParam(f.prefixShort+"-signer", signingKey).
 		SetQueryParam(f.prefixShort+"-channel", channel).
 		SetQueryParam(f.prefixShort+"-chaincode", chaincode).
 		SetQueryParam(f.prefixShort+"-sync", "false").
@@ -481,7 +486,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	tx := &asyncTXSubmission{}
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
@@ -498,7 +503,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, ide
 		Contexts:   hashes,
 	}
 	input := newTxInput(pinInput)
-	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, identity, batch.TransactionID.String(), input, tx)
+	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, signingKey, operationID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
 	}

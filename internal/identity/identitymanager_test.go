@@ -411,7 +411,7 @@ func TestResolveLocalOrgDIDFail(t *testing.T) {
 	config.Set(config.OrgIdentityDeprecated, "key1")
 
 	_, err := im.ResolveLocalOrgDID(ctx)
-	assert.Regexp(t, "FF10290", err)
+	assert.Regexp(t, "FF10280", err)
 
 	_, err = im.GetLocalOrganization(ctx)
 	assert.Regexp(t, "FF10290", err)
@@ -431,7 +431,7 @@ func TestResolveLocalOrgDIDNotFound(t *testing.T) {
 	config.Set(config.OrgIdentityDeprecated, "key1")
 
 	_, err := im.ResolveLocalOrgDID(ctx)
-	assert.Regexp(t, "FF10290", err)
+	assert.Regexp(t, "FF10280", err)
 
 	mbi.AssertExpectations(t)
 

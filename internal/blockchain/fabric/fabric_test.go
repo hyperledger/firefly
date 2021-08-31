@@ -381,7 +381,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: signer}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -417,7 +417,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: signer}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -445,7 +445,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: signer}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
 
 	assert.Regexp(t, "FF10281", err)
 	assert.Regexp(t, "pop", err)
@@ -456,10 +456,10 @@ func TestVerifySigner(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 
-	id := &fftypes.Identity{OnChain: "signer001"}
-	err := e.VerifyIdentitySyntax(context.Background(), id)
+	id := "signer001"
+	signKey, err := e.ResolveSigningKey(context.Background(), id)
 	assert.NoError(t, err)
-	assert.Equal(t, "signer001", id.OnChain)
+	assert.Equal(t, "signer001", signKey)
 
 }
 
@@ -695,11 +695,12 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
+	operationID := fftypes.NewUUID()
 	data := []byte(`{
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
     "headers": {
         "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-        "requestId": "748e7587-9e72-4244-7351-808f69b88291",
+        "requestId": "` + operationID.String() + `",
         "requestOffset": "",
         "timeElapsed": 0.475721,
         "timeReceived": "2021-08-27T03:04:34.199742Z",
@@ -708,10 +709,9 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "receivedAt": 1630033474675
   }`)
 
-	em.On("TxSubmissionUpdate",
-		"748e7587-9e72-4244-7351-808f69b88291",
+	em.On("BlockchainOpUpdate",
+		operationID,
 		fftypes.OpStatusSucceeded,
-		"",
 		"",
 		mock.Anything).Return(nil)
 
