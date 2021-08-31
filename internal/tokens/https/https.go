@@ -52,15 +52,12 @@ const (
 	messageTokenPool msgType = "token-pool"
 )
 
-type responseData struct {
-	RequestID string `json:"id"`
-}
-
 type createPool struct {
-	ID        string            `json:"clientId"`
+	ClientID  string            `json:"clientId"`
 	Type      fftypes.TokenType `json:"type"`
 	Namespace string            `json:"namespace"`
 	Name      string            `json:"name"`
+	RequestID string            `json:"requestId"`
 }
 
 func (h *HTTPS) Name() string {
@@ -215,23 +212,22 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) (txTrackingID string, err error) {
+func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*pool.TX.ID)[:])
 	copy(uuids[16:32], (*pool.ID)[:])
 
-	var response responseData
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&createPool{
-			ID:        hex.EncodeToString(uuids[0:32]),
+			ClientID:  hex.EncodeToString(uuids[0:32]),
 			Type:      pool.Type,
 			Namespace: pool.Namespace,
 			Name:      pool.Name,
+			RequestID: pool.TX.ID.String(),
 		}).
-		SetResult(&response).
 		Post("/api/v1/pool")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}
-	return response.RequestID, nil
+	return nil
 }
