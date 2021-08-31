@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -116,6 +115,8 @@ type fabTxInput struct {
 }
 
 func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
+	hashesJSON, _ := json.Marshal(pinInput.Contexts)
+	stringifiedHashes := string(hashesJSON)
 	input := &fabTxInput{
 		Headers: newTxInputHeaders(),
 		Func:    "PinBatch",
@@ -124,7 +125,7 @@ func newTxInput(pinInput *fabBatchPinInput) *fabTxInput {
 			pinInput.UUIDs,
 			pinInput.BatchHash,
 			pinInput.PayloadRef,
-			fmt.Sprintf("%s", pinInput.Contexts),
+			stringifiedHashes,
 		},
 	}
 	return input
