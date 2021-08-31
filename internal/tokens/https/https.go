@@ -162,7 +162,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, data)
+	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, tx)
 }
 
 func (h *HTTPS) eventLoop() {
