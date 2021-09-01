@@ -25,5 +25,5 @@ import (
 func TestFFEnumValues(t *testing.T) {
 	assert.Equal(t, FFEnum("test1"), ffEnum("ut", "test1"))
 	assert.Equal(t, FFEnum("test2"), ffEnum("ut", "test2"))
-	assert.Equal(t, []FFEnum{"test1", "test2"}, FFEnumValues("ut"))
+	assert.Equal(t, []interface{}{"test1", "test2"}, FFEnumValues("ut"))
 }

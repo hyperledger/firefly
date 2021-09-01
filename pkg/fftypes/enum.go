@@ -23,14 +23,14 @@ import (
 
 type FFEnum string
 
-var enumValues = map[string][]FFEnum{}
+var enumValues = map[string][]interface{}{}
 
-func ffEnum(t string, val FFEnum) FFEnum {
+func ffEnum(t string, val string) FFEnum {
 	enumValues[t] = append(enumValues[t], val)
-	return val
+	return FFEnum(val)
 }
 
-func FFEnumValues(t string) []FFEnum {
+func FFEnumValues(t string) []interface{} {
 	return enumValues[t]
 }
 
