@@ -17,19 +17,19 @@
 package fftypes
 
 // WSClientPayloadType actions go from client->server
-type WSClientPayloadType = LowerCasedType
+type WSClientPayloadType = FFEnum
 
-const (
+var (
 	// WSClientActionStart is a request to the server to start delivering messages to the client
-	WSClientActionStart WSClientPayloadType = "start"
+	WSClientActionStart WSClientPayloadType = ffEnum("wstype", "start")
 	// WSClientActionAck acknowledges an event that was delivered, allowing further messages to be sent
-	WSClientActionAck WSClientPayloadType = "ack"
+	WSClientActionAck WSClientPayloadType = ffEnum("wstype", "ack")
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
-	WSProtocolErrorEventType WSClientPayloadType = "protocol_error"
+	WSProtocolErrorEventType WSClientPayloadType = ffEnum("wstype", "protocol_error")
 
 	// WSClientActionChangeNotifcation a special event type that is a local database change event, and never requires an ack
-	WSClientActionChangeNotifcation WSClientPayloadType = "change_notification"
+	WSClientActionChangeNotifcation WSClientPayloadType = ffEnum("wstype", "change_notification")
 )
 
 // WSClientActionBase is the base fields of all client actions sent on the websocket
@@ -60,7 +60,7 @@ type WSClientActionAckPayload struct {
 
 // WSProtocolErrorPayload is sent to the client by the server in the case of a protocol error
 type WSProtocolErrorPayload struct {
-	Type  WSClientPayloadType `json:"type"`
+	Type  WSClientPayloadType `json:"type" ffenum:"wstype"`
 	Error string              `json:"error"`
 }
 

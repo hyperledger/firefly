@@ -16,19 +16,14 @@
 
 package fftypes
 
-type TokenType = FFEnum
+import (
+	"testing"
 
-var (
-	TokenTypeFungible    TokenType = ffEnum("tokentype", "fungible")
-	TokenTypeNonFungible TokenType = ffEnum("tokentype", "nonfungible")
+	"github.com/stretchr/testify/assert"
 )
 
-type TokenPool struct {
-	ID         *UUID          `json:"id,omitempty"`
-	Type       TokenType      `json:"type" ffenum:"tokentype"`
-	Namespace  string         `json:"namespace,omitempty"`
-	Name       string         `json:"name,omitempty"`
-	ProtocolID string         `json:"protocolId,omitempty"`
-	Author     string         `json:"author,omitempty"`
-	TX         TransactionRef `json:"tx,omitempty"`
+func TestFFEnumValues(t *testing.T) {
+	assert.Equal(t, FFEnum("test1"), ffEnum("ut", "test1"))
+	assert.Equal(t, FFEnum("test2"), ffEnum("ut", "test2"))
+	assert.Equal(t, []FFEnum{"test1", "test2"}, FFEnumValues("ut"))
 }
