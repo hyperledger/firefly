@@ -8,7 +8,7 @@ require (
 	github.com/aidarkhanov/nanoid v1.0.8
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/getkin/kin-openapi v0.62.0
+	github.com/getkin/kin-openapi v0.75.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
