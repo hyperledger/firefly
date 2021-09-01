@@ -76,9 +76,6 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName
 }
 
 func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	pool.ID = id
-	pool.Namespace = ns
-
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
@@ -97,28 +94,19 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 	}
 
 	if waitConfirm {
-		return am.syncasync.SendConfirmTokenPool(ctx, pool.Namespace, func(requestID *fftypes.UUID) error {
+		return am.syncasync.SendConfirmTokenPool(ctx, ns, func(requestID *fftypes.UUID) error {
 			_, err := am.CreateTokenPoolWithID(ctx, ns, requestID, typeName, pool, false)
 			return err
 		})
 	}
 
-	pool.TX = fftypes.TransactionRef{
-		ID:   fftypes.NewUUID(),
-		Type: fftypes.TransactionTypeTokenPool,
-	}
-	trackingID, err := plugin.CreateTokenPool(ctx, author, pool)
-	if err != nil {
-		return nil, err
-	}
-
 	tx := &fftypes.Transaction{
-		ID: pool.TX.ID,
+		ID: fftypes.NewUUID(),
 		Subject: fftypes.TransactionSubject{
-			Namespace: pool.Namespace,
-			Type:      pool.TX.Type,
+			Namespace: ns,
+			Type:      fftypes.TransactionTypeTokenPool,
 			Signer:    author.OnChain, // The transaction records on the on-chain identity
-			Reference: pool.ID,
+			Reference: id,
 		},
 		Created: fftypes.Now(),
 		Status:  fftypes.OpStatusPending,
@@ -132,12 +120,23 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 	op := fftypes.NewTXOperation(
 		plugin,
 		ns,
-		fftypes.NewUUID(),
-		trackingID,
+		tx.ID,
+		"",
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
 		author.Identifier)
-	return pool, am.database.UpsertOperation(ctx, op, false)
+	err = am.database.UpsertOperation(ctx, op, false)
+	if err != nil {
+		return nil, err
+	}
+
+	pool.ID = id
+	pool.Namespace = ns
+	pool.TX = fftypes.TransactionRef{
+		ID:   tx.ID,
+		Type: tx.Subject.Type,
+	}
+	return pool, plugin.CreateTokenPool(ctx, author, pool)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {

@@ -119,6 +119,8 @@ func TestCreateTokenPool(t *testing.T) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
+			assert.Contains(t, body, "requestId")
+			delete(body, "requestId")
 			assert.Equal(t, fftypes.JSONObject{
 				"clientId":  hex.EncodeToString(uuids[0:32]),
 				"namespace": "ns1",
@@ -136,9 +138,8 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	trackingID, err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
 	assert.NoError(t, err)
-	assert.Equal(t, "1", trackingID)
 }
 
 func TestCreateTokenPoolError(t *testing.T) {
@@ -156,7 +157,7 @@ func TestCreateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	_, err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
 	assert.Regexp(t, "FF10274", err)
 }
 
