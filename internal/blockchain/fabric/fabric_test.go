@@ -252,7 +252,7 @@ func TestStreamQueryError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10272", err)
+	assert.Regexp(t, "FF10277", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -281,7 +281,7 @@ func TestStreamCreateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10272", err)
+	assert.Regexp(t, "FF10277", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -312,7 +312,7 @@ func TestSubQueryError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10272", err)
+	assert.Regexp(t, "FF10277", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -345,7 +345,7 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{})
 
-	assert.Regexp(t, "FF10272", err)
+	assert.Regexp(t, "FF10277", err)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -447,7 +447,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: signer}, batch)
 
-	assert.Regexp(t, "FF10272", err)
+	assert.Regexp(t, "FF10277", err)
 	assert.Regexp(t, "pop", err)
 
 }
