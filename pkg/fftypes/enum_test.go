@@ -17,10 +17,32 @@
 package fftypes
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestFFEnumStringCompareEtc(t *testing.T) {
+
+	txtype1 := TransactionType("Batch_Pin")
+	assert.True(t, TransactionTypeBatchPin.Equals(txtype1))
+	assert.Equal(t, TransactionTypeBatchPin, txtype1.Lower())
+
+	var tdv driver.Valuer = txtype1
+	v, err := tdv.Value()
+	assert.Nil(t, err)
+	assert.Equal(t, "batch_pin", v)
+
+	var utStruct struct {
+		TXType TransactionType `json:"txType"`
+	}
+	err = json.Unmarshal([]byte(`{"txType": "Batch_PIN"}`), &utStruct)
+	assert.NoError(t, err)
+	assert.Equal(t, "batch_pin", string(utStruct.TXType))
+
+}
 
 func TestFFEnumValues(t *testing.T) {
 	assert.Equal(t, FFEnum("test1"), ffEnum("ut", "test1"))
