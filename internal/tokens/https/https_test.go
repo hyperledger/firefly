@@ -19,7 +19,6 @@ package https
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -110,10 +109,6 @@ func TestCreateTokenPool(t *testing.T) {
 		Type:      "fungible",
 	}
 
-	var uuids fftypes.Bytes32
-	copy(uuids[0:16], (*pool.TX.ID)[:])
-	copy(uuids[16:32], (*pool.ID)[:])
-
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			body := make(fftypes.JSONObject)
@@ -122,10 +117,8 @@ func TestCreateTokenPool(t *testing.T) {
 			assert.Contains(t, body, "requestId")
 			delete(body, "requestId")
 			assert.Equal(t, fftypes.JSONObject{
-				"clientId":  hex.EncodeToString(uuids[0:32]),
-				"namespace": "ns1",
-				"name":      "new-pool",
-				"type":      "fungible",
+				"data": "{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"" + pool.ID.String() + "\",\"transactionId\":\"" + pool.TX.ID.String() + "\"}",
+				"type": "fungible",
 			}, body)
 
 			res := &http.Response{
@@ -162,7 +155,6 @@ func TestCreateTokenPoolError(t *testing.T) {
 }
 
 func TestEvents(t *testing.T) {
-
 	h, toServer, fromServer, _, done := newTestHTTPS(t)
 	defer done()
 
@@ -188,29 +180,42 @@ func TestEvents(t *testing.T) {
 	fromServer <- `{"id":"4","event":"receipt","data":{"id":"abc","success":false}}`
 
 	// token-pool: missing data
-	fromServer <- `{"id":"5","event":"token-pool","data":{}}`
+	fromServer <- `{"id":"5","event":"token-pool"}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"5"},"event":"ack"}`, string(msg))
 
-	// token-pool: invalid uuids
-	fromServer <- `{"id":"6","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"bad","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	// token-pool: unparseable packed data
+	fromServer <- `{"id":"6","event":"token-pool","data":{"data":"!","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
+	// token-pool: missing packed data
+	fromServer <- `{"id":"7","event":"token-pool","data":{"data":"{}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
+
+	// token-pool: invalid uuids
+	fromServer <- `{"id":"8","event":"token-pool","data":{"data":"{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"bad\",\"transactionId\":\"bad\"}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
+
 	id1 := fftypes.NewUUID()
 	id2 := fftypes.NewUUID()
-	var uuids fftypes.Bytes32
-	copy(uuids[0:16], (*id1)[:])
-	copy(uuids[16:32], (*id2)[:])
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
-		return pool.Namespace == "ns1" && pool.Name == "test-pool" && pool.Type == fftypes.TokenTypeFungible && pool.ProtocolID == "F1" && *pool.ID == *id2 && *pool.TX.ID == *id1
+		assert.Equal(t, "ns1", pool.Namespace)
+		assert.Equal(t, "new-pool", pool.Name)
+		assert.Equal(t, fftypes.TokenTypeFungible, pool.Type)
+		assert.Equal(t, "F1", pool.ProtocolID)
+		assert.Equal(t, *id1, *pool.ID)
+		assert.Equal(t, *id2, *pool.TX.ID)
+		return true
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"},
 	).Return(nil)
-	fromServer <- `{"id":"7","event":"token-pool","data":{"namespace":"ns1","name":"test-pool","clientId":"` + hex.EncodeToString(uuids[0:32]) + `","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"9","event":"token-pool","data":{"data":"{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"` + id1.String() + `\",\"transactionId\":\"` + id2.String() + `\"}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
+	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }
