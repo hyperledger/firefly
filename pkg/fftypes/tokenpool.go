@@ -16,16 +16,16 @@
 
 package fftypes
 
-type TokenType = LowerCasedType
+type TokenType = FFEnum
 
-const (
-	TokenTypeFungible    TokenType = "fungible"
-	TokenTypeNonFungible TokenType = "nonfungible"
+var (
+	TokenTypeFungible    TokenType = ffEnum("tokentype", "fungible")
+	TokenTypeNonFungible TokenType = ffEnum("tokentype", "nonfungible")
 )
 
 type TokenPool struct {
 	ID         *UUID          `json:"id,omitempty"`
-	Type       TokenType      `json:"type"`
+	Type       TokenType      `json:"type" ffenum:"tokentype"`
 	Namespace  string         `json:"namespace,omitempty"`
 	Name       string         `json:"name,omitempty"`
 	ProtocolID string         `json:"protocolId,omitempty"`

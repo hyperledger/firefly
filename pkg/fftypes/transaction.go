@@ -21,15 +21,15 @@ import (
 	"encoding/json"
 )
 
-type TransactionType = LowerCasedType
+type TransactionType = FFEnum
 
-const (
+var (
 	// TransactionTypeNone indicates no transaction should be used for this message/batch
-	TransactionTypeNone TransactionType = "none"
+	TransactionTypeNone TransactionType = ffEnum("txtype", "none")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypeBatchPin TransactionType = "batch_pin"
+	TransactionTypeBatchPin TransactionType = ffEnum("txtype", "batch_pin")
 	// TransactionTypeTokenPool represents a token pool creation
-	TransactionTypeTokenPool TransactionType = "token_pool"
+	TransactionTypeTokenPool TransactionType = ffEnum("txtype", "token_pool")
 )
 
 // TransactionRef refers to a transaction, in other types
@@ -42,7 +42,7 @@ type TransactionRef struct {
 type TransactionSubject struct {
 	Signer    string          `json:"signer"` // on-chain signing identity
 	Namespace string          `json:"namespace,omitempty"`
-	Type      TransactionType `json:"type"`
+	Type      TransactionType `json:"type" ffenum:"txtype"`
 	Reference *UUID           `json:"reference,omitempty"`
 }
 
