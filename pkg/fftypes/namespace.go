@@ -24,15 +24,15 @@ import (
 )
 
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
-type NamespaceType = LowerCasedType
+type NamespaceType = FFEnum
 
-const (
+var (
 	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
-	NamespaceTypeLocal NamespaceType = "local"
+	NamespaceTypeLocal NamespaceType = ffEnum("namespacetype", "local")
 	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
-	NamespaceTypeBroadcast NamespaceType = "broadcast"
+	NamespaceTypeBroadcast NamespaceType = ffEnum("namespacetype", "broadcast")
 	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
-	NamespaceTypeSystem NamespaceType = "system"
+	NamespaceTypeSystem NamespaceType = ffEnum("namespacetype", "system")
 )
 
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
@@ -42,7 +42,7 @@ type Namespace struct {
 	Message     *UUID         `json:"message,omitempty"`
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
-	Type        NamespaceType `json:"type"`
+	Type        NamespaceType `json:"type" ffenum:"namespacetype"`
 	Created     *FFTime       `json:"created"`
 }
 

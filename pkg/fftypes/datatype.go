@@ -22,20 +22,20 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
-type ValidatorType = LowerCasedType
+type ValidatorType = FFEnum
 
-const (
+var (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
-	ValidatorTypeJSON ValidatorType = "json"
+	ValidatorTypeJSON ValidatorType = ffEnum("validatortype", "json")
 	// ValidatorTypeSystemDefinition is the validator type for system definitions
-	ValidatorTypeSystemDefinition ValidatorType = "definition"
+	ValidatorTypeSystemDefinition ValidatorType = ffEnum("validatortype", "definition")
 )
 
 // Datatype is the structure defining a data definition, such as a JSON schema
 type Datatype struct {
 	ID        *UUID         `json:"id,omitempty"`
 	Message   *UUID         `json:"message,omitempty"`
-	Validator ValidatorType `json:"validator"`
+	Validator ValidatorType `json:"validator" ffenum:"validatortype"`
 	Namespace string        `json:"namespace,omitempty"`
 	Name      string        `json:"name,omitempty"`
 	Version   string        `json:"version,omitempty"`

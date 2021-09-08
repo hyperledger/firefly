@@ -30,17 +30,17 @@ const (
 )
 
 // MessageType is the fundamental type of a message
-type MessageType = LowerCasedType
+type MessageType = FFEnum
 
-const (
+var (
 	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, members, data definitions, etc.)
-	MessageTypeDefinition MessageType = "definition"
+	MessageTypeDefinition MessageType = ffEnum("messagetype", "definition")
 	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
-	MessageTypeBroadcast MessageType = "broadcast"
+	MessageTypeBroadcast MessageType = ffEnum("messagetype", "broadcast")
 	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
-	MessageTypePrivate MessageType = "private"
+	MessageTypePrivate MessageType = ffEnum("messagetype", "private")
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
-	MessageTypeGroupInit MessageType = "groupinit"
+	MessageTypeGroupInit MessageType = ffEnum("messagetype", "groupinit")
 )
 
 // MessageHeader contains all fields that contribute to the hash
@@ -48,7 +48,7 @@ const (
 type MessageHeader struct {
 	ID        *UUID           `json:"id,omitempty"`
 	CID       *UUID           `json:"cid,omitempty"`
-	Type      MessageType     `json:"type"`
+	Type      MessageType     `json:"type" ffenum:"messagetype"`
 	TxType    TransactionType `json:"txtype,omitempty"`
 	Author    string          `json:"author,omitempty"`
 	Created   *FFTime         `json:"created,omitempty"`

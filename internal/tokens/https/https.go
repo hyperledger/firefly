@@ -154,7 +154,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 		},
 		Namespace:  ns,
 		Name:       name,
-		Type:       fftypes.LowerCasedType(tokenType),
+		Type:       fftypes.FFEnum(tokenType),
 		ProtocolID: protocolID,
 	}
 

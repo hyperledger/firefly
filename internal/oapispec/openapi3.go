@@ -31,6 +31,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
 func SwaggerGen(ctx context.Context, routes []*Route, url string) *openapi3.T {
@@ -81,6 +82,13 @@ func initInput(op *openapi3.Operation) {
 	}
 }
 
+func ffTagHandler(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+	if ffEnum := tag.Get("ffenum"); ffEnum != "" {
+		schema.Enum = fftypes.FFEnumValues(ffEnum)
+	}
+	return nil
+}
+
 func addInput(ctx context.Context, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
 	var schemaRef *openapi3.SchemaRef
 	if schemaDef != nil {
@@ -90,7 +98,7 @@ func addInput(ctx context.Context, input interface{}, mask []string, schemaDef f
 		}
 	}
 	if schemaRef == nil {
-		schemaRef, _, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask))
+		schemaRef, _, _ = openapi3gen.NewSchemaRefForValue(maskFields(input, mask), openapi3gen.SchemaCustomizer(ffTagHandler))
 	}
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
 		Schema: schemaRef,
