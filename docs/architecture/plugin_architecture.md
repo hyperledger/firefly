@@ -16,10 +16,20 @@ nav_order: 4
 
 ---
 
-## Overview
+<iframe width="736" height="414" src="https://www.youtube.com/embed/wkuQjBy_uhg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+---
+![FireFly Plugin Architecture](../images/firefly_plugin_architecture.svg "FireFly Plugin Architecture")
+This diagram shows the various plugins that are currently in the codebase and the layers in each plugin
+
+---
 
 ![FireFly Plugin Architecture](../images/firefly_plugin_architecture.jpg "FireFly Plugin Architecture")
+This diagram shows the details of what goes into each layer of a FireFly plugin
 
+---
+
+## Overview
 The FireFly node is built for extensibility, with separate pluggable runtimes orchestrated into a common API for developers.  The mechanics of that 
 pluggability for developers of new connectors is explained below:
 
