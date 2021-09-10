@@ -18,28 +18,39 @@ package fftypes
 
 import (
 	"database/sql/driver"
-	"encoding/json"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"strings"
 )
 
-func TestTypeStringCompareEtc(t *testing.T) {
+type FFEnum string
 
-	txtype1 := TransactionType("Batch_Pin")
-	assert.True(t, TransactionTypeBatchPin.Equals(txtype1))
-	assert.Equal(t, TransactionTypeBatchPin, txtype1.Lower())
+var enumValues = map[string][]interface{}{}
 
-	var tdv driver.Valuer = txtype1
-	v, err := tdv.Value()
-	assert.Nil(t, err)
-	assert.Equal(t, "batch_pin", v)
+func ffEnum(t string, val string) FFEnum {
+	enumValues[t] = append(enumValues[t], val)
+	return FFEnum(val)
+}
 
-	var utStruct struct {
-		TXType TransactionType `json:"txType"`
-	}
-	err = json.Unmarshal([]byte(`{"txType": "Batch_PIN"}`), &utStruct)
-	assert.NoError(t, err)
-	assert.Equal(t, "batch_pin", string(utStruct.TXType))
+func FFEnumValues(t string) []interface{} {
+	return enumValues[t]
+}
 
+func (ts FFEnum) String() string {
+	return strings.ToLower(string(ts))
+}
+
+func (ts FFEnum) Lower() FFEnum {
+	return FFEnum(strings.ToLower(string(ts)))
+}
+
+func (ts FFEnum) Equals(ts2 FFEnum) bool {
+	return strings.EqualFold(string(ts), string(ts2))
+}
+
+func (ts FFEnum) Value() (driver.Value, error) {
+	return ts.String(), nil
+}
+
+func (ts *FFEnum) UnmarshalText(b []byte) error {
+	*ts = FFEnum(strings.ToLower(string(b)))
+	return nil
 }

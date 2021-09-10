@@ -549,6 +549,27 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
 	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
 
+	info1 := fftypes.JSONObject{
+		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber":      "38011",
+		"logIndex":         "50",
+		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"subID":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"transactionIndex": "0x0",
+	}
+	assert.Equal(t, info1, em.Calls[0].Arguments[3])
+	info2 := fftypes.JSONObject{
+		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber":      "38011",
+		"logIndex":         "51",
+		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"subID":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"transactionHash":  "0x0c50dff0893e795293189d9cc5ba0d63c4020d8758ace4a69d02c9d6d43cb695",
+		"transactionIndex": "0x1",
+	}
+	assert.Equal(t, info2, em.Calls[1].Arguments[3])
+
 	em.AssertExpectations(t)
 
 }

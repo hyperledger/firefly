@@ -106,11 +106,11 @@ func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error 
 }
 
 // DeleteOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.LowerCasedType, name string) error {
+func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.FFEnum, name string) error {
 	ret := _m.Called(ctx, t, name)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) error); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		r0 = ret.Error(0)
@@ -973,11 +973,11 @@ func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fft
 }
 
 // GetOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, name string) (*fftypes.Offset, error) {
+func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.FFEnum, name string) (*fftypes.Offset, error) {
 	ret := _m.Called(ctx, t, name)
 
 	var r0 *fftypes.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.LowerCasedType, string) *fftypes.Offset); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) *fftypes.Offset); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		if ret.Get(0) != nil {
@@ -986,7 +986,7 @@ func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.LowerCasedType, name 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.LowerCasedType, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string) error); ok {
 		r1 = rf(ctx, t, name)
 	} else {
 		r1 = ret.Error(1)

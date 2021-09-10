@@ -631,7 +631,7 @@ func TestDeleteDurableSubscriptionOk(t *testing.T) {
 	}
 
 	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(subDef, nil)
-	mdi.On("DeleteOffset", mock.Anything, fftypes.LowerCasedType("subscription"), subID.String()).Return(fmt.Errorf("this error is logged and swallowed"))
+	mdi.On("DeleteOffset", mock.Anything, fftypes.FFEnum("subscription"), subID.String()).Return(fmt.Errorf("this error is logged and swallowed"))
 	sm.deletedDurableSubscription(subID)
 
 	assert.Empty(t, sm.connections["conn1"].dispatchers)

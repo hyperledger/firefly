@@ -17,31 +17,31 @@
 package fftypes
 
 // EventType indicates what the event means, as well as what the Reference in the event refers to
-type EventType = LowerCasedType
+type EventType = FFEnum
 
-const (
+var (
 	// EventTypeMessageConfirmed is the most important event type in the system. This means a message and all of its data
 	// is available for processing by an application. Most applications only need to listen to this event type
-	EventTypeMessageConfirmed EventType = "message_confirmed"
+	EventTypeMessageConfirmed EventType = ffEnum("eventtype", "message_confirmed")
 	// EventTypeMessageRejected occurs if a message is received and confirmed from a sequencing perspective, but is rejected as invalid (mismatch to schema, or duplicate system broadcast)
-	EventTypeMessageRejected EventType = "message_rejected"
+	EventTypeMessageRejected EventType = ffEnum("eventtype", "message_rejected")
 	// EventTypeNamespaceConfirmed occurs when a new namespace is ready for use (on the namespace itself)
-	EventTypeNamespaceConfirmed EventType = "namespace_confirmed"
+	EventTypeNamespaceConfirmed EventType = ffEnum("eventtype", "namespace_confirmed")
 	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)
-	EventTypeDatatypeConfirmed EventType = "datatype_confirmed"
+	EventTypeDatatypeConfirmed EventType = ffEnum("eventtype", "datatype_confirmed")
 	// EventTypeGroupConfirmed occurs when a new group is ready to use (on the namespace of the group, on all group participants)
-	EventTypeGroupConfirmed EventType = "group_confirmed"
+	EventTypeGroupConfirmed EventType = ffEnum("eventtype", "group_confirmed")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
-	EventTypePoolConfirmed EventType = "token_pool_confirmed"
+	EventTypePoolConfirmed EventType = ffEnum("eventtype", "token_pool_confirmed")
 	// EventTypePoolRejected occurs when a new token pool is rejected (due to validation errors, duplicates, etc)
-	EventTypePoolRejected EventType = "token_pool_rejected"
+	EventTypePoolRejected EventType = ffEnum("eventtype", "token_pool_rejected")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
 type Event struct {
 	ID        *UUID     `json:"id"`
 	Sequence  int64     `json:"sequence"`
-	Type      EventType `json:"type"`
+	Type      EventType `json:"type" ffenum:"eventtype"`
 	Namespace string    `json:"namespace"`
 	Reference *UUID     `json:"reference"`
 	Created   *FFTime   `json:"created"`

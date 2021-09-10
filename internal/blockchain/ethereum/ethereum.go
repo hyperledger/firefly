@@ -324,6 +324,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
+	delete(msgJSON, "data")
 	return e.callbacks.BatchPinComplete(batch, authorAddress, sTransactionHash, msgJSON)
 }
 

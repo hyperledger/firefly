@@ -36,24 +36,17 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, identity, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) (string, error) {
+func (_m *Plugin) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
 	ret := _m.Called(ctx, identity, pool)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity, *fftypes.TokenPool) string); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity, *fftypes.TokenPool) error); ok {
 		r0 = rf(ctx, identity, pool)
 	} else {
-		r0 = ret.Get(0).(string)
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity, *fftypes.TokenPool) error); ok {
-		r1 = rf(ctx, identity, pool)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Init provides a mock function with given fields: ctx, prefix, callbacks

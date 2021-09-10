@@ -18,7 +18,6 @@ package https
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
@@ -52,15 +51,17 @@ const (
 	messageTokenPool msgType = "token-pool"
 )
 
-type responseData struct {
-	RequestID string `json:"id"`
+type createPool struct {
+	Type      fftypes.TokenType `json:"type"`
+	RequestID string            `json:"requestId"`
+	Data      string            `json:"data"`
 }
 
-type createPool struct {
-	ID        string            `json:"clientId"`
-	Type      fftypes.TokenType `json:"type"`
-	Namespace string            `json:"namespace"`
-	Name      string            `json:"name"`
+type createPoolData struct {
+	Namespace     string        `json:"namespace"`
+	Name          string        `json:"name"`
+	ID            *fftypes.UUID `json:"id"`
+	TransactionID *fftypes.UUID `json:"transactionId"`
 }
 
 func (h *HTTPS) Name() string {
@@ -119,18 +120,14 @@ func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) erro
 }
 
 func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
-	ns := data.GetString("namespace")
-	name := data.GetString("name")
-	clientID := data.GetString("clientId")
+	packedData := data.GetString("data")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
 
-	if ns == "" ||
-		name == "" ||
-		clientID == "" ||
+	if packedData == "" ||
 		tokenType == "" ||
 		protocolID == "" ||
 		operatorAddress == "" ||
@@ -139,30 +136,34 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 		return nil // move on
 	}
 
-	hexUUIDs, err := hex.DecodeString(clientID)
-	if err != nil || len(hexUUIDs) != 32 {
-		log.L(ctx).Errorf("TokenPool event is not valid - bad uuids (%s): %+v", err, data)
+	unpackedData := createPoolData{}
+	err = json.Unmarshal([]byte(packedData), &unpackedData)
+	if err != nil {
+		log.L(ctx).Errorf("TokenPool event is not valid - could not unpack data (%s): %+v", err, data)
 		return nil // move on
 	}
-	var txnID fftypes.UUID
-	copy(txnID[:], hexUUIDs[0:16])
-	var id fftypes.UUID
-	copy(id[:], hexUUIDs[16:32])
+	if unpackedData.Namespace == "" ||
+		unpackedData.Name == "" ||
+		unpackedData.ID == nil ||
+		unpackedData.TransactionID == nil {
+		log.L(ctx).Errorf("TokenPool event is not valid - missing packed data: %+v", unpackedData)
+		return nil // move on
+	}
 
 	pool := &fftypes.TokenPool{
-		ID: &id,
+		ID: unpackedData.ID,
 		TX: fftypes.TransactionRef{
-			ID:   &txnID,
+			ID:   unpackedData.TransactionID,
 			Type: fftypes.TransactionTypeTokenPool,
 		},
-		Namespace:  ns,
-		Name:       name,
-		Type:       fftypes.LowerCasedType(tokenType),
+		Namespace:  unpackedData.Namespace,
+		Name:       unpackedData.Name,
+		Type:       fftypes.FFEnum(tokenType),
 		ProtocolID: protocolID,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, data)
+	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, tx)
 }
 
 func (h *HTTPS) eventLoop() {
@@ -215,23 +216,26 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) (txTrackingID string, err error) {
-	var uuids fftypes.Bytes32
-	copy(uuids[0:16], (*pool.TX.ID)[:])
-	copy(uuids[16:32], (*pool.ID)[:])
-
-	var response responseData
-	res, err := h.client.R().SetContext(ctx).
-		SetBody(&createPool{
-			ID:        hex.EncodeToString(uuids[0:32]),
-			Type:      pool.Type,
-			Namespace: pool.Namespace,
-			Name:      pool.Name,
-		}).
-		SetResult(&response).
-		Post("/api/v1/pool")
-	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
+	data := createPoolData{
+		Namespace:     pool.Namespace,
+		Name:          pool.Name,
+		ID:            pool.ID,
+		TransactionID: pool.TX.ID,
 	}
-	return response.RequestID, nil
+	packedData, err := json.Marshal(data)
+	var res *resty.Response
+	if err == nil {
+		res, err = h.client.R().SetContext(ctx).
+			SetBody(&createPool{
+				Type:      pool.Type,
+				RequestID: pool.TX.ID.String(),
+				Data:      string(packedData),
+			}).
+			Post("/api/v1/pool")
+	}
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
 }

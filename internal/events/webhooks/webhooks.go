@@ -364,9 +364,9 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 
 	// Emit the response
 	if reply {
-		txType := fftypes.LowerCasedType(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
+		txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 		if req != nil && req.replyTx != "" {
-			txType = fftypes.LowerCasedType(strings.ToLower(req.replyTx))
+			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
 		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
 			ID:           event.ID,

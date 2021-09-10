@@ -16,20 +16,20 @@
 
 package fftypes
 
-type OffsetType = LowerCasedType
+type OffsetType = FFEnum
 
-const (
+var (
 	// OffsetTypeBatch is an offset stored by the batch manager on the messages table
-	OffsetTypeBatch OffsetType = "batch"
+	OffsetTypeBatch OffsetType = ffEnum("offsettype", "batch")
 	// OffsetTypeAggregator is an offset stored by the aggregator on the events table
-	OffsetTypeAggregator OffsetType = "aggregator"
+	OffsetTypeAggregator OffsetType = ffEnum("offsettype", "aggregator")
 	// OffsetTypeSubscription is an offeset stored by a dispatcher on the events table
-	OffsetTypeSubscription OffsetType = "subscription"
+	OffsetTypeSubscription OffsetType = ffEnum("offsettype", "subscription")
 )
 
 // Offset is a simple stored data structure that records a sequence position within another collection
 type Offset struct {
-	Type    OffsetType `json:"type"`
+	Type    OffsetType `json:"type" ffenum:"offsettype"`
 	Name    string     `json:"name"`
 	Current int64      `json:"current,omitempty"`
 

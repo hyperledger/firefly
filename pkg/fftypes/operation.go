@@ -19,19 +19,19 @@ package fftypes
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
 // to be correlated with messages by operators.
-type OpType = LowerCasedType
+type OpType = FFEnum
 
-const (
+var (
 	// OpTypeBlockchainBatchPin is a blockchain transaction to pin a batch
-	OpTypeBlockchainBatchPin OpType = "blockchain_batch_pin"
+	OpTypeBlockchainBatchPin OpType = ffEnum("optype", "blockchain_batch_pin")
 	// OpTypePublicStorageBatchBroadcast is a public storage operation to store broadcast data
-	OpTypePublicStorageBatchBroadcast OpType = "publicstorage_batch_broadcast"
+	OpTypePublicStorageBatchBroadcast OpType = ffEnum("optype", "publicstorage_batch_broadcast")
 	// OpTypeDataExchangeBatchSend is a private send
-	OpTypeDataExchangeBatchSend OpType = "dataexchange_batch_send"
+	OpTypeDataExchangeBatchSend OpType = ffEnum("optype", "dataexchange_batch_send")
 	// OpTypeDataExchangeBlobSend is a private send
-	OpTypeDataExchangeBlobSend OpType = "dataexchange_blob_send"
+	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokensCreatePool is a token pool creation
-	OpTypeTokensCreatePool OpType = "tokens_create_pool"
+	OpTypeTokensCreatePool OpType = ffEnum("optype", "tokens_create_pool")
 )
 
 // OpStatus is the current status of an operation
@@ -70,7 +70,7 @@ type Operation struct {
 	ID          *UUID      `json:"id"`
 	Namespace   string     `json:"namespace"`
 	Transaction *UUID      `json:"tx"`
-	Type        OpType     `json:"type"`
+	Type        OpType     `json:"type" ffenum:"optype"`
 	Member      string     `json:"member,omitempty"`
 	Status      OpStatus   `json:"status"`
 	Error       string     `json:"error,omitempty"`

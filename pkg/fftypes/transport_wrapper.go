@@ -16,16 +16,16 @@
 
 package fftypes
 
-type TransportPayloadType LowerCasedType
+type TransportPayloadType = FFEnum
 
-const (
-	TransportPayloadTypeMessage TransportPayloadType = "message"
-	TransportPayloadTypeBatch   TransportPayloadType = "batch"
+var (
+	TransportPayloadTypeMessage TransportPayloadType = ffEnum("transportpayload", "message")
+	TransportPayloadTypeBatch   TransportPayloadType = ffEnum("transportpayload", "batch")
 )
 
 // TransportWrapper wraps paylaods over data exchange transfers, for easy deserialization at target
 type TransportWrapper struct {
-	Type    TransportPayloadType `json:"type"`
+	Type    TransportPayloadType `json:"type" ffenum:"transportpayload"`
 	Message *Message             `json:"message,omitempty"`
 	Data    []*Data              `json:"data,omitempty"`
 	Batch   *Batch               `json:"batch,omitempty"`
