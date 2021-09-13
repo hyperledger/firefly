@@ -16,26 +16,9 @@
 
 package fftypes
 
-import (
-	"crypto/sha256"
-	"encoding/json"
-)
-
-type TokenAccountIdentifier struct {
-	Namespace  string `json:"namespace"`
-	PoolID     *UUID  `json:"poolId,omitempty"`
+type TokenAccount struct {
+	ProtocolID *UUID  `json:"protocolId,omitempty"`
 	TokenIndex string `json:"tokenIndex,omitempty"`
 	Identity   string `json:"identity,omitempty"`
-}
-
-func (t *TokenAccountIdentifier) Hash() *Bytes32 {
-	b, _ := json.Marshal(&t)
-	var b32 Bytes32 = sha256.Sum256(b)
-	return &b32
-}
-
-type TokenAccount struct {
-	Identifier TokenAccountIdentifier `json:"identifier"`
-	Balance    int64                  `json:"balance"`
-	Hash       *Bytes32               `json:"hash,omitempty"`
+	Balance    int64  `json:"balance"`
 }

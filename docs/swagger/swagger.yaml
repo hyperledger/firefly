@@ -4486,22 +4486,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: hash
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: identity
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: poolid
+        name: protocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4553,17 +4543,11 @@ paths:
                     balance:
                       format: int64
                       type: integer
-                    hash: {}
-                    identifier:
-                      properties:
-                        identity:
-                          type: string
-                        namespace:
-                          type: string
-                        poolId: {}
-                        tokenIndex:
-                          type: string
-                      type: object
+                    identity:
+                      type: string
+                    protocolId: {}
+                    tokenIndex:
+                      type: string
                   type: object
                 type: array
           description: Success
