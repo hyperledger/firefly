@@ -165,7 +165,11 @@ func (hs *httpServer) serveHTTP(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			log.L(ctx).Infof("API server context cancelled - shutting down")
-			hs.s.Close()
+			shutdownContext, cancel := context.WithTimeout(ctx, config.GetDuration(config.APIShutdownTimeout))
+			defer cancel()
+			if err := hs.s.Shutdown(shutdownContext); err != nil {
+				log.L(ctx).Error(err)
+			}
 		case <-serverEnded:
 			return
 		}

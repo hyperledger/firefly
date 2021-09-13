@@ -51,6 +51,8 @@ var (
 	APIRequestTimeout = rootKey("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
+	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
+	APIShutdownTimeout = rootKey("api.shutdownTimeout")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
@@ -263,6 +265,7 @@ func Reset() {
 	viper.SetDefault(string(APIMaxFilterLimit), 250)
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
+	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
