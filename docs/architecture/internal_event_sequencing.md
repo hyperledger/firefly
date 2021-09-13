@@ -16,6 +16,8 @@ nav_order: 6
 
 ---
 
+<iframe width="736" height="414" src="https://www.youtube.com/embed/JroBAfmfI_E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Overview
 
 ![Internal Event Sequencing](../images/internal_event_sequencing.jpg "Internal Event Sequencing")

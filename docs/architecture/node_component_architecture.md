@@ -16,6 +16,8 @@ nav_order: 1
 
 ---
 
+<iframe width="736" height="414" src="https://www.youtube.com/embed/KbXcP7wAB-0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## What is a FireFly Node?
 
 The core architecture of a FireFly node can be broken down into the following three areas:
