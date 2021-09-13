@@ -29,15 +29,13 @@ import (
 
 var (
 	tokenAccountColumns = []string{
-		"pool_id",
-		"namespace",
+		"protocol_id",
 		"token_index",
 		"identity",
 		"balance",
-		"hash",
 	}
 	tokenAccountFilterFieldMap = map[string]string{
-		"poolid":     "pool_id",
+		"protocolid": "protocol_id",
 		"tokenindex": "token_index",
 	}
 )
@@ -52,7 +50,11 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("seq").
 			From("tokenaccount").
-			Where(sq.Eq{"hash": account.Hash}),
+			Where(sq.And{
+				sq.Eq{"protocol_id": account.ProtocolID},
+				sq.Eq{"token_index": account.TokenIndex},
+				sq.Eq{"identity": account.Identity},
+			}),
 	)
 	if err != nil {
 		return err
@@ -63,15 +65,13 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
-				Set("pool_id", account.Identifier.PoolID).
-				Set("namespace", account.Identifier.Namespace).
-				Set("token_index", account.Identifier.TokenIndex).
-				Set("identity", account.Identifier.Identity).
 				Set("balance", account.Balance).
-				Where(sq.Eq{"hash": account.Hash}),
-			func() {
-				s.callbacks.HashCollectionNSEvent(database.CollectionTokenAccounts, fftypes.ChangeEventTypeUpdated, account.Identifier.Namespace, account.Hash)
-			},
+				Where(sq.And{
+					sq.Eq{"protocol_id": account.ProtocolID},
+					sq.Eq{"token_index": account.TokenIndex},
+					sq.Eq{"identity": account.Identity},
+				}),
+			nil,
 		); err != nil {
 			return err
 		}
@@ -80,16 +80,12 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 			sq.Insert("tokenaccount").
 				Columns(tokenAccountColumns...).
 				Values(
-					account.Identifier.PoolID,
-					account.Identifier.Namespace,
-					account.Identifier.TokenIndex,
-					account.Identifier.Identity,
+					account.ProtocolID,
+					account.TokenIndex,
+					account.Identity,
 					account.Balance,
-					account.Hash,
 				),
-			func() {
-				s.callbacks.HashCollectionNSEvent(database.CollectionTokenAccounts, fftypes.ChangeEventTypeCreated, account.Identifier.Namespace, account.Hash)
-			},
+			nil,
 		); err != nil {
 			return err
 		}
@@ -101,12 +97,10 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenAccount, error) {
 	account := fftypes.TokenAccount{}
 	err := row.Scan(
-		&account.Identifier.PoolID,
-		&account.Identifier.Namespace,
-		&account.Identifier.TokenIndex,
-		&account.Identifier.Identity,
+		&account.ProtocolID,
+		&account.TokenIndex,
+		&account.Identity,
 		&account.Balance,
-		&account.Hash,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")
@@ -138,12 +132,17 @@ func (s *SQLCommon) getTokenAccountPred(ctx context.Context, desc string, pred i
 	return account, nil
 }
 
-func (s *SQLCommon) GetTokenAccount(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.TokenAccount, err error) {
-	return s.getTokenAccountPred(ctx, hash.String(), sq.Eq{"hash": hash})
+func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID, tokenIndex, identity string) (message *fftypes.TokenAccount, err error) {
+	desc := protocolID.String() + "/" + tokenIndex + "/" + identity
+	return s.getTokenAccountPred(ctx, desc, sq.And{
+		sq.Eq{"protocol_id": protocolID},
+		sq.Eq{"token_index": tokenIndex},
+		sq.Eq{"identity": identity},
+	})
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenAccountColumns...).From("tokenAccount"), filter, tokenAccountFilterFieldMap, []string{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenAccountColumns...).From("tokenaccount"), filter, tokenAccountFilterFieldMap, []string{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}

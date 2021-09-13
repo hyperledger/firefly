@@ -368,8 +368,8 @@ type iTokenAccountCollection interface {
 	// UpsertTokenAccount - Upsert a token account
 	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
 
-	// GetTokenAccount - Get a token account by hash
-	GetTokenAccount(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.TokenAccount, error)
+	// GetTokenAccount - Get a token account by pool and account identity
+	GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
 
 	// GetTokenAccounts - Get all known token accounts in a pool
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
@@ -471,8 +471,7 @@ const (
 type HashCollectionNS CollectionName
 
 const (
-	CollectionGroups        HashCollectionNS = "groups"
-	CollectionTokenAccounts HashCollectionNS = "tokenaccounts"
+	CollectionGroups HashCollectionNS = "groups"
 )
 
 // UUIDCollection is like UUIDCollectionNS, but for objects that do not reside within a namespace
@@ -496,6 +495,7 @@ const (
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
 	CollectionOffsets       OtherCollection = "offsets"
+	CollectionTokenAccounts OtherCollection = "tokenaccounts"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -747,10 +747,8 @@ var TokenPoolQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"poolid":     &UUIDField{},
-	"namespace":  &StringField{},
+	"protocolid": &UUIDField{},
 	"tokenindex": &StringField{},
 	"identity":   &StringField{},
 	"balance":    &Int64Field{},
-	"hash":       &Bytes32Field{},
 }
