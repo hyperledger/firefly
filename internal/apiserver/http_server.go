@@ -55,9 +55,16 @@ const (
 	HTTPConfTLSKeyFile = "tls.keyFile"
 )
 
+type IServer interface {
+	Close() error
+	Serve(l net.Listener) error
+	ServeTLS(l net.Listener, certFile, keyFile string) error
+	Shutdown(ctx context.Context) error
+}
+
 type httpServer struct {
 	name        string
-	s           *http.Server
+	s           IServer
 	l           net.Listener
 	conf        config.Prefix
 	onClose     chan error
@@ -105,7 +112,7 @@ func (hs *httpServer) createListener(ctx context.Context) (net.Listener, error) 
 	return listener, err
 }
 
-func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv *http.Server, err error) {
+func (hs *httpServer) createServer(ctx context.Context, r *mux.Router) (srv IServer, err error) {
 
 	// Support client auth
 	clientAuth := tls.NoClientCert
@@ -165,10 +172,11 @@ func (hs *httpServer) serveHTTP(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			log.L(ctx).Infof("API server context cancelled - shutting down")
-			shutdownContext, cancel := context.WithTimeout(ctx, config.GetDuration(config.APIShutdownTimeout))
+			shutdownContext, cancel := context.WithTimeout(context.Background(), config.GetDuration(config.APIShutdownTimeout))
 			defer cancel()
 			if err := hs.s.Shutdown(shutdownContext); err != nil {
-				log.L(ctx).Error(err)
+				hs.onClose <- err
+				return
 			}
 		case <-serverEnded:
 			return

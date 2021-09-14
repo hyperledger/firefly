@@ -25,6 +25,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -36,7 +37,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger-labs/firefly/mocks/apiservermocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestInvalidListener(t *testing.T) {
@@ -58,6 +61,43 @@ func TestServeFail(t *testing.T) {
 	go hs.serveHTTP(context.Background())
 	err = <-errChan
 	assert.Error(t, err)
+}
+
+func TestShutdownOk(t *testing.T) {
+	config.Reset()
+	cp := config.NewPluginConfig("ut")
+	initHTTPConfPrefx(cp, 0)
+	errChan := make(chan error)
+	ctx, cancel := context.WithCancel(context.Background())
+	_, err := newHTTPServer(ctx, "ut", mux.NewRouter(), errChan, cp)
+	assert.NoError(t, err)
+	cancel()
+}
+
+func TestShutdownError(t *testing.T) {
+	testDone := make(chan struct{})
+	config.Reset()
+	cp := config.NewPluginConfig("ut")
+	config.Set(config.APIShutdownTimeout, "1ms")
+	initHTTPConfPrefx(cp, 0)
+	errChan := make(chan error)
+	ctx, cancel := context.WithCancel(context.Background())
+	s, err := newHTTPServer(ctx, "ut", mux.NewRouter(), errChan, cp)
+	assert.NoError(t, err)
+	m := &apiservermocks.IServer{}
+	m.On("Shutdown", mock.Anything).Return(errors.New("forced error"))
+	m.On("Serve", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		<-testDone
+		return
+	})
+	s.s = m
+	go func() {
+		s.serveHTTP(ctx)
+	}()
+	cancel()
+	err = <-errChan
+	assert.Error(t, err)
+	testDone <- struct{}{}
 }
 
 func TestMissingCAFile(t *testing.T) {
