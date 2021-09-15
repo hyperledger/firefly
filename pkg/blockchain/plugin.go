@@ -42,11 +42,11 @@ type Plugin interface {
 
 	// VerifyIdentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
 	// Can apply transformations to the supplied signing identity (only), such as lower case
-	VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error
+	ResolveSigningKey(ctx context.Context, signingKey string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

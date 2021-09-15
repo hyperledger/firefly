@@ -22,10 +22,10 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
 
@@ -42,20 +42,20 @@ type Manager interface {
 type assetManager struct {
 	ctx       context.Context
 	database  database.Plugin
-	identity  identity.Plugin
+	identity  identity.Manager
 	data      data.Manager
 	syncasync syncasync.Bridge
 	tokens    map[string]tokens.Plugin
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
-	if di == nil || ii == nil || sa == nil || ti == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
+	if di == nil || im == nil || sa == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
 		ctx:       ctx,
 		database:  di,
-		identity:  ii,
+		identity:  im,
 		data:      dm,
 		syncasync: sa,
 		tokens:    ti,

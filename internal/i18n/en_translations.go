@@ -194,4 +194,7 @@ var (
 	MsgTokensRESTErr               = ffm("FF10274", "Error from tokens service: %s")
 	MsgTokenPoolDuplicate          = ffm("FF10275", "Duplicate token pool")
 	MsgTokenPoolRejected           = ffm("FF10276", "Token pool with ID '%s' was rejected. Please check the FireFly logs for more information")
+	MsgAuthorNotFoundByDID         = ffm("FF10277", "Author could not be resolved via DID '%s'")
+	MsgAuthorOrgNotFoundByName     = ffm("FF10278", "Author organization could not be resolved via name '%s'")
+	MsgAuthorOrgSigningKeyMismatch = ffm("FF10279", "Author organization '%s' is not associated with signing key '%s'")
 )

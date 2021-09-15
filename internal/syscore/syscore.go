@@ -14,11 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package onchain
+package syscore
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
+	"context"
+
+	"github.com/hyperledger-labs/firefly/internal/events/system"
+	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (oc *OnChain) InitPrefix(prefix config.Prefix) {
+// SystemCore specifies an interface for global utility functions, without creating a cycle between components
+type SystemCore interface {
+	AddSystemEventListener(ns string, el system.EventListener) error
+	ResolveSigningIdentity(ctx context.Context, suppliedIdentity string) (*fftypes.Identity, error)
 }

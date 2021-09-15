@@ -19,11 +19,11 @@ package batchpin
 import (
 	"context"
 
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 )
 
 type Submitter interface {
@@ -32,14 +32,14 @@ type Submitter interface {
 
 type batchPinSubmitter struct {
 	database   database.Plugin
-	identity   identity.Plugin
+	identity   identity.Manager
 	blockchain blockchain.Plugin
 }
 
-func NewBatchPinSubmitter(di database.Plugin, ii identity.Plugin, bi blockchain.Plugin) Submitter {
+func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin) Submitter {
 	return &batchPinSubmitter{
 		database:   di,
-		identity:   ii,
+		identity:   im,
 		blockchain: bi,
 	}
 }

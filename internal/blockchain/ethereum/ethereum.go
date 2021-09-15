@@ -422,9 +422,8 @@ func (e *Ethereum) eventLoop() {
 	}
 }
 
-func (e *Ethereum) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) (err error) {
-	identity.OnChain, err = e.validateEthAddress(ctx, identity.OnChain)
-	return
+func (e *Ethereum) ResolveSigningKey(ctx context.Context, signingKeyInput string) (signingKey string, err error) {
+	return e.validateEthAddress(ctx, signingKeyInput)
 }
 
 func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (string, error) {
@@ -435,10 +434,10 @@ func (e *Ethereum) validateEthAddress(ctx context.Context, identity string) (str
 	return "0x" + identity, nil
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, method string, identity *fftypes.Identity, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, method, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
 	return e.client.R().
 		SetContext(ctx).
-		SetQueryParam(e.prefixShort+"-from", identity.OnChain).
+		SetQueryParam(e.prefixShort+"-from", signingKey).
 		SetQueryParam(e.prefixShort+"-sync", "false").
 		SetQueryParam(e.prefixShort+"-id", requestID).
 		SetBody(input).
@@ -446,7 +445,7 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, method string, iden
 		Post(e.instancePath + "/" + method)
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	tx := &asyncTXSubmission{}
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
@@ -462,7 +461,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, i
 		PayloadRef: batch.BatchPaylodRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, "pinBatch", identity, batch.TransactionID.String(), input, tx)
+	res, err := e.invokeContractMethod(ctx, "pinBatch", signingKey, batch.TransactionID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}

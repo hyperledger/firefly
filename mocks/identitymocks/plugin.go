@@ -7,8 +7,6 @@ import (
 
 	config "github.com/hyperledger-labs/firefly/internal/config"
 
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
-
 	identity "github.com/hyperledger-labs/firefly/pkg/identity"
 
 	mock "github.com/stretchr/testify/mock"
@@ -66,29 +64,6 @@ func (_m *Plugin) Name() string {
 	}
 
 	return r0
-}
-
-// Resolve provides a mock function with given fields: ctx, identifier
-func (_m *Plugin) Resolve(ctx context.Context, identifier string) (*fftypes.Identity, error) {
-	ret := _m.Called(ctx, identifier)
-
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
-		r0 = rf(ctx, identifier)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, identifier)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // Start provides a mock function with given fields:

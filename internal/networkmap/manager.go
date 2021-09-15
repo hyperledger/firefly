@@ -21,10 +21,10 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/broadcast"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 )
 
 type Manager interface {
@@ -43,11 +43,11 @@ type networkMap struct {
 	database  database.Plugin
 	broadcast broadcast.Manager
 	exchange  dataexchange.Plugin
-	identity  identity.Plugin
+	identity  identity.Manager
 }
 
-func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, ii identity.Plugin) (Manager, error) {
-	if di == nil || bm == nil || dx == nil || ii == nil {
+func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager) (Manager, error) {
+	if di == nil || bm == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 
@@ -56,7 +56,7 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		database:  di,
 		broadcast: bm,
 		exchange:  dx,
-		identity:  ii,
+		identity:  im,
 	}
 	return nm, nil
 }

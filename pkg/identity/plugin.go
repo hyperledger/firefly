@@ -40,8 +40,14 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// Resolve maps an identity identifier passed in a message to a full identity that includes the signing identity
-	Resolve(ctx context.Context, identifier string) (identity *fftypes.Identity, err error)
+	// INTERFACE IS TBD SINCE INTRODUCTION OF THE IDENTITY MANAGER [Im] COMPONENT
+	//
+	// There is a strong thought that a pluggable infrastructure for mapping external DID based identity
+	// solutions into FireFly is required. However, the immediate shift in Sep 2021 moved to defining
+	// a strong enough identity construct within FireFly to map from/to.
+	//
+	// See issue https://github.com/hyperledger-labs/firefly/issues/187 to contribute to the discussion
+
 }
 
 // Callbacks is the interface provided to the identity plugin, to allow it to request information from firefly, or pass events.

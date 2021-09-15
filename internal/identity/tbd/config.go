@@ -14,11 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fftypes
+package tbd
 
-// Identity is the nested structure representing an identity, that might comprise a resolvable
-// by FireFly identity DID, a blockchain signing key, or both.
-type Identity struct {
-	Author string `json:"author"`
-	Key    string `json:"key"`
+import (
+	"github.com/hyperledger-labs/firefly/internal/config"
+)
+
+func (tbd *TBD) InitPrefix(prefix config.Prefix) {
 }

@@ -151,6 +151,10 @@ var (
 	AdminPreinit = rootKey("admin.preinit")
 	// IdentityType the type of the identity plugin in use
 	IdentityType = rootKey("identity.type")
+	// IdentityManagerCacheTTL the identity manager cache time to live
+	IdentityManagerCacheTTL = rootKey("identity.manager.cache.ttl")
+	// IdentityManagerCacheLimit the identity manager cache limit in count of items
+	IdentityManagerCacheLimit = rootKey("identity.manager.cache.limit")
 	// Lang is the language to use for translation
 	Lang = rootKey("lang")
 	// LogForceColor forces color to be enabled, even if we do not detect a TTY
@@ -325,6 +329,8 @@ func Reset() {
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
+	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
+	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")
 
 	i18n.SetLang(GetString(Lang))
 }

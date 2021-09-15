@@ -67,6 +67,27 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
+// ResolveSigningKey provides a mock function with given fields: ctx, signingKey
+func (_m *Plugin) ResolveSigningKey(ctx context.Context, signingKey string) (string, error) {
+	ret := _m.Called(ctx, signingKey)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, signingKey)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, signingKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Start provides a mock function with given fields:
 func (_m *Plugin) Start() error {
 	ret := _m.Called()
@@ -81,27 +102,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, ledgerID, identity, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, ledgerID, identity, batch)
+// SubmitBatchPin provides a mock function with given fields: ctx, ledgerID, signingKey, batch
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, ledgerID, signingKey, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, ledgerID, identity, batch)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// VerifyIdentitySyntax provides a mock function with given fields: ctx, identity
-func (_m *Plugin) VerifyIdentitySyntax(ctx context.Context, identity *fftypes.Identity) error {
-	ret := _m.Called(ctx, identity)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity) error); ok {
-		r0 = rf(ctx, identity)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, ledgerID, signingKey, batch)
 	} else {
 		r0 = ret.Error(0)
 	}

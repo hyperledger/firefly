@@ -372,7 +372,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
 
 	assert.NoError(t, err)
 
@@ -408,7 +408,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
 
 	assert.NoError(t, err)
 
@@ -436,7 +436,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -447,14 +447,12 @@ func TestVerifyEthAddress(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 
-	id := &fftypes.Identity{OnChain: "0x12345"}
-	err := e.VerifyIdentitySyntax(context.Background(), id)
+	_, err := e.ResolveSigningKey(context.Background(), "0x12345")
 	assert.Regexp(t, "FF10141", err)
 
-	id = &fftypes.Identity{OnChain: "0x2a7c9D5248681CE6c393117E641aD037F5C079F6"}
-	err = e.VerifyIdentitySyntax(context.Background(), id)
+	key, err := e.ResolveSigningKey(context.Background(), "0x2a7c9D5248681CE6c393117E641aD037F5C079F6")
 	assert.NoError(t, err)
-	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", id.OnChain)
+	assert.Equal(t, "0x2a7c9d5248681ce6c393117e641ad037f5c079f6", key)
 
 }
 

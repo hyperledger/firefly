@@ -45,6 +45,7 @@ $(eval $(call makemock, pkg/dataexchange,          Plugin,         dataexchangem
 $(eval $(call makemock, pkg/dataexchange,          Callbacks,      dataexchangemocks))
 $(eval $(call makemock, pkg/tokens,                Plugin,         tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,      tokenmocks))
+$(eval $(call makemock, internal/identity,         Manager,        identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,      batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,   sysmessagingmocks))
 $(eval $(call makemock, internal/syncasync,        Bridge,         syncasyncmocks))

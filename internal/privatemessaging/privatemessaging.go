@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
@@ -32,7 +33,6 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/karlseguin/ccache"
 )
 
@@ -50,7 +50,7 @@ type privateMessaging struct {
 
 	ctx                  context.Context
 	database             database.Plugin
-	identity             identity.Plugin
+	identity             identity.Manager
 	exchange             dataexchange.Plugin
 	blockchain           blockchain.Plugin
 	batch                batch.Manager
@@ -64,15 +64,15 @@ type privateMessaging struct {
 	opCorrelationRetries int
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
-	if di == nil || ii == nil || dx == nil || bi == nil || ba == nil || dm == nil {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 
 	pm := &privateMessaging{
 		ctx:              ctx,
 		database:         di,
-		identity:         ii,
+		identity:         im,
 		exchange:         dx,
 		blockchain:       bi,
 		batch:            ba,

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package onchain
+package tbd
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("onchain_unit_tests")
 
 func TestInit(t *testing.T) {
-	var oc identity.Plugin = &OnChain{}
+	var oc identity.Plugin = &TBD{}
 	oc.InitPrefix(utConfPrefix)
 	err := oc.Init(context.Background(), utConfPrefix, &identitymocks.Callbacks{})
 	assert.NoError(t, err)
@@ -38,15 +38,4 @@ func TestInit(t *testing.T) {
 	assert.NoError(t, err)
 	capabilities := oc.Capabilities()
 	assert.NotNil(t, capabilities)
-}
-
-func TestResolve(t *testing.T) {
-	var oc identity.Plugin = &OnChain{}
-	err := oc.Init(context.Background(), utConfPrefix, &identitymocks.Callbacks{})
-	assert.NoError(t, err)
-
-	id, err := oc.Resolve(context.Background(), "0x12345")
-	assert.NoError(t, err)
-	assert.Equal(t, "0x12345", id.Identifier)
-	assert.Equal(t, "0x12345", id.OnChain)
 }

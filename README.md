@@ -186,6 +186,12 @@ It depends on the following Kaleido services:
   │       │   │               │    * Hashes data, and maintains mapping to payload references in blob storage
   │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │
+  │       │   ┌───────────────┐
+  │       ├───┤ identity [Im] │  - Central identity management service across components
+  │       │   │ manager       │    * Resolves API input identity + key combos (short names, formatting etc.)
+  │       │   │               │    * Resolves registered on-chain signing keys back to identities
+  │       │   └───────────────┘    * Integrates with Blockchain Interface and plugable Identity Interface (TBD)
+  │       │
   │       │   ┌───────────────┐  - Private data management and validation
   │       ├───┤ event     [Em]│    * Implements dispatcher for batch component
   │       │   │ manager       │    * Integrates with data exchange [Dx] plugin
@@ -268,15 +274,10 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ httpdirect    │   │ kaleido       │
   │           └───────────────┘   └───────────────┘
   │
-  │           ┌───────────────┐  - Identity resolution and mapping
-  ├───────────┤ identity  [Ii]│    * Resolves opaque identifiers used throughout FireFly
-  │           │ interface     │    * Maps to and from blockchain signing identities
-  │           └─────┬─────────┘    * Map API/user identities from authentication, to network/organizational identities
-  │                 │
-  │                 ├───────────── ... extensible to DIDs etc.
-  │           ┌─────┴─────────┐
-  │           │ onchain       │
-  │           └───────────────┘
+  │           ┌───────────────┐  - Pluggable identity infrastructure
+  ├───────────┤ identity  [Ii]│    * TBD 
+  │           │ interface     │    * See Identity Manager component above
+  │           └───────────────┘    * See Issue 
   │
   │           ┌───────────────┐  - API Authentication and Authorization Interface
   ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)

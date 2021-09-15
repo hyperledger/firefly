@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
@@ -58,6 +59,7 @@ type testOrchestrator struct {
 	mpm *privatemessagingmocks.Manager
 	mbi *blockchainmocks.Plugin
 	mii *identitymocks.Plugin
+	mim *identitymanagermocks.Manager
 	mdx *dataexchangemocks.Plugin
 	mam *assetmocks.Manager
 	mti *tokenmocks.Plugin
@@ -81,6 +83,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mpm: &privatemessagingmocks.Manager{},
 		mbi: &blockchainmocks.Plugin{},
 		mii: &identitymocks.Plugin{},
+		mim: &identitymanagermocks.Manager{},
 		mdx: &dataexchangemocks.Plugin{},
 		mam: &assetmocks.Manager{},
 		mti: &tokenmocks.Plugin{},

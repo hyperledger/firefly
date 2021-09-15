@@ -26,12 +26,12 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/internal/syncasync"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 )
 
@@ -49,7 +49,7 @@ type Manager interface {
 type broadcastManager struct {
 	ctx           context.Context
 	database      database.Plugin
-	identity      identity.Plugin
+	identity      identity.Manager
 	data          data.Manager
 	blockchain    blockchain.Plugin
 	exchange      dataexchange.Plugin
@@ -59,14 +59,14 @@ type broadcastManager struct {
 	batchpin      batchpin.Submitter
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
-	if di == nil || ii == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
 		database:      di,
-		identity:      ii,
+		identity:      im,
 		data:          dm,
 		blockchain:    bi,
 		exchange:      dx,
