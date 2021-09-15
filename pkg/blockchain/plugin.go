@@ -40,7 +40,7 @@ type Plugin interface {
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// VerifyIdentitySyntax verifies that the supplied identity string is valid syntax according to the protocol.
+	// ResolveSigningKey verifies that the supplied identity string is valid syntax according to the protocol.
 	// Can apply transformations to the supplied signing identity (only), such as lower case
 	ResolveSigningKey(ctx context.Context, signingKey string) (string, error)
 

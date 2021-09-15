@@ -38,7 +38,6 @@ import (
 
 func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	config.Reset()
-	config.Set(config.OrgIdentity, "UTNodeID")
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -49,9 +48,6 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 	mbi.On("Name").Return("ut_blockchain").Maybe()
-	mim.On("ResolveInputIdentity", mock.Anything, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		return identity.Author == "" && identity.Key == ""
-	})).Return(nil).Maybe()
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast, fftypes.MessageTypeDefinition}, mock.Anything, mock.Anything).Return()
 	ctx, cancel := context.WithCancel(context.Background())
 	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
@@ -138,11 +134,9 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mps.On("PublishData", mock.Anything, mock.Anything).Return("id1", nil)
-	mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything).Return(nil)
 	mps.On("Name").Return("ut_publicstorage")
 
 	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})

@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -57,6 +58,8 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &fftypes.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
@@ -71,7 +74,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
@@ -90,7 +95,9 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
@@ -109,7 +116,9 @@ func TestBroadcastBroadcastFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
@@ -129,7 +138,9 @@ func TestBroadcastOk(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)

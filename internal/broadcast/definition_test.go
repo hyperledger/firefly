@@ -33,6 +33,8 @@ func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }

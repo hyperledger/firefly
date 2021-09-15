@@ -98,8 +98,10 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
