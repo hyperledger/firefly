@@ -31,7 +31,7 @@ func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.
 	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-	msg, err := bm.broadcastDefinitionAsNode(ctx, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
 	if msg != nil {
 		ns.Message = msg.Header.ID
 	}

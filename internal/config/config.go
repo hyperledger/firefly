@@ -187,8 +187,10 @@ var (
 	NodeDescription = rootKey("node.description")
 	// OrgName is the short name o the org
 	OrgName = rootKey("org.name")
-	// OrgIdentity is the signing identity allocated to the organization (can be the same as the nodes)
-	OrgIdentity = rootKey("org.identity")
+	// OrgIdentityDeprecated deprecated synonym to org.key
+	OrgIdentityDeprecated = rootKey("org.identity")
+	// OrgKey is the signing identity allocated to the organization (can be the same as the nodes)
+	OrgKey = rootKey("org.key")
 	// OrgDescription is a description for the org
 	OrgDescription = rootKey("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup

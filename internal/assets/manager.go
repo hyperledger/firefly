@@ -19,7 +19,6 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/data"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 	"github.com/hyperledger-labs/firefly/internal/identity"
@@ -81,10 +80,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		return nil, err
 	}
 
-	if pool.Author == "" {
-		pool.Author = config.GetString(config.OrgIdentity)
-	}
-	author, err := am.identity.Resolve(ctx, pool.Author)
+	err := am.identity.ResolveInputIdentity(ctx, &pool.Identity)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
@@ -106,7 +102,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		Subject: fftypes.TransactionSubject{
 			Namespace: ns,
 			Type:      fftypes.TransactionTypeTokenPool,
-			Signer:    author.OnChain, // The transaction records on the on-chain identity
+			Signer:    pool.Key,
 			Reference: id,
 		},
 		Created: fftypes.Now(),
@@ -125,7 +121,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		"",
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
-		author.Identifier)
+		pool.Author)
 	err = am.database.UpsertOperation(ctx, op, false)
 	if err != nil {
 		return nil, err
@@ -137,7 +133,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		ID:   tx.ID,
 		Type: tx.Subject.Type,
 	}
-	return pool, plugin.CreateTokenPool(ctx, author, pool)
+	return pool, plugin.CreateTokenPool(ctx, pool.Key, pool)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {

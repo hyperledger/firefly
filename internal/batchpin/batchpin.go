@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger-labs/firefly/internal/identity"
-	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/blockchain"
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -46,28 +45,19 @@ func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
-	signingIdentity, err := bp.identity.Resolve(ctx, batch.Author)
-	if err == nil {
-		err = bp.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		return err
-	}
-
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: batch.Namespace,
-			Signer:    signingIdentity.OnChain, // The transaction records on the on-chain identity
+			Signer:    batch.Key, // The transaction records on the on-chain identity
 			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	err := bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
@@ -87,7 +77,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 
 	// Write the batch pin to the blockchain
-	return bp.blockchain.SubmitBatchPin(ctx, nil /* TODO: ledger selection */, signingIdentity, &blockchain.BatchPin{
+	return bp.blockchain.SubmitBatchPin(ctx, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,

@@ -58,7 +58,10 @@ func TestBroadcastMessageOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{
@@ -113,7 +116,10 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{
@@ -176,7 +182,10 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{

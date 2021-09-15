@@ -48,6 +48,10 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
+		Identity: fftypes.Identity{
+			Key:    "0x12345",
+			Author: "did:firefly:org/abcd",
+		},
 	}
 	poolJson, _ := json.Marshal(&pool)
 

@@ -24,17 +24,17 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, author string) (valid bool, err error) {
+func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, signingKey string) (valid bool, err error) {
 	l := log.L(ctx)
 
-	// Verify the author matches
-	id, err := em.identity.Resolve(ctx, batch.Author)
+	// Verify that we can resolve the signing key back to this identity.
+	// This is a specific rule for broadcasts, so we know the authenticity of the data.
+	author, err := em.identity.ResolveSigningKeyIdentity(ctx, signingKey)
 	if err != nil {
-		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
-		return false, nil // This is not retryable. skip this batch
+		return false, err
 	}
-	if author != id.OnChain {
-		l.Errorf("Invalid batch '%s'. Author '%s' does not match transaction submitter '%s'", batch.ID, id.OnChain, author)
+	if author == "" || author != batch.Author || signingKey != batch.Key {
+		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Author, batch.Key, author, signingKey)
 		return false, nil // This is not retryable. skip this batch
 	}
 

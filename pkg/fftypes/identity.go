@@ -19,6 +19,6 @@ package fftypes
 // Identity is the nested structure representing an identity, that might comprise a resolvable
 // by FireFly identity DID, a blockchain signing key, or both.
 type Identity struct {
-	Author string `json:"author"`
-	Key    string `json:"key"`
+	Author string `json:"author,omitempty"`
+	Key    string `json:"key,omitempty"`
 }

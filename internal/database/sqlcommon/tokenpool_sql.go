@@ -36,6 +36,8 @@ var (
 		"type",
 		"tx_type",
 		"tx_id",
+		"author",
+		"key",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"protocolid":       "protocol_id",
@@ -81,6 +83,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("type", pool.Type).
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
+				Set("author", pool.Author).
+				Set("key", pool.Key).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, pool.Namespace, pool.ID)
@@ -100,6 +104,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Type,
 					pool.TX.Type,
 					pool.TX.ID,
+					pool.Author,
+					pool.Key,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, pool.Namespace, pool.ID)
@@ -122,6 +128,8 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Type,
 		&pool.TX.Type,
 		&pool.TX.ID,
+		&pool.Author,
+		&pool.Key,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenpool")

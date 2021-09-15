@@ -43,7 +43,7 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	if err := bm.data.CheckDatatype(ctx, ns, datatype); err != nil {
 		return nil, err
 	}
-	msg, err := bm.broadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype, waitConfirm)
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, datatype, fftypes.SystemTagDefineDatatype, waitConfirm)
 	if msg != nil {
 		datatype.Message = msg.Header.ID
 	}

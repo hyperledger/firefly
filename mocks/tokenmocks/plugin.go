@@ -35,13 +35,13 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 	return r0
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, identity, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
-	ret := _m.Called(ctx, identity, pool)
+// CreateTokenPool provides a mock function with given fields: ctx, signingKey, pool
+func (_m *Plugin) CreateTokenPool(ctx context.Context, signingKey string, pool *fftypes.TokenPool) error {
+	ret := _m.Called(ctx, signingKey, pool)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity, *fftypes.TokenPool) error); ok {
-		r0 = rf(ctx, identity, pool)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenPool) error); ok {
+		r0 = rf(ctx, signingKey, pool)
 	} else {
 		r0 = ret.Error(0)
 	}

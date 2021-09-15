@@ -27,7 +27,6 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 )
 
 // SystemHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
@@ -40,17 +39,15 @@ type SystemHandlers interface {
 
 type systemHandlers struct {
 	database  database.Plugin
-	identity  identity.Plugin
 	exchange  dataexchange.Plugin
 	data      data.Manager
 	broadcast broadcast.Manager
 	messaging privatemessaging.Manager
 }
 
-func NewSystemHandlers(di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager) SystemHandlers {
+func NewSystemHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager) SystemHandlers {
 	return &systemHandlers{
 		database:  di,
-		identity:  ii,
 		exchange:  dx,
 		data:      dm,
 		broadcast: bm,

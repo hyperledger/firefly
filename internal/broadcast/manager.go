@@ -40,8 +40,8 @@ type Manager interface {
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
+	BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
-	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	Start() error
 	WaitStop()
 }
@@ -85,15 +85,6 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		fftypes.MessageTypeDefinition,
 	}, bm.dispatchBatch, bo)
 	return bm, nil
-}
-
-func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
-	orgIdentity := config.GetString(config.OrgIdentity)
-	id, err := bm.identity.Resolve(ctx, orgIdentity)
-	if err != nil {
-		return nil, err
-	}
-	return id, nil
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {

@@ -54,11 +54,6 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 		return nil, nil, err
 	}
 
-	signingIdentity, err := nm.identity.Resolve(ctx, node.Owner)
-	if err != nil {
-		return nil, nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
-	}
-
 	msg, err = nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode, waitConfirm)
 	if msg != nil {
 		node.Message = msg.Header.ID

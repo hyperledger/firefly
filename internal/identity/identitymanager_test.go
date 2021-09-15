@@ -301,3 +301,130 @@ func TestResolveInputIdentityOrgLookupByNameNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10278", err)
 	mdi.AssertExpectations(t)
 }
+
+func TestResolveSigningKeyIdentityBadSigningKey(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "badness").Return("", fmt.Errorf("pop"))
+
+	_, err := im.ResolveSigningKeyIdentity(ctx, "badness")
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveSigningKeyIdentityOrgLookupFail(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, fmt.Errorf("pop"))
+
+	_, err := im.ResolveSigningKeyIdentity(ctx, "key1")
+	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveSigningKeyIdentityOrgLookupOkCached(t *testing.T) {
+
+	org := &fftypes.Organization{
+		ID:       fftypes.NewUUID(),
+		Identity: "key1resolved",
+	}
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(org, nil).Once()
+
+	author, err := im.ResolveSigningKeyIdentity(ctx, "key1")
+	assert.NoError(t, err)
+	assert.Equal(t, orgDID(org), author)
+
+	// Cached second time, without any DB call (see "Once()" above)
+	author, err = im.ResolveSigningKeyIdentity(ctx, "key1")
+	assert.NoError(t, err)
+	assert.Equal(t, orgDID(org), author)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveSigningKeyIdentityOrgLookupUnresolved(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil)
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, nil)
+
+	author, err := im.ResolveSigningKeyIdentity(ctx, "key1")
+	assert.NoError(t, err)
+	assert.Equal(t, "", author)
+
+	mbi.AssertExpectations(t)
+}
+
+func TestResolveLocalOrgDIDSuccess(t *testing.T) {
+
+	org := &fftypes.Organization{
+		ID:       fftypes.NewUUID(),
+		Name:     "org1",
+		Identity: "0x222222",
+	}
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil).Once()
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(org, nil).Once()
+
+	config.Set(config.OrgIdentityDeprecated, "key1")
+
+	localOrgDID, err := im.ResolveLocalOrgDID(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, orgDID(org), localOrgDID)
+
+	// Second one cached
+	localOrgDID, err = im.ResolveLocalOrgDID(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, orgDID(org), localOrgDID)
+
+	mbi.AssertExpectations(t)
+
+}
+
+func TestResolveLocalOrgDIDFail(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil).Once()
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, fmt.Errorf("pop")).Once()
+
+	config.Set(config.OrgIdentityDeprecated, "key1")
+
+	_, err := im.ResolveLocalOrgDID(ctx)
+	assert.Regexp(t, "FF10290", err)
+
+	mbi.AssertExpectations(t)
+
+}
+
+func TestResolveLocalOrgDIDNotFound(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil).Once()
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, nil).Once()
+
+	config.Set(config.OrgIdentityDeprecated, "key1")
+
+	_, err := im.ResolveLocalOrgDID(ctx)
+	assert.Regexp(t, "FF10290", err)
+
+	mbi.AssertExpectations(t)
+
+}

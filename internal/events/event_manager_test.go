@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
 	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -38,13 +38,13 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	config.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
 	mpi := &publicstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &syshandlersmocks.SystemHandlers{}
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mpi, mdi, mii, msh, mdm)
+	emi, err := NewEventManager(ctx, mpi, mdi, mim, msh, mdm)
 	em := emi.(*eventManager)
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -83,11 +83,11 @@ func TestStartStopBadTransports(t *testing.T) {
 	config.Set(config.EventTransportsEnabled, []string{"wrongun"})
 	defer config.Reset()
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
 	mpi := &publicstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &syshandlersmocks.SystemHandlers{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mii, msh, mdm)
+	_, err := NewEventManager(context.Background(), mpi, mdi, mim, msh, mdm)
 	assert.Regexp(t, "FF10172", err)
 
 }

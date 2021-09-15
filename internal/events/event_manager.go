@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
 	"github.com/hyperledger-labs/firefly/internal/events/system"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/identity"
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/internal/retry"
 	"github.com/hyperledger-labs/firefly/internal/syshandlers"
@@ -35,7 +36,6 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/database"
 	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
 	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
 	"github.com/hyperledger-labs/firefly/pkg/tokens"
 )
@@ -72,7 +72,7 @@ type eventManager struct {
 	ctx                  context.Context
 	publicstorage        publicstorage.Plugin
 	database             database.Plugin
-	identity             identity.Plugin
+	identity             identity.Manager
 	syshandlers          syshandlers.SystemHandlers
 	data                 data.Manager
 	subManager           *subscriptionManager
@@ -85,8 +85,8 @@ type eventManager struct {
 	internalEvents       *system.Events
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, ii identity.Plugin, sh syshandlers.SystemHandlers, dm data.Manager) (EventManager, error) {
-	if pi == nil || di == nil || ii == nil || dm == nil {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager) (EventManager, error) {
+	if pi == nil || di == nil || im == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -95,7 +95,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		ctx:           log.WithLogField(ctx, "role", "event-manager"),
 		publicstorage: pi,
 		database:      di,
-		identity:      ii,
+		identity:      im,
 		syshandlers:   sh,
 		data:          dm,
 		retry: retry.Retry{

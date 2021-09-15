@@ -51,8 +51,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	defer cancel()
 
 	// Generate some pin data
-	member1 := "0x12345"
-	member2 := "0x23456"
+	member1org := "org1"
+	member2org := "org2"
+	member2key := "0x23456"
 	topic := "some-topic"
 	batchID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -61,9 +62,9 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	h.Write([]byte(topic))
 	h.Write((*groupID)[:])
 	contextUnmasked := fftypes.HashResult(h)
-	member1NonceZero := ag.calcHash(topic, groupID, member1, 0)
-	member2NonceZero := ag.calcHash(topic, groupID, member2, 0)
-	member2NonceOne := ag.calcHash(topic, groupID, member2, 1)
+	member1NonceZero := ag.calcHash(topic, groupID, member1org, 0)
+	member2NonceZero := ag.calcHash(topic, groupID, member2org, 0)
+	member2NonceOne := ag.calcHash(topic, groupID, member2org, 1)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -79,7 +80,10 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 						ID:     msgID,
 						Group:  groupID,
 						Topics: []string{topic},
-						Author: member2,
+						Identity: fftypes.Identity{
+							Author: member2org,
+							Key:    member2key,
+						},
 					},
 					Pins: []string{member2NonceZero.String()},
 					Data: fftypes.DataRefs{
@@ -95,8 +99,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
-				{Identity: member1},
-				{Identity: member2},
+				{Identity: member1org},
+				{Identity: member2org},
 			},
 		},
 	}, nil)
@@ -183,8 +187,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	defer cancel()
 
 	// Generate some pin data
-	member1 := "0x12345"
-	member2 := "0x23456"
+	member1org := "org1"
+	member2org := "org2"
+	member2key := "0x12345"
 	topic := "some-topic"
 	batchID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -193,9 +198,9 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	h.Write([]byte(topic))
 	h.Write((*groupID)[:])
 	contextUnmasked := fftypes.HashResult(h)
-	member1Nonce100 := ag.calcHash(topic, groupID, member1, 100)
-	member2Nonce500 := ag.calcHash(topic, groupID, member2, 500)
-	member2Nonce501 := ag.calcHash(topic, groupID, member2, 501)
+	member1Nonce100 := ag.calcHash(topic, groupID, member1org, 100)
+	member2Nonce500 := ag.calcHash(topic, groupID, member2org, 500)
+	member2Nonce501 := ag.calcHash(topic, groupID, member2org, 501)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -210,7 +215,10 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 						ID:     msgID,
 						Group:  groupID,
 						Topics: []string{topic},
-						Author: member2,
+						Identity: fftypes.Identity{
+							Author: member2org,
+							Key:    member2key,
+						},
 					},
 					Pins: []string{member2Nonce500.String()},
 					Data: fftypes.DataRefs{
@@ -222,8 +230,8 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	}, nil)
 	// Look for existing nextpins - none found, first on context
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
-		{Context: contextUnmasked, Identity: member1, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
-		{Context: contextUnmasked, Identity: member2, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
+		{Context: contextUnmasked, Identity: member1org, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
+		{Context: contextUnmasked, Identity: member2org, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
 	}, nil, nil).Once()
 	// Validate the message is ok
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
@@ -285,7 +293,8 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 
 	// Get the batch
-	member1 := "0x12345"
+	member1org := "org1"
+	member1key := "0x12345"
 	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
@@ -294,7 +303,10 @@ func TestAggregationBroadcast(t *testing.T) {
 					Header: fftypes.MessageHeader{
 						ID:     msgID,
 						Topics: []string{topic},
-						Author: member1,
+						Identity: fftypes.Identity{
+							Author: member1org,
+							Key:    member1key,
+						},
 					},
 					Data: fftypes.DataRefs{
 						{ID: fftypes.NewUUID()},
@@ -611,9 +623,12 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 
 	_, err := ag.checkMaskedContextReady(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewRandB32(),
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: fftypes.NewRandB32(),
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32())
 	assert.NoError(t, err)
@@ -629,9 +644,12 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewRandB32(),
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: fftypes.NewRandB32(),
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.EqualError(t, err, "pop")
@@ -647,9 +665,12 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  fftypes.NewRandB32(),
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: fftypes.NewRandB32(),
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
@@ -673,9 +694,12 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  groupID,
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
@@ -698,9 +722,12 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  groupID,
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
@@ -726,9 +753,12 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 
 	_, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  groupID,
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.EqualError(t, err, "pop")
@@ -756,9 +786,12 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 
 	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  groupID,
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
@@ -786,9 +819,12 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 
 	np, err := ag.attemptContextInit(ag.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			ID:     fftypes.NewUUID(),
-			Group:  groupID,
-			Author: "author1",
+			ID:    fftypes.NewUUID(),
+			Group: groupID,
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.Nil(t, np)

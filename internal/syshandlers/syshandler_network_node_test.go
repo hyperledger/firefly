@@ -24,7 +24,6 @@ import (
 
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,8 +48,6 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -61,14 +58,16 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -91,8 +90,6 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -108,7 +105,6 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -131,8 +127,6 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -150,7 +144,6 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -173,8 +166,6 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x99999"}, nil)
@@ -188,7 +179,6 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -211,8 +201,6 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x23456"}, nil)
@@ -229,7 +217,6 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -252,8 +239,6 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, fmt.Errorf("pop"))
@@ -267,7 +252,6 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -290,8 +274,6 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -304,7 +286,6 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -327,8 +308,6 @@ func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
@@ -341,7 +320,6 @@ func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 

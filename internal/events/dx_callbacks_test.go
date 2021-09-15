@@ -34,8 +34,11 @@ func TestMessageReceiveOK(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "signingOrg",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -72,8 +75,11 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -103,8 +109,11 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	cancel() // retryable error
 
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "signingOrg",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -273,8 +282,11 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	cancel() // retryable error so we need to break the loop
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -302,8 +314,11 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -331,8 +346,11 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -561,7 +579,10 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -595,7 +616,10 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -629,7 +653,10 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -669,7 +696,10 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -716,7 +746,10 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -765,7 +798,10 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -804,7 +840,10 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},

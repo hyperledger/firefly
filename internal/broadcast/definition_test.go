@@ -20,35 +20,32 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastDefinitionAsNodeBadId(t *testing.T) {
+func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	config.Set(config.OrgIdentity, "wrong")
-	mii := bm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "wrong").Return(nil, fmt.Errorf("pop"))
-	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(fmt.Errorf("pop"))
+	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }
 
-func TestBroadcastDefinitionAsNodeBadSigningId(t *testing.T) {
+func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	config.Set(config.OrgIdentity, "wrong")
-	mii := bm.identity.(*identitymocks.Plugin)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
-	badID := &fftypes.Identity{OnChain: "0x99999"}
-	mii.On("Resolve", mock.Anything, "wrong").Return(badID, nil)
-	mbi.On("VerifyIdentitySyntax", mock.Anything, badID).Return(fmt.Errorf("pop"))
-	_, err := bm.broadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, false)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	_, err := bm.BroadcastDefinition(bm.ctx, &fftypes.Namespace{}, &fftypes.Identity{
+		Author: "wrong",
+		Key:    "wrong",
+	}, fftypes.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }

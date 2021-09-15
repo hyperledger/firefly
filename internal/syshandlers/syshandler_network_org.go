@@ -50,14 +50,8 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 		}
 	}
 
-	id, err := sh.identity.Resolve(ctx, signingIdentity)
-	if err != nil {
-		l.Warnf("Unable to process organization broadcast %s - resolve identity failed: %s", msg.Header.ID, err)
-		return false, nil
-	}
-
-	if msg.Header.Author != id.OnChain {
-		l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, id.OnChain, msg.Header.Author)
+	if msg.Header.Author != signingIdentity {
+		l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, signingIdentity, msg.Header.Author)
 		return false, nil
 	}
 

@@ -133,11 +133,13 @@ func TestSealKnownMessage(t *testing.T) {
 	hash3.UnmarshalText([]byte("284b535da66aa0734af56c708426d756331baec3bce3079e508003bcf4738ee6"))
 	msg := Message{
 		Header: MessageHeader{
-			ID:        msgid,
-			CID:       cid,
-			Type:      MessageTypePrivate,
-			TxType:    TransactionTypeBatchPin,
-			Author:    "0x12345",
+			ID:     msgid,
+			CID:    cid,
+			Type:   MessageTypePrivate,
+			TxType: TransactionTypeBatchPin,
+			Identity: Identity{
+				Author: "0x12345",
+			},
 			Namespace: "ns1",
 			Topics:    []string{"topic1", "topic2"},
 			Tag:       "tag1",

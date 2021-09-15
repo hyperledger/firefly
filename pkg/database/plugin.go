@@ -547,6 +547,7 @@ var MessageQueryFactory = &queryFields{
 	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
+	"key":       &StringField{},
 	"topics":    &FFNameArrayField{},
 	"tag":       &StringField{},
 	"group":     &Bytes32Field{},
@@ -568,6 +569,7 @@ var BatchQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
+	"key":        &StringField{},
 	"group":      &Bytes32Field{},
 	"hash":       &Bytes32Field{},
 	"payloadref": &StringField{},
@@ -743,6 +745,8 @@ var TokenPoolQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"name":       &StringField{},
 	"protocolid": &StringField{},
+	"author":     &StringField{},
+	"key":        &StringField{},
 }
 
 // TokenAccountQueryFactory filter fields for token accounts

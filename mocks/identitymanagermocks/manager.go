@@ -28,3 +28,45 @@ func (_m *Manager) ResolveInputIdentity(ctx context.Context, _a1 *fftypes.Identi
 
 	return r0
 }
+
+// ResolveLocalOrgDID provides a mock function with given fields: ctx
+func (_m *Manager) ResolveLocalOrgDID(ctx context.Context) (string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ResolveSigningKeyIdentity provides a mock function with given fields: ctx, signingKey
+func (_m *Manager) ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (string, error) {
+	ret := _m.Called(ctx, signingKey)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, signingKey)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, signingKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

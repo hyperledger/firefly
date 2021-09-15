@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) error {
+func (pm *privateMessaging) resolveReceipientList(ctx context.Context, in *fftypes.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		return nil // validity of existing group checked later
@@ -43,7 +43,7 @@ func (pm *privateMessaging) resolveReceipientList(ctx context.Context, sender *f
 
 	// If the group is new, we need to do a group initialization, before we send the message itself.
 	if isNew {
-		return pm.groupManager.groupInit(ctx, sender, group)
+		return pm.groupManager.groupInit(ctx, &in.Header.Identity, group)
 	}
 	return err
 }
@@ -105,6 +105,12 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 }
 
 func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
+
+	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	foundLocal := false
 	gi = &fftypes.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
@@ -123,7 +129,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || (node.Owner == pm.localOrgIdentity && node.Name == pm.localNodeName)
+		foundLocal = foundLocal || (node.Owner == localOrgDID && node.Name == pm.localNodeName)
 		gi.Members[i] = &fftypes.Member{
 			Identity: org.Identity,
 			Node:     node.ID,
@@ -131,25 +137,25 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	}
 	if !foundLocal {
 		// Add in the local org identity
-		localNodeID, err := pm.resolveLocalNode(ctx)
+		localNodeID, err := pm.resolveLocalNode(ctx, localOrgDID)
 		if err != nil {
 			return nil, err
 		}
 		gi.Members = append(gi.Members, &fftypes.Member{
-			Identity: pm.localOrgIdentity,
+			Identity: localOrgDID,
 			Node:     localNodeID,
 		})
 	}
 	return gi, nil
 }
 
-func (pm *privateMessaging) resolveLocalNode(ctx context.Context) (*fftypes.UUID, error) {
+func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrgDID string) (*fftypes.UUID, error) {
 	if pm.localNodeID != nil {
 		return pm.localNodeID, nil
 	}
 	fb := database.NodeQueryFactory.NewFilterLimit(ctx, 1)
 	filter := fb.And(
-		fb.Eq("owner", pm.localOrgIdentity),
+		fb.Eq("owner", localOrgDID),
 		fb.Eq("name", pm.localNodeName),
 	)
 	nodes, _, err := pm.database.GetNodes(ctx, filter)

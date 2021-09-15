@@ -42,7 +42,7 @@ type Plugin interface {
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, signingKey string, pool *fftypes.TokenPool) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.

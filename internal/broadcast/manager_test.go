@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
@@ -40,7 +40,7 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	config.Reset()
 	config.Set(config.OrgIdentity, "UTNodeID")
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mpi := &publicstoragemocks.Plugin{}
@@ -49,12 +49,12 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 	mbi.On("Name").Return("ut_blockchain").Maybe()
-	defaultIdentity := &fftypes.Identity{Identifier: "UTNodeID", OnChain: "0x12345"}
-	mii.On("Resolve", mock.Anything, "UTNodeID").Return(defaultIdentity, nil).Maybe()
-	mbi.On("VerifyIdentitySyntax", mock.Anything, defaultIdentity).Return(nil).Maybe()
+	mim.On("ResolveInputIdentity", mock.Anything, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+		return identity.Author == "" && identity.Key == ""
+	})).Return(nil).Maybe()
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast, fftypes.MessageTypeDefinition}, mock.Anything, mock.Anything).Return()
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mii, mdm, mbi, mdx, mpi, mba, msa, mbp)
+	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
@@ -132,17 +132,6 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetOrgIdentityEmpty(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-
-	config.Set(config.OrgIdentity, "")
-	mii := bm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "").Return(nil, fmt.Errorf("pop"))
-	_, err := bm.GetNodeSigningIdentity(bm.ctx)
-	assert.Regexp(t, "pop", err)
-}
-
 func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -156,7 +145,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything).Return(nil)
 	mps.On("Name").Return("ut_publicstorage")
 
-	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Author: "wrong"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.dispatchBatch(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "wrong", Key: "wrong"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.NoError(t, err)
 
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -176,7 +165,7 @@ func TestSubmitTXAndUpdateDBUpdateBatchFail(t *testing.T) {
 	mdi.On("UpdateBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	bm.blockchain.(*blockchainmocks.Plugin).On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
-	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Author: "UTNodeID"}, []*fftypes.Bytes32{fftypes.NewRandB32()})
+	err := bm.submitTXAndUpdateDB(context.Background(), &fftypes.Batch{Identity: fftypes.Identity{Author: "org1", Key: "0x12345"}}, []*fftypes.Bytes32{fftypes.NewRandB32()})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -194,7 +183,7 @@ func TestSubmitTXAndUpdateDBAddOp1Fail(t *testing.T) {
 	bm.publicstorage.(*publicstoragemocks.Plugin).On("Name").Return("ut_publicstorage")
 
 	batch := &fftypes.Batch{
-		Author: "UTNodeID",
+		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
@@ -225,7 +214,7 @@ func TestSubmitTXAndUpdateDBSucceed(t *testing.T) {
 
 	msgID := fftypes.NewUUID()
 	batch := &fftypes.Batch{
-		Author: "UTNodeID",
+		Identity: fftypes.Identity{Author: "org1", Key: "0x12345"},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,

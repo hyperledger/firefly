@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -44,11 +45,11 @@ func TestRegisterNodeOk(t *testing.T) {
 		Description: "owning organization",
 	}, nil)
 
-	mii := nm.identity.(*identitymocks.Plugin)
+	mim := nm.identity.(*identitymanagermocks.Manager)
 	childID := &fftypes.Identity{OnChain: "0x12345"}
 	parentID := &fftypes.Identity{OnChain: "0x23456"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
-	mii.On("Resolve", nm.ctx, "0x23456").Return(parentID, nil)
+	mim.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
+	mim.On("Resolve", nm.ctx, "0x23456").Return(parentID, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return("peer1", fftypes.JSONObject{"endpoint": "details"}, nil)

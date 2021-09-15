@@ -34,6 +34,7 @@ var (
 		"cid",
 		"mtype",
 		"author",
+		"key",
 		"created",
 		"namespace",
 		"topics",
@@ -106,6 +107,7 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 				Set("cid", message.Header.CID).
 				Set("mtype", string(message.Header.Type)).
 				Set("author", message.Header.Author).
+				Set("key", message.Header.Key).
 				Set("created", message.Header.Created).
 				Set("namespace", message.Header.Namespace).
 				Set("topics", message.Header.Topics).
@@ -136,6 +138,7 @@ func (s *SQLCommon) upsertMessageCommon(ctx context.Context, message *fftypes.Me
 					message.Header.CID,
 					string(message.Header.Type),
 					message.Header.Author,
+					message.Header.Key,
 					message.Header.Created,
 					message.Header.Namespace,
 					message.Header.Topics,
@@ -278,6 +281,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Header.CID,
 		&msg.Header.Type,
 		&msg.Header.Author,
+		&msg.Header.Key,
 		&msg.Header.Created,
 		&msg.Header.Namespace,
 		&msg.Header.Topics,

@@ -60,7 +60,6 @@ type privateMessaging struct {
 	retry                retry.Retry
 	localNodeName        string
 	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	localOrgIdentity     string
 	opCorrelationRetries int
 }
 
@@ -70,17 +69,16 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 	}
 
 	pm := &privateMessaging{
-		ctx:              ctx,
-		database:         di,
-		identity:         im,
-		exchange:         dx,
-		blockchain:       bi,
-		batch:            ba,
-		data:             dm,
-		syncasync:        sa,
-		batchpin:         bp,
-		localNodeName:    config.GetString(config.NodeName),
-		localOrgIdentity: config.GetString(config.OrgIdentity),
+		ctx:           ctx,
+		database:      di,
+		identity:      im,
+		exchange:      dx,
+		blockchain:    bi,
+		batch:         ba,
+		data:          dm,
+		syncasync:     sa,
+		batchpin:      bp,
+		localNodeName: config.GetString(config.NodeName),
 		groupManager: groupManager{
 			database:      di,
 			data:          dm,
@@ -178,10 +176,15 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
+	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Owner == pm.localOrgIdentity {
+		if node.Owner == localOrgDID {
 			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
 			continue
 		}

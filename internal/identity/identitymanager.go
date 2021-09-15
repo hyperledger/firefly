@@ -38,6 +38,8 @@ const (
 
 type Manager interface {
 	ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error)
+	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
+	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
 }
 
 type identityManager struct {
@@ -45,6 +47,7 @@ type identityManager struct {
 	plugin     identity.Plugin
 	blockchain blockchain.Plugin
 
+	localOrgDID        string
 	identityCacheTTL   time.Duration
 	identityCache      *ccache.Cache
 	signingKeyCacheTTL time.Duration
@@ -73,16 +76,21 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	return im, nil
 }
 
+func orgDID(org *fftypes.Organization) string {
+	if org == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s%s", fireflyOrgDIDPrefix, org.ID)
+}
+
 // ResolveInputIdentity takes in identity input information from an API call, or configuration load, and resolves
 // the combination
 func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error) {
 	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", identity.Key, identity.Author)
 
-	if identity.Key != "" {
-		err = im.resolveSigningKey(ctx, identity)
-		if err != nil {
-			return err
-		}
+	identity.Key, err = im.resolveSigningKey(ctx, identity.Key)
+	if err != nil {
+		return err
 	}
 
 	// Resolve the identity
@@ -94,9 +102,60 @@ func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *f
 	return
 }
 
+func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error) {
+
+	signingKey, err = im.resolveSigningKey(ctx, signingKey)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO: Consider other ways identity could be resolved
+	org, err := im.cachedOrgLookupBySigningKey(ctx, signingKey)
+	if err != nil {
+		return "", err
+	}
+
+	return orgDID(org), nil
+
+}
+
+func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error) {
+	if im.localOrgDID != "" {
+		return im.localOrgDID, nil
+	}
+	orgKey := config.GetString(config.OrgKey)
+	if orgKey == "" {
+		orgKey = config.GetString(config.OrgIdentityDeprecated)
+	}
+	im.localOrgDID, err = im.ResolveSigningKeyIdentity(ctx, orgKey)
+	if err != nil {
+		return "", i18n.WrapError(ctx, err, i18n.MsgLocalOrgLookupFailed, orgKey)
+	}
+	if im.localOrgDID == "" {
+		return "", i18n.NewError(ctx, i18n.MsgLocalOrgLookupFailed, orgKey)
+	}
+	return im.localOrgDID, err
+}
+
+func (im *identityManager) cachedOrgLookupBySigningKey(ctx context.Context, signingKey string) (org *fftypes.Organization, err error) {
+	cacheKey := fmt.Sprintf("key:%s", signingKey)
+	if cached := im.identityCache.Get(cacheKey); cached != nil {
+		cached.Extend(im.identityCacheTTL)
+		org = cached.Value().(*fftypes.Organization)
+	} else {
+		if org, err = im.database.GetOrganizationByIdentity(ctx, signingKey); err != nil || org == nil {
+			return org, err
+		}
+		// Cache the result
+		im.identityCache.Set(cacheKey, org, im.identityCacheTTL)
+	}
+	return org, nil
+}
+
 func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author string) (org *fftypes.Organization, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
-	if cached := im.identityCache.Get(author); cached != nil {
+	cacheKey := fmt.Sprintf("author:%s", author)
+	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
 		org = cached.Value().(*fftypes.Organization)
 	} else {
@@ -124,7 +183,7 @@ func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author s
 		}
 
 		// Cache the result
-		im.identityCache.Set(author, org, im.identityCacheTTL)
+		im.identityCache.Set(cacheKey, org, im.identityCacheTTL)
 	}
 	return org, nil
 }
@@ -160,26 +219,24 @@ func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fft
 	}
 
 	// We normalize the author to the DID
-	identity.Author = fmt.Sprintf("%s%s", fireflyOrgDIDPrefix, org.ID)
+	identity.Author = orgDID(org)
 	return nil
 
 }
 
-func (im *identityManager) resolveSigningKey(ctx context.Context, identity *fftypes.Identity) (err error) {
+func (im *identityManager) resolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error) {
 	// Resolve the signing key
-	if identity.Key != "" {
-		inputKey := identity.Key
+	if inputKey != "" {
 		if cached := im.signingKeyCache.Get(inputKey); cached != nil {
 			cached.Extend(im.identityCacheTTL)
-			identity.Key = cached.Value().(string)
+			outputKey = cached.Value().(string)
 		} else {
-			identity.Key, err = im.blockchain.ResolveSigningKey(ctx, inputKey)
+			outputKey, err = im.blockchain.ResolveSigningKey(ctx, inputKey)
 			if err != nil {
-				return err
+				return "", err
 			}
-			im.signingKeyCache.Set(inputKey, identity.Key, im.identityCacheTTL)
+			im.signingKeyCache.Set(inputKey, outputKey, im.identityCacheTTL)
 		}
 	}
-
 	return
 }

@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
+	"github.com/hyperledger-labs/firefly/mocks/identitymanagermocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,8 +34,8 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
-	nm, err := NewNetworkMap(ctx, mdi, mbm, mdx, mii)
+	mim := &identitymanagermocks.Manager{}
+	nm, err := NewNetworkMap(ctx, mdi, mbm, mdx, mim)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 

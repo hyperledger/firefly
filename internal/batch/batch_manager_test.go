@@ -88,7 +88,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		},
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},
@@ -156,8 +156,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 		assert.Len(t, s, 2)
 		h := sha256.New()
 		nonceBytes, _ := hex.DecodeString(
-			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "30783132333435" + "0000000000003039",
-		/*|  topic1   |    | ---- group id -------------------------------------------------|   |author'0x12345'|  |i64 nonce (12345) */
+			"746f70696331" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
+		/*|  topic1   |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
@@ -165,8 +165,8 @@ func TestE2EDispatchPrivate(t *testing.T) {
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
-			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "30783132333435" + "000000000000303a",
-		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'0x12345'|  |i64 nonce (12346) */
+			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "000000000000303a",
+		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12346) */
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
@@ -192,7 +192,7 @@ func TestE2EDispatchPrivate(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Topics:    []string{"topic1", "topic2"},
 			Namespace: "ns1",
-			Author:    "0x12345",
+			Identity:  fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
 			Group:     &groupID,
 		},
 		Data: fftypes.DataRefs{

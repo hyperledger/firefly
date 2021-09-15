@@ -197,4 +197,5 @@ var (
 	MsgAuthorNotFoundByDID         = ffm("FF10277", "Author could not be resolved via DID '%s'")
 	MsgAuthorOrgNotFoundByName     = ffm("FF10278", "Author organization could not be resolved via name '%s'")
 	MsgAuthorOrgSigningKeyMismatch = ffm("FF10279", "Author organization '%s' is not associated with signing key '%s'")
+	MsgLocalOrgLookupFailed        = ffm("FF10290", "Unable resolve the local org by the configured signing key on the node. Please confirm the org is registered with key '%s'", 500)
 )

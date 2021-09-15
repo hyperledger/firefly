@@ -112,7 +112,7 @@ func (gm *groupManager) groupInit(ctx context.Context, signer *fftypes.Identity,
 			Group:     group.Hash,
 			Namespace: group.Namespace, // Must go into the same ordering context as the message itself
 			Type:      fftypes.MessageTypeGroupInit,
-			Author:    signer.Identifier,
+			Identity:  *signer,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Topics:    fftypes.FFNameArray{group.Topic()},
 			TxType:    fftypes.TransactionTypeBatchPin,

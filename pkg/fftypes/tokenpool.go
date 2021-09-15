@@ -24,11 +24,11 @@ var (
 )
 
 type TokenPool struct {
-	ID         *UUID          `json:"id,omitempty"`
-	Type       TokenType      `json:"type" ffenum:"tokentype"`
-	Namespace  string         `json:"namespace,omitempty"`
-	Name       string         `json:"name,omitempty"`
-	ProtocolID string         `json:"protocolId,omitempty"`
-	Author     string         `json:"author,omitempty"`
-	TX         TransactionRef `json:"tx,omitempty"`
+	ID         *UUID     `json:"id,omitempty"`
+	Type       TokenType `json:"type" ffenum:"tokentype"`
+	Namespace  string    `json:"namespace,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	ProtocolID string    `json:"protocolId,omitempty"`
+	Identity
+	TX TransactionRef `json:"tx,omitempty"`
 }
