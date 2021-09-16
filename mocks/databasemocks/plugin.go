@@ -1294,11 +1294,11 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 }
 
 // GetTokenAccount provides a mock function with given fields: ctx, protocolID, tokenIndex, identity
-func (_m *Plugin) GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID, tokenIndex string, identity string) (*fftypes.TokenAccount, error) {
+func (_m *Plugin) GetTokenAccount(ctx context.Context, protocolID string, tokenIndex string, identity string) (*fftypes.TokenAccount, error) {
 	ret := _m.Called(ctx, protocolID, tokenIndex, identity)
 
 	var r0 *fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) *fftypes.TokenAccount); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.TokenAccount); ok {
 		r0 = rf(ctx, protocolID, tokenIndex, identity)
 	} else {
 		if ret.Get(0) != nil {
@@ -1307,7 +1307,7 @@ func (_m *Plugin) GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, protocolID, tokenIndex, identity)
 	} else {
 		r1 = ret.Error(1)
