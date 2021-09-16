@@ -133,7 +133,7 @@ func (s *SQLCommon) getTokenAccountPred(ctx context.Context, desc string, pred i
 }
 
 func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (message *fftypes.TokenAccount, err error) {
-	desc := protocolID + "/" + tokenIndex + "/" + identity
+	desc := fftypes.TokenAccountIdentifier(protocolID, tokenIndex, identity)
 	return s.getTokenAccountPred(ctx, desc, sq.And{
 		sq.Eq{"protocol_id": protocolID},
 		sq.Eq{"token_index": tokenIndex},
