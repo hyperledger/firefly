@@ -360,6 +360,9 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
+	// GetTokenPoolByID - Get a token pool by protocol ID
+	GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error)
+
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
 }

@@ -70,6 +70,13 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
+	// Query back the token pool (by protocol ID)
+	poolRead, err = s.GetTokenPoolByProtocolID(ctx, pool.ProtocolID)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolReadJson, _ = json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
 	// Query back the token pool (by query filter)
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
