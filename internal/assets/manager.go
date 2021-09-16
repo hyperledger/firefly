@@ -172,7 +172,7 @@ func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("poolid", pool.ID)))
+	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("protocolid", pool.ProtocolID)))
 }
 
 func (am *assetManager) Start() error {
