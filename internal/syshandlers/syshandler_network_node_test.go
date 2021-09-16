@@ -139,8 +139,10 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -174,8 +176,10 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -212,8 +216,10 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
@@ -247,8 +253,10 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -281,42 +289,10 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x99999",
-			Tag:       string(fftypes.SystemTagDefineNode),
-		},
-	}, []*fftypes.Data{data})
-	assert.False(t, valid)
-	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
-
-	node := &fftypes.Node{
-		ID:          fftypes.NewUUID(),
-		Name:        "node1",
-		Owner:       "0x23456",
-		Description: "my org",
-		DX: fftypes.DXInfo{
-			Peer:     "peer1",
-			Endpoint: fftypes.JSONObject{"some": "info"},
-		},
-	}
-	b, err := json.Marshal(&node)
-	assert.NoError(t, err)
-	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
-	}
-
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x12345",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -349,8 +325,10 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -383,8 +361,10 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -415,8 +395,10 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -433,8 +415,10 @@ func TestHandleSystemBroadcastNodeUnmarshalFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

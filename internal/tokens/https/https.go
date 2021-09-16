@@ -216,7 +216,7 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
+func (h *HTTPS) CreateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
 	data := createPoolData{
 		Namespace:     pool.Namespace,
 		Name:          pool.Name,

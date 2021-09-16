@@ -53,6 +53,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -333,6 +335,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: namespace
         schema:
           type: string
@@ -406,6 +413,8 @@ paths:
                     created: {}
                     hash: {}
                     id: {}
+                    key:
+                      type: string
                     namespace:
                       type: string
                     payload:
@@ -460,6 +469,8 @@ paths:
                                   datahash: {}
                                   group: {}
                                   id: {}
+                                  key:
+                                    type: string
                                   namespace:
                                     type: string
                                   tag:
@@ -541,6 +552,8 @@ paths:
                   created: {}
                   hash: {}
                   id: {}
+                  key:
+                    type: string
                   namespace:
                     type: string
                   payload:
@@ -595,6 +608,8 @@ paths:
                                 datahash: {}
                                 group: {}
                                 id: {}
+                                key:
+                                  type: string
                                 namespace:
                                   type: string
                                 tag:
@@ -698,6 +713,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -813,6 +830,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -1197,6 +1216,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: local
         schema:
           type: string
@@ -1356,6 +1380,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: local
         schema:
           type: string
@@ -1463,6 +1492,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -2017,6 +2048,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: local
         schema:
           type: string
@@ -2125,6 +2161,8 @@ paths:
                         datahash: {}
                         group: {}
                         id: {}
+                        key:
+                          type: string
                         namespace:
                           type: string
                         tag:
@@ -2241,6 +2279,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -2649,6 +2689,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -2698,6 +2740,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -2831,6 +2875,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -2880,6 +2926,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -3041,6 +3089,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -3405,6 +3455,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -3534,6 +3586,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -4209,7 +4263,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: author
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4276,6 +4340,8 @@ paths:
                     author:
                       type: string
                     id: {}
+                    key:
+                      type: string
                     name:
                       type: string
                     namespace:
@@ -4331,6 +4397,11 @@ paths:
               properties:
                 author:
                   type: string
+                key:
+                  enum:
+                  - fungible
+                  - nonfungible
+                  type: string
                 name:
                   type: string
                 type:
@@ -4348,6 +4419,8 @@ paths:
                   author:
                     type: string
                   id: {}
+                  key:
+                    type: string
                   name:
                     type: string
                   namespace:
@@ -4372,6 +4445,8 @@ paths:
                   author:
                     type: string
                   id: {}
+                  key:
+                    type: string
                   name:
                     type: string
                   namespace:
@@ -4430,6 +4505,8 @@ paths:
                   author:
                     type: string
                   id: {}
+                  key:
+                    type: string
                   name:
                     type: string
                   namespace:
@@ -5457,6 +5534,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -5527,6 +5606,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:
@@ -5609,6 +5690,8 @@ paths:
                       datahash: {}
                       group: {}
                       id: {}
+                      key:
+                        type: string
                       namespace:
                         type: string
                       tag:

@@ -133,7 +133,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		ID:   tx.ID,
 		Type: tx.Subject.Type,
 	}
-	return pool, plugin.CreateTokenPool(ctx, pool.Key, pool)
+	return pool, plugin.CreateTokenPool(ctx, pool)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {

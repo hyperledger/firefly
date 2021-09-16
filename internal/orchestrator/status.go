@@ -25,13 +25,17 @@ import (
 
 func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStatus, err error) {
 
+	orgKey := config.GetString(config.OrgKey)
+	if orgKey == "" {
+		orgKey = config.GetString(config.OrgIdentityDeprecated)
+	}
 	status = &fftypes.NodeStatus{
 		Node: fftypes.NodeStatusNode{
 			Name: config.GetString(config.NodeName),
 		},
 		Org: fftypes.NodeStatusOrg{
 			Name:     config.GetString(config.OrgName),
-			Identity: config.GetString(config.OrgIdentity),
+			Identity: orgKey,
 		},
 		Defaults: fftypes.NodeStatusDefaults{
 			Namespace: config.GetString(config.NamespacesDefault),

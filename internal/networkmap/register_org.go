@@ -40,11 +40,32 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 	return err
 }
 
+func (nm *networkMap) getLocalOrgSigningKey(ctx context.Context) (localOrgSigningKey string, err error) {
+	localOrgSigningKey = config.GetString(config.OrgKey)
+	if localOrgSigningKey == "" {
+		localOrgSigningKey = config.GetString(config.OrgIdentityDeprecated)
+	}
+	localOrgSigningKey, err = nm.identity.ResolveSigningKey(ctx, localOrgSigningKey)
+	if err != nil {
+		return "", err
+	}
+	if localOrgSigningKey == "" {
+		return "", i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+	}
+	return localOrgSigningKey, nil
+}
+
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
 func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Organization, msg *fftypes.Message, err error) {
+
+	localOrgSigningKey, err := nm.getLocalOrgSigningKey(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	org = &fftypes.Organization{
 		Name:        config.GetString(config.OrgName),
-		Identity:    config.GetString(config.OrgIdentity),
+		Identity:    localOrgSigningKey, // TODO: Switch hierarchy to DID based, not signing key. Introducing an intermediate identity object
 		Description: config.GetString(config.OrgDescription),
 	}
 	if org.Identity == "" || org.Name == "" {
@@ -70,7 +91,9 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 	signingIdentityString := org.Identity
 	if org.Parent != "" {
 		// Check the identity itself is ok
-		if _, err = nm.identity.Resolve(ctx, org.Identity); err != nil {
+		if err = nm.identity.ResolveInputIdentity(ctx, &fftypes.Identity{
+			Key: signingIdentityString,
+		}); err != nil {
 			return nil, err
 		}
 
@@ -82,10 +105,7 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 		}
 	}
 
-	signingIdentity, err := nm.identity.Resolve(ctx, signingIdentityString)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
-	}
-
-	return nm.broadcast.BroadcastDefinition(ctx, org, signingIdentity, fftypes.SystemTagDefineOrganization, waitConfirm)
+	return nm.broadcast.BroadcastDefinition(ctx, org, &fftypes.Identity{
+		Key: signingIdentityString,
+	}, fftypes.SystemTagDefineOrganization, waitConfirm)
 }

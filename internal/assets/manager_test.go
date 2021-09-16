@@ -35,7 +35,6 @@ import (
 
 func newTestAssets(t *testing.T) (*assetManager, func()) {
 	config.Reset()
-	config.Set(config.OrgIdentity, "UTNodeID")
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -178,7 +177,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
+	mti.On("CreateTokenPool", context.Background(), mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
 		return pool.ID == requestID
 	})).Return(nil).Times(1)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {

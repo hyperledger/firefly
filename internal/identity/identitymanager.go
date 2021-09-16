@@ -38,6 +38,7 @@ const (
 
 type Manager interface {
 	ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error)
+	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
 	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
 	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
 }
@@ -88,7 +89,7 @@ func orgDID(org *fftypes.Organization) string {
 func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error) {
 	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", identity.Key, identity.Author)
 
-	identity.Key, err = im.resolveSigningKey(ctx, identity.Key)
+	identity.Key, err = im.ResolveSigningKey(ctx, identity.Key)
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,7 @@ func (im *identityManager) ResolveInputIdentity(ctx context.Context, identity *f
 
 func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error) {
 
-	signingKey, err = im.resolveSigningKey(ctx, signingKey)
+	signingKey, err = im.ResolveSigningKey(ctx, signingKey)
 	if err != nil {
 		return "", err
 	}
@@ -135,6 +136,23 @@ func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID 
 		return "", i18n.NewError(ctx, i18n.MsgLocalOrgLookupFailed, orgKey)
 	}
 	return im.localOrgDID, err
+}
+
+func (im *identityManager) ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error) {
+	// Resolve the signing key
+	if inputKey != "" {
+		if cached := im.signingKeyCache.Get(inputKey); cached != nil {
+			cached.Extend(im.identityCacheTTL)
+			outputKey = cached.Value().(string)
+		} else {
+			outputKey, err = im.blockchain.ResolveSigningKey(ctx, inputKey)
+			if err != nil {
+				return "", err
+			}
+			im.signingKeyCache.Set(inputKey, outputKey, im.identityCacheTTL)
+		}
+	}
+	return
 }
 
 func (im *identityManager) cachedOrgLookupBySigningKey(ctx context.Context, signingKey string) (org *fftypes.Organization, err error) {
@@ -222,21 +240,4 @@ func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fft
 	identity.Author = orgDID(org)
 	return nil
 
-}
-
-func (im *identityManager) resolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error) {
-	// Resolve the signing key
-	if inputKey != "" {
-		if cached := im.signingKeyCache.Get(inputKey); cached != nil {
-			cached.Extend(im.identityCacheTTL)
-			outputKey = cached.Value().(string)
-		} else {
-			outputKey, err = im.blockchain.ResolveSigningKey(ctx, inputKey)
-			if err != nil {
-				return "", err
-			}
-			im.signingKeyCache.Set(inputKey, outputKey, im.identityCacheTTL)
-		}
-	}
-	return
 }

@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
 	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
 	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -33,12 +32,11 @@ import (
 
 func newTestSystemHandlers(t *testing.T) *systemHandlers {
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	return NewSystemHandlers(mdi, mii, mdx, mdm, mbm, mpm).(*systemHandlers)
+	return NewSystemHandlers(mdi, mdx, mdm, mbm, mpm).(*systemHandlers)
 }
 
 func TestHandleSystemBroadcastUnknown(t *testing.T) {

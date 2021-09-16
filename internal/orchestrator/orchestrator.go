@@ -281,9 +281,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if or.identity == nil {
+	if or.identityPlugin == nil {
 		iiType := config.GetString(config.IdentityType)
-		if or.identity, err = iifactory.GetPlugin(ctx, iiType); err != nil {
+		if or.identityPlugin, err = iifactory.GetPlugin(ctx, iiType); err != nil {
 			return err
 		}
 	}
@@ -384,7 +384,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging)
+	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data)

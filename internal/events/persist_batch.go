@@ -34,7 +34,7 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 		return false, err
 	}
 	if author == "" || author != batch.Author || signingKey != batch.Key {
-		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Author, batch.Key, author, signingKey)
+		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, author)
 		return false, nil // This is not retryable. skip this batch
 	}
 
@@ -135,8 +135,8 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 }
 
 func (em *eventManager) persistBatchMessage(ctx context.Context /* db TX context*/, batch *fftypes.Batch, i int, msg *fftypes.Message) error {
-	if msg != nil && msg.Header.Author != batch.Author {
-		log.L(ctx).Errorf("Mismatched author '%s' on message entry %d in batch '%s'", msg.Header.Author, i, batch.ID)
+	if msg != nil && (msg.Header.Author != batch.Author || msg.Header.Key != batch.Key) {
+		log.L(ctx).Errorf("Mismatched key/author '%s'/'%s' on message entry %d in batch '%s'", msg.Header.Key, msg.Header.Author, i, batch.ID)
 		return nil // skip entry
 	}
 

@@ -519,7 +519,7 @@ func TestFilterEventsMatch(t *testing.T) {
 	ed.subscription.groupFilter = nil
 	ed.subscription.topicsFilter = nil
 	ed.subscription.tagFilter = nil
-	ed.subscription.authorFilter = regexp.MustCompile("0x23456")
+	ed.subscription.authorFilter = regexp.MustCompile("org2")
 	matched = ed.filterEvents(events)
 	assert.Equal(t, 1, len(matched))
 	assert.Equal(t, *id2, *matched[0].ID)

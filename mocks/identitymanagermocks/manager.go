@@ -50,6 +50,27 @@ func (_m *Manager) ResolveLocalOrgDID(ctx context.Context) (string, error) {
 	return r0, r1
 }
 
+// ResolveSigningKey provides a mock function with given fields: ctx, inputKey
+func (_m *Manager) ResolveSigningKey(ctx context.Context, inputKey string) (string, error) {
+	ret := _m.Called(ctx, inputKey)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, inputKey)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, inputKey)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ResolveSigningKeyIdentity provides a mock function with given fields: ctx, signingKey
 func (_m *Manager) ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (string, error) {
 	ret := _m.Called(ctx, signingKey)

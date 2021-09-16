@@ -153,12 +153,16 @@ func TestUpsertTokenPoolInsertSuccess(t *testing.T) {
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 	}
 
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs(poolID, "ns1", "", "", "nonfungible", pool.TX.Type, pool.TX.ID).
+		WithArgs(poolID, "ns1", "", "", "nonfungible", pool.TX.Type, pool.TX.ID, "author1", "0x12345").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
@@ -175,6 +179,10 @@ func TestUpsertTokenPoolUpdateSuccess(t *testing.T) {
 	pool := &fftypes.TokenPool{
 		ID:        poolID,
 		Namespace: "ns1",
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 	}
 
 	db.ExpectBegin()

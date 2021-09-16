@@ -90,7 +90,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
 	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -216,10 +216,10 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
-	assert.NoError(t, err)
+	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 }
 
@@ -242,7 +242,7 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 		Hash: batchHash,
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
 	assert.NoError(t, err)
@@ -267,7 +267,7 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 		Hash: fftypes.NewRandB32(),
 	}
 	mim := em.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32(), "0x12345")
 	assert.NoError(t, err)

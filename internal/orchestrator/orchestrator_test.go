@@ -97,7 +97,8 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.publicstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.blockchain = tor.mbi
-	tor.orchestrator.identity = tor.mii
+	tor.orchestrator.identity = tor.mim
+	tor.orchestrator.identityPlugin = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
@@ -151,7 +152,7 @@ func TestBadIdentityPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	config.Set(config.IdentityType, "wrong")
-	or.identity = nil
+	or.identityPlugin = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -375,6 +376,14 @@ func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.data = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitIdentityComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.identity = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
