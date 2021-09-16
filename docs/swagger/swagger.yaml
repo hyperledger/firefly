@@ -4545,7 +4545,8 @@ paths:
                       type: integer
                     identity:
                       type: string
-                    protocolId: {}
+                    protocolId:
+                      type: string
                     tokenIndex:
                       type: string
                   type: object

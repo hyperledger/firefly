@@ -17,7 +17,7 @@
 package fftypes
 
 type TokenAccount struct {
-	ProtocolID *UUID  `json:"protocolId,omitempty"`
+	ProtocolID string `json:"protocolId,omitempty"`
 	TokenIndex string `json:"tokenIndex,omitempty"`
 	Identity   string `json:"identity,omitempty"`
 	Balance    int64  `json:"balance"`

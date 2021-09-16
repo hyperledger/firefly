@@ -369,7 +369,7 @@ type iTokenAccountCollection interface {
 	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
 
 	// GetTokenAccount - Get a token account by pool and account identity
-	GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
+	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
 
 	// GetTokenAccounts - Get all known token accounts in a pool
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
@@ -747,7 +747,7 @@ var TokenPoolQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"protocolid": &UUIDField{},
+	"protocolid": &StringField{},
 	"tokenindex": &StringField{},
 	"identity":   &StringField{},
 	"balance":    &Int64Field{},
