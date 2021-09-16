@@ -16,17 +16,18 @@
 
 package fftypes
 
-type TokenAccount struct {
-	ProtocolID string `json:"protocolId,omitempty"`
-	TokenIndex string `json:"tokenIndex,omitempty"`
-	Identity   string `json:"identity,omitempty"`
-	Balance    int64  `json:"balance"`
-}
+import (
+	"testing"
 
-func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {
-	return protocolID + ":" + tokenIndex + ":" + identity
-}
+	"github.com/stretchr/testify/assert"
+)
 
-func (a *TokenAccount) Identifier() string {
-	return TokenAccountIdentifier(a.ProtocolID, a.TokenIndex, a.Identity)
+func TestTokenAccountIdentifier(t *testing.T) {
+	account := &TokenAccount{
+		ProtocolID: "123",
+		TokenIndex: "1",
+		Identity:   "0x00",
+		Balance:    5,
+	}
+	assert.Equal(t, "123:1:0x00", account.Identifier())
 }
