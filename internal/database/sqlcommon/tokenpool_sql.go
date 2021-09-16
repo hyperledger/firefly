@@ -161,6 +161,10 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (mes
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
+func (s *SQLCommon) GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, id, sq.Eq{"protocol_id": id})
+}
+
 func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []string{"seq"})
 	if err != nil {
