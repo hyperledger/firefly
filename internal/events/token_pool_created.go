@@ -30,7 +30,7 @@ func (em *eventManager) persistTokenPoolTransaction(ctx context.Context, pool *f
 		log.L(ctx).Errorf("Invalid token pool '%s'. Missing ID (%v) or transaction ID (%v)", pool.ID, pool.ID, pool.TX.ID)
 		return false, nil // this is not retryable
 	}
-	return em.persistTransaction(ctx, &fftypes.Transaction{
+	return database.PersistTransaction(ctx, em.database, &fftypes.Transaction{
 		ID: pool.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Namespace: pool.Namespace,
