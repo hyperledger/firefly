@@ -53,11 +53,11 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	TxSubmissionUpdate(plugin fftypes.Named, tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
+	TxSubmissionUpdate(plugin fftypes.Named, tx string, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
 

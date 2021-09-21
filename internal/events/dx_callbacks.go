@@ -218,7 +218,7 @@ func (em *eventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	})
 }
 
-func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
 	log.L(em.ctx).Infof("Transfer result %s=%s info='%s'", trackingID, status, info)
 
 	// We process the event in a retry loop (which will break only if the context is closed), so that
@@ -251,7 +251,7 @@ func (em *eventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 		update := database.OperationQueryFactory.NewUpdate(em.ctx).
 			Set("status", status).
 			Set("error", info).
-			Set("info", additionalInfo)
+			Set("output", opOutput)
 		for _, op := range operations {
 			if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 				return true, err // this is always retryable

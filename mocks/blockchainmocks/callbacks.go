@@ -28,13 +28,13 @@ func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentit
 	return r0
 }
 
-// BlockchainTxUpdate provides a mock function with given fields: tx, txState, errorMessage, additionalInfo
-func (_m *Callbacks) BlockchainTxUpdate(tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tx, txState, errorMessage, additionalInfo)
+// BlockchainTxUpdate provides a mock function with given fields: tx, txState, errorMessage, opOutput
+func (_m *Callbacks) BlockchainTxUpdate(tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(tx, txState, errorMessage, opOutput)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tx, txState, errorMessage, additionalInfo)
+		r0 = rf(tx, txState, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -231,13 +231,13 @@ func (_m *EventManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPo
 	return r0
 }
 
-// TransferResult provides a mock function with given fields: dx, trackingID, status, info, additionalInfo
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(dx, trackingID, status, info, additionalInfo)
+// TransferResult provides a mock function with given fields: dx, trackingID, status, info, opOutput
+func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(dx, trackingID, status, info, opOutput)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(dx, trackingID, status, info, additionalInfo)
+		r0 = rf(dx, trackingID, status, info, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -245,13 +245,13 @@ func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string
 	return r0
 }
 
-// TxSubmissionUpdate provides a mock function with given fields: plugin, tx, txState, errorMessage, additionalInfo
-func (_m *EventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, tx, txState, errorMessage, additionalInfo)
+// TxSubmissionUpdate provides a mock function with given fields: plugin, tx, txState, errorMessage, opOutput
+func (_m *EventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, tx, txState, errorMessage, opOutput)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(fftypes.Named, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, tx, txState, errorMessage, additionalInfo)
+		r0 = rf(plugin, tx, txState, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}
