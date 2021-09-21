@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
 
 	// Find a matching operation, for this plugin, with the specified ID.
 	fb := database.OperationQueryFactory.NewFilter(em.ctx)
@@ -43,7 +43,7 @@ func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txSt
 	update := database.OperationQueryFactory.NewUpdate(em.ctx).
 		Set("status", txState).
 		Set("error", errorMessage).
-		Set("info", additionalInfo)
+		Set("output", opOutput)
 	for _, op := range operations {
 		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
 			return err

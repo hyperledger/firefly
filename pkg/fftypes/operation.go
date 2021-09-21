@@ -76,7 +76,8 @@ type Operation struct {
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`
 	BackendID   string     `json:"backendId"`
-	Info        JSONObject `json:"info,omitempty"`
+	Input       JSONObject `json:"input,omitempty"`
+	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`
 }

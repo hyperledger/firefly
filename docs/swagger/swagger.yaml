@@ -2482,13 +2482,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -3109,7 +3112,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: info
+        name: input
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3120,6 +3123,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: output
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3194,13 +3202,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -3251,13 +3262,16 @@ paths:
                   error:
                     type: string
                   id: {}
-                  info:
+                  input:
                     additionalProperties: {}
                     type: object
                   member:
                     type: string
                   namespace:
                     type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
                   plugin:
                     type: string
                   status:

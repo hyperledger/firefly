@@ -30,20 +30,20 @@ type boundCallbacks struct {
 	ei events.EventManager
 }
 
-func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, additionalInfo)
+func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(plugin, tx, txState, errorMessage, additionalInfo)
+func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.TxSubmissionUpdate(plugin, tx, txState, errorMessage, opOutput)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity, protocolTxID, additionalInfo)
 }
 
-func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TransferResult(bc.dx, trackingID, status, info, additionalInfo)
+func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
+	return bc.ei.TransferResult(bc.dx, trackingID, status, info, opOutput)
 }
 
 func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error {
