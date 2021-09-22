@@ -747,6 +747,8 @@ var TokenPoolQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"name":       &StringField{},
 	"protocolid": &StringField{},
+	"symbol":     &StringField{},
+	"message":    &UUIDField{},
 }
 
 // TokenAccountQueryFactory filter fields for token accounts

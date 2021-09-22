@@ -34,11 +34,15 @@ var (
 		"name",
 		"protocol_id",
 		"type",
+		"connector",
+		"symbol",
+		"message_id",
 		"tx_type",
 		"tx_id",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"protocolid":       "protocol_id",
+		"message":          "message_id",
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
 	}
@@ -79,6 +83,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("name", pool.Name).
 				Set("protocol_id", pool.ProtocolID).
 				Set("type", pool.Type).
+				Set("connector", pool.Connector).
+				Set("symbol", pool.Symbol).
+				Set("message_id", pool.Message).
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
 				Where(sq.Eq{"id": pool.ID}),
@@ -98,6 +105,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Name,
 					pool.ProtocolID,
 					pool.Type,
+					pool.Connector,
+					pool.Symbol,
+					pool.Message,
 					pool.TX.Type,
 					pool.TX.ID,
 				),
@@ -120,6 +130,9 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Name,
 		&pool.ProtocolID,
 		&pool.Type,
+		&pool.Connector,
+		&pool.Symbol,
+		&pool.Message,
 		&pool.TX.Type,
 		&pool.TX.ID,
 	)

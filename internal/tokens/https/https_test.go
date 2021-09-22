@@ -60,9 +60,10 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 	utConfPrefix.AddKnownKey(restclient.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
-	err := h.Init(context.Background(), utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "https", h.Name())
+	assert.Equal(t, "testtokens", h.configuredName)
 	assert.NotNil(t, h.Capabilities())
 	return h, toServer, fromServer, httpURL, func() {
 		cancel()
@@ -78,7 +79,7 @@ func TestInitBadURL(t *testing.T) {
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfPrefix.AddKnownKey(tokens.TokensConfigConnector, "https")
 	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
 }
 
@@ -90,7 +91,7 @@ func TestInitMissingURL(t *testing.T) {
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfPrefix.AddKnownKey(tokens.TokensConfigConnector, "https")
 	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "")
-	err := h.Init(context.Background(), utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 

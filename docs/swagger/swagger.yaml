@@ -4228,6 +4228,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: message
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: name
         schema:
           type: string
@@ -4239,6 +4244,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: symbol
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4289,12 +4299,17 @@ paths:
                   properties:
                     author:
                       type: string
+                    connector:
+                      type: string
                     id: {}
+                    message: {}
                     name:
                       type: string
                     namespace:
                       type: string
                     protocolId:
+                      type: string
+                    symbol:
                       type: string
                     tx:
                       properties:
@@ -4347,6 +4362,8 @@ paths:
                   type: string
                 name:
                   type: string
+                symbol:
+                  type: string
                 type:
                   enum:
                   - fungible
@@ -4361,12 +4378,17 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4385,12 +4407,17 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4443,12 +4470,17 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:

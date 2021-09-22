@@ -31,11 +31,12 @@ import (
 )
 
 type HTTPS struct {
-	ctx          context.Context
-	capabilities *tokens.Capabilities
-	callbacks    tokens.Callbacks
-	client       *resty.Client
-	wsconn       wsclient.WSClient
+	ctx            context.Context
+	capabilities   *tokens.Capabilities
+	callbacks      tokens.Callbacks
+	configuredName string
+	client         *resty.Client
+	wsconn         wsclient.WSClient
 }
 
 type wsEvent struct {
@@ -68,10 +69,11 @@ func (h *HTTPS) Name() string {
 	return "https"
 }
 
-func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+func (h *HTTPS) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
 
 	h.ctx = log.WithLogField(ctx, "proto", "https")
 	h.callbacks = callbacks
+	h.configuredName = name
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.https")
@@ -159,6 +161,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 		Namespace:  unpackedData.Namespace,
 		Name:       unpackedData.Name,
 		Type:       fftypes.FFEnum(tokenType),
+		Connector:  h.configuredName,
 		ProtocolID: protocolID,
 	}
 
