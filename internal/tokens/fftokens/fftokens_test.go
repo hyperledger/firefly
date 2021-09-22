@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package https
+package fftokens
 
 import (
 	"bytes"
@@ -40,7 +40,7 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("tokens").Array()
 
-func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, httpURL string, done func()) {
+func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
 
@@ -51,18 +51,18 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 	httpURL = u.String()
 
 	config.Reset()
-	h = &HTTPS{}
+	h = &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
-	utConfPrefix.AddKnownKey(tokens.TokensConfigConnector, "https")
+	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
 	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, httpURL)
 	utConfPrefix.AddKnownKey(restclient.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.NoError(t, err)
-	assert.Equal(t, "https", h.Name())
+	assert.Equal(t, "fftokens", h.Name())
 	assert.Equal(t, "testtokens", h.configuredName)
 	assert.NotNil(t, h.Capabilities())
 	return h, toServer, fromServer, httpURL, func() {
@@ -73,11 +73,11 @@ func newTestHTTPS(t *testing.T) (h *HTTPS, toServer, fromServer chan string, htt
 
 func TestInitBadURL(t *testing.T) {
 	config.Reset()
-	h := &HTTPS{}
+	h := &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
-	utConfPrefix.AddKnownKey(tokens.TokensConfigConnector, "https")
+	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
 	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "::::////")
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10162", err)
@@ -85,18 +85,18 @@ func TestInitBadURL(t *testing.T) {
 
 func TestInitMissingURL(t *testing.T) {
 	config.Reset()
-	h := &HTTPS{}
+	h := &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
-	utConfPrefix.AddKnownKey(tokens.TokensConfigConnector, "https")
+	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
 	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "")
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 
 func TestCreateTokenPool(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
 	pool := &fftypes.TokenPool{
@@ -137,7 +137,7 @@ func TestCreateTokenPool(t *testing.T) {
 }
 
 func TestCreateTokenPoolError(t *testing.T) {
-	h, _, _, httpURL, done := newTestHTTPS(t)
+	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
 	pool := &fftypes.TokenPool{
@@ -156,7 +156,7 @@ func TestCreateTokenPoolError(t *testing.T) {
 }
 
 func TestEvents(t *testing.T) {
-	h, toServer, fromServer, _, done := newTestHTTPS(t)
+	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
 	err := h.Start()
@@ -224,7 +224,7 @@ func TestEvents(t *testing.T) {
 func TestEventLoopReceiveClosed(t *testing.T) {
 	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
-	h := &HTTPS{
+	h := &FFTokens{
 		ctx:       context.Background(),
 		callbacks: dxc,
 		wsconn:    wsm,
@@ -239,7 +239,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 func TestEventLoopSendClosed(t *testing.T) {
 	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
-	h := &HTTPS{
+	h := &FFTokens{
 		ctx:       context.Background(),
 		callbacks: dxc,
 		wsconn:    wsm,
@@ -257,7 +257,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	h := &HTTPS{
+	h := &FFTokens{
 		ctx:       ctx,
 		callbacks: dxc,
 		wsconn:    wsm,

@@ -14,13 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package https
+package fftokens
 
 import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/wsclient"
 )
 
-func (h *HTTPS) InitPrefix(prefix config.PrefixArray) {
+func (h *FFTokens) InitPrefix(prefix config.PrefixArray) {
 	wsclient.InitPrefix(prefix)
 }
