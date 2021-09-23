@@ -28,13 +28,13 @@ func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenP
 	return r0
 }
 
-// TokensTxUpdate provides a mock function with given fields: plugin, txTrackingID, txState, errorMessage, opOutput
-func (_m *Callbacks) TokensTxUpdate(plugin tokens.Plugin, txTrackingID string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, txTrackingID, txState, errorMessage, opOutput)
+// TokensOpUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
+func (_m *Callbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, txTrackingID, txState, errorMessage, opOutput)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

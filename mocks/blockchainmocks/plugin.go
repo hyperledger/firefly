@@ -81,13 +81,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, ledgerID, identity, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, ledgerID, identity, batch)
+// SubmitBatchPin provides a mock function with given fields: ctx, operationID, ledgerID, identity, batch
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, identity *fftypes.Identity, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, operationID, ledgerID, identity, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, ledgerID, identity, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.UUID, *fftypes.Identity, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, operationID, ledgerID, identity, batch)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -47,6 +47,10 @@ func resetConf() {
 	e.InitPrefix(utConfPrefix)
 }
 
+func uuidMatches(id1 *fftypes.UUID) interface{} {
+	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
+}
+
 func newTestEthereum() (*Ethereum, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	em := &blockchainmocks.Callbacks{}
@@ -372,7 +376,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
 
@@ -408,7 +412,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, asyncTXSubmission{})(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.NoError(t, err)
 
@@ -436,7 +440,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/instances/0x12345/pinBatch`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, &fftypes.Identity{OnChain: addr}, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, nil, &fftypes.Identity{OnChain: addr}, batch)
 
 	assert.Regexp(t, "FF10111", err)
 	assert.Regexp(t, "pop", err)
@@ -845,6 +849,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	}
 
 	var reply fftypes.JSONObject
+	operationID := fftypes.NewUUID()
 	data := []byte(`{
     "_id": "4373614c-e0f7-47b0-640e-7eacec417a9e",
     "blockHash": "0xad269b2b43481e44500f583108e8d24bd841fb767c7f526772959d195b9c72d5",
@@ -854,7 +859,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "gasUsed": "24655",
     "headers": {
       "id": "4603a151-f212-446e-5c15-0f36b57cecc7",
-      "requestId": "4373614c-e0f7-47b0-640e-7eacec417a9e",
+      "requestId": "` + operationID.String() + `",
       "requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:12",
       "timeElapsed": 3.966414429,
       "timeReceived": "2021-05-28T20:54:27.481245697Z",
@@ -868,8 +873,8 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
     "transactionIndex": "0"
   }`)
 
-	em.On("BlockchainTxUpdate",
-		"4373614c-e0f7-47b0-640e-7eacec417a9e",
+	em.On("BlockchainOpUpdate",
+		uuidMatches(operationID),
 		fftypes.OpStatusSucceeded,
 		"",
 		mock.Anything).Return(nil)
@@ -889,12 +894,13 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	e.closed = make(chan struct{})
 
 	wsm.On("Receive").Return((<-chan []byte)(r))
+	operationID := fftypes.NewUUID()
 	data := []byte(`{
 		"_id": "6fb94fff-81d3-4094-567d-e031b1871694",
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
 			"id": "3a37b17b-13b6-4dc5-647a-07c11eae0be3",
-			"requestId": "6fb94fff-81d3-4094-567d-e031b1871694",
+			"requestId": "` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:0",
 			"timeElapsed": 0.020969053,
 			"timeReceived": "2021-05-31T02:35:11.458880504Z",
@@ -905,8 +911,8 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	}`)
 
 	em := e.callbacks.(*blockchainmocks.Callbacks)
-	txsu := em.On("BlockchainTxUpdate",
-		"6fb94fff-81d3-4094-567d-e031b1871694",
+	txsu := em.On("BlockchainOpUpdate",
+		uuidMatches(operationID),
 		fftypes.OpStatusFailed,
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
@@ -934,6 +940,24 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 
 	var reply fftypes.JSONObject
 	data := []byte(`{}`)
+	err := json.Unmarshal(data, &reply)
+	assert.NoError(t, err)
+	err = e.handleReceipt(context.Background(), reply)
+	assert.NoError(t, err)
+}
+
+func TestHandleReceiptBadRequestID(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	wsm := &wsmocks.WSClient{}
+	e := &Ethereum{
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
+	}
+
+	var reply fftypes.JSONObject
+	data := []byte(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)

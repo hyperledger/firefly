@@ -17,26 +17,15 @@
 package events
 
 import (
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-
-	// Find a matching operation, for this plugin, with the specified ID.
-	fb := database.OperationQueryFactory.NewFilter(em.ctx)
-	filter := fb.And(
-		fb.Eq("tx", tx),
-		fb.Eq("plugin", plugin.Name()),
-	)
-	operations, _, err := em.database.GetOperations(em.ctx, filter)
-	if err == nil && len(operations) == 0 {
-		err = i18n.NewError(em.ctx, i18n.Msg404NotFound)
-	}
-	if err != nil {
-		log.L(em.ctx).Debugf("TX '%s' submission update ignored, as it was not submitted by this node", tx)
+func (em *eventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	op, err := em.database.GetOperationByID(em.ctx, operationID)
+	if err != nil || op == nil {
+		log.L(em.ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", operationID)
 		return nil
 	}
 
@@ -44,11 +33,8 @@ func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txSt
 		Set("status", txState).
 		Set("error", errorMessage).
 		Set("output", opOutput)
-	for _, op := range operations {
-		if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
-			return err
-		}
+	if err := em.database.UpdateOperation(em.ctx, op.ID, update); err != nil {
+		return err
 	}
-
 	return nil
 }

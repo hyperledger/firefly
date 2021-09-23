@@ -110,15 +110,20 @@ func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) erro
 	success := data.GetBool("success")
 	message := data.GetString("message")
 	if requestID == "" {
-		l.Errorf("Reply cannot be processed: %+v", data)
+		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return nil // Swallow this and move on
 	}
-	updateType := fftypes.OpStatusSucceeded
-	if !success {
-		updateType = fftypes.OpStatusFailed
+	operationID, err := fftypes.ParseUUID(ctx, requestID)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
+		return nil // Swallow this and move on
 	}
-	l.Infof("Tokens '%s' reply (request=%s) %s", updateType, requestID, message)
-	return h.callbacks.TokensTxUpdate(h, requestID, updateType, message, data)
+	replyType := fftypes.OpStatusSucceeded
+	if !success {
+		replyType = fftypes.OpStatusFailed
+	}
+	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
+	return h.callbacks.TokensOpUpdate(h, operationID, replyType, message, data)
 }
 
 func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -219,7 +224,7 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
+func (h *HTTPS) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
 	data := createPoolData{
 		Namespace:     pool.Namespace,
 		Name:          pool.Name,
@@ -232,7 +237,7 @@ func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity,
 		res, err = h.client.R().SetContext(ctx).
 			SetBody(&createPool{
 				Type:      pool.Type,
-				RequestID: pool.TX.ID.String(),
+				RequestID: operationID.String(),
 				Data:      string(packedData),
 			}).
 			Post("/api/v1/pool")
