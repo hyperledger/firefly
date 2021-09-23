@@ -19,8 +19,8 @@ package syshandlers
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 func (sh *systemHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {

@@ -19,9 +19,9 @@ package oapispec
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 // Route defines each API operation on the REST API of Firefly

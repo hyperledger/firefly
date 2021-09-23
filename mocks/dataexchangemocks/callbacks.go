@@ -3,7 +3,7 @@
 package dataexchangemocks
 
 import (
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 	mock "github.com/stretchr/testify/mock"
 )
 

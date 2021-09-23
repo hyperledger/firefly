@@ -19,10 +19,10 @@ package dxfactory
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/dataexchange/dxhttps"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/dataexchange/dxhttps"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
 var plugins = []dataexchange.Plugin{

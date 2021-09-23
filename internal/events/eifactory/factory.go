@@ -19,12 +19,12 @@ package eifactory
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/events/system"
-	"github.com/hyperledger-labs/firefly/internal/events/webhooks"
-	"github.com/hyperledger-labs/firefly/internal/events/websockets"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/events"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/events/webhooks"
+	"github.com/hyperledger/firefly/internal/events/websockets"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/events"
 )
 
 var plugins = []events.Plugin{

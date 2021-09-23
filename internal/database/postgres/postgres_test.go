@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 )
 

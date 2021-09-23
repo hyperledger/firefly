@@ -21,17 +21,17 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
-	"github.com/hyperledger-labs/firefly/internal/events/system"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/retry"
-	"github.com/hyperledger-labs/firefly/internal/syshandlers"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/events"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/syshandlers"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type subscription struct {

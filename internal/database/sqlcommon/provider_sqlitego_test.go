@@ -27,9 +27,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 
 	// Import SQLite driver

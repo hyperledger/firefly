@@ -20,8 +20,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 // Plugin is the interface implemented by each Public Storage plugin

@@ -25,10 +25,10 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/mocks/eventsmocks"
-	"github.com/hyperledger-labs/firefly/pkg/events"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

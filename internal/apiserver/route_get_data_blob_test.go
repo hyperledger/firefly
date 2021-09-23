@@ -22,7 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -29,9 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 

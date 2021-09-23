@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 )
 
 // JSONObject is a holder of a hash, that can be used to correlate onchain data with off-chain data.

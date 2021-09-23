@@ -19,10 +19,10 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/oapispec"
-	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var getDataBlob = &oapispec.Route{

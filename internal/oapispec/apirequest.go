@@ -20,9 +20,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/hyperledger-labs/firefly/internal/orchestrator"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type APIRequest struct {
