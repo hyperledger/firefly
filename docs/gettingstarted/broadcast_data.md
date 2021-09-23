@@ -6,13 +6,15 @@ nav_order: 4
 ---
 
 # Broadcast data
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -54,7 +56,7 @@ nav_order: 4
 
 Status: `202 Accepted` - the message is on it's way, but has not yet been confirmed.
 
-> _Issue [#112](https://github.com/hyperledger-labs/firefly/issues/112) proposes adding
+> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 
@@ -76,7 +78,8 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
   "hash": "81acf8c8f7982dbc49258535561461601cbe769752fecec0f8ce0358664979e6", // hash of the header
   "local": true, // we sent this message
   "pending": true, // it is not yet confirmed
-  "data": [ // one item of data was stored
+  "data": [
+    // one item of data was stored
     {
       "id": "8d8635e2-7c90-4963-99cc-794c98a68b1d", // can be used to query the data in the future
       "hash": "c95d6352f524a770a787c16509237baf7eb59967699fb9a6d825270e7ec0eacf" // sha256 hash of `"a string"`
@@ -118,9 +121,13 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
 ## Example 3: Upload a blob with metadata and broadcast
 
 Here we make two API calls.
+
 1. Create the `data` object explicitly, using a multi-party form upload
+
 - You can also just post JSON to this endpoint
+
 2. Broadcast a message referring to that data
+
 - The BLOB attachment gets published to shared storage
   - This happens the first time a broadcast happens on a data attachment
 - A pin goes to the blockchain
@@ -135,7 +142,7 @@ and pipe it into a multi-part form post to FireFly.
 > the `filename`, and `size`, to the JSON part of the `data` object for us._
 
 ```sh
-curl -sLo - https://github.com/hyperledger-labs/firefly/raw/main/docs/firefly_logo.png \
+curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.png \
  | curl --form autometa=true --form file=@- \
    http://localhost:5000/api/v1/api/v1/namespaces/default/data
 ```

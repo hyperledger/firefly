@@ -3,8 +3,8 @@
 package blockchainmocks
 
 import (
-	blockchain "github.com/hyperledger-labs/firefly/pkg/blockchain"
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

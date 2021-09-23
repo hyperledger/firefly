@@ -20,9 +20,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/pkg/events"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 const (

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 // UpdateBuilder is the output of the builder

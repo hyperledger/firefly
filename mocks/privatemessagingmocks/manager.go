@@ -5,8 +5,8 @@ package privatemessagingmocks
 import (
 	context "context"
 
-	database "github.com/hyperledger-labs/firefly/pkg/database"
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	database "github.com/hyperledger/firefly/pkg/database"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

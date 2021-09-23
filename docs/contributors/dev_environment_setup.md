@@ -5,14 +5,14 @@ parent: Contributors
 nav_order: 1
 ---
 
-
 # Setting up a local development environment
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -24,19 +24,19 @@ This guide will walk you through setting up your machine for contributing to Fir
 
 You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.
 
-- Go (1.16 or newer) 
+- Go (1.16 or newer)
 - make
 - GCC (?)
 - There are probably more that I'm forgetting...
 
-The [FireFly CLI](https://github.com/hyperledger-labs/firefly-cli) is the recommended path for running a local development stack. It has its [own set of prerequisites](https://github.com/hyperledger-labs/firefly-cli#prerequisites) as well.
+The [FireFly CLI](https://github.com/hyperledger/firefly-cli) is the recommended path for running a local development stack. It has its [own set of prerequisites](https://github.com/hyperledger/firefly-cli#prerequisites) as well.
 
 ## Building FireFly
 
 After installing dependencies, building FireFly from source is very easy. Just clone the repo:
 
 ```
-git clone git@github.com:hyperledger-labs/firefly.git && cd firefly
+git clone git@github.com:hyperledger/firefly.git && cd firefly
 ```
 
 And run the `Makefile` to run tests, and compile the app
@@ -51,11 +51,10 @@ If you want to install the binary on your path (assuming your Go Home is already
 go install
 ```
 
-
 ## Install the CLI
 
 Please check the CLI Installation instructions for the best way to install the CLI on your machine:
-https://github.com/hyperledger-labs/firefly-cli#install-the-cli
+https://github.com/hyperledger/firefly-cli#install-the-cli
 
 ## Set up a development stack
 

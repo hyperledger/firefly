@@ -33,7 +33,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -394,7 +394,7 @@ func TestE2EWebhookExchange(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
+			"url": "https://raw.githubusercontent.com/hyperledger/firefly/main/test/data/config/firefly.core.yaml",
 			"reply": true,
 			"replytag": "myreply",
 			"method": "GET"
@@ -448,7 +448,7 @@ func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://github.com/hyperledger-labs/firefly/raw/main/resources/ff-logo-32.png",
+			"url": "https://github.com/hyperledger/firefly/raw/main/resources/ff-logo-32.png",
 			"reply": true,
 			"replytag": "myreply",
 			"replytx": "none",

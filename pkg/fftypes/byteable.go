@@ -21,7 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/log"
 )
 
 // Byteable uses raw encode/decode to preserve field order, and can handle any types of field.

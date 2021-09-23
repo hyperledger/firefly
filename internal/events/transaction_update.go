@@ -17,10 +17,10 @@
 package events
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 func (em *eventManager) TxSubmissionUpdate(plugin fftypes.Named, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {

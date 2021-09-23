@@ -6,13 +6,15 @@ nav_order: 2
 ---
 
 # Firefly Code Overview
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -41,15 +43,16 @@ A few highlights:
 - Updated API resource model
   - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
 - Added flexibility, with simplified the developer experience:
+
   - Versioning of data definitions
   - Introducing a first class `Context` construct link related events into a single sequence
   - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
   - Clearer separation of concerns between the FireFly DB and the Application DB
   - Better search, filter and query support
-  
+
   ## Directories
-  
-- [internal](https://github.com/hyperledger-labs/firefly/tree/main/internal): The core Golang implementation code
-- [pkg](https://github.com/hyperledger-labs/firefly/tree/main/pkg): Interfaces intended for external project use
-- [cmd](https://github.com/hyperledger-labs/firefly/tree/main/cmd): The command line entry point
-- [solidity_firefly](https://github.com/hyperledger-labs/firefly/tree/main/solidity_firefly): Ethereum/Solidity smart contract code
+
+- [internal](https://github.com/hyperledger/firefly/tree/main/internal): The core Golang implementation code
+- [pkg](https://github.com/hyperledger/firefly/tree/main/pkg): Interfaces intended for external project use
+- [cmd](https://github.com/hyperledger/firefly/tree/main/cmd): The command line entry point
+- [solidity_firefly](https://github.com/hyperledger/firefly/tree/main/solidity_firefly): Ethereum/Solidity smart contract code

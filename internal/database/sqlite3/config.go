@@ -19,8 +19,8 @@
 package sqlite3
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/database/sqlcommon"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/database/sqlcommon"
 )
 
 const (

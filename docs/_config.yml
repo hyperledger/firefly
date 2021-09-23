@@ -3,7 +3,7 @@ logo: "firefly_logo.png"
 title: FireFly
 aux_links:
   "GitHub":
-    - "//github.com/hyperledger-labs/firefly"
+    - "//github.com/hyperledger/firefly"
   "Wiki":
     - "//wiki.hyperledger.org/display/labs/Firefly"
   "Chat":

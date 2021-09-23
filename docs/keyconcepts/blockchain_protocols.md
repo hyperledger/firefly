@@ -6,13 +6,15 @@ nav_order: 4
 ---
 
 # Blockchain protocols
+
 {: .no_toc }
 
 ## Table of contents
+
 {: .no_toc .text-delta }
 
 1. TOC
-{:toc}
+   {:toc}
 
 ---
 
@@ -79,15 +81,16 @@ model, but with protocol specific configuration that can be passed through from 
 blockchain interface.
 
 There are sub-communities building the blockchain interfaces for each of the "big 3":
+
 - Ethereum (Hyperledger Besu, Quorum, Go-ethereum)
   - Status: Mature
-  - Repo: [hyperledger-labs/firefly-ethconnect](https://github.com/hyperledger-labs/firefly-ethconnect)
+  - Repo: [hyperledger/firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect)
 - Hyperledger Fabric
   - Status: Under active development
-  - Repo: [hyperledger-labs/firefly-fabricconnect](https://github.com/hyperledger-labs/firefly-fabricconnect)
+  - Repo: [hyperledger/firefly-fabricconnect](https://github.com/hyperledger/firefly-fabricconnect)
 - Corda
   - Status: Core transactions+events proved out. Seeking contributors
-  - Repo: [hyperledger-labs/firefly-fabricconnect](https://github.com/hyperledger-labs/firefly-fabricconnect)
+  - Repo: [hyperledger/firefly-fabricconnect](https://github.com/hyperledger/firefly-fabricconnect)
 
 > _Each FireFly network is tied to a single blockchain technology. Watch this space for
 > evolution of pluggable bridges for tokens, assets and data between networks through

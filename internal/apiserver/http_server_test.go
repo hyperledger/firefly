@@ -35,7 +35,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
