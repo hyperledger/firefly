@@ -212,7 +212,7 @@ func TestGetTokenPool(t *testing.T) {
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&fftypes.TokenPool{}, nil)
 	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "abc")
 	assert.NoError(t, err)
 }
@@ -307,4 +307,44 @@ func TestValidateTokenPoolTx(t *testing.T) {
 
 	err := am.ValidateTokenPoolTx(context.Background(), nil, "")
 	assert.NoError(t, err)
+}
+
+func TestGetTokenTransfers(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+	}
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
+	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*fftypes.TokenTransfer{}, nil, nil)
+	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenTransfersBadPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
+	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetTokenTransfersNoPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, nil)
+	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	assert.Regexp(t, "FF10109", err)
 }

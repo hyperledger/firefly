@@ -40,6 +40,7 @@ type Manager interface {
 	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
 	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
+	GetTokenTransfers(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
@@ -209,7 +210,14 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name str
 	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 		return nil, err
 	}
-	return am.database.GetTokenPool(ctx, ns, name)
+	pool, err := am.database.GetTokenPool(ctx, ns, name)
+	if err != nil {
+		return nil, err
+	}
+	if pool == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return pool, nil
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
@@ -223,6 +231,14 @@ func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name
 func (am *assetManager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {
 	// TODO: validate that the given token pool was created with the given protocolTxId
 	return nil
+}
+
+func (am *assetManager) GetTokenTransfers(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+	pool, err := am.GetTokenPool(ctx, ns, typeName, name)
+	if err != nil {
+		return nil, nil, err
+	}
+	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
 }
 
 func (am *assetManager) Start() error {
