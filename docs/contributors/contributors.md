@@ -6,15 +6,13 @@ has_children: true
 ---
 
 # Contributors' Guide
-
 {: .no_toc }
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 
@@ -24,11 +22,11 @@ We welcome anyone to contribute to the FireFly project! If you're interested, th
 
 ## Connect with us on Rocket Chat
 
-You can chat with maintainers and other contributors on Rocket Chat in the `firefly-lab` channel:
-https://chat.hyperledger.org/channel/firefly-lab
+You can chat with maintainers and other contributors on Rocket Chat in the `firefly` channel:
+[https://chat.hyperledger.org/channel/firefly](https://chat.hyperledger.org/channel/firefly)
 
 If you don't have a Linux Foundation ID, you can sign up for a free account here:
-https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID
+[https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID](https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID)
 
 ## Finding your first issue
 
