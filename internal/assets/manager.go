@@ -217,7 +217,7 @@ func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name
 	if err != nil {
 		return nil, nil, err
 	}
-	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("protocolid", pool.ProtocolID)))
+	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
 }
 
 func (am *assetManager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {

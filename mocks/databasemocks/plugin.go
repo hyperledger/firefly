@@ -1449,6 +1449,61 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	return r0, r1, r2
 }
 
+// GetTokenTransfer provides a mock function with given fields: ctx, protocolID
+func (_m *Plugin) GetTokenTransfer(ctx context.Context, protocolID string) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, protocolID)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, protocolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenTransfers provides a mock function with given fields: ctx, filter
+func (_m *Plugin) GetTokenTransfers(ctx context.Context, filter database.Filter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetTransactionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
 	ret := _m.Called(ctx, id)
@@ -2034,6 +2089,20 @@ func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) error); ok {
 		r0 = rf(ctx, pool)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpsertTokenTransfer provides a mock function with given fields: ctx, transfer
+func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, transfer)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, transfer)
 	} else {
 		r0 = ret.Error(0)
 	}

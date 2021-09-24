@@ -4640,7 +4640,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: protocolid
+        name: poolprotocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4694,7 +4694,7 @@ paths:
                       type: integer
                     identity:
                       type: string
-                    protocolId:
+                    poolProtocolId:
                       type: string
                     tokenIndex:
                       type: string

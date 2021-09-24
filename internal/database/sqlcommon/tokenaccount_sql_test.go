@@ -37,10 +37,10 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 
 	// Create a new token account
 	account := &fftypes.TokenAccount{
-		ProtocolID: "F1",
-		TokenIndex: "1",
-		Identity:   "0x0",
-		Balance:    10,
+		PoolProtocolID: "F1",
+		TokenIndex:     "1",
+		Identity:       "0x0",
+		Balance:        10,
 	}
 	accountJson, _ := json.Marshal(&account)
 
@@ -57,7 +57,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	// Query back the token account (by query filter)
 	fb := database.TokenAccountQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("protocolid", account.ProtocolID),
+		fb.Eq("poolprotocolid", account.PoolProtocolID),
 		fb.Eq("tokenindex", account.TokenIndex),
 		fb.Eq("identity", account.Identity),
 	)
@@ -124,10 +124,10 @@ func TestUpsertTokenAccountInsertSuccess(t *testing.T) {
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
 	account := &fftypes.TokenAccount{
-		ProtocolID: "F1",
-		TokenIndex: "1",
-		Identity:   "0x0",
-		Balance:    10,
+		PoolProtocolID: "F1",
+		TokenIndex:     "1",
+		Identity:       "0x0",
+		Balance:        10,
 	}
 
 	db.ExpectBegin()
@@ -146,10 +146,10 @@ func TestUpsertTokenAccountUpdateSuccess(t *testing.T) {
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
 	account := &fftypes.TokenAccount{
-		ProtocolID: "F1",
-		TokenIndex: "1",
-		Identity:   "0x0",
-		Balance:    10,
+		PoolProtocolID: "F1",
+		TokenIndex:     "1",
+		Identity:       "0x0",
+		Balance:        10,
 	}
 
 	db.ExpectBegin()
@@ -189,7 +189,7 @@ func TestGetTokenAccountScanFail(t *testing.T) {
 func TestGetTokenAccountsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("poolprotocolid", "")
 	_, _, err := s.GetTokenAccounts(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -197,15 +197,15 @@ func TestGetTokenAccountsQueryFail(t *testing.T) {
 
 func TestGetTokenAccountsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
+	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("poolprotocolid", map[bool]bool{true: false})
 	_, _, err := s.GetTokenAccounts(context.Background(), f)
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
 func TestGetTokenAccountsScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
-	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"poolprotocolid"}).AddRow("only one"))
+	f := database.TokenAccountQueryFactory.NewFilter(context.Background()).Eq("poolprotocolid", "")
 	_, _, err := s.GetTokenAccounts(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

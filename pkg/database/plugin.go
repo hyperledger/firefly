@@ -374,8 +374,19 @@ type iTokenAccountCollection interface {
 	// GetTokenAccount - Get a token account by pool and account identity
 	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
 
-	// GetTokenAccounts - Get all known token accounts in a pool
+	// GetTokenAccounts - Get token accounts
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+}
+
+type iTokenTransferCollection interface {
+	// UpsertTokenTransfer - Upsert a token transfer
+	UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error
+
+	// GetTokenTransfer - Get a token transfer by protocol ID
+	GetTokenTransfer(ctx context.Context, protocolID string) (*fftypes.TokenTransfer, error)
+
+	// GetTokenTransfers - Get token transfers
+	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -430,6 +441,7 @@ type PeristenceInterface interface {
 	iConfigRecordCollection
 	iTokenPoolCollection
 	iTokenAccountCollection
+	iTokenTransferCollection
 }
 
 // CollectionName represents all collections
@@ -493,12 +505,13 @@ const (
 type OtherCollection CollectionName
 
 const (
-	CollectionConfigrecords OtherCollection = "configrecords"
-	CollectionBlobs         OtherCollection = "blobs"
-	CollectionNextpins      OtherCollection = "nextpins"
-	CollectionNonces        OtherCollection = "nonces"
-	CollectionOffsets       OtherCollection = "offsets"
-	CollectionTokenAccounts OtherCollection = "tokenaccounts"
+	CollectionConfigrecords  OtherCollection = "configrecords"
+	CollectionBlobs          OtherCollection = "blobs"
+	CollectionNextpins       OtherCollection = "nextpins"
+	CollectionNonces         OtherCollection = "nonces"
+	CollectionOffsets        OtherCollection = "offsets"
+	CollectionTokenAccounts  OtherCollection = "tokenaccounts"
+	CollectionTokenTransfers OtherCollection = "tokentransfers"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -757,8 +770,20 @@ var TokenPoolQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"protocolid": &StringField{},
-	"tokenindex": &StringField{},
-	"identity":   &StringField{},
-	"balance":    &Int64Field{},
+	"poolprotocolid": &StringField{},
+	"tokenindex":     &StringField{},
+	"identity":       &StringField{},
+	"balance":        &Int64Field{},
+}
+
+// TokenTransferQueryFactory filter fields for token transfers
+var TokenTransferQueryFactory = &queryFields{
+	"poolprotocolid": &StringField{},
+	"tokenindex":     &StringField{},
+	"key":            &StringField{},
+	"from":           &StringField{},
+	"to":             &StringField{},
+	"amount":         &Int64Field{},
+	"protocolid":     &StringField{},
+	"created":        &TimeField{},
 }
