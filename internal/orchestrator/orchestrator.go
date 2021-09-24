@@ -324,13 +324,28 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		for i := 0; i < tokensConfig.ArraySize(); i++ {
 			prefix := tokensConfig.ArrayEntry(i)
 			name := prefix.GetString(tokens.TokensConfigName)
-			connector := prefix.GetString(tokens.TokensConfigConnector)
-			if name == "" || connector == "" {
+			pluginName := prefix.GetString(tokens.TokensConfigPlugin)
+			if name == "" {
 				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
 			}
+			if pluginName == "" {
+				// Migration path for old config key
+				// TODO: eventually make this fatal
+				pluginName = prefix.GetString(tokens.TokensConfigConnector)
+				if pluginName == "" {
+					return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+				}
+				log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
+			}
+			if pluginName == "https" {
+				// Migration path for old plugin name
+				// TODO: eventually make this fatal
+				log.L(ctx).Warnf("Your tokens config uses the old plugin name 'https' - this plugin has been renamed to 'fftokens'")
+				pluginName = "fftokens"
+			}
 
-			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
-			plugin, err := tifactory.GetPlugin(ctx, connector)
+			log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
+			plugin, err := tifactory.GetPlugin(ctx, pluginName)
 			if plugin != nil {
 				err = plugin.Init(ctx, name, prefix, &or.bc)
 			}

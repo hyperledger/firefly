@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package https
+package fftokens
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-type HTTPS struct {
+type FFTokens struct {
 	ctx            context.Context
 	capabilities   *tokens.Capabilities
 	callbacks      tokens.Callbacks
@@ -65,18 +65,17 @@ type createPoolData struct {
 	TransactionID *fftypes.UUID `json:"transactionId"`
 }
 
-func (h *HTTPS) Name() string {
-	return "https"
+func (h *FFTokens) Name() string {
+	return "fftokens"
 }
 
-func (h *HTTPS) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
-
-	h.ctx = log.WithLogField(ctx, "proto", "https")
+func (h *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+	h.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	h.callbacks = callbacks
 	h.configuredName = name
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.https")
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
 	h.client = restclient.New(h.ctx, prefix)
@@ -95,15 +94,15 @@ func (h *HTTPS) Init(ctx context.Context, name string, prefix config.Prefix, cal
 	return nil
 }
 
-func (h *HTTPS) Start() error {
+func (h *FFTokens) Start() error {
 	return h.wsconn.Connect()
 }
 
-func (h *HTTPS) Capabilities() *tokens.Capabilities {
+func (h *FFTokens) Capabilities() *tokens.Capabilities {
 	return h.capabilities
 }
 
-func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+func (h *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
@@ -121,7 +120,7 @@ func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) erro
 	return h.callbacks.TokensTxUpdate(h, requestID, updateType, message, data)
 }
 
-func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
+func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	packedData := data.GetString("data")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
@@ -169,7 +168,7 @@ func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObje
 	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, tx)
 }
 
-func (h *HTTPS) eventLoop() {
+func (h *FFTokens) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
@@ -219,7 +218,7 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
+func (h *FFTokens) CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
 	data := createPoolData{
 		Namespace:     pool.Namespace,
 		Name:          pool.Name,
