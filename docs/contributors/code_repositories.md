@@ -6,15 +6,13 @@ nav_order: 5
 ---
 
 # Code Repositories
-
 {: .no_toc }
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 
@@ -30,7 +28,8 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 - [HTTP Data Exchange](https://github.com/hyperledger/firefly-dataexchange-https)
 - [Ethereum (Hyperledger Besu / Quorum) connector](https://github.com/hyperledger/firefly-ethconnect)
 - [Corda connector](https://github.com/hyperledger/firefly-cordaconnect)
-- Hyperledger Fabric connector - in design phase, including collaboration with the [Fabric Smart Client](https://github.com/hyperledger/fabric-smart-client) project.
+- [Hyperledger Fabric connector](https://github.com/hyperledger/firefly-fabconnect)
+- [Token connector reference implementation (ERC1155)](https://github.com/hyperledger/firefly-tokens-erc1155)
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
 > of the ecosystem of projects that integrate underneath the plugins.
