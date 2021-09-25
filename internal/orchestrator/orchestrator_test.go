@@ -274,7 +274,9 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
@@ -294,6 +296,8 @@ func TestBadTokensPlugin(t *testing.T) {
 
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName)
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -312,8 +316,31 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	assert.Regexp(t, "FF10273", err)
 }
 
+func TestBadTokensPluginNoType(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10273", err)
+}
+
 func TestGoodTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")

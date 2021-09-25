@@ -665,6 +665,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:
@@ -1639,6 +1640,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:

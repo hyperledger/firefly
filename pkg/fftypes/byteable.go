@@ -21,7 +21,12 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
+)
+
+const (
+	nullString = "null"
 )
 
 // Byteable uses raw encode/decode to preserve field order, and can handle any types of field.
@@ -41,7 +46,7 @@ func (h *Byteable) UnmarshalJSON(b []byte) error {
 
 func (h Byteable) MarshalJSON() ([]byte, error) {
 	if h == nil {
-		return []byte("null"), nil
+		return []byte(nullString), nil
 	}
 	return h, nil
 }
@@ -71,4 +76,20 @@ func (h Byteable) JSONObjectOk() (JSONObject, bool) {
 func (h Byteable) JSONObject() JSONObject {
 	jo, _ := h.JSONObjectOk()
 	return jo
+}
+
+// Scan implements sql.Scanner
+func (h *Byteable) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case nil:
+		nullVal := []byte(nullString)
+		*h = nullVal
+		return nil
+	case []byte:
+		return h.UnmarshalJSON(src)
+	case string:
+		return h.UnmarshalJSON([]byte(src))
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, h)
+	}
 }
