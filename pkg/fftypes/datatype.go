@@ -27,7 +27,7 @@ type ValidatorType = FFEnum
 var (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
 	ValidatorTypeJSON ValidatorType = ffEnum("validatortype", "json")
-	// ValidatorTypeNone explicitly disables validation, even when a datatype is set. Allowing cateogration of datatype without validation.
+	// ValidatorTypeNone explicitly disables validation, even when a datatype is set. Allowing categorization of datatype without validation.
 	ValidatorTypeNone ValidatorType = ffEnum("validatortype", "none")
 	// ValidatorTypeSystemDefinition is the validator type for system definitions
 	ValidatorTypeSystemDefinition ValidatorType = ffEnum("validatortype", "definition")
