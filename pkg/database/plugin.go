@@ -749,6 +749,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"protocolid": &StringField{},
 	"symbol":     &StringField{},
 	"message":    &UUIDField{},
+	"created":    &TimeField{},
 }
 
 // TokenAccountQueryFactory filter fields for token accounts

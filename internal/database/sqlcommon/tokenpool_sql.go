@@ -37,6 +37,7 @@ var (
 		"connector",
 		"symbol",
 		"message_id",
+		"created",
 		"tx_type",
 		"tx_id",
 	}
@@ -96,6 +97,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 			return err
 		}
 	} else {
+		pool.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("tokenpool").
 				Columns(tokenPoolColumns...).
@@ -108,6 +110,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Connector,
 					pool.Symbol,
 					pool.Message,
+					pool.Created,
 					pool.TX.Type,
 					pool.TX.ID,
 				),
@@ -133,6 +136,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Connector,
 		&pool.Symbol,
 		&pool.Message,
+		&pool.Created,
 		&pool.TX.Type,
 		&pool.TX.ID,
 	)
