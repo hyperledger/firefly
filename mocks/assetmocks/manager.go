@@ -248,6 +248,20 @@ func (_m *Manager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenP
 	return r0
 }
 
+// TokensTransferred provides a mock function with given fields: tk, transfer, signingIdentity, protocolTxID, additionalInfo
+func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tk, transfer, signingIdentity, protocolTxID, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(tk, transfer, signingIdentity, protocolTxID, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // WaitStop provides a mock function with given fields:
 func (_m *Manager) WaitStop() {
 	_m.Called()

@@ -368,8 +368,8 @@ type iTokenPoolCollection interface {
 }
 
 type iTokenAccountCollection interface {
-	// UpsertTokenAccount - Upsert a token account
-	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
+	// AddTokenAccountBalance - Add a (positive or negative) balance to the account's current balance
+	AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) error
 
 	// GetTokenAccount - Get a token account by pool and account identity
 	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)

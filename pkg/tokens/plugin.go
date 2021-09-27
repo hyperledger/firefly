@@ -67,6 +67,11 @@ type Callbacks interface {
 	//
 	// Error should will only be returned in shutdown scenarios
 	TokenPoolCreated(plugin Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
+	// TokensTransferred notifies on a transfer between token accounts.
+	//
+	// Error should will only be returned in shutdown scenarios
+	TokensTransferred(plugin Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the tokens

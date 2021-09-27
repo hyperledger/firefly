@@ -264,6 +264,24 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
+	// token-mint: missing data
+	fromServer <- `{"id":"9","event":"token-mint"}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
+
+	// token-mint: invalid amount
+	fromServer <- `{"id":"10","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"bad","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"10"},"event":"ack"}`, string(msg))
+
+	// token-mint: success
+	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
+		return t.PoolProtocolID == "F1" && t.Amount == 2
+	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	fromServer <- `{"id":"11","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"2","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"11"},"event":"ack"}`, string(msg))
+
 	mcb.AssertExpectations(t)
 }
 

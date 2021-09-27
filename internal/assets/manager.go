@@ -45,6 +45,7 @@ type Manager interface {
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	Start() error
 	WaitStop()

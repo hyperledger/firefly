@@ -19,6 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -51,6 +52,7 @@ type msgType string
 const (
 	messageReceipt   msgType = "receipt"
 	messageTokenPool msgType = "token-pool"
+	messageTokenMint msgType = "token-mint"
 )
 
 type createPool struct {
@@ -64,7 +66,7 @@ type mintTokens struct {
 	PoolID    string `json:"poolId"`
 	To        string `json:"to"`
 	Amount    int64  `json:"amount"`
-	RequestID string `json:"requestId"`
+	RequestID string `json:"requestId,omitempty"`
 }
 
 func (h *FFTokens) Name() string {
@@ -157,6 +159,44 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
 }
 
+func (h *FFTokens) handleTokenMint(ctx context.Context, data fftypes.JSONObject) (err error) {
+	tokenIndex := data.GetString("tokenIndex")
+	poolProtocolID := data.GetString("poolId")
+	operatorAddress := data.GetString("operator")
+	toAddress := data.GetString("to")
+	value := data.GetString("amount")
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash")
+
+	if tokenIndex == "" ||
+		poolProtocolID == "" ||
+		operatorAddress == "" ||
+		toAddress == "" ||
+		value == "" ||
+		txHash == "" {
+		log.L(ctx).Errorf("TokenMint event is not valid - missing data: %+v", data)
+		return nil // move on
+	}
+
+	valueInt, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		log.L(ctx).Errorf("TokenMint event is not valid - invalid amount: %+v", data)
+		return nil // move on
+	}
+
+	transfer := &fftypes.TokenTransfer{
+		Type:           fftypes.TokenTransferTypeMint,
+		PoolProtocolID: poolProtocolID,
+		TokenIndex:     tokenIndex,
+		To:             toAddress,
+		Amount:         valueInt,
+		ProtocolID:     txHash,
+	}
+
+	// If there's an error dispatching the event, we must return the error and shutdown
+	return h.callbacks.TokensTransferred(h, transfer, operatorAddress, txHash, tx)
+}
+
 func (h *FFTokens) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
@@ -184,6 +224,8 @@ func (h *FFTokens) eventLoop() {
 				err = h.handleReceipt(ctx, msg.Data)
 			case messageTokenPool:
 				err = h.handleTokenPoolCreate(ctx, msg.Data)
+			case messageTokenMint:
+				err = h.handleTokenMint(ctx, msg.Data)
 			default:
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}

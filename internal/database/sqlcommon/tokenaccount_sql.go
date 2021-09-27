@@ -40,7 +40,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) (err error) {
+func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
-				Set("balance", account.Balance).
+				Set("balance", sq.Expr("balance + ?", account.Amount)).
 				Where(sq.And{
 					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 					sq.Eq{"token_index": account.TokenIndex},
@@ -83,7 +83,7 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 					account.PoolProtocolID,
 					account.TokenIndex,
 					account.Identity,
-					account.Balance,
+					account.Amount,
 				),
 			nil,
 		); err != nil {
