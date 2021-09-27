@@ -53,4 +53,4 @@ A few highlights:
 - [internal](https://github.com/hyperledger/firefly/tree/main/internal): The core Golang implementation code
 - [pkg](https://github.com/hyperledger/firefly/tree/main/pkg): Interfaces intended for external project use
 - [cmd](https://github.com/hyperledger/firefly/tree/main/cmd): The command line entry point
-- [solidity_firefly](https://github.com/hyperledger/firefly/tree/main/solidity_firefly): Ethereum/Solidity smart contract code
+- [smart_contracts](https://github.com/hyperledger/firefly/tree/main/smart_contracts): smart contract code for FireFly's onchain logic

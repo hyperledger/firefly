@@ -60,7 +60,7 @@ Directories:
 - [internal](./internal): The core Golang implementation code
 - [pkg](./pkg): Interfaces intended for external project use
 - [cmd](./cmd): The command line entry point
-- [solidity_firefly](./solidity_firefly): Ethereum/Solidity smart contract code
+- [smart_contracts](./smart_contracts): smart contract code for Firefly's onchain logic, with support for Ethereum and Hyperledger Fabric in their respective sub-directories
 
 [Full code layout here](#firefly-code-hierarchy)
 
