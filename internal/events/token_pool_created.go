@@ -57,7 +57,7 @@ func (em *eventManager) persistTokenPool(ctx context.Context, pool *fftypes.Toke
 			return false, nil // This is not retryable
 		}
 		l.Errorf("Failed to insert token pool '%s': %s", pool.ID, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 	return true, nil
 }
