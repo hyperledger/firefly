@@ -219,7 +219,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 		return err
 	}
 	// If a datatype is specified, we need to verify the payload conforms
-	if datatype != nil {
+	if datatype != nil && validator != fftypes.ValidatorTypeNone {
 		if datatype.Name == "" || datatype.Version == "" {
 			return i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
 		}
