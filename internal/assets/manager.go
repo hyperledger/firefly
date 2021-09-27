@@ -68,9 +68,9 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		syncasync: sa,
 		tokens:    ti,
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
+			InitialDelay: config.GetDuration(config.AssetManagerRetryInitialDelay),
+			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
+			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
 		},
 		txhelper: txcommon.NewTransactionHelper(di),
 	}
