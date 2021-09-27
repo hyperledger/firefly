@@ -26,10 +26,16 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return bm.BroadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
+	return bm.BroadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm, false)
 }
 
-func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessageWithResolvedID(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+	return bm.BroadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm, true)
+}
+
+// THIS IS WHERE THE NEW CODE FIRST CALLS ResolveInputIdentity
+// IT already has an author and key here
+func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool, identityResolved bool) (out *fftypes.Message, err error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
@@ -40,9 +46,11 @@ func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns strin
 		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
-	// Resolve the sending identity
-	if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if !identityResolved {
+		// Resolve the sending identity
+		if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+		}
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
@@ -64,7 +72,7 @@ func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns strin
 			return nil
 		}
 
-		out, err = bm.broadcastMessageCommon(ctx, resolved, false)
+		out, err = bm.broadcastMessageCommon(ctx, resolved, false, identityResolved)
 		return err
 	})
 	if err != nil {
@@ -75,7 +83,7 @@ func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns strin
 	if len(dataToPublish) > 0 {
 		return bm.publishBlobsAndSend(ctx, resolved, dataToPublish, waitConfirm)
 	} else if waitConfirm {
-		return bm.broadcastMessageCommon(ctx, resolved, true)
+		return bm.broadcastMessageCommon(ctx, resolved, true, identityResolved)
 	}
 
 	// The broadcastMessage function modifies the input message to create all the refs
@@ -111,5 +119,5 @@ func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftype
 	}
 
 	// Now we broadcast the message, as all data has been published
-	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm, false)
 }

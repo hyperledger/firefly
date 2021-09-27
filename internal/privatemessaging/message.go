@@ -93,7 +93,7 @@ func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.
 		if immediateConfirm {
 			msg.Confirmed = fftypes.Now()
 			msg.Pending = false
-			msg.Header.Key = "" // there is no on-chain signing assurance with this message
+			// msg.Header.Key = "" // there is no on-chain signing assurance with this message
 		}
 
 		// Store the message - this asynchronously triggers the next step in process

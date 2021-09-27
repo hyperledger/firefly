@@ -105,7 +105,7 @@ func (nm *networkMap) RegisterOrganization(ctx context.Context, org *fftypes.Org
 		}
 	}
 
-	return nm.broadcast.BroadcastDefinition(ctx, org, &fftypes.Identity{
+	return nm.broadcast.BroadcastRootOrgDefinition(ctx, org, &fftypes.Identity{
 		Key: signingIdentityString,
 	}, fftypes.SystemTagDefineOrganization, waitConfirm)
 }

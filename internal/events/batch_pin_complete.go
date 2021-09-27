@@ -33,28 +33,28 @@ import (
 //
 // We must block here long enough to get the payload from the publicstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 
-	log.L(em.ctx).Infof("-> BatchPinComplete txn=%s author=%s", protocolTxID, signingIdentity)
+	log.L(em.ctx).Infof("-> BatchPinComplete txn=%s author=%s", protocolTxID, author)
 	defer func() {
-		log.L(em.ctx).Infof("<- BatchPinComplete txn=%s author=%s", protocolTxID, signingIdentity)
+		log.L(em.ctx).Infof("<- BatchPinComplete txn=%s author=%s", protocolTxID, author)
 	}()
 	log.L(em.ctx).Tracef("BatchPinComplete info: %+v", additionalInfo)
 
 	if batchPin.BatchPaylodRef != "" {
-		return em.handleBroadcastPinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
+		return em.handleBroadcastPinComplete(batchPin, author, protocolTxID, additionalInfo)
 	}
-	return em.handlePrivatePinComplete(batchPin, signingIdentity, protocolTxID, additionalInfo)
+	return em.handlePrivatePinComplete(batchPin, author, protocolTxID, additionalInfo)
 }
 
-func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	// Here we simple record all the pins as parked, and emit an event for the aggregator
 	// to check whether the messages in the batch have been written.
 	return em.retry.Do(em.ctx, "persist private batch pins", func(attempt int) (bool, error) {
 		// We process the batch into the DB as a single transaction (if transactions are supported), both for
 		// efficiency and to minimize the chance of duplicates (although at-least-once delivery is the core model)
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			valid, err := em.persistBatchTransaction(ctx, batchPin, signingIdentity, protocolTxID, additionalInfo)
+			valid, err := em.persistBatchTransaction(ctx, batchPin, author, protocolTxID, additionalInfo)
 			if valid && err == nil {
 				err = em.persistContexts(ctx, batchPin, true)
 			}

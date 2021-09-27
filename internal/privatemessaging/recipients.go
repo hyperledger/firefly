@@ -111,6 +111,11 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		return nil, err
 	}
 
+	localOrg, err := pm.identity.GetLocalOrganization(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	foundLocal := false
 	gi = &fftypes.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
@@ -137,7 +142,7 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	}
 	if !foundLocal {
 		// Add in the local org identity
-		localNodeID, err := pm.resolveLocalNode(ctx, localOrgDID)
+		localNodeID, err := pm.resolveLocalNode(ctx, localOrg.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -149,13 +154,13 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 	return gi, nil
 }
 
-func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrgDID string) (*fftypes.UUID, error) {
+func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrgSigningKey string) (*fftypes.UUID, error) {
 	if pm.localNodeID != nil {
 		return pm.localNodeID, nil
 	}
 	fb := database.NodeQueryFactory.NewFilterLimit(ctx, 1)
 	filter := fb.And(
-		fb.Eq("owner", localOrgDID),
+		fb.Eq("owner", localOrgSigningKey),
 		fb.Eq("name", pm.localNodeName),
 	)
 	nodes, _, err := pm.database.GetNodes(ctx, filter)

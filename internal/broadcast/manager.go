@@ -39,9 +39,10 @@ type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
+	BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool, identityResolved bool) (out *fftypes.Message, err error)
 	BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	Start() error
 	WaitStop()
 }
@@ -132,7 +133,7 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	return bm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
-func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool, identityResolved bool) (*fftypes.Message, error) {
 
 	if !waitConfirm {
 		// Seal the message
@@ -145,7 +146,7 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 	}
 
 	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
-		_, err := bm.BroadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+		_, err := bm.BroadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false, identityResolved)
 		return err
 	})
 }

@@ -65,7 +65,8 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 
 }
 
-func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID string, author string) (node *fftypes.Node, err error) {
+// Why does the node itself matter here?
+func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author, signingKey string) (node *fftypes.Node, err error) {
 	l := log.L(em.ctx)
 
 	// Find the node associated with the peer
@@ -82,7 +83,7 @@ func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID string
 	node = nodes[0]
 
 	// Find the identity in the mesage
-	org, err := em.database.GetOrganizationByIdentity(ctx, author)
+	org, err := em.database.GetOrganizationByIdentity(ctx, signingKey)
 	if err != nil {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retry for persistence error
@@ -94,7 +95,7 @@ func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID string
 
 	// One of the orgs in the hierarchy of the author must be the owner of the peer node
 	candidate := org
-	foundNodeOrg := author == node.Owner
+	foundNodeOrg := signingKey == node.Owner
 	for !foundNodeOrg && candidate.Parent != "" {
 		parent := candidate.Parent
 		candidate, err = em.database.GetOrganizationByIdentity(ctx, parent)
@@ -123,7 +124,7 @@ func (em *eventManager) pinedBatchReceived(peerID string, batch *fftypes.Batch) 
 		return true, em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			l := log.L(ctx)
 
-			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author)
+			node, err := em.checkReceivedIdentity(ctx, peerID, batch.Author, batch.Key)
 			if err != nil {
 				return err
 			}
@@ -279,7 +280,7 @@ func (em *eventManager) unpinnedMessageReceived(peerID string, message *fftypes.
 				return err
 			}
 
-			node, err := em.checkReceivedIdentity(ctx, peerID, message.Header.Author)
+			node, err := em.checkReceivedIdentity(ctx, peerID, message.Header.Author, message.Header.Key)
 			if err != nil {
 				return err
 			}

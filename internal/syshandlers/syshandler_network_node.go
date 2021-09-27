@@ -46,7 +46,7 @@ func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.
 		return false, nil
 	}
 
-	if msg.Header.Author != node.Owner {
+	if msg.Header.Key != node.Owner {
 		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)
 		return false, nil
 	}

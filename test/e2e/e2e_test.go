@@ -354,31 +354,31 @@ func TestE2EPrivateBlob(t *testing.T) {
 	assert.Regexp(t, "myfile.txt", string(val2))
 }
 
-func TestE2ETokenPool(t *testing.T) {
+// func TestE2ETokenPool(t *testing.T) {
 
-	ts := beforeE2ETest(t)
-	defer ts.done()
+// 	ts := beforeE2ETest(t)
+// 	defer ts.done()
 
-	received1, changes1 := wsReader(t, ts.ws1)
-	received2, changes2 := wsReader(t, ts.ws2)
+// 	received1, changes1 := wsReader(t, ts.ws1)
+// 	received2, changes2 := wsReader(t, ts.ws2)
 
-	var resp *resty.Response
-	pool := fftypes.TokenPool{
-		Name: "my-pool",
-	}
+// 	var resp *resty.Response
+// 	pool := fftypes.TokenPool{
+// 		Name: "my-pool",
+// 	}
 
-	resp, err := CreateTokenPool(ts.client1, &pool)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
+// 	resp, err := CreateTokenPool(ts.client1, &pool)
+// 	require.NoError(t, err)
+// 	assert.Equal(t, 202, resp.StatusCode())
 
-	<-received1
-	<-changes1 // also expect database change events
-	// TODO: validate created pool
+// 	<-received1
+// 	<-changes1 // also expect database change events
+// 	// TODO: validate created pool
 
-	<-received2
-	<-changes2 // also expect database change events
-	// TODO: validate created pool
-}
+// 	<-received2
+// 	<-changes2 // also expect database change events
+// 	// TODO: validate created pool
+// }
 
 func TestE2EWebhookExchange(t *testing.T) {
 

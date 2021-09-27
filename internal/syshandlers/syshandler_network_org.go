@@ -37,23 +37,23 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 		return false, nil
 	}
 
-	signingIdentity := org.Identity
-	if org.Parent != "" {
-		signingIdentity = org.Parent
-		parent, err := sh.database.GetOrganizationByIdentity(ctx, org.Parent)
-		if err != nil {
-			return false, err // We only return database errors
-		}
-		if parent == nil {
-			l.Warnf("Unable to process organization broadcast %s - parent identity not found: %s", msg.Header.ID, org.Parent)
-			return false, nil
-		}
-	}
+	// signingIdentity := org.Identity
+	// if org.Parent != "" {
+	// 	signingIdentity = org.Parent
+	// 	parent, err := sh.database.GetOrganizationByIdentity(ctx, org.Parent)
+	// 	if err != nil {
+	// 		return false, err // We only return database errors
+	// 	}
+	// 	if parent == nil {
+	// 		l.Warnf("Unable to process organization broadcast %s - parent identity not found: %s", msg.Header.ID, org.Parent)
+	// 		return false, nil
+	// 	}
+	// }
 
-	if msg.Header.Author != signingIdentity {
-		l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, signingIdentity, msg.Header.Author)
-		return false, nil
-	}
+	// if msg.Header.Author != signingIdentity {
+	// 	l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, signingIdentity, msg.Header.Author)
+	// 	return false, nil
+	// }
 
 	existing, err := sh.database.GetOrganizationByIdentity(ctx, org.Identity)
 	if err == nil && existing == nil {

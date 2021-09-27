@@ -312,7 +312,7 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.
 	if err != nil {
 		return nil, err
 	}
-	l.Debugf("Group=%s Topic='%s' NextPins=%v Sequence=%d Pin=%s NextPins=%v", msg.Header.Group, topic, nextPins, pinnedSequence, pin, nextPins)
+	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s NextPins=%v", msg.Header.Group, topic, pinnedSequence, pin, nextPins)
 
 	if len(nextPins) == 0 {
 		// If this is the first time we've seen the context, then this message is read as long as it is
@@ -329,8 +329,8 @@ func (ag *aggregator) checkMaskedContextReady(ctx context.Context, msg *fftypes.
 			break
 		}
 	}
-	if nextPin == nil || nextPin.Identity != msg.Header.Author {
-		l.Debugf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
+	if nextPin == nil || nextPin.Identity != msg.Header.Key {
+		l.Warnf("Mismatched nexthash or author group=%s topic=%s context=%s pin=%s nextHash=%+v", msg.Header.Group, topic, contextUnmasked, pin, nextPin)
 		return nil, nil
 	}
 	return nextPin, nil

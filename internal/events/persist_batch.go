@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/database"
@@ -33,7 +34,9 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 	if err != nil {
 		return false, err
 	}
-	if author == "" || author != batch.Author || signingKey != batch.Key {
+
+	// The special case of a root org broadcast is allowed to not have a resolved author, because it's not in the database yet
+	if !em.isRootOrgBroadcast(batch) && (author == "" || author != batch.Author) || signingKey != batch.Key {
 		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, author)
 		return false, nil // This is not retryable. skip this batch
 	}
@@ -45,6 +48,26 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 
 	valid, err = em.persistBatch(ctx, batch)
 	return valid, err
+}
+
+func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
+	// Look into batch to see if it contains a message that contains a data item that is a root organization definition
+	for _, message := range batch.Payload.Messages {
+		if message.Header.Type == fftypes.MessageTypeBroadcast {
+			for _, messageDataItem := range message.Data {
+				for _, batchDataItem := range batch.Payload.Data {
+					if batchDataItem.ID.Equals(messageDataItem.ID) {
+						var org *fftypes.Organization
+						json.Unmarshal(batchDataItem.Value, &org)
+						if org != nil && org.Parent == "" {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

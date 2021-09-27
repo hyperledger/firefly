@@ -28,6 +28,8 @@ func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, def f
 	return bm.BroadcastDefinition(ctx, def, &fftypes.Identity{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
+// THIS IS WHERE THE OLD CODE FIRST CALLS ResolveInputIdentity
+// It does NOT have an author and key the first time
 func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	err = bm.identity.ResolveInputIdentity(ctx, signingIdentity)
@@ -74,5 +76,51 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 	}
 
 	// Broadcast the message
-	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm, false)
+}
+
+func (bm *broadcastManager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+
+	signingIdentity.Author = bm.identity.OrgDID(def)
+
+	// Ensure the broadcast message is nil on the sending side - only set on receiving side
+	def.SetBroadcastMessage(nil)
+
+	// Serialize it into a data object, as a piece of data we can write to a message
+	data := &fftypes.Data{
+		Validator: fftypes.ValidatorTypeSystemDefinition,
+		ID:        fftypes.NewUUID(),
+		Namespace: fftypes.SystemNamespace,
+		Created:   fftypes.Now(),
+	}
+	data.Value, err = json.Marshal(&def)
+	if err == nil {
+		err = data.Seal(ctx)
+	}
+	if err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+	}
+
+	// Write as data to the local store
+	if err = bm.database.UpsertData(ctx, data, true, false /* we just generated the ID, so it is new */); err != nil {
+		return nil, err
+	}
+
+	// Create a broadcast message referring to the data
+	msg = &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			Namespace: fftypes.SystemNamespace,
+			Type:      fftypes.MessageTypeDefinition,
+			Identity:  *signingIdentity,
+			Topics:    fftypes.FFNameArray{def.Topic()},
+			Tag:       string(tag),
+			TxType:    fftypes.TransactionTypeBatchPin,
+		},
+		Data: fftypes.DataRefs{
+			{ID: data.ID, Hash: data.Hash},
+		},
+	}
+
+	// Broadcast the message
+	return bm.broadcastMessageCommon(ctx, msg, waitConfirm, true)
 }

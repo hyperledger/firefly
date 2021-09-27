@@ -41,6 +41,8 @@ type Manager interface {
 	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
 	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
 	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
+	OrgDID(org *fftypes.Organization) string
+	GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error)
 }
 
 type identityManager struct {
@@ -77,7 +79,11 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	return im, nil
 }
 
-func orgDID(org *fftypes.Organization) string {
+func (im *identityManager) GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error) {
+	return im.cachedOrgLookupByAuthor(ctx, im.localOrgDID)
+}
+
+func (im *identityManager) OrgDID(org *fftypes.Organization) string {
 	if org == nil {
 		return ""
 	}
@@ -116,7 +122,7 @@ func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signin
 		return "", err
 	}
 
-	return orgDID(org), nil
+	return im.OrgDID(org), nil
 
 }
 
@@ -237,7 +243,7 @@ func (im *identityManager) resolveInputAuthor(ctx context.Context, identity *fft
 	}
 
 	// We normalize the author to the DID
-	identity.Author = orgDID(org)
+	identity.Author = im.OrgDID(org)
 	return nil
 
 }
