@@ -34,8 +34,8 @@ func TestOperationUpdateSuccess(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mdi.On("GetOperationByID", em.ctx, uuidMatches(opID)).Return(&fftypes.Operation{ID: opID}, nil)
-	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
+	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID}, nil)
+	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
@@ -52,7 +52,7 @@ func TestOperationUpdateNotFound(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mdi.On("GetOperationByID", em.ctx, uuidMatches(opID)).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", em.ctx, opID).Return(nil, fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
@@ -69,8 +69,8 @@ func TestOperationUpdateError(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mdi.On("GetOperationByID", em.ctx, uuidMatches(opID)).Return(&fftypes.Operation{ID: opID}, nil)
-	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID}, nil)
+	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
 	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)

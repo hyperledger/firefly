@@ -47,10 +47,6 @@ func resetConf() {
 	e.InitPrefix(utConfPrefix)
 }
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func newTestEthereum() (*Ethereum, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	em := &blockchainmocks.Callbacks{}
@@ -874,7 +870,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
   }`)
 
 	em.On("BlockchainOpUpdate",
-		uuidMatches(operationID),
+		operationID,
 		fftypes.OpStatusSucceeded,
 		"",
 		mock.Anything).Return(nil)
@@ -912,7 +908,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
-		uuidMatches(operationID),
+		operationID,
 		fftypes.OpStatusFailed,
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))

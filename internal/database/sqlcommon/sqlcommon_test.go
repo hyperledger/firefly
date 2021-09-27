@@ -26,16 +26,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool {
-		return id1.Equals(id2)
-	})
-}
 
 func TestInitSQLCommon(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)

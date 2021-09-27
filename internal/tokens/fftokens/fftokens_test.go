@@ -40,10 +40,6 @@ import (
 
 var utConfPrefix = config.NewPluginConfig("tokens").Array()
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
 	httpmock.ActivateNonDefault(mockedClient)
@@ -179,11 +175,11 @@ func TestEvents(t *testing.T) {
 	fromServer <- `{"id":"2","event":"receipt","data":{"id":"abc"}}`
 
 	// receipt: success
-	mcb.On("TokensOpUpdate", h, uuidMatches(opID), fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
+	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
 	fromServer <- `{"id":"3","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
 
 	// receipt: failure
-	mcb.On("TokensOpUpdate", h, uuidMatches(opID), fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
+	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
 	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
 
 	// token-pool: missing data

@@ -35,10 +35,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func TestUploadBlobOk(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
@@ -420,7 +416,7 @@ func TestDownloadBlobOk(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &fftypes.BlobRef{
@@ -454,7 +450,7 @@ func TestDownloadBlobNotFound(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &fftypes.BlobRef{
@@ -477,7 +473,7 @@ func TestDownloadBlobLookupErr(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &fftypes.BlobRef{
@@ -499,7 +495,7 @@ func TestDownloadBlobNoBlob(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob:      &fftypes.BlobRef{},
@@ -518,7 +514,7 @@ func TestDownloadBlobNSMismatch(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(&fftypes.Data{
+	mdi.On("GetDataByID", ctx, dataID, false).Return(&fftypes.Data{
 		ID:        dataID,
 		Namespace: "ns2",
 		Blob:      &fftypes.BlobRef{},
@@ -537,7 +533,7 @@ func TestDownloadBlobDataLookupErr(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, uuidMatches(dataID), false).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := dm.DownloadBLOB(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "pop", err)

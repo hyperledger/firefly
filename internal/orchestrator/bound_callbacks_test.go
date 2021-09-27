@@ -46,11 +46,11 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mbi, uuidMatches(opID), fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
 	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("OperationUpdate", mti, uuidMatches(opID), fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
 	err = bc.TokensOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 

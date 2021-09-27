@@ -26,15 +26,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func TestGetOrganizationByIDOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	id := fftypes.NewUUID()
-	nm.database.(*databasemocks.Plugin).On("GetOrganizationByID", nm.ctx, uuidMatches(id)).Return(&fftypes.Organization{ID: id}, nil)
+	nm.database.(*databasemocks.Plugin).On("GetOrganizationByID", nm.ctx, id).Return(&fftypes.Organization{ID: id}, nil)
 	res, err := nm.GetOrganizationByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -51,7 +47,7 @@ func TestGetNodeByIDOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	id := fftypes.NewUUID()
-	nm.database.(*databasemocks.Plugin).On("GetNodeByID", nm.ctx, uuidMatches(id)).Return(&fftypes.Node{ID: id}, nil)
+	nm.database.(*databasemocks.Plugin).On("GetNodeByID", nm.ctx, id).Return(&fftypes.Node{ID: id}, nil)
 	res, err := nm.GetNodeByID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
