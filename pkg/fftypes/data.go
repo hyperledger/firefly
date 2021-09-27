@@ -71,6 +71,15 @@ func (d DataRefs) Hash() *Bytes32 {
 	return &b32
 }
 
+func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
+	switch validator {
+	case ValidatorTypeJSON, ValidatorTypeNone, ValidatorTypeSystemDefinition:
+		return nil
+	default:
+		return i18n.NewError(ctx, i18n.MsgUnknownValidatorType, validator)
+	}
+}
+
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 	if d.Value == nil {
 		d.Value = Byteable(nullString)
@@ -96,6 +105,9 @@ func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 }
 
 func (d *Data) Seal(ctx context.Context) (err error) {
+	if d.Validator == "" {
+		d.Validator = ValidatorTypeJSON
+	}
 	if d.ID == nil {
 		d.ID = NewUUID()
 	}
@@ -103,5 +115,8 @@ func (d *Data) Seal(ctx context.Context) (err error) {
 		d.Created = Now()
 	}
 	d.Hash, err = d.CalcHash(ctx)
+	if err == nil {
+		err = CheckValidatorType(ctx, d.Validator)
+	}
 	return err
 }
