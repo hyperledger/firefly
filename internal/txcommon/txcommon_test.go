@@ -29,28 +29,31 @@ import (
 
 func TestPersistTransactionNoID(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{}
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
 func TestPersistTransactionNoNamespace(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
 	}
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
 func TestPersistTransactionGetTransactionError(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -61,13 +64,14 @@ func TestPersistTransactionGetTransactionError(t *testing.T) {
 
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestPersistTransactionSubjectMismatch(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -86,13 +90,14 @@ func TestPersistTransactionSubjectMismatch(t *testing.T) {
 
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(existing, nil)
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
 func TestPersistTransactionUpsertFail(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -112,13 +117,14 @@ func TestPersistTransactionUpsertFail(t *testing.T) {
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(existing, nil)
 	mdb.On("UpsertTransaction", context.Background(), tx, false).Return(fmt.Errorf("pop"))
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestPersistTransactionHashMismatch(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -138,13 +144,14 @@ func TestPersistTransactionHashMismatch(t *testing.T) {
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(existing, nil)
 	mdb.On("UpsertTransaction", context.Background(), tx, false).Return(database.HashMismatch)
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.False(t, valid)
 	assert.NoError(t, err)
 }
 
 func TestPersistTransactionUpdateOk(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -164,13 +171,14 @@ func TestPersistTransactionUpdateOk(t *testing.T) {
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(existing, nil)
 	mdb.On("UpsertTransaction", context.Background(), tx, false).Return(nil)
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 }
 
 func TestPersistTransactionCreateOk(t *testing.T) {
 	mdb := &databasemocks.Plugin{}
+	th := NewTransactionHelper(mdb)
 
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
@@ -183,7 +191,7 @@ func TestPersistTransactionCreateOk(t *testing.T) {
 	mdb.On("GetTransactionByID", context.Background(), tx.ID).Return(nil, nil)
 	mdb.On("UpsertTransaction", context.Background(), tx, false).Return(nil)
 
-	valid, err := PersistTransaction(context.Background(), mdb, tx)
+	valid, err := th.PersistTransaction(context.Background(), tx)
 	assert.True(t, valid)
 	assert.NoError(t, err)
 

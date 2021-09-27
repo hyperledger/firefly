@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -77,6 +78,7 @@ type eventManager struct {
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
+	txhelper             txcommon.Helper
 	aggregator           *aggregator
 	newEventNotifier     *eventNotifier
 	newPinNotifier       *eventNotifier
@@ -103,6 +105,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
+		txhelper:             txcommon.NewTransactionHelper(di),
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,
