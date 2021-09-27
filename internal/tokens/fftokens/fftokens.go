@@ -60,6 +60,13 @@ type createPool struct {
 	Config     fftypes.JSONObject `json:"config"`
 }
 
+type mintTokens struct {
+	PoolID    string `json:"poolId"`
+	To        string `json:"to"`
+	Amount    int64  `json:"amount"`
+	RequestID string `json:"requestId"`
+}
+
 func (h *FFTokens) Name() string {
 	return "fftokens"
 }
@@ -209,6 +216,21 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 			Config:     pool.Config,
 		}).
 		Post("/api/v1/pool")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&mintTokens{
+			PoolID:    pool.ProtocolID,
+			To:        mint.To,
+			Amount:    mint.Amount,
+			RequestID: operationID.String(),
+		}).
+		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

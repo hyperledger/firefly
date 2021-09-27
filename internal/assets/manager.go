@@ -37,10 +37,11 @@ type Manager interface {
 	CreateTokenPool(ctx context.Context, ns, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
-	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+	GetTokenPool(ctx context.Context, ns, typeName, poolName string) (*fftypes.TokenPool, error)
+	GetTokenAccounts(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
-	GetTokenTransfers(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
+	GetTokenTransfers(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
+	MintTokens(ctx context.Context, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
@@ -200,17 +201,17 @@ func (am *assetManager) GetTokenPools(ctx context.Context, ns string, typeName s
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error) {
+func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, poolName string) (*fftypes.TokenPool, error) {
 	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
 		return nil, err
 	}
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
-	pool, err := am.database.GetTokenPool(ctx, ns, name)
+	pool, err := am.database.GetTokenPool(ctx, ns, poolName)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +221,8 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name str
 	return pool, nil
 }
 
-func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, typeName, name)
+func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	pool, err := am.GetTokenPool(ctx, ns, typeName, poolName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -239,6 +240,45 @@ func (am *assetManager) GetTokenTransfers(ctx context.Context, ns, typeName, nam
 		return nil, nil, err
 	}
 	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
+}
+
+func (am *assetManager) MintTokens(ctx context.Context, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	plugin, err := am.selectTokenPlugin(ctx, typeName)
+	if err != nil {
+		return nil, err
+	}
+	pool, err := am.GetTokenPool(ctx, ns, typeName, poolName)
+	if err != nil {
+		return nil, err
+	}
+
+	if mint.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		mint.Key = org.Identity
+	}
+	if mint.To == "" {
+		mint.To = mint.Key
+	}
+
+	op := fftypes.NewTXOperation(
+		plugin,
+		ns,
+		fftypes.NewUUID(),
+		"",
+		fftypes.OpTypeTokensMint,
+		fftypes.OpStatusPending,
+		"")
+	err = am.database.UpsertOperation(ctx, op, false)
+	if err != nil {
+		return nil, err
+	}
+
+	mint.Type = fftypes.TokenTransferTypeMint
+	mint.PoolProtocolID = pool.ProtocolID
+	return mint, plugin.MintTokens(ctx, op.ID, pool, mint)
 }
 
 func (am *assetManager) Start() error {

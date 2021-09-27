@@ -42,6 +42,9 @@ type Plugin interface {
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
+
+	// MintTokens mints new tokens in a pool and adds them to the recipient's account
+	MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.

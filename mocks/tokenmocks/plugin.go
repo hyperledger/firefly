@@ -68,6 +68,20 @@ func (_m *Plugin) InitPrefix(prefix config.PrefixArray) {
 	_m.Called(prefix)
 }
 
+// MintTokens provides a mock function with given fields: ctx, operationID, pool, mint
+func (_m *Plugin) MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, operationID, pool, mint)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, operationID, pool, mint)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Name provides a mock function with given fields:
 func (_m *Plugin) Name() string {
 	ret := _m.Called()
