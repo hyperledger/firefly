@@ -24,6 +24,20 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
+type Helper interface {
+	PersistTransaction(ctx context.Context, tx *fftypes.Transaction) (valid bool, err error)
+}
+
+type transactionHelper struct {
+	database database.Plugin
+}
+
+func NewTransactionHelper(di database.Plugin) Helper {
+	return &transactionHelper{
+		database: di,
+	}
+}
+
 func subjectMatch(a *fftypes.TransactionSubject, b *fftypes.TransactionSubject) bool {
 	return a.Type == b.Type &&
 		a.Signer == b.Signer &&
@@ -32,7 +46,7 @@ func subjectMatch(a *fftypes.TransactionSubject, b *fftypes.TransactionSubject) 
 		a.Namespace == b.Namespace
 }
 
-func PersistTransaction(ctx context.Context, db database.Plugin, tx *fftypes.Transaction) (valid bool, err error) {
+func (t *transactionHelper) PersistTransaction(ctx context.Context, tx *fftypes.Transaction) (valid bool, err error) {
 	if tx.ID == nil {
 		log.L(ctx).Errorf("Invalid transaction - ID is nil")
 		return false, nil // this is not retryable
@@ -41,7 +55,7 @@ func PersistTransaction(ctx context.Context, db database.Plugin, tx *fftypes.Tra
 		log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - invalid namespace '%s': %a", tx.ID, tx.Subject.Reference, tx.Subject.Namespace, err)
 		return false, nil // this is not retryable
 	}
-	existing, err := db.GetTransactionByID(ctx, tx.ID)
+	existing, err := t.database.GetTransactionByID(ctx, tx.ID)
 	if err != nil {
 		return false, err // a persistence failure here is considered retryable (so returned)
 	}
@@ -64,7 +78,7 @@ func PersistTransaction(ctx context.Context, db database.Plugin, tx *fftypes.Tra
 
 	// Upsert the transaction, ensuring the hash does not change
 	tx.Status = fftypes.OpStatusSucceeded
-	err = db.UpsertTransaction(ctx, tx, false)
+	err = t.database.UpsertTransaction(ctx, tx, false)
 	if err != nil {
 		if err == database.HashMismatch {
 			log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - hash mismatch with existing record '%s'", tx.ID, tx.Subject.Reference, tx.Hash)
