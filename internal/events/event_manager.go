@@ -38,7 +38,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/publicstorage"
-	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type EventManager interface {
@@ -61,9 +60,6 @@ type EventManager interface {
 	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
-
-	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents
