@@ -118,8 +118,8 @@ func TestCreateTokenPool(t *testing.T) {
 			assert.Contains(t, body, "requestId")
 			delete(body, "requestId")
 			assert.Equal(t, fftypes.JSONObject{
-				"data": "{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"" + pool.ID.String() + "\",\"transactionId\":\"" + pool.TX.ID.String() + "\"}",
-				"type": "fungible",
+				"trackingId": pool.TX.ID.String(),
+				"type":       "fungible",
 			}, body)
 
 			res := &http.Response{
@@ -172,53 +172,33 @@ func TestEvents(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	fromServer <- `{"id":"2","event":"receipt","data":{}}`
-	fromServer <- `{"id":"2","event":"receipt","data":{"id":"abc"}}`
+	fromServer <- `{"id":"3","event":"receipt","data":{"id":"abc"}}`
 
 	// receipt: success
 	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"3","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
+	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
 
 	// receipt: failure
 	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
+	fromServer <- `{"id":"5","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
 
 	// token-pool: missing data
-	fromServer <- `{"id":"5","event":"token-pool"}`
-	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"5"},"event":"ack"}`, string(msg))
-
-	// token-pool: unparseable packed data
-	fromServer <- `{"id":"6","event":"token-pool","data":{"data":"!","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"6","event":"token-pool"}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
-	// token-pool: missing packed data
-	fromServer <- `{"id":"7","event":"token-pool","data":{"data":"{}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	// token-pool: invalid uuid
+	fromServer <- `{"id":"7","event":"token-pool","data":{"trackingId":"bad","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
 
-	// token-pool: invalid uuids
-	fromServer <- `{"id":"8","event":"token-pool","data":{"data":"{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"bad\",\"transactionId\":\"bad\"}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
-	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
-
-	id1 := fftypes.NewUUID()
-	id2 := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	// token-pool: success
-	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
-		assert.Equal(t, "ns1", pool.Namespace)
-		assert.Equal(t, "new-pool", pool.Name)
-		assert.Equal(t, fftypes.TokenTypeFungible, pool.Type)
-		assert.Equal(t, "F1", pool.ProtocolID)
-		assert.Equal(t, *id1, *pool.ID)
-		assert.Equal(t, *id2, *pool.TX.ID)
-		return true
-	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"},
-	).Return(nil)
-	fromServer <- `{"id":"9","event":"token-pool","data":{"data":"{\"namespace\":\"ns1\",\"name\":\"new-pool\",\"id\":\"` + id1.String() + `\",\"transactionId\":\"` + id2.String() + `\"}","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
+	mcb.On("TokenPoolCreated", h, fftypes.TokenTypeFungible, txID, "F1", "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	fromServer <- `{"id":"8","event":"token-pool","data":{"trackingId":"` + txID.String() + `","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
+	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }

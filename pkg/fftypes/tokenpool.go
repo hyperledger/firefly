@@ -16,6 +16,10 @@
 
 package fftypes
 
+import (
+	"context"
+)
+
 type TokenType = FFEnum
 
 var (
@@ -34,4 +38,27 @@ type TokenPool struct {
 	Connector  string         `json:"connector,omitempty"`
 	Message    *UUID          `json:"message,omitempty"`
 	TX         TransactionRef `json:"tx,omitempty"`
+}
+
+type TokenPoolAnnouncement struct {
+	TokenPool
+	ProtocolTxID string `json:"protocolTxID"`
+}
+
+func (t *TokenPool) Validate(ctx context.Context, existing bool) (err error) {
+	if err = ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
+		return err
+	}
+	if err = ValidateFFNameField(ctx, t.Name, "name"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TokenPool) Topic() string {
+	return namespaceTopic(t.Namespace)
+}
+
+func (t *TokenPool) SetBroadcastMessage(msgID *UUID) {
+	t.Message = msgID
 }

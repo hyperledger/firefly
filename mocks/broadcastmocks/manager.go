@@ -129,6 +129,29 @@ func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace
 	return r0, r1
 }
 
+// BroadcastTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
+func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, pool, waitConfirm)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenPoolAnnouncement, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, pool, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenPoolAnnouncement, bool) error); ok {
+		r1 = rf(ctx, ns, pool, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetNodeSigningIdentity provides a mock function with given fields: ctx
 func (_m *Manager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
 	ret := _m.Called(ctx)

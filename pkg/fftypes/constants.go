@@ -40,4 +40,7 @@ const (
 
 	// SystemTagDefineGroup is the topic for messages that send the definition of a group, to all parties in that group
 	SystemTagDefineGroup SystemTag = "ff_define_group"
+
+	// SystemTagDefinePool is the topic for messages that broadcast data definitions
+	SystemTagDefinePool SystemTag = "ff_define_pool"
 )

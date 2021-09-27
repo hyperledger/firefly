@@ -53,16 +53,9 @@ const (
 )
 
 type createPool struct {
-	Type      fftypes.TokenType `json:"type"`
-	RequestID string            `json:"requestId"`
-	Data      string            `json:"data"`
-}
-
-type createPoolData struct {
-	Namespace     string        `json:"namespace"`
-	Name          string        `json:"name"`
-	ID            *fftypes.UUID `json:"id"`
-	TransactionID *fftypes.UUID `json:"transactionId"`
+	Type       fftypes.TokenType `json:"type"`
+	RequestID  string            `json:"requestId"`
+	TrackingID string            `json:"trackingId"`
 }
 
 func (h *FFTokens) Name() string {
@@ -126,51 +119,30 @@ func (h *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) e
 }
 
 func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
-	packedData := data.GetString("data")
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
+	trackingID := data.GetString("trackingId")
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
 
-	if packedData == "" ||
-		tokenType == "" ||
+	if tokenType == "" ||
 		protocolID == "" ||
+		trackingID == "" ||
 		operatorAddress == "" ||
 		txHash == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
 
-	unpackedData := createPoolData{}
-	err = json.Unmarshal([]byte(packedData), &unpackedData)
+	txID, err := fftypes.ParseUUID(ctx, trackingID)
 	if err != nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - could not unpack data (%s): %+v", err, data)
+		log.L(ctx).Errorf("TokenPool event is not valid - invalid transaction ID (%s): %+v", err, data)
 		return nil // move on
-	}
-	if unpackedData.Namespace == "" ||
-		unpackedData.Name == "" ||
-		unpackedData.ID == nil ||
-		unpackedData.TransactionID == nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - missing packed data: %+v", unpackedData)
-		return nil // move on
-	}
-
-	pool := &fftypes.TokenPool{
-		ID: unpackedData.ID,
-		TX: fftypes.TransactionRef{
-			ID:   unpackedData.TransactionID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
-		Namespace:  unpackedData.Namespace,
-		Name:       unpackedData.Name,
-		Type:       fftypes.FFEnum(tokenType),
-		Connector:  h.configuredName,
-		ProtocolID: protocolID,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, tx)
+	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
 }
 
 func (h *FFTokens) eventLoop() {
@@ -224,23 +196,13 @@ func (h *FFTokens) eventLoop() {
 }
 
 func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
-	data := createPoolData{
-		Namespace:     pool.Namespace,
-		Name:          pool.Name,
-		ID:            pool.ID,
-		TransactionID: pool.TX.ID,
-	}
-	packedData, err := json.Marshal(data)
-	var res *resty.Response
-	if err == nil {
-		res, err = h.client.R().SetContext(ctx).
-			SetBody(&createPool{
-				Type:      pool.Type,
-				RequestID: operationID.String(),
-				Data:      string(packedData),
-			}).
-			Post("/api/v1/pool")
-	}
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&createPool{
+			Type:       pool.Type,
+			RequestID:  operationID.String(),
+			TrackingID: pool.TX.ID.String(),
+		}).
+		Post("/api/v1/pool")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

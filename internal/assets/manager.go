@@ -18,7 +18,9 @@ package assets
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -37,9 +39,10 @@ type Manager interface {
 	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
 	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
 
 	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	Start() error
 	WaitStop()
@@ -51,12 +54,13 @@ type assetManager struct {
 	identity  identity.Plugin
 	data      data.Manager
 	syncasync syncasync.Bridge
+	broadcast broadcast.Manager
 	tokens    map[string]tokens.Plugin
 	retry     retry.Retry
 	txhelper  txcommon.Helper
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
+func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, ti map[string]tokens.Plugin) (Manager, error) {
 	if di == nil || ii == nil || sa == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
@@ -66,6 +70,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		identity:  ii,
 		data:      dm,
 		syncasync: sa,
+		broadcast: bm,
 		tokens:    ti,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.AssetManagerRetryInitialDelay),
@@ -84,6 +89,28 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 		}
 	}
 	return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, name)
+}
+
+func storeTokenOpInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
+	op.Input = fftypes.JSONObject{
+		"id":        pool.ID.String(),
+		"namespace": pool.Namespace,
+		"name":      pool.Name,
+	}
+}
+
+func retrieveTokenOpInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
+	input := &op.Input
+	pool.ID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
+	if err != nil {
+		return err
+	}
+	pool.Namespace = input.GetString("namespace")
+	pool.Name = input.GetString("name")
+	if pool.Namespace == "" || pool.Name == "" {
+		return fmt.Errorf("namespace or name missing from inputs")
+	}
+	return nil
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -132,6 +159,13 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		return nil, err
 	}
 
+	pool.ID = id
+	pool.Namespace = ns
+	pool.TX = fftypes.TransactionRef{
+		ID:   tx.ID,
+		Type: tx.Subject.Type,
+	}
+
 	op := fftypes.NewTXOperation(
 		plugin,
 		ns,
@@ -140,17 +174,12 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
 		author.Identifier)
+	storeTokenOpInputs(op, pool)
 	err = am.database.UpsertOperation(ctx, op, false)
 	if err != nil {
 		return nil, err
 	}
 
-	pool.ID = id
-	pool.Namespace = ns
-	pool.TX = fftypes.TransactionRef{
-		ID:   tx.ID,
-		Type: tx.Subject.Type,
-	}
 	return pool, plugin.CreateTokenPool(ctx, op.ID, author, pool)
 }
 
@@ -187,6 +216,11 @@ func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name
 		return nil, nil, err
 	}
 	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("protocolid", pool.ProtocolID)))
+}
+
+func (am *assetManager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {
+	// TODO: validate that the given token pool was created with the given protocolTxId
+	return nil
 }
 
 func (am *assetManager) Start() error {
