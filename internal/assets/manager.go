@@ -22,7 +22,9 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/identity"
@@ -35,6 +37,10 @@ type Manager interface {
 	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
 	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+
+	// Bound token callbacks
+	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
 	Start() error
 	WaitStop()
 }
@@ -46,6 +52,8 @@ type assetManager struct {
 	data      data.Manager
 	syncasync syncasync.Bridge
 	tokens    map[string]tokens.Plugin
+	retry     retry.Retry
+	txhelper  txcommon.Helper
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
@@ -59,6 +67,12 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		data:      dm,
 		syncasync: sa,
 		tokens:    ti,
+		retry: retry.Retry{
+			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
+			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
+			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
+		},
+		txhelper: txcommon.NewTransactionHelper(di),
 	}
 	return am, nil
 }
