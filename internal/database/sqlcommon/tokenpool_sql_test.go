@@ -51,7 +51,6 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 		},
 	}
-	poolJson, _ := json.Marshal(&pool)
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).
 		Return().Once()
@@ -60,6 +59,9 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 
 	err := s.UpsertTokenPool(ctx, pool)
 	assert.NoError(t, err)
+
+	assert.NotNil(t, pool.Created)
+	poolJson, _ := json.Marshal(&pool)
 
 	// Query back the token pool (by ID)
 	poolRead, err := s.GetTokenPoolByID(ctx, pool.ID)
@@ -90,6 +92,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		fb.Eq("name", pool.Name),
 		fb.Eq("protocolid", pool.ProtocolID),
 		fb.Eq("message", pool.Message),
+		fb.Eq("created", pool.Created),
 	)
 	pools, res, err := s.GetTokenPools(ctx, filter.Count(true))
 	assert.NoError(t, err)
