@@ -43,7 +43,7 @@ func PersistTransaction(ctx context.Context, db database.Plugin, tx *fftypes.Tra
 	}
 	existing, err := db.GetTransactionByID(ctx, tx.ID)
 	if err != nil {
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	switch {
@@ -71,7 +71,7 @@ func PersistTransaction(ctx context.Context, db database.Plugin, tx *fftypes.Tra
 			return false, nil // this is not retryable
 		}
 		log.L(ctx).Errorf("Failed to insert transaction ID='%s' Reference='%s': %a", tx.ID, tx.Subject.Reference, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	return true, nil
