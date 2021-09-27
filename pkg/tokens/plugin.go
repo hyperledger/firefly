@@ -41,8 +41,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	// The returned tracking ID will be used to correlate with any subsequent transaction tracking updates
-	CreateTokenPool(ctx context.Context, identity *fftypes.Identity, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, identity *fftypes.Identity, pool *fftypes.TokenPool) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -51,14 +50,14 @@ type Plugin interface {
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
 type Callbacks interface {
-	// TokensTxUpdate notifies firefly of an update to this plugin's operation within a transaction.
+	// TokensOpUpdate notifies firefly of an update to this plugin's operation within a transaction.
 	// Only success/failure and errorMessage (for errors) are modeled.
 	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokensTxUpdate(plugin Plugin, txTrackingID string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error
+	TokensOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.

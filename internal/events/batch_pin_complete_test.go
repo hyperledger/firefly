@@ -80,7 +80,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(batchData.Payload.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, batchData.Payload.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
@@ -129,7 +129,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(batchData.Payload.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, batchData.Payload.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
 	mbi := &blockchainmocks.Plugin{}

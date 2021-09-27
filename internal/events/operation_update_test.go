@@ -27,68 +27,55 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestTransactionLookupSuccess(t *testing.T) {
+func TestOperationUpdateSuccess(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID},
-	}, nil, nil)
-	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
+	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID}, nil)
+	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
-func TestTransactionLookupNoResults(t *testing.T) {
+func TestOperationUpdateNotFound(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
-	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(nil)
+	mdi.On("GetOperationByID", em.ctx, opID).Return(nil, fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
-	assert.NoError(t, err)
-}
-
-func TestTransactionLookupNotFound(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	mdi := em.database.(*databasemocks.Plugin)
-	mbi := &blockchainmocks.Plugin{}
-
-	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-
-	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
 	assert.NoError(t, err) // swallowed after logging
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
-func TestTxSubmissionUpdateError(t *testing.T) {
+func TestOperationUpdateError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mbi := &blockchainmocks.Plugin{}
 
 	opID := fftypes.NewUUID()
-	mbi.On("Name").Return("ut")
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID},
-	}, nil, nil)
-	mdi.On("UpdateOperation", em.ctx, uuidMatches(opID), mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", em.ctx, opID).Return(&fftypes.Operation{ID: opID}, nil)
+	mdi.On("UpdateOperation", em.ctx, opID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := em.TxSubmissionUpdate(mbi, "tracking12345", fftypes.OpStatusFailed, "some error", info)
+	err := em.OperationUpdate(mbi, opID, fftypes.OpStatusFailed, "some error", info)
 	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }

@@ -30,12 +30,12 @@ type boundCallbacks struct {
 	ei events.EventManager
 }
 
-func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, opOutput)
+func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(bc.bi, operationID, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(plugin, tx, txState, errorMessage, opOutput)
+func (bc *boundCallbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {

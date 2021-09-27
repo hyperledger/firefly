@@ -292,6 +292,27 @@ func TestBadTokensPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10272.*wrong", err)
 }
 
+func TestBadTokensPluginNoConnector(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	tokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10273", err)
+}
+
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
 	tokensConfig.AddKnownKey(tokens.TokensConfigName)

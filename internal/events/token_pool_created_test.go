@@ -44,7 +44,7 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, pool.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
@@ -116,7 +116,7 @@ func TestTokenPoolBadName(t *testing.T) {
 		Namespace: "test-ns",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, pool.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
@@ -253,7 +253,7 @@ func TestTokenPoolIDMismatch(t *testing.T) {
 		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, pool.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
@@ -284,7 +284,7 @@ func TestTokenPoolUpsertFailAndRetry(t *testing.T) {
 		Name:      "my-pool",
 	}
 
-	mdi.On("GetTransactionByID", mock.Anything, uuidMatches(pool.TX.ID)).Return(nil, nil)
+	mdi.On("GetTransactionByID", mock.Anything, pool.TX.ID).Return(nil, nil)
 	mdi.On("UpsertTransaction", mock.Anything, mock.Anything, false).Return(nil)
 	mdi.On("UpsertTokenPool", em.ctx, pool).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenPool", em.ctx, pool).Return(nil).Once()

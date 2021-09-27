@@ -132,7 +132,7 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), &fftypes.Identity{}, pool)
 	assert.NoError(t, err)
 }
 
@@ -151,7 +151,7 @@ func TestCreateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.CreateTokenPool(context.Background(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), &fftypes.Identity{}, pool)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -169,16 +169,18 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	opID := fftypes.NewUUID()
 
 	fromServer <- `{"id":"2","event":"receipt","data":{}}`
+	fromServer <- `{"id":"2","event":"receipt","data":{"id":"abc"}}`
 
 	// receipt: success
-	mcb.On("TokensTxUpdate", h, "abc", fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"3","event":"receipt","data":{"id":"abc","success":true}}`
+	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil).Once()
+	fromServer <- `{"id":"3","event":"receipt","data":{"id":"` + opID.String() + `","success":true}}`
 
 	// receipt: failure
-	mcb.On("TokensTxUpdate", h, "abc", fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
-	fromServer <- `{"id":"4","event":"receipt","data":{"id":"abc","success":false}}`
+	mcb.On("TokensOpUpdate", h, opID, fftypes.OpStatusFailed, "", mock.Anything).Return(nil).Once()
+	fromServer <- `{"id":"4","event":"receipt","data":{"id":"` + opID.String() + `","success":false}}`
 
 	// token-pool: missing data
 	fromServer <- `{"id":"5","event":"token-pool"}`

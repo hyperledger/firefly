@@ -70,7 +70,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
 	}), false).Return(nil)
-	mbi.On("SubmitBatchPin", ctx, (*fftypes.UUID)(nil), identity, mock.Anything).Return(nil)
+	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), identity, mock.Anything).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)

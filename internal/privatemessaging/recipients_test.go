@@ -240,7 +240,7 @@ func TestResolveOrgByIDFail(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByID", pm.ctx, uuidMatches(orgID)).Return(&fftypes.Organization{ID: orgID}, nil)
+	mdi.On("GetOrganizationByID", pm.ctx, orgID).Return(&fftypes.Organization{ID: orgID}, nil)
 
 	org, err := pm.resolveOrg(pm.ctx, orgID.String())
 	assert.NoError(t, err)
