@@ -157,7 +157,7 @@ func (dm *dataManager) GetMessageData(ctx context.Context, msg *fftypes.Message,
 
 func (dm *dataManager) ValidateAll(ctx context.Context, data []*fftypes.Data) (valid bool, err error) {
 	for _, d := range data {
-		if d.Datatype != nil {
+		if d.Datatype != nil && d.Validator != fftypes.ValidatorTypeNone {
 			v, err := dm.getValidatorForDatatype(ctx, d.Namespace, d.Validator, d.Datatype)
 			if err != nil {
 				return false, err

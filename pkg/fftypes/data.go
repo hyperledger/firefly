@@ -58,7 +58,7 @@ type DatatypeRef struct {
 
 func (dr *DatatypeRef) String() string {
 	if dr == nil {
-		return "null"
+		return nullString
 	}
 	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
 }
@@ -72,16 +72,20 @@ func (d DataRefs) Hash() *Bytes32 {
 }
 
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
-	if (d.Value == nil || d.Value.String() == "null") && (d.Blob == nil || d.Blob.Hash == nil) {
+	if d.Value == nil {
+		d.Value = Byteable(nullString)
+	}
+	valueIsNull := d.Value.String() == nullString
+	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {
 		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 	// The hash is either the blob hash, the value hash, or if both are supplied
 	// (e.g. a blob with associated metadata) it a hash of the two HEX hashes
 	// concattenated together (no spaces or separation).
 	switch {
-	case d.Value != nil && (d.Blob == nil || d.Blob.Hash == nil):
+	case !valueIsNull && (d.Blob == nil || d.Blob.Hash == nil):
 		return d.Value.Hash(), nil
-	case d.Value == nil && d.Blob != nil && d.Blob.Hash != nil:
+	case valueIsNull && d.Blob != nil && d.Blob.Hash != nil:
 		return d.Blob.Hash, nil
 	default:
 		hash := sha256.New()

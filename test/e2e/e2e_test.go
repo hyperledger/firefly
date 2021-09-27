@@ -328,7 +328,7 @@ func TestE2EBroadcastBlob(t *testing.T) {
 
 }
 
-func TestE2EPrivateBlob(t *testing.T) {
+func TestE2EPrivateBlobDatatypeTagged(t *testing.T) {
 
 	ts := beforeE2ETest(t)
 	defer ts.done()
@@ -338,7 +338,7 @@ func TestE2EPrivateBlob(t *testing.T) {
 
 	var resp *resty.Response
 
-	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+	resp, err := PrivateBlobMessageDatatypeTagged(t, ts.client1, []string{
 		ts.org1.Name,
 		ts.org2.Name,
 	})
@@ -346,12 +346,10 @@ func TestE2EPrivateBlob(t *testing.T) {
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val1))
+	_ = validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 
 	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val2))
+	_ = validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 }
 
 func TestE2ETokenPool(t *testing.T) {
