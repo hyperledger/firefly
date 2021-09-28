@@ -42,7 +42,7 @@ var (
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
-	urlPostTokenPool    = "/namespaces/default/tokens/erc1155/pools"
+	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -293,8 +293,22 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 	return &replyMsg
 }
 
-func CreateTokenPool(client *resty.Client, pool *fftypes.TokenPool) (*resty.Response, error) {
-	return client.R().
+func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool) {
+	path := urlTokenPools
+	resp, err := client.R().
 		SetBody(pool).
-		Post(urlPostTokenPool)
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*fftypes.TokenPool) {
+	path := urlTokenPools
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&pools).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return pools
 }
