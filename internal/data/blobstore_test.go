@@ -74,7 +74,7 @@ func TestUploadBlobOk(t *testing.T) {
 	// Check the hashes and other details of the data
 	assert.Equal(t, [32]byte(sha256.Sum256(b)), [32]byte(*data.Hash))
 	assert.Equal(t, <-dxID, *data.ID)
-	assert.Empty(t, data.Validator)
+	assert.Equal(t, fftypes.ValidatorTypeJSON, data.Validator)
 	assert.Nil(t, data.Datatype)
 
 	mdi.AssertExpectations(t)
@@ -123,6 +123,37 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 	assert.Equal(t, "value1", data.Value.JSONObject().GetString("custom"))
 
 	mdi.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+
+}
+
+func TestUploadBlobBadValidator(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+
+	dxID := make(chan fftypes.UUID, 1)
+	mdx := dm.exchange.(*dataexchangemocks.Plugin)
+	dxUpload := mdx.On("UploadBLOB", ctx, "ns1", mock.Anything, mock.Anything)
+	dxUpload.RunFn = func(a mock.Arguments) {
+		readBytes, err := ioutil.ReadAll(a[3].(io.Reader))
+		assert.Nil(t, err)
+		uuid := a[2].(fftypes.UUID)
+		dxID <- uuid
+		var hash fftypes.Bytes32 = sha256.Sum256(readBytes)
+		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, err}
+	}
+
+	_, err := dm.UploadBLOB(ctx, "ns1", &fftypes.DataRefOrValue{
+		Value:     fftypes.Byteable(`{"custom": "value1"}`),
+		Validator: "wrong",
+	}, &fftypes.Multipart{
+		Data:     bytes.NewReader([]byte(`hello`)),
+		Filename: "myfile.csv",
+		Mimetype: "text/csv",
+	}, true)
+	assert.Regexp(t, "FF10200", err)
+
 	mdx.AssertExpectations(t)
 
 }
