@@ -1463,13 +1463,13 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	return r0, r1, r2
 }
 
-// GetTokenTransfer provides a mock function with given fields: ctx, protocolID
-func (_m *Plugin) GetTokenTransfer(ctx context.Context, protocolID string) (*fftypes.TokenTransfer, error) {
-	ret := _m.Called(ctx, protocolID)
+// GetTokenTransfer provides a mock function with given fields: ctx, localID
+func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, localID)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.TokenTransfer); ok {
-		r0 = rf(ctx, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, localID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenTransfer)
@@ -1477,8 +1477,8 @@ func (_m *Plugin) GetTokenTransfer(ctx context.Context, protocolID string) (*fft
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, localID)
 	} else {
 		r1 = ret.Error(1)
 	}

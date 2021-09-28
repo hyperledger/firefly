@@ -25,6 +25,7 @@ var (
 
 type TokenTransfer struct {
 	Type           TokenTransferType `json:"type" ffenum:"tokentransfertype"`
+	LocalID        *UUID             `json:"localId,omitempty"`
 	PoolProtocolID string            `json:"poolProtocolId,omitempty"`
 	TokenIndex     string            `json:"tokenIndex,omitempty"`
 	Key            string            `json:"key,omitempty"`

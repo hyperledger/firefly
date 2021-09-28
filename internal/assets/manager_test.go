@@ -446,3 +446,37 @@ func TestMintTokensOperationFail(t *testing.T) {
 	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, false)
 	assert.EqualError(t, err, "pop")
 }
+
+func TestMintTokensConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	mint := &fftypes.TokenTransfer{
+		Amount: 5,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdm := am.data.(*datamocks.Manager)
+	msa := am.syncasync.(*syncasyncmocks.Bridge)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("MintTokens", context.Background(), mock.Anything, mock.Anything, mint).Return(nil)
+	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
+	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[2].(syncasync.RequestSender)
+			send(requestID)
+		}).
+		Return(nil, nil)
+
+	_, err := am.MintTokens(context.Background(), "ns1", "magic-tokens", "pool1", mint, true)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}

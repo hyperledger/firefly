@@ -169,8 +169,9 @@ func TestMintTokens(t *testing.T) {
 		ProtocolID: "123",
 	}
 	mint := &fftypes.TokenTransfer{
-		To:     "user1",
-		Amount: 10,
+		LocalID: fftypes.NewUUID(),
+		To:      "user1",
+		Amount:  10,
 	}
 	opID := fftypes.NewUUID()
 
@@ -179,12 +180,12 @@ func TestMintTokens(t *testing.T) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
-			assert.Contains(t, body, "requestId")
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":    "123",
-				"to":        "user1",
-				"amount":    float64(10),
-				"requestId": opID.String(),
+				"poolId":     "123",
+				"to":         "user1",
+				"amount":     float64(10),
+				"requestId":  opID.String(),
+				"trackingId": mint.LocalID.String(),
 			}, body)
 
 			res := &http.Response{
@@ -234,6 +235,7 @@ func TestEvents(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	fromServer <- `{"id":"2","event":"receipt","data":{}}`
 	fromServer <- `{"id":"3","event":"receipt","data":{"id":"abc"}}`
@@ -256,8 +258,6 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"7"},"event":"ack"}`, string(msg))
 
-	txID := fftypes.NewUUID()
-
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, fftypes.TokenTypeFungible, txID, "F1", "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
 	fromServer <- `{"id":"8","event":"token-pool","data":{"trackingId":"` + txID.String() + `","type":"fungible","poolId":"F1","operator":"0x0","transaction":{"transactionHash":"abc"}}}`
@@ -270,7 +270,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
 
 	// token-mint: invalid amount
-	fromServer <- `{"id":"10","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"bad","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"10","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"bad","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"10"},"event":"ack"}`, string(msg))
 
@@ -278,9 +278,17 @@ func TestEvents(t *testing.T) {
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.PoolProtocolID == "F1" && t.Amount == 2
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"11","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"2","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"11","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"11"},"event":"ack"}`, string(msg))
+
+	// token-mint: invalid uuid (success)
+	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
+		return t.PoolProtocolID == "N1" && t.Amount == 1
+	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	fromServer <- `{"id":"12","event":"token-mint","data":{"poolId":"N1","tokenIndex":"1","operator":"0x0","to":"0x0","amount":"1","trackingId":"bad","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"12"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }

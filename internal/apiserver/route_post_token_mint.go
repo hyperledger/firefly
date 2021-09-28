@@ -41,7 +41,7 @@ var postTokenMint = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenTransfer{} },
-	JSONInputMask:   []string{"Type", "PoolProtocolID", "TokenIndex", "From", "ProtocolID", "Created"},
+	JSONInputMask:   []string{"Type", "LocalID", "PoolProtocolID", "TokenIndex", "From", "ProtocolID", "Created"},
 	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

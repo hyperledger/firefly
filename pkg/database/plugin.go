@@ -382,8 +382,8 @@ type iTokenTransferCollection interface {
 	// UpsertTokenTransfer - Upsert a token transfer
 	UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
-	// GetTokenTransfer - Get a token transfer by protocol ID
-	GetTokenTransfer(ctx context.Context, protocolID string) (*fftypes.TokenTransfer, error)
+	// GetTokenTransfer - Get a token transfer by ID
+	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)

@@ -30,6 +30,7 @@ import (
 var (
 	tokenTransferColumns = []string{
 		"type",
+		"local_id",
 		"pool_protocol_id",
 		"token_index",
 		"key",
@@ -40,6 +41,7 @@ var (
 		"created",
 	}
 	tokenTransferFilterFieldMap = map[string]string{
+		"localid":        "local_id",
 		"poolprotocolid": "pool_protocol_id",
 		"tokenindex":     "token_index",
 		"from":           "from_key",
@@ -70,6 +72,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokentransfer").
 				Set("type", transfer.Type).
+				Set("local_id", transfer.LocalID).
 				Set("pool_protocol_id", transfer.PoolProtocolID).
 				Set("token_index", transfer.TokenIndex).
 				Set("key", transfer.Key).
@@ -88,6 +91,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Columns(tokenTransferColumns...).
 				Values(
 					transfer.Type,
+					transfer.LocalID,
 					transfer.PoolProtocolID,
 					transfer.TokenIndex,
 					transfer.Key,
@@ -110,6 +114,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 	transfer := fftypes.TokenTransfer{}
 	err := row.Scan(
 		&transfer.Type,
+		&transfer.LocalID,
 		&transfer.PoolProtocolID,
 		&transfer.TokenIndex,
 		&transfer.Key,
@@ -149,8 +154,8 @@ func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred 
 	return transfer, nil
 }
 
-func (s *SQLCommon) GetTokenTransfer(ctx context.Context, protocolID string) (*fftypes.TokenTransfer, error) {
-	return s.getTokenTransferPred(ctx, protocolID, sq.Eq{"protocol_id": protocolID})
+func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {

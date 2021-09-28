@@ -1,6 +1,7 @@
 BEGIN;
 CREATE TABLE tokentransfer (
   seq              SERIAL          PRIMARY KEY,
+  local_id         UUID            NOT NULL,
   type             VARCHAR(64)     NOT NULL,
   pool_protocol_id VARCHAR(1024)   NOT NULL,
   token_index      VARCHAR(1024)   NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE tokentransfer (
   created          BIGINT          NOT NULL
 );
 
+CREATE UNIQUE INDEX tokentransfer_id ON tokentransfer(local_id);
 CREATE INDEX tokentransfer_pool ON tokentransfer(pool_protocol_id,token_index);
 CREATE UNIQUE INDEX tokentransfer_protocolid ON tokentransfer(protocol_id);
 

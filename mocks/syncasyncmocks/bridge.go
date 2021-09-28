@@ -91,3 +91,26 @@ func (_m *Bridge) SendConfirmTokenPool(ctx context.Context, ns string, send sync
 
 	return r0, r1
 }
+
+// SendConfirmTokenTransfer provides a mock function with given fields: ctx, ns, send
+func (_m *Bridge) SendConfirmTokenTransfer(ctx context.Context, ns string, send syncasync.RequestSender) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, send)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, syncasync.RequestSender) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}

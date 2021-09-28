@@ -58,7 +58,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				return err
 			}
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, signingIdentity)
-			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, pool.ID)
+			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, transfer.LocalID)
 			return am.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)

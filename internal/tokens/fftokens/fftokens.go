@@ -63,10 +63,11 @@ type createPool struct {
 }
 
 type mintTokens struct {
-	PoolID    string `json:"poolId"`
-	To        string `json:"to"`
-	Amount    int64  `json:"amount"`
-	RequestID string `json:"requestId,omitempty"`
+	PoolID     string `json:"poolId"`
+	To         string `json:"to"`
+	Amount     int64  `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
 }
 
 func (h *FFTokens) Name() string {
@@ -184,7 +185,18 @@ func (h *FFTokens) handleTokenMint(ctx context.Context, data fftypes.JSONObject)
 		return nil // move on
 	}
 
+	// We want to process all transfers, even those not initiated by FireFly.
+	// The trackingID is an optional argument from the connector, so it's important not to
+	// fail if it's missing or malformed.
+	trackingID := data.GetString("trackingId")
+	localID, err := fftypes.ParseUUID(ctx, trackingID)
+	if err != nil {
+		log.L(ctx).Infof("TokenMint event contains invalid ID - continuing anyway (%s): %+v", err, data)
+		localID = fftypes.NewUUID()
+	}
+
 	transfer := &fftypes.TokenTransfer{
+		LocalID:        localID,
 		Type:           fftypes.TokenTransferTypeMint,
 		PoolProtocolID: poolProtocolID,
 		TokenIndex:     tokenIndex,
@@ -267,10 +279,11 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error {
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
-			PoolID:    pool.ProtocolID,
-			To:        mint.To,
-			Amount:    mint.Amount,
-			RequestID: operationID.String(),
+			PoolID:     pool.ProtocolID,
+			To:         mint.To,
+			Amount:     mint.Amount,
+			RequestID:  operationID.String(),
+			TrackingID: mint.LocalID.String(),
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {

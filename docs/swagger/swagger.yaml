@@ -4766,6 +4766,7 @@ paths:
                     type: string
                   key:
                     type: string
+                  localId: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4791,6 +4792,7 @@ paths:
                     type: string
                   key:
                     type: string
+                  localId: {}
                   poolProtocolId:
                     type: string
                   protocolId:
