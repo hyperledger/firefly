@@ -176,17 +176,20 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed"
+	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
+
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 	wsUrl2 := url.URL{
 		Scheme:   websocketProtocolClient2,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())
@@ -387,6 +390,27 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, "default", pools2[0].Namespace)
 	assert.Equal(t, poolName, pools2[0].Name)
 	assert.Equal(t, fftypes.TokenTypeFungible, pools2[0].Type)
+
+	MintTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{Amount: 1})
+
+	<-received1
+	<-changes1 // also expect database change events
+
+	transfers1 := GetTokenTransfers(t, ts.client1, poolName)
+	assert.Equal(t, 1, len(transfers1))
+	assert.Equal(t, "0", transfers1[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers1[0].Amount)
+	account1 := GetTokenAccount(t, ts.client1, poolName, "0", ts.org1.Identity)
+	assert.Equal(t, int64(1), account1.Balance)
+
+	<-received2
+	<-changes2 // also expect database change events
+
+	transfers2 := GetTokenTransfers(t, ts.client2, poolName)
+	assert.Equal(t, 1, len(transfers2))
+	assert.Equal(t, int64(1), transfers2[0].Amount)
+	account2 := GetTokenAccount(t, ts.client2, poolName, "0", ts.org1.Identity)
+	assert.Equal(t, int64(1), account2.Balance)
 }
 
 func TestE2EWebhookExchange(t *testing.T) {
