@@ -32,10 +32,6 @@ import (
 	"github.com/karlseguin/ccache"
 )
 
-const (
-	fireflyOrgDIDPrefix = "did:firefly:org/"
-)
-
 type Manager interface {
 	ResolveInputIdentity(ctx context.Context, identity *fftypes.Identity) (err error)
 	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
@@ -84,10 +80,7 @@ func (im *identityManager) GetLocalOrganization(ctx context.Context) (*fftypes.O
 }
 
 func (im *identityManager) OrgDID(org *fftypes.Organization) string {
-	if org == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s%s", fireflyOrgDIDPrefix, org.ID)
+	return org.GetDID()
 }
 
 // ResolveInputIdentity takes in identity input information from an API call, or configuration load, and resolves
@@ -186,8 +179,8 @@ func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author s
 		// TODO: Per comments in https://github.com/hyperledger-labs/firefly/issues/187 we need to resolve whether "Organization"
 		//       is the right thing to resolve here. We might want to fall-back to that in the case of plain string, but likely
 		//       we need something more sophisticated here where we have an Identity object in the database.
-		if strings.HasPrefix(author, fireflyOrgDIDPrefix) {
-			orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(author, fireflyOrgDIDPrefix))
+		if strings.HasPrefix(author, fftypes.FireflyOrgDIDPrefix) {
+			orgUUID, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(author, fftypes.FireflyOrgDIDPrefix))
 			if err != nil {
 				return nil, err
 			}

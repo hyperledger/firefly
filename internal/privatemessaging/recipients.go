@@ -52,6 +52,7 @@ func (pm *privateMessaging) resolveOrg(ctx context.Context, orgInput string) (or
 	orgID, err := fftypes.ParseUUID(ctx, orgInput)
 	if err == nil {
 		org, err = pm.database.GetOrganizationByID(ctx, orgID)
+
 	} else {
 		org, err = pm.database.GetOrganizationByName(ctx, orgInput)
 		if err == nil && org == nil {
@@ -134,9 +135,9 @@ func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.Mess
 		if err != nil {
 			return nil, err
 		}
-		foundLocal = foundLocal || (node.Owner == localOrgDID && node.Name == pm.localNodeName)
+		foundLocal = foundLocal || (node.Owner == localOrg.Identity && node.Name == pm.localNodeName)
 		gi.Members[i] = &fftypes.Member{
-			Identity: org.Identity,
+			Identity: org.GetDID(),
 			Node:     node.ID,
 		}
 	}

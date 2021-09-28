@@ -25,6 +25,10 @@ import (
 	"github.com/hyperledger-labs/firefly/internal/i18n"
 )
 
+const (
+	FireflyOrgDIDPrefix = "did:firefly:org/"
+)
+
 // Organization is a top-level identity in the network
 type Organization struct {
 	ID          *UUID      `json:"id"`
@@ -73,4 +77,11 @@ func (org *Organization) Topic() string {
 
 func (org *Organization) SetBroadcastMessage(msgID *UUID) {
 	org.Message = msgID
+}
+
+func (org *Organization) GetDID() string {
+	if org == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s%s", FireflyOrgDIDPrefix, org.ID)
 }
