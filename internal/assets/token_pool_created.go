@@ -32,7 +32,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.Tok
 	)
 	operations, _, err := am.database.GetOperations(am.ctx, filter)
 	if err != nil || len(operations) == 0 {
-		log.L(am.ctx).Debugf("Token pool transaction '%s' ignored, as it was not submitted by this node", tx)
+		log.L(am.ctx).Debugf("Token pool transaction '%s' ignored, as it did not match an operation submitted by this node", tx)
 		return nil
 	}
 
@@ -44,13 +44,17 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.Tok
 		},
 		ProtocolTxID: protocolTxID,
 	}
-	err = retrieveTokenOpInputs(am.ctx, operations[0], &pool.TokenPool)
+	err = retrieveTokenPoolCreateInputs(am.ctx, operations[0], &pool.TokenPool)
 	if err != nil {
 		log.L(am.ctx).Errorf("Error retrieving pool info from transaction '%s' (%s) - ignoring: %v", tx, err, operations[0].Input)
 		return nil
 	}
 
-	// Update the transaction with the info received (but leave transaction as "pending")
+	// Update the transaction with the info received (but leave transaction as "pending").
+	// At this point we are the only node in the network that knows about this transaction object.
+	// Our local token connector has performed whatever actions it needs to perform, to give us
+	// enough information to distribute to all other token connectors in the network.
+	// (e.g. details of a newly created token instance or an existing one)
 	transaction := &fftypes.Transaction{
 		ID:     tx,
 		Status: fftypes.OpStatusPending,

@@ -91,7 +91,7 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 	return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, name)
 }
 
-func storeTokenOpInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
+func addTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
 	op.Input = fftypes.JSONObject{
 		"id":        pool.ID.String(),
 		"namespace": pool.Namespace,
@@ -100,7 +100,7 @@ func storeTokenOpInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
 	}
 }
 
-func retrieveTokenOpInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
+func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
 	input := &op.Input
 	pool.ID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
 	if err != nil {
@@ -176,7 +176,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
 		author.Identifier)
-	storeTokenOpInputs(op, pool)
+	addTokenPoolCreateInputs(op, pool)
 	err = am.database.UpsertOperation(ctx, op, false)
 	if err != nil {
 		return nil, err
