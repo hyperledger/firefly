@@ -325,6 +325,15 @@ func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftyp
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
+func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	resp, err := client.R().
+		SetBody(transfer).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
 func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (transfers []*fftypes.TokenTransfer) {
 	path := fmt.Sprintf(urlTokenTransfers, poolName)
 	resp, err := client.R().

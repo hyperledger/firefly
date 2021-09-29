@@ -391,7 +391,9 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, poolName, pools2[0].Name)
 	assert.Equal(t, fftypes.TokenTypeFungible, pools2[0].Type)
 
-	MintTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{Amount: 1})
+	MintTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{
+		Amount: 1,
+	})
 
 	<-received1
 	<-changes1 // also expect database change events
@@ -410,6 +412,36 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, 1, len(transfers2))
 	assert.Equal(t, int64(1), transfers2[0].Amount)
 	account2 := GetTokenAccount(t, ts.client2, poolName, "0", ts.org1.Identity)
+	assert.Equal(t, int64(1), account2.Balance)
+
+	TransferTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{
+		TokenIndex: "0",
+		Amount:     1,
+		To:         ts.org2.Identity,
+	})
+
+	<-received1
+	<-changes1 // also expect database change events
+
+	transfers1 = GetTokenTransfers(t, ts.client1, poolName)
+	assert.Equal(t, 2, len(transfers1))
+	assert.Equal(t, "0", transfers1[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers1[0].Amount)
+	account1 = GetTokenAccount(t, ts.client1, poolName, "0", ts.org1.Identity)
+	assert.Equal(t, int64(0), account1.Balance)
+	account2 = GetTokenAccount(t, ts.client1, poolName, "0", ts.org2.Identity)
+	assert.Equal(t, int64(1), account2.Balance)
+
+	<-received2
+	<-changes2 // also expect database change events
+
+	transfers2 = GetTokenTransfers(t, ts.client2, poolName)
+	assert.Equal(t, 2, len(transfers1))
+	assert.Equal(t, "0", transfers1[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers1[0].Amount)
+	account1 = GetTokenAccount(t, ts.client2, poolName, "0", ts.org1.Identity)
+	assert.Equal(t, int64(0), account1.Balance)
+	account2 = GetTokenAccount(t, ts.client2, poolName, "0", ts.org2.Identity)
 	assert.Equal(t, int64(1), account2.Balance)
 }
 

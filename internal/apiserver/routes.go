@@ -83,4 +83,5 @@ var routes = []*oapispec.Route{
 	getTokenAccounts,
 	getTokenTransfers,
 	postTokenMint,
+	postTokenTransfer,
 }

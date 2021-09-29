@@ -50,9 +50,10 @@ type wsEvent struct {
 type msgType string
 
 const (
-	messageReceipt   msgType = "receipt"
-	messageTokenPool msgType = "token-pool"
-	messageTokenMint msgType = "token-mint"
+	messageReceipt       msgType = "receipt"
+	messageTokenPool     msgType = "token-pool"
+	messageTokenMint     msgType = "token-mint"
+	messageTokenTransfer msgType = "token-transfer"
 )
 
 type createPool struct {
@@ -64,6 +65,16 @@ type createPool struct {
 
 type mintTokens struct {
 	PoolID     string `json:"poolId"`
+	To         string `json:"to"`
+	Amount     int64  `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
+}
+
+type transferTokens struct {
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex"`
+	From       string `json:"from"`
 	To         string `json:"to"`
 	Amount     int64  `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
@@ -160,14 +171,20 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
 }
 
-func (h *FFTokens) handleTokenMint(ctx context.Context, data fftypes.JSONObject) (err error) {
+func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
 	tokenIndex := data.GetString("tokenIndex")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
+	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
+
+	eventName := "Transfer"
+	if t == fftypes.TokenTransferTypeMint {
+		eventName = "Mint"
+	}
 
 	if tokenIndex == "" ||
 		poolProtocolID == "" ||
@@ -175,13 +192,18 @@ func (h *FFTokens) handleTokenMint(ctx context.Context, data fftypes.JSONObject)
 		toAddress == "" ||
 		value == "" ||
 		txHash == "" {
-		log.L(ctx).Errorf("TokenMint event is not valid - missing data: %+v", data)
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
+		return nil // move on
+	}
+
+	if t == fftypes.TokenTransferTypeTransfer && fromAddress == "" {
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
 		return nil // move on
 	}
 
 	valueInt, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		log.L(ctx).Errorf("TokenMint event is not valid - invalid amount: %+v", data)
+		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
 		return nil // move on
 	}
 
@@ -191,15 +213,16 @@ func (h *FFTokens) handleTokenMint(ctx context.Context, data fftypes.JSONObject)
 	trackingID := data.GetString("trackingId")
 	localID, err := fftypes.ParseUUID(ctx, trackingID)
 	if err != nil {
-		log.L(ctx).Infof("TokenMint event contains invalid ID - continuing anyway (%s): %+v", err, data)
+		log.L(ctx).Infof("%s event contains invalid ID - continuing anyway (%s): %+v", eventName, err, data)
 		localID = fftypes.NewUUID()
 	}
 
 	transfer := &fftypes.TokenTransfer{
 		LocalID:        localID,
-		Type:           fftypes.TokenTransferTypeMint,
+		Type:           t,
 		PoolProtocolID: poolProtocolID,
 		TokenIndex:     tokenIndex,
+		From:           fromAddress,
 		To:             toAddress,
 		Amount:         valueInt,
 		ProtocolID:     txHash,
@@ -237,7 +260,9 @@ func (h *FFTokens) eventLoop() {
 			case messageTokenPool:
 				err = h.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:
-				err = h.handleTokenMint(ctx, msg.Data)
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
+			case messageTokenTransfer:
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
 			default:
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
@@ -276,16 +301,34 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 	return nil
 }
 
-func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error {
+func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
-			PoolID:     pool.ProtocolID,
+			PoolID:     mint.PoolProtocolID,
 			To:         mint.To,
 			Amount:     mint.Amount,
 			RequestID:  operationID.String(),
 			TrackingID: mint.LocalID.String(),
 		}).
 		Post("/api/v1/mint")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&transferTokens{
+			PoolID:     transfer.PoolProtocolID,
+			TokenIndex: transfer.TokenIndex,
+			From:       transfer.From,
+			To:         transfer.To,
+			Amount:     transfer.Amount,
+			RequestID:  operationID.String(),
+			TrackingID: transfer.LocalID.String(),
+		}).
+		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

@@ -35,14 +35,13 @@ import (
 
 type Manager interface {
 	CreateTokenPool(ctx context.Context, ns, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	CreateTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, typeName, poolName string) (*fftypes.TokenPool, error)
 	GetTokenAccounts(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
 	GetTokenTransfers(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	MintTokens(ctx context.Context, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	MintTokensWithID(ctx context.Context, id *fftypes.UUID, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
@@ -120,10 +119,10 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	return am.CreateTokenPoolWithID(ctx, fftypes.NewUUID(), ns, typeName, pool, waitConfirm)
+	return am.createTokenPoolWithID(ctx, fftypes.NewUUID(), ns, typeName, pool, waitConfirm)
 }
 
-func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
@@ -143,7 +142,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, id *fftypes.U
 
 	if waitConfirm {
 		return am.syncasync.SendConfirmTokenPool(ctx, ns, func(requestID *fftypes.UUID) error {
-			_, err := am.CreateTokenPoolWithID(ctx, requestID, ns, typeName, pool, false)
+			_, err := am.createTokenPoolWithID(ctx, requestID, ns, typeName, pool, false)
 			return err
 		})
 	}
@@ -244,11 +243,41 @@ func (am *assetManager) GetTokenTransfers(ctx context.Context, ns, typeName, nam
 	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("poolprotocolid", pool.ProtocolID)))
 }
 
-func (am *assetManager) MintTokens(ctx context.Context, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
-	return am.MintTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, mint, waitConfirm)
+func (am *assetManager) MintTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	transfer.Type = fftypes.TokenTransferTypeMint
+	if transfer.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		transfer.Key = org.Identity
+	}
+	transfer.From = ""
+	if transfer.To == "" {
+		transfer.To = transfer.Key
+	}
+	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
 }
 
-func (am *assetManager) MintTokensWithID(ctx context.Context, id *fftypes.UUID, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	transfer.Type = fftypes.TokenTransferTypeTransfer
+	if transfer.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		transfer.Key = org.Identity
+	}
+	if transfer.From == "" {
+		transfer.From = transfer.Key
+	}
+	if transfer.To == "" {
+		transfer.To = transfer.Key
+	}
+	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
+}
+
+func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UUID, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	plugin, err := am.selectTokenPlugin(ctx, typeName)
 	if err != nil {
 		return nil, err
@@ -257,21 +286,13 @@ func (am *assetManager) MintTokensWithID(ctx context.Context, id *fftypes.UUID, 
 	if err != nil {
 		return nil, err
 	}
-
-	if mint.Key == "" {
-		org, err := am.identity.GetLocalOrganization(ctx)
-		if err != nil {
-			return nil, err
-		}
-		mint.Key = org.Identity
-	}
-	if mint.To == "" {
-		mint.To = mint.Key
+	if transfer.From == transfer.To {
+		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 
 	if waitConfirm {
 		return am.syncasync.SendConfirmTokenTransfer(ctx, ns, func(requestID *fftypes.UUID) error {
-			_, err := am.MintTokensWithID(ctx, requestID, ns, typeName, poolName, mint, false)
+			_, err := am.transferTokensWithID(ctx, requestID, ns, typeName, poolName, transfer, false)
 			return err
 		})
 	}
@@ -289,10 +310,17 @@ func (am *assetManager) MintTokensWithID(ctx context.Context, id *fftypes.UUID, 
 		return nil, err
 	}
 
-	mint.LocalID = id
-	mint.Type = fftypes.TokenTransferTypeMint
-	mint.PoolProtocolID = pool.ProtocolID
-	return mint, plugin.MintTokens(ctx, op.ID, pool, mint)
+	transfer.LocalID = id
+	transfer.PoolProtocolID = pool.ProtocolID
+
+	switch transfer.Type {
+	case fftypes.TokenTransferTypeMint:
+		return transfer, plugin.MintTokens(ctx, op.ID, transfer)
+	case fftypes.TokenTransferTypeTransfer:
+		return transfer, plugin.TransferTokens(ctx, op.ID, transfer)
+	default:
+		panic(fmt.Sprintf("unknown transfer type: %v", transfer.Type))
+	}
 }
 
 func (am *assetManager) Start() error {

@@ -197,6 +197,6 @@ var (
 	MsgAuthorNotFoundByDID         = ffm("FF10277", "Author could not be resolved via DID '%s'")
 	MsgAuthorOrgNotFoundByName     = ffm("FF10278", "Author organization could not be resolved via name '%s'")
 	MsgAuthorOrgSigningKeyMismatch = ffm("FF10279", "Author organization '%s' is not associated with signing key '%s'")
-	MsgRecipientInvalid            = ffm("FF10280", "Invalid recipient specified", 400)
+	MsgCannotTransferToSelf        = ffm("FF10280", "From and to addresses must be different", 400)
 	MsgLocalOrgLookupFailed        = ffm("FF10290", "Unable resolve the local org by the configured signing key on the node. Please confirm the org is registered with key '%s'", 500)
 )

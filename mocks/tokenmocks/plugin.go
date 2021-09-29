@@ -68,13 +68,13 @@ func (_m *Plugin) InitPrefix(prefix config.PrefixArray) {
 	_m.Called(prefix)
 }
 
-// MintTokens provides a mock function with given fields: ctx, operationID, pool, mint
-func (_m *Plugin) MintTokens(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool, mint *fftypes.TokenTransfer) error {
-	ret := _m.Called(ctx, operationID, pool, mint)
+// MintTokens provides a mock function with given fields: ctx, operationID, mint
+func (_m *Plugin) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, operationID, mint)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool, *fftypes.TokenTransfer) error); ok {
-		r0 = rf(ctx, operationID, pool, mint)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, operationID, mint)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -103,6 +103,20 @@ func (_m *Plugin) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TransferTokens provides a mock function with given fields: ctx, operationID, mint
+func (_m *Plugin) TransferTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, operationID, mint)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, operationID, mint)
 	} else {
 		r0 = ret.Error(0)
 	}
