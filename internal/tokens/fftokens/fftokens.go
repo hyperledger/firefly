@@ -53,9 +53,10 @@ const (
 )
 
 type createPool struct {
-	Type       fftypes.TokenType `json:"type"`
-	RequestID  string            `json:"requestId"`
-	TrackingID string            `json:"trackingId"`
+	Type       fftypes.TokenType  `json:"type"`
+	RequestID  string             `json:"requestId"`
+	TrackingID string             `json:"trackingId"`
+	Config     fftypes.JSONObject `json:"config"`
 }
 
 func (h *FFTokens) Name() string {
@@ -201,6 +202,7 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 			Type:       pool.Type,
 			RequestID:  operationID.String(),
 			TrackingID: pool.TX.ID.String(),
+			Config:     pool.Config,
 		}).
 		Post("/api/v1/pool")
 	if err != nil || !res.IsSuccess() {

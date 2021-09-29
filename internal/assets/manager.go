@@ -96,6 +96,7 @@ func storeTokenOpInputs(op *fftypes.Operation, pool *fftypes.TokenPool) {
 		"id":        pool.ID.String(),
 		"namespace": pool.Namespace,
 		"name":      pool.Name,
+		"config":    pool.Config,
 	}
 }
 
@@ -110,6 +111,7 @@ func retrieveTokenOpInputs(ctx context.Context, op *fftypes.Operation, pool *fft
 	if pool.Namespace == "" || pool.Name == "" {
 		return fmt.Errorf("namespace or name missing from inputs")
 	}
+	pool.Config = input.GetObject("config")
 	return nil
 }
 

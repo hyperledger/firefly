@@ -99,6 +99,7 @@ func TestCreateTokenPool(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
+	opID := fftypes.NewUUID()
 	pool := &fftypes.TokenPool{
 		ID: fftypes.NewUUID(),
 		TX: fftypes.TransactionRef{
@@ -108,6 +109,9 @@ func TestCreateTokenPool(t *testing.T) {
 		Namespace: "ns1",
 		Name:      "new-pool",
 		Type:      "fungible",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
@@ -115,11 +119,13 @@ func TestCreateTokenPool(t *testing.T) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
-			assert.Contains(t, body, "requestId")
-			delete(body, "requestId")
 			assert.Equal(t, fftypes.JSONObject{
+				"requestId":  opID.String(),
 				"trackingId": pool.TX.ID.String(),
 				"type":       "fungible",
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
 			}, body)
 
 			res := &http.Response{
@@ -132,7 +138,7 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), opID, &fftypes.Identity{}, pool)
 	assert.NoError(t, err)
 }
 

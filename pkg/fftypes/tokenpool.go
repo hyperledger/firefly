@@ -37,6 +37,7 @@ type TokenPool struct {
 	Symbol     string         `json:"symbol,omitempty"`
 	Connector  string         `json:"connector,omitempty"`
 	Message    *UUID          `json:"message,omitempty"`
+	Config     JSONObject     `json:"config,omitempty"`
 	TX         TransactionRef `json:"tx,omitempty"`
 }
 
