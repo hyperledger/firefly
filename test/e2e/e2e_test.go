@@ -360,22 +360,33 @@ func TestE2ETokenPool(t *testing.T) {
 	received1, changes1 := wsReader(t, ts.ws1)
 	received2, changes2 := wsReader(t, ts.ws2)
 
-	var resp *resty.Response
-	pool := fftypes.TokenPool{
-		Name: "my-pool",
-	}
+	pools := GetTokenPools(t, ts.client1, time.Unix(0, 0))
+	poolName := fmt.Sprintf("pool%d", len(pools))
+	t.Logf("Pool name: %s", poolName)
 
-	resp, err := CreateTokenPool(ts.client1, &pool)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
+	pool := &fftypes.TokenPool{
+		Name: poolName,
+		Type: fftypes.TokenTypeFungible,
+	}
+	CreateTokenPool(t, ts.client1, pool)
 
 	<-received1
 	<-changes1 // also expect database change events
-	// TODO: validate created pool
+
+	pools1 := GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools1))
+	assert.Equal(t, "default", pools1[0].Namespace)
+	assert.Equal(t, poolName, pools1[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools1[0].Type)
 
 	<-received2
 	<-changes2 // also expect database change events
-	// TODO: validate created pool
+
+	pools2 := GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools2))
+	assert.Equal(t, "default", pools2[0].Namespace)
+	assert.Equal(t, poolName, pools2[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools2[0].Type)
 }
 
 func TestE2EWebhookExchange(t *testing.T) {

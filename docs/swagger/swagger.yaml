@@ -4225,6 +4225,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -4306,6 +4311,7 @@ paths:
                       type: object
                     connector:
                       type: string
+                    created: {}
                     id: {}
                     message: {}
                     name:
@@ -4391,6 +4397,7 @@ paths:
                     type: object
                   connector:
                     type: string
+                  created: {}
                   id: {}
                   message: {}
                   name:
@@ -4423,6 +4430,7 @@ paths:
                     type: object
                   connector:
                     type: string
+                  created: {}
                   id: {}
                   message: {}
                   name:
@@ -4489,6 +4497,7 @@ paths:
                     type: object
                   connector:
                     type: string
+                  created: {}
                   id: {}
                   message: {}
                   name:

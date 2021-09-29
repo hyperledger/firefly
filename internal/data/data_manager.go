@@ -65,11 +65,12 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi publicstorage.Pl
 		publicstorage:     pi,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
-		blobStore: blobStore{
-			database:      di,
-			publicstorage: pi,
-			exchange:      dx,
-		},
+	}
+	dm.blobStore = blobStore{
+		dm:            dm,
+		database:      di,
+		publicstorage: pi,
+		exchange:      dx,
 	}
 	dm.validatorCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -196,15 +197,6 @@ func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *fftyp
 	}
 }
 
-func (dm *dataManager) checkValidatorType(ctx context.Context, validator fftypes.ValidatorType) error {
-	switch validator {
-	case "", fftypes.ValidatorTypeJSON:
-		return nil
-	default:
-		return i18n.NewError(ctx, i18n.MsgUnknownValidatorType, validator)
-	}
-}
-
 func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *fftypes.BlobRef) (*fftypes.Blob, error) {
 	if blobRef != nil && blobRef.Hash != nil {
 		blob, err := dm.database.GetBlobMatchingHash(ctx, blobRef.Hash)
@@ -219,28 +211,39 @@ func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *fftypes.BlobRef
 	return nil, nil
 }
 
-func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable, blobRef *fftypes.BlobRef) (data *fftypes.Data, blob *fftypes.Blob, err error) {
+func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable) error {
+	if validator == "" {
+		validator = fftypes.ValidatorTypeJSON
+	}
+	if err := fftypes.CheckValidatorType(ctx, validator); err != nil {
+		return err
+	}
 	// If a datatype is specified, we need to verify the payload conforms
-	if datatype != nil {
-		if err := dm.checkValidatorType(ctx, validator); err != nil {
-			return nil, nil, err
+	if datatype != nil && validator != fftypes.ValidatorTypeNone {
+		if datatype.Name == "" || datatype.Version == "" {
+			return i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
 		}
-		if datatype == nil || datatype.Name == "" || datatype.Version == "" {
-			return nil, nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
+		if validator != fftypes.ValidatorTypeNone {
+			v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
+			if err != nil {
+				return err
+			}
+			if v == nil {
+				return i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
+			}
+			err = v.ValidateValue(ctx, value, nil)
+			if err != nil {
+				return err
+			}
 		}
-		v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
-		if err != nil {
-			return nil, nil, err
-		}
-		if v == nil {
-			return nil, nil, i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
-		}
-		err = v.ValidateValue(ctx, value, nil)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		validator = ""
+	}
+	return nil
+}
+
+func (dm *dataManager) validateAndStore(ctx context.Context, ns string, validator fftypes.ValidatorType, datatype *fftypes.DatatypeRef, value fftypes.Byteable, blobRef *fftypes.BlobRef) (data *fftypes.Data, blob *fftypes.Blob, err error) {
+
+	if err := dm.checkValidation(ctx, ns, validator, datatype, value); err != nil {
+		return nil, nil, err
 	}
 
 	if blob, err = dm.resolveBlob(ctx, blobRef); err != nil {

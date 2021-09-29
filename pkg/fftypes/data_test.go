@@ -37,6 +37,11 @@ func TestDatatypeReference(t *testing.T) {
 
 }
 
+func TestValidateBadValidator(t *testing.T) {
+	err := CheckValidatorType(context.Background(), "wrong")
+	assert.Regexp(t, "FF10200", err)
+}
+
 func TestSealNoData(t *testing.T) {
 	d := &Data{}
 	err := d.Seal(context.Background())
