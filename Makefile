@@ -59,6 +59,7 @@ $(eval $(call makemock, internal/assets,           Manager,        assetmocks))
 $(eval $(call makemock, internal/wsclient,         WSClient,       wsmocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,   orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,         apiservermocks))
+$(eval $(call makemock, internal/apiserver,        IServer,        apiservermocks))
 $(eval $(call makemock, internal/txcommon,         Helper,         txcommonmocks))
 
 firefly-nocgo: ${GOFILES}		
