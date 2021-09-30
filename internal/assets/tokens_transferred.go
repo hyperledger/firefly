@@ -25,7 +25,7 @@ import (
 )
 
 func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return am.retry.Do(am.ctx, "persist token pool", func(attempt int) (bool, error) {
+	return am.retry.Do(am.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
 			pool, err := am.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
 			if err != nil {
@@ -39,24 +39,29 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
 			}
+
 			balance := &fftypes.TokenBalanceChange{
 				PoolProtocolID: transfer.PoolProtocolID,
 				TokenIndex:     transfer.TokenIndex,
-				Identity:       transfer.From,
-				Amount:         -transfer.Amount,
 			}
 			if transfer.Type != fftypes.TokenTransferTypeMint {
+				balance.Identity = transfer.From
+				balance.Amount = -transfer.Amount
 				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
-					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", transfer.From, transfer.ProtocolID, err)
+					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
 					return err
 				}
 			}
-			balance.Identity = transfer.To
-			balance.Amount = transfer.Amount
-			if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
-				log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", transfer.To, transfer.ProtocolID, err)
-				return err
+
+			if transfer.Type != fftypes.TokenTransferTypeBurn {
+				balance.Identity = transfer.To
+				balance.Amount = transfer.Amount
+				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
+					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
+					return err
+				}
 			}
+
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, signingIdentity)
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, transfer.LocalID)
 			return am.database.InsertEvent(ctx, event)

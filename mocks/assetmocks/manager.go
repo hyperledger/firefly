@@ -18,6 +18,29 @@ type Manager struct {
 	mock.Mock
 }
 
+// BurnTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
+func (_m *Manager) BurnTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
+		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CreateTokenPool provides a mock function with given fields: ctx, ns, typeName, pool, waitConfirm
 func (_m *Manager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	ret := _m.Called(ctx, ns, typeName, pool, waitConfirm)
@@ -160,13 +183,13 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, typeName st
 	return r0, r1, r2
 }
 
-// MintTokens provides a mock function with given fields: ctx, ns, typeName, poolName, mint, waitConfirm
-func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
-	ret := _m.Called(ctx, ns, typeName, poolName, mint, waitConfirm)
+// MintTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
+func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
-		r0 = rf(ctx, ns, typeName, poolName, mint, waitConfirm)
+		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenTransfer)
@@ -175,7 +198,7 @@ func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, p
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
-		r1 = rf(ctx, ns, typeName, poolName, mint, waitConfirm)
+		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

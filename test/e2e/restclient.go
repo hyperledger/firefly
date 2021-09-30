@@ -44,6 +44,7 @@ var (
 	urlSubscriptions    = "/namespaces/default/subscriptions"
 	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
 	urlTokenMint        = "/namespaces/default/tokens/erc1155/pools/%s/mint"
+	urlTokenBurn        = "/namespaces/default/tokens/erc1155/pools/%s/burn"
 	urlTokenTransfers   = "/namespaces/default/tokens/erc1155/pools/%s/transfers"
 	urlTokenAccounts    = "/namespaces/default/tokens/erc1155/pools/%s/accounts"
 	urlGetOrganizations = "/network/organizations"
@@ -320,6 +321,15 @@ func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftyp
 	path := fmt.Sprintf(urlTokenMint, poolName)
 	resp, err := client.R().
 		SetBody(mint).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenBurn, poolName)
+	resp, err := client.R().
+		SetBody(burn).
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())

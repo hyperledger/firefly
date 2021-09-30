@@ -19,6 +19,20 @@ type Plugin struct {
 	mock.Mock
 }
 
+// BurnTokens provides a mock function with given fields: ctx, operationID, burn
+func (_m *Plugin) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
+	ret := _m.Called(ctx, operationID, burn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenTransfer) error); ok {
+		r0 = rf(ctx, operationID, burn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *tokens.Capabilities {
 	ret := _m.Called()

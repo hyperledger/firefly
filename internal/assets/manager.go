@@ -40,7 +40,8 @@ type Manager interface {
 	GetTokenAccounts(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
 	GetTokenTransfers(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	MintTokens(ctx context.Context, ns, typeName, poolName string, mint *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	MintTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	BurnTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	// Bound token callbacks
@@ -259,6 +260,22 @@ func (am *assetManager) MintTokens(ctx context.Context, ns, typeName, poolName s
 	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
 }
 
+func (am *assetManager) BurnTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+	transfer.Type = fftypes.TokenTransferTypeBurn
+	if transfer.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		transfer.Key = org.Identity
+	}
+	if transfer.From == "" {
+		transfer.From = transfer.Key
+	}
+	transfer.To = ""
+	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
+}
+
 func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	transfer.Type = fftypes.TokenTransferTypeTransfer
 	if transfer.Key == "" {
@@ -274,6 +291,9 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolNa
 	if transfer.To == "" {
 		transfer.To = transfer.Key
 	}
+	if transfer.From == transfer.To {
+		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
+	}
 	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
 }
 
@@ -285,9 +305,6 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 	pool, err := am.GetTokenPool(ctx, ns, typeName, poolName)
 	if err != nil {
 		return nil, err
-	}
-	if transfer.From == transfer.To {
-		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
 
 	if waitConfirm {
@@ -318,6 +335,8 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 		return transfer, plugin.MintTokens(ctx, op.ID, transfer)
 	case fftypes.TokenTransferTypeTransfer:
 		return transfer, plugin.TransferTokens(ctx, op.ID, transfer)
+	case fftypes.TokenTransferTypeBurn:
+		return transfer, plugin.BurnTokens(ctx, op.ID, transfer)
 	default:
 		panic(fmt.Sprintf("unknown transfer type: %v", transfer.Type))
 	}

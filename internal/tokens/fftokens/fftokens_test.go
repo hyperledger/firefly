@@ -204,15 +204,66 @@ func TestMintTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	mint := &fftypes.TokenTransfer{
-		PoolProtocolID: "123",
-		Amount:         10,
-	}
+	mint := &fftypes.TokenTransfer{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
 	err := h.MintTokens(context.Background(), fftypes.NewUUID(), mint)
+	assert.Regexp(t, "FF10274", err)
+}
+
+func TestBurnTokens(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	burn := &fftypes.TokenTransfer{
+		PoolProtocolID: "123",
+		LocalID:        fftypes.NewUUID(),
+		TokenIndex:     "1",
+		From:           "user1",
+		Amount:         10,
+	}
+	opID := fftypes.NewUUID()
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"poolId":     "123",
+				"tokenIndex": "1",
+				"from":       "user1",
+				"amount":     float64(10),
+				"requestId":  opID.String(),
+				"trackingId": burn.LocalID.String(),
+			}, body)
+
+			res := &http.Response{
+				Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"1"}`))),
+				Header: http.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				StatusCode: 202,
+			}
+			return res, nil
+		})
+
+	err := h.BurnTokens(context.Background(), opID, burn)
+	assert.NoError(t, err)
+}
+
+func TestBurnTokensError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	burn := &fftypes.TokenTransfer{}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+
+	err := h.BurnTokens(context.Background(), fftypes.NewUUID(), burn)
 	assert.Regexp(t, "FF10274", err)
 }
 
@@ -263,10 +314,7 @@ func TestTransferTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	transfer := &fftypes.TokenTransfer{
-		PoolProtocolID: "123",
-		Amount:         10,
-	}
+	transfer := &fftypes.TokenTransfer{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
@@ -357,6 +405,14 @@ func TestEvents(t *testing.T) {
 	fromServer <- `{"id":"14","event":"token-transfer","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
+
+	// token-burn: success
+	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
+		return t.PoolProtocolID == "F1" && t.Amount == 2 && t.From == "0x0"
+	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	fromServer <- `{"id":"15","event":"token-burn","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }

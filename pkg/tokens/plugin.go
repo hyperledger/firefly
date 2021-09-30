@@ -46,6 +46,9 @@ type Plugin interface {
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
 	MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error
 
+	// BurnTokens burns tokens from an account
+	BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error
+
 	// TransferTokens transfers tokens within a pool from one account to another
 	TransferTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error
 }

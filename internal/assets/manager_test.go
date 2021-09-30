@@ -486,6 +486,47 @@ func TestMintTokensConfirm(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestBurnTokensSuccess(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransfer{
+		Amount: 5,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("BurnTokens", context.Background(), mock.Anything, burn).Return(nil)
+	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+}
+
+func TestBurnTokensIdentityFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	burn := &fftypes.TokenTransfer{
+		Amount: 5,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+
+	_, err := am.BurnTokens(context.Background(), "ns1", "magic-tokens", "pool1", burn, false)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestTransferTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -538,16 +579,13 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 		Amount: 5,
 	}
 
-	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.Regexp(t, "FF10280", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 }
 
 func TestTransferTokensInvalidType(t *testing.T) {

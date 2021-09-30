@@ -4703,6 +4703,112 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/tokens/{type}/pools/{name}/burn:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenBurn
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount:
+                  format: int64
+                  type: integer
+                from:
+                  type: string
+                key:
+                  type: string
+                tokenIndex:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount:
+                    format: int64
+                    type: integer
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount:
+                    format: int64
+                    type: integer
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
   /namespaces/{ns}/tokens/{type}/pools/{name}/mint:
     post:
       description: 'TODO: Description'

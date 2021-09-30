@@ -53,6 +53,7 @@ const (
 	messageReceipt       msgType = "receipt"
 	messageTokenPool     msgType = "token-pool"
 	messageTokenMint     msgType = "token-mint"
+	messageTokenBurn     msgType = "token-burn"
 	messageTokenTransfer msgType = "token-transfer"
 )
 
@@ -66,6 +67,15 @@ type createPool struct {
 type mintTokens struct {
 	PoolID     string `json:"poolId"`
 	To         string `json:"to"`
+	Amount     int64  `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
+}
+
+type burnTokens struct {
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex"`
+	From       string `json:"from"`
 	Amount     int64  `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
 	TrackingID string `json:"trackingId"`
@@ -189,14 +199,10 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 	if tokenIndex == "" ||
 		poolProtocolID == "" ||
 		operatorAddress == "" ||
-		toAddress == "" ||
 		value == "" ||
-		txHash == "" {
-		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
-		return nil // move on
-	}
-
-	if t == fftypes.TokenTransferTypeTransfer && fromAddress == "" {
+		txHash == "" ||
+		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
+		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
 		return nil // move on
 	}
@@ -261,6 +267,8 @@ func (h *FFTokens) eventLoop() {
 				err = h.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:
 				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
+			case messageTokenBurn:
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
 			case messageTokenTransfer:
 				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
 			default:
@@ -311,6 +319,23 @@ func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mi
 			TrackingID: mint.LocalID.String(),
 		}).
 		Post("/api/v1/mint")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&burnTokens{
+			PoolID:     burn.PoolProtocolID,
+			TokenIndex: burn.TokenIndex,
+			From:       burn.From,
+			Amount:     burn.Amount,
+			RequestID:  operationID.String(),
+			TrackingID: burn.LocalID.String(),
+		}).
+		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}
