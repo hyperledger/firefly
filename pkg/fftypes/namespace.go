@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network

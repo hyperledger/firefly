@@ -21,10 +21,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 // BatchPinComplete is called in-line with a particular ledger's stream of events, so while we
@@ -64,57 +63,8 @@ func (em *eventManager) handlePrivatePinComplete(batchPin *blockchain.BatchPin, 
 	})
 }
 
-func subjectMatch(a *fftypes.TransactionSubject, b *fftypes.TransactionSubject) bool {
-	return a.Type == b.Type &&
-		a.Signer == b.Signer &&
-		a.Reference != nil && b.Reference != nil &&
-		*a.Reference == *b.Reference &&
-		a.Namespace == b.Namespace
-}
-
-func (em *eventManager) persistTransaction(ctx context.Context, tx *fftypes.Transaction) (valid bool, err error) {
-	if err := fftypes.ValidateFFNameField(ctx, tx.Subject.Namespace, "namespace"); err != nil {
-		log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - invalid namespace '%s': %a", tx.ID, tx.Subject.Reference, tx.Subject.Namespace, err)
-		return false, nil // this is not retryable
-	}
-	existing, err := em.database.GetTransactionByID(ctx, tx.ID)
-	if err != nil {
-		return false, err // a peristence failure here is considered retryable (so returned)
-	}
-
-	switch {
-	case existing == nil:
-		// We're the first to write the transaction record on this node
-		tx.Created = fftypes.Now()
-		tx.Hash = tx.Subject.Hash()
-
-	case subjectMatch(&tx.Subject, &existing.Subject):
-		// This is an update to an existing transaction, but the subject is the same
-		tx.Created = existing.Created
-		tx.Hash = existing.Hash
-
-	default:
-		log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - does not match existing subject", tx.ID, tx.Subject.Reference)
-		return false, nil // this is not retryable
-	}
-
-	// Upsert the transaction, ensuring the hash does not change
-	tx.Status = fftypes.OpStatusSucceeded
-	err = em.database.UpsertTransaction(ctx, tx, false)
-	if err != nil {
-		if err == database.HashMismatch {
-			log.L(ctx).Errorf("Invalid transaction ID='%s' Reference='%s' - hash mismatch with existing record '%s'", tx.ID, tx.Subject.Reference, tx.Hash)
-			return false, nil // this is not retryable
-		}
-		log.L(ctx).Errorf("Failed to insert transaction ID='%s' Reference='%s': %a", tx.ID, tx.Subject.Reference, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
-	}
-
-	return true, nil
-}
-
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
-	return em.persistTransaction(ctx, &fftypes.Transaction{
+	return em.txhelper.PersistTransaction(ctx, &fftypes.Transaction{
 		ID: batchPin.TransactionID,
 		Subject: fftypes.TransactionSubject{
 			Namespace: batchPin.Namespace,

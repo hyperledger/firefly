@@ -19,14 +19,14 @@ package tifactory
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/tokens/https"
-	"github.com/hyperledger-labs/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/tokens/fftokens"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 var plugins = []tokens.Plugin{
-	&https.HTTPS{},
+	&fftokens.FFTokens{},
 }
 
 var pluginsByName = make(map[string]tokens.Plugin)
@@ -39,6 +39,7 @@ func init() {
 
 func InitPrefix(prefix config.PrefixArray) {
 	prefix.AddKnownKey(tokens.TokensConfigConnector)
+	prefix.AddKnownKey(tokens.TokensConfigPlugin)
 	prefix.AddKnownKey(tokens.TokensConfigName)
 	for _, plugin := range plugins {
 		// Accept a superset of configs allowed by all plugins

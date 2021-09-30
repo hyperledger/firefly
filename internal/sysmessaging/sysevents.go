@@ -16,7 +16,7 @@
 
 package sysmessaging
 
-import "github.com/hyperledger-labs/firefly/internal/events/system"
+import "github.com/hyperledger/firefly/internal/events/system"
 
 // SystemEvents specifies the internal interface, without creating a cycle
 type SystemEvents interface {

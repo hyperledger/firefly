@@ -21,24 +21,24 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
-	"github.com/hyperledger-labs/firefly/mocks/assetmocks"
-	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
-	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger-labs/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/eventmocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
-	"github.com/hyperledger-labs/firefly/mocks/networkmapmocks"
-	"github.com/hyperledger-labs/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
-	"github.com/hyperledger-labs/firefly/mocks/tokenmocks"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/tokens/tifactory"
+	"github.com/hyperledger/firefly/mocks/assetmocks"
+	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/eventmocks"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -274,7 +274,9 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
@@ -292,8 +294,31 @@ func TestBadTokensPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10272.*wrong", err)
 }
 
+func TestBadTokensPluginNoConnector(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	tokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10273", err)
+}
+
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName)
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -312,8 +337,31 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	assert.Regexp(t, "FF10273", err)
 }
 
+func TestBadTokensPluginNoType(t *testing.T) {
+	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
+	tifactory.InitPrefix(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
+	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10273", err)
+}
+
 func TestGoodTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
+	tokensConfig = config.NewPluginConfig("tokens").Array()
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")

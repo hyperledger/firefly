@@ -22,22 +22,22 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/events/eifactory"
-	"github.com/hyperledger-labs/firefly/internal/events/system"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/retry"
-	"github.com/hyperledger-labs/firefly/internal/syshandlers"
-	"github.com/hyperledger-labs/firefly/internal/sysmessaging"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
-	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
-	"github.com/hyperledger-labs/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/syshandlers"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
 type EventManager interface {
@@ -53,16 +53,13 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	TxSubmissionUpdate(plugin fftypes.Named, tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
+	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
-
-	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -77,6 +74,7 @@ type eventManager struct {
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
+	txhelper             txcommon.Helper
 	aggregator           *aggregator
 	newEventNotifier     *eventNotifier
 	newPinNotifier       *eventNotifier
@@ -103,6 +101,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
+		txhelper:             txcommon.NewTransactionHelper(di),
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,

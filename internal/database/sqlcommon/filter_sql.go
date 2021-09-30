@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/database"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []string, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {

@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -69,7 +69,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Plugin:      "ethereum",
 		BackendID:   fftypes.NewRandB32().String(),
 		Error:       "pop",
-		Info:        fftypes.JSONObject{"some": "info"},
+		Input:       fftypes.JSONObject{"some": "input-info"},
+		Output:      fftypes.JSONObject{"some": "output-info"},
 		Created:     fftypes.Now(),
 		Updated:     fftypes.Now(),
 	}

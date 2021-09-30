@@ -29,10 +29,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/oapispec"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/stretchr/testify/assert"
 )
 

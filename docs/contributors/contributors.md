@@ -22,17 +22,18 @@ We welcome anyone to contribute to the FireFly project! If you're interested, th
 
 ## Connect with us on Rocket Chat
 
-You can chat with maintainers and other contributors on Rocket Chat in the `firefly-lab` channel:
-https://chat.hyperledger.org/channel/firefly-lab
+You can chat with maintainers and other contributors on Rocket Chat in the `firefly` channel:
+[https://chat.hyperledger.org/channel/firefly](https://chat.hyperledger.org/channel/firefly)
 
 If you don't have a Linux Foundation ID, you can sign up for a free account here:
-https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID
+[https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID](https://wiki.hyperledger.org/display/CA/Setting+up+an+LFID)
 
 ## Finding your first issue
 
-If you're looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at [issues tagged with "Good first issue"](https://github.com/search?q=repo%3Ahyperledger-labs%2Ffirefly+repo%3Ahyperledger-labs%2Ffirefly-fabconnect+repo%3Ahyperledger-labs%2Ffirefly-cli+repo%3Ahyperledger-labs%2Ffirefly-samples+repo%3Ahyperledger-labs%2Ffirefly-ethconnect+repo%3Ahyperledger-labs%2Ffirefly-dataexchange-https+repo%3Ahyperledger-labs%2Ffirefly-ui+repo%3Ahyperledger-labs%2Ffirefly-cordaconnect+label%3A%22Good+first+issue%22+state%3Aopen&type=Issues&ref=advsearch&l=&l=). You can definitely work on other things if you want to. These are only suggestions for easy places to get started.
+If you're looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at [issues tagged with "Good first issue"](https://github.com/search?q=repo%3Ahyperledger%2Ffirefly+repo%3Ahyperledger%2Ffirefly-fabconnect+repo%3Ahyperledger%2Ffirefly-cli+repo%3Ahyperledger%2Ffirefly-samples+repo%3Ahyperledger%2Ffirefly-ethconnect+repo%3Ahyperledger%2Ffirefly-dataexchange-https+repo%3Ahyperledger%2Ffirefly-ui+repo%3Ahyperledger%2Ffirefly-cordaconnect+label%3A%22Good+first+issue%22+state%3Aopen&type=Issues&ref=advsearch&l=&l=). You can definitely work on other things if you want to. These are only suggestions for easy places to get started.
 
 ## Setting up a local development environment
+
 Here are some detailed instructions on [Setting up a local development environment](./dev_environment_setup.html)
 
 ## Making changes

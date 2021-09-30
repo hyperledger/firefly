@@ -17,8 +17,8 @@
 package wsclient
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/restclient"
 )
 
 const (

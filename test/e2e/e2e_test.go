@@ -33,7 +33,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -328,7 +328,7 @@ func TestE2EBroadcastBlob(t *testing.T) {
 
 }
 
-func TestE2EPrivateBlob(t *testing.T) {
+func TestE2EPrivateBlobDatatypeTagged(t *testing.T) {
 
 	ts := beforeE2ETest(t)
 	defer ts.done()
@@ -338,7 +338,7 @@ func TestE2EPrivateBlob(t *testing.T) {
 
 	var resp *resty.Response
 
-	resp, err := PrivateBlobMessage(t, ts.client1, []string{
+	resp, err := PrivateBlobMessageDatatypeTagged(t, ts.client1, []string{
 		ts.org1.Name,
 		ts.org2.Name,
 	})
@@ -346,12 +346,10 @@ func TestE2EPrivateBlob(t *testing.T) {
 	assert.Equal(t, 202, resp.StatusCode())
 
 	<-received1
-	val1 := validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val1))
+	_ = validateReceivedMessages(ts, ts.client1, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 
 	<-received2
-	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
-	assert.Regexp(t, "myfile.txt", string(val2))
+	_ = validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 }
 
 func TestE2ETokenPool(t *testing.T) {
@@ -362,22 +360,33 @@ func TestE2ETokenPool(t *testing.T) {
 	received1, changes1 := wsReader(t, ts.ws1)
 	received2, changes2 := wsReader(t, ts.ws2)
 
-	var resp *resty.Response
-	pool := fftypes.TokenPool{
-		Name: "my-pool",
-	}
+	pools := GetTokenPools(t, ts.client1, time.Unix(0, 0))
+	poolName := fmt.Sprintf("pool%d", len(pools))
+	t.Logf("Pool name: %s", poolName)
 
-	resp, err := CreateTokenPool(ts.client1, &pool)
-	require.NoError(t, err)
-	assert.Equal(t, 202, resp.StatusCode())
+	pool := &fftypes.TokenPool{
+		Name: poolName,
+		Type: fftypes.TokenTypeFungible,
+	}
+	CreateTokenPool(t, ts.client1, pool)
 
 	<-received1
 	<-changes1 // also expect database change events
-	// TODO: validate created pool
+
+	pools1 := GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools1))
+	assert.Equal(t, "default", pools1[0].Namespace)
+	assert.Equal(t, poolName, pools1[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools1[0].Type)
 
 	<-received2
 	<-changes2 // also expect database change events
-	// TODO: validate created pool
+
+	pools2 := GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools2))
+	assert.Equal(t, "default", pools2[0].Namespace)
+	assert.Equal(t, poolName, pools2[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools2[0].Type)
 }
 
 func TestE2EWebhookExchange(t *testing.T) {
@@ -394,7 +403,7 @@ func TestE2EWebhookExchange(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://raw.githubusercontent.com/hyperledger-labs/firefly/main/test/data/config/firefly.core.yaml",
+			"url": "https://raw.githubusercontent.com/hyperledger/firefly/main/test/data/config/firefly.core.yaml",
 			"reply": true,
 			"replytag": "myreply",
 			"method": "GET"
@@ -448,7 +457,7 @@ func TestE2EWebhookRequestReplyNoTx(t *testing.T) {
 		"name": "myhook",
 		"options": {
 			"withData": true,
-			"url": "https://github.com/hyperledger-labs/firefly/raw/main/resources/ff-logo-32.png",
+			"url": "https://github.com/hyperledger/firefly/raw/main/resources/ff-logo-32.png",
 			"reply": true,
 			"replytag": "myreply",
 			"replytx": "none",

@@ -20,8 +20,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type changeEventListener struct {

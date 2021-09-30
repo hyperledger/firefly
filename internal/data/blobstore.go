@@ -23,15 +23,16 @@ import (
 	"io"
 
 	"github.com/docker/go-units"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
 type blobStore struct {
+	dm            *dataManager
 	publicstorage publicstorage.Plugin
 	database      database.Plugin
 	exchange      dataexchange.Plugin
@@ -95,6 +96,9 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 	if err != nil {
 		return nil, err
 	}
+	data.Blob = &fftypes.BlobRef{
+		Hash: hash,
+	}
 
 	// autoMeta will create/update JSON metadata with the upload details
 	if autoMeta {
@@ -103,14 +107,19 @@ func (bs *blobStore) UploadBLOB(ctx context.Context, ns string, inData *fftypes.
 		do["mimetype"] = blob.Mimetype
 		do["size"] = float64(written)
 		data.Value, _ = json.Marshal(&do)
+	}
+	if data.Validator == "" {
 		data.Validator = fftypes.ValidatorTypeJSON
 	}
 
-	data.Blob = &fftypes.BlobRef{
-		Hash: hash,
+	err = bs.dm.checkValidation(ctx, ns, data.Validator, data.Datatype, data.Value)
+	if err == nil {
+		err = data.Seal(ctx)
 	}
-	_ = data.Seal(ctx)
-	log.L(ctx).Infof("Uploaded BLOB %.2fkb hash=%s", float64(written)/1024, data.Hash)
+	if err != nil {
+		return nil, err
+	}
+	log.L(ctx).Infof("Uploaded BLOB %.2fkb blobhash=%s hash=%s", float64(written)/1024, data.Blob.Hash, data.Hash)
 
 	err = bs.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		err := bs.database.UpsertData(ctx, data, false, false)

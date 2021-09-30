@@ -19,8 +19,8 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 func (nm *networkMap) GetOrganizationByID(ctx context.Context, id string) (*fftypes.Organization, error) {

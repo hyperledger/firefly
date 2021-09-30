@@ -23,13 +23,14 @@ A FireFly node is a collection of multiple microservice runtimes with a single u
 ![The FireFly node](../images/firefly_node.png "The FireFly node")
 
 The minimum set of runtimes is as follows:
+
 - FireFly Core - the API and event server for your multi-party applications
 - Blockchain node - the decentralized ledger technology establishing a shared source of truth
 - Blockchain interface - transaction submission and event streams for your chosen protocol
 - Public storage node - a network-wide peer-to-peer store of shared data
 - Data exchange - for private member to member communications of messages and files
 
-> _Check out the [FireFly CLI](https://github.com/hyperledger-labs/firefly-cli) to get a
+> _Check out the [FireFly CLI](https://github.com/hyperledger/firefly-cli) to get a
 > a multi-party system running on your laptop in minutes._
 
 ## Pluggable microservices architecture

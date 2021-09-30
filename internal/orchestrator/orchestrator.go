@@ -20,32 +20,32 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger-labs/firefly/internal/assets"
-	"github.com/hyperledger-labs/firefly/internal/batch"
-	"github.com/hyperledger-labs/firefly/internal/batchpin"
-	"github.com/hyperledger-labs/firefly/internal/blockchain/bifactory"
-	"github.com/hyperledger-labs/firefly/internal/broadcast"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/database/difactory"
-	"github.com/hyperledger-labs/firefly/internal/dataexchange/dxfactory"
-	"github.com/hyperledger-labs/firefly/internal/events"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/identity/iifactory"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/networkmap"
-	"github.com/hyperledger-labs/firefly/internal/privatemessaging"
-	"github.com/hyperledger-labs/firefly/internal/publicstorage/psfactory"
-	"github.com/hyperledger-labs/firefly/internal/syncasync"
-	"github.com/hyperledger-labs/firefly/internal/syshandlers"
-	"github.com/hyperledger-labs/firefly/internal/tokens/tifactory"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
-	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
-	"github.com/hyperledger-labs/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/internal/assets"
+	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/batchpin"
+	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
+	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/database/difactory"
+	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/events"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/networkmap"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/internal/publicstorage/psfactory"
+	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/syshandlers"
+	"github.com/hyperledger/firefly/internal/tokens/tifactory"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 var (
@@ -171,6 +171,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchain
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
+	or.bc.am = or.assets
 	return err
 }
 
@@ -324,15 +325,30 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		for i := 0; i < tokensConfig.ArraySize(); i++ {
 			prefix := tokensConfig.ArrayEntry(i)
 			name := prefix.GetString(tokens.TokensConfigName)
-			connector := prefix.GetString(tokens.TokensConfigConnector)
-			if name == "" || connector == "" {
+			pluginName := prefix.GetString(tokens.TokensConfigPlugin)
+			if name == "" {
 				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
 			}
+			if pluginName == "" {
+				// Migration path for old config key
+				// TODO: eventually make this fatal
+				pluginName = prefix.GetString(tokens.TokensConfigConnector)
+				if pluginName == "" {
+					return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+				}
+				log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
+			}
+			if pluginName == "https" {
+				// Migration path for old plugin name
+				// TODO: eventually make this fatal
+				log.L(ctx).Warnf("Your tokens config uses the old plugin name 'https' - this plugin has been renamed to 'fftokens'")
+				pluginName = "fftokens"
+			}
 
-			log.L(ctx).Infof("Loading tokens plugin name=%s connector=%s", name, connector)
-			plugin, err := tifactory.GetPlugin(ctx, connector)
+			log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
+			plugin, err := tifactory.GetPlugin(ctx, pluginName)
 			if plugin != nil {
-				err = plugin.Init(ctx, prefix, &or.bc)
+				err = plugin.Init(ctx, name, prefix, &or.bc)
 			}
 			if err != nil {
 				return err

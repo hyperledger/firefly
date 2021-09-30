@@ -1,4 +1,4 @@
-module github.com/hyperledger-labs/firefly
+module github.com/hyperledger/firefly
 
 go 1.16
 

@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -92,7 +92,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, database.IDMismatch, err)
 
 	// Blank out the ID and retry
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", uuidMatches(subscription.ID)).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", subscription.ID).Return()
 	subscriptionUpdated.ID = nil
 	err = s.UpsertSubscription(context.Background(), subscriptionUpdated, true)
 	assert.NoError(t, err)
@@ -134,7 +134,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subscriptions))
 
 	// Test delete, and refind no return
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", uuidMatches(subscription.ID)).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", subscription.ID).Return()
 	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
 	assert.NoError(t, err)
 	subscriptions, _, err = s.GetSubscriptions(ctx, filter)

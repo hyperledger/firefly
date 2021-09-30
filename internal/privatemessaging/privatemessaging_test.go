@@ -21,17 +21,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/syncasync"
-	"github.com/hyperledger-labs/firefly/mocks/batchmocks"
-	"github.com/hyperledger-labs/firefly/mocks/batchpinmocks"
-	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
-	"github.com/hyperledger-labs/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/mocks/batchmocks"
+	"github.com/hyperledger/firefly/mocks/batchpinmocks"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -67,10 +67,6 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x12345" })).Return(nil).Maybe()
 
 	return pm.(*privateMessaging), cancel
-}
-
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
 }
 
 func TestDispatchBatchWithBlobs(t *testing.T) {
@@ -110,14 +106,14 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
+	mdi.On("GetNodeByID", pm.ctx, node1).Return(&fftypes.Node{
 		ID: node1,
 		DX: fftypes.DXInfo{
 			Peer:     "node1",
 			Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 		},
 	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node2)).Return(&fftypes.Node{
+	mdi.On("GetNodeByID", pm.ctx, node2).Return(&fftypes.Node{
 		ID: node2,
 		DX: fftypes.DXInfo{
 			Peer:     "node2",

@@ -21,16 +21,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/events/system"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
 
 func TestCreateSubscriptionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
@@ -132,7 +128,7 @@ func TestDeleteSubscription(t *testing.T) {
 			Namespace: "ns1",
 		},
 	}
-	or.mdi.On("GetSubscriptionByID", mock.Anything, uuidMatches(sub.ID)).Return(sub, nil)
+	or.mdi.On("GetSubscriptionByID", mock.Anything, sub.ID).Return(sub, nil)
 	or.mem.On("DeleteDurableSubscription", mock.Anything, sub).Return(nil)
 	err := or.DeleteSubscription(or.ctx, "ns1", sub.ID.String())
 	assert.NoError(t, err)

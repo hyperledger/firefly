@@ -21,25 +21,24 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger-labs/firefly/internal/batch"
-	"github.com/hyperledger-labs/firefly/internal/batchpin"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/syncasync"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/dataexchange"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
-	"github.com/hyperledger-labs/firefly/pkg/publicstorage"
+	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/batchpin"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
 type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	Start() error
@@ -154,7 +153,7 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 	}
 
 	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
-		_, err := bm.BroadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+		_, err := bm.broadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})
 }

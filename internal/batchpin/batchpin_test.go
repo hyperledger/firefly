@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/mocks/identitymocks"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -70,7 +70,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
 	}), false).Return(nil)
-	mbi.On("SubmitBatchPin", ctx, (*fftypes.UUID)(nil), identity, mock.Anything).Return(nil)
+	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), identity, mock.Anything).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)

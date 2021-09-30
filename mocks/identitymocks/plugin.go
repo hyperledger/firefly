@@ -5,11 +5,11 @@ package identitymocks
 import (
 	context "context"
 
-	config "github.com/hyperledger-labs/firefly/internal/config"
+	config "github.com/hyperledger/firefly/internal/config"
 
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
-	identity "github.com/hyperledger-labs/firefly/pkg/identity"
+	identity "github.com/hyperledger/firefly/pkg/identity"
 
 	mock "github.com/stretchr/testify/mock"
 )

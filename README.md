@@ -1,12 +1,13 @@
-# FireFly
+# Hyperledger FireFly
 
-[![codecov](https://codecov.io/gh/hyperledger-labs/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger-labs/firefly)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger-labs/firefly)](https://goreportcard.com/report/github.com/hyperledger-labs/firefly)
-[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://labs.hyperledger.org/firefly/)
+[![codecov](https://codecov.io/gh/hyperledger/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger/firefly)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
+[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
 
-FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
+Hyperledger FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
 
 FireFly focusses on:
+
 - Providing a great developer API and experience, with a CLI and UI as first class project components
 - Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
 - Making proven multi-party system patterns easy for new projects to adopt
@@ -22,7 +23,7 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ## Documentation
 
-https://labs.hyperledger.org/firefly/
+https://hyperledger.github.io/firefly//
 
 ## FireFly repos
 
@@ -31,14 +32,14 @@ As such there are a number of repos, and the list will grow as the community evo
 
 But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
 
-- CLI / Developer experience - https://github.com/hyperledger-labs/firefly-cli
-- UI Explorer - https://github.com/hyperledger-labs/firefly-ui
-- Sample applications - https://github.com/hyperledger-labs/firefly-samples
-- Core (this repo) - https://github.com/hyperledger-labs/firefly
-- HTTP Data Exchange - https://github.com/hyperledger-labs/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger-labs/firefly-ethconnect
-- Corda connector: https://github.com/hyperledger-labs/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
-- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger-labs/fabric-smart-client
+- CLI / Developer experience - https://github.com/hyperledger/firefly-cli
+- UI Explorer - https://github.com/hyperledger/firefly-ui
+- Sample applications - https://github.com/hyperledger/firefly-samples
+- Core (this repo) - https://github.com/hyperledger/firefly
+- HTTP Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
+- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger/firefly-ethconnect
+- Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
+- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger/fabric-smart-client
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
 > of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
@@ -46,7 +47,7 @@ But not to worry, one of those repos is a CLI designed to get you running with a
 
 ## Getting Started
 
-Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger-labs/firefly-cli
+Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger/firefly-cli
 
 ## Navigating this repo
 
@@ -218,7 +219,7 @@ It depends on the following Kaleido services:
   │       │   ┌───────────────┐
   │       ├───┤ sync /   [Sa] │  - Sync/Async Bridge
   │       │   │ async bridge  │    * Provides synchronous request/reply APIs
-  │       │   │               │    * Translates to underlying event-driven API 
+  │       │   │               │    * Translates to underlying event-driven API
   │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Aggregates messages and data, with rolled up hashes for pinning

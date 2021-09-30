@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hyperledger-labs/firefly/cmd"
+	"github.com/hyperledger/firefly/cmd"
 )
 
 func main() {

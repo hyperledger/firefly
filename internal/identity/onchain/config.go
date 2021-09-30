@@ -17,7 +17,7 @@
 package onchain
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config"
 )
 
 func (oc *OnChain) InitPrefix(prefix config.Prefix) {

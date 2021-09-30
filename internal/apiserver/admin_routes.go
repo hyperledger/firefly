@@ -16,7 +16,7 @@
 
 package apiserver
 
-import "github.com/hyperledger-labs/firefly/internal/oapispec"
+import "github.com/hyperledger/firefly/internal/oapispec"
 
 var adminRoutes = []*oapispec.Route{
 	getConfig,

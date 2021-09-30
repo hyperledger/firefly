@@ -22,11 +22,11 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 
 	// Import migrate file source
 	_ "github.com/golang-migrate/migrate/v4/source/file"

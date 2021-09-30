@@ -16,7 +16,7 @@
 
 package apiserver
 
-import "github.com/hyperledger-labs/firefly/internal/oapispec"
+import "github.com/hyperledger/firefly/internal/oapispec"
 
 const emptyObjectSchema = `{"type": "object"}`
 
@@ -80,4 +80,5 @@ var routes = []*oapispec.Route{
 	postTokenPool,
 	getTokenPools,
 	getTokenPoolByName,
+	getTokenAccounts,
 }
