@@ -493,9 +493,10 @@ const (
 type UUIDCollection CollectionName
 
 const (
-	CollectionNamespaces    UUIDCollection = "namespaces"
-	CollectionNodes         UUIDCollection = "nodes"
-	CollectionOrganizations UUIDCollection = "organizations"
+	CollectionNamespaces     UUIDCollection = "namespaces"
+	CollectionNodes          UUIDCollection = "nodes"
+	CollectionOrganizations  UUIDCollection = "organizations"
+	CollectionTokenTransfers UUIDCollection = "tokentransfers"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.
@@ -505,13 +506,12 @@ const (
 type OtherCollection CollectionName
 
 const (
-	CollectionConfigrecords  OtherCollection = "configrecords"
-	CollectionBlobs          OtherCollection = "blobs"
-	CollectionNextpins       OtherCollection = "nextpins"
-	CollectionNonces         OtherCollection = "nonces"
-	CollectionOffsets        OtherCollection = "offsets"
-	CollectionTokenAccounts  OtherCollection = "tokenaccounts"
-	CollectionTokenTransfers OtherCollection = "tokentransfers"
+	CollectionConfigrecords OtherCollection = "configrecords"
+	CollectionBlobs         OtherCollection = "blobs"
+	CollectionNextpins      OtherCollection = "nextpins"
+	CollectionNonces        OtherCollection = "nonces"
+	CollectionOffsets       OtherCollection = "offsets"
+	CollectionTokenAccounts OtherCollection = "tokenaccounts"
 )
 
 // Callbacks are the methods for passing data from plugin to core

@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestTokenTransferE2EWithDB(t *testing.T) {
@@ -44,6 +45,11 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		Amount:         10,
 		ProtocolID:     "12345",
 	}
+
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID, mock.Anything).
+		Return().Once()
+	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID, mock.Anything).
+		Return().Once()
 
 	err := s.UpsertTokenTransfer(ctx, transfer)
 	assert.NoError(t, err)

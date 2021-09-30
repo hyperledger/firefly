@@ -80,7 +80,9 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("to_key", transfer.To).
 				Set("amount", transfer.Amount).
 				Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
-			nil,
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID)
+			},
 		); err != nil {
 			return err
 		}
@@ -101,7 +103,9 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.ProtocolID,
 					transfer.Created,
 				),
-			nil,
+			func() {
+				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID)
+			},
 		); err != nil {
 			return err
 		}
