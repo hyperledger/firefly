@@ -39,7 +39,8 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 	if len(operations) > 0 {
 		// Mark announce operation completed
 		update := database.OperationQueryFactory.NewUpdate(ctx).
-			Set("status", fftypes.OpStatusSucceeded)
+			Set("status", fftypes.OpStatusSucceeded).
+			Set("output", fftypes.JSONObject{"message": pool.Message})
 		if err := sh.database.UpdateOperation(ctx, operations[0].ID, update); err != nil {
 			return false, err // retryable
 		}
