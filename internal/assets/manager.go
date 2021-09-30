@@ -19,21 +19,28 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/data"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/syncasync"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
-	"github.com/hyperledger-labs/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	CreateTokenPoolWithID(ctx context.Context, ns string, id *fftypes.UUID, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
-	GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenPool(ctx context.Context, ns string, typeName string, name string) (*fftypes.TokenPool, error)
+	GetTokenPools(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
+	GetTokenPool(ctx context.Context, ns, typeName, name string) (*fftypes.TokenPool, error)
+	GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+
+	// Bound token callbacks
+	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
 	Start() error
 	WaitStop()
 }
@@ -45,6 +52,8 @@ type assetManager struct {
 	data      data.Manager
 	syncasync syncasync.Bridge
 	tokens    map[string]tokens.Plugin
+	retry     retry.Retry
+	txhelper  txcommon.Helper
 }
 
 func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, ti map[string]tokens.Plugin) (Manager, error) {
@@ -58,6 +67,12 @@ func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin
 		data:      dm,
 		syncasync: sa,
 		tokens:    ti,
+		retry: retry.Retry{
+			InitialDelay: config.GetDuration(config.AssetManagerRetryInitialDelay),
+			MaximumDelay: config.GetDuration(config.AssetManagerRetryMaxDelay),
+			Factor:       config.GetFloat64(config.AssetManagerRetryFactor),
+		},
+		txhelper: txcommon.NewTransactionHelper(di),
 	}
 	return am, nil
 }
@@ -136,7 +151,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		ID:   tx.ID,
 		Type: tx.Subject.Type,
 	}
-	return pool, plugin.CreateTokenPool(ctx, author, pool)
+	return pool, plugin.CreateTokenPool(ctx, op.ID, author, pool)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
@@ -145,6 +160,9 @@ func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.A
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
 	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
+		return nil, nil, err
+	}
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
@@ -161,6 +179,14 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, name str
 		return nil, err
 	}
 	return am.database.GetTokenPool(ctx, ns, name)
+}
+
+func (am *assetManager) GetTokenAccounts(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	pool, err := am.GetTokenPool(ctx, ns, typeName, name)
+	if err != nil {
+		return nil, nil, err
+	}
+	return am.database.GetTokenAccounts(ctx, filter.Condition(filter.Builder().Eq("protocolid", pool.ProtocolID)))
 }
 
 func (am *assetManager) Start() error {

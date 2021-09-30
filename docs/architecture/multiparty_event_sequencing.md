@@ -16,6 +16,8 @@ nav_order: 2
 
 ---
 
+<iframe width="736" height="414" src="https://www.youtube.com/embed/bJuu5dMvJ0k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 [![Multiparty Event Sequencing](../images/global_sequencing.svg "Multiparty Event Sequencing")](../images/global_sequencing.svg)
 
 ## Transaction Submission

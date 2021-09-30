@@ -665,6 +665,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:
@@ -1639,6 +1640,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:
@@ -2482,13 +2484,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -3109,7 +3114,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: info
+        name: input
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3120,6 +3125,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: output
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3194,13 +3204,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -3251,13 +3264,16 @@ paths:
                   error:
                     type: string
                   id: {}
-                  info:
+                  input:
                     additionalProperties: {}
                     type: object
                   member:
                     type: string
                   namespace:
                     type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
                   plugin:
                     type: string
                   status:
@@ -4209,7 +4225,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: message
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4225,6 +4251,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: symbol
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4275,12 +4306,18 @@ paths:
                   properties:
                     author:
                       type: string
+                    connector:
+                      type: string
+                    created: {}
                     id: {}
+                    message: {}
                     name:
                       type: string
                     namespace:
                       type: string
                     protocolId:
+                      type: string
+                    symbol:
                       type: string
                     tx:
                       properties:
@@ -4333,6 +4370,8 @@ paths:
                   type: string
                 name:
                   type: string
+                symbol:
+                  type: string
                 type:
                   enum:
                   - fungible
@@ -4347,12 +4386,18 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4371,12 +4416,18 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4429,12 +4480,18 @@ paths:
                 properties:
                   author:
                     type: string
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4445,6 +4502,112 @@ paths:
                   type:
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/{type}/pools/{name}/accounts:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokenAccounts
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: balance
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: identity
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tokenindex
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    balance:
+                      format: int64
+                      type: integer
+                    identity:
+                      type: string
+                    protocolId:
+                      type: string
+                    tokenIndex:
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""

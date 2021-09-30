@@ -21,10 +21,10 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var (
@@ -40,7 +40,8 @@ var (
 		"created",
 		"updated",
 		"error",
-		"info",
+		"input",
+		"output",
 	}
 	opFilterFieldMap = map[string]string{
 		"tx":        "tx_id",
@@ -88,7 +89,8 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 				Set("created", operation.Created).
 				Set("updated", operation.Updated).
 				Set("error", operation.Error).
-				Set("info", operation.Info).
+				Set("input", operation.Input).
+				Set("output", operation.Output).
 				Where(sq.Eq{"id": operation.ID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, operation.Namespace, operation.ID)
@@ -112,7 +114,8 @@ func (s *SQLCommon) UpsertOperation(ctx context.Context, operation *fftypes.Oper
 					operation.Created,
 					operation.Updated,
 					operation.Error,
-					operation.Info,
+					operation.Input,
+					operation.Output,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeCreated, operation.Namespace, operation.ID)
@@ -139,7 +142,8 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Created,
 		&op.Updated,
 		&op.Error,
-		&op.Info,
+		&op.Input,
+		&op.Output,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "operations")

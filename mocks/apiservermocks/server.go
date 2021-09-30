@@ -5,7 +5,7 @@ package apiservermocks
 import (
 	context "context"
 
-	orchestrator "github.com/hyperledger-labs/firefly/internal/orchestrator"
+	orchestrator "github.com/hyperledger/firefly/internal/orchestrator"
 	mock "github.com/stretchr/testify/mock"
 )
 

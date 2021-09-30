@@ -16,6 +16,8 @@ nav_order: 3
 
 ---
 
+<iframe width="736" height="414" src="https://www.youtube.com/embed/6Zp5YxdNRZw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 ## Overview 
 
 [![Simple Ping Pong Tx Flow](../images/ping_pong.svg "Simple Ping Pong Tx Flow")](../images/ping_pong.svg)

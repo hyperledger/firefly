@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
 )
 
 // FFTime is serialized to JSON on the API in RFC3339 nanosecond UTC time

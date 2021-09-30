@@ -22,19 +22,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/mocks/syshandlersmocks"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
 
 func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
@@ -70,7 +66,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -201,7 +197,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -286,7 +282,7 @@ func TestAggregationBroadcast(t *testing.T) {
 
 	// Get the batch
 	member1 := "0x12345"
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{

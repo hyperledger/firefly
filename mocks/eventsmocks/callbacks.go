@@ -3,8 +3,8 @@
 package eventsmocks
 
 import (
-	events "github.com/hyperledger-labs/firefly/pkg/events"
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	events "github.com/hyperledger/firefly/pkg/events"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

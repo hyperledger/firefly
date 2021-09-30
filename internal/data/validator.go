@@ -19,7 +19,7 @@ package data
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type Validator interface {

@@ -20,8 +20,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 // Plugin is the interface implemented by each data exchange plugin
@@ -102,7 +102,7 @@ type Callbacks interface {
 	BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error
 
 	// TransferResult notifies of a status update of a transfer
-	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the data exchange

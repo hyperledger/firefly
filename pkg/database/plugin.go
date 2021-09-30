@@ -19,9 +19,9 @@ package database
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var (
@@ -352,16 +352,30 @@ type iConfigRecordCollection interface {
 
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
-	UpsertTokenPool(ctx context.Context, data *fftypes.TokenPool) (err error)
+	UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) error
 
 	// GetTokenPool - Get a token pool by name
-	GetTokenPool(ctx context.Context, ns string, name string) (message *fftypes.TokenPool, err error)
+	GetTokenPool(ctx context.Context, ns, name string) (*fftypes.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
-	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error)
+	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
+
+	// GetTokenPoolByID - Get a token pool by protocol ID
+	GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
-	GetTokenPools(ctx context.Context, filter Filter) (message []*fftypes.TokenPool, fr *FilterResult, err error)
+	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
+}
+
+type iTokenAccountCollection interface {
+	// UpsertTokenAccount - Upsert a token account
+	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
+
+	// GetTokenAccount - Get a token account by pool and account identity
+	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
+
+	// GetTokenAccounts - Get all known token accounts in a pool
+	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -415,6 +429,7 @@ type PeristenceInterface interface {
 	iBlobCollection
 	iConfigRecordCollection
 	iTokenPoolCollection
+	iTokenAccountCollection
 }
 
 // CollectionName represents all collections
@@ -483,6 +498,7 @@ const (
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
 	CollectionOffsets       OtherCollection = "offsets"
+	CollectionTokenAccounts OtherCollection = "tokenaccounts"
 )
 
 // Callbacks are the methods for passing data from plugin to core
@@ -619,7 +635,8 @@ var OperationQueryFactory = &queryFields{
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
-	"info":      &JSONField{},
+	"input":     &JSONField{},
+	"output":    &JSONField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
@@ -730,4 +747,15 @@ var TokenPoolQueryFactory = &queryFields{
 	"namespace":  &StringField{},
 	"name":       &StringField{},
 	"protocolid": &StringField{},
+	"symbol":     &StringField{},
+	"message":    &UUIDField{},
+	"created":    &TimeField{},
+}
+
+// TokenAccountQueryFactory filter fields for token accounts
+var TokenAccountQueryFactory = &queryFields{
+	"protocolid": &StringField{},
+	"tokenindex": &StringField{},
+	"identity":   &StringField{},
+	"balance":    &Int64Field{},
 }

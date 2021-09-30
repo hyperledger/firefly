@@ -23,15 +23,14 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestTokenPoolE2EWithDB(t *testing.T) {
-
 	s, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -44,17 +43,25 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Name:       "my-pool",
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "12345",
+		Connector:  "erc1155",
+		Symbol:     "COIN",
+		Message:    fftypes.NewUUID(),
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
 	}
-	poolJson, _ := json.Marshal(&pool)
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).
+		Return().Once()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
+		Return().Once()
 
 	err := s.UpsertTokenPool(ctx, pool)
 	assert.NoError(t, err)
+
+	assert.NotNil(t, pool.Created)
+	poolJson, _ := json.Marshal(&pool)
 
 	// Query back the token pool (by ID)
 	poolRead, err := s.GetTokenPoolByID(ctx, pool.ID)
@@ -70,6 +77,13 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
+	// Query back the token pool (by protocol ID)
+	poolRead, err = s.GetTokenPoolByProtocolID(ctx, pool.ProtocolID)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolReadJson, _ = json.Marshal(&poolRead)
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
 	// Query back the token pool (by query filter)
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -77,12 +91,28 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		fb.Eq("namespace", pool.Namespace),
 		fb.Eq("name", pool.Name),
 		fb.Eq("protocolid", pool.ProtocolID),
+		fb.Eq("message", pool.Message),
+		fb.Eq("created", pool.Created),
 	)
 	pools, res, err := s.GetTokenPools(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pools))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	poolReadJson, _ = json.Marshal(pools[0])
+	assert.Equal(t, string(poolJson), string(poolReadJson))
+
+	// Update the token pool
+	pool.ProtocolID = "67890"
+	pool.Type = fftypes.TokenTypeNonFungible
+	err = s.UpsertTokenPool(ctx, pool)
+	assert.NoError(t, err)
+
+	// Query back the token pool (by ID)
+	poolRead, err = s.GetTokenPoolByID(ctx, pool.ID)
+	assert.NoError(t, err)
+	assert.NotNil(t, poolRead)
+	poolJson, _ = json.Marshal(&pool)
+	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 }
 
@@ -134,53 +164,6 @@ func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpsertTokenPoolInsertSuccess(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SQLCommon.callbacks = callbacks
-	poolID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-		Type:      fftypes.TokenTypeNonFungible,
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
-			ID:   fftypes.NewUUID(),
-		},
-	}
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	db.ExpectExec("INSERT .*").
-		WithArgs(poolID, "ns1", "", "", "nonfungible", pool.TX.Type, pool.TX.ID).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	db.ExpectCommit()
-	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).Return()
-	err := s.UpsertTokenPool(context.Background(), pool)
-	assert.NoError(t, err)
-	assert.NoError(t, db.ExpectationsWereMet())
-}
-
-func TestUpsertTokenPoolUpdateSuccess(t *testing.T) {
-	s, db := newMockProvider().init()
-	callbacks := &databasemocks.Callbacks{}
-	s.SQLCommon.callbacks = callbacks
-	poolID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
-		ID:        poolID,
-		Namespace: "ns1",
-	}
-
-	db.ExpectBegin()
-	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(poolID))
-	db.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	db.ExpectCommit()
-	callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).Return()
-	err := s.UpsertTokenPool(context.Background(), pool)
-	assert.NoError(t, err)
-	assert.NoError(t, db.ExpectationsWereMet())
 }
 
 func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {

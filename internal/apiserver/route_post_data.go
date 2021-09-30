@@ -22,10 +22,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/oapispec"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var postData = &oapispec.Route{
@@ -55,6 +55,16 @@ var postData = &oapispec.Route{
 	},
 	FormUploadHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		data := &fftypes.DataRefOrValue{}
+		validator := r.FP["validator"]
+		if len(validator) > 0 {
+			data.Validator = fftypes.ValidatorType(validator)
+		}
+		if r.FP["datatype.name"] != "" {
+			data.Datatype = &fftypes.DatatypeRef{
+				Name:    r.FP["datatype.name"],
+				Version: r.FP["datatype.version"],
+			}
+		}
 		metadata := r.FP["metadata"]
 		if len(metadata) > 0 {
 			// The metadata might be JSON, or just a simple string. Try to unmarshal and see
@@ -63,13 +73,6 @@ var postData = &oapispec.Route{
 				metadata = fmt.Sprintf(`"%s"`, metadata)
 			}
 			data.Value = fftypes.Byteable(metadata)
-			data.Validator = fftypes.ValidatorType(r.FP["validator"])
-			if r.FP["datatype.name"] != "" {
-				data.Datatype = &fftypes.DatatypeRef{
-					Name:    r.FP["datatype.name"],
-					Version: r.FP["datatype.version"],
-				}
-			}
 		}
 		output, err = r.Or.Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err

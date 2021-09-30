@@ -1,12 +1,16 @@
 remote_theme: pmarsceill/just-the-docs
 logo: "firefly_logo.png"
-title: FireFly
+title: Hyperledger FireFly Docs
 aux_links:
   "GitHub":
-    - "//github.com/hyperledger-labs/firefly"
+    - "//github.com/hyperledger/firefly"
   "Wiki":
-    - "//wiki.hyperledger.org/display/labs/Firefly"
+    - "https://wiki.hyperledger.org/display/FIR"
   "Chat":
-    - "https://chat.hyperledger.org/channel/firefly-lab"
+    - "https://chat.hyperledger.org/channel/firefly"
+  "Mailing List":
+    - "https://lists.hyperledger.org/g/firefly"
+  "Calendar":
+    - "https://lists.hyperledger.org/g/firefly/calendar"
 
 theme: just-the-docs

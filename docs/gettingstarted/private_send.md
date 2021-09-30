@@ -63,9 +63,11 @@ nav_order: 4
     }
   ],
   "group": {
-    "members": [{
-      "identity": "org_1"
-    }]
+    "members": [
+      {
+        "identity": "org_1"
+      }
+    ]
   }
 }
 ```
@@ -74,7 +76,7 @@ nav_order: 4
 
 Status: `202 Accepted` - the message is on it's way, but has not yet been confirmed.
 
-> _Issue [#112](https://github.com/hyperledger-labs/firefly/issues/112) proposes adding
+> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 
@@ -82,10 +84,10 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
 {
   "header": {
     "id": "c387e9d2-bdac-44cc-9dd5-5e7f0b6b0e58", // uniquely identifies this private message
-    "type": "private", // set automatically 
+    "type": "private", // set automatically
     "txtype": "batch_pin", // message will be batched, and sequenced via the blockchain
     "author": "0x0a65365587a65ce44938eab5a765fe8bc6532bdf", // set automatically in this example to the node org
-    "created": "2021-07-02T02:37:13.4642085Z", // set automatically 
+    "created": "2021-07-02T02:37:13.4642085Z", // set automatically
     "namespace": "default", // the 'default' namespace was set in the URL
     // The group hash is calculated from the resolved list of group participants.
     // The first time a group is used, the participant list is sent privately along with the
@@ -100,7 +102,8 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
   "hash": "423ad7d99fd30ff679270ad2b6b35cdd85d48db30bafb71464ca1527ce114a60", // hash of the header
   "local": true, // we sent this message
   "pending": true, // it is not yet confirmed
-  "data": [ // one item of data was stored
+  "data": [
+    // one item of data was stored
     {
       "id": "8d8635e2-7c90-4963-99cc-794c98a68b1d", // can be used to query the data in the future
       "hash": "c95d6352f524a770a787c16509237baf7eb59967699fb9a6d825270e7ec0eacf" // sha256 hash of `"a string"`
@@ -127,9 +130,11 @@ The message is sent immediately (no batching) over the private data exchange.
     }
   ],
   "group": {
-    "members": [{
-      "identity": "org_1"
-    }]
+    "members": [
+      {
+        "identity": "org_1"
+      }
+    ]
   }
 }
 ```
@@ -139,11 +144,11 @@ The message is sent immediately (no batching) over the private data exchange.
 It is very good practice to set a `tag` and `topic` in each of your messages:
 
 - `tag` should tell the apps receiving the private send (including the local app), what
-   to do when it receives the message. Its the reason for the send - an
-   application specific type for the message.
+  to do when it receives the message. Its the reason for the send - an
+  application specific type for the message.
 - `topic` should be something like a well known identifier that relates to the
-   information you are publishing. It is used as an ordering context, so all
-   sends on a given topic are assured to be processed in order.
+  information you are publishing. It is used as an ordering context, so all
+  sends on a given topic are assured to be processed in order.
 
 `POST` `/api/v1/namespaces/default/send/message`
 
@@ -154,9 +159,11 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
     "topics": ["widget_id_12345"]
   },
   "group": {
-    "members": [{
-      "identity": "org_1"
-    }]
+    "members": [
+      {
+        "identity": "org_1"
+      }
+    ]
   },
   "data": [
     {
@@ -197,12 +204,16 @@ on the vast majority of your messages.
 ## Example 3: Upload a blob with metadata and send privately
 
 Here we make two API calls.
+
 1. Create the `data` object explicitly, using a multi-party form upload
-  - You can also just post JSON to this endpoint
+
+- You can also just post JSON to this endpoint
+
 2. Privately send a message referring to that data
-  - The BLOB is sent privately to each party
-  - A pin goes to the blockchain
-  - The metadata goes into a batch with the message
+
+- The BLOB is sent privately to each party
+- A pin goes to the blockchain
+- The metadata goes into a batch with the message
 
 ### Multipart form post of a file
 
@@ -213,7 +224,7 @@ and pipe it into a multi-part form post to FireFly.
 > the `filename`, and `size`, to the JSON part of the `data` object for us._
 
 ```sh
-curl -sLo - https://github.com/hyperledger-labs/firefly/raw/main/docs/firefly_logo.png \
+curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.png \
  | curl --form autometa=true --form file=@- \
    http://localhost:5000/api/v1/api/v1/namespaces/default/data
 ```
@@ -222,7 +233,7 @@ curl -sLo - https://github.com/hyperledger-labs/firefly/raw/main/docs/firefly_lo
 
 Status: `200 OK` - your data is uploaded to your local FireFly node
 
-At this point the data has not be shared with anyone else in the network 
+At this point the data has not be shared with anyone else in the network
 
 ```json
 {

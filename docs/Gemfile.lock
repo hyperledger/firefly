@@ -67,6 +67,7 @@ GEM
 
 PLATFORMS
   universal-darwin-20
+  x86_64-linux
 
 DEPENDENCIES
   jekyll (~> 3.3)
@@ -75,4 +76,4 @@ DEPENDENCIES
   kramdown-parser-gfm (~> 1.1)
 
 BUNDLED WITH
-   2.2.21
+   2.2.27

@@ -23,8 +23,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/apiservermocks"
-	"github.com/hyperledger-labs/firefly/mocks/orchestratormocks"
+	"github.com/hyperledger/firefly/mocks/apiservermocks"
+	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

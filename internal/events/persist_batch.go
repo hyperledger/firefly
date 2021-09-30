@@ -19,9 +19,9 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX context*/, batch *fftypes.Batch, onchainHash *fftypes.Bytes32, author string) (valid bool, err error) {
@@ -76,7 +76,7 @@ func (em *eventManager) persistBatch(ctx context.Context /* db TX context*/, bat
 			return false, nil // This is not retryable. skip this batch
 		}
 		l.Errorf("Failed to insert batch '%s': %s", batch.ID, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	// Insert the data entries
@@ -128,7 +128,7 @@ func (em *eventManager) persistReceivedData(ctx context.Context /* db TX context
 			return false, nil // This is not retryable. skip this data entry
 		}
 		log.L(ctx).Errorf("Failed to insert data entry %d in %s '%s': %s", i, mType, mID, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	return true, nil
@@ -167,7 +167,7 @@ func (em *eventManager) persistReceivedMessage(ctx context.Context /* db TX cont
 			return false, nil // This is not retryable. skip this data entry
 		}
 		l.Errorf("Failed to insert message entry %d in %s '%s': %s", i, mType, mID, err)
-		return false, err // a peristence failure here is considered retryable (so returned)
+		return false, err // a persistence failure here is considered retryable (so returned)
 	}
 
 	return true, nil

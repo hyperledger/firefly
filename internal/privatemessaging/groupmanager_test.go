@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/mocks/databasemocks"
-	"github.com/hyperledger-labs/firefly/mocks/datamocks"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -419,7 +419,7 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetNodeByID", pm.ctx, node1).Return(nil, fmt.Errorf("pop")).Once()
 
 	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.EqualError(t, err, "pop")
@@ -440,7 +440,7 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(nil, nil).Once()
+	mdi.On("GetNodeByID", pm.ctx, node1).Return(nil, nil).Once()
 
 	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash)
 	assert.Regexp(t, "FF10224", err)

@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/require"
 	"gotest.tools/assert"
 )
@@ -42,7 +42,7 @@ var (
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
-	urlPostTokenPool    = "/namespaces/default/tokens/erc1155/pools"
+	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -162,7 +162,7 @@ func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*rest
 		Post(urlBroadcastMessage)
 }
 
-func CreateBlob(t *testing.T, client *resty.Client) *fftypes.Data {
+func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {
 	r, _ := rand.Int(rand.Reader, big.NewInt(1024*1024))
 	blob := make([]byte, r.Int64()+1024*1024)
 	for i := 0; i < len(blob); i++ {
@@ -171,25 +171,40 @@ func CreateBlob(t *testing.T, client *resty.Client) *fftypes.Data {
 	var blobHash fftypes.Bytes32 = sha256.Sum256(blob)
 	t.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
 	var data fftypes.Data
+	formData := map[string]string{}
+	if dt == nil {
+		// If there's no datatype, tell FireFly to automatically add a data payload
+		formData["autometa"] = "true"
+		formData["metadata"] = `{"mymeta": "data"}`
+	} else {
+		// Otherwise use a tagging only approach, where we allow a nil value, specify that this should
+		// not be validated, but still set a datatype for classification of the data.
+		formData["validator"] = "none"
+		formData["datatype.name"] = dt.Name
+		formData["datatype.version"] = dt.Version
+	}
 	resp, err := client.R().
-		SetFormData(map[string]string{
-			"autometa": "true",
-			"metadata": `{"mymeta": "data"}`,
-		}).
+		SetFormData(formData).
 		SetFileReader("file", "myfile.txt", bytes.NewReader(blob)).
 		SetResult(&data).
 		Post(urlUploadData)
 	require.NoError(t, err)
 	require.Equal(t, 201, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
-	assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
-	assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
-	assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
+	t.Logf("Data created: %s", data.ID)
+	if dt == nil {
+		assert.Equal(t, "data", data.Value.JSONObject().GetString("mymeta"))
+		assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
+		assert.Equal(t, float64(len(blob)), data.Value.JSONObject()["size"])
+	} else {
+		assert.Equal(t, fftypes.ValidatorTypeNone, data.Validator)
+		assert.Equal(t, *dt, *data.Datatype)
+	}
 	assert.Equal(t, blobHash, *data.Blob.Hash)
 	return &data
 }
 
 func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, error) {
-	data := CreateBlob(t, client)
+	data := CreateBlob(t, client, nil)
 	return client.R().
 		SetBody(fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{
@@ -199,8 +214,8 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client) (*resty.Response, 
 		Post(urlBroadcastMessage)
 }
 
-func PrivateBlobMessage(t *testing.T, client *resty.Client, orgNames []string) (*resty.Response, error) {
-	data := CreateBlob(t, client)
+func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNames []string) (*resty.Response, error) {
+	data := CreateBlob(t, client, &fftypes.DatatypeRef{Name: "myblob"})
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -278,8 +293,22 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 	return &replyMsg
 }
 
-func CreateTokenPool(client *resty.Client, pool *fftypes.TokenPool) (*resty.Response, error) {
-	return client.R().
+func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool) {
+	path := urlTokenPools
+	resp, err := client.R().
 		SetBody(pool).
-		Post(urlPostTokenPool)
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*fftypes.TokenPool) {
+	path := urlTokenPools
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&pools).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return pools
 }

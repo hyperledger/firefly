@@ -19,11 +19,11 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
 )
 
 type Submitter interface {
@@ -87,7 +87,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 
 	// Write the batch pin to the blockchain
-	return bp.blockchain.SubmitBatchPin(ctx, nil /* TODO: ledger selection */, signingIdentity, &blockchain.BatchPin{
+	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, signingIdentity, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,

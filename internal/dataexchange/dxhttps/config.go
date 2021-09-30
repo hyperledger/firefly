@@ -17,8 +17,8 @@
 package dxhttps
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/wsclient"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/wsclient"
 )
 
 func (h *HTTPS) InitPrefix(prefix config.Prefix) {

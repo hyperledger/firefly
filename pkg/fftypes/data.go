@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 type DataRef struct {
@@ -58,7 +58,7 @@ type DatatypeRef struct {
 
 func (dr *DatatypeRef) String() string {
 	if dr == nil {
-		return "null"
+		return nullString
 	}
 	return fmt.Sprintf("%s/%s", dr.Name, dr.Version)
 }
@@ -71,17 +71,30 @@ func (d DataRefs) Hash() *Bytes32 {
 	return &b32
 }
 
+func CheckValidatorType(ctx context.Context, validator ValidatorType) error {
+	switch validator {
+	case ValidatorTypeJSON, ValidatorTypeNone, ValidatorTypeSystemDefinition:
+		return nil
+	default:
+		return i18n.NewError(ctx, i18n.MsgUnknownValidatorType, validator)
+	}
+}
+
 func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
-	if (d.Value == nil || d.Value.String() == "null") && (d.Blob == nil || d.Blob.Hash == nil) {
+	if d.Value == nil {
+		d.Value = Byteable(nullString)
+	}
+	valueIsNull := d.Value.String() == nullString
+	if valueIsNull && (d.Blob == nil || d.Blob.Hash == nil) {
 		return nil, i18n.NewError(ctx, i18n.MsgDataValueIsNull)
 	}
 	// The hash is either the blob hash, the value hash, or if both are supplied
 	// (e.g. a blob with associated metadata) it a hash of the two HEX hashes
 	// concattenated together (no spaces or separation).
 	switch {
-	case d.Value != nil && (d.Blob == nil || d.Blob.Hash == nil):
+	case !valueIsNull && (d.Blob == nil || d.Blob.Hash == nil):
 		return d.Value.Hash(), nil
-	case d.Value == nil && d.Blob != nil && d.Blob.Hash != nil:
+	case valueIsNull && d.Blob != nil && d.Blob.Hash != nil:
 		return d.Blob.Hash, nil
 	default:
 		hash := sha256.New()
@@ -92,6 +105,9 @@ func (d *Data) CalcHash(ctx context.Context) (*Bytes32, error) {
 }
 
 func (d *Data) Seal(ctx context.Context) (err error) {
+	if d.Validator == "" {
+		d.Validator = ValidatorTypeJSON
+	}
 	if d.ID == nil {
 		d.ID = NewUUID()
 	}
@@ -99,5 +115,8 @@ func (d *Data) Seal(ctx context.Context) (err error) {
 		d.Created = Now()
 	}
 	d.Hash, err = d.CalcHash(ctx)
+	if err == nil {
+		err = CheckValidatorType(ctx, d.Validator)
+	}
 	return err
 }

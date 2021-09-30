@@ -35,11 +35,11 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-	docker build -t ghcr.io/hyperledger-labs/firefly:latest ../..
+	docker build -t ghcr.io/hyperledger/firefly:latest ../..
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-	go install github.com/hyperledger-labs/firefly-cli/ff@latest
+	go install github.com/hyperledger/firefly-cli/ff@latest
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
