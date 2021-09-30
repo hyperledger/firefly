@@ -39,7 +39,6 @@ type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	Start() error
@@ -154,7 +153,7 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 	}
 
 	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
-		_, err := bm.BroadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+		_, err := bm.broadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})
 }
