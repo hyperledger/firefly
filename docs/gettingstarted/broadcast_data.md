@@ -142,7 +142,7 @@ and pipe it into a multi-part form post to FireFly.
 ```sh
 curl -sLo - https://github.com/hyperledger/firefly/raw/main/docs/firefly_logo.png \
  | curl --form autometa=true --form file=@- \
-   http://localhost:5000/api/v1/api/v1/namespaces/default/data
+   http://localhost:5000/api/v1/namespaces/default/data
 ```
 
 ### Example data response from BLOB upload
