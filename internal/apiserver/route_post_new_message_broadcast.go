@@ -60,8 +60,13 @@ var broadcastSchema = `{
 							"type": "string"
 					 },
 					 "group": {},
-					 "topic": {
+					 "tag": {
 							"type": "string"
+					 },
+					 "topics": {
+						 	"items": {
+								 "type": "string"
+							 }
 					 },
 					 "tx": {
 							"properties": {

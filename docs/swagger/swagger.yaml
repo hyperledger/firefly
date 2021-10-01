@@ -779,8 +779,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -2619,8 +2622,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -2801,8 +2807,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -2978,8 +2987,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -3353,8 +3365,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -3515,8 +3530,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
