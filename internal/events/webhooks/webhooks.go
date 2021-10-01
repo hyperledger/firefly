@@ -262,10 +262,10 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 }
 
 func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data []*fftypes.Data) (req *whRequest, res *whResponse, err error) {
-
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]fftypes.Byteable, 0, len(data))
 	var firstData fftypes.JSONObject
+	var valid bool
 	if withData {
 		for _, d := range data {
 			if d.Value != nil {
@@ -275,7 +275,14 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		if len(allData) == 0 {
 			firstData = fftypes.JSONObject{}
 		} else {
-			firstData = allData[0].JSONObject()
+			// Use JSONObjectOk instead of JSONObject
+			// JSONObject fails for datatypes such as array, string, bool, number etc
+			firstData, valid = allData[0].JSONObjectOk()
+			if !valid {
+				firstData = fftypes.JSONObject{
+					"value": allData[0],
+				}
+			}
 		}
 	}
 
