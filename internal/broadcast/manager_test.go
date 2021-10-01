@@ -67,7 +67,7 @@ func TestBroadcastMessageGood(t *testing.T) {
 	msg := &fftypes.Message{}
 	bm.database.(*databasemocks.Plugin).On("InsertMessageLocal", mock.Anything, msg).Return(nil)
 
-	msgRet, err := bm.broadcastMessageCommon(context.Background(), msg, false)
+	msgRet, err := bm.broadcastMessageCommon(context.Background(), msg, false, false)
 	assert.NoError(t, err)
 	assert.Equal(t, msg, msgRet)
 
@@ -87,7 +87,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 	}
 	bm.database.(*databasemocks.Plugin).On("UpsertMessage", mock.Anything, msg, false).Return(nil)
 
-	_, err := bm.broadcastMessageCommon(context.Background(), msg, false)
+	_, err := bm.broadcastMessageCommon(context.Background(), msg, false, false)
 	assert.Regexp(t, "FF10144", err)
 
 }

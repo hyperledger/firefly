@@ -56,8 +56,8 @@ func TestMessageReceiveOK(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -91,8 +91,8 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -131,8 +131,8 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -298,8 +298,8 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, fmt.Errorf("pop"))
 	err := em.MessageReceived(mdx, "peer1", b)
@@ -330,8 +330,8 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, nil)
 	err := em.MessageReceived(mdx, "peer1", b)
@@ -362,8 +362,8 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "another"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -676,10 +676,10 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
@@ -726,10 +726,10 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
@@ -776,10 +776,10 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(nil)

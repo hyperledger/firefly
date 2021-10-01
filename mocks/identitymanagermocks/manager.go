@@ -15,6 +15,43 @@ type Manager struct {
 	mock.Mock
 }
 
+// GetLocalOrganization provides a mock function with given fields: ctx
+func (_m *Manager) GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.Organization
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.Organization); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Organization)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OrgDID provides a mock function with given fields: org
+func (_m *Manager) OrgDID(org *fftypes.Organization) string {
+	ret := _m.Called(org)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(*fftypes.Organization) string); ok {
+		r0 = rf(org)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // ResolveInputIdentity provides a mock function with given fields: ctx, _a1
 func (_m *Manager) ResolveInputIdentity(ctx context.Context, _a1 *fftypes.Identity) error {
 	ret := _m.Called(ctx, _a1)

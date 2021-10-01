@@ -36,15 +36,26 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	nodeIDRemote := fftypes.NewUUID()
 	nodeIDLocal := fftypes.NewUUID()
-	orgID := fftypes.NewUUID()
+	orgIDLocal := fftypes.NewUUID()
+	orgIDRemote := fftypes.NewUUID()
+
+	orgNameRemote := "remoteOrg"
+
+	signingKeyLocal := "localSigningKey"
+	signingKeyRemote := "remoteSigningKey"
+
+	orgDIDLocal := "did:firefly:org/" + orgIDLocal.String()
+	orgDIDRemote := "did:firefly:org/" + orgIDRemote.String()
+
 	var dataID *fftypes.UUID
-	mdi.On("GetOrganizationByName", pm.ctx, mock.Anything).Return(&fftypes.Organization{ID: orgID, Identity: "remoteorg"}, nil)
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDRemote, Name: "node2", Owner: "remoteorg"}}, nil, nil).Once()
-	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDLocal, Name: "node1", Owner: "localorg"}}, nil, nil).Once()
+	mdi.On("GetOrganizationByName", pm.ctx, orgNameRemote).Return(&fftypes.Organization{ID: orgIDRemote, Identity: signingKeyRemote}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDRemote, Name: "node2", Owner: signingKeyRemote}}, nil, nil).Once()
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{{ID: nodeIDLocal, Name: "node1", Owner: signingKeyLocal}}, nil, nil).Once()
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, true).Return(nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return(orgDIDLocal, nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: signingKeyLocal}, nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, true, false).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*fftypes.Data)
@@ -54,12 +65,21 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		err := json.Unmarshal(data.Value, &group)
 		assert.NoError(t, err)
 		assert.Len(t, group.Members, 2)
-		// Note localorg comes first, as we sort groups before hashing
-		assert.Equal(t, "localorg", group.Members[0].Identity)
-		assert.Equal(t, *nodeIDLocal, *group.Members[0].Node)
-		assert.Equal(t, "remoteorg", group.Members[1].Identity)
-		assert.Equal(t, *nodeIDRemote, *group.Members[1].Node)
-		assert.Nil(t, group.Ledger)
+		// Group identiy is sorted by group members DIDs so check them in that order
+		if orgDIDLocal < orgDIDRemote {
+			assert.Equal(t, orgDIDLocal, group.Members[0].Identity)
+			assert.Equal(t, *nodeIDLocal, *group.Members[0].Node)
+			assert.Equal(t, orgDIDRemote, group.Members[1].Identity)
+			assert.Equal(t, *nodeIDRemote, *group.Members[1].Node)
+			assert.Nil(t, group.Ledger)
+		} else {
+			assert.Equal(t, orgDIDRemote, group.Members[0].Identity)
+			assert.Equal(t, *nodeIDRemote, *group.Members[1].Node)
+			assert.Equal(t, orgDIDLocal, group.Members[1].Identity)
+			assert.Equal(t, *nodeIDLocal, *group.Members[0].Node)
+			assert.Nil(t, group.Ledger)
+		}
+
 		dataID = data.ID
 	}
 	um := mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
@@ -82,7 +102,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
-				{Identity: "remoteorg"},
+				{Identity: orgNameRemote},
 			},
 		},
 	})
@@ -104,6 +124,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	}, nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -135,6 +156,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -192,6 +214,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -222,6 +245,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{}, nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -252,6 +276,7 @@ func TestResolveMemberOrgNameNotFound(t *testing.T) {
 	mdi.On("GetOrganizationByIdentity", pm.ctx, "org1").Return(nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -286,6 +311,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{{Hash: fftypes.NewRandB32()}}, nil, nil)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{

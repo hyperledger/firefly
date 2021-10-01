@@ -35,8 +35,13 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 		return false, err
 	}
 
+	isRootOrgBroadcast, err := em.isRootOrgBroadcast(batch)
+	if err != nil {
+		return false, err
+	}
+
 	// The special case of a root org broadcast is allowed to not have a resolved author, because it's not in the database yet
-	if !em.isRootOrgBroadcast(batch) && (author == "" || author != batch.Author) || signingKey != batch.Key {
+	if !isRootOrgBroadcast && (author == "" || author != batch.Author) || signingKey != batch.Key {
 		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, author)
 		return false, nil // This is not retryable. skip this batch
 	}
@@ -50,7 +55,7 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 	return valid, err
 }
 
-func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
+func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) (bool, error) {
 	// Look into batch to see if it contains a message that contains a data item that is a root organization definition
 	for _, message := range batch.Payload.Messages {
 		if message.Header.Type == fftypes.MessageTypeBroadcast {
@@ -58,16 +63,19 @@ func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
 				for _, batchDataItem := range batch.Payload.Data {
 					if batchDataItem.ID.Equals(messageDataItem.ID) {
 						var org *fftypes.Organization
-						json.Unmarshal(batchDataItem.Value, &org)
+						err := json.Unmarshal(batchDataItem.Value, &org)
+						if err != nil {
+							return false, nil
+						}
 						if org != nil && org.Parent == "" {
-							return true
+							return true, nil
 						}
 					}
 				}
 			}
 		}
 	}
-	return false
+	return false, nil
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

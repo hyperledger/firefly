@@ -51,13 +51,13 @@ func (_m *EventManager) BLOBReceived(dx dataexchange.Plugin, peerID string, hash
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, signingIdentity, protocolTxID, additionalInfo
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(bi, batch, signingIdentity, protocolTxID, additionalInfo)
+// BatchPinComplete provides a mock function with given fields: bi, batch, author, protocolTxID, additionalInfo
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(bi, batch, author, protocolTxID, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(bi, batch, signingIdentity, protocolTxID, additionalInfo)
+		r0 = rf(bi, batch, author, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

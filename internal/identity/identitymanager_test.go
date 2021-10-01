@@ -341,12 +341,12 @@ func TestResolveSigningKeyIdentityOrgLookupOkCached(t *testing.T) {
 
 	author, err := im.ResolveSigningKeyIdentity(ctx, "key1")
 	assert.NoError(t, err)
-	assert.Equal(t, orgDID(org), author)
+	assert.Equal(t, im.OrgDID(org), author)
 
 	// Cached second time, without any DB call (see "Once()" above)
 	author, err = im.ResolveSigningKeyIdentity(ctx, "key1")
 	assert.NoError(t, err)
-	assert.Equal(t, orgDID(org), author)
+	assert.Equal(t, im.OrgDID(org), author)
 
 	mbi.AssertExpectations(t)
 }
@@ -384,12 +384,12 @@ func TestResolveLocalOrgDIDSuccess(t *testing.T) {
 
 	localOrgDID, err := im.ResolveLocalOrgDID(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, orgDID(org), localOrgDID)
+	assert.Equal(t, im.OrgDID(org), localOrgDID)
 
 	// Second one cached
 	localOrgDID, err = im.ResolveLocalOrgDID(ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, orgDID(org), localOrgDID)
+	assert.Equal(t, im.OrgDID(org), localOrgDID)
 
 	mbi.AssertExpectations(t)
 

@@ -59,8 +59,8 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -99,7 +99,8 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -140,7 +141,8 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -177,7 +179,8 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -217,7 +220,8 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -254,7 +258,8 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -290,7 +295,8 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x12345",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x12345",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -326,7 +332,8 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -362,7 +369,8 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -396,7 +404,8 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},
@@ -416,7 +425,8 @@ func TestHandleSystemBroadcastNodeUnmarshalFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineNode),
 		},

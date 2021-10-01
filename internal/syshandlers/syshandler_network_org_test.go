@@ -46,7 +46,6 @@ func TestHandleSystemBroadcastOrgOk(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, nil)
 	mdi.On("GetOrganizationByName", mock.Anything, "org1").Return(nil, nil)
 	mdi.On("GetOrganizationByID", mock.Anything, org.ID).Return(nil, nil)
@@ -55,7 +54,8 @@ func TestHandleSystemBroadcastOrgOk(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -84,14 +84,14 @@ func TestHandleSystemBroadcastOrgDupOk(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x23456"}, nil)
 	mdi.On("UpsertOrganization", mock.Anything, mock.Anything, true).Return(nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -120,13 +120,13 @@ func TestHandleSystemBroadcastOrgDupMismatch(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x9999"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -223,11 +223,13 @@ func TestHandleSystemBroadcastOrgAuthorMismatch(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x12345", Parent: "0x9999"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -256,12 +258,13 @@ func TestHandleSystemBroadcastGetParentFail(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x12345").Return(nil, fmt.Errorf("pop"))
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -279,7 +282,7 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 		ID:          fftypes.NewUUID(),
 		Name:        "org1",
 		Identity:    "0x12345",
-		Parent:      "0x23456",
+		Parent:      "",
 		Description: "my org",
 		Profile:     fftypes.JSONObject{"some": "info"},
 	}
@@ -290,12 +293,13 @@ func TestHandleSystemBroadcastGetParentNotFound(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(nil, nil)
+	mdi.On("GetOrganizationByIdentity", mock.Anything, org.Identity).Return(&fftypes.Organization{Identity: "0x12345", Parent: "0x99999"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -325,7 +329,8 @@ func TestHandleSystemBroadcastValidateFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},
@@ -345,7 +350,8 @@ func TestHandleSystemBroadcastUnmarshalFail(t *testing.T) {
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			Identity: fftypes.Identity{
-				Author: "0x23456",
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
 			},
 			Tag: string(fftypes.SystemTagDefineOrganization),
 		},

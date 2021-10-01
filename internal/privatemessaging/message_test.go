@@ -40,6 +40,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -260,8 +261,10 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
+
 	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)

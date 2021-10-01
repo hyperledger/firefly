@@ -65,7 +65,6 @@ func (em *eventManager) MessageReceived(dx dataexchange.Plugin, peerID string, d
 
 }
 
-// Why does the node itself matter here?
 func (em *eventManager) checkReceivedIdentity(ctx context.Context, peerID, author, signingKey string) (node *fftypes.Node, err error) {
 	l := log.L(em.ctx)
 
