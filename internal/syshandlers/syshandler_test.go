@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -38,7 +39,8 @@ func newTestSystemHandlers(t *testing.T) *systemHandlers {
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	return NewSystemHandlers(mdi, mii, mdx, mdm, mbm, mpm).(*systemHandlers)
+	mam := &assetmocks.Manager{}
+	return NewSystemHandlers(mdi, mii, mdx, mdm, mbm, mpm, mam).(*systemHandlers)
 }
 
 func TestHandleSystemBroadcastUnknown(t *testing.T) {

@@ -4324,6 +4324,9 @@ paths:
                   properties:
                     author:
                       type: string
+                    config:
+                      additionalProperties: {}
+                      type: object
                     connector:
                       type: string
                     created: {}
@@ -4386,6 +4389,9 @@ paths:
               properties:
                 author:
                   type: string
+                config:
+                  additionalProperties: {}
+                  type: object
                 name:
                   type: string
                 symbol:
@@ -4404,6 +4410,9 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}
@@ -4434,6 +4443,9 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}
@@ -4498,6 +4510,9 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
                   connector:
                     type: string
                   created: {}

@@ -32,6 +32,8 @@ var (
 	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokensCreatePool is a token pool creation
 	OpTypeTokensCreatePool OpType = ffEnum("optype", "tokens_create_pool")
+	// OpTypeTokensAnnounce is a broadcast of token pool info
+	OpTypeTokensAnnouncePool OpType = ffEnum("optype", "tokens_announce_pool")
 )
 
 // OpStatus is the current status of an operation

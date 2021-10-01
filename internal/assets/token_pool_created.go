@@ -17,69 +17,82 @@
 package assets
 
 import (
-	"context"
-
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (am *assetManager) persistTokenPoolTransaction(ctx context.Context, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
-	if pool.ID == nil || pool.TX.ID == nil {
-		log.L(ctx).Errorf("Invalid token pool '%s'. Missing ID (%v) or transaction ID (%v)", pool.ID, pool.ID, pool.TX.ID)
-		return false, nil // this is not retryable
+func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	// Find a matching operation within this transaction
+	fb := database.OperationQueryFactory.NewFilter(am.ctx)
+	filter := fb.And(
+		fb.Eq("tx", tx),
+		fb.Eq("type", fftypes.OpTypeTokensCreatePool),
+	)
+	operations, _, err := am.database.GetOperations(am.ctx, filter)
+	if err != nil || len(operations) == 0 {
+		log.L(am.ctx).Debugf("Token pool transaction '%s' ignored, as it did not match an operation submitted by this node", tx)
+		return nil
 	}
-	return am.txhelper.PersistTransaction(ctx, &fftypes.Transaction{
-		ID: pool.TX.ID,
+
+	pool := &fftypes.TokenPoolAnnouncement{
+		TokenPool: fftypes.TokenPool{
+			Type:       tokenType,
+			ProtocolID: protocolID,
+			Author:     signingIdentity,
+		},
+		ProtocolTxID: protocolTxID,
+	}
+	err = retrieveTokenPoolCreateInputs(am.ctx, operations[0], &pool.TokenPool)
+	if err != nil {
+		log.L(am.ctx).Errorf("Error retrieving pool info from transaction '%s' (%s) - ignoring: %v", tx, err, operations[0].Input)
+		return nil
+	}
+
+	// Update the transaction with the info received (but leave transaction as "pending").
+	// At this point we are the only node in the network that knows about this transaction object.
+	// Our local token connector has performed whatever actions it needs to perform, to give us
+	// enough information to distribute to all other token connectors in the network.
+	// (e.g. details of a newly created token instance or an existing one)
+	transaction := &fftypes.Transaction{
+		ID:     tx,
+		Status: fftypes.OpStatusPending,
 		Subject: fftypes.TransactionSubject{
 			Namespace: pool.Namespace,
-			Type:      pool.TX.Type,
+			Type:      fftypes.TransactionTypeTokenPool,
 			Signer:    signingIdentity,
 			Reference: pool.ID,
 		},
 		ProtocolID: protocolTxID,
 		Info:       additionalInfo,
-	})
-}
-
-func (am *assetManager) persistTokenPool(ctx context.Context, pool *fftypes.TokenPool) (valid bool, err error) {
-	l := log.L(ctx)
-	if err := fftypes.ValidateFFNameField(ctx, pool.Name, "name"); err != nil {
-		l.Errorf("Invalid token pool '%s' - invalid name '%s': %a", pool.ID, pool.Name, err)
-		return false, nil // This is not retryable
 	}
-	err = am.database.UpsertTokenPool(ctx, pool)
-	if err != nil {
-		if err == database.IDMismatch {
-			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)
-			return false, nil // This is not retryable
+	pool.TX.ID = transaction.ID
+	pool.TX.Type = transaction.Subject.Type
+
+	// Add a new operation for the announcement
+	op := fftypes.NewTXOperation(
+		tk,
+		pool.Namespace,
+		tx,
+		"",
+		fftypes.OpTypeTokensAnnouncePool,
+		fftypes.OpStatusPending,
+		signingIdentity)
+
+	var valid bool
+	err = am.retry.Do(am.ctx, "persist token pool transaction", func(attempt int) (bool, error) {
+		valid, err = am.txhelper.PersistTransaction(am.ctx, transaction)
+		if valid && err == nil {
+			err = am.database.UpsertOperation(am.ctx, op, false)
 		}
-		l.Errorf("Failed to insert token pool '%s': %s", pool.ID, err)
-		return false, err // a persistence failure here is considered retryable (so returned)
-	}
-	return true, nil
-}
-
-func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return am.retry.Do(am.ctx, "persist token pool", func(attempt int) (bool, error) {
-		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
-			valid, err := am.persistTokenPoolTransaction(ctx, pool, signingIdentity, protocolTxID, additionalInfo)
-			if valid && err == nil {
-				valid, err = am.persistTokenPool(ctx, pool)
-			}
-			if err != nil {
-				return err
-			}
-			if !valid {
-				log.L(ctx).Warnf("Token pool rejected id=%s author=%s", pool.ID, signingIdentity)
-				event := fftypes.NewEvent(fftypes.EventTypePoolRejected, pool.Namespace, pool.ID)
-				return am.database.InsertEvent(ctx, event)
-			}
-			log.L(ctx).Infof("Token pool created id=%s author=%s", pool.ID, signingIdentity)
-			event := fftypes.NewEvent(fftypes.EventTypePoolConfirmed, pool.Namespace, pool.ID)
-			return am.database.InsertEvent(ctx, event)
-		})
-		return err != nil, err // retry indefinitely (until context closes)
+		return err != nil, err
 	})
+	if !valid || err != nil {
+		return err
+	}
+
+	// Announce the details of the new token pool
+	_, err = am.broadcast.BroadcastTokenPool(am.ctx, pool.Namespace, pool, false)
+	return err
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
@@ -40,12 +41,13 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mii := &identitymocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
+	mbm := &broadcastmocks.Manager{}
 	mti := &tokenmocks.Plugin{}
 	mti.On("Name").Return("ut_tokens").Maybe()
 	defaultIdentity := &fftypes.Identity{Identifier: "UTNodeID", OnChain: "0x12345"}
 	mii.On("Resolve", mock.Anything, "UTNodeID").Return(defaultIdentity, nil).Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mii, mdm, msa, map[string]tokens.Plugin{"magic-tokens": mti})
+	a, err := NewAssetManager(ctx, mdi, mii, mdm, msa, mbm, map[string]tokens.Plugin{"magic-tokens": mti})
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -55,7 +57,7 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -288,4 +290,12 @@ func TestGetTokenAccountsBadPool(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
 	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestValidateTokenPoolTx(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	err := am.ValidateTokenPoolTx(context.Background(), nil, "")
+	assert.NoError(t, err)
 }

@@ -63,7 +63,7 @@ type Callbacks interface {
 	// submitted by us, or by any other authorized party in the network.
 	//
 	// Error should will only be returned in shutdown scenarios
-	TokenPoolCreated(plugin Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(plugin Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the tokens

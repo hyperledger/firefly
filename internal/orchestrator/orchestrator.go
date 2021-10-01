@@ -391,7 +391,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging)
+	if or.assets == nil {
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.tokens)
+		if err != nil {
+			return err
+		}
+	}
+
+	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data)
@@ -408,13 +415,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync.Init(or.events)
-
-	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.tokens)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
