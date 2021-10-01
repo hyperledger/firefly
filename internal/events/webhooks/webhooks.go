@@ -277,7 +277,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		} else {
 			// Use JSONObjectOk instead of JSONObject
 			// JSONObject fails for datatypes such as array, string, bool, number etc
-			firstData, valid  = allData[0].JSONObjectOk()
+			firstData, valid = allData[0].JSONObjectOk()
 			if !valid {
 				firstData = fftypes.JSONObject{
 					"value": allData[0],
