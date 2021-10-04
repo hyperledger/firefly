@@ -19,10 +19,10 @@ package iifactory
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/identity/tbd"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity/tbd"
+	"github.com/hyperledger/firefly/pkg/identity"
 )
 
 var plugins = []identity.Plugin{

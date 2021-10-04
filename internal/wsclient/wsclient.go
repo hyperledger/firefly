@@ -25,11 +25,11 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/internal/retry"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/retry"
 )
 
 type WSAuthConfig struct {

@@ -24,10 +24,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
-	"github.com/hyperledger-labs/firefly/mocks/publicstoragemocks"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )

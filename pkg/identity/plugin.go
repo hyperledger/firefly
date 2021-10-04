@@ -19,8 +19,8 @@ package identity
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 // Plugin is the interface implemented by each identity plugin
@@ -46,7 +46,7 @@ type Plugin interface {
 	// solutions into FireFly is required. However, the immediate shift in Sep 2021 moved to defining
 	// a strong enough identity construct within FireFly to map from/to.
 	//
-	// See issue https://github.com/hyperledger-labs/firefly/issues/187 to contribute to the discussion
+	// See issue https://github.com/hyperledger/firefly/issues/187 to contribute to the discussion
 
 }
 

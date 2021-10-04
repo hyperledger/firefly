@@ -22,13 +22,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/internal/log"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
-	"github.com/hyperledger-labs/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/karlseguin/ccache"
 )
 
@@ -183,7 +183,7 @@ func (im *identityManager) cachedOrgLookupByAuthor(ctx context.Context, author s
 		cached.Extend(im.identityCacheTTL)
 		org = cached.Value().(*fftypes.Organization)
 	} else {
-		// TODO: Per comments in https://github.com/hyperledger-labs/firefly/issues/187 we need to resolve whether "Organization"
+		// TODO: Per comments in https://github.com/hyperledger/firefly/issues/187 we need to resolve whether "Organization"
 		//       is the right thing to resolve here. We might want to fall-back to that in the case of plain string, but likely
 		//       we need something more sophisticated here where we have an Identity object in the database.
 		if strings.HasPrefix(author, fftypes.FireflyOrgDIDPrefix) {

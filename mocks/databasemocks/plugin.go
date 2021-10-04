@@ -5,11 +5,11 @@ package databasemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger-labs/firefly/internal/config"
+	config "github.com/hyperledger/firefly/internal/config"
 
-	database "github.com/hyperledger-labs/firefly/pkg/database"
+	database "github.com/hyperledger/firefly/pkg/database"
 
-	fftypes "github.com/hyperledger-labs/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -22,7 +22,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 type Batch struct {

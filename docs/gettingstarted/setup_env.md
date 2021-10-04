@@ -42,13 +42,13 @@ The tooling is designed to be a helper, but not to hide or abstract things away 
     - Adding a block explorer UI option is an enhancement tracked in #108
 - Blockchain connector: one per member
   - The transaction and events interface for your blockchain node
-  - An instance of [firefly-ethconnect](https://github.com/hyperledger-labs/firefly-ethconnect) is the default option
+  - An instance of [firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect) is the default option
 - Shared storage: one per member
   - An [IPFS](https://ipfs.io/) node is the default option
   - Any data you upload, will only be available to other nodes within the stack
     - These storage nodes are automatically joined together into a private network
 - Data exchange: one per member
-  - An instance [HTTPS data exchange](https://github.com/hyperledger-labs/firefly-dataexchange-https) is the default option
+  - An instance [HTTPS data exchange](https://github.com/hyperledger/firefly-dataexchange-https) is the default option
   - Uses Mutual TLS for authentication and transport encryption
   - Automatically generates a self-signed certificate for each member
 - Database: one per member

@@ -1,4 +1,4 @@
-module github.com/hyperledger-labs/firefly
+module github.com/hyperledger/firefly
 
 go 1.16
 
@@ -13,7 +13,6 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/golang-migrate/migrate/v4 v4.14.2-0.20210521165626-8a1a8534dc64
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -23,7 +22,6 @@ require (
 	github.com/karlseguin/ccache v2.0.3+incompatible
 	github.com/karlseguin/expect v1.0.8 // indirect
 	github.com/lib/pq v1.10.2
-	github.com/likexian/gokit v0.24.7
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
@@ -49,5 +47,4 @@ require (
 	golang.org/x/text v0.3.6
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gotest.tools v2.2.0+incompatible
 )

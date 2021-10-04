@@ -29,7 +29,7 @@ The minimum set of runtimes is as follows:
 - Public storage node - a network-wide peer-to-peer store of shared data
 - Data exchange - for private member to member communications of messages and files
 
-> _Check out the [FireFly CLI](https://github.com/hyperledger-labs/firefly-cli) to get a
+> _Check out the [FireFly CLI](https://github.com/hyperledger/firefly-cli) to get a
 > a multi-party system running on your laptop in minutes._
 
 ## Pluggable microservices architecture

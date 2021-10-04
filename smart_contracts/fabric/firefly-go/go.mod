@@ -1,4 +1,4 @@
-module github.com/hyperledger-labs/firefly/chaincode-go
+module github.com/hyperledger/firefly/chaincode-go
 
 go 1.16
 

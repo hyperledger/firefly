@@ -17,7 +17,7 @@
 package postgres
 
 import (
-	"github.com/hyperledger-labs/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config"
 )
 
 func (psql *Postgres) InitPrefix(prefix config.Prefix) {

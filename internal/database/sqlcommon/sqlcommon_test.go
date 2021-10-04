@@ -25,8 +25,8 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/hyperledger-labs/firefly/pkg/database"
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -237,7 +237,7 @@ func TestTXConcurrency(t *testing.T) {
 	// the well adopted CGO implementation.
 	// When the e2e DB tests move to being able to be run against any database, this
 	// test should be included.
-	// (additional refactor required - see https://github.com/hyperledger-labs/firefly/issues/119)
+	// (additional refactor required - see https://github.com/hyperledger/firefly/issues/119)
 
 	_, err := s.db.Exec(`
 		CREATE TABLE testconc ( seq INTEGER PRIMARY KEY AUTOINCREMENT, val VARCHAR(256) );

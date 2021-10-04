@@ -3,11 +3,11 @@ package chaincode_test
 import (
 	"testing"
 
-	"github.com/hyperledger-labs/firefly/chaincode-go/chaincode"
-	"github.com/hyperledger-labs/firefly/chaincode-go/chaincode/mocks"
 	"github.com/hyperledger/fabric-chaincode-go/pkg/cid"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"github.com/hyperledger/firefly/chaincode-go/chaincode"
+	"github.com/hyperledger/firefly/chaincode-go/chaincode/mocks"
 	"github.com/stretchr/testify/require"
 )
 

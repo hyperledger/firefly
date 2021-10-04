@@ -19,7 +19,7 @@ package fftypes
 import (
 	"testing"
 
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestByteSize(t *testing.T) {

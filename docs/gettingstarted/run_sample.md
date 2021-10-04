@@ -23,4 +23,4 @@ transactions, without needing to write any code.
 
 You can then use the code itself as a starting point for building your own apps, or learning the API.
 
-Check out the samples here: [FireFly Samples Repo](https://github.com/hyperledger-labs/firefly-samples)
+Check out the samples here: [FireFly Samples Repo](https://github.com/hyperledger/firefly-samples)

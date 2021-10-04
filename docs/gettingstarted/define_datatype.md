@@ -67,7 +67,7 @@ Status: `202 Accepted` - a broadcast message has been sent, and on confirmation 
 datatype will be created (unless it conflicts with another definition with the same
 `name` and `version` that was ordered onto the blockchain before this definition).
 
-> _Issue [#112](https://github.com/hyperledger-labs/firefly/issues/112) proposes adding
+> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
 > an option to wait for the message to be confirmed by the blockchain before returning,
 > with `200 OK`._
 

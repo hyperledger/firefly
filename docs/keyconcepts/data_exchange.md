@@ -79,5 +79,5 @@ backed by Mutual TLS authentication. X509 certificate exchange is orchestrated b
 such that self-signed certificates can be used (or multiple PKI trust roots) and bound to
 the blockchain-backed identities of the organizations in FireFly.
 
-See [hyperledger-labs/firefly-dataexchange-https](https://github.com/hyperledger-labs/firefly-dataexchange-https)
+See [hyperledger/firefly-dataexchange-https](https://github.com/hyperledger/firefly-dataexchange-https)
 

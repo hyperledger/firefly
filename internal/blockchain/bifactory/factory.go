@@ -19,10 +19,10 @@ package bifactory
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/blockchain/ethereum"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/i18n"
-	"github.com/hyperledger-labs/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 )
 
 var plugins = []blockchain.Plugin{

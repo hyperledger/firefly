@@ -19,7 +19,7 @@ package fftypes
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/i18n"
 )
 
 type ValidatorType = FFEnum

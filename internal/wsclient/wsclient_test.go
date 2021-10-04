@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger-labs/firefly/internal/config"
-	"github.com/hyperledger-labs/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/stretchr/testify/assert"
 )
 

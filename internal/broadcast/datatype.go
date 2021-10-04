@@ -19,7 +19,7 @@ package broadcast
 import (
 	"context"
 
-	"github.com/hyperledger-labs/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (*fftypes.Message, error) {
