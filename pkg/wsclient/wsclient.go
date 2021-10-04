@@ -23,18 +23,26 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-type WSAuthConfig struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+type WSConfig struct {
+	HTTPURL                string             `json:"httpUrl,omitempty"`
+	WSKeyPath              string             `json:"wsKeyPath,omitempty"`
+	ReadBufferSize         int                `json:"readBufferSize,omitempty"`
+	WriteBufferSize        int                `json:"writeBufferSize,omitempty"`
+	InitialDelay           time.Duration      `json:"initialDelay,omitempty"`
+	MaximumDelay           time.Duration      `json:"maximumDelay,omitempty"`
+	InitialConnectAttempts int                `json:"InitialConnectAttempts,omitempty"`
+	AuthUsername           string             `json:"authUsername,omitempty"`
+	AuthPassword           string             `json:"authPassword,omitempty"`
+	HTTPHeaders            fftypes.JSONObject `json:"headers,omitempty"`
 }
 
 type WSClient interface {
@@ -65,9 +73,9 @@ type wsClient struct {
 // WSPostConnectHandler will be called after every connect/reconnect. Can send data over ws, but must not block listening for data on the ws.
 type WSPostConnectHandler func(ctx context.Context, w WSClient) error
 
-func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHandler) (WSClient, error) {
+func New(ctx context.Context, config *WSConfig, afterConnect WSPostConnectHandler) (WSClient, error) {
 
-	wsURL, err := buildWSUrl(ctx, prefix)
+	wsURL, err := buildWSUrl(ctx, config)
 	if err != nil {
 		return nil, err
 	}
@@ -76,27 +84,27 @@ func New(ctx context.Context, prefix config.Prefix, afterConnect WSPostConnectHa
 		ctx: ctx,
 		url: wsURL,
 		wsdialer: &websocket.Dialer{
-			ReadBufferSize:  int(prefix.GetByteSize(WSConfigKeyReadBufferSize)),
-			WriteBufferSize: int(prefix.GetByteSize(WSConfigKeyWriteBufferSize)),
+			ReadBufferSize:  config.ReadBufferSize,
+			WriteBufferSize: config.WriteBufferSize,
 		},
 		retry: retry.Retry{
-			InitialDelay: prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),
-			MaximumDelay: prefix.GetDuration(restclient.HTTPConfigRetryMaxDelay),
+			InitialDelay: config.InitialDelay,
+			MaximumDelay: config.MaximumDelay,
 		},
-		initialRetryAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
+		initialRetryAttempts: config.InitialConnectAttempts,
 		headers:              make(http.Header),
 		receive:              make(chan []byte),
 		send:                 make(chan []byte),
 		closing:              make(chan struct{}),
 		afterConnect:         afterConnect,
 	}
-	for k, v := range prefix.GetObject(restclient.HTTPConfigHeaders) {
+	for k, v := range config.HTTPHeaders {
 		if vs, ok := v.(string); ok {
 			w.headers.Set(k, vs)
 		}
 	}
-	authUsername := prefix.GetString(restclient.HTTPConfigAuthUsername)
-	authPassword := prefix.GetString(restclient.HTTPConfigAuthPassword)
+	authUsername := config.AuthUsername
+	authPassword := config.AuthPassword
 	if authUsername != "" && authPassword != "" {
 		w.headers.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", authUsername, authPassword)))))
 	}
@@ -151,15 +159,13 @@ func (w *wsClient) Send(ctx context.Context, message []byte) error {
 	}
 }
 
-func buildWSUrl(ctx context.Context, prefix config.Prefix) (string, error) {
-	urlString := prefix.GetString(restclient.HTTPConfigURL)
-	u, err := url.Parse(urlString)
+func buildWSUrl(ctx context.Context, config *WSConfig) (string, error) {
+	u, err := url.Parse(config.HTTPURL)
 	if err != nil {
-		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, urlString)
+		return "", i18n.WrapError(ctx, err, i18n.MsgInvalidURL, config.HTTPURL)
 	}
-	wsPath := prefix.GetString(WSConfigKeyPath)
-	if wsPath != "" {
-		u.Path = wsPath
+	if config.WSKeyPath != "" {
+		u.Path = config.WSKeyPath
 	}
 	if u.Scheme == "http" {
 		u.Scheme = "ws"

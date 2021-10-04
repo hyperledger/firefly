@@ -25,12 +25,13 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/internal/wsclient"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 type HTTPS struct {
@@ -100,7 +101,10 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks dataex
 
 	h.client = restclient.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{}
-	h.wsconn, err = wsclient.New(ctx, prefix, nil)
+
+	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+
+	h.wsconn, err = wsclient.New(ctx, wsConfig, nil)
 	if err != nil {
 		return err
 	}

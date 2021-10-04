@@ -22,12 +22,13 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/internal/wsclient"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 type FFTokens struct {
@@ -75,10 +76,13 @@ func (h *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, 
 	h.client = restclient.New(h.ctx, prefix)
 	h.capabilities = &tokens.Capabilities{}
 
-	if prefix.GetString(wsclient.WSConfigKeyPath) == "" {
-		prefix.Set(wsclient.WSConfigKeyPath, "/api/ws")
+	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/api/ws"
 	}
-	h.wsconn, err = wsclient.New(ctx, prefix, nil)
+
+	h.wsconn, err = wsclient.New(ctx, wsConfig, nil)
 	if err != nil {
 		return err
 	}
