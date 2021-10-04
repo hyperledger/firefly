@@ -24,16 +24,11 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/stretchr/testify/assert"
 )
 
-var utConfPrefix = config.NewPluginConfig("ws_unit_tests")
-
-func resetConf() {
-	config.Reset()
-	InitPrefix(utConfPrefix)
+func generateConfig() *WSConfig {
+	return &WSConfig{}
 }
 
 func TestWSClientE2E(t *testing.T) {
@@ -47,11 +42,13 @@ func TestWSClientE2E(t *testing.T) {
 		return w.Send(ctx, []byte(`after connect message`))
 	}
 
-	// Init from config
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, url)
-	utConfPrefix.Set(WSConfigKeyPath, "/test")
-	wsClient, err := New(context.Background(), utConfPrefix, afterConnect)
+	// Init clean config
+	wsConfig := generateConfig()
+
+	wsConfig.HTTPURL = url
+	wsConfig.WSKeyPath = "/test"
+
+	wsClient, err := New(context.Background(), wsConfig, afterConnect)
 	assert.NoError(t, err)
 
 	//  Change the settings and connect
@@ -82,28 +79,28 @@ func TestWSClientE2E(t *testing.T) {
 }
 
 func TestWSClientBadURL(t *testing.T) {
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, ":::")
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = ":::"
 
-	_, err := New(context.Background(), utConfPrefix, nil)
+	_, err := New(context.Background(), wsConfig, nil)
 	assert.Regexp(t, "FF10162", err)
 }
 
 func TestHTTPToWSURLRemap(t *testing.T) {
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, "http://test:12345")
-	utConfPrefix.Set(WSConfigKeyPath, "/websocket")
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = "http://test:12345"
+	wsConfig.WSKeyPath = "/websocket"
 
-	url, err := buildWSUrl(context.Background(), utConfPrefix)
+	url, err := buildWSUrl(context.Background(), wsConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "ws://test:12345/websocket", url)
 }
 
 func TestHTTPSToWSSURLRemap(t *testing.T) {
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, "https://test:12345")
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = "https://test:12345"
 
-	url, err := buildWSUrl(context.Background(), utConfPrefix)
+	url, err := buildWSUrl(context.Background(), wsConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "wss://test:12345", url)
 }
@@ -119,17 +116,17 @@ func TestWSFailStartupHttp500(t *testing.T) {
 	))
 	defer svr.Close()
 
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(restclient.HTTPConfigHeaders, map[string]interface{}{
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = fmt.Sprintf("ws://%s", svr.Listener.Addr())
+	wsConfig.HTTPHeaders = map[string]interface{}{
 		"custom-header": "custom value",
-	})
-	utConfPrefix.Set(restclient.HTTPConfigAuthUsername, "user")
-	utConfPrefix.Set(restclient.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
-	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
+	}
+	wsConfig.AuthUsername = "user"
+	wsConfig.AuthPassword = "pass"
+	wsConfig.InitialDelay = 1
+	wsConfig.InitialConnectAttempts = 1
 
-	w, _ := New(context.Background(), utConfPrefix, nil)
+	w, _ := New(context.Background(), wsConfig, nil)
 	err := w.Connect()
 	assert.Regexp(t, "FF10161", err)
 }
@@ -143,22 +140,22 @@ func TestWSFailStartupConnect(t *testing.T) {
 	))
 	svr.Close()
 
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("ws://%s", svr.Listener.Addr()))
-	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
-	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = fmt.Sprintf("ws://%s", svr.Listener.Addr())
+	wsConfig.InitialDelay = 1
+	wsConfig.InitialConnectAttempts = 1
 
-	w, _ := New(context.Background(), utConfPrefix, nil)
+	w, _ := New(context.Background(), wsConfig, nil)
 	err := w.Connect()
 	assert.Regexp(t, "FF10161", err)
 }
 
 func TestWSSendClosed(t *testing.T) {
 
-	resetConf()
-	utConfPrefix.Set(restclient.HTTPConfigURL, "ws://localhost:12345")
+	wsConfig := generateConfig()
+	wsConfig.HTTPURL = "http://test:12345"
 
-	w, err := New(context.Background(), utConfPrefix, nil)
+	w, err := New(context.Background(), wsConfig, nil)
 	assert.NoError(t, err)
 	w.Close()
 

@@ -18,7 +18,7 @@ package ethereum
 
 import (
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/wsclient"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 )
 
 const (
@@ -51,7 +51,7 @@ const (
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	wsclient.InitPrefix(ethconnectConf)
+	wsconfig.InitPrefix(ethconnectConf)
 	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigSkipEventstreamInit)

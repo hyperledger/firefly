@@ -26,12 +26,13 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/internal/wsclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -131,10 +132,13 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		GlobalSequencer: true,
 	}
 
-	if ethconnectConf.GetString(wsclient.WSConfigKeyPath) == "" {
-		ethconnectConf.Set(wsclient.WSConfigKeyPath, "/ws")
+	wsConfig := wsconfig.GenerateConfigFromPrefix(ethconnectConf)
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/ws"
 	}
-	e.wsconn, err = wsclient.New(ctx, ethconnectConf, e.afterConnect)
+
+	e.wsconn, err = wsclient.New(ctx, wsConfig, e.afterConnect)
 	if err != nil {
 		return err
 	}

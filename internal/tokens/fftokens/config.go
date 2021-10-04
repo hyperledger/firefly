@@ -18,9 +18,9 @@ package fftokens
 
 import (
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/wsclient"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 )
 
 func (h *FFTokens) InitPrefix(prefix config.PrefixArray) {
-	wsclient.InitPrefix(prefix)
+	wsconfig.InitPrefix(prefix)
 }

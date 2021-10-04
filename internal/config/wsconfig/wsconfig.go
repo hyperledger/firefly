@@ -14,11 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package wsclient
+package wsconfig
 
 import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -29,7 +30,6 @@ const (
 const (
 	// WSSpecificConfPrefix is the sub-section of the http config options that contains websocket specific config
 	WSSpecificConfPrefix = "ws"
-
 	// WSConfigKeyWriteBufferSize is the write buffer size
 	WSConfigKeyWriteBufferSize = "ws.writeBufferSize"
 	// WSConfigKeyReadBufferSize is the read buffer size
@@ -48,4 +48,19 @@ func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(WSConfigKeyReadBufferSize, defaultBufferSize)
 	prefix.AddKnownKey(WSConfigKeyInitialConnectAttempts, defaultIntialConnectAttempts)
 	prefix.AddKnownKey(WSConfigKeyPath)
+}
+
+func GenerateConfigFromPrefix(prefix config.Prefix) *wsclient.WSConfig {
+	return &wsclient.WSConfig{
+		HTTPURL:                prefix.GetString(restclient.HTTPConfigURL),
+		WSKeyPath:              prefix.GetString(WSConfigKeyPath),
+		ReadBufferSize:         int(prefix.GetByteSize(WSConfigKeyReadBufferSize)),
+		WriteBufferSize:        int(prefix.GetByteSize(WSConfigKeyWriteBufferSize)),
+		InitialDelay:           prefix.GetDuration(restclient.HTTPConfigRetryInitDelay),
+		MaximumDelay:           prefix.GetDuration(restclient.HTTPConfigRetryMaxDelay),
+		InitialConnectAttempts: prefix.GetInt(WSConfigKeyInitialConnectAttempts),
+		HTTPHeaders:            prefix.GetObject(restclient.HTTPConfigHeaders),
+		AuthUsername:           prefix.GetString(restclient.HTTPConfigAuthUsername),
+		AuthPassword:           prefix.GetString(restclient.HTTPConfigAuthPassword),
+	}
 }
