@@ -74,9 +74,9 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 			assert.Nil(t, group.Ledger)
 		} else {
 			assert.Equal(t, orgDIDRemote, group.Members[0].Identity)
-			assert.Equal(t, *nodeIDRemote, *group.Members[1].Node)
+			assert.Equal(t, *nodeIDRemote, *group.Members[0].Node)
 			assert.Equal(t, orgDIDLocal, group.Members[1].Identity)
-			assert.Equal(t, *nodeIDLocal, *group.Members[0].Node)
+			assert.Equal(t, *nodeIDLocal, *group.Members[1].Node)
 			assert.Nil(t, group.Ledger)
 		}
 
@@ -184,6 +184,33 @@ func TestResolveMemberListLocalOrgUnregistered(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", fmt.Errorf("pop"))
+
+	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Identity: fftypes.Identity{
+					Author: "org1",
+				},
+			},
+		},
+		Group: &fftypes.InputGroup{
+			Members: []fftypes.MemberInput{
+				{Identity: "org1"},
+			},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestResolveMemberListLocalOrgLookupFailed(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{

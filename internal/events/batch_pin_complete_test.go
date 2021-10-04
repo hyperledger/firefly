@@ -219,7 +219,7 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
 

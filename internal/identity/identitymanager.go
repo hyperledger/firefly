@@ -37,6 +37,7 @@ type Manager interface {
 	ResolveSigningKey(ctx context.Context, inputKey string) (outputKey string, err error)
 	ResolveSigningKeyIdentity(ctx context.Context, signingKey string) (author string, err error)
 	ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error)
+	GetOrgKey(ctx context.Context) string
 	OrgDID(org *fftypes.Organization) string
 	GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error)
 }
@@ -119,14 +120,20 @@ func (im *identityManager) ResolveSigningKeyIdentity(ctx context.Context, signin
 
 }
 
-func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error) {
-	if im.localOrgDID != "" {
-		return im.localOrgDID, nil
-	}
+func (im *identityManager) GetOrgKey(ctx context.Context) string {
 	orgKey := config.GetString(config.OrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(config.OrgIdentityDeprecated)
 	}
+	return orgKey
+}
+
+func (im *identityManager) ResolveLocalOrgDID(ctx context.Context) (localOrgDID string, err error) {
+	if im.localOrgDID != "" {
+		return im.localOrgDID, nil
+	}
+	orgKey := im.GetOrgKey(ctx)
+
 	im.localOrgDID, err = im.ResolveSigningKeyIdentity(ctx, orgKey)
 	if err != nil {
 		return "", i18n.WrapError(ctx, err, i18n.MsgLocalOrgLookupFailed, orgKey)

@@ -38,6 +38,20 @@ func (_m *Manager) GetLocalOrganization(ctx context.Context) (*fftypes.Organizat
 	return r0, r1
 }
 
+// GetOrgKey provides a mock function with given fields: ctx
+func (_m *Manager) GetOrgKey(ctx context.Context) string {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // OrgDID provides a mock function with given fields: org
 func (_m *Manager) OrgDID(org *fftypes.Organization) string {
 	ret := _m.Called(org)

@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger-labs/firefly/internal/config"
 	"github.com/hyperledger-labs/firefly/internal/i18n"
+	"github.com/hyperledger-labs/firefly/internal/log"
 	"github.com/hyperledger-labs/firefly/pkg/fftypes"
 )
 
@@ -43,6 +44,7 @@ func (nm *networkMap) findOrgsToRoot(ctx context.Context, idType, identity, pare
 func (nm *networkMap) getLocalOrgSigningKey(ctx context.Context) (localOrgSigningKey string, err error) {
 	localOrgSigningKey = config.GetString(config.OrgKey)
 	if localOrgSigningKey == "" {
+		log.L(ctx).Warnf("The %s config key has been deprecated. Use %s instead.", config.OrgIdentityDeprecated, config.OrgKey)
 		localOrgSigningKey = config.GetString(config.OrgIdentityDeprecated)
 	}
 	localOrgSigningKey, err = nm.identity.ResolveSigningKey(ctx, localOrgSigningKey)

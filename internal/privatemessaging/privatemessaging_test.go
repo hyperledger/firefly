@@ -96,11 +96,11 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		}
 	}
 
-	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
 		assert.Equal(t, "org1", identity.Author)
 		identity.Key = "0x12345"
-		return true
-	})).Return(nil)
+	}).Return(nil)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: fftypes.NewRandB32(),

@@ -105,7 +105,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, org *fftypes.Organi
 	return node, nil
 }
 
-func (pm *privateMessaging) getReceipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
+func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
 
 	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
 	if err != nil {
@@ -176,7 +176,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrgSignin
 }
 
 func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInOut) (group *fftypes.Group, isNew bool, err error) {
-	gi, err := pm.getReceipients(ctx, in)
+	gi, err := pm.getRecipients(ctx, in)
 	if err != nil {
 		return nil, false, err
 	}

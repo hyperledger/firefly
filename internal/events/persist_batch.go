@@ -30,20 +30,26 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 
 	// Verify that we can resolve the signing key back to this identity.
 	// This is a specific rule for broadcasts, so we know the authenticity of the data.
-	author, err := em.identity.ResolveSigningKeyIdentity(ctx, signingKey)
+	resolvedAuthor, err := em.identity.ResolveSigningKeyIdentity(ctx, signingKey)
 	if err != nil {
-		return false, err
-	}
-
-	isRootOrgBroadcast, err := em.isRootOrgBroadcast(batch)
-	if err != nil {
-		return false, err
+		l.Errorf("Invalid batch '%s'. Author '%s' cound not be resolved: %s", batch.ID, batch.Author, err)
+		return false, nil // This is not retryable. skip this batch
 	}
 
 	// The special case of a root org broadcast is allowed to not have a resolved author, because it's not in the database yet
-	if !isRootOrgBroadcast && (author == "" || author != batch.Author) || signingKey != batch.Key {
-		l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, author)
-		return false, nil // This is not retryable. skip this batch
+	if (resolvedAuthor == "" || resolvedAuthor != batch.Author) || signingKey != batch.Key {
+		if resolvedAuthor == "" && signingKey == batch.Key && em.isRootOrgBroadcast(batch) {
+
+			// This is where a future "gatekeeper" plugin should sit, to allow pluggable authorization of new root
+			// identities joining the network
+			l.Infof("New root org broadcast: %s", batch.Author)
+
+		} else {
+
+			l.Errorf("Invalid batch '%s'. Key/author in batch '%s' / '%s' does not match resolved key/author '%s' / '%s'", batch.ID, batch.Key, batch.Author, signingKey, resolvedAuthor)
+			return false, nil // This is not retryable. skip this batch
+
+		}
 	}
 
 	if !onchainHash.Equals(batch.Hash) {
@@ -55,27 +61,30 @@ func (em *eventManager) persistBatchFromBroadcast(ctx context.Context /* db TX c
 	return valid, err
 }
 
-func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) (bool, error) {
+func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
 	// Look into batch to see if it contains a message that contains a data item that is a root organization definition
-	for _, message := range batch.Payload.Messages {
+	if len(batch.Payload.Messages) > 0 {
+		message := batch.Payload.Messages[0]
 		if message.Header.Type == fftypes.MessageTypeBroadcast {
-			for _, messageDataItem := range message.Data {
-				for _, batchDataItem := range batch.Payload.Data {
+			if len(message.Data) > 0 {
+				messageDataItem := message.Data[0]
+				if len(batch.Payload.Data) > 0 {
+					batchDataItem := batch.Payload.Data[0]
 					if batchDataItem.ID.Equals(messageDataItem.ID) {
 						var org *fftypes.Organization
 						err := json.Unmarshal(batchDataItem.Value, &org)
 						if err != nil {
-							return false, nil
+							return false
 						}
-						if org != nil && org.Parent == "" {
-							return true, nil
+						if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
+							return true
 						}
 					}
 				}
 			}
 		}
 	}
-	return false, nil
+	return false
 }
 
 // persistBatch performs very simple validation on each message/data element (hashes) and either persists

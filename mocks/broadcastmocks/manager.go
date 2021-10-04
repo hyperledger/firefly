@@ -106,13 +106,13 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.
 	return r0, r1
 }
 
-// BroadcastMessageWithID provides a mock function with given fields: ctx, ns, id, unresolved, resolved, waitConfirm, identityResolved
-func (_m *Manager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool, identityResolved bool) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, id, unresolved, resolved, waitConfirm, identityResolved)
+// BroadcastMessageWithID provides a mock function with given fields: ctx, ns, id, unresolved, resolved, waitConfirm
+func (_m *Manager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, id, unresolved, resolved, waitConfirm)
 
 	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool, bool) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, id, unresolved, resolved, waitConfirm, identityResolved)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, id, unresolved, resolved, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.Message)
@@ -120,8 +120,8 @@ func (_m *Manager) BroadcastMessageWithID(ctx context.Context, ns string, id *ff
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool, bool) error); ok {
-		r1 = rf(ctx, ns, id, unresolved, resolved, waitConfirm, identityResolved)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool) error); ok {
+		r1 = rf(ctx, ns, id, unresolved, resolved, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

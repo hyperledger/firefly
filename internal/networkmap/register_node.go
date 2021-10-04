@@ -42,7 +42,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 	if node.Name == "" {
 		orgName := config.GetString(config.OrgName)
 		if orgName != "" {
-			node.Name = fmt.Sprintf("%s.node", config.GetString(config.OrgName))
+			node.Name = fmt.Sprintf("%s.node", orgName)
 		}
 	}
 	if node.Owner == "" || node.Name == "" {

@@ -18,6 +18,7 @@ package fftypes
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,4 +51,16 @@ func TestOrganizationValidation(t *testing.T) {
 	assert.Equal(t, "ff_org_A_B_C_D_E_F_G_H_I_J_K_L_M_N_O_P_Q_R_S_T_U_V_W_X_Y_Z___________0_1", def.Topic())
 	def.SetBroadcastMessage(NewUUID())
 	assert.NotNil(t, org.Message)
+}
+
+func TestGetDID(t *testing.T) {
+
+	var org *Organization
+	assert.Equal(t, "", org.GetDID())
+
+	org = &Organization{
+		ID: NewUUID(),
+	}
+	assert.Equal(t, fmt.Sprintf("did:firefly:org/%s", org.ID), org.GetDID())
+
 }
