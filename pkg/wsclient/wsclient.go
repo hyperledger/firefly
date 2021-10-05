@@ -39,7 +39,7 @@ type WSConfig struct {
 	WriteBufferSize        int                `json:"writeBufferSize,omitempty"`
 	InitialDelay           time.Duration      `json:"initialDelay,omitempty"`
 	MaximumDelay           time.Duration      `json:"maximumDelay,omitempty"`
-	InitialConnectAttempts int                `json:"InitialConnectAttempts,omitempty"`
+	InitialConnectAttempts int                `json:"initialConnectAttempts,omitempty"`
 	AuthUsername           string             `json:"authUsername,omitempty"`
 	AuthPassword           string             `json:"authPassword,omitempty"`
 	HTTPHeaders            fftypes.JSONObject `json:"headers,omitempty"`
