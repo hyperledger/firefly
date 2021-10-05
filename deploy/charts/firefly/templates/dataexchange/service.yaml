@@ -1,0 +1,21 @@
+{{- if .Values.dataexchange.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "firefly.fullname" . }}-dx
+  labels:
+    {{- include "firefly.dataexchangeLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.dataexchange.service.type }}
+  ports:
+    - port: {{ .Values.dataexchange.service.apiPort }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.dataexchange.service.p2pPort }}
+      targetPort: p2p
+      protocol: TCP
+      name: p2p
+  selector:
+    {{- include "firefly.dataexchangeSelectorLabels" . | nindent 4 }}
+{{- end }}

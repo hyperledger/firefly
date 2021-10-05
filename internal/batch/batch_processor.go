@@ -86,7 +86,7 @@ func newBatchProcessor(ctx context.Context, di database.Plugin, conf *batchProce
 }
 
 // The assemblyLoop accepts work into the pipe as quickly as possible.
-// It dispatches work asynchronously to the peristenceLoop, which is responsible for
+// It dispatches work asynchronously to the persistenceLoop, which is responsible for
 // calling back each piece of work once persisted into a batch
 // (doesn't wait until that batch is sealed/dispatched).
 // The assemblyLoop seals batches when they are full, or timeout.

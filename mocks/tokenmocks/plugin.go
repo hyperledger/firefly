@@ -35,13 +35,13 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 	return r0
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
-	ret := _m.Called(ctx, pool)
+// CreateTokenPool provides a mock function with given fields: ctx, operationID, pool
+func (_m *Plugin) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error {
+	ret := _m.Called(ctx, operationID, pool)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) error); ok {
-		r0 = rf(ctx, pool)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) error); ok {
+		r0 = rf(ctx, operationID, pool)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -49,13 +49,13 @@ func (_m *Plugin) CreateTokenPool(ctx context.Context, pool *fftypes.TokenPool) 
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks tokens.Callbacks) error {
-	ret := _m.Called(ctx, prefix, callbacks)
+// Init provides a mock function with given fields: ctx, name, prefix, callbacks
+func (_m *Plugin) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) error {
+	ret := _m.Called(ctx, name, prefix, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, tokens.Callbacks) error); ok {
-		r0 = rf(ctx, prefix, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, string, config.Prefix, tokens.Callbacks) error); ok {
+		r0 = rf(ctx, name, prefix, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}

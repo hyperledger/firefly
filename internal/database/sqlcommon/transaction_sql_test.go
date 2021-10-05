@@ -236,7 +236,7 @@ func TestGetTransactionsBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
-func TestGettTransactionsReadMessageFail(t *testing.T) {
+func TestGetTransactionsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.TransactionQueryFactory.NewFilter(context.Background()).Eq("id", "")
@@ -245,7 +245,7 @@ func TestGettTransactionsReadMessageFail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestTxSubmissionUpdateBeginFail(t *testing.T) {
+func TestTransactionUpdateBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
@@ -253,7 +253,7 @@ func TestTxSubmissionUpdateBeginFail(t *testing.T) {
 	assert.Regexp(t, "FF10114", err)
 }
 
-func TestTxSubmissionUpdateBuildQueryFail(t *testing.T) {
+func TestTransactionUpdateBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	u := database.TransactionQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
@@ -261,7 +261,7 @@ func TestTxSubmissionUpdateBuildQueryFail(t *testing.T) {
 	assert.Regexp(t, "FF10149.*id", err)
 }
 
-func TestTxSubmissionUpdateFail(t *testing.T) {
+func TestTransactionUpdateFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))

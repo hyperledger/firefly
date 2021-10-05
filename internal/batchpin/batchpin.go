@@ -77,7 +77,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 
 	// Write the batch pin to the blockchain
-	return bp.blockchain.SubmitBatchPin(ctx, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
+	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,

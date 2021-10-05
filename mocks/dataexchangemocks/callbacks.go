@@ -40,13 +40,13 @@ func (_m *Callbacks) MessageReceived(peerID string, data []byte) error {
 	return r0
 }
 
-// TransferResult provides a mock function with given fields: trackingID, status, info, additionalInfo
-func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(trackingID, status, info, additionalInfo)
+// TransferResult provides a mock function with given fields: trackingID, status, info, opOutput
+func (_m *Callbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(trackingID, status, info, opOutput)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(trackingID, status, info, additionalInfo)
+		r0 = rf(trackingID, status, info, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -14,13 +14,13 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// TokenPoolCreated provides a mock function with given fields: plugin, pool, signingIdentity, protocolTxID, additionalInfo
-func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: plugin, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo
+func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, tokenType fftypes.FFEnum, tx *fftypes.UUID, protocolID string, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(plugin, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, fftypes.FFEnum, *fftypes.UUID, string, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +28,13 @@ func (_m *Callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenP
 	return r0
 }
 
-// TokensTxUpdate provides a mock function with given fields: plugin, txTrackingID, txState, errorMessage, additionalInfo
-func (_m *Callbacks) TokensTxUpdate(plugin tokens.Plugin, txTrackingID string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(plugin, txTrackingID, txState, errorMessage, additionalInfo)
+// TokensOpUpdate provides a mock function with given fields: plugin, operationID, txState, errorMessage, opOutput
+func (_m *Callbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	ret := _m.Called(plugin, operationID, txState, errorMessage, opOutput)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, string, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, txTrackingID, txState, errorMessage, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, operationID, txState, errorMessage, opOutput)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -1,12 +1,13 @@
-# FireFly
+# Hyperledger FireFly
 
 [![codecov](https://codecov.io/gh/hyperledger/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger/firefly)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
-[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://labs.hyperledger.org/firefly/)
+[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
 
-FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
+Hyperledger FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
 
 FireFly focusses on:
+
 - Providing a great developer API and experience, with a CLI and UI as first class project components
 - Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
 - Making proven multi-party system patterns easy for new projects to adopt
@@ -22,7 +23,7 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ## Documentation
 
-https://labs.hyperledger.org/firefly/
+https://hyperledger.github.io/firefly//
 
 ## FireFly repos
 
@@ -224,7 +225,7 @@ It depends on the following Kaleido services:
   │       │   ┌───────────────┐
   │       ├───┤ sync /   [Sa] │  - Sync/Async Bridge
   │       │   │ async bridge  │    * Provides synchronous request/reply APIs
-  │       │   │               │    * Translates to underlying event-driven API 
+  │       │   │               │    * Translates to underlying event-driven API
   │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Aggregates messages and data, with rolled up hashes for pinning

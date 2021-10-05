@@ -5,7 +5,6 @@ parent: Contributors
 nav_order: 1
 ---
 
-
 # Setting up a local development environment
 
 ## Table of contents
@@ -24,7 +23,7 @@ This guide will walk you through setting up your machine for contributing to Fir
 
 You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.
 
-- Go (1.16 or newer) 
+- Go (1.16 or newer)
 - make
 - GCC (?)
 - There are probably more that I'm forgetting...
@@ -50,7 +49,6 @@ If you want to install the binary on your path (assuming your Go Home is already
 ```
 go install
 ```
-
 
 ## Install the CLI
 

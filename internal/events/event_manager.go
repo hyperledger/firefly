@@ -32,12 +32,12 @@ import (
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/publicstorage"
-	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type EventManager interface {
@@ -53,16 +53,13 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	TxSubmissionUpdate(plugin fftypes.Named, tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error
+	OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Bound dataexchange callbacks
-	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 	BLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, payloadRef string) error
 	MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) error
-
-	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -77,6 +74,7 @@ type eventManager struct {
 	data                 data.Manager
 	subManager           *subscriptionManager
 	retry                retry.Retry
+	txhelper             txcommon.Helper
 	aggregator           *aggregator
 	newEventNotifier     *eventNotifier
 	newPinNotifier       *eventNotifier
@@ -103,6 +101,7 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
 			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
 		},
+		txhelper:             txcommon.NewTransactionHelper(di),
 		defaultTransport:     config.GetString(config.EventTransportsDefault),
 		opCorrelationRetries: config.GetInt(config.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:     newEventNotifier,

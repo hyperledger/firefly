@@ -222,6 +222,111 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	mcb.AssertExpectations(t)
 }
 
+func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
+	wh, cancel := newTestWebHooks(t)
+	defer cancel()
+
+	r := mux.NewRouter()
+	r.HandleFunc("/myapi/my/sub/path?escape_query", func(res http.ResponseWriter, req *http.Request) {
+		assert.Equal(t, "myheaderval", req.Header.Get("My-Header"))
+		assert.Equal(t, "dynamicheaderval", req.Header.Get("Dynamic-Header"))
+		assert.Equal(t, "myqueryval", req.URL.Query().Get("my-query"))
+		assert.Equal(t, "dynamicqueryval", req.URL.Query().Get("dynamic-query"))
+		var body fftypes.JSONObject
+		err := json.NewDecoder(req.Body).Decode(&body)
+		assert.NoError(t, err)
+		assert.Equal(t, "", body.GetString("inputfield"))
+		res.Header().Set("my-reply-header", "myheaderval2")
+		res.WriteHeader(200)
+		res.Write([]byte(`{
+			"replyfield": ""
+		}`))
+	}).Methods(http.MethodPut)
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	yes := true
+	dataID := fftypes.NewUUID()
+	msgID := fftypes.NewUUID()
+	groupHash := fftypes.NewRandB32()
+	sub := &fftypes.Subscription{
+		Options: fftypes.SubscriptionOptions{
+			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+				WithData: &yes,
+			},
+		},
+	}
+	to := sub.Options.TransportOptions()
+	to["reply"] = true
+	to["json"] = true
+	to["method"] = "PUT"
+	to["url"] = fmt.Sprintf("http://%s/myapi/", server.Listener.Addr())
+	to["headers"] = map[string]interface{}{
+		"my-header": "myheaderval",
+	}
+	to["query"] = map[string]interface{}{
+		"my-query": "myqueryval",
+	}
+	to["input"] = map[string]interface{}{
+		"query":   "in_query",
+		"headers": "in_headers",
+		"body":    "in_body",
+		"path":    "in_path",
+		"replytx": "in_replytx",
+	}
+	event := &fftypes.EventDelivery{
+		Event: fftypes.Event{
+			ID: fftypes.NewUUID(),
+		},
+		Subscription: fftypes.SubscriptionRef{
+			ID: sub.ID,
+		},
+		Message: &fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID:    msgID,
+				Group: groupHash,
+				Type:  fftypes.MessageTypePrivate,
+			},
+			Data: fftypes.DataRefs{
+				{ID: dataID},
+			},
+		},
+	}
+	data := &fftypes.Data{
+		ID: dataID,
+		Value: fftypes.Byteable(`{
+			"in_body": {
+				"inputfield": ""
+			},
+			"in_query": {
+				"dynamic-query": "dynamicqueryval"
+			},
+			"in_headers": {
+				"dynamic-header": "dynamicheaderval"
+			},
+			"in_path": "/my/sub/path?escape_query",
+			"in_replytx": true
+		}`),
+	}
+
+	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
+		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
+		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
+		assert.Equal(t, fftypes.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
+		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
+		assert.Equal(t, "", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
+		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
+		return true
+	})).Return(nil)
+
+	err := wh.DeliveryRequest(mock.Anything, sub, event, []*fftypes.Data{data})
+	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
+}
+
 func TestRequestNoBodyNoReply(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()

@@ -51,6 +51,8 @@ var (
 	APIRequestTimeout = rootKey("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = rootKey("api.requestMaxTimeout")
+	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
+	APIShutdownTimeout = rootKey("api.shutdownTimeout")
 	// BatchManagerReadPageSize is the size of each page of messages read from the database into memory when assembling batches
 	BatchManagerReadPageSize = rootKey("batch.manager.readPageSize")
 	// BatchManagerReadPollTimeout is how long without any notifications of new messages to wait, before doing a page query
@@ -206,7 +208,13 @@ var (
 	// SubscriptionsRetryMaxDelay is the initial retry delay
 	SubscriptionsRetryMaxDelay = rootKey("subscription.retry.maxDelay")
 	// SubscriptionsRetryFactor the backoff factor to use for retry of database operations
-	SubscriptionsRetryFactor = rootKey("event.dispatcher.retry.factor")
+	SubscriptionsRetryFactor = rootKey("subscription.retry.factor")
+	// AssetManagerRetryInitialDelay is the initial retry delay
+	AssetManagerRetryInitialDelay = rootKey("asset.manager.retry.initDelay")
+	// AssetManagerRetryMaxDelay is the initial retry delay
+	AssetManagerRetryMaxDelay = rootKey("asset.manager.retry.maxDelay")
+	// AssetManagerRetryFactor the backoff factor to use for retry of database operations
+	AssetManagerRetryFactor = rootKey("asset.manager.retry.factor")
 	// UIEnabled set to false to disable the UI (default is true, so UI will be enabled if ui.path is valid)
 	UIEnabled = rootKey("ui.enabled")
 	// UIPath the path on which to serve the UI
@@ -269,6 +277,7 @@ func Reset() {
 	viper.SetDefault(string(APIMaxFilterLimit), 250)
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
+	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(BatchManagerReadPageSize), 100)
 	viper.SetDefault(string(BatchManagerReadPollTimeout), "30s")
 	viper.SetDefault(string(BatchRetryFactor), 2.0)
@@ -328,6 +337,9 @@ func Reset() {
 	viper.SetDefault(string(SubscriptionsRetryInitialDelay), "250ms")
 	viper.SetDefault(string(SubscriptionsRetryMaxDelay), "30s")
 	viper.SetDefault(string(SubscriptionsRetryFactor), 2.0)
+	viper.SetDefault(string(AssetManagerRetryInitialDelay), "250ms")
+	viper.SetDefault(string(AssetManagerRetryMaxDelay), "30s")
+	viper.SetDefault(string(AssetManagerRetryFactor), 2.0)
 	viper.SetDefault(string(UIEnabled), true)
 	viper.SetDefault(string(ValidatorCacheSize), "1Mb")
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")

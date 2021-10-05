@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package https
+package fftokens
 
 import (
 	"context"
@@ -30,12 +30,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-type HTTPS struct {
-	ctx          context.Context
-	capabilities *tokens.Capabilities
-	callbacks    tokens.Callbacks
-	client       *resty.Client
-	wsconn       wsclient.WSClient
+type FFTokens struct {
+	ctx            context.Context
+	capabilities   *tokens.Capabilities
+	callbacks      tokens.Callbacks
+	configuredName string
+	client         *resty.Client
+	wsconn         wsclient.WSClient
 }
 
 type wsEvent struct {
@@ -52,29 +53,23 @@ const (
 )
 
 type createPool struct {
-	Type      fftypes.TokenType `json:"type"`
-	RequestID string            `json:"requestId"`
-	Data      string            `json:"data"`
+	Type       fftypes.TokenType  `json:"type"`
+	RequestID  string             `json:"requestId"`
+	TrackingID string             `json:"trackingId"`
+	Config     fftypes.JSONObject `json:"config"`
 }
 
-type createPoolData struct {
-	Namespace     string        `json:"namespace"`
-	Name          string        `json:"name"`
-	ID            *fftypes.UUID `json:"id"`
-	TransactionID *fftypes.UUID `json:"transactionId"`
+func (h *FFTokens) Name() string {
+	return "fftokens"
 }
 
-func (h *HTTPS) Name() string {
-	return "https"
-}
-
-func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
-
-	h.ctx = log.WithLogField(ctx, "proto", "https")
+func (h *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+	h.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	h.callbacks = callbacks
+	h.configuredName = name
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.https")
+		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
 	h.client = restclient.New(h.ctx, prefix)
@@ -93,80 +88,65 @@ func (h *HTTPS) Init(ctx context.Context, prefix config.Prefix, callbacks tokens
 	return nil
 }
 
-func (h *HTTPS) Start() error {
+func (h *FFTokens) Start() error {
 	return h.wsconn.Connect()
 }
 
-func (h *HTTPS) Capabilities() *tokens.Capabilities {
+func (h *FFTokens) Capabilities() *tokens.Capabilities {
 	return h.capabilities
 }
 
-func (h *HTTPS) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+func (h *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
 	success := data.GetBool("success")
 	message := data.GetString("message")
 	if requestID == "" {
-		l.Errorf("Reply cannot be processed: %+v", data)
+		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return nil // Swallow this and move on
 	}
-	updateType := fftypes.OpStatusSucceeded
-	if !success {
-		updateType = fftypes.OpStatusFailed
+	operationID, err := fftypes.ParseUUID(ctx, requestID)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
+		return nil // Swallow this and move on
 	}
-	l.Infof("Tokens '%s' reply (request=%s) %s", updateType, requestID, message)
-	return h.callbacks.TokensTxUpdate(h, requestID, updateType, message, data)
+	replyType := fftypes.OpStatusSucceeded
+	if !success {
+		replyType = fftypes.OpStatusFailed
+	}
+	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
+	return h.callbacks.TokensOpUpdate(h, operationID, replyType, message, data)
 }
 
-func (h *HTTPS) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
-	packedData := data.GetString("data")
+func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
+	trackingID := data.GetString("trackingId")
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
 
-	if packedData == "" ||
-		tokenType == "" ||
+	if tokenType == "" ||
 		protocolID == "" ||
+		trackingID == "" ||
 		operatorAddress == "" ||
 		txHash == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
 
-	unpackedData := createPoolData{}
-	err = json.Unmarshal([]byte(packedData), &unpackedData)
+	txID, err := fftypes.ParseUUID(ctx, trackingID)
 	if err != nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - could not unpack data (%s): %+v", err, data)
+		log.L(ctx).Errorf("TokenPool event is not valid - invalid transaction ID (%s): %+v", err, data)
 		return nil // move on
-	}
-	if unpackedData.Namespace == "" ||
-		unpackedData.Name == "" ||
-		unpackedData.ID == nil ||
-		unpackedData.TransactionID == nil {
-		log.L(ctx).Errorf("TokenPool event is not valid - missing packed data: %+v", unpackedData)
-		return nil // move on
-	}
-
-	pool := &fftypes.TokenPool{
-		ID: unpackedData.ID,
-		TX: fftypes.TransactionRef{
-			ID:   unpackedData.TransactionID,
-			Type: fftypes.TransactionTypeTokenPool,
-		},
-		Namespace:  unpackedData.Namespace,
-		Name:       unpackedData.Name,
-		Type:       fftypes.FFEnum(tokenType),
-		ProtocolID: protocolID,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, operatorAddress, txHash, tx)
+	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
 }
 
-func (h *HTTPS) eventLoop() {
+func (h *FFTokens) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
 	ctx := log.WithLogger(h.ctx, l)
@@ -216,24 +196,15 @@ func (h *HTTPS) eventLoop() {
 	}
 }
 
-func (h *HTTPS) CreateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
-	data := createPoolData{
-		Namespace:     pool.Namespace,
-		Name:          pool.Name,
-		ID:            pool.ID,
-		TransactionID: pool.TX.ID,
-	}
-	packedData, err := json.Marshal(data)
-	var res *resty.Response
-	if err == nil {
-		res, err = h.client.R().SetContext(ctx).
-			SetBody(&createPool{
-				Type:      pool.Type,
-				RequestID: pool.TX.ID.String(),
-				Data:      string(packedData),
-			}).
-			Post("/api/v1/pool")
-	}
+func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&createPool{
+			Type:       pool.Type,
+			RequestID:  operationID.String(),
+			TrackingID: pool.TX.ID.String(),
+			Config:     pool.Config,
+		}).
+		Post("/api/v1/pool")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

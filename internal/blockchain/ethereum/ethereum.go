@@ -337,15 +337,20 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 	txHash := reply.GetString("transactionHash")
 	message := reply.GetString("errorMessage")
 	if requestID == "" || replyType == "" {
-		l.Errorf("Reply cannot be processed: %+v", reply)
+		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
+		return nil // Swallow this and move on
+	}
+	operationID, err := fftypes.ParseUUID(ctx, requestID)
+	if err != nil {
+		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
 		return nil // Swallow this and move on
 	}
 	updateType := fftypes.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = fftypes.OpStatusFailed
 	}
-	l.Infof("Ethconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	return e.callbacks.BlockchainTxUpdate(requestID, updateType, message, reply)
+	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
+	return e.callbacks.BlockchainOpUpdate(operationID, updateType, message, reply)
 }
 
 func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -445,7 +450,7 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, method, signingKey 
 		Post(e.instancePath + "/" + method)
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	tx := &asyncTXSubmission{}
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
@@ -461,7 +466,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, ledgerID *fftypes.UUID, s
 		PayloadRef: batch.BatchPaylodRef,
 		Contexts:   ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, "pinBatch", signingKey, batch.TransactionID.String(), input, tx)
+	res, err := e.invokeContractMethod(ctx, "pinBatch", signingKey, operationID.String(), input, tx)
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
 	}

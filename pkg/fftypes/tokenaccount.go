@@ -17,8 +17,16 @@
 package fftypes
 
 type TokenAccount struct {
-	ProtocolID *UUID  `json:"protocolId,omitempty"`
+	ProtocolID string `json:"protocolId,omitempty"`
 	TokenIndex string `json:"tokenIndex,omitempty"`
 	Identity   string `json:"identity,omitempty"`
 	Balance    int64  `json:"balance"`
+}
+
+func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {
+	return protocolID + ":" + tokenIndex + ":" + identity
+}
+
+func (a *TokenAccount) Identifier() string {
+	return TokenAccountIdentifier(a.ProtocolID, a.TokenIndex, a.Identity)
 }

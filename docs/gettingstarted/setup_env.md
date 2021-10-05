@@ -56,17 +56,16 @@ The tooling is designed to be a helper, but not to hide or abstract things away 
 
 ## Check your `ff` CLI is healthy
 
-First, check that it is installed on your machine:  `ff -h` this should expose the various exercisable commands and flags.
+First, check that it is installed on your machine: `ff -h` this should expose the various exercisable commands and flags.
 
 ## Initialize a new stack
 
 - Make sure you have Docker running
 - In your terminal run the following command - `ff init [stack_name]`. For example, `ff init dev1`.
-- You will be prompted to select the number of members in your system.  Choose `2`
+- You will be prompted to select the number of members in your system. Choose `2`
 
 ## Start your stack
 
 - Now start the FireFly stack by running - `ff start [stack_name]`. For example, `ff start dev1`.
-- Be patient on this step.  The CLI is downloading the various images encapsulated within a FireFly node and starting the corresponding containers.  This may take a couple of minutes.
-- Once the system is running, you will be able to access an interactive Swagger interface for each membership on ports 5000, 5001 and 5002 respectively.  These will be enumerated in your terminal session.
-  
+- Be patient on this step. The CLI is downloading the various images encapsulated within a FireFly node and starting the corresponding containers. This may take a couple of minutes.
+- Once the system is running, you will be able to access an interactive Swagger interface for each membership on ports 5000, 5001 and 5002 respectively. These will be enumerated in your terminal session.

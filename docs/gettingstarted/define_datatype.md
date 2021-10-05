@@ -113,7 +113,8 @@ datatype will be created (unless it conflicts with another definition with the s
     "version": "0.0.2", // the version of the data type
     "hash": "a4dceb79a21937ca5ea9fa22419011ca937b4b8bc563d690cea3114af9abce2c", // hash of the schema itself
     "created": "2021-07-01T21:06:26.983986Z", // time it was confirmed
-    "value": { // the JSON schema itself
+    "value": {
+      // the JSON schema itself
       "$id": "https://example.com/widget.schema.json",
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "Widget",
@@ -146,12 +147,14 @@ time if it does not conform. On other nodes, bad data results in a `message_reje
 {
   "header": {
     "tag": "new_widget_created",
-    "topic": [ "widget_id_12345" ]
+    "topic": ["widget_id_12345"]
   },
   "group": {
-    "members": [{
-      "identity": "org_1"
-    }]
+    "members": [
+      {
+        "identity": "org_1"
+      }
+    ]
   },
   "data": [
     {

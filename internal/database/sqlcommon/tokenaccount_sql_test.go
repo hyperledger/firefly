@@ -35,10 +35,9 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	// Create a new token pool entry
-	poolID := fftypes.NewUUID()
+	// Create a new token account
 	account := &fftypes.TokenAccount{
-		ProtocolID: poolID,
+		ProtocolID: "F1",
 		TokenIndex: "1",
 		Identity:   "0x0",
 		Balance:    10,
@@ -49,7 +48,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Query back the token account (by pool ID and identity)
-	accountRead, err := s.GetTokenAccount(ctx, poolID, "1", "0x0")
+	accountRead, err := s.GetTokenAccount(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
 	accountReadJson, _ := json.Marshal(&accountRead)
@@ -58,15 +57,15 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	// Query back the token account (by query filter)
 	fb := database.TokenAccountQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("protocolid", account.ProtocolID.String()),
+		fb.Eq("protocolid", account.ProtocolID),
 		fb.Eq("tokenindex", account.TokenIndex),
 		fb.Eq("identity", account.Identity),
 	)
-	pools, res, err := s.GetTokenAccounts(ctx, filter.Count(true))
+	accounts, res, err := s.GetTokenAccounts(ctx, filter.Count(true))
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(pools))
+	assert.Equal(t, 1, len(accounts))
 	assert.Equal(t, int64(1), *res.TotalCount)
-	accountReadJson, _ = json.Marshal(pools[0])
+	accountReadJson, _ = json.Marshal(accounts[0])
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 }
 
@@ -124,9 +123,8 @@ func TestUpsertTokenAccountInsertSuccess(t *testing.T) {
 	s, db := newMockProvider().init()
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
-	poolID := fftypes.NewUUID()
 	account := &fftypes.TokenAccount{
-		ProtocolID: poolID,
+		ProtocolID: "F1",
 		TokenIndex: "1",
 		Identity:   "0x0",
 		Balance:    10,
@@ -135,7 +133,7 @@ func TestUpsertTokenAccountInsertSuccess(t *testing.T) {
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs(poolID, "1", "0x0", 10).
+		WithArgs("F1", "1", "0x0", 10).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	err := s.UpsertTokenAccount(context.Background(), account)
@@ -147,9 +145,8 @@ func TestUpsertTokenAccountUpdateSuccess(t *testing.T) {
 	s, db := newMockProvider().init()
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
-	poolID := fftypes.NewUUID()
 	account := &fftypes.TokenAccount{
-		ProtocolID: poolID,
+		ProtocolID: "F1",
 		TokenIndex: "1",
 		Identity:   "0x0",
 		Balance:    10,
@@ -166,18 +163,16 @@ func TestUpsertTokenAccountUpdateSuccess(t *testing.T) {
 
 func TestGetTokenAccountSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	poolID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetTokenAccount(context.Background(), poolID, "1", "0x0")
+	_, err := s.GetTokenAccount(context.Background(), "F1", "1", "0x0")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetTokenAccountNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	poolID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetTokenAccount(context.Background(), poolID, "1", "0x0")
+	msg, err := s.GetTokenAccount(context.Background(), "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -185,9 +180,8 @@ func TestGetTokenAccountNotFound(t *testing.T) {
 
 func TestGetTokenAccountScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	poolID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetTokenAccount(context.Background(), poolID, "1", "0x0")
+	_, err := s.GetTokenAccount(context.Background(), "F1", "1", "0x0")
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

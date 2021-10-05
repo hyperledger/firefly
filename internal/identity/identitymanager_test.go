@@ -391,6 +391,11 @@ func TestResolveLocalOrgDIDSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, im.OrgDID(org), localOrgDID)
 
+	mdi.On("GetOrganizationByID", ctx, org.ID).Return(org, nil)
+	localOrg, err := im.GetLocalOrganization(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, org, localOrg)
+
 	mbi.AssertExpectations(t)
 
 }

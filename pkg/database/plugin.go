@@ -360,6 +360,9 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
+	// GetTokenPoolByID - Get a token pool by protocol ID
+	GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error)
+
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
 }
@@ -369,7 +372,7 @@ type iTokenAccountCollection interface {
 	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
 
 	// GetTokenAccount - Get a token account by pool and account identity
-	GetTokenAccount(ctx context.Context, protocolID *fftypes.UUID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
+	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
 
 	// GetTokenAccounts - Get all known token accounts in a pool
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
@@ -634,7 +637,8 @@ var OperationQueryFactory = &queryFields{
 	"status":    &StringField{},
 	"error":     &StringField{},
 	"plugin":    &StringField{},
-	"info":      &JSONField{},
+	"input":     &JSONField{},
+	"output":    &JSONField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
 	"updated":   &TimeField{},
@@ -747,11 +751,14 @@ var TokenPoolQueryFactory = &queryFields{
 	"protocolid": &StringField{},
 	"author":     &StringField{},
 	"key":        &StringField{},
+	"symbol":     &StringField{},
+	"message":    &UUIDField{},
+	"created":    &TimeField{},
 }
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"protocolid": &UUIDField{},
+	"protocolid": &StringField{},
 	"tokenindex": &StringField{},
 	"identity":   &StringField{},
 	"balance":    &Int64Field{},

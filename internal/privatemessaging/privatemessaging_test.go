@@ -64,10 +64,6 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	return pm.(*privateMessaging), cancel
 }
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func TestDispatchBatchWithBlobs(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -112,14 +108,14 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node1)).Return(&fftypes.Node{
+	mdi.On("GetNodeByID", pm.ctx, node1).Return(&fftypes.Node{
 		ID: node1,
 		DX: fftypes.DXInfo{
 			Peer:     "node1",
 			Endpoint: fftypes.JSONObject{"url": "https://node1.example.com"},
 		},
 	}, nil).Once()
-	mdi.On("GetNodeByID", pm.ctx, uuidMatches(node2)).Return(&fftypes.Node{
+	mdi.On("GetNodeByID", pm.ctx, node2).Return(&fftypes.Node{
 		ID: node2,
 		DX: fftypes.DXInfo{
 			Peer:     "node2",

@@ -26,10 +26,10 @@ import (
 )
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return bm.BroadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
+	return bm.broadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) broadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}

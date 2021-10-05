@@ -32,6 +32,8 @@ var (
 	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
 	// OpTypeTokensCreatePool is a token pool creation
 	OpTypeTokensCreatePool OpType = ffEnum("optype", "tokens_create_pool")
+	// OpTypeTokensAnnounce is a broadcast of token pool info
+	OpTypeTokensAnnouncePool OpType = ffEnum("optype", "tokens_announce_pool")
 )
 
 // OpStatus is the current status of an operation
@@ -76,7 +78,8 @@ type Operation struct {
 	Error       string     `json:"error,omitempty"`
 	Plugin      string     `json:"plugin"`
 	BackendID   string     `json:"backendId"`
-	Info        JSONObject `json:"info,omitempty"`
+	Input       JSONObject `json:"input,omitempty"`
+	Output      JSONObject `json:"output,omitempty"`
 	Created     *FFTime    `json:"created,omitempty"`
 	Updated     *FFTime    `json:"updated,omitempty"`
 }

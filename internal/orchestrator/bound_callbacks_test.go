@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
@@ -34,23 +35,25 @@ func TestBoundCallbacks(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei}
+	mam := &assetmocks.Manager{}
+	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, am: mam}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
-	pool := &fftypes.TokenPool{}
 	hash := fftypes.NewRandB32()
+	opID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
 
 	mei.On("BatchPinComplete", mbi, batch, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
 	err := bc.BatchPinComplete(batch, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TxSubmissionUpdate", mbi, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainTxUpdate("tracking12345", fftypes.OpStatusFailed, "error info", info)
+	mei.On("OperationUpdate", mbi, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainOpUpdate(opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TxSubmissionUpdate", mti, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
-	err = bc.TokensTxUpdate(mti, "tracking12345", fftypes.OpStatusFailed, "error info", info)
+	mei.On("OperationUpdate", mti, opID, fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
+	err = bc.TokensOpUpdate(mti, opID, fftypes.OpStatusFailed, "error info", info)
 	assert.EqualError(t, err, "pop")
 
 	mei.On("TransferResult", mdx, "tracking12345", fftypes.OpStatusFailed, "error info", info).Return(fmt.Errorf("pop"))
@@ -65,7 +68,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.MessageReceived("peer1", []byte{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("TokenPoolCreated", mti, pool, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
-	err = bc.TokenPoolCreated(mti, pool, "0x12345", "tx12345", info)
+	mam.On("TokenPoolCreated", mti, fftypes.TokenTypeFungible, txID, "123", "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 }

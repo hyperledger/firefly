@@ -13,6 +13,7 @@ CREATE TABLE tokenpool (
 
 CREATE UNIQUE INDEX tokenpool_id ON tokenpool(id);
 CREATE UNIQUE INDEX tokenpool_name ON tokenpool(namespace,name);
+CREATE UNIQUE INDEX tokenpool_protocolid ON tokenpool(protocol_id);
 CREATE INDEX tokenpool_fortx ON tokenpool(namespace,tx_id);
 
 COMMIT;

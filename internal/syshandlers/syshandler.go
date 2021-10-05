@@ -20,10 +20,12 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -43,15 +45,19 @@ type systemHandlers struct {
 	data      data.Manager
 	broadcast broadcast.Manager
 	messaging privatemessaging.Manager
+	assets    assets.Manager
+	txhelper  txcommon.Helper
 }
 
-func NewSystemHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager) SystemHandlers {
+func NewSystemHandlers(di database.Plugin, dx dataexchange.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager) SystemHandlers {
 	return &systemHandlers{
 		database:  di,
 		exchange:  dx,
 		data:      dm,
 		broadcast: bm,
 		messaging: pm,
+		assets:    am,
+		txhelper:  txcommon.NewTransactionHelper(di),
 	}
 }
 
@@ -83,6 +89,8 @@ func (sh *systemHandlers) HandleSystemBroadcast(ctx context.Context, msg *fftype
 		return sh.handleOrganizationBroadcast(ctx, msg, data)
 	case fftypes.SystemTagDefineNode:
 		return sh.handleNodeBroadcast(ctx, msg, data)
+	case fftypes.SystemTagDefinePool:
+		return sh.handleTokenPoolBroadcast(ctx, msg, data)
 	default:
 		l.Warnf("Unknown topic '%s' for system broadcast ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}

@@ -19,6 +19,7 @@ package fftypes
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,13 +28,18 @@ import (
 func TestDatatypeReference(t *testing.T) {
 
 	var dr *DatatypeRef
-	assert.Equal(t, "null", dr.String())
+	assert.Equal(t, nullString, dr.String())
 	dr = &DatatypeRef{
 		Name:    "customer",
 		Version: "0.0.1",
 	}
 	assert.Equal(t, "customer/0.0.1", dr.String())
 
+}
+
+func TestValidateBadValidator(t *testing.T) {
+	err := CheckValidatorType(context.Background(), "wrong")
+	assert.Regexp(t, "FF10200", err)
 }
 
 func TestSealNoData(t *testing.T) {
@@ -61,7 +67,7 @@ func TestSealBlobOnly(t *testing.T) {
 	}
 	err := d.Seal(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, d.Hash.String(), "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9")
+	assert.Equal(t, "22440fcf4ee9ac8c1a83de36c3a9ef39f838d960971dc79b274718392f1735f9", d.Hash.String())
 }
 
 func TestSealBlobAndHashOnly(t *testing.T) {
@@ -76,4 +82,33 @@ func TestSealBlobAndHashOnly(t *testing.T) {
 	err := d.Seal(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, d.Hash[:], h[:])
+}
+
+func TestHashDataNull(t *testing.T) {
+
+	jd := []byte(`{
+		"id": "a64addf8-00e2-4210-9474-477e93b7f8dc",
+		"validator": "none",
+		"namespace": "default",
+		"hash": "3e12f246f0d16ab3fe6d15d15161ca5de8a00991c98fa12cea1b9733ea9832da",
+		"created": "2021-09-25T05:07:53.5847572Z",
+		"datatype": {
+			"name": "myblob"
+		},
+		"value": null,
+		"blob": {
+			"hash": "6014cbaf6bde9f9d755f347cb326db88859475e9d1a215d5dc4ccd8ae9caec7c"
+		}
+	}`)
+	var d Data
+	err := json.Unmarshal(jd, &d)
+	assert.NoError(t, err)
+
+	// Note that the processing of "null" means the value does not contribute to the hash
+	expectedHash, err := ParseBytes32(context.Background(), "6014cbaf6bde9f9d755f347cb326db88859475e9d1a215d5dc4ccd8ae9caec7c")
+	assert.NoError(t, err)
+	hash, err := d.CalcHash(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, expectedHash.String(), hash.String())
+
 }

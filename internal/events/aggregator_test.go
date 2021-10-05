@@ -32,10 +32,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func uuidMatches(id1 *fftypes.UUID) interface{} {
-	return mock.MatchedBy(func(id2 *fftypes.UUID) bool { return id1.Equals(id2) })
-}
-
 func newTestAggregator() (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
@@ -71,7 +67,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	msh := ag.syshandlers.(*syshandlersmocks.SystemHandlers)
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -206,7 +202,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{
@@ -295,7 +291,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Get the batch
 	member1org := "org1"
 	member1key := "0x12345"
-	mdi.On("GetBatchByID", ag.ctx, uuidMatches(batchID)).Return(&fftypes.Batch{
+	mdi.On("GetBatchByID", ag.ctx, batchID).Return(&fftypes.Batch{
 		ID: batchID,
 		Payload: fftypes.BatchPayload{
 			Messages: []*fftypes.Message{

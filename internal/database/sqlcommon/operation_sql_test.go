@@ -69,7 +69,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Plugin:      "ethereum",
 		BackendID:   fftypes.NewRandB32().String(),
 		Error:       "pop",
-		Info:        fftypes.JSONObject{"some": "info"},
+		Input:       fftypes.JSONObject{"some": "input-info"},
+		Output:      fftypes.JSONObject{"some": "output-info"},
 		Created:     fftypes.Now(),
 		Updated:     fftypes.Now(),
 	}

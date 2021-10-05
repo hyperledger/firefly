@@ -34,6 +34,10 @@ var (
 		"name",
 		"protocol_id",
 		"type",
+		"connector",
+		"symbol",
+		"message_id",
+		"created",
 		"tx_type",
 		"tx_id",
 		"author",
@@ -41,6 +45,7 @@ var (
 	}
 	tokenPoolFilterFieldMap = map[string]string{
 		"protocolid":       "protocol_id",
+		"message":          "message_id",
 		"transaction.type": "tx_type",
 		"transaction.id":   "tx_id",
 	}
@@ -81,6 +86,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("name", pool.Name).
 				Set("protocol_id", pool.ProtocolID).
 				Set("type", pool.Type).
+				Set("connector", pool.Connector).
+				Set("symbol", pool.Symbol).
+				Set("message_id", pool.Message).
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
 				Set("author", pool.Author).
@@ -93,6 +101,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 			return err
 		}
 	} else {
+		pool.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("tokenpool").
 				Columns(tokenPoolColumns...).
@@ -102,6 +111,10 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Name,
 					pool.ProtocolID,
 					pool.Type,
+					pool.Connector,
+					pool.Symbol,
+					pool.Message,
+					pool.Created,
 					pool.TX.Type,
 					pool.TX.ID,
 					pool.Author,
@@ -126,6 +139,10 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Name,
 		&pool.ProtocolID,
 		&pool.Type,
+		&pool.Connector,
+		&pool.Symbol,
+		&pool.Message,
+		&pool.Created,
 		&pool.TX.Type,
 		&pool.TX.ID,
 		&pool.Author,
@@ -167,6 +184,10 @@ func (s *SQLCommon) GetTokenPool(ctx context.Context, ns string, name string) (m
 
 func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.TokenPool, err error) {
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
+}
+
+func (s *SQLCommon) GetTokenPoolByProtocolID(ctx context.Context, id string) (*fftypes.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, id, sq.Eq{"protocol_id": id})
 }
 
 func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {

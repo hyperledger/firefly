@@ -41,7 +41,6 @@ type Manager interface {
 
 	Start() error
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
 
@@ -240,7 +239,7 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresol
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
 	return pm.syncasync.RequestReply(ctx, ns, func(requestID *fftypes.UUID) error {
-		_, err := pm.SendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
+		_, err := pm.sendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
 		return err
 	})
 }

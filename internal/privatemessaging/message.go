@@ -25,10 +25,10 @@ import (
 )
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return pm.SendMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
+	return pm.sendMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
 }
 
-func (pm *privateMessaging) SendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+func (pm *privateMessaging) sendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
 	if unresolved != nil {
 		resolved = &unresolved.Message
 	}
@@ -119,7 +119,7 @@ func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.
 	// Pass it to the sync-async handler to wait for the confirmation to come back in.
 	// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
 	return pm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
-		_, err := pm.SendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+		_, err := pm.sendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})
 

@@ -79,6 +79,7 @@ model, but with protocol specific configuration that can be passed through from 
 blockchain interface.
 
 There are sub-communities building the blockchain interfaces for each of the "big 3":
+
 - Ethereum (Hyperledger Besu, Quorum, Go-ethereum)
   - Status: Mature
   - Repo: [hyperledger/firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect)

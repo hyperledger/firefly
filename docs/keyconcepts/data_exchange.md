@@ -50,7 +50,7 @@ characteristics that differ between different implementations.
     during the setup phase of a connection. This means a distribution mechanism is required
     for public keys, which might be enhanced with a trust hierarchy (like PKI).
 - Request/Response (Sync) vs. Message Queuing (Async)
-  - Synchronous transports like HTTPS require both parties to be available at the 
+  - Synchronous transports like HTTPS require both parties to be available at the
     time data is sent, and the transmission must be retried at the application (plugin)
     layer if it fails or times out.
   - Asynchronous transports like AMQP, MQTT or Kafka introduce one or more broker runtimes
@@ -80,4 +80,3 @@ such that self-signed certificates can be used (or multiple PKI trust roots) and
 the blockchain-backed identities of the organizations in FireFly.
 
 See [hyperledger/firefly-dataexchange-https](https://github.com/hyperledger/firefly-dataexchange-https)
-

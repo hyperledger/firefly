@@ -17,6 +17,7 @@
 package orchestrator
 
 import (
+	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -28,22 +29,23 @@ type boundCallbacks struct {
 	bi blockchain.Plugin
 	dx dataexchange.Plugin
 	ei events.EventManager
+	am assets.Manager
 }
 
-func (bc *boundCallbacks) BlockchainTxUpdate(tx string, txState blockchain.TransactionStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(bc.bi, tx, txState, errorMessage, additionalInfo)
+func (bc *boundCallbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState blockchain.TransactionStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(bc.bi, operationID, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) TokensTxUpdate(plugin tokens.Plugin, tx string, txState fftypes.OpStatus, errorMessage string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TxSubmissionUpdate(plugin, tx, txState, errorMessage, additionalInfo)
+func (bc *boundCallbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, errorMessage string, opOutput fftypes.JSONObject) error {
+	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	return bc.ei.BatchPinComplete(bc.bi, batch, author, protocolTxID, additionalInfo)
 }
 
-func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TransferResult(bc.dx, trackingID, status, info, additionalInfo)
+func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {
+	return bc.ei.TransferResult(bc.dx, trackingID, status, info, opOutput)
 }
 
 func (bc *boundCallbacks) BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error {
@@ -54,6 +56,6 @@ func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {
 	return bc.ei.MessageReceived(bc.dx, peerID, data)
 }
 
-func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.TokenPool, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.TokenPoolCreated(plugin, pool, signingIdentity, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.am.TokenPoolCreated(plugin, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
 }

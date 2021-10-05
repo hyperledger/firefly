@@ -1,0 +1,13 @@
+apiVersion: v2
+name: firefly
+description: A Helm chart for Kubernetes
+type: application
+# TODO appVersion and version might be the same once an official FireFly release is made
+appVersion: "0.0.1"
+version: "0.0.1"
+
+maintainers:
+  - name: hfuss
+    email: hayden.fuss@kaleido.io
+  - name: drewmarshburn
+    email: drew.marshburn@kaleido.io

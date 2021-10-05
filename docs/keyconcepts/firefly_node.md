@@ -23,6 +23,7 @@ A FireFly node is a collection of multiple microservice runtimes with a single u
 ![The FireFly node](../images/firefly_node.png "The FireFly node")
 
 The minimum set of runtimes is as follows:
+
 - FireFly Core - the API and event server for your multi-party applications
 - Blockchain node - the decentralized ledger technology establishing a shared source of truth
 - Blockchain interface - transaction submission and event streams for your chosen protocol

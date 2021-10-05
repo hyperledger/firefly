@@ -102,7 +102,7 @@ type Callbacks interface {
 	BLOBReceived(peerID string, hash fftypes.Bytes32, payloadRef string) error
 
 	// TransferResult notifies of a status update of a transfer
-	TransferResult(trackingID string, status fftypes.OpStatus, info string, additionalInfo fftypes.JSONObject) error
+	TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the data exchange

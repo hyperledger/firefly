@@ -680,6 +680,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:
@@ -795,8 +796,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -1670,6 +1674,7 @@ paths:
                 validator:
                   enum:
                   - json
+                  - none
                   - definition
                   type: string
                 value:
@@ -2522,13 +2527,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -2654,8 +2662,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -2840,8 +2851,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -3021,8 +3035,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -3159,7 +3176,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: info
+        name: input
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3170,6 +3187,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: output
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3244,13 +3266,16 @@ paths:
                     error:
                       type: string
                     id: {}
-                    info:
+                    input:
                       additionalProperties: {}
                       type: object
                     member:
                       type: string
                     namespace:
                       type: string
+                    output:
+                      additionalProperties: {}
+                      type: object
                     plugin:
                       type: string
                     status:
@@ -3301,13 +3326,16 @@ paths:
                   error:
                     type: string
                   id: {}
-                  info:
+                  input:
                     additionalProperties: {}
                     type: object
                   member:
                     type: string
                   namespace:
                     type: string
+                  output:
+                    additionalProperties: {}
+                    type: object
                   plugin:
                     type: string
                   status:
@@ -3387,8 +3415,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -3551,8 +3582,11 @@ paths:
                     context:
                       type: string
                     group: {}
-                    topic:
+                    tag:
                       type: string
+                    topics:
+                      items:
+                        type: string
                     tx:
                       properties:
                         type:
@@ -4268,12 +4302,22 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: message
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4289,6 +4333,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: symbol
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4339,14 +4388,23 @@ paths:
                   properties:
                     author:
                       type: string
+                    config:
+                      additionalProperties: {}
+                      type: object
+                    connector:
+                      type: string
+                    created: {}
                     id: {}
                     key:
                       type: string
+                    message: {}
                     name:
                       type: string
                     namespace:
                       type: string
                     protocolId:
+                      type: string
+                    symbol:
                       type: string
                     tx:
                       properties:
@@ -4397,12 +4455,17 @@ paths:
               properties:
                 author:
                   type: string
+                config:
+                  additionalProperties: {}
+                  type: object
                 key:
                   enum:
                   - fungible
                   - nonfungible
                   type: string
                 name:
+                  type: string
+                symbol:
                   type: string
                 type:
                   enum:
@@ -4418,14 +4481,23 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
                   key:
                     type: string
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4444,14 +4516,23 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
                   key:
                     type: string
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4504,14 +4585,23 @@ paths:
                 properties:
                   author:
                     type: string
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
                   id: {}
                   key:
                     type: string
+                  message: {}
                   name:
                     type: string
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  symbol:
                     type: string
                   tx:
                     properties:
@@ -4622,7 +4712,8 @@ paths:
                       type: integer
                     identity:
                       type: string
-                    protocolId: {}
+                    protocolId:
+                      type: string
                     tokenIndex:
                       type: string
                   type: object

@@ -106,29 +106,6 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.
 	return r0, r1
 }
 
-// BroadcastMessageWithID provides a mock function with given fields: ctx, ns, id, unresolved, resolved, waitConfirm
-func (_m *Manager) BroadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
-	ret := _m.Called(ctx, ns, id, unresolved, resolved, waitConfirm)
-
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool) *fftypes.Message); ok {
-		r0 = rf(ctx, ns, id, unresolved, resolved, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, *fftypes.MessageInOut, *fftypes.Message, bool) error); ok {
-		r1 = rf(ctx, ns, id, unresolved, resolved, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // BroadcastNamespace provides a mock function with given fields: ctx, ns, waitConfirm
 func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, waitConfirm)
@@ -168,6 +145,29 @@ func (_m *Manager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Organization, *fftypes.Identity, fftypes.SystemTag, bool) error); ok {
 		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BroadcastTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
+func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (*fftypes.Message, error) {
+	ret := _m.Called(ctx, ns, pool, waitConfirm)
+
+	var r0 *fftypes.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.TokenPoolAnnouncement, bool) *fftypes.Message); ok {
+		r0 = rf(ctx, ns, pool, waitConfirm)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Message)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.TokenPoolAnnouncement, bool) error); ok {
+		r1 = rf(ctx, ns, pool, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

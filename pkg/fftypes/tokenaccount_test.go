@@ -14,13 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package https
+package fftypes
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/wsclient"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func (h *HTTPS) InitPrefix(prefix config.PrefixArray) {
-	wsclient.InitPrefix(prefix)
+func TestTokenAccountIdentifier(t *testing.T) {
+	account := &TokenAccount{
+		ProtocolID: "123",
+		TokenIndex: "1",
+		Identity:   "0x00",
+		Balance:    5,
+	}
+	assert.Equal(t, "123:1:0x00", account.Identifier())
 }

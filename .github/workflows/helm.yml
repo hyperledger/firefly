@@ -1,0 +1,50 @@
+name: Helm
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "deploy/charts/**/*"
+jobs:
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup helm
+        uses: azure/setup-helm@v1
+        with:
+          version: 3.6.0
+
+      - name: setup chart-testing tool
+        uses: helm/chart-testing-action@v2.0.1
+
+      - name: lint chart
+        run: ct lint --charts deploy/charts/firefly
+
+      - name: setup kind
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: v0.11.1
+
+      - name: install cert-manager
+        run: |
+          kubectl create ns cert-manager || true
+          kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.4.0/cert-manager.crds.yaml
+          helm repo add jetstack https://charts.jetstack.io || true
+          helm install --skip-crds -n cert-manager cert-manager jetstack/cert-manager --wait
+          kubectl apply -n cert-manager -f deploy/manifests/tls-issuers.yaml
+
+      - name: install postgres
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami || true
+          helm install --set postgresqlPassword=firef1y --set extraEnv[0].name=POSTGRES_DATABASE --set extraEnv[0].value=firefly postgresql bitnami/postgresql
+
+      - name: run chart integration test
+        run: ct install --charts deploy/charts/firefly
+
+      - name: debug k8s
+        if: ${{ failure() }}
+        run: |
+          kubectl get pod -A
