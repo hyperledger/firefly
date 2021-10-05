@@ -5,5 +5,4 @@ ALTER TABLE messages ADD COLUMN "key" VARCHAR(1024);
 UPDATE messages SET "key" = "";
 
 ALTER TABLE tokenpool ADD COLUMN "key" VARCHAR(1024);
-ALTER TABLE tokenpool ADD COLUMN "author" VARCHAR(1024);
-UPDATE tokenpool SET "key" = "", "author" = "";
+UPDATE tokenpool SET "key" = "";

@@ -124,9 +124,12 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		return nil, err
 	}
 
-	err := am.identity.ResolveInputIdentity(ctx, &pool.Identity)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if pool.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pool.Key = org.Identity
 	}
 
 	plugin, err := am.selectTokenPlugin(ctx, typeName)
@@ -172,7 +175,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		"",
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
-		pool.Author)
+		"")
 	addTokenPoolCreateInputs(op, pool)
 	err = am.database.UpsertOperation(ctx, op, false)
 	if err != nil {

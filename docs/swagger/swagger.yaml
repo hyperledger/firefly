@@ -4297,11 +4297,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: author
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: created
         schema:
           type: string
@@ -4386,8 +4381,6 @@ paths:
               schema:
                 items:
                   properties:
-                    author:
-                      type: string
                     config:
                       additionalProperties: {}
                       type: object
@@ -4453,15 +4446,10 @@ paths:
           application/json:
             schema:
               properties:
-                author:
-                  type: string
                 config:
                   additionalProperties: {}
                   type: object
                 key:
-                  enum:
-                  - fungible
-                  - nonfungible
                   type: string
                 name:
                   type: string
@@ -4479,8 +4467,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  author:
-                    type: string
                   config:
                     additionalProperties: {}
                     type: object
@@ -4514,8 +4500,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  author:
-                    type: string
                   config:
                     additionalProperties: {}
                     type: object
@@ -4583,8 +4567,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  author:
-                    type: string
                   config:
                     additionalProperties: {}
                     type: object

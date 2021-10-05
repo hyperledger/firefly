@@ -75,7 +75,7 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 			Subject: fftypes.TransactionSubject{
 				Namespace: pool.Namespace,
 				Type:      fftypes.TransactionTypeTokenPool,
-				Signer:    pool.Author,
+				Signer:    pool.Key,
 				Reference: pool.ID,
 			},
 			ProtocolID: pool.ProtocolTxID,

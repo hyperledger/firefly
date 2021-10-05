@@ -40,7 +40,6 @@ var (
 		"created",
 		"tx_type",
 		"tx_id",
-		"author",
 		"key",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
@@ -91,7 +90,6 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("message_id", pool.Message).
 				Set("tx_type", pool.TX.Type).
 				Set("tx_id", pool.TX.ID).
-				Set("author", pool.Author).
 				Set("key", pool.Key).
 				Where(sq.Eq{"id": pool.ID}),
 			func() {
@@ -117,7 +115,6 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Created,
 					pool.TX.Type,
 					pool.TX.ID,
-					pool.Author,
 					pool.Key,
 				),
 			func() {
@@ -145,7 +142,6 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Created,
 		&pool.TX.Type,
 		&pool.TX.ID,
-		&pool.Author,
 		&pool.Key,
 	)
 	if err != nil {

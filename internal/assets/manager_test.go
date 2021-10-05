@@ -43,9 +43,6 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mbm := &broadcastmocks.Manager{}
 	mti := &tokenmocks.Plugin{}
 	mti.On("Name").Return("ut_tokens").Maybe()
-	mim.On("ResolveInputIdentity", mock.Anything, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		return identity.Author == "org1"
-	})).Return(nil).Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
 	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, map[string]tokens.Plugin{"magic-tokens": mti})
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything).Maybe()
@@ -80,20 +77,17 @@ func TestCreateTokenPoolBadNamespace(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestCreateTokenPoolBadIdentity(t *testing.T) {
+func TestCreateTokenPoolIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
 	mdm := am.data.(*datamocks.Manager)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mim.On("ResolveInputIdentity", mock.Anything, mock.MatchedBy(func(identity *fftypes.Identity) bool {
-		assert.Equal(t, "wrong", identity.Author)
-		return true
-	})).Return(fmt.Errorf("pop"))
+	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "test", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "wrong"}}, false)
-	assert.Regexp(t, "pop", err)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "test", &fftypes.TokenPool{}, false)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestCreateTokenPoolBadConnector(t *testing.T) {
@@ -101,9 +95,11 @@ func TestCreateTokenPoolBadConnector(t *testing.T) {
 	defer cancel()
 
 	mdm := am.data.(*datamocks.Manager)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "bad", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, false)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "bad", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -114,6 +110,8 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
@@ -121,7 +119,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, false)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -131,10 +129,12 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, false)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -144,13 +144,15 @@ func TestCreateTokenPoolOperationFail(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, false)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -161,6 +163,8 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
@@ -168,7 +172,7 @@ func TestCreateTokenPoolSuccess(t *testing.T) {
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", mock.Anything, mock.Anything, false).Return(nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, false)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, false)
 	assert.NoError(t, err)
 }
 
@@ -182,6 +186,8 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil).Maybe()
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
 	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
 		return pool.ID == requestID
@@ -197,7 +203,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 		}).
 		Return(nil, nil)
 
-	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{Identity: fftypes.Identity{Author: "org1"}}, true)
+	_, err := am.CreateTokenPool(context.Background(), "ns1", "magic-tokens", &fftypes.TokenPool{}, true)
 	assert.NoError(t, err)
 }
 

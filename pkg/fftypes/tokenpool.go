@@ -28,18 +28,18 @@ var (
 )
 
 type TokenPool struct {
-	ID         *UUID     `json:"id,omitempty"`
-	Type       TokenType `json:"type" ffenum:"tokentype"`
-	Namespace  string    `json:"namespace,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	ProtocolID string    `json:"protocolId,omitempty"`
-	Identity
-	Symbol    string         `json:"symbol,omitempty"`
-	Connector string         `json:"connector,omitempty"`
-	Message   *UUID          `json:"message,omitempty"`
-	Created   *FFTime        `json:"created,omitempty"`
-	Config    JSONObject     `json:"config,omitempty"`
-	TX        TransactionRef `json:"tx,omitempty"`
+	ID         *UUID          `json:"id,omitempty"`
+	Type       TokenType      `json:"type" ffenum:"tokentype"`
+	Namespace  string         `json:"namespace,omitempty"`
+	Name       string         `json:"name,omitempty"`
+	ProtocolID string         `json:"protocolId,omitempty"`
+	Key        string         `json:"key,omitempty"`
+	Symbol     string         `json:"symbol,omitempty"`
+	Connector  string         `json:"connector,omitempty"`
+	Message    *UUID          `json:"message,omitempty"`
+	Created    *FFTime        `json:"created,omitempty"`
+	Config     JSONObject     `json:"config,omitempty"`
+	TX         TransactionRef `json:"tx,omitempty"`
 }
 
 type TokenPoolAnnouncement struct {

@@ -40,9 +40,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.Tok
 		TokenPool: fftypes.TokenPool{
 			Type:       tokenType,
 			ProtocolID: protocolID,
-			Identity: fftypes.Identity{
-				Key: signingIdentity,
-			},
+			Key:        signingIdentity,
 		},
 		ProtocolTxID: protocolTxID,
 	}

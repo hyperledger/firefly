@@ -9,9 +9,7 @@ UPDATE messages SET "key" = "";
 ALTER TABLE messages ALTER COLUMN "key" SET NOT NULL;
 
 ALTER TABLE tokenpool ADD "key" VARCHAR(1024);
-ALTER TABLE tokenpool ADD "author" VARCHAR(1024);
-UPDATE tokenpool SET "key" = "", "author" = "";
+UPDATE tokenpool SET "key" = "";
 ALTER TABLE tokenpool ALTER COLUMN "key" SET NOT NULL;
-ALTER TABLE tokenpool ALTER COLUMN "author" SET NOT NULL;
 
 COMMIT;
