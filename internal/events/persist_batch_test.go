@@ -65,7 +65,7 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 				{
 					Header: fftypes.MessageHeader{
 						ID:   fftypes.NewUUID(),
-						Type: fftypes.MessageTypeBroadcast,
+						Type: fftypes.MessageTypeDefinition,
 						Identity: fftypes.Identity{
 							Key: "0x12345",
 						},
