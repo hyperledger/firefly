@@ -397,7 +397,7 @@ func TestResolveLocalOrgDIDSuccess(t *testing.T) {
 	assert.Equal(t, org, localOrg)
 
 	mbi.AssertExpectations(t)
-
+	mdi.AssertExpectations(t)
 }
 
 func TestResolveLocalOrgDIDFail(t *testing.T) {
@@ -406,15 +406,18 @@ func TestResolveLocalOrgDIDFail(t *testing.T) {
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("ResolveSigningKey", ctx, "key1").Return("key1resolved", nil).Once()
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOrganizationByIdentity", ctx, "key1resolved").Return(nil, fmt.Errorf("pop")).Twice()
 
 	config.Set(config.OrgIdentityDeprecated, "key1")
 
 	_, err := im.ResolveLocalOrgDID(ctx)
 	assert.Regexp(t, "FF10290", err)
 
-	mbi.AssertExpectations(t)
+	_, err = im.GetLocalOrganization(ctx)
+	assert.Regexp(t, "FF10290", err)
 
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestResolveLocalOrgDIDNotFound(t *testing.T) {

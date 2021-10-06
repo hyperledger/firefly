@@ -77,7 +77,11 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 }
 
 func (im *identityManager) GetLocalOrganization(ctx context.Context) (*fftypes.Organization, error) {
-	return im.cachedOrgLookupByAuthor(ctx, im.localOrgDID)
+	orgDID, err := im.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return im.cachedOrgLookupByAuthor(ctx, orgDID)
 }
 
 func (im *identityManager) OrgDID(org *fftypes.Organization) string {
