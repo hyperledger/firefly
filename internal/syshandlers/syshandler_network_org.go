@@ -37,6 +37,22 @@ func (sh *systemHandlers) handleOrganizationBroadcast(ctx context.Context, msg *
 		return false, nil
 	}
 
+	if org.Parent != "" {
+		parent, err := sh.database.GetOrganizationByIdentity(ctx, org.Parent)
+		if err != nil {
+			return false, err // We only return database errors
+		}
+		if parent == nil {
+			l.Warnf("Unable to process organization broadcast %s - parent identity not found: %s", msg.Header.ID, org.Parent)
+			return false, nil
+		}
+
+		if msg.Header.Key != parent.Identity {
+			l.Warnf("Unable to process organization broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, parent.Identity, msg.Header.Author)
+			return false, nil
+		}
+	}
+
 	existing, err := sh.database.GetOrganizationByIdentity(ctx, org.Identity)
 	if err == nil && existing == nil {
 		existing, err = sh.database.GetOrganizationByName(ctx, org.Name)
