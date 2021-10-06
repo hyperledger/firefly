@@ -138,7 +138,7 @@ func TestCreateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	err := h.CreateTokenPool(context.Background(), opID, &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), opID, pool)
 	assert.NoError(t, err)
 }
 
@@ -157,7 +157,7 @@ func TestCreateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/pool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), &fftypes.Identity{}, pool)
+	err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
 	assert.Regexp(t, "FF10274", err)
 }
 

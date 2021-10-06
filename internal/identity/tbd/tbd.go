@@ -14,42 +14,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package onchain
+package tbd
 
 import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/identity"
 )
 
-type OnChain struct {
+// TBD is a null implementation of the Identity Interface to avoid breaking configuration created with the previous "onchain" plugin
+type TBD struct {
 	capabilities *identity.Capabilities
 	callbacks    identity.Callbacks
 }
 
-func (oc *OnChain) Name() string {
-	return "onchain"
+func (tbd *TBD) Name() string {
+	return "onchain" // For backwards compatibility with previous config that might have specified "onchain"
 }
 
-func (oc *OnChain) Init(ctx context.Context, prefix config.Prefix, callbacks identity.Callbacks) (err error) {
-	oc.callbacks = callbacks
-	oc.capabilities = &identity.Capabilities{}
+func (tbd *TBD) Init(ctx context.Context, prefix config.Prefix, callbacks identity.Callbacks) (err error) {
+	tbd.callbacks = callbacks
+	tbd.capabilities = &identity.Capabilities{}
 	return nil
 }
 
-func (oc *OnChain) Start() error {
+func (tbd *TBD) Start() error {
 	return nil
 }
 
-func (oc *OnChain) Capabilities() *identity.Capabilities {
-	return oc.capabilities
-}
-
-func (oc *OnChain) Resolve(ctx context.Context, identifier string) (*fftypes.Identity, error) {
-	return &fftypes.Identity{
-		Identifier: identifier,
-		OnChain:    identifier,
-	}, nil
+func (tbd *TBD) Capabilities() *identity.Capabilities {
+	return tbd.capabilities
 }

@@ -29,7 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -39,12 +39,11 @@ import (
 func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	config.Reset()
 	config.Set(config.NodeName, "node1")
-	config.Set(config.OrgIdentity, "localorg")
 	config.Set(config.GroupCacheTTL, "1m")
 	config.Set(config.GroupCacheSize, "1m")
 
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mba := &batchmocks.Manager{}
@@ -55,16 +54,12 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mii, mdx, mbi, mba, mdm, msa, mbp)
+	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
 	mdx.On("Name").Return("utdx").Maybe()
 	mbi.On("Name").Return("utblk").Maybe()
-	mii.On("Resolve", ctx, "org1").Return(&fftypes.Identity{
-		Identifier: "org1", OnChain: "0x12345",
-	}, nil).Maybe()
-	mbi.On("VerifyIdentitySyntax", ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.OnChain == "0x12345" })).Return(nil).Maybe()
 
 	return pm.(*privateMessaging), cancel
 }
@@ -88,6 +83,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
+	mim := pm.identity.(*identitymanagermocks.Manager)
 
 	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -96,6 +92,12 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		}
 	}
 
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		assert.Equal(t, "org1", identity.Author)
+		identity.Key = "0x12345"
+	}).Return(nil)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: fftypes.GroupIdentity{
@@ -145,8 +147,10 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(nil)
 
 	err := pm.dispatchBatch(pm.ctx, &fftypes.Batch{
-		ID:        batchID,
-		Author:    "org1",
+		ID: batchID,
+		Identity: fftypes.Identity{
+			Author: "org1",
+		},
 		Group:     groupID,
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
@@ -202,14 +206,38 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "badauthor").Return(&fftypes.Identity{OnChain: "!badaddress"}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+		assert.Equal(t, "badauthor", identity.Author)
+		return true
+	})).Return(fmt.Errorf("pop"))
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
-		Author: "badauthor",
+		Identity: fftypes.Identity{
+			Author: "badauthor",
+		},
+	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
+	assert.Regexp(t, "pop", err)
+}
+
+func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", fmt.Errorf("pop"))
+
+	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
+		Identity: fftypes.Identity{
+			Author: "badauthor",
+		},
 	}, []*fftypes.Node{}, fftypes.Byteable(`{}`), []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
@@ -218,11 +246,16 @@ func TestSendImmediateFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
-		Author: "org1",
+		Identity: fftypes.Identity{
+			Author: "org1",
+		},
 	}, []*fftypes.Node{
 		{
 			DX: fftypes.DXInfo{
@@ -238,6 +271,9 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, mock.Anything).Return("tracking1", nil)
 
@@ -245,7 +281,9 @@ func TestSendSubmitUpsertOperationFail(t *testing.T) {
 	mdi.On("UpsertOperation", pm.ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
-		Author: "org1",
+		Identity: fftypes.Identity{
+			Author: "org1",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -266,11 +304,16 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendAndSubmitBatch(pm.ctx, &fftypes.Batch{
-		Author: "org1",
+		Identity: fftypes.Identity{
+			Author: "org1",
+		},
 		Payload: fftypes.BatchPayload{
 			Data: []*fftypes.Data{
 				{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
@@ -298,7 +341,10 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{Author: "org1"}, []*fftypes.Bytes32{})
+	err := pm.writeTransaction(pm.ctx, &fftypes.Batch{
+		Identity: fftypes.Identity{
+			Author: "org1",
+		}}, []*fftypes.Bytes32{})
 	assert.Regexp(t, "pop", err)
 }
 
@@ -381,6 +427,9 @@ func TestRequestReplySuccess(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -395,9 +444,11 @@ func TestRequestReplySuccess(t *testing.T) {
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Tag:    "mytag",
-				Group:  fftypes.NewRandB32(),
-				Author: "org1",
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
+				Identity: fftypes.Identity{
+					Author: "org1",
+				},
 			},
 		},
 	})

@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -37,11 +37,10 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -108,11 +107,13 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		identity.Author = "localorg"
+		identity.Key = "localkey"
+	}).Return(nil)
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -175,6 +176,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -183,8 +185,8 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(nil, fmt.Errorf("pop"))
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -198,6 +200,8 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10206.*pop", err)
 
+	mim.AssertExpectations(t)
+
 }
 
 func TestSendMessageFail(t *testing.T) {
@@ -205,11 +209,12 @@ func TestSendMessageFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		identity.Author = "localorg"
+		identity.Key = "localkey"
+	}).Return(nil)
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -231,6 +236,8 @@ func TestSendMessageFail(t *testing.T) {
 	}, false)
 	assert.EqualError(t, err, "pop")
 
+	mim.AssertExpectations(t)
+
 }
 
 func TestResolveAndSendBadMembers(t *testing.T) {
@@ -238,7 +245,7 @@ func TestResolveAndSendBadMembers(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveMessage(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
+	err := pm.resolveMessage(pm.ctx, &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
@@ -252,7 +259,12 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
+
 	mdi := pm.database.(*databasemocks.Plugin)
+
 	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
@@ -266,7 +278,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveMessage(pm.ctx, &fftypes.Identity{}, &fftypes.MessageInOut{
+	err := pm.resolveMessage(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
@@ -300,11 +312,11 @@ func TestSendUnpinnedMessageMarshalFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+		assert.Equal(t, "localorg", identity.Author)
+		return true
+	})).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()
@@ -333,7 +345,9 @@ func TestSendUnpinnedMessageMarshalFail(t *testing.T) {
 
 	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "localorg",
+			Identity: fftypes.Identity{
+				Author: "localorg",
+			},
 			TxType: fftypes.TransactionTypeNone,
 			Group:  groupID,
 		},
@@ -349,12 +363,6 @@ func TestSendUnpinnedMessageGetDataFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
-
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
 
 	groupID := fftypes.NewRandB32()
 	nodeID1 := fftypes.NewUUID()
@@ -381,7 +389,9 @@ func TestSendUnpinnedMessageGetDataFail(t *testing.T) {
 
 	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "localorg",
+			Identity: fftypes.Identity{
+				Author: "localorg",
+			},
 			TxType: fftypes.TransactionTypeNone,
 			Group:  groupID,
 		},
@@ -389,35 +399,6 @@ func TestSendUnpinnedMessageGetDataFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mdm.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-
-}
-func TestSendUnpinnedMessageIdentityFail(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "badid").Return(nil, fmt.Errorf("pop"))
-
-	groupID := fftypes.NewRandB32()
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
-		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{},
-		},
-	}, nil).Once()
-
-	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Author: "badid",
-			TxType: fftypes.TransactionTypeNone,
-			Group:  groupID,
-		},
-	})
-	assert.Regexp(t, "pop", err)
-
 	mdi.AssertExpectations(t)
 
 }
@@ -433,7 +414,9 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 
 	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "org1",
+			Identity: fftypes.Identity{
+				Author: "org1",
+			},
 			TxType: fftypes.TransactionTypeNone,
 			Group:  groupID,
 		},
@@ -449,11 +432,11 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+		assert.Empty(t, identity.Author)
+		return true
+	})).Return(nil)
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -490,6 +473,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -498,11 +482,8 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -543,6 +524,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -551,11 +533,9 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mii := pm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", pm.ctx, "localorg").Return(&fftypes.Identity{
-		Identifier: "localorg",
-		OnChain:    "0x12345",
-	}, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
@@ -616,5 +596,6 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }

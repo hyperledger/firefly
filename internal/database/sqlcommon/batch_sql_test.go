@@ -39,9 +39,12 @@ func TestBatch2EWithDB(t *testing.T) {
 	batchID := fftypes.NewUUID()
 	msgID1 := fftypes.NewUUID()
 	batch := &fftypes.Batch{
-		ID:        batchID,
-		Type:      fftypes.MessageTypeBroadcast,
-		Author:    "0x12345",
+		ID:   batchID,
+		Type: fftypes.MessageTypeBroadcast,
+		Identity: fftypes.Identity{
+			Key:    "0x12345",
+			Author: "did:firefly:org/abcd",
+		},
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),
@@ -75,9 +78,12 @@ func TestBatch2EWithDB(t *testing.T) {
 	msgID2 := fftypes.NewUUID()
 	payloadRef := ""
 	batchUpdated := &fftypes.Batch{
-		ID:        batchID,
-		Type:      fftypes.MessageTypeBroadcast,
-		Author:    "0x12345",
+		ID:   batchID,
+		Type: fftypes.MessageTypeBroadcast,
+		Identity: fftypes.Identity{
+			Key:    "0x12345",
+			Author: "did:firefly:org/abcd",
+		},
 		Namespace: "ns1",
 		Hash:      fftypes.NewRandB32(),
 		Created:   fftypes.Now(),

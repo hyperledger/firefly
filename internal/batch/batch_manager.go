@@ -151,13 +151,13 @@ func (bm *batchManager) removeProcessor(dispatcher *dispatcher, key string) {
 	dispatcher.mux.Unlock()
 }
 
-func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace, author string) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftypes.Bytes32, namespace string, identity *fftypes.Identity) (*batchProcessor, error) {
 	dispatcher, ok := bm.dispatchers[batchType]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, batchType)
 	}
 	dispatcher.mux.Lock()
-	key := fmt.Sprintf("%s:%s[group=%v]", namespace, author, group)
+	key := fmt.Sprintf("%s:%s:%s[group=%v]", namespace, identity.Author, identity.Key, group)
 	processor, ok := dispatcher.processors[key]
 	if !ok {
 		processor = newBatchProcessor(
@@ -166,7 +166,7 @@ func (bm *batchManager) getProcessor(batchType fftypes.MessageType, group *fftyp
 			&batchProcessorConf{
 				Options:   dispatcher.batchOptions,
 				namespace: namespace,
-				author:    author,
+				identity:  *identity,
 				group:     group,
 				dispatch:  dispatcher.handler,
 				processorQuiescing: func() {
@@ -345,7 +345,7 @@ func (bm *batchManager) updateOffset(infiniteRetry bool, newOffset int64) (err e
 
 func (bm *batchManager) dispatchMessage(dispatched chan *batchDispatch, msg *fftypes.Message, data ...*fftypes.Data) error {
 	l := log.L(bm.ctx)
-	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, msg.Header.Author)
+	processor, err := bm.getProcessor(msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.Identity)
 	if err != nil {
 		return err
 	}

@@ -49,7 +49,6 @@ A few highlights:
   - Better search, filter and query support
 
   ## Directories
-
 - [internal](https://github.com/hyperledger/firefly/tree/main/internal): The core Golang implementation code
 - [pkg](https://github.com/hyperledger/firefly/tree/main/pkg): Interfaces intended for external project use
 - [cmd](https://github.com/hyperledger/firefly/tree/main/cmd): The command line entry point

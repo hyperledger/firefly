@@ -34,8 +34,11 @@ func TestMessageReceiveOK(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "signingOrg",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -53,8 +56,8 @@ func TestMessageReceiveOK(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -72,8 +75,11 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -85,8 +91,8 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -103,8 +109,11 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	cancel() // retryable error
 
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "signingOrg",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -122,8 +131,8 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -273,8 +282,11 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	cancel() // retryable error so we need to break the loop
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -286,8 +298,8 @@ func TestMessageReceiveGetCandidateOrgFail(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, fmt.Errorf("pop"))
 	err := em.MessageReceived(mdx, "peer1", b)
@@ -302,8 +314,11 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -315,8 +330,8 @@ func TestMessageReceiveGetCandidateOrgNotFound(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "parentOrg"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(nil, nil)
 	err := em.MessageReceived(mdx, "peer1", b)
@@ -331,8 +346,11 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	defer cancel()
 
 	batch := &fftypes.Batch{
-		ID:     nil, // so that we only test up to persistBatch which will return a non-retry error
-		Author: "signingOrg",
+		ID: nil, // so that we only test up to persistBatch which will return a non-retry error
+		Identity: fftypes.Identity{
+			Author: "signingOrg",
+			Key:    "0x12345",
+		},
 	}
 	b, _ := json.Marshal(&fftypes.TransportWrapper{
 		Type:  fftypes.TransportPayloadTypeBatch,
@@ -344,8 +362,8 @@ func TestMessageReceiveGetCandidateOrgNotMatch(t *testing.T) {
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
 		{Name: "node1", Owner: "another"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg", Parent: "parentOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345", Parent: "parentOrg",
 	}, nil)
 	mdi.On("GetOrganizationByIdentity", em.ctx, "parentOrg").Return(&fftypes.Organization{
 		Identity: "parentOrg",
@@ -561,7 +579,10 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -595,7 +616,10 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -629,7 +653,10 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -649,10 +676,10 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
@@ -669,7 +696,10 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -696,10 +726,10 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(fmt.Errorf("pop"))
 
@@ -716,7 +746,10 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -743,10 +776,10 @@ func TestMessageReceiveMessagePersistEventFail(t *testing.T) {
 	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mdi.On("GetNodes", em.ctx, mock.Anything).Return([]*fftypes.Node{
-		{Name: "node1", Owner: "signingOrg"},
+		{Name: "node1", Owner: "0x12345"},
 	}, nil, nil)
-	mdi.On("GetOrganizationByIdentity", em.ctx, "signingOrg").Return(&fftypes.Organization{
-		Identity: "signingOrg",
+	mdi.On("GetOrganizationByIdentity", em.ctx, "0x12345").Return(&fftypes.Organization{
+		Identity: "0x12345",
 	}, nil)
 	mdi.On("UpsertData", em.ctx, mock.Anything, true, false).Return(nil)
 	mdi.On("UpsertMessage", em.ctx, mock.Anything, true, false).Return(nil)
@@ -765,7 +798,10 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},
@@ -804,7 +840,10 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
-			Author: "signingOrg",
+			Identity: fftypes.Identity{
+				Author: "signingOrg",
+				Key:    "0x12345",
+			},
 			ID:     fftypes.NewUUID(),
 			TxType: fftypes.TransactionTypeNone,
 		},

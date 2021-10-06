@@ -22,8 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestGetStatusRegistered(t *testing.T) {
@@ -48,6 +50,8 @@ func TestGetStatusRegistered(t *testing.T) {
 		Name:  "node1",
 		Owner: "0x1111111",
 	}, nil)
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -75,6 +79,8 @@ func TestGetStatusUnregistered(t *testing.T) {
 
 	mdi := or.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, nil)
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -106,6 +112,9 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		Name:     "org1",
 	}, nil)
 	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, nil)
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -131,6 +140,9 @@ func TestGetStatuOrgError(t *testing.T) {
 
 	mdi := or.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByName", or.ctx, "org1").Return(nil, fmt.Errorf("pop"))
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
 }
@@ -152,6 +164,9 @@ func TestGetStatusNodeError(t *testing.T) {
 		Name:     "org1",
 	}, nil)
 	mdi.On("GetNode", or.ctx, "0x1111111", "node1").Return(nil, fmt.Errorf("pop"))
+	mim := or.identity.(*identitymanagermocks.Manager)
+	mim.On("GetOrgKey", mock.Anything).Return("0x1111111")
+
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
 }

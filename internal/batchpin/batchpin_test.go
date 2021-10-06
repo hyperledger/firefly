@@ -23,7 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,10 +31,10 @@ import (
 
 func newTestBatchPinSubmitter(t *testing.T) *batchPinSubmitter {
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mbi.On("Name").Return("ut").Maybe()
-	return NewBatchPinSubmitter(mdi, mii, mbi).(*batchPinSubmitter)
+	return NewBatchPinSubmitter(mdi, mim, mbi).(*batchPinSubmitter)
 }
 
 func TestSubmitPinnedBatchOk(t *testing.T) {
@@ -42,17 +42,15 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t)
 	ctx := context.Background()
 
-	mii := bp.identity.(*identitymocks.Plugin)
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 
-	identity := &fftypes.Identity{
-		Identifier: "id1",
-		OnChain:    "0x12345",
-	}
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "id1",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "id1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -61,8 +59,6 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mii.On("Resolve", ctx, "id1").Return(identity, nil)
-	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
 	mdi.On("UpsertOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		assert.Equal(t, fftypes.OpTypeBlockchainBatchPin, op.Type)
@@ -70,7 +66,7 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 		assert.Equal(t, *batch.Payload.TX.ID, *op.Transaction)
 		return true
 	}), false).Return(nil)
-	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), identity, mock.Anything).Return(nil)
+	mbi.On("SubmitBatchPin", ctx, mock.Anything, (*fftypes.UUID)(nil), "0x12345", mock.Anything).Return(nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.NoError(t, err)
@@ -82,17 +78,14 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t)
 	ctx := context.Background()
 
-	mii := bp.identity.(*identitymocks.Plugin)
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 
-	identity := &fftypes.Identity{
-		Identifier: "id1",
-		OnChain:    "0x12345",
-	}
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "id1",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "id1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -101,8 +94,6 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mii.On("Resolve", ctx, "id1").Return(identity, nil)
-	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(nil)
 	mdi.On("UpsertOperation", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
 
@@ -116,17 +107,14 @@ func TestSubmitPinnedBatchTxInsertFail(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t)
 	ctx := context.Background()
 
-	mii := bp.identity.(*identitymocks.Plugin)
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 
-	identity := &fftypes.Identity{
-		Identifier: "id1",
-		OnChain:    "0x12345",
-	}
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "id1",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "id1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				ID: fftypes.NewUUID(),
@@ -135,40 +123,7 @@ func TestSubmitPinnedBatchTxInsertFail(t *testing.T) {
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mii.On("Resolve", ctx, "id1").Return(identity, nil)
-	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(nil)
 	mdi.On("UpsertTransaction", ctx, mock.Anything, false).Return(fmt.Errorf("pop"))
-
-	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
-	assert.Regexp(t, "pop", err)
-
-}
-
-func TestSubmitPinnedBatchTxBadIdentity(t *testing.T) {
-
-	bp := newTestBatchPinSubmitter(t)
-	ctx := context.Background()
-
-	mii := bp.identity.(*identitymocks.Plugin)
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
-
-	identity := &fftypes.Identity{
-		Identifier: "id1",
-		OnChain:    "badness",
-	}
-	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "id1",
-		Payload: fftypes.BatchPayload{
-			TX: fftypes.TransactionRef{
-				ID: fftypes.NewUUID(),
-			},
-		},
-	}
-	contexts := []*fftypes.Bytes32{}
-
-	mii.On("Resolve", ctx, "id1").Return(identity, nil)
-	mbi.On("VerifyIdentitySyntax", ctx, identity).Return(fmt.Errorf("pop"))
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts)
 	assert.Regexp(t, "pop", err)

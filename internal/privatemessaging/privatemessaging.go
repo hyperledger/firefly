@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -32,7 +33,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/karlseguin/ccache"
 )
 
@@ -49,7 +49,7 @@ type privateMessaging struct {
 
 	ctx                  context.Context
 	database             database.Plugin
-	identity             identity.Plugin
+	identity             identity.Manager
 	exchange             dataexchange.Plugin
 	blockchain           blockchain.Plugin
 	batch                batch.Manager
@@ -59,27 +59,25 @@ type privateMessaging struct {
 	retry                retry.Retry
 	localNodeName        string
 	localNodeID          *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	localOrgIdentity     string
 	opCorrelationRetries int
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, ii identity.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
-	if di == nil || ii == nil || dx == nil || bi == nil || ba == nil || dm == nil {
+func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 
 	pm := &privateMessaging{
-		ctx:              ctx,
-		database:         di,
-		identity:         ii,
-		exchange:         dx,
-		blockchain:       bi,
-		batch:            ba,
-		data:             dm,
-		syncasync:        sa,
-		batchpin:         bp,
-		localNodeName:    config.GetString(config.NodeName),
-		localOrgIdentity: config.GetString(config.OrgIdentity),
+		ctx:           ctx,
+		database:      di,
+		identity:      im,
+		exchange:      dx,
+		blockchain:    bi,
+		batch:         ba,
+		data:          dm,
+		syncasync:     sa,
+		batchpin:      bp,
+		localNodeName: config.GetString(config.NodeName),
 		groupManager: groupManager{
 			database:      di,
 			data:          dm,
@@ -177,10 +175,15 @@ func (pm *privateMessaging) transferBlobs(ctx context.Context, data []*fftypes.D
 func (pm *privateMessaging) sendData(ctx context.Context, mType string, mID *fftypes.UUID, group *fftypes.Bytes32, ns string, nodes []*fftypes.Node, payload fftypes.Byteable, txid *fftypes.UUID, data []*fftypes.Data) (err error) {
 	l := log.L(ctx)
 
+	localOrgDID, err := pm.identity.ResolveLocalOrgDID(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Write it to the dataexchange for each member
 	for i, node := range nodes {
 
-		if node.Owner == pm.localOrgIdentity {
+		if node.Owner == localOrgDID {
 			l.Debugf("Skipping send of %s for local node %s:%s for group=%s node=%s (%d/%d)", mType, ns, mID, group, node.ID, i+1, len(nodes))
 			continue
 		}

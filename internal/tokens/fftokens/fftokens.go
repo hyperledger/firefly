@@ -200,7 +200,7 @@ func (h *FFTokens) eventLoop() {
 	}
 }
 
-func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, identity *fftypes.Identity, pool *fftypes.TokenPool) error {
+func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error {
 	res, err := h.client.R().SetContext(ctx).
 		SetBody(&createPool{
 			Type:       pool.Type,

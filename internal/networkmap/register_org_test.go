@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,15 +40,13 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 		Description: "parent organization",
 	}, nil)
 
-	mii := nm.identity.(*identitymocks.Plugin)
-	childID := &fftypes.Identity{OnChain: "0x12345"}
-	parentID := &fftypes.Identity{OnChain: "0x23456"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
-	mii.On("Resolve", nm.ctx, "0x23456").Return(parentID, nil)
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	parentID := &fftypes.Identity{Key: "0x23456"}
+	mim.On("ResolveInputIdentity", nm.ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "0x12345" })).Return(nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineOrganization, false).Return(mockMsg, nil)
+	mbm.On("BroadcastRootOrgDefinition", nm.ctx, mock.Anything, parentID, fftypes.SystemTagDefineOrganization, false).Return(mockMsg, nil)
 
 	msg, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Name:        "org1",
@@ -59,6 +57,7 @@ func TestRegisterOrganizationChildOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, mockMsg, msg)
 
+	mim.AssertExpectations(t)
 }
 
 func TestRegisterNodeOrganizationRootOk(t *testing.T) {
@@ -66,17 +65,17 @@ func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
+	config.Set(config.OrgIdentityDeprecated, "0x12345")
 	config.Set(config.OrgName, "org1")
-	config.Set(config.OrgIdentity, "0x12345")
 	config.Set(config.OrgDescription, "my organization")
 
-	mii := nm.identity.(*identitymocks.Plugin)
-	rootID := &fftypes.Identity{OnChain: "0x12345"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(rootID, nil)
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKey", nm.ctx, "0x12345").Return("0x12345", nil)
+	mim.On("ResolveInputIdentity", nm.ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "0x12345" })).Return(nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx, mock.Anything, rootID, fftypes.SystemTagDefineOrganization, true).Return(mockMsg, nil)
+	mbm.On("BroadcastRootOrgDefinition", nm.ctx, mock.Anything, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "0x12345" }), fftypes.SystemTagDefineOrganization, true).Return(mockMsg, nil)
 
 	org, msg, err := nm.RegisterNodeOrganization(nm.ctx, true)
 	assert.NoError(t, err)
@@ -85,14 +84,30 @@ func TestRegisterNodeOrganizationRootOk(t *testing.T) {
 
 }
 
-func TestRegisterNodeOrganizationMissingConfig(t *testing.T) {
+func TestRegisterNodeOrganizationMissingOrgKey(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(config.OrgIdentity, nil)
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKey", nm.ctx, "").Return("", nil)
 
-	_, _, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	_, _, err := nm.RegisterNodeOrganization(nm.ctx, true)
+	assert.Regexp(t, "FF10216", err)
+
+}
+
+func TestRegisterNodeOrganizationMissingName(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	config.Set(config.OrgKey, "0x2345")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKey", nm.ctx, "0x2345").Return("0x2345", nil)
+
+	_, _, err := nm.RegisterNodeOrganization(nm.ctx, true)
 	assert.Regexp(t, "FF10216", err)
 
 }
@@ -115,14 +130,17 @@ func TestRegisterOrganizationBadIdentity(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	mii := nm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", nm.ctx, "!wrong").Return(nil, fmt.Errorf("pop"))
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", nm.ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "wrongun" })).Return(fmt.Errorf("pop"))
+	mdi := nm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByIdentity", nm.ctx, "wrongun").Return(nil, nil)
 
 	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
 		Name:     "org1",
-		Identity: "!wrong",
+		Identity: "wrongun",
+		Parent:   "ok",
 	}, false)
-	assert.Regexp(t, "FF10215.*pop", err)
+	assert.Regexp(t, "pop", err)
 
 }
 
@@ -131,9 +149,8 @@ func TestRegisterOrganizationBadParent(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	mii := nm.identity.(*identitymocks.Plugin)
-	childID := &fftypes.Identity{OnChain: "0x12345"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", nm.ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "0x12345" })).Return(nil)
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", nm.ctx, "wrongun").Return(nil, nil)
 
@@ -146,31 +163,13 @@ func TestRegisterOrganizationBadParent(t *testing.T) {
 
 }
 
-func TestRegisterOrganizationChildResolveFail(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	mii := nm.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", nm.ctx, "0x12345").Return(nil, fmt.Errorf("pop"))
-
-	_, err := nm.RegisterOrganization(nm.ctx, &fftypes.Organization{
-		Name:     "org1",
-		Identity: "0x12345",
-		Parent:   "0x23456",
-	}, false)
-	assert.Regexp(t, "pop", err)
-
-}
-
 func TestRegisterOrganizationParentLookupFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	mii := nm.identity.(*identitymocks.Plugin)
-	childID := &fftypes.Identity{OnChain: "0x12345"}
-	mii.On("Resolve", nm.ctx, "0x12345").Return(childID, nil)
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", nm.ctx, mock.MatchedBy(func(i *fftypes.Identity) bool { return i.Key == "0x12345" })).Return(nil)
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", nm.ctx, "0x23456").Return(nil, fmt.Errorf("pop"))
 

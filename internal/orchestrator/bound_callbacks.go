@@ -18,7 +18,6 @@ package orchestrator
 
 import (
 	"github.com/hyperledger/firefly/internal/assets"
-
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -41,8 +40,8 @@ func (bc *boundCallbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *ffty
 	return bc.ei.OperationUpdate(plugin, operationID, txState, errorMessage, opOutput)
 }
 
-func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.ei.BatchPinComplete(bc.bi, batch, signingIdentity, protocolTxID, additionalInfo)
+func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, author string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.ei.BatchPinComplete(bc.bi, batch, author, protocolTxID, additionalInfo)
 }
 
 func (bc *boundCallbacks) TransferResult(trackingID string, status fftypes.OpStatus, info string, opOutput fftypes.JSONObject) error {

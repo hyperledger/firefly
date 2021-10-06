@@ -19,11 +19,10 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/identity"
 )
 
 type Submitter interface {
@@ -32,42 +31,33 @@ type Submitter interface {
 
 type batchPinSubmitter struct {
 	database   database.Plugin
-	identity   identity.Plugin
+	identity   identity.Manager
 	blockchain blockchain.Plugin
 }
 
-func NewBatchPinSubmitter(di database.Plugin, ii identity.Plugin, bi blockchain.Plugin) Submitter {
+func NewBatchPinSubmitter(di database.Plugin, im identity.Manager, bi blockchain.Plugin) Submitter {
 	return &batchPinSubmitter{
 		database:   di,
-		identity:   ii,
+		identity:   im,
 		blockchain: bi,
 	}
 }
 
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 
-	signingIdentity, err := bp.identity.Resolve(ctx, batch.Author)
-	if err == nil {
-		err = bp.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", batch.Author, err)
-		return err
-	}
-
 	tx := &fftypes.Transaction{
 		ID: batch.Payload.TX.ID,
 		Subject: fftypes.TransactionSubject{
 			Type:      fftypes.TransactionTypeBatchPin,
 			Namespace: batch.Namespace,
-			Signer:    signingIdentity.OnChain, // The transaction records on the on-chain identity
+			Signer:    batch.Key, // The transaction records on the on-chain identity
 			Reference: batch.ID,
 		},
 		Created: fftypes.Now(),
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+	err := bp.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return err
 	}
@@ -87,7 +77,7 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	}
 
 	// Write the batch pin to the blockchain
-	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, signingIdentity, &blockchain.BatchPin{
+	return bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
 		Namespace:      batch.Namespace,
 		TransactionID:  batch.Payload.TX.ID,
 		BatchID:        batch.ID,

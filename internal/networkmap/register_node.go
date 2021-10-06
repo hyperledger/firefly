@@ -18,6 +18,7 @@ package networkmap
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -26,15 +27,23 @@ import (
 
 func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Node, msg *fftypes.Message, err error) {
 
+	localOrgSigningKey, err := nm.getLocalOrgSigningKey(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	node = &fftypes.Node{
 		ID:          fftypes.NewUUID(),
 		Created:     fftypes.Now(),
-		Owner:       config.GetString(config.OrgIdentity),
+		Owner:       localOrgSigningKey, // TODO: Switch hierarchy to DID based, not signing key. Introducing an intermediate identity object
 		Name:        config.GetString(config.NodeName),
 		Description: config.GetString(config.NodeDescription),
 	}
 	if node.Name == "" {
-		node.Name = config.GetString(config.OrgIdentity)
+		orgName := config.GetString(config.OrgName)
+		if orgName != "" {
+			node.Name = fmt.Sprintf("%s.node", orgName)
+		}
 	}
 	if node.Owner == "" || node.Name == "" {
 		return nil, nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
@@ -54,12 +63,7 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (node 
 		return nil, nil, err
 	}
 
-	signingIdentity, err := nm.identity.Resolve(ctx, node.Owner)
-	if err != nil {
-		return nil, nil, i18n.WrapError(ctx, err, i18n.MsgInvalidSigningIdentity)
-	}
-
-	msg, err = nm.broadcast.BroadcastDefinition(ctx, node, signingIdentity, fftypes.SystemTagDefineNode, waitConfirm)
+	msg, err = nm.broadcast.BroadcastDefinitionAsNode(ctx, node, fftypes.SystemTagDefineNode, waitConfirm)
 	if msg != nil {
 		node.Message = msg.Header.ID
 	}

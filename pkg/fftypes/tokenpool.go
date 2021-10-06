@@ -33,7 +33,7 @@ type TokenPool struct {
 	Namespace  string         `json:"namespace,omitempty"`
 	Name       string         `json:"name,omitempty"`
 	ProtocolID string         `json:"protocolId,omitempty"`
-	Author     string         `json:"author,omitempty"`
+	Key        string         `json:"key,omitempty"`
 	Symbol     string         `json:"symbol,omitempty"`
 	Connector  string         `json:"connector,omitempty"`
 	Message    *UUID          `json:"message,omitempty"`

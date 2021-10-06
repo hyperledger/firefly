@@ -94,7 +94,10 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -116,7 +119,10 @@ func TestResolveInitGroupBadData(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -138,7 +144,10 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -173,7 +182,10 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -210,7 +222,10 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     group.Hash,
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -248,7 +263,10 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 			Namespace: fftypes.SystemNamespace,
 			Tag:       string(fftypes.SystemTagDefineGroup),
 			Group:     group.Hash,
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -269,7 +287,10 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)
@@ -288,7 +309,10 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.EqualError(t, err, "pop")
@@ -307,7 +331,10 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			Author:    "author1",
+			Identity: fftypes.Identity{
+				Author: "author1",
+				Key:    "0x12345",
+			},
 		},
 	})
 	assert.NoError(t, err)

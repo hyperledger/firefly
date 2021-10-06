@@ -31,6 +31,7 @@ import (
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/networkmap"
@@ -43,7 +44,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/identity"
+	idplugin "github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -118,27 +119,28 @@ type Orchestrator interface {
 }
 
 type orchestrator struct {
-	ctx           context.Context
-	cancelCtx     context.CancelFunc
-	started       bool
-	database      database.Plugin
-	blockchain    blockchain.Plugin
-	identity      identity.Plugin
-	publicstorage publicstorage.Plugin
-	dataexchange  dataexchange.Plugin
-	events        events.EventManager
-	networkmap    networkmap.Manager
-	batch         batch.Manager
-	broadcast     broadcast.Manager
-	messaging     privatemessaging.Manager
-	syshandlers   syshandlers.SystemHandlers
-	data          data.Manager
-	syncasync     syncasync.Bridge
-	batchpin      batchpin.Submitter
-	assets        assets.Manager
-	tokens        map[string]tokens.Plugin
-	bc            boundCallbacks
-	preInitMode   bool
+	ctx            context.Context
+	cancelCtx      context.CancelFunc
+	started        bool
+	database       database.Plugin
+	blockchain     blockchain.Plugin
+	identity       identity.Manager
+	identityPlugin idplugin.Plugin
+	publicstorage  publicstorage.Plugin
+	dataexchange   dataexchange.Plugin
+	events         events.EventManager
+	networkmap     networkmap.Manager
+	batch          batch.Manager
+	broadcast      broadcast.Manager
+	messaging      privatemessaging.Manager
+	syshandlers    syshandlers.SystemHandlers
+	data           data.Manager
+	syncasync      syncasync.Bridge
+	batchpin       batchpin.Submitter
+	assets         assets.Manager
+	tokens         map[string]tokens.Plugin
+	bc             boundCallbacks
+	preInitMode    bool
 }
 
 func NewOrchestrator() Orchestrator {
@@ -280,13 +282,13 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if or.identity == nil {
+	if or.identityPlugin == nil {
 		iiType := config.GetString(config.IdentityType)
-		if or.identity, err = iifactory.GetPlugin(ctx, iiType); err != nil {
+		if or.identityPlugin, err = iifactory.GetPlugin(ctx, iiType); err != nil {
 			return err
 		}
 	}
-	if err = or.identity.Init(ctx, identityConfig.SubPrefix(or.identity.Name()), or); err != nil {
+	if err = or.identityPlugin.Init(ctx, identityConfig.SubPrefix(or.identityPlugin.Name()), or); err != nil {
 		return err
 	}
 
@@ -362,6 +364,13 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
+	if or.identity == nil {
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.database, or.publicstorage, or.dataexchange)
 		if err != nil {
@@ -398,7 +407,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.identity, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
+	or.syshandlers = syshandlers.NewSystemHandlers(or.database, or.dataexchange, or.data, or.broadcast, or.messaging, or.assets)
 
 	if or.events == nil {
 		or.events, err = events.NewEventManager(ctx, or.publicstorage, or.database, or.identity, or.syshandlers, or.data)

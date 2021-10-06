@@ -24,12 +24,12 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -51,7 +51,7 @@ type Manager interface {
 type assetManager struct {
 	ctx       context.Context
 	database  database.Plugin
-	identity  identity.Plugin
+	identity  identity.Manager
 	data      data.Manager
 	syncasync syncasync.Bridge
 	broadcast broadcast.Manager
@@ -60,14 +60,14 @@ type assetManager struct {
 	txhelper  txcommon.Helper
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, ti map[string]tokens.Plugin) (Manager, error) {
-	if di == nil || ii == nil || sa == nil || ti == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, ti map[string]tokens.Plugin) (Manager, error) {
+	if di == nil || im == nil || sa == nil || bm == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
 		ctx:       ctx,
 		database:  di,
-		identity:  ii,
+		identity:  im,
 		data:      dm,
 		syncasync: sa,
 		broadcast: bm,
@@ -124,12 +124,12 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		return nil, err
 	}
 
-	if pool.Author == "" {
-		pool.Author = config.GetString(config.OrgIdentity)
-	}
-	author, err := am.identity.Resolve(ctx, pool.Author)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if pool.Key == "" {
+		org, err := am.identity.GetLocalOrganization(ctx)
+		if err != nil {
+			return nil, err
+		}
+		pool.Key = org.Identity
 	}
 
 	plugin, err := am.selectTokenPlugin(ctx, typeName)
@@ -149,7 +149,7 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		Subject: fftypes.TransactionSubject{
 			Namespace: ns,
 			Type:      fftypes.TransactionTypeTokenPool,
-			Signer:    author.OnChain, // The transaction records on the on-chain identity
+			Signer:    pool.Key,
 			Reference: id,
 		},
 		Created: fftypes.Now(),
@@ -175,14 +175,14 @@ func (am *assetManager) CreateTokenPoolWithID(ctx context.Context, ns string, id
 		"",
 		fftypes.OpTypeTokensCreatePool,
 		fftypes.OpStatusPending,
-		author.Identifier)
+		"")
 	addTokenPoolCreateInputs(op, pool)
 	err = am.database.UpsertOperation(ctx, op, false)
 	if err != nil {
 		return nil, err
 	}
 
-	return pool, plugin.CreateTokenPool(ctx, op.ID, author, pool)
+	return pool, plugin.CreateTokenPool(ctx, op.ID, pool)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {

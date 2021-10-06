@@ -26,10 +26,10 @@ import (
 )
 
 type Batch struct {
-	ID         *UUID        `json:"id"`
-	Namespace  string       `json:"namespace"`
-	Type       MessageType  `json:"type"`
-	Author     string       `json:"author"`
+	ID        *UUID       `json:"id"`
+	Namespace string      `json:"namespace"`
+	Type      MessageType `json:"type"`
+	Identity
 	Group      *Bytes32     `jdon:"group,omitempty"`
 	Hash       *Bytes32     `json:"hash"`
 	Created    *FFTime      `json:"created"`

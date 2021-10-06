@@ -26,7 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -47,9 +47,12 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		Contexts:       []*fftypes.Bytes32{fftypes.NewRandB32()},
 	}
 	batchData := &fftypes.Batch{
-		ID:         batch.BatchID,
-		Namespace:  "ns1",
-		Author:     "0x12345",
+		ID:        batch.BatchID,
+		Namespace: "ns1",
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		PayloadRef: batch.BatchPaylodRef,
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -86,8 +89,8 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything, false).Return(nil)
 	mbi := &blockchainmocks.Plugin{}
 
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, "0x12345").Return("author1", nil)
 
 	err = em.BatchPinComplete(mbi, batch, "0x12345", "tx1", nil)
 	assert.NoError(t, err)
@@ -199,8 +202,11 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 	defer cancel()
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x23456",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -209,11 +215,11 @@ func TestPersistBatchAuthorResolveFail(t *testing.T) {
 		},
 		Hash: batchHash,
 	}
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("", fmt.Errorf("pop"))
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
-	assert.NoError(t, err)
+	assert.NoError(t, err) // retryable
 	assert.False(t, valid)
 }
 
@@ -222,8 +228,11 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 	defer cancel()
 	batchHash := fftypes.NewRandB32()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x23456",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -232,8 +241,8 @@ func TestPersistBatchBadAuthor(t *testing.T) {
 		},
 		Hash: batchHash,
 	}
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author2", nil)
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, batchHash, "0x12345")
 	assert.NoError(t, err)
@@ -244,8 +253,11 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -254,8 +266,8 @@ func TestPersistBatchMismatchChainHash(t *testing.T) {
 		},
 		Hash: fftypes.NewRandB32(),
 	}
-	mii := em.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x12345").Return(&fftypes.Identity{OnChain: "0x12345"}, nil)
+	mim := em.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveSigningKeyIdentity", mock.Anything, mock.Anything).Return("author1", nil)
 	batch.Hash = batch.Payload.Hash()
 	valid, err := em.persistBatchFromBroadcast(context.Background(), batch, fftypes.NewRandB32(), "0x12345")
 	assert.NoError(t, err)
@@ -266,8 +278,11 @@ func TestPersistBatchUpsertBatchMismatchHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -290,8 +305,11 @@ func TestPersistBatchBadHash(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -310,8 +328,11 @@ func TestPersistBatchUpsertBatchFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:     fftypes.NewUUID(),
-		Author: "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeBatchPin,
@@ -333,8 +354,11 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:        fftypes.NewUUID(),
-		Author:    "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -360,8 +384,11 @@ func TestPersistBatchGoodDataUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:        fftypes.NewUUID(),
-		Author:    "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -389,8 +416,11 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:        fftypes.NewUUID(),
-		Author:    "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -399,8 +429,11 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 			},
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Author: "0x12345",
+					ID: fftypes.NewUUID(),
+					Identity: fftypes.Identity{
+						Author: "author1",
+						Key:    "0x12345",
+					},
 				}},
 			},
 		},
@@ -422,8 +455,11 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	batch := &fftypes.Batch{
-		ID:        fftypes.NewUUID(),
-		Author:    "0x12345",
+		ID: fftypes.NewUUID(),
+		Identity: fftypes.Identity{
+			Author: "author1",
+			Key:    "0x12345",
+		},
 		Namespace: "ns1",
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -432,8 +468,11 @@ func TestPersistBatchGoodMessageAuthorMismatch(t *testing.T) {
 			},
 			Messages: []*fftypes.Message{
 				{Header: fftypes.MessageHeader{
-					ID:     fftypes.NewUUID(),
-					Author: "0x9999999",
+					ID: fftypes.NewUUID(),
+					Identity: fftypes.Identity{
+						Author: "author1",
+						Key:    "0x9999999",
+					},
 				}},
 			},
 		},

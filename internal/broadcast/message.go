@@ -19,7 +19,6 @@ package broadcast
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -37,11 +36,13 @@ func (bm *broadcastManager) broadcastMessageWithID(ctx context.Context, ns strin
 	resolved.Header.ID = id
 	resolved.Header.Namespace = ns
 	resolved.Header.Type = fftypes.MessageTypeBroadcast
-	if resolved.Header.Author == "" {
-		resolved.Header.Author = config.GetString(config.OrgIdentity)
-	}
 	if resolved.Header.TxType == "" {
 		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
+	}
+
+	// Resolve the sending identity
+	if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
+		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin

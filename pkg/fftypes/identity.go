@@ -16,10 +16,9 @@
 
 package fftypes
 
-// Identity is a structure used to keep track of and map identity in the system.
-//
-// TODO: Mapping of more sophisticate identities (DIDs etc.) via plugins, and richer interface
+// Identity is the nested structure representing an identity, that might comprise a resolvable
+// by FireFly identity DID, a blockchain signing key, or both.
 type Identity struct {
-	Identifier string `json:"identifier,omitempty"`
-	OnChain    string `json:"onchain,omitempty"`
+	Author string `json:"author,omitempty"`
+	Key    string `json:"key,omitempty"`
 }

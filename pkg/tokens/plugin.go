@@ -41,7 +41,7 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, identity *fftypes.Identity, pool *fftypes.TokenPool) error
+	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.

@@ -33,7 +33,7 @@ func newTestBatchProcessor(dispatch DispatchHandler) (*databasemocks.Plugin, *ba
 	mdi := &databasemocks.Plugin{}
 	bp := newBatchProcessor(context.Background(), mdi, &batchProcessorConf{
 		namespace:          "ns1",
-		author:             "0x12345",
+		identity:           fftypes.Identity{Author: "did:firefly:org/abcd", Key: "0x12345"},
 		dispatch:           dispatch,
 		processorQuiescing: func() {},
 		Options: Options{

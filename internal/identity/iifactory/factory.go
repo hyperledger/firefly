@@ -21,12 +21,12 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/identity/onchain"
+	"github.com/hyperledger/firefly/internal/identity/tbd"
 	"github.com/hyperledger/firefly/pkg/identity"
 )
 
 var plugins = []identity.Plugin{
-	&onchain.OnChain{},
+	&tbd.TBD{}, // Plugin interface is TBD at this point. Plugin with "onchain" naming, and TBD implementation provided to avoid config migration impact
 }
 
 var pluginsByName = make(map[string]identity.Plugin)

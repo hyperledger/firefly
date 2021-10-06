@@ -30,7 +30,7 @@ func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, p
 		return nil, err
 	}
 
-	msg, err = bm.broadcastDefinitionAsNode(ctx, pool, fftypes.SystemTagDefinePool, waitConfirm)
+	msg, err = bm.BroadcastDefinitionAsNode(ctx, pool, fftypes.SystemTagDefinePool, waitConfirm)
 	if msg != nil {
 		pool.Message = msg.Header.ID
 	}

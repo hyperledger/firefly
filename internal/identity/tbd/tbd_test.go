@@ -14,11 +14,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package onchain
+package tbd
 
 import (
+	"context"
+	"testing"
+
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/stretchr/testify/assert"
 )
 
-func (oc *OnChain) InitPrefix(prefix config.Prefix) {
+var utConfPrefix = config.NewPluginConfig("onchain_unit_tests")
+
+func TestInit(t *testing.T) {
+	var oc identity.Plugin = &TBD{}
+	oc.InitPrefix(utConfPrefix)
+	err := oc.Init(context.Background(), utConfPrefix, &identitymocks.Callbacks{})
+	assert.NoError(t, err)
+	assert.Equal(t, "onchain", oc.Name())
+	err = oc.Start()
+	assert.NoError(t, err)
+	capabilities := oc.Capabilities()
+	assert.NotNil(t, capabilities)
 }

@@ -24,23 +24,28 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) broadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
-	signingIdentity, err := bm.GetNodeSigningIdentity(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return bm.BroadcastDefinition(ctx, def, signingIdentity, tag, waitConfirm)
+func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+	return bm.BroadcastDefinition(ctx, def, &fftypes.Identity{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
 func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
-	err = bm.blockchain.VerifyIdentitySyntax(ctx, signingIdentity)
+	err = bm.identity.ResolveInputIdentity(ctx, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
 
-	// Ensure the broadcast message is nil on the sending side - only set on receiving side
-	def.SetBroadcastMessage(nil)
+	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+}
+
+func (bm *broadcastManager) BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
+
+	signingIdentity.Author = bm.identity.OrgDID(def)
+
+	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+}
+
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	data := &fftypes.Data{
@@ -67,7 +72,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 		Header: fftypes.MessageHeader{
 			Namespace: fftypes.SystemNamespace,
 			Type:      fftypes.MessageTypeDefinition,
-			Author:    signingIdentity.Identifier,
+			Identity:  *signingIdentity,
 			Topics:    fftypes.FFNameArray{def.Topic()},
 			Tag:       string(tag),
 			TxType:    fftypes.TransactionTypeBatchPin,
@@ -79,4 +84,5 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def fftypes
 
 	// Broadcast the message
 	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
+
 }

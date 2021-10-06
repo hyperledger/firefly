@@ -46,17 +46,17 @@ var (
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID        *UUID           `json:"id,omitempty"`
-	CID       *UUID           `json:"cid,omitempty"`
-	Type      MessageType     `json:"type" ffenum:"messagetype"`
-	TxType    TransactionType `json:"txtype,omitempty"`
-	Author    string          `json:"author,omitempty"`
-	Created   *FFTime         `json:"created,omitempty"`
-	Namespace string          `json:"namespace,omitempty"`
-	Group     *Bytes32        `json:"group,omitempty"`
-	Topics    FFNameArray     `json:"topics,omitempty"`
-	Tag       string          `json:"tag,omitempty"`
-	DataHash  *Bytes32        `json:"datahash,omitempty"`
+	ID     *UUID           `json:"id,omitempty"`
+	CID    *UUID           `json:"cid,omitempty"`
+	Type   MessageType     `json:"type" ffenum:"messagetype"`
+	TxType TransactionType `json:"txtype,omitempty"`
+	Identity
+	Created   *FFTime     `json:"created,omitempty"`
+	Namespace string      `json:"namespace,omitempty"`
+	Group     *Bytes32    `json:"group,omitempty"`
+	Topics    FFNameArray `json:"topics,omitempty"`
+	Tag       string      `json:"tag,omitempty"`
+	DataHash  *Bytes32    `json:"datahash,omitempty"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network

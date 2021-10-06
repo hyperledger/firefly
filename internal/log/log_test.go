@@ -20,8 +20,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/likexian/gokit/assert"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLogContext(t *testing.T) {

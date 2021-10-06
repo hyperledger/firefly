@@ -46,14 +46,8 @@ func (sh *systemHandlers) handleNodeBroadcast(ctx context.Context, msg *fftypes.
 		return false, nil
 	}
 
-	id, err := sh.identity.Resolve(ctx, node.Owner)
-	if err != nil {
-		l.Warnf("Unable to process node broadcast %s - resolve owner identity failed: %s", msg.Header.ID, err)
-		return false, nil
-	}
-
-	if msg.Header.Author != id.OnChain {
-		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, id.OnChain, msg.Header.Author)
+	if msg.Header.Key != node.Owner {
+		l.Warnf("Unable to process node broadcast %s - incorrect signature. Expected=%s Received=%s", msg.Header.ID, node.Owner, msg.Header.Author)
 		return false, nil
 	}
 

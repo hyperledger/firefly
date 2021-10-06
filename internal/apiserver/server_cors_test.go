@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/likexian/gokit/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServerCorsDisabled(t *testing.T) {

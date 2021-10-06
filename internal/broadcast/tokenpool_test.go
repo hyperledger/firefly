@@ -23,6 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -83,6 +84,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		TokenPool: fftypes.TokenPool{
@@ -96,6 +98,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 		ProtocolTxID: "tx123",
 	}
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -105,6 +108,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolOk(t *testing.T) {
@@ -112,6 +116,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		TokenPool: fftypes.TokenPool{
@@ -125,6 +130,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 		ProtocolTxID: "tx123",
 	}
 
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mdi.On("InsertMessageLocal", mock.Anything, mock.Anything).Return(nil)
@@ -134,4 +140,5 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }

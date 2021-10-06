@@ -25,10 +25,10 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -41,7 +41,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -49,16 +49,19 @@ func TestBroadcastMessageOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{
@@ -79,8 +82,8 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
@@ -88,10 +91,10 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{}, nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	requestID := fftypes.NewUUID()
 	replyMsg := &fftypes.Message{
@@ -113,7 +116,10 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{
@@ -133,9 +139,9 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -146,7 +152,6 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
-	mbi.On("VerifyIdentitySyntax", ctx, "0x12345").Return("0x12345", nil)
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, []*fftypes.DataAndBlob{
@@ -172,11 +177,15 @@ func TestBroadcastMessageWithBlobsOk(t *testing.T) {
 	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
-				Author: "0x12345",
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
 			},
 		},
 		InlineData: fftypes.InlineData{
@@ -199,16 +208,16 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
-	mbi := bm.blockchain.(*blockchainmocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
-	mbi.On("VerifyIdentitySyntax", ctx, mock.Anything).Return("0x12345", nil)
 	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
 	rag.RunFn = func(a mock.Arguments) {
 		var fn = a[1].(func(context.Context) error)
 		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
 	}
 	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
@@ -221,12 +230,31 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestBroadcastMessageBadIdentity(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	ctx := context.Background()
+	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.Byteable(`{"hello": "world"}`)},
+		},
+	}, false)
+	assert.Regexp(t, "FF10206", err)
+
+	mim.AssertExpectations(t)
+}
+
 func TestPublishBlobsSendMessageFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -241,6 +269,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
@@ -267,6 +296,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -280,6 +310,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 		return true
 	})).Return("payload-ref", nil)
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
@@ -306,6 +337,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
@@ -318,6 +350,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 		assert.Equal(t, "some data", string(b))
 		return true
 	})).Return("", fmt.Errorf("pop"))
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{
@@ -343,12 +376,14 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
+	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
 		{

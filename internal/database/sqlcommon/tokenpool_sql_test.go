@@ -50,6 +50,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
+		Key: "0x12345",
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).

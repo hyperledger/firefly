@@ -24,7 +24,6 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -49,8 +48,6 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -61,14 +58,16 @@ func TestHandleSystemBroadcastNodeOk(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -91,8 +90,6 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -101,14 +98,16 @@ func TestHandleSystemBroadcastNodeUpsertFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -131,8 +130,6 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, nil)
@@ -143,14 +140,16 @@ func TestHandleSystemBroadcastNodeAddPeerFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -173,22 +172,22 @@ func TestHandleSystemBroadcastNodeDupMismatch(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x99999"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -211,8 +210,6 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(&fftypes.Node{Owner: "0x23456"}, nil)
@@ -222,14 +219,16 @@ func TestHandleSystemBroadcastNodeDupOK(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.True(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -252,22 +251,22 @@ func TestHandleSystemBroadcastNodeGetFail(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	mdi.On("GetNode", mock.Anything, "0x23456", "node1").Return(nil, fmt.Errorf("pop"))
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -290,58 +289,21 @@ func TestHandleSystemBroadcastNodeBadAuthor(t *testing.T) {
 		Value: fftypes.Byteable(b),
 	}
 
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(&fftypes.Identity{OnChain: "0x23456"}, nil)
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x99999",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x12345",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
 	assert.NoError(t, err)
 
-	mii.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestHandleSystemBroadcastNodeResolveFail(t *testing.T) {
-	sh := newTestSystemHandlers(t)
-
-	node := &fftypes.Node{
-		ID:          fftypes.NewUUID(),
-		Name:        "node1",
-		Owner:       "0x23456",
-		Description: "my org",
-		DX: fftypes.DXInfo{
-			Peer:     "peer1",
-			Endpoint: fftypes.JSONObject{"some": "info"},
-		},
-	}
-	b, err := json.Marshal(&node)
-	assert.NoError(t, err)
-	data := &fftypes.Data{
-		Value: fftypes.Byteable(b),
-	}
-
-	mii := sh.identity.(*identitymocks.Plugin)
-	mii.On("Resolve", mock.Anything, "0x23456").Return(nil, fmt.Errorf("pop"))
-	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetOrganizationByIdentity", mock.Anything, "0x23456").Return(&fftypes.Organization{ID: fftypes.NewUUID(), Identity: "0x23456"}, nil)
-	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
-		},
-	}, []*fftypes.Data{data})
-	assert.False(t, valid)
-	assert.NoError(t, err)
-
-	mii.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -369,8 +331,11 @@ func TestHandleSystemBroadcastNodeGetOrgNotFound(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -403,8 +368,11 @@ func TestHandleSystemBroadcastNodeGetOrgFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -435,8 +403,11 @@ func TestHandleSystemBroadcastNodeValidateFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)
@@ -453,8 +424,11 @@ func TestHandleSystemBroadcastNodeUnmarshalFail(t *testing.T) {
 	valid, err := sh.HandleSystemBroadcast(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
-			Author:    "0x23456",
-			Tag:       string(fftypes.SystemTagDefineNode),
+			Identity: fftypes.Identity{
+				Author: "did:firefly:org/0x23456",
+				Key:    "0x23456",
+			},
+			Tag: string(fftypes.SystemTagDefineNode),
 		},
 	}, []*fftypes.Data{data})
 	assert.False(t, valid)

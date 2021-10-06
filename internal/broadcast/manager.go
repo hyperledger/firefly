@@ -26,12 +26,12 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
@@ -39,9 +39,10 @@ type Manager interface {
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
+	BroadcastDefinitionAsNode(ctx context.Context, def fftypes.Definition, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastDefinition(ctx context.Context, def fftypes.Definition, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
+	BroadcastRootOrgDefinition(ctx context.Context, def *fftypes.Organization, signingIdentity *fftypes.Identity, tag fftypes.SystemTag, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error)
-	GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error)
 	Start() error
 	WaitStop()
 }
@@ -49,7 +50,7 @@ type Manager interface {
 type broadcastManager struct {
 	ctx           context.Context
 	database      database.Plugin
-	identity      identity.Plugin
+	identity      identity.Manager
 	data          data.Manager
 	blockchain    blockchain.Plugin
 	exchange      dataexchange.Plugin
@@ -59,14 +60,14 @@ type broadcastManager struct {
 	batchpin      batchpin.Submitter
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Plugin, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
-	if di == nil || ii == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
+func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, pi publicstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter) (Manager, error) {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || pi == nil || ba == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	bm := &broadcastManager{
 		ctx:           ctx,
 		database:      di,
-		identity:      ii,
+		identity:      im,
 		data:          dm,
 		blockchain:    bi,
 		exchange:      dx,
@@ -85,15 +86,6 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, ii identity.Pl
 		fftypes.MessageTypeDefinition,
 	}, bm.dispatchBatch, bo)
 	return bm, nil
-}
-
-func (bm *broadcastManager) GetNodeSigningIdentity(ctx context.Context) (*fftypes.Identity, error) {
-	orgIdentity := config.GetString(config.OrgIdentity)
-	id, err := bm.identity.Resolve(ctx, orgIdentity)
-	if err != nil {
-		return nil, err
-	}
-	return id, nil
 }
 
 func (bm *broadcastManager) dispatchBatch(ctx context.Context, batch *fftypes.Batch, pins []*fftypes.Bytes32) error {

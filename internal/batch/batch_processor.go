@@ -45,7 +45,7 @@ type batchDispatch struct {
 type batchProcessorConf struct {
 	Options
 	namespace          string
-	author             string
+	identity           fftypes.Identity
 	group              *fftypes.Bytes32
 	dispatch           DispatchHandler
 	processorQuiescing func()
@@ -66,13 +66,13 @@ type batchProcessor struct {
 }
 
 func newBatchProcessor(ctx context.Context, di database.Plugin, conf *batchProcessorConf, retry *retry.Retry) *batchProcessor {
-	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s", conf.namespace, conf.author))
+	pCtx := log.WithLogField(ctx, "role", fmt.Sprintf("batchproc-%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key))
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
 		ctx:         pCtx,
 		cancelCtx:   cancelCtx,
 		database:    di,
-		name:        fmt.Sprintf("%s:%s", conf.namespace, conf.author),
+		name:        fmt.Sprintf("%s:%s:%s", conf.namespace, conf.identity.Author, conf.identity.Key),
 		newWork:     make(chan *batchWork),
 		persistWork: make(chan *batchWork, conf.BatchMaxSize),
 		sealBatch:   make(chan bool),
@@ -157,7 +157,7 @@ func (bp *batchProcessor) createOrAddToBatch(batch *fftypes.Batch, newWork []*ba
 		batch = &fftypes.Batch{
 			ID:        batchID,
 			Namespace: bp.conf.namespace,
-			Author:    bp.conf.author,
+			Identity:  bp.conf.identity,
 			Group:     bp.conf.group,
 			Payload:   fftypes.BatchPayload{},
 			Created:   fftypes.Now(),
@@ -207,6 +207,7 @@ func (bp *batchProcessor) maskContext(ctx context.Context, msg *fftypes.Message,
 
 	// Now combine our sending identity, and this nonce, to produce the hash that should
 	// be expected by all members of the group as the next nonce from us on this topic.
+	// Note we use our identity DID (not signing key) for this.
 	hashBuilder.Write([]byte(msg.Header.Author))
 	nonceBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(nonceBytes, uint64(gc.Nonce))

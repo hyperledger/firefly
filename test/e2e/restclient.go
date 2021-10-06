@@ -28,8 +28,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 var (

@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -37,22 +36,20 @@ func (pm *privateMessaging) sendMessageWithID(ctx context.Context, ns string, id
 	resolved.Header.ID = id
 	resolved.Header.Namespace = ns
 	resolved.Header.Type = fftypes.MessageTypePrivate
-	if resolved.Header.Author == "" {
-		resolved.Header.Author = pm.localOrgIdentity
-	}
 	if resolved.Header.TxType == "" {
 		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
-	sender, err := pm.identity.Resolve(ctx, resolved.Header.Author)
-	if err != nil {
+	// Resolve the sending identity
+	if err := pm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
+	var err error
 	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		if unresolved != nil {
-			err = pm.resolveMessage(ctx, sender, unresolved)
+			err = pm.resolveMessage(ctx, unresolved)
 		}
 		if err == nil && !waitConfirm {
 			// We can safely optimize the send into the same DB transaction
@@ -70,9 +67,10 @@ func (pm *privateMessaging) sendMessageWithID(ctx context.Context, ns string, id
 	return resolved, err
 }
 
-func (pm *privateMessaging) resolveMessage(ctx context.Context, sender *fftypes.Identity, in *fftypes.MessageInOut) (err error) {
+func (pm *privateMessaging) resolveMessage(ctx context.Context, in *fftypes.MessageInOut) (err error) {
+
 	// Resolve the member list into a group
-	if err = pm.resolveReceipientList(ctx, sender, in); err != nil {
+	if err = pm.resolveReceipientList(ctx, in); err != nil {
 		return err
 	}
 
@@ -95,6 +93,7 @@ func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.
 		if immediateConfirm {
 			msg.Confirmed = fftypes.Now()
 			msg.Pending = false
+			// msg.Header.Key = "" // there is no on-chain signing assurance with this message
 		}
 
 		// Store the message - this asynchronously triggers the next step in process
@@ -131,15 +130,6 @@ func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *ff
 	// Retrieve the group
 	group, nodes, err := pm.groupManager.getGroupNodes(ctx, message.Header.Group)
 	if err != nil {
-		return err
-	}
-
-	id, err := pm.identity.Resolve(ctx, message.Header.Author)
-	if err == nil {
-		err = pm.blockchain.VerifyIdentitySyntax(ctx, id)
-	}
-	if err != nil {
-		log.L(ctx).Errorf("Invalid signing identity '%s': %s", message.Header.Author, err)
 		return err
 	}
 
