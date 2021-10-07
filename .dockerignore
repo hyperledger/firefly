@@ -1,6 +1,6 @@
 **/node_modules
 **/coverage
 **/.nyc_output
-solidity_firefly/build
+smart_contracts/ethereum/solidity_firefly/build
 .git
 firefly

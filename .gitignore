@@ -1,9 +1,9 @@
 solidity_kat/node_modules
 solidity_kat/build
 solidity_kat/package-lock.json
-solidity_firefly/node_modules
-solidity_firefly/build
-solidity_firefly/package-lock.json
+smart_contracts/ethereum/solidity_firefly/node_modules
+smart_contracts/ethereum/solidity_firefly/build
+smart_contracts/ethereum/solidity_firefly/package-lock.json
 utils/kat-client/node_modules
 **/*.jar
 firefly
