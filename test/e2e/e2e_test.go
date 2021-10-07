@@ -244,6 +244,10 @@ func wsReader(t *testing.T, conn *websocket.Conn) (chan *fftypes.EventDelivery, 
 	return events, changeEvents
 }
 
+func TestFailJustBecause(t *testing.T) {
+	panic("It's Thursday!")
+}
+
 func TestE2EBroadcast(t *testing.T) {
 
 	ts := beforeE2ETest(t)

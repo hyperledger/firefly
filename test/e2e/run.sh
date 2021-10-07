@@ -50,4 +50,16 @@ fi
 $CLI info $STACK_NAME
 
 export STACK_FILE
+
+set +e
 go clean -testcache && go test -v .
+RC=$?
+
+WORKDIR=${GITHUB_WORKSPACE}
+if [ -z "$WORKDIR" ]; then WORKDIR=.; fi
+
+mkdir -p "${WORKDIR}/containerlogs"
+$CLI logs $STACK_NAME > "${WORKDIR}/containerlogs/logs.txt"
+if [ $RC -eq 0 ]; then RC=$?; fi
+
+exit $RC
