@@ -47,14 +47,16 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 	orgBytes, err := json.Marshal(&org)
 	assert.NoError(t, err)
 	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: orgBytes,
+		ID:        fftypes.NewUUID(),
+		Value:     orgBytes,
+		Validator: fftypes.MessageTypeDefinition,
 	}
 
 	batch := &fftypes.Batch{
 		ID: fftypes.NewUUID(),
 		Identity: fftypes.Identity{
-			Key: "0x12345",
+			Author: "did:firefly:org/12345",
+			Key:    "0x12345",
 		},
 		Payload: fftypes.BatchPayload{
 			TX: fftypes.TransactionRef{
@@ -67,7 +69,8 @@ func TestPersistBatchFromBroadcastRootOrg(t *testing.T) {
 						ID:   fftypes.NewUUID(),
 						Type: fftypes.MessageTypeDefinition,
 						Identity: fftypes.Identity{
-							Key: "0x12345",
+							Author: "did:firefly:org/12345",
+							Key:    "0x12345",
 						},
 					},
 					Data: fftypes.DataRefs{
@@ -99,8 +102,9 @@ func TestPersistBatchFromBroadcastRootOrgBadData(t *testing.T) {
 	mim.On("ResolveSigningKeyIdentity", em.ctx, mock.Anything).Return("", nil)
 
 	data := &fftypes.Data{
-		ID:    fftypes.NewUUID(),
-		Value: []byte("!badness"),
+		ID:        fftypes.NewUUID(),
+		Value:     []byte("!badness"),
+		Validator: fftypes.MessageTypeDefinition,
 	}
 
 	batch := &fftypes.Batch{
