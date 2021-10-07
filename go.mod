@@ -10,7 +10,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/getkin/kin-openapi v0.76.1-0.20211007120119-47bb0b2707dc
+	github.com/getkin/kin-openapi v0.77.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.6.0
