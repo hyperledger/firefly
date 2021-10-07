@@ -42,7 +42,7 @@ var testRoutes = []*Route{
 		QueryParams:     nil,
 		FilterFactory:   nil,
 		Description:     i18n.MsgTBD,
-		JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONInputMask:   []string{"id"},
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
