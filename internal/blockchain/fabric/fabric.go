@@ -25,12 +25,13 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/config/wsconfig"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/restclient"
-	"github.com/hyperledger/firefly/internal/wsclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -176,10 +177,13 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		GlobalSequencer: true,
 	}
 
-	if fabconnectConf.GetString(wsclient.WSConfigKeyPath) == "" {
-		fabconnectConf.Set(wsclient.WSConfigKeyPath, "/ws")
+	wsConfig := wsconfig.GenerateConfigFromPrefix(fabconnectConf)
+
+	if wsConfig.WSKeyPath == "" {
+		wsConfig.WSKeyPath = "/ws"
 	}
-	f.wsconn, err = wsclient.New(ctx, fabconnectConf, f.afterConnect)
+
+	f.wsconn, err = wsclient.New(ctx, wsConfig, f.afterConnect)
 	if err != nil {
 		return err
 	}

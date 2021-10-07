@@ -414,7 +414,7 @@ func TestResolveLocalOrgDIDFail(t *testing.T) {
 	assert.Regexp(t, "FF10280", err)
 
 	_, err = im.GetLocalOrganization(ctx)
-	assert.Regexp(t, "FF10290", err)
+	assert.Regexp(t, "FF10280", err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
