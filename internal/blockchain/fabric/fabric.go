@@ -21,6 +21,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -53,8 +55,9 @@ type Fabric struct {
 		stream *eventStream
 		subs   []*subscription
 	}
-	wsconn wsclient.WSClient
-	closed chan struct{}
+	idCache map[string]*fabIdentity
+	wsconn  wsclient.WSClient
+	closed  chan struct{}
 }
 
 type eventStream struct {
@@ -137,9 +140,18 @@ type fabWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
+type fabIdentity struct {
+	MSPID  string `json:"mspId"`
+	ECert  string `json:"enrollmentCert"`
+	CACert string `json:"caCert"`
+}
+
 var requiredSubscriptions = map[string]string{
 	"BatchPin": "Batch pin",
 }
+
+var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
+var cnPatteren = regexp.MustCompile("CN=([^,]+)")
 
 func (f *Fabric) Name() string {
 	return "fabric"
@@ -467,6 +479,32 @@ func (f *Fabric) eventLoop() {
 }
 
 func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) (string, error) {
+	// we expand the short user name into the fully qualified onchain identity:
+	// mspid::x509::{ecert DN}::{CA DN}	return signingKeyInput, nil
+	if !fullIdentityPattern.MatchString(signingKeyInput) {
+		existingID := f.idCache[signingKeyInput]
+		if existingID == nil {
+			var idRes fabIdentity
+			res, err := f.client.R().SetContext(f.ctx).SetResult(&idRes).Get(fmt.Sprintf("/identities/%s", signingKeyInput))
+			if err != nil || !res.IsSuccess() {
+				return "", i18n.NewError(f.ctx, i18n.MsgFabconnectRESTErr, err)
+			}
+			f.idCache[signingKeyInput] = &idRes
+			existingID = &idRes
+		}
+
+		ecertDN, err := getDNFromCertString(existingID.ECert)
+		if err != nil {
+			return "", i18n.NewError(f.ctx, i18n.MsgFailedToDecodeCertificate, err)
+		}
+		cacertDN, err := getDNFromCertString(existingID.CACert)
+		if err != nil {
+			return "", i18n.NewError(f.ctx, i18n.MsgFailedToDecodeCertificate, err)
+		}
+		resolvedSigningKey := fmt.Sprintf("%s::x509::%s::%s", existingID.MSPID, ecertDN, cacertDN)
+		log.L(f.ctx).Debugf("Resolved signing key: %s", resolvedSigningKey)
+		return resolvedSigningKey, nil
+	}
 	return signingKeyInput, nil
 }
 
