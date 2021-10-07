@@ -34,8 +34,8 @@ var (
 	OpTypeTokensCreatePool OpType = ffEnum("optype", "tokens_create_pool")
 	// OpTypeTokensAnnounce is a broadcast of token pool info
 	OpTypeTokensAnnouncePool OpType = ffEnum("optype", "tokens_announce_pool")
-	// OpTypeTokensMint is a token mint
-	OpTypeTokensMint OpType = ffEnum("optype", "tokens_mint")
+	// OpTypeTokensTransfer is a token transfer
+	OpTypeTokensTransfer OpType = ffEnum("optype", "tokens_transfer")
 )
 
 // OpStatus is the current status of an operation

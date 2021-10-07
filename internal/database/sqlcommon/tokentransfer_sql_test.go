@@ -44,6 +44,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		To:             "0x02",
 		Amount:         10,
 		ProtocolID:     "12345",
+		MessageHash:    fftypes.NewRandB32(),
 	}
 
 	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID, mock.Anything).

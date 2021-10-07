@@ -4769,6 +4769,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4777,6 +4778,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4795,6 +4802,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4803,6 +4811,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4873,6 +4887,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4881,6 +4896,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4899,6 +4920,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4907,6 +4929,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -4962,6 +4990,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messagehash
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5106,6 +5139,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5114,6 +5148,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object
@@ -5132,6 +5172,7 @@ paths:
                   key:
                     type: string
                   localId: {}
+                  messageHash: {}
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5140,6 +5181,12 @@ paths:
                     type: string
                   tokenIndex:
                     type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
                   type:
                     type: string
                 type: object

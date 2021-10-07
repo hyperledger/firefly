@@ -319,7 +319,7 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 		ns,
 		fftypes.NewUUID(),
 		"",
-		fftypes.OpTypeTokensMint,
+		fftypes.OpTypeTokensTransfer,
 		fftypes.OpStatusPending,
 		"")
 	err = am.database.UpsertOperation(ctx, op, false)
