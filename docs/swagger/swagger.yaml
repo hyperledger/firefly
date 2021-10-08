@@ -4980,6 +4980,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: localid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: messagehash
         schema:
           type: string

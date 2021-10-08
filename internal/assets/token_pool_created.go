@@ -28,7 +28,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.Tok
 	fb := database.OperationQueryFactory.NewFilter(am.ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
-		fb.Eq("type", fftypes.OpTypeTokensCreatePool),
+		fb.Eq("type", fftypes.OpTypeTokenCreatePool),
 	)
 	operations, _, err := am.database.GetOperations(am.ctx, filter)
 	if err != nil || len(operations) == 0 {
@@ -76,7 +76,7 @@ func (am *assetManager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.Tok
 		pool.Namespace,
 		tx,
 		"",
-		fftypes.OpTypeTokensAnnouncePool,
+		fftypes.OpTypeTokenAnnouncePool,
 		fftypes.OpStatusPending,
 		signingIdentity)
 

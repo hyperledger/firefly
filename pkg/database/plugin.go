@@ -778,6 +778,7 @@ var TokenAccountQueryFactory = &queryFields{
 
 // TokenTransferQueryFactory filter fields for token transfers
 var TokenTransferQueryFactory = &queryFields{
+	"localid":        &StringField{},
 	"poolprotocolid": &StringField{},
 	"tokenindex":     &StringField{},
 	"key":            &StringField{},

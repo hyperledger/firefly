@@ -177,7 +177,7 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 		ns,
 		tx.ID,
 		"",
-		fftypes.OpTypeTokensCreatePool,
+		fftypes.OpTypeTokenCreatePool,
 		fftypes.OpStatusPending,
 		"")
 	addTokenPoolCreateInputs(op, pool)
@@ -319,7 +319,7 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 		ns,
 		fftypes.NewUUID(),
 		"",
-		fftypes.OpTypeTokensTransfer,
+		fftypes.OpTypeTokenTransfer,
 		fftypes.OpStatusPending,
 		"")
 	err = am.database.UpsertOperation(ctx, op, false)

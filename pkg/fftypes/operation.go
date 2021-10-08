@@ -30,12 +30,12 @@ var (
 	OpTypeDataExchangeBatchSend OpType = ffEnum("optype", "dataexchange_batch_send")
 	// OpTypeDataExchangeBlobSend is a private send
 	OpTypeDataExchangeBlobSend OpType = ffEnum("optype", "dataexchange_blob_send")
-	// OpTypeTokensCreatePool is a token pool creation
-	OpTypeTokensCreatePool OpType = ffEnum("optype", "tokens_create_pool")
-	// OpTypeTokensAnnounce is a broadcast of token pool info
-	OpTypeTokensAnnouncePool OpType = ffEnum("optype", "tokens_announce_pool")
-	// OpTypeTokensTransfer is a token transfer
-	OpTypeTokensTransfer OpType = ffEnum("optype", "tokens_transfer")
+	// OpTypeTokenCreatePool is a token pool creation
+	OpTypeTokenCreatePool OpType = ffEnum("optype", "token_create_pool")
+	// OpTypeTokenAnnouncePool is a broadcast of token pool info
+	OpTypeTokenAnnouncePool OpType = ffEnum("optype", "token_announce_pool")
+	// OpTypeTokenTransfer is a token transfer
+	OpTypeTokenTransfer OpType = ffEnum("optype", "token_transfer")
 )
 
 // OpStatus is the current status of an operation

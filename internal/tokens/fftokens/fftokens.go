@@ -191,9 +191,14 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 	tx := data.GetObject("transaction")
 	txHash := tx.GetString("transactionHash")
 
-	eventName := "Transfer"
-	if t == fftypes.TokenTransferTypeMint {
+	var eventName string
+	switch t {
+	case fftypes.TokenTransferTypeMint:
 		eventName = "Mint"
+	case fftypes.TokenTransferTypeBurn:
+		eventName = "Burn"
+	default:
+		eventName = "Transfer"
 	}
 
 	if tokenIndex == "" ||
