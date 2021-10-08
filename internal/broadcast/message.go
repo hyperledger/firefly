@@ -18,6 +18,7 @@ package broadcast
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/log"
@@ -35,14 +36,20 @@ func (bm *broadcastManager) broadcastMessageWithID(ctx context.Context, ns strin
 	}
 	resolved.Header.ID = id
 	resolved.Header.Namespace = ns
-	resolved.Header.Type = fftypes.MessageTypeBroadcast
+
+	if resolved.Header.Type == "" {
+		resolved.Header.Type = fftypes.MessageTypeBroadcast
+	}
+
 	if resolved.Header.TxType == "" {
 		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
 
-	// Resolve the sending identity
-	if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if !bm.isRootOrgBroadcast(ctx, resolved) {
+		// Resolve the sending identity
+		if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+		}
 	}
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
@@ -80,6 +87,29 @@ func (bm *broadcastManager) broadcastMessageWithID(ctx context.Context, ns strin
 
 	// The broadcastMessage function modifies the input message to create all the refs
 	return out, err
+}
+
+func (bm *broadcastManager) isRootOrgBroadcast(ctx context.Context, message *fftypes.Message) bool {
+	// Look into message to see if it contains a data item that is a root organization definition
+	if message.Header.Type == fftypes.MessageTypeDefinition {
+		messageData, ok, err := bm.data.GetMessageData(ctx, message, true)
+		if ok && err == nil {
+			if len(messageData) > 0 {
+				dataItem := messageData[0]
+				if dataItem.Validator == fftypes.MessageTypeDefinition {
+					var org *fftypes.Organization
+					err := json.Unmarshal(dataItem.Value, &org)
+					if err != nil {
+						return false
+					}
+					if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob, waitConfirm bool) (*fftypes.Message, error) {

@@ -71,13 +71,15 @@ func (em *eventManager) isRootOrgBroadcast(batch *fftypes.Batch) bool {
 				if len(batch.Payload.Data) > 0 {
 					batchDataItem := batch.Payload.Data[0]
 					if batchDataItem.ID.Equals(messageDataItem.ID) {
-						var org *fftypes.Organization
-						err := json.Unmarshal(batchDataItem.Value, &org)
-						if err != nil {
-							return false
-						}
-						if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
-							return true
+						if batchDataItem.Validator == fftypes.MessageTypeDefinition {
+							var org *fftypes.Organization
+							err := json.Unmarshal(batchDataItem.Value, &org)
+							if err != nil {
+								return false
+							}
+							if org != nil && org.Name != "" && org.ID != nil && org.Parent == "" {
+								return true
+							}
 						}
 					}
 				}

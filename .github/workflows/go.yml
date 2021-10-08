@@ -36,3 +36,10 @@ jobs:
 
       - name: Run E2E tests
         run: ./test/e2e/run.sh
+
+      - name: Archive container logs
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: container-logs
+          path: containerlogs/logs.txt
