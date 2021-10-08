@@ -32,28 +32,28 @@ fi
 cd $CWD
 
 if [ $RC -eq 0 ] && [ "$CREATE_STACK" == "true" ]; then
-	$CLI remove -f $STACK_NAME || true
+  $CLI remove -f $STACK_NAME || true
   RC=$?
 fi
 
 if [ $RC -eq 0 ] && [ "$BUILD_FIREFLY" == "true" ]; then
-	docker build -t ghcr.io/hyperledger/firefly:latest ../..
+  docker build -t ghcr.io/hyperledger/firefly:latest ../..
   RC=$?
 fi
 
 if [ $RC -eq 0 ] && [ "$DOWNLOAD_CLI" == "true" ]; then
-	go install github.com/hyperledger/firefly-cli/ff@latest
+  go install github.com/hyperledger/firefly-cli/ff@latest
   RC=$?
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
   if [ $RC -eq 0 ]; then
-	  $CLI init --database $DATABASE_TYPE $STACK_NAME 2
+    $CLI init --database $DATABASE_TYPE $STACK_NAME 2
     RC=$?
   fi
 
   if [ $RC -eq 0 ]; then
-  	$CLI start -nb $STACK_NAME
+    $CLI start -nb $STACK_NAME
     RC=$?
   fi
 fi
