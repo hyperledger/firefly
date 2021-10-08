@@ -47,6 +47,15 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 			},
 		},
 	}
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
 
 	mti.On("Name").Return("mock-tokens")
 	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
@@ -62,7 +71,7 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 	}), false).Return(nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x0", "tx1", info)
+	err := am.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -78,12 +87,21 @@ func TestTokenPoolCreatedOpNotFound(t *testing.T) {
 
 	txID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{}
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
 
 	mti.On("Name").Return("mock-tokens")
 	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x0", "tx1", info)
+	err := am.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -104,12 +122,21 @@ func TestTokenPoolMissingID(t *testing.T) {
 			Input: fftypes.JSONObject{},
 		},
 	}
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
 
 	mti.On("Name").Return("mock-tokens")
 	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x0", "tx1", info)
+	err := am.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -133,12 +160,21 @@ func TestTokenPoolCreatedMissingNamespace(t *testing.T) {
 			},
 		},
 	}
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
 
 	mti.On("Name").Return("mock-tokens")
 	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x0", "tx1", info)
+	err := am.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -164,6 +200,15 @@ func TestTokenPoolCreatedUpsertFail(t *testing.T) {
 			},
 		},
 	}
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.TokenTypeFungible,
+		ProtocolID: "123",
+		Key:        "0x0",
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
 
 	mti.On("Name").Return("mock-tokens")
 	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operations, nil, nil)
@@ -173,7 +218,7 @@ func TestTokenPoolCreatedUpsertFail(t *testing.T) {
 	}), false).Return(database.HashMismatch)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x0", "tx1", info)
+	err := am.TokenPoolCreated(mti, pool, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

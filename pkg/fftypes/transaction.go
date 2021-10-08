@@ -30,6 +30,8 @@ var (
 	TransactionTypeBatchPin TransactionType = ffEnum("txtype", "batch_pin")
 	// TransactionTypeTokenPool represents a token pool creation
 	TransactionTypeTokenPool TransactionType = ffEnum("txtype", "token_pool")
+	// TransactionTypeTokenTransfer represents a token transfer
+	TransactionTypeTokenTransfer TransactionType = ffEnum("txtype", "token_transfer")
 )
 
 // TransactionRef refers to a transaction, in other types

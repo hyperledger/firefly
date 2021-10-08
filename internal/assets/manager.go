@@ -45,8 +45,8 @@ type Manager interface {
 	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	// Bound token callbacks
-	TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
-	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
+	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	Start() error
 	WaitStop()
@@ -116,6 +116,21 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 		return fmt.Errorf("namespace or name missing from inputs")
 	}
 	pool.Config = input.GetObject("config")
+	return nil
+}
+
+func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
+	op.Input = fftypes.JSONObject{
+		"id": transfer.LocalID.String(),
+	}
+}
+
+func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
+	input := &op.Input
+	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -314,21 +329,41 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 		})
 	}
 
-	op := fftypes.NewTXOperation(
-		plugin,
-		ns,
-		fftypes.NewUUID(),
-		"",
-		fftypes.OpTypeTokenTransfer,
-		fftypes.OpStatusPending,
-		"")
-	err = am.database.UpsertOperation(ctx, op, false)
+	tx := &fftypes.Transaction{
+		ID: fftypes.NewUUID(),
+		Subject: fftypes.TransactionSubject{
+			Namespace: ns,
+			Type:      fftypes.TransactionTypeTokenTransfer,
+			Signer:    transfer.Key,
+			Reference: id,
+		},
+		Created: fftypes.Now(),
+		Status:  fftypes.OpStatusPending,
+	}
+	tx.Hash = tx.Subject.Hash()
+	err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
 	if err != nil {
 		return nil, err
 	}
 
 	transfer.LocalID = id
 	transfer.PoolProtocolID = pool.ProtocolID
+	transfer.TX.ID = tx.ID
+	transfer.TX.Type = tx.Subject.Type
+
+	op := fftypes.NewTXOperation(
+		plugin,
+		ns,
+		tx.ID,
+		"",
+		fftypes.OpTypeTokenTransfer,
+		fftypes.OpStatusPending,
+		"")
+	addTokenTransferInputs(op, transfer)
+	err = am.database.UpsertOperation(ctx, op, false)
+	if err != nil {
+		return nil, err
+	}
 
 	switch transfer.Type {
 	case fftypes.TokenTransferTypeMint:

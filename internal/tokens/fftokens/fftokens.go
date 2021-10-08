@@ -177,8 +177,18 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 		return nil // move on
 	}
 
+	pool := &fftypes.TokenPool{
+		Type:       fftypes.FFEnum(tokenType),
+		ProtocolID: protocolID,
+		Key:        operatorAddress,
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
+
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
+	return h.callbacks.TokenPoolCreated(h, pool, txHash, tx)
 }
 
 func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -222,14 +232,13 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 	// The trackingID is an optional argument from the connector, so it's important not to
 	// fail if it's missing or malformed.
 	trackingID := data.GetString("trackingId")
-	localID, err := fftypes.ParseUUID(ctx, trackingID)
+	txID, err := fftypes.ParseUUID(ctx, trackingID)
 	if err != nil {
 		log.L(ctx).Infof("%s event contains invalid ID - continuing anyway (%s): %+v", eventName, err, data)
-		localID = fftypes.NewUUID()
+		txID = fftypes.NewUUID()
 	}
 
 	transfer := &fftypes.TokenTransfer{
-		LocalID:        localID,
 		Type:           t,
 		PoolProtocolID: poolProtocolID,
 		TokenIndex:     tokenIndex,
@@ -237,10 +246,15 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		To:             toAddress,
 		Amount:         valueInt,
 		ProtocolID:     txHash,
+		Key:            operatorAddress,
+		TX: fftypes.TransactionRef{
+			ID:   txID,
+			Type: fftypes.TransactionTypeTokenTransfer,
+		},
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokensTransferred(h, transfer, operatorAddress, txHash, tx)
+	return h.callbacks.TokensTransferred(h, transfer, txHash, tx)
 }
 
 func (h *FFTokens) eventLoop() {
@@ -321,7 +335,7 @@ func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mi
 			To:         mint.To,
 			Amount:     mint.Amount,
 			RequestID:  operationID.String(),
-			TrackingID: mint.LocalID.String(),
+			TrackingID: mint.TX.ID.String(),
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
@@ -338,7 +352,7 @@ func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, bu
 			From:       burn.From,
 			Amount:     burn.Amount,
 			RequestID:  operationID.String(),
-			TrackingID: burn.LocalID.String(),
+			TrackingID: burn.TX.ID.String(),
 		}).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
@@ -356,7 +370,7 @@ func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID
 			To:         transfer.To,
 			Amount:     transfer.Amount,
 			RequestID:  operationID.String(),
-			TrackingID: transfer.LocalID.String(),
+			TrackingID: transfer.TX.ID.String(),
 		}).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
