@@ -74,7 +74,7 @@ type mintTokens struct {
 
 type burnTokens struct {
 	PoolID     string  `json:"poolId"`
-	TokenIndex string  `json:"tokenIndex"`
+	TokenIndex string  `json:"tokenIndex,omitempty"`
 	From       string  `json:"from"`
 	Amount     big.Int `json:"amount"`
 	RequestID  string  `json:"requestId,omitempty"`
@@ -83,7 +83,7 @@ type burnTokens struct {
 
 type transferTokens struct {
 	PoolID     string  `json:"poolId"`
-	TokenIndex string  `json:"tokenIndex"`
+	TokenIndex string  `json:"tokenIndex,omitempty"`
 	From       string  `json:"from"`
 	To         string  `json:"to"`
 	Amount     big.Int `json:"amount"`
@@ -201,8 +201,7 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		eventName = "Transfer"
 	}
 
-	if tokenIndex == "" ||
-		poolProtocolID == "" ||
+	if poolProtocolID == "" ||
 		operatorAddress == "" ||
 		value == "" ||
 		txHash == "" ||

@@ -3,7 +3,7 @@ CREATE TABLE tokentransfer (
   local_id         UUID            NOT NULL,
   type             VARCHAR(64)     NOT NULL,
   pool_protocol_id VARCHAR(1024)   NOT NULL,
-  token_index      VARCHAR(1024)   NOT NULL,
+  token_index      VARCHAR(1024),
   key              VARCHAR(1024)   NOT NULL,
   from_key         VARCHAR(1024),
   to_key           VARCHAR(1024),
