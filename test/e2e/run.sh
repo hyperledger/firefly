@@ -6,7 +6,19 @@ CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
 STACK_NAME=firefly-e2e
-RC=0
+
+checkOk() {
+  RC=$1
+
+  WORKDIR=${GITHUB_WORKSPACE}
+  if [ -z "$WORKDIR" ]; then WORKDIR=.; fi
+
+  mkdir -p "${WORKDIR}/containerlogs"
+  $CLI logs $STACK_NAME > "${WORKDIR}/containerlogs/logs.txt"
+  if [ $RC -eq 0 ]; then RC=$?; fi
+
+  if [ $RC -ne 0 ]; then exit $RC; fi
+}
 
 if [ -z "${DOWNLOAD_CLI}" ]; then
   DOWNLOAD_CLI=true
@@ -31,50 +43,33 @@ fi
 
 cd $CWD
 
-if [ $RC -eq 0 ] && [ "$CREATE_STACK" == "true" ]; then
+if [ "$CREATE_STACK" == "true" ]; then
   $CLI remove -f $STACK_NAME || true
-  RC=$?
+  checkOk $?
 fi
 
-if [ $RC -eq 0 ] && [ "$BUILD_FIREFLY" == "true" ]; then
+if [ "$BUILD_FIREFLY" == "true" ]; then
   docker build -t ghcr.io/hyperledger/firefly:latest ../..
-  RC=$?
+  checkOk $?
 fi
 
-if [ $RC -eq 0 ] && [ "$DOWNLOAD_CLI" == "true" ]; then
+if [ "$DOWNLOAD_CLI" == "true" ]; then
   go install github.com/hyperledger/firefly-cli/ff@latest
-  RC=$?
+  checkOk $?
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  if [ $RC -eq 0 ]; then
-    $CLI init --database $DATABASE_TYPE $STACK_NAME 2
-    RC=$?
-  fi
+  $CLI init --database $DATABASE_TYPE $STACK_NAME 2
+  checkOk $?
 
-  if [ $RC -eq 0 ]; then
-    $CLI start -nb $STACK_NAME
-    RC=$?
-  fi
+  $CLI start -nb $STACK_NAME
+  checkOk $?
 fi
 
-if [ $RC -eq 0 ]; then
-  $CLI info $STACK_NAME
-  RC=$?
-fi
+$CLI info $STACK_NAME
+checkOk $?
 
 export STACK_FILE
 
-if [ $RC -eq 0 ]; then
-  go clean -testcache && go test -v .
-  RC=$?
-fi
-
-WORKDIR=${GITHUB_WORKSPACE}
-if [ -z "$WORKDIR" ]; then WORKDIR=$CWD; fi
-
-mkdir -p "${WORKDIR}/containerlogs"
-$CLI logs $STACK_NAME > "${WORKDIR}/containerlogs/logs.txt"
-if [ $RC -eq 0 ]; then RC=$?; fi
-
-exit $RC
+go clean -testcache && go test -v .
+checkOk $?
