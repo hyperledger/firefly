@@ -8,16 +8,16 @@ STACK_DIR=~/.firefly/stacks
 STACK_NAME=firefly-e2e
 
 checkOk() {
-  RC=$1
+  local rc=$1
 
   WORKDIR=${GITHUB_WORKSPACE}
   if [ -z "$WORKDIR" ]; then WORKDIR=.; fi
 
   mkdir -p "${WORKDIR}/containerlogs"
   $CLI logs $STACK_NAME > "${WORKDIR}/containerlogs/logs.txt"
-  if [ $RC -eq 0 ]; then RC=$?; fi
+  if [ $rc -eq 0 ]; then rc=$?; fi
 
-  if [ $RC -ne 0 ]; then exit $RC; fi
+  if [ $rc -ne 0 ]; then exit $rc; fi
 }
 
 if [ -z "${DOWNLOAD_CLI}" ]; then
