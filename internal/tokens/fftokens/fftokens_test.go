@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"net/url"
 	"testing"
@@ -169,7 +170,7 @@ func TestMintTokens(t *testing.T) {
 		PoolProtocolID: "123",
 		LocalID:        fftypes.NewUUID(),
 		To:             "user1",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 	opID := fftypes.NewUUID()
 
@@ -222,7 +223,7 @@ func TestBurnTokens(t *testing.T) {
 		LocalID:        fftypes.NewUUID(),
 		TokenIndex:     "1",
 		From:           "user1",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 	opID := fftypes.NewUUID()
 
@@ -277,7 +278,7 @@ func TestTransferTokens(t *testing.T) {
 		TokenIndex:     "1",
 		From:           "user1",
 		To:             "user2",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 	opID := fftypes.NewUUID()
 
@@ -379,7 +380,7 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.PoolProtocolID == "F1" && t.Amount == 2 && t.To == "0x0"
+		return t.PoolProtocolID == "F1" && t.Amount.Int64() == 2 && t.To == "0x0"
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
 	fromServer <- `{"id":"11","event":"token-mint","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","to":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
@@ -387,7 +388,7 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.PoolProtocolID == "N1" && t.Amount == 1 && t.To == "0x0"
+		return t.PoolProtocolID == "N1" && t.Amount.Int64() == 1 && t.To == "0x0"
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
 	fromServer <- `{"id":"12","event":"token-mint","data":{"poolId":"N1","tokenIndex":"1","operator":"0x0","to":"0x0","amount":"1","trackingId":"bad","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
@@ -400,7 +401,7 @@ func TestEvents(t *testing.T) {
 
 	// token-transfer: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.PoolProtocolID == "F1" && t.Amount == 2 && t.From == "0x0" && t.To == "0x1"
+		return t.PoolProtocolID == "F1" && t.Amount.Int64() == 2 && t.From == "0x0" && t.To == "0x1"
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
 	fromServer <- `{"id":"14","event":"token-transfer","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
@@ -408,7 +409,7 @@ func TestEvents(t *testing.T) {
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
-		return t.PoolProtocolID == "F1" && t.Amount == 2 && t.From == "0x0"
+		return t.PoolProtocolID == "F1" && t.Amount.Int64() == 2 && t.From == "0x0"
 	}), "0x0", "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
 	fromServer <- `{"id":"15","event":"token-burn","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer

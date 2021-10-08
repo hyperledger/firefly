@@ -4689,9 +4689,7 @@ paths:
               schema:
                 items:
                   properties:
-                    balance:
-                      format: int64
-                      type: integer
+                    balance: {}
                     identity:
                       type: string
                     poolProtocolId:
@@ -4744,9 +4742,7 @@ paths:
           application/json:
             schema:
               properties:
-                amount:
-                  format: int64
-                  type: integer
+                amount: {}
                 from:
                   type: string
                 key:
@@ -4760,9 +4756,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string
@@ -4793,9 +4787,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string
@@ -4864,9 +4856,7 @@ paths:
           application/json:
             schema:
               properties:
-                amount:
-                  format: int64
-                  type: integer
+                amount: {}
                 key:
                   type: string
                 to:
@@ -4878,9 +4868,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string
@@ -4911,9 +4899,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string
@@ -5058,9 +5044,7 @@ paths:
               schema:
                 items:
                   properties:
-                    balance:
-                      format: int64
-                      type: integer
+                    balance: {}
                     identity:
                       type: string
                     poolProtocolId:
@@ -5112,9 +5096,7 @@ paths:
           application/json:
             schema:
               properties:
-                amount:
-                  format: int64
-                  type: integer
+                amount: {}
                 from:
                   type: string
                 key:
@@ -5130,9 +5112,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string
@@ -5163,9 +5143,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  amount:
-                    format: int64
-                    type: integer
+                  amount: {}
                   created: {}
                   from:
                     type: string

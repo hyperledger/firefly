@@ -27,7 +27,6 @@ func TestTokenAccountIdentifier(t *testing.T) {
 		PoolProtocolID: "123",
 		TokenIndex:     "1",
 		Identity:       "0x00",
-		Balance:        5,
 	}
 	assert.Equal(t, "123:1:0x00", account.Identifier())
 }

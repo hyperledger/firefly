@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -40,13 +41,13 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Identity:       "0x0",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 	account := &fftypes.TokenAccount{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Identity:       "0x0",
-		Balance:        10,
+		Balance:        *big.NewInt(10),
 	}
 	accountJson, _ := json.Marshal(&account)
 
@@ -83,7 +84,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
 	accountReadJson, _ = json.Marshal(&accountRead)
-	account.Balance = 20
+	account.Balance.SetInt64(20)
 	accountJson, _ = json.Marshal(&account)
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 }
@@ -146,13 +147,13 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Identity:       "0x0",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs("F1", "1", "0x0", 10).
+		WithArgs("F1", "1", "0x0", "10").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	err := s.AddTokenAccountBalance(context.Background(), operation)
@@ -168,7 +169,7 @@ func TestAddTokenAccountBalanceUpdateSuccess(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Identity:       "0x0",
-		Amount:         10,
+		Amount:         *big.NewInt(10),
 	}
 
 	db.ExpectBegin()

@@ -19,7 +19,7 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
-	"strconv"
+	"math/big"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -65,30 +65,30 @@ type createPool struct {
 }
 
 type mintTokens struct {
-	PoolID     string `json:"poolId"`
-	To         string `json:"to"`
-	Amount     int64  `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	TrackingID string `json:"trackingId"`
+	PoolID     string  `json:"poolId"`
+	To         string  `json:"to"`
+	Amount     big.Int `json:"amount"`
+	RequestID  string  `json:"requestId,omitempty"`
+	TrackingID string  `json:"trackingId"`
 }
 
 type burnTokens struct {
-	PoolID     string `json:"poolId"`
-	TokenIndex string `json:"tokenIndex"`
-	From       string `json:"from"`
-	Amount     int64  `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	TrackingID string `json:"trackingId"`
+	PoolID     string  `json:"poolId"`
+	TokenIndex string  `json:"tokenIndex"`
+	From       string  `json:"from"`
+	Amount     big.Int `json:"amount"`
+	RequestID  string  `json:"requestId,omitempty"`
+	TrackingID string  `json:"trackingId"`
 }
 
 type transferTokens struct {
-	PoolID     string `json:"poolId"`
-	TokenIndex string `json:"tokenIndex"`
-	From       string `json:"from"`
-	To         string `json:"to"`
-	Amount     int64  `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	TrackingID string `json:"trackingId"`
+	PoolID     string  `json:"poolId"`
+	TokenIndex string  `json:"tokenIndex"`
+	From       string  `json:"from"`
+	To         string  `json:"to"`
+	Amount     big.Int `json:"amount"`
+	RequestID  string  `json:"requestId,omitempty"`
+	TrackingID string  `json:"trackingId"`
 }
 
 func (h *FFTokens) Name() string {
@@ -207,8 +207,9 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		return nil // move on
 	}
 
-	valueInt, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
+	var valueInt big.Int
+	_, ok := valueInt.SetString(value, 10)
+	if !ok {
 		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
 		return nil // move on
 	}

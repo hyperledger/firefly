@@ -17,6 +17,7 @@ package assets
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -354,7 +355,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	defer cancel()
 
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -385,7 +386,7 @@ func TestMintTokensBadPool(t *testing.T) {
 	defer cancel()
 
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -402,7 +403,7 @@ func TestMintTokensIdentityFail(t *testing.T) {
 	defer cancel()
 
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -419,7 +420,7 @@ func TestMintTokensFail(t *testing.T) {
 	defer cancel()
 
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -439,7 +440,7 @@ func TestMintTokensOperationFail(t *testing.T) {
 	defer cancel()
 
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -458,7 +459,7 @@ func TestMintTokensConfirm(t *testing.T) {
 
 	requestID := fftypes.NewUUID()
 	mint := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -491,7 +492,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	defer cancel()
 
 	burn := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -515,7 +516,7 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 	defer cancel()
 
 	burn := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -534,7 +535,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	transfer := &fftypes.TokenTransfer{
 		From:   "A",
 		To:     "B",
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -560,7 +561,7 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 	transfer := &fftypes.TokenTransfer{
 		From:   "A",
 		To:     "B",
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -576,7 +577,7 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	defer cancel()
 
 	transfer := &fftypes.TokenTransfer{
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -595,7 +596,7 @@ func TestTransferTokensInvalidType(t *testing.T) {
 	transfer := &fftypes.TokenTransfer{
 		From:   "A",
 		To:     "B",
-		Amount: 5,
+		Amount: *big.NewInt(5),
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)

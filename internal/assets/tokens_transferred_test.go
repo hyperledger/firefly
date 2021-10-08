@@ -18,6 +18,7 @@ package assets
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -39,19 +40,19 @@ func TestTokensTransferredAddBalanceSucceedWithRetries(t *testing.T) {
 		TokenIndex:     "0",
 		From:           "0x1",
 		To:             "0x2",
-		Amount:         1,
+		Amount:         *big.NewInt(1),
 	}
 	fromBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
 		Identity:       "0x1",
-		Amount:         -1,
+		Amount:         *big.NewInt(-1),
 	}
 	toBalance := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "0",
 		Identity:       "0x2",
-		Amount:         1,
+		Amount:         *big.NewInt(1),
 	}
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
@@ -89,7 +90,7 @@ func TestTokensTransferredAddBalanceIgnore(t *testing.T) {
 		TokenIndex:     "0",
 		From:           "0x1",
 		To:             "0x2",
-		Amount:         1,
+		Amount:         *big.NewInt(1),
 	}
 
 	mdi.On("GetTokenPoolByProtocolID", am.ctx, "F1").Return(nil, nil)
