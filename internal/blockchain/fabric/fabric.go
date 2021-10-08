@@ -163,6 +163,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
 	f.callbacks = callbacks
+	f.idCache = make(map[string]*fabIdentity)
 
 	if fabconnectConf.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
@@ -172,10 +173,8 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	if f.chaincode == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
 	}
+	// the org identity is guaranteed to be configured by the core
 	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
-	if f.signer == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "signer", "blockchain.fabconnect")
-	}
 	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.fabconnect")
@@ -294,7 +293,6 @@ func (f *Fabric) ensureSusbscriptions(streamID string) error {
 				Channel:     f.defaultChannel,
 				Signer:      f.signer,
 				Stream:      streamID,
-				FromBlock:   "1",
 			}
 			newSub.Filter.ChaincodeID = f.chaincode
 			newSub.Filter.EventFilter = "BatchPin"
@@ -511,7 +509,7 @@ func (f *Fabric) ResolveSigningKey(ctx context.Context, signingKeyInput string) 
 func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, signingKey string, requestID string, input interface{}, output interface{}) (*resty.Response, error) {
 	return f.client.R().
 		SetContext(ctx).
-		SetQueryParam(f.prefixShort+"-signer", signingKey).
+		SetQueryParam(f.prefixShort+"-signer", getUserName(signingKey)).
 		SetQueryParam(f.prefixShort+"-channel", channel).
 		SetQueryParam(f.prefixShort+"-chaincode", chaincode).
 		SetQueryParam(f.prefixShort+"-sync", "false").
@@ -519,6 +517,18 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, s
 		SetBody(input).
 		SetResult(output).
 		Post("/transactions")
+}
+
+func getUserName(fullIDString string) string {
+	matches := fullIdentityPattern.FindStringSubmatch(fullIDString)
+	if len(matches) == 0 {
+		return fullIDString
+	}
+	matches = cnPatteren.FindStringSubmatch(matches[1])
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
 }
 
 func hexFormatB32(b *fftypes.Bytes32) string {
