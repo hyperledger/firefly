@@ -26,6 +26,14 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - test-suite: TestEthereumE2ESuite
+            blockchain-provider: geth
+          - test-suite: TestFabricE2ESuite
+            blockchain-provider: fabric
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
 
@@ -35,6 +43,9 @@ jobs:
           go-version: 1.16
 
       - name: Run E2E tests
+        env:
+          TEST_SUITE: ${{ matrix.test-suite }}
+          BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
         run: ./test/e2e/run.sh
 
       - name: Archive container logs
