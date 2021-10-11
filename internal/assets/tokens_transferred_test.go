@@ -92,12 +92,12 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		Key:            "0x12345",
 		From:           "0x1",
 		To:             "0x2",
-		Amount:         *big.NewInt(1),
 		TX: fftypes.TransactionRef{
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
 	}
+	transfer.Amount.Int().SetInt64(1)
 	pool := &fftypes.TokenPool{
 		Namespace: "ns1",
 	}

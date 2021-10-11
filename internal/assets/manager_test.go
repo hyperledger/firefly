@@ -627,10 +627,10 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 	defer cancel()
 
 	transfer := &fftypes.TokenTransfer{
-		From:   "A",
-		To:     "B",
-		Amount: *big.NewInt(5),
+		From: "A",
+		To:   "B",
 	}
+	transfer.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
