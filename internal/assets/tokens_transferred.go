@@ -20,13 +20,15 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	return am.retry.Do(am.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
+			// Check that this is from a known pool
 			pool, err := am.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
 			if err != nil {
 				return err
@@ -35,6 +37,51 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				log.L(ctx).Warnf("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolProtocolID, protocolTxID)
 				return nil
 			}
+
+			transfer.LocalID = nil
+
+			if transfer.TX.ID != nil {
+				// Find a matching operation within this transaction
+				fb := database.OperationQueryFactory.NewFilter(ctx)
+				filter := fb.And(
+					fb.Eq("tx", transfer.TX.ID),
+					fb.Eq("type", fftypes.OpTypeTokenTransfer),
+				)
+				operations, _, err := am.database.GetOperations(ctx, filter)
+				if err != nil {
+					return err
+				}
+				if len(operations) > 0 {
+					err = retrieveTokenTransferInputs(ctx, operations[0], transfer)
+					if err != nil {
+						log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
+					}
+				}
+
+				transaction := &fftypes.Transaction{
+					ID:     transfer.TX.ID,
+					Status: fftypes.OpStatusSucceeded,
+					Subject: fftypes.TransactionSubject{
+						Namespace: pool.Namespace,
+						Type:      transfer.TX.Type,
+						Signer:    transfer.Key,
+						Reference: transfer.LocalID,
+					},
+					ProtocolID: protocolTxID,
+					Info:       additionalInfo,
+				}
+				valid, err := am.txhelper.PersistTransaction(ctx, transaction)
+				if err != nil {
+					return err
+				} else if !valid {
+					return nil
+				}
+			}
+
+			if transfer.LocalID == nil {
+				transfer.LocalID = fftypes.NewUUID()
+			}
+
 			if err := am.database.UpsertTokenTransfer(ctx, transfer); err != nil {
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
@@ -62,7 +109,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				}
 			}
 
-			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, signingIdentity)
+			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, transfer.LocalID)
 			return am.database.InsertEvent(ctx, event)
 		})

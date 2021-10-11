@@ -44,6 +44,10 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		To:             "0x02",
 		ProtocolID:     "12345",
 		MessageHash:    fftypes.NewRandB32(),
+		TX: fftypes.TransactionRef{
+			Type: fftypes.TransactionTypeTokenTransfer,
+			ID:   fftypes.NewUUID(),
+		},
 	}
 	transfer.Amount.Int().SetInt64(10)
 

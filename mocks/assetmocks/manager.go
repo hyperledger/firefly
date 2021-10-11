@@ -220,13 +220,13 @@ func (_m *Manager) Start() error {
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: tk, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo
-func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.FFEnum, tx *fftypes.UUID, protocolID string, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: tk, pool, protocolTxID, additionalInfo
+func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tk, pool, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, fftypes.FFEnum, *fftypes.UUID, string, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
+		r0 = rf(tk, pool, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -234,13 +234,13 @@ func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, tokenType fftypes.FFEnum, 
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: tk, transfer, signingIdentity, protocolTxID, additionalInfo
-func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, transfer, signingIdentity, protocolTxID, additionalInfo)
+// TokensTransferred provides a mock function with given fields: tk, transfer, protocolTxID, additionalInfo
+func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(tk, transfer, protocolTxID, additionalInfo)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, transfer, signingIdentity, protocolTxID, additionalInfo)
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
+		r0 = rf(tk, transfer, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}
