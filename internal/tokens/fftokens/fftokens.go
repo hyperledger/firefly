@@ -49,8 +49,11 @@ type wsEvent struct {
 type msgType string
 
 const (
-	messageReceipt   msgType = "receipt"
-	messageTokenPool msgType = "token-pool"
+	messageReceipt       msgType = "receipt"
+	messageTokenPool     msgType = "token-pool"
+	messageTokenMint     msgType = "token-mint"
+	messageTokenBurn     msgType = "token-burn"
+	messageTokenTransfer msgType = "token-transfer"
 )
 
 type createPool struct {
@@ -58,6 +61,33 @@ type createPool struct {
 	RequestID  string             `json:"requestId"`
 	TrackingID string             `json:"trackingId"`
 	Config     fftypes.JSONObject `json:"config"`
+}
+
+type mintTokens struct {
+	PoolID     string `json:"poolId"`
+	To         string `json:"to"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
+}
+
+type burnTokens struct {
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex,omitempty"`
+	From       string `json:"from"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
+}
+
+type transferTokens struct {
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex,omitempty"`
+	From       string `json:"from"`
+	To         string `json:"to"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
 }
 
 func (h *FFTokens) Name() string {
@@ -150,6 +180,66 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 	return h.callbacks.TokenPoolCreated(h, fftypes.FFEnum(tokenType), txID, protocolID, operatorAddress, txHash, tx)
 }
 
+func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
+	tokenIndex := data.GetString("tokenIndex")
+	poolProtocolID := data.GetString("poolId")
+	operatorAddress := data.GetString("operator")
+	fromAddress := data.GetString("from")
+	toAddress := data.GetString("to")
+	value := data.GetString("amount")
+	tx := data.GetObject("transaction")
+	txHash := tx.GetString("transactionHash")
+
+	var eventName string
+	switch t {
+	case fftypes.TokenTransferTypeMint:
+		eventName = "Mint"
+	case fftypes.TokenTransferTypeBurn:
+		eventName = "Burn"
+	default:
+		eventName = "Transfer"
+	}
+
+	if poolProtocolID == "" ||
+		operatorAddress == "" ||
+		value == "" ||
+		txHash == "" ||
+		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
+		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
+		return nil // move on
+	}
+
+	// We want to process all transfers, even those not initiated by FireFly.
+	// The trackingID is an optional argument from the connector, so it's important not to
+	// fail if it's missing or malformed.
+	trackingID := data.GetString("trackingId")
+	localID, err := fftypes.ParseUUID(ctx, trackingID)
+	if err != nil {
+		log.L(ctx).Infof("%s event contains invalid ID - continuing anyway (%s): %+v", eventName, err, data)
+		localID = fftypes.NewUUID()
+	}
+
+	transfer := &fftypes.TokenTransfer{
+		LocalID:        localID,
+		Type:           t,
+		PoolProtocolID: poolProtocolID,
+		TokenIndex:     tokenIndex,
+		From:           fromAddress,
+		To:             toAddress,
+		ProtocolID:     txHash,
+	}
+
+	_, ok := transfer.Amount.Int().SetString(value, 10)
+	if !ok {
+		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
+		return nil // move on
+	}
+
+	// If there's an error dispatching the event, we must return the error and shutdown
+	return h.callbacks.TokensTransferred(h, transfer, operatorAddress, txHash, tx)
+}
+
 func (h *FFTokens) eventLoop() {
 	defer h.wsconn.Close()
 	l := log.L(h.ctx).WithField("role", "event-loop")
@@ -177,6 +267,12 @@ func (h *FFTokens) eventLoop() {
 				err = h.handleReceipt(ctx, msg.Data)
 			case messageTokenPool:
 				err = h.handleTokenPoolCreate(ctx, msg.Data)
+			case messageTokenMint:
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
+			case messageTokenBurn:
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
+			case messageTokenTransfer:
+				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
 			default:
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
@@ -209,6 +305,57 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 			Config:     pool.Config,
 		}).
 		Post("/api/v1/pool")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&mintTokens{
+			PoolID:     mint.PoolProtocolID,
+			To:         mint.To,
+			Amount:     mint.Amount.Int().String(),
+			RequestID:  operationID.String(),
+			TrackingID: mint.LocalID.String(),
+		}).
+		Post("/api/v1/mint")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&burnTokens{
+			PoolID:     burn.PoolProtocolID,
+			TokenIndex: burn.TokenIndex,
+			From:       burn.From,
+			Amount:     burn.Amount.Int().String(),
+			RequestID:  operationID.String(),
+			TrackingID: burn.LocalID.String(),
+		}).
+		Post("/api/v1/burn")
+	if err != nil || !res.IsSuccess() {
+		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+	}
+	return nil
+}
+
+func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
+	res, err := h.client.R().SetContext(ctx).
+		SetBody(&transferTokens{
+			PoolID:     transfer.PoolProtocolID,
+			TokenIndex: transfer.TokenIndex,
+			From:       transfer.From,
+			To:         transfer.To,
+			Amount:     transfer.Amount.Int().String(),
+			RequestID:  operationID.String(),
+			TrackingID: transfer.LocalID.String(),
+		}).
+		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
 		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
 	}

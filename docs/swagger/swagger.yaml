@@ -4640,7 +4640,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: protocolid
+        name: poolprotocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4689,17 +4689,490 @@ paths:
               schema:
                 items:
                   properties:
-                    balance:
-                      format: int64
-                      type: integer
+                    balance: {}
                     identity:
                       type: string
-                    protocolId:
+                    poolProtocolId:
                       type: string
                     tokenIndex:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/{type}/pools/{name}/burn:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenBurn
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                from:
+                  type: string
+                key:
+                  type: string
+                tokenIndex:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/{type}/pools/{name}/mint:
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenMint
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                key:
+                  type: string
+                to:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/{type}/pools/{name}/transfers:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokenTransfers
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: amount
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: from
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: localid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messagehash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: poolprotocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: to
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: tokenindex
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    balance: {}
+                    identity:
+                      type: string
+                    poolProtocolId:
+                      type: string
+                    tokenIndex:
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+    post:
+      description: 'TODO: Description'
+      operationId: postTokenTransfer
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: type
+        required: true
+        schema:
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                amount: {}
+                from:
+                  type: string
+                key:
+                  type: string
+                to:
+                  type: string
+                tokenIndex:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

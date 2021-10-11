@@ -41,3 +41,17 @@ func (_m *Callbacks) TokensOpUpdate(plugin tokens.Plugin, operationID *fftypes.U
 
 	return r0
 }
+
+// TokensTransferred provides a mock function with given fields: plugin, transfer, signingIdentity, protocolTxID, additionalInfo
+func (_m *Callbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(plugin, transfer, signingIdentity, protocolTxID, additionalInfo)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, string, fftypes.JSONObject) error); ok {
+		r0 = rf(plugin, transfer, signingIdentity, protocolTxID, additionalInfo)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

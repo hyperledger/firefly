@@ -42,6 +42,15 @@ type Plugin interface {
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
 	CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error
+
+	// MintTokens mints new tokens in a pool and adds them to the recipient's account
+	MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error
+
+	// BurnTokens burns tokens from an account
+	BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error
+
+	// TransferTokens transfers tokens within a pool from one account to another
+	TransferTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -64,6 +73,11 @@ type Callbacks interface {
 	//
 	// Error should will only be returned in shutdown scenarios
 	TokenPoolCreated(plugin Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error
+
+	// TokensTransferred notifies on a transfer between token accounts.
+	//
+	// Error should will only be returned in shutdown scenarios
+	TokensTransferred(plugin Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error
 }
 
 // Capabilities the supported featureset of the tokens

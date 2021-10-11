@@ -109,6 +109,13 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 	return msgData.Value
 }
 
+func validateAccountBalances(t *testing.T, client *resty.Client, poolName, tokenIndex string, balances map[string]int64) {
+	for identity, balance := range balances {
+		account := GetTokenAccount(t, client, poolName, tokenIndex, identity)
+		assert.Equal(t, balance, account.Balance.Int().Int64())
+	}
+}
+
 func beforeE2ETest(t *testing.T) *testState {
 	stackFile := os.Getenv("STACK_FILE")
 	if stackFile == "" {
@@ -176,17 +183,20 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed"
+	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
+
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 	wsUrl2 := url.URL{
 		Scheme:   websocketProtocolClient2,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())
@@ -357,8 +367,8 @@ func TestE2ETokenPool(t *testing.T) {
 	ts := beforeE2ETest(t)
 	defer ts.done()
 
-	received1, changes1 := wsReader(t, ts.ws1)
-	received2, changes2 := wsReader(t, ts.ws2)
+	received1, _ := wsReader(t, ts.ws1)
+	received2, _ := wsReader(t, ts.ws2)
 
 	pools := GetTokenPools(t, ts.client1, time.Unix(0, 0))
 	poolName := fmt.Sprintf("pool%d", len(pools))
@@ -371,22 +381,98 @@ func TestE2ETokenPool(t *testing.T) {
 	CreateTokenPool(t, ts.client1, pool)
 
 	<-received1
-	<-changes1 // also expect database change events
-
-	pools1 := GetTokenPools(t, ts.client1, ts.startTime)
-	assert.Equal(t, 1, len(pools1))
-	assert.Equal(t, "default", pools1[0].Namespace)
-	assert.Equal(t, poolName, pools1[0].Name)
-	assert.Equal(t, fftypes.TokenTypeFungible, pools1[0].Type)
+	pools = GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools))
+	assert.Equal(t, "default", pools[0].Namespace)
+	assert.Equal(t, poolName, pools[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools[0].Type)
 
 	<-received2
-	<-changes2 // also expect database change events
+	pools = GetTokenPools(t, ts.client1, ts.startTime)
+	assert.Equal(t, 1, len(pools))
+	assert.Equal(t, "default", pools[0].Namespace)
+	assert.Equal(t, poolName, pools[0].Name)
+	assert.Equal(t, fftypes.TokenTypeFungible, pools[0].Type)
 
-	pools2 := GetTokenPools(t, ts.client1, ts.startTime)
-	assert.Equal(t, 1, len(pools2))
-	assert.Equal(t, "default", pools2[0].Namespace)
-	assert.Equal(t, poolName, pools2[0].Name)
-	assert.Equal(t, fftypes.TokenTypeFungible, pools2[0].Type)
+	transfer := &fftypes.TokenTransfer{}
+	transfer.Amount.Int().SetInt64(1)
+	MintTokens(t, ts.client1, poolName, transfer)
+
+	<-received1
+	transfers := GetTokenTransfers(t, ts.client1, poolName)
+	assert.Equal(t, 1, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
+	assert.Equal(t, "0", transfers[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
+		ts.org1.Identity: 1,
+	})
+
+	<-received2
+	transfers = GetTokenTransfers(t, ts.client2, poolName)
+	assert.Equal(t, 1, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
+		ts.org1.Identity: 1,
+	})
+
+	transfer = &fftypes.TokenTransfer{
+		TokenIndex: "0",
+		To:         ts.org2.Identity,
+	}
+	transfer.Amount.Int().SetInt64(1)
+	TransferTokens(t, ts.client1, poolName, transfer)
+
+	<-received1
+	transfers = GetTokenTransfers(t, ts.client1, poolName)
+	assert.Equal(t, 2, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
+	assert.Equal(t, "0", transfers[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
+		ts.org1.Identity: 0,
+		ts.org2.Identity: 1,
+	})
+
+	<-received2
+	transfers = GetTokenTransfers(t, ts.client2, poolName)
+	assert.Equal(t, 2, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
+	assert.Equal(t, "0", transfers[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
+		ts.org1.Identity: 0,
+		ts.org2.Identity: 1,
+	})
+
+	transfer = &fftypes.TokenTransfer{
+		TokenIndex: "0",
+	}
+	transfer.Amount.Int().SetInt64(1)
+	BurnTokens(t, ts.client2, poolName, transfer)
+
+	<-received2
+	transfers = GetTokenTransfers(t, ts.client2, poolName)
+	assert.Equal(t, 3, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
+	assert.Equal(t, "0", transfers[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
+		ts.org1.Identity: 0,
+		ts.org2.Identity: 0,
+	})
+
+	<-received1
+	transfers = GetTokenTransfers(t, ts.client1, poolName)
+	assert.Equal(t, 3, len(transfers))
+	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
+	assert.Equal(t, "0", transfers[0].TokenIndex)
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
+	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
+		ts.org1.Identity: 0,
+		ts.org2.Identity: 0,
+	})
 }
 
 func TestE2EWebhookExchange(t *testing.T) {

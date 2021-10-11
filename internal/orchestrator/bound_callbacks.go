@@ -59,3 +59,7 @@ func (bc *boundCallbacks) MessageReceived(peerID string, data []byte) error {
 func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, tokenType fftypes.TokenType, tx *fftypes.UUID, protocolID, signingIdentity, protocolTxID string, additionalInfo fftypes.JSONObject) error {
 	return bc.am.TokenPoolCreated(plugin, tokenType, tx, protocolID, signingIdentity, protocolTxID, additionalInfo)
 }
+
+func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, signingIdentity string, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return bc.am.TokensTransferred(plugin, transfer, signingIdentity, protocolTxID, additionalInfo)
+}

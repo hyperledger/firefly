@@ -43,6 +43,10 @@ var (
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
 	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
+	urlTokenMint        = "/namespaces/default/tokens/erc1155/pools/%s/mint"
+	urlTokenBurn        = "/namespaces/default/tokens/erc1155/pools/%s/burn"
+	urlTokenTransfers   = "/namespaces/default/tokens/erc1155/pools/%s/transfers"
+	urlTokenAccounts    = "/namespaces/default/tokens/erc1155/pools/%s/accounts"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -311,4 +315,55 @@ func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (poo
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return pools
+}
+
+func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenMint, poolName)
+	resp, err := client.R().
+		SetBody(mint).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenBurn, poolName)
+	resp, err := client.R().
+		SetBody(burn).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	resp, err := client.R().
+		SetBody(transfer).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (transfers []*fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	resp, err := client.R().
+		SetResult(&transfers).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return transfers
+}
+
+func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, identity string) (account *fftypes.TokenAccount) {
+	var accounts []*fftypes.TokenAccount
+	path := fmt.Sprintf(urlTokenAccounts, poolName)
+	resp, err := client.R().
+		SetQueryParam("tokenIndex", tokenIndex).
+		SetQueryParam("identity", identity).
+		SetResult(&accounts).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Greater(t, len(accounts), 0)
+	return accounts[0]
 }

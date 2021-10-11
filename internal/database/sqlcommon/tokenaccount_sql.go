@@ -29,18 +29,18 @@ import (
 
 var (
 	tokenAccountColumns = []string{
-		"protocol_id",
+		"pool_protocol_id",
 		"token_index",
 		"identity",
 		"balance",
 	}
 	tokenAccountFilterFieldMap = map[string]string{
-		"protocolid": "protocol_id",
-		"tokenindex": "token_index",
+		"poolprotocolid": "pool_protocol_id",
+		"tokenindex":     "token_index",
 	}
 )
 
-func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) (err error) {
+func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -48,10 +48,10 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	rows, _, err := s.queryTx(ctx, tx,
-		sq.Select("seq").
+		sq.Select("balance").
 			From("tokenaccount").
 			Where(sq.And{
-				sq.Eq{"protocol_id": account.ProtocolID},
+				sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 				sq.Eq{"token_index": account.TokenIndex},
 				sq.Eq{"identity": account.Identity},
 			}),
@@ -60,14 +60,22 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 		return err
 	}
 	existing := rows.Next()
+
+	var balance fftypes.BigInt
+	if existing {
+		if err = rows.Scan(&balance); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")
+		}
+	}
+	balance.Int().Add(balance.Int(), account.Amount.Int())
 	rows.Close()
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
-				Set("balance", account.Balance).
+				Set("balance", balance).
 				Where(sq.And{
-					sq.Eq{"protocol_id": account.ProtocolID},
+					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 					sq.Eq{"token_index": account.TokenIndex},
 					sq.Eq{"identity": account.Identity},
 				}),
@@ -80,10 +88,10 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 			sq.Insert("tokenaccount").
 				Columns(tokenAccountColumns...).
 				Values(
-					account.ProtocolID,
+					account.PoolProtocolID,
 					account.TokenIndex,
 					account.Identity,
-					account.Balance,
+					account.Amount,
 				),
 			nil,
 		); err != nil {
@@ -97,7 +105,7 @@ func (s *SQLCommon) UpsertTokenAccount(ctx context.Context, account *fftypes.Tok
 func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenAccount, error) {
 	account := fftypes.TokenAccount{}
 	err := row.Scan(
-		&account.ProtocolID,
+		&account.PoolProtocolID,
 		&account.TokenIndex,
 		&account.Identity,
 		&account.Balance,
@@ -135,7 +143,7 @@ func (s *SQLCommon) getTokenAccountPred(ctx context.Context, desc string, pred i
 func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (message *fftypes.TokenAccount, err error) {
 	desc := fftypes.TokenAccountIdentifier(protocolID, tokenIndex, identity)
 	return s.getTokenAccountPred(ctx, desc, sq.And{
-		sq.Eq{"protocol_id": protocolID},
+		sq.Eq{"pool_protocol_id": protocolID},
 		sq.Eq{"token_index": tokenIndex},
 		sq.Eq{"identity": identity},
 	})

@@ -55,7 +55,7 @@ func TestTokenPoolCreatedSuccess(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", am.ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokensAnnouncePool
+		return op.Type == fftypes.OpTypeTokenAnnouncePool
 	}), false).Return(nil)
 	mbm.On("BroadcastTokenPool", am.ctx, "test-ns", mock.MatchedBy(func(pool *fftypes.TokenPoolAnnouncement) bool {
 		return pool.Namespace == "test-ns" && pool.Name == "my-pool" && *pool.ID == *poolID

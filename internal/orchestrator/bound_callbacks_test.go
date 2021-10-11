@@ -40,6 +40,7 @@ func TestBoundCallbacks(t *testing.T) {
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
+	transfer := &fftypes.TokenTransfer{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
@@ -70,5 +71,9 @@ func TestBoundCallbacks(t *testing.T) {
 
 	mam.On("TokenPoolCreated", mti, fftypes.TokenTypeFungible, txID, "123", "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
 	err = bc.TokenPoolCreated(mti, fftypes.TokenTypeFungible, txID, "123", "0x12345", "tx12345", info)
+	assert.EqualError(t, err, "pop")
+
+	mam.On("TokensTransferred", mti, transfer, "0x12345", "tx12345", info).Return(fmt.Errorf("pop"))
+	err = bc.TokensTransferred(mti, transfer, "0x12345", "tx12345", info)
 	assert.EqualError(t, err, "pop")
 }

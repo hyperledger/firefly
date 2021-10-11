@@ -368,14 +368,25 @@ type iTokenPoolCollection interface {
 }
 
 type iTokenAccountCollection interface {
-	// UpsertTokenAccount - Upsert a token account
-	UpsertTokenAccount(ctx context.Context, account *fftypes.TokenAccount) error
+	// AddTokenAccountBalance - Add a (positive or negative) balance to the account's current balance
+	AddTokenAccountBalance(ctx context.Context, account *fftypes.TokenBalanceChange) error
 
 	// GetTokenAccount - Get a token account by pool and account identity
 	GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (*fftypes.TokenAccount, error)
 
-	// GetTokenAccounts - Get all known token accounts in a pool
+	// GetTokenAccounts - Get token accounts
 	GetTokenAccounts(ctx context.Context, filter Filter) ([]*fftypes.TokenAccount, *FilterResult, error)
+}
+
+type iTokenTransferCollection interface {
+	// UpsertTokenTransfer - Upsert a token transfer
+	UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error
+
+	// GetTokenTransfer - Get a token transfer by ID
+	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
+
+	// GetTokenTransfers - Get token transfers
+	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -430,6 +441,7 @@ type PeristenceInterface interface {
 	iConfigRecordCollection
 	iTokenPoolCollection
 	iTokenAccountCollection
+	iTokenTransferCollection
 }
 
 // CollectionName represents all collections
@@ -481,9 +493,10 @@ const (
 type UUIDCollection CollectionName
 
 const (
-	CollectionNamespaces    UUIDCollection = "namespaces"
-	CollectionNodes         UUIDCollection = "nodes"
-	CollectionOrganizations UUIDCollection = "organizations"
+	CollectionNamespaces     UUIDCollection = "namespaces"
+	CollectionNodes          UUIDCollection = "nodes"
+	CollectionOrganizations  UUIDCollection = "organizations"
+	CollectionTokenTransfers UUIDCollection = "tokentransfers"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.
@@ -757,8 +770,22 @@ var TokenPoolQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"protocolid": &StringField{},
-	"tokenindex": &StringField{},
-	"identity":   &StringField{},
-	"balance":    &Int64Field{},
+	"poolprotocolid": &StringField{},
+	"tokenindex":     &StringField{},
+	"identity":       &StringField{},
+	"balance":        &Int64Field{},
+}
+
+// TokenTransferQueryFactory filter fields for token transfers
+var TokenTransferQueryFactory = &queryFields{
+	"localid":        &StringField{},
+	"poolprotocolid": &StringField{},
+	"tokenindex":     &StringField{},
+	"key":            &StringField{},
+	"from":           &StringField{},
+	"to":             &StringField{},
+	"amount":         &Int64Field{},
+	"protocolid":     &StringField{},
+	"messagehash":    &Bytes32Field{},
+	"created":        &TimeField{},
 }

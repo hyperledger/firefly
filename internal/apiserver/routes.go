@@ -81,4 +81,8 @@ var routes = []*oapispec.Route{
 	getTokenPools,
 	getTokenPoolByName,
 	getTokenAccounts,
+	getTokenTransfers,
+	postTokenMint,
+	postTokenBurn,
+	postTokenTransfer,
 }
