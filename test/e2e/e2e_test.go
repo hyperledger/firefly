@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"image/png"
-	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -113,7 +112,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 func validateAccountBalances(t *testing.T, client *resty.Client, poolName, tokenIndex string, balances map[string]int64) {
 	for identity, balance := range balances {
 		account := GetTokenAccount(t, client, poolName, tokenIndex, identity)
-		assert.Equal(t, balance, account.Balance.Int64())
+		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
 }
 
@@ -395,16 +394,16 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, poolName, pools[0].Name)
 	assert.Equal(t, fftypes.TokenTypeFungible, pools[0].Type)
 
-	MintTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{
-		Amount: *big.NewInt(1),
-	})
+	transfer := &fftypes.TokenTransfer{}
+	transfer.Amount.Int().SetInt64(1)
+	MintTokens(t, ts.client1, poolName, transfer)
 
 	<-received1
 	transfers := GetTokenTransfers(t, ts.client1, poolName)
 	assert.Equal(t, 1, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(t, "0", transfers[0].TokenIndex)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
 		ts.org1.Identity: 1,
 	})
@@ -413,23 +412,24 @@ func TestE2ETokenPool(t *testing.T) {
 	transfers = GetTokenTransfers(t, ts.client2, poolName)
 	assert.Equal(t, 1, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
 		ts.org1.Identity: 1,
 	})
 
-	TransferTokens(t, ts.client1, poolName, &fftypes.TokenTransfer{
+	transfer = &fftypes.TokenTransfer{
 		TokenIndex: "0",
-		Amount:     *big.NewInt(1),
 		To:         ts.org2.Identity,
-	})
+	}
+	transfer.Amount.Int().SetInt64(1)
+	TransferTokens(t, ts.client1, poolName, transfer)
 
 	<-received1
 	transfers = GetTokenTransfers(t, ts.client1, poolName)
 	assert.Equal(t, 2, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(t, "0", transfers[0].TokenIndex)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
 		ts.org1.Identity: 0,
 		ts.org2.Identity: 1,
@@ -440,23 +440,24 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, 2, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(t, "0", transfers[0].TokenIndex)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
 		ts.org1.Identity: 0,
 		ts.org2.Identity: 1,
 	})
 
-	BurnTokens(t, ts.client2, poolName, &fftypes.TokenTransfer{
+	transfer = &fftypes.TokenTransfer{
 		TokenIndex: "0",
-		Amount:     *big.NewInt(1),
-	})
+	}
+	transfer.Amount.Int().SetInt64(1)
+	BurnTokens(t, ts.client2, poolName, transfer)
 
 	<-received2
 	transfers = GetTokenTransfers(t, ts.client2, poolName)
 	assert.Equal(t, 3, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(t, "0", transfers[0].TokenIndex)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "0", map[string]int64{
 		ts.org1.Identity: 0,
 		ts.org2.Identity: 0,
@@ -467,7 +468,7 @@ func TestE2ETokenPool(t *testing.T) {
 	assert.Equal(t, 3, len(transfers))
 	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(t, "0", transfers[0].TokenIndex)
-	assert.Equal(t, int64(1), transfers[0].Amount.Int64())
+	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "0", map[string]int64{
 		ts.org1.Identity: 0,
 		ts.org2.Identity: 0,

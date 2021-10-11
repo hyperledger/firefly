@@ -19,7 +19,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"math/big"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly/internal/i18n"
@@ -62,21 +61,19 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 	}
 	existing := rows.Next()
 
-	var balance big.Int
+	var balance fftypes.BigInt
 	if existing {
-		var balanceStr string
-		err = rows.Scan(&balanceStr)
-		if err == nil {
-			balance.SetString(balanceStr, 10)
+		if err = rows.Scan(&balance); err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")
 		}
 	}
-	balance.Add(&balance, &account.Amount)
+	balance.Int().Add(balance.Int(), account.Amount.Int())
 	rows.Close()
 
 	if existing {
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
-				Set("balance", balance.String()).
+				Set("balance", balance).
 				Where(sq.And{
 					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 					sq.Eq{"token_index": account.TokenIndex},
@@ -94,7 +91,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 					account.PoolProtocolID,
 					account.TokenIndex,
 					account.Identity,
-					account.Amount.String(),
+					account.Amount,
 				),
 			nil,
 		); err != nil {
@@ -107,17 +104,15 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 
 func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenAccount, error) {
 	account := fftypes.TokenAccount{}
-	var balanceStr string
 	err := row.Scan(
 		&account.PoolProtocolID,
 		&account.TokenIndex,
 		&account.Identity,
-		&balanceStr,
+		&account.Balance,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")
 	}
-	account.Balance.SetString(balanceStr, 10)
 	return &account, nil
 }
 

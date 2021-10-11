@@ -46,7 +46,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			}
 			if transfer.Type != fftypes.TokenTransferTypeMint {
 				balance.Identity = transfer.From
-				balance.Amount.Neg(&transfer.Amount)
+				balance.Amount.Int().Neg(transfer.Amount.Int())
 				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
 					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
 					return err
@@ -55,7 +55,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 
 			if transfer.Type != fftypes.TokenTransferTypeBurn {
 				balance.Identity = transfer.To
-				balance.Amount.Set(&transfer.Amount)
+				balance.Amount.Int().Set(transfer.Amount.Int())
 				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
 					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
 					return err

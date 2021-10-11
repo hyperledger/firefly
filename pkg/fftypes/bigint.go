@@ -57,9 +57,9 @@ func (i *BigInt) UnmarshalJSON(b []byte) error {
 	}
 }
 
-func (i *BigInt) Value() (driver.Value, error) {
+func (i BigInt) Value() (driver.Value, error) {
 	// Represent as base 16 string in database, to allow a 64 character limit
-	res := (*big.Int)(i).Text(16)
+	res := (*big.Int)(&i).Text(16)
 	if len(res) > MaxBigIntHexLength {
 		return nil, i18n.NewError(context.Background(), i18n.MsgBigIntTooLarge, len(res), MaxBigIntHexLength)
 	}

@@ -16,13 +16,11 @@
 
 package fftypes
 
-import "math/big"
-
 type TokenAccount struct {
-	PoolProtocolID string  `json:"poolProtocolId,omitempty"`
-	TokenIndex     string  `json:"tokenIndex,omitempty"`
-	Identity       string  `json:"identity,omitempty"`
-	Balance        big.Int `json:"balance"`
+	PoolProtocolID string `json:"poolProtocolId,omitempty"`
+	TokenIndex     string `json:"tokenIndex,omitempty"`
+	Identity       string `json:"identity,omitempty"`
+	Balance        BigInt `json:"balance"`
 }
 
 func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {
@@ -37,5 +35,5 @@ type TokenBalanceChange struct {
 	PoolProtocolID string
 	TokenIndex     string
 	Identity       string
-	Amount         big.Int
+	Amount         BigInt
 }

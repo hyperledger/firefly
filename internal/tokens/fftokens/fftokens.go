@@ -19,7 +19,6 @@ package fftokens
 import (
 	"context"
 	"encoding/json"
-	"math/big"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/config"
@@ -65,30 +64,30 @@ type createPool struct {
 }
 
 type mintTokens struct {
-	PoolID     string  `json:"poolId"`
-	To         string  `json:"to"`
-	Amount     big.Int `json:"amount"`
-	RequestID  string  `json:"requestId,omitempty"`
-	TrackingID string  `json:"trackingId"`
+	PoolID     string `json:"poolId"`
+	To         string `json:"to"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
 }
 
 type burnTokens struct {
-	PoolID     string  `json:"poolId"`
-	TokenIndex string  `json:"tokenIndex,omitempty"`
-	From       string  `json:"from"`
-	Amount     big.Int `json:"amount"`
-	RequestID  string  `json:"requestId,omitempty"`
-	TrackingID string  `json:"trackingId"`
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex,omitempty"`
+	From       string `json:"from"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
 }
 
 type transferTokens struct {
-	PoolID     string  `json:"poolId"`
-	TokenIndex string  `json:"tokenIndex,omitempty"`
-	From       string  `json:"from"`
-	To         string  `json:"to"`
-	Amount     big.Int `json:"amount"`
-	RequestID  string  `json:"requestId,omitempty"`
-	TrackingID string  `json:"trackingId"`
+	PoolID     string `json:"poolId"`
+	TokenIndex string `json:"tokenIndex,omitempty"`
+	From       string `json:"from"`
+	To         string `json:"to"`
+	Amount     string `json:"amount"`
+	RequestID  string `json:"requestId,omitempty"`
+	TrackingID string `json:"trackingId"`
 }
 
 func (h *FFTokens) Name() string {
@@ -211,13 +210,6 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		return nil // move on
 	}
 
-	var valueInt big.Int
-	_, ok := valueInt.SetString(value, 10)
-	if !ok {
-		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
-		return nil // move on
-	}
-
 	// We want to process all transfers, even those not initiated by FireFly.
 	// The trackingID is an optional argument from the connector, so it's important not to
 	// fail if it's missing or malformed.
@@ -235,8 +227,13 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		TokenIndex:     tokenIndex,
 		From:           fromAddress,
 		To:             toAddress,
-		Amount:         valueInt,
 		ProtocolID:     txHash,
+	}
+
+	_, ok := transfer.Amount.Int().SetString(value, 10)
+	if !ok {
+		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
+		return nil // move on
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -319,7 +316,7 @@ func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mi
 		SetBody(&mintTokens{
 			PoolID:     mint.PoolProtocolID,
 			To:         mint.To,
-			Amount:     mint.Amount,
+			Amount:     mint.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: mint.LocalID.String(),
 		}).
@@ -336,7 +333,7 @@ func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, bu
 			PoolID:     burn.PoolProtocolID,
 			TokenIndex: burn.TokenIndex,
 			From:       burn.From,
-			Amount:     burn.Amount,
+			Amount:     burn.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: burn.LocalID.String(),
 		}).
@@ -354,7 +351,7 @@ func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID
 			TokenIndex: transfer.TokenIndex,
 			From:       transfer.From,
 			To:         transfer.To,
-			Amount:     transfer.Amount,
+			Amount:     transfer.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: transfer.LocalID.String(),
 		}).
