@@ -16,8 +16,6 @@
 
 package fftypes
 
-import "math/big"
-
 type TokenTransferType = FFEnum
 
 var (
@@ -34,7 +32,7 @@ type TokenTransfer struct {
 	Key            string            `json:"key,omitempty"`
 	From           string            `json:"from,omitempty"`
 	To             string            `json:"to,omitempty"`
-	Amount         big.Int           `json:"amount,omitempty"`
+	Amount         BigInt            `json:"amount"`
 	ProtocolID     string            `json:"protocolId,omitempty"`
 	MessageHash    *Bytes32          `json:"messageHash,omitempty"`
 	Created        *FFTime           `json:"created,omitempty"`

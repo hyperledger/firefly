@@ -45,6 +45,7 @@ $(eval $(call makemock, pkg/dataexchange,          Plugin,         dataexchangem
 $(eval $(call makemock, pkg/dataexchange,          Callbacks,      dataexchangemocks))
 $(eval $(call makemock, pkg/tokens,                Plugin,         tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,      tokenmocks))
+$(eval $(call makemock, pkg/wsclient,              WSClient,       wsmocks))
 $(eval $(call makemock, internal/identity,         Manager,        identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,      batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,   sysmessagingmocks))
@@ -57,13 +58,12 @@ $(eval $(call makemock, internal/syshandlers,      SystemHandlers, syshandlersmo
 $(eval $(call makemock, internal/events,           EventManager,   eventmocks))
 $(eval $(call makemock, internal/networkmap,       Manager,        networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,        assetmocks))
-$(eval $(call makemock, internal/wsclient,         WSClient,       wsmocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,   orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,         apiservermocks))
 $(eval $(call makemock, internal/apiserver,        IServer,        apiservermocks))
 $(eval $(call makemock, internal/txcommon,         Helper,         txcommonmocks))
 
-firefly-nocgo: ${GOFILES}		
+firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
 		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
@@ -75,7 +75,7 @@ e2e: build
 .ALWAYS: ;
 e2e-rebuild: .ALWAYS
 		DOWNLOAD_CLI=false BUILD_FIREFLY=false CREATE_STACK=false ./test/e2e/run.sh
-clean: 
+clean:
 		$(VGO) clean
 		rm -f *.so ${BINARY_NAME}
 deps:

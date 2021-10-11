@@ -17,7 +17,6 @@ package assets
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
@@ -354,9 +353,8 @@ func TestMintTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
@@ -388,9 +386,8 @@ func TestMintTokensBadPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -405,9 +402,8 @@ func TestMintTokensIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -422,9 +418,8 @@ func TestMintTokensFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
@@ -445,9 +440,8 @@ func TestMintTokensOperationFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -467,9 +461,8 @@ func TestMintTokensConfirm(t *testing.T) {
 	defer cancel()
 
 	requestID := fftypes.NewUUID()
-	mint := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	mint := &fftypes.TokenTransfer{}
+	mint.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
@@ -503,9 +496,8 @@ func TestBurnTokensSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	burn := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	burn := &fftypes.TokenTransfer{}
+	burn.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
@@ -530,9 +522,8 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	burn := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	burn := &fftypes.TokenTransfer{}
+	burn.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
@@ -548,10 +539,10 @@ func TestTransferTokensSuccess(t *testing.T) {
 	defer cancel()
 
 	transfer := &fftypes.TokenTransfer{
-		From:   "A",
-		To:     "B",
-		Amount: *big.NewInt(5),
+		From: "A",
+		To:   "B",
 	}
+	transfer.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
@@ -577,10 +568,11 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 	defer cancel()
 
 	transfer := &fftypes.TokenTransfer{
-		From:   "A",
-		To:     "B",
-		Amount: *big.NewInt(5),
+		From: "A",
+		To:   "B",
 	}
+	transfer.Amount.Int().SetInt64(5)
+
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(nil, fmt.Errorf("pop"))
@@ -594,9 +586,8 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	transfer := &fftypes.TokenTransfer{
-		Amount: *big.NewInt(5),
-	}
+	transfer := &fftypes.TokenTransfer{}
+	transfer.Amount.Int().SetInt64(5)
 
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
@@ -612,10 +603,10 @@ func TestTransferTokensInvalidType(t *testing.T) {
 	defer cancel()
 
 	transfer := &fftypes.TokenTransfer{
-		From:   "A",
-		To:     "B",
-		Amount: *big.NewInt(5),
+		From: "A",
+		To:   "B",
 	}
+	transfer.Amount.Int().SetInt64(5)
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)

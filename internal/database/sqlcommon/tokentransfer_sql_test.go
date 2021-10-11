@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -43,7 +42,6 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		TokenIndex:     "1",
 		From:           "0x01",
 		To:             "0x02",
-		Amount:         *big.NewInt(10),
 		ProtocolID:     "12345",
 		MessageHash:    fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
@@ -51,6 +49,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 		},
 	}
+	transfer.Amount.Int().SetInt64(10)
 
 	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID, mock.Anything).
 		Return().Once()
@@ -89,7 +88,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 
 	// Update the token transfer
 	transfer.Type = fftypes.TokenTransferTypeMint
-	transfer.Amount.SetInt64(1)
+	transfer.Amount.Int().SetInt64(1)
 	transfer.To = "0x03"
 	err = s.UpsertTokenTransfer(ctx, transfer)
 	assert.NoError(t, err)

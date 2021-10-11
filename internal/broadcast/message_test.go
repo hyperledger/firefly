@@ -19,6 +19,8 @@ package broadcast
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -72,6 +74,109 @@ func TestBroadcastMessageOk(t *testing.T) {
 	assert.NotNil(t, msg.Data[0].ID)
 	assert.NotNil(t, msg.Data[0].Hash)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastRootOrg(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	ctx := context.Background()
+	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+
+	org := fftypes.Organization{
+		ID:     fftypes.NewUUID(),
+		Name:   "org1",
+		Parent: "", // root
+	}
+	orgBytes, err := json.Marshal(&org)
+	assert.NoError(t, err)
+
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     orgBytes,
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}, []*fftypes.DataAndBlob{}, nil)
+	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
+
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.MessageTypeDefinition,
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/12345",
+					Key:    "0x12345",
+				},
+			},
+			Data: fftypes.DataRefs{
+				{
+					ID:   data.ID,
+					Hash: data.Hash,
+				},
+			},
+		},
+	}, false)
+	assert.NoError(t, err)
+	assert.NotNil(t, msg.Data[0].ID)
+	assert.NotNil(t, msg.Data[0].Hash)
+	assert.Equal(t, "ns1", msg.Header.Namespace)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastRootOrgBadData(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	ctx := context.Background()
+	data := &fftypes.Data{
+		ID:        fftypes.NewUUID(),
+		Value:     []byte("not an org"),
+		Validator: fftypes.MessageTypeDefinition,
+	}
+
+	mdm.On("GetMessageData", ctx, mock.Anything, mock.Anything).Return([]*fftypes.Data{data}, true, nil)
+	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(errors.New("not registered"))
+
+	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				ID:   fftypes.NewUUID(),
+				Type: fftypes.MessageTypeDefinition,
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/12345",
+					Key:    "0x12345",
+				},
+			},
+			Data: fftypes.DataRefs{
+				{
+					ID:   data.ID,
+					Hash: data.Hash,
+				},
+			},
+		},
+	}, false)
+	assert.Error(t, err, "not registered")
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)

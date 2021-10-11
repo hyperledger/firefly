@@ -8,7 +8,7 @@ CREATE TABLE tokentransfer (
   key              VARCHAR(1024)   NOT NULL,
   from_key         VARCHAR(1024),
   to_key           VARCHAR(1024),
-  amount           VARCHAR(1024),
+  amount           VARCHAR(65),
   protocol_id      VARCHAR(1024)   NOT NULL,
   message_hash     CHAR(64),
   tx_type          VARCHAR(64),

@@ -84,7 +84,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("key", transfer.Key).
 				Set("from_key", transfer.From).
 				Set("to_key", transfer.To).
-				Set("amount", transfer.Amount.String()).
+				Set("amount", transfer.Amount).
 				Set("message_hash", transfer.MessageHash).
 				Set("tx_type", transfer.TX.Type).
 				Set("tx_id", transfer.TX.ID).
@@ -108,7 +108,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.Key,
 					transfer.From,
 					transfer.To,
-					transfer.Amount.String(),
+					transfer.Amount,
 					transfer.ProtocolID,
 					transfer.MessageHash,
 					transfer.TX.Type,
@@ -128,7 +128,6 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 
 func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenTransfer, error) {
 	transfer := fftypes.TokenTransfer{}
-	var amountStr string
 	err := row.Scan(
 		&transfer.Type,
 		&transfer.LocalID,
@@ -137,7 +136,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.Key,
 		&transfer.From,
 		&transfer.To,
-		&amountStr,
+		&transfer.Amount,
 		&transfer.ProtocolID,
 		&transfer.MessageHash,
 		&transfer.TX.Type,
@@ -147,7 +146,6 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokentransfer")
 	}
-	transfer.Amount.SetString(amountStr, 10)
 	return &transfer, nil
 }
 
