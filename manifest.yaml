@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# FireflyVersion Manifest
+# This file describes the version of each microservice that should be used with this version of FireFly
+
+ethconnect: ghcr.io/hyperledger/firefly-ethconnect:v3.0.0
+fabconnect: ghcr.io/hyperledger/firefly-fabconnect:null
+data-exchange-https: ghcr.io/hyperledger/firefly-data-exchange-https:null
+tokens-erc-1155: ghcr.io/hyperledger/firefly-tokens-erc-1155:null
