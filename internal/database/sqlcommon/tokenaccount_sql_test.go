@@ -105,6 +105,19 @@ func TestAddTokenAccountBalanceFailSelect(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
+func TestAddTokenAccountSelectBadExistingValue(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{
+		"balance",
+	}).AddRow(
+		"!not an integer",
+	))
+	err := s.AddTokenAccountBalance(context.Background(), &fftypes.TokenBalanceChange{})
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
 func TestAddTokenAccountBalanceFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
