@@ -4,26 +4,67 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
 [![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
 
-Hyperledger FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
+![Hyperledger FireFly](./images/hyperledger_firefly_logo.png)
 
-FireFly focusses on:
+Hyperledger FireFly is an API and data orchestration layer to build enterprise multi-party systems, on top of blockchain tech.
 
-- Providing a great developer API and experience, with a CLI and UI as first class project components
-- Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
-- Making proven multi-party system patterns easy for new projects to adopt
-- Providing developer friendly access to custom transactions+events in the underlying blockchain platforms
-- Giving visibility and control on the private data exchange that occurs between businesses in a multi-party system
-- Simplifying the journey of building multi-party business processes, by empowering non-blockchain developers to build great APIs+UX
+- Transaction submission and event streaming
+  - Radically simplified API access to your on-chain smart contracts
+- Multi-protocol blockchain integration
+  - Hyperledger Fabric
+  - Enterprise Ethereum - Hyperledger Besu & Quorum
+  - Corda *(work in progress)*
+- Developer friendly event-driven REST & WebSocket APIs
+  - For building multi-party business applications that solve real enterprise use cases
+- Digital assets
+  - Tokens and NFTs ready for use, and easy to extend + customize
+- On-chain/off-chain orchestration
+  - Enterprise data flows backed by blockchain, with secure off-chain transfer of private docs+data
+- Microservice architecture, for docker deployment
+  - Fully pluggable architecture, embracing multiple runtime technologies (Go, Node.js, Java etc.)
+- Built by developers for developers
+  - Ready to go in minutes, with a CLI, built-in UI explorer, OpenAPI spec, and samples
+- Data operations at the boundary of your data center
+  - Fast database cache + audit of all data flowing out of your enterprise, to the network
 
-You will see enterprise focussed code in FireFly solving hard "plumbing" problems like on-chain/off-chain event sequencing and aggregation, and enough smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin, NodeRED etc.
+## Quick Start Guide
 
-> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture (building on the work done in gen1, also in this repo). The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
+Follow the [get started](https://hyperledger.github.io/firefly/gettingstarted/gettingstarted.html) guide in the doc, and your
+local developer environment will be up in minutes.
 
-![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
+You'll have your own private multi-party system, comprising a blockchain (Ethereum/Fabric) with API/Event connectors, a Private Data Exchange, an IPFS data sharing network, and ERC-1155 Token/NFT implementations.
+
+All with the Hyperledger FireFly Explorer UI of course, and a [samples to get you building fast](https://github.com/hyperledger/firefly-samples).
+
+![FireFly Explorer](images/firefly_explorer.png)
+
+## API Reference
+
+All the Hyperledger FireFly APIs are self-documenting via Swagger, and you can just open them up on `/api` on your running FireFly.
+
+Or you can check out the [latest API here](https://hyperledger.github.io/firefly/swagger/swagger.html).
 
 ## Documentation
 
-https://hyperledger.github.io/firefly//
+https://hyperledger.github.io/firefly
+
+## Components
+
+There are multiple Git repos making up the Hyperledger FireFly project, and this
+list is likely to grow as additional pluggable extensions come online in the community:
+
+- Command Line Interface (CLI) - https://github.com/hyperledger/firefly-cli
+- Core (this repo) - https://github.com/hyperledger/firefly
+- Sample applications - https://github.com/hyperledger/firefly-samples
+- HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
+- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger/firefly-ethconnect
+- Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
+- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger/fabric-smart-client
+- FireFly Explorer UI - https://github.com/hyperledger/firefly-ui
+
+## Multi-party Systems
+
+![Introducing FireFly](./images/intro_to_firefly_teaser.svg)
 
 ## FireFly repos
 
@@ -32,14 +73,6 @@ As such there are a number of repos, and the list will grow as the community evo
 
 But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
 
-- CLI / Developer experience - https://github.com/hyperledger/firefly-cli
-- UI Explorer - https://github.com/hyperledger/firefly-ui
-- Sample applications - https://github.com/hyperledger/firefly-samples
-- Core (this repo) - https://github.com/hyperledger/firefly
-- HTTP Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger/firefly-ethconnect
-- Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
-- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger/fabric-smart-client
 
 > Note only the projects that are primarily built to support FireFly are listed here, not all
 > of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
@@ -51,10 +84,6 @@ Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger/firefly-c
 
 ## Navigating this repo
 
-There are **two core codebases** currently active in this repo:
-
-### Generation 2: FireFly
-
 Directories:
 
 - [internal](./internal): The core Golang implementation code
@@ -63,56 +92,6 @@ Directories:
 - [smart_contracts](./smart_contracts): smart contract code for Firefly's onchain logic, with support for Ethereum and Hyperledger Fabric in their respective sub-directories
 
 [Full code layout here](#firefly-code-hierarchy)
-
-This latest generation is re-engineered from the ground up to improve developer experience, runtime performance, and extensibility.
-
-This means a simplified REST/WebSocket programming model for app development, and a wider range of infrastructure options for deployment.
-
-It also means a focus on an architecture and code structure for a vibrant open source community.
-
-A few highlights:
-
-- Golang codebase
-  - Strong coding standards, including unit test coverage, translation support, logging and more
-  - Fast starting, low memory footprint, multi-threaded runtime
-- OpenAPI 3.0 API specification (Swagger)
-  - Generated from the API router code, to avoid divergence with the implementation
-- Active/active HA architecture for the core runtime
-  - Deferring to the core database for state high availability
-  - Exploiting leader election where required
-- Fully pluggable architecture
-  - Everything from Database through to Blockchain, and Compute
-  - Golang plugin infrastructure to decouple the core code from the implementation
-  - Remote Agent model to decouple code languages, and HA designs
-- Updated API resource model
-  - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
-- Added flexibility, with simplified the developer experience:
-  - Versioning of data definitions
-  - Introducing a first class `Context` construct link related events into a single sequence
-  - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
-  - Clearer separation of concerns between the FireFly DB and the Application DB
-  - Better search, filter and query support
-
-### Generation 1: Kaleido Asset Trail (KAT)
-
-Directories:
-
-- [kat](./kat): The core TypeScript runtime
-- [solidity_kat](./solidity_kat): Ethereum/Solidity smart contract code
-- [cordapp_kat](./cordapp_kat): The Corda smart contract (CorDapp)
-
-This was the original implementation of the multi-party systems API by Kaleido, and is already deployed in a number production projects.
-
-The codebase distilled years of learning, into a set of patterns for performing blockchain orchestrated data exchange.
-
-It depends on the following Kaleido services:
-
-- Blockchain nodes
-  - Ethereum with the Kaleido [Kaleido REST API Gateway](https://docs.kaleido.io/kaleido-services/ethconnect/)
-  - Corda with the Kaleido built-in API for streaming KAT transactions
-- [Kaleido Event Streams](https://docs.kaleido.io/kaleido-services/event-streams/)
-- [Kaleido App2App Messaging](https://docs.kaleido.io/kaleido-services/app2app/)
-- [Kaleido Document Exchange](https://docs.kaleido.io/kaleido-services/document-store/)
 
 ## FireFly code hierarchy
 
@@ -343,39 +322,3 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
 
 ```
-
-## API Query Syntax
-
-REST collections provide filter, `skip`, `limit` and `sort` support.
-
-- The field in the message is used as the query parameter
-- When multiple query parameters are supplied these are combined with AND
-- When the same query parameter is supplied multiple times, these are combined with OR
-
-### Example
-
-`GET` `/api/v1/messages?confirmed=>0&type=broadcast&topic=t1&topic=t2&context=@someprefix&sort=sequence&descending&skip=100&limit=50`
-
-This states:
-
-- Filter on `confirmed` greater than 0
-- Filter on `type` exactly equal to `broadcast`
-- Filter on `topic` exactly equal to `t1` _or_ `t2`
-- Filter on `context` containing the case-sensitive string `someprefix`
-- Sort on `sequence` in `descending` order
-- Paginate with `limit` of `50` and `skip` of `100` (e.g. get page 3, with 50/page)
-
-Table of filter operations, which must be the first character of the query string (after the `=` in the above URL path example)
-
-| Operator | Description                       |
-| -------- | --------------------------------- |
-| (none)   | Equal                             |
-| `!`      | Not equal                         |
-| `<`      | Less than                         |
-| `<=`     | Less than or equal                |
-| `>`      | Greater than                      |
-| `>=`     | Greater than or equal             |
-| `@`      | Containing - case sensitive       |
-| `!@`     | Not containing - case sensitive   |
-| `^`      | Containing - case insensitive     |
-| `!^`     | Not containing - case insensitive |
