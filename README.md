@@ -123,9 +123,9 @@ list is likely to grow as additional pluggable extensions come online in the com
 - Core (this repo) - https://github.com/hyperledger/firefly
 - Sample applications - https://github.com/hyperledger/firefly-samples
 - HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger/firefly-ethconnect
+- Hyperledger Fabric connector - https://github.com/hyperledger/firefly-fabconnect
+- Ethereum (Hyperledger Besu / Quorum) connector - https://github.com/hyperledger/firefly-ethconnect
 - Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
-- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger/fabric-smart-client
 - FireFly Explorer UI - https://github.com/hyperledger/firefly-ui
 
 ## Contributing
