@@ -51,7 +51,11 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 
-	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
+	}, mock.Anything, mock.Anything).Return()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)

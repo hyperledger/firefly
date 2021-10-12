@@ -249,11 +249,11 @@ func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTr
 }
 
 // TransferTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
-func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
 		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -262,7 +262,7 @@ func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName strin
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) error); ok {
 		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)

@@ -5102,13 +5102,119 @@ paths:
             schema:
               properties:
                 amount: {}
+                created: {}
                 from:
                   type: string
                 key:
                   type: string
+                localId: {}
+                message:
+                  properties:
+                    batch: {}
+                    confirmed: {}
+                    data:
+                      items:
+                        properties:
+                          blob:
+                            properties:
+                              hash: {}
+                              public:
+                                type: string
+                            type: object
+                          datatype:
+                            properties:
+                              name:
+                                type: string
+                              version:
+                                type: string
+                            type: object
+                          hash: {}
+                          id: {}
+                          validator:
+                            type: string
+                          value:
+                            format: byte
+                            type: string
+                        type: object
+                      type: array
+                    group:
+                      properties:
+                        ledger: {}
+                        members:
+                          items:
+                            properties:
+                              identity:
+                                type: string
+                              node:
+                                type: string
+                            type: object
+                          type: array
+                        name:
+                          type: string
+                      type: object
+                    hash: {}
+                    header:
+                      properties:
+                        author:
+                          type: string
+                        cid: {}
+                        created: {}
+                        datahash: {}
+                        group: {}
+                        id: {}
+                        key:
+                          type: string
+                        namespace:
+                          type: string
+                        tag:
+                          type: string
+                        topics:
+                          items:
+                            type: string
+                          type: array
+                        txtype:
+                          type: string
+                        type:
+                          enum:
+                          - definition
+                          - broadcast
+                          - private
+                          - groupinit
+                          - transfer-broadcast
+                          - transfer-private
+                          type: string
+                      type: object
+                    local:
+                      type: boolean
+                    pending:
+                      type: boolean
+                    pins:
+                      items:
+                        type: string
+                      type: array
+                    rejected:
+                      type: boolean
+                  type: object
+                messageHash: {}
+                poolProtocolId:
+                  type: string
+                protocolId:
+                  type: string
                 to:
                   type: string
                 tokenIndex:
+                  type: string
+                tx:
+                  properties:
+                    id: {}
+                    type:
+                      type: string
+                  type: object
+                type:
+                  enum:
+                  - mint
+                  - burn
+                  - transfer
                   type: string
               type: object
       responses:

@@ -48,7 +48,11 @@ func newTestBroadcast(t *testing.T) (*broadcastManager, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 	mbi.On("Name").Return("ut_blockchain").Maybe()
-	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeBroadcast, fftypes.MessageTypeDefinition}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeBroadcast,
+		fftypes.MessageTypeDefinition,
+		fftypes.MessageTypeTransferBroadcast,
+	}, mock.Anything, mock.Anything).Return()
 	ctx, cancel := context.WithCancel(context.Background())
 	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp)
 	assert.NoError(t, err)

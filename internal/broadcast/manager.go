@@ -84,6 +84,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 	ba.RegisterDispatcher([]fftypes.MessageType{
 		fftypes.MessageTypeBroadcast,
 		fftypes.MessageTypeDefinition,
+		fftypes.MessageTypeTransferBroadcast,
 	}, bm.dispatchBatch, bo)
 	return bm, nil
 }

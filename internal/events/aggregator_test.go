@@ -887,6 +887,56 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 
 }
 
+func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return([]*fftypes.TokenTransfer{}, nil, nil)
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeTransferBroadcast,
+		},
+	}
+	msg.Hash = msg.Header.Hash()
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	assert.EqualError(t, err, "transfer for message '"+msg.Hash.String()+"' not available")
+	assert.False(t, dispatched)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
+func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdm := ag.data.(*datamocks.Manager)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return([]*fftypes.Data{}, true, nil)
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	msg := &fftypes.Message{
+		Header: fftypes.MessageHeader{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.MessageTypeTransferBroadcast,
+		},
+	}
+	msg.Hash = msg.Header.Hash()
+	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
+	assert.EqualError(t, err, "pop")
+	assert.False(t, dispatched)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestAttemptMessageDispatchFailValidateBadSystem(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()

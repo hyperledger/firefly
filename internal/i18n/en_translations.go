@@ -198,6 +198,7 @@ var (
 	MsgAuthorOrgNotFoundByName     = ffm("FF10278", "Author organization could not be resolved via name '%s'")
 	MsgAuthorOrgSigningKeyMismatch = ffm("FF10279", "Author organization '%s' is not associated with signing key '%s'")
 	MsgCannotTransferToSelf        = ffm("FF10280", "From and to addresses must be different", 400)
+	MsgInvalidMessageType          = ffm("FF10281", "Invalid message type - allowed types are %s", 400)
 	MsgLocalOrgLookupFailed        = ffm("FF10290", "Unable resolve the local org by the configured signing key on the node. Please confirm the org is registered with key '%s'", 500)
 	MsgBigIntTooLarge              = ffm("FF10291", "Byte length of serialized integer is too large %d (max=%d)")
 	MsgBigIntParseFailed           = ffm("FF10292", "Failed to parse JSON value '%s' into BigInt")

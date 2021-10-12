@@ -105,6 +105,7 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 	ba.RegisterDispatcher([]fftypes.MessageType{
 		fftypes.MessageTypeGroupInit,
 		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
 	}, pm.dispatchBatch, bo)
 
 	return pm, nil

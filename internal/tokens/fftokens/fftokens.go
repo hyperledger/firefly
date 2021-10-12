@@ -88,6 +88,7 @@ type transferTokens struct {
 	Amount     string `json:"amount"`
 	RequestID  string `json:"requestId,omitempty"`
 	TrackingID string `json:"trackingId"`
+	Data       string `json:"data,omitempty"`
 }
 
 func (h *FFTokens) Name() string {
@@ -221,13 +222,21 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 	}
 
 	// We want to process all transfers, even those not initiated by FireFly.
-	// The trackingID is an optional argument from the connector, so it's important not to
-	// fail if it's missing or malformed.
+	// The following are optional arguments from the connector, so it's important not to
+	// fail if they're missing or malformed.
 	trackingID := data.GetString("trackingId")
 	txID, err := fftypes.ParseUUID(ctx, trackingID)
 	if err != nil {
 		log.L(ctx).Infof("%s event contains invalid ID - continuing anyway (%s): %+v", eventName, err, data)
 		txID = fftypes.NewUUID()
+	}
+	transferData := data.GetString("data")
+	var messageHash fftypes.Bytes32
+	if transferData != "" {
+		err = messageHash.UnmarshalText([]byte(transferData))
+		if err != nil {
+			log.L(ctx).Errorf("%s event contains invalid message hash - continuing anyway (%s): %+v", eventName, err, data)
+		}
 	}
 
 	transfer := &fftypes.TokenTransfer{
@@ -238,6 +247,7 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		To:             toAddress,
 		ProtocolID:     txHash,
 		Key:            operatorAddress,
+		MessageHash:    &messageHash,
 		TX: fftypes.TransactionRef{
 			ID:   txID,
 			Type: fftypes.TransactionTypeTokenTransfer,
@@ -368,6 +378,7 @@ func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID
 			Amount:     transfer.Amount.Int().String(),
 			RequestID:  operationID.String(),
 			TrackingID: transfer.TX.ID.String(),
+			Data:       transfer.MessageHash.String(),
 		}).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {

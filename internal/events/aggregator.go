@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -410,6 +411,20 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 	// Verify we have all the blobs for the data
 	if resolved, err := ag.resolveBlobs(ctx, data); err != nil || !resolved {
 		return false, err
+	}
+
+	// For transfers, verify the transfer has come through
+	if msg.Header.Type == fftypes.MessageTypeTransferBroadcast || msg.Header.Type == fftypes.MessageTypeTransferPrivate {
+		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("messagehash", msg.Hash),
+		)
+		transfers, _, err := ag.database.GetTokenTransfers(ctx, filter)
+		if err != nil {
+			return false, err
+		} else if len(transfers) == 0 {
+			return false, fmt.Errorf("transfer for message '%s' not available", msg.Hash)
+		}
 	}
 
 	// We're going to dispatch it at this point, but we need to validate the data first
