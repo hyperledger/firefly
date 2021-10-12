@@ -36,16 +36,16 @@ type Bridge interface {
 	Init(sysevents sysmessaging.SystemEvents)
 	// Request performs a request/reply exchange taking a message as input, and returning a message as a response
 	// The input message must have a tag, and a group, to be routed appropriately.
-	RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error)
+	RequestReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error)
 	// SendConfirm blocks until the message is confirmed (or rejected), but does not look for a reply.
-	SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error)
+	SendConfirm(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error)
 	// SendConfirmTokenPool blocks until the token pool is confirmed (or rejected)
-	SendConfirmTokenPool(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenPool, error)
+	SendConfirmTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error)
 	// SendConfirmTokenTransfer blocks until the token transfer is confirmed
-	SendConfirmTokenTransfer(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenTransfer, error)
+	SendConfirmTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error)
 }
 
-type RequestSender func(requestID *fftypes.UUID) error
+type RequestSender func() error
 
 type requestType int
 
@@ -94,9 +94,9 @@ func (sa *syncAsyncBridge) Init(sysevents sysmessaging.SystemEvents) {
 	sa.sysevents = sysevents
 }
 
-func (sa *syncAsyncBridge) addInFlight(ns string, reqType requestType) (*inflightRequest, error) {
+func (sa *syncAsyncBridge) addInFlight(ns string, id *fftypes.UUID, reqType requestType) (*inflightRequest, error) {
 	inflight := &inflightRequest{
-		id:        fftypes.NewUUID(),
+		id:        id,
 		startTime: time.Now(),
 		response:  make(chan inflightResponse),
 		reqType:   reqType,
@@ -298,8 +298,8 @@ func (sa *syncAsyncBridge) resolveConfirmedTokenTransfer(inflight *inflightReque
 	inflight.response <- inflightResponse{id: transfer.LocalID, data: transfer}
 }
 
-func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType requestType, send RequestSender) (interface{}, error) {
-	inflight, err := sa.addInFlight(ns, reqType)
+func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send RequestSender) (interface{}, error) {
+	inflight, err := sa.addInFlight(ns, id, reqType)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +314,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType r
 		}
 	}()
 
-	err = send(inflight.id)
+	err = send()
 	if err != nil {
 		return nil, err
 	}
@@ -328,32 +328,32 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, reqType r
 	}
 }
 
-func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, send RequestSender) (*fftypes.MessageInOut, error) {
-	reply, err := sa.sendAndWait(ctx, ns, messageReply, send)
+func (sa *syncAsyncBridge) RequestReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.MessageInOut, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, messageReply, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, send RequestSender) (*fftypes.Message, error) {
-	reply, err := sa.sendAndWait(ctx, ns, messageConfirm, send)
+func (sa *syncAsyncBridge) SendConfirm(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Message, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, messageConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.Message), err
 }
 
-func (sa *syncAsyncBridge) SendConfirmTokenPool(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenPool, error) {
-	reply, err := sa.sendAndWait(ctx, ns, tokenPoolConfirm, send)
+func (sa *syncAsyncBridge) SendConfirmTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenPool, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, tokenPoolConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*fftypes.TokenPool), err
 }
 
-func (sa *syncAsyncBridge) SendConfirmTokenTransfer(ctx context.Context, ns string, send RequestSender) (*fftypes.TokenTransfer, error) {
-	reply, err := sa.sendAndWait(ctx, ns, tokenTransferConfirm, send)
+func (sa *syncAsyncBridge) SendConfirmTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, tokenTransferConfirm, send)
 	if err != nil {
 		return nil, err
 	}

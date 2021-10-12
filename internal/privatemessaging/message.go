@@ -118,7 +118,8 @@ func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.
 
 	// Pass it to the sync-async handler to wait for the confirmation to come back in.
 	// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
-	return pm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
+	requestID := fftypes.NewUUID()
+	return pm.syncasync.SendConfirm(ctx, msg.Header.Namespace, requestID, func() error {
 		_, err := pm.sendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})
