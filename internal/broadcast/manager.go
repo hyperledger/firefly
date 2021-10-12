@@ -146,7 +146,8 @@ func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fft
 		return msg, bm.database.InsertMessageLocal(ctx, msg)
 	}
 
-	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
+	requestID := fftypes.NewUUID()
+	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, requestID, func() error {
 		_, err := bm.broadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
 		return err
 	})

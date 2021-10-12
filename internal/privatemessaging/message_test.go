@@ -70,22 +70,19 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		{Hash: fftypes.NewRandB32()},
 	}, nil, nil).Once()
 
-	requestID := fftypes.NewUUID()
 	retMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything).
+	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(requestID)
+			send := args[3].(syncasync.RequestSender)
+			send()
 		}).
 		Return(retMsg, nil).Once()
-	mdi.On("InsertMessageLocal", pm.ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.Header.ID == requestID
-	})).Return(nil).Once()
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
 	msg, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{

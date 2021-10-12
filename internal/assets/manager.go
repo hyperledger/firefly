@@ -151,7 +151,8 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 	}
 
 	if waitConfirm {
-		return am.syncasync.SendConfirmTokenPool(ctx, ns, func(requestID *fftypes.UUID) error {
+		requestID := fftypes.NewUUID()
+		return am.syncasync.SendConfirmTokenPool(ctx, ns, requestID, func() error {
 			_, err := am.createTokenPoolWithID(ctx, requestID, ns, typeName, pool, false)
 			return err
 		})
@@ -345,7 +346,8 @@ func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UU
 	}
 
 	if waitConfirm {
-		return am.syncasync.SendConfirmTokenTransfer(ctx, ns, func(requestID *fftypes.UUID) error {
+		requestID := fftypes.NewUUID()
+		return am.syncasync.SendConfirmTokenTransfer(ctx, ns, requestID, func() error {
 			_, err := am.transferTokensWithID(ctx, requestID, ns, typeName, poolName, transfer, false)
 			return err
 		})

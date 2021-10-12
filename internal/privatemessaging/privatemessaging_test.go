@@ -435,10 +435,10 @@ func TestRequestReplySuccess(t *testing.T) {
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(fftypes.NewUUID())
+			send := args[3].(syncasync.RequestSender)
+			send()
 		}).
 		Return(nil, nil)
 

@@ -239,7 +239,8 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresol
 	if unresolved.Header.CID != nil {
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
-	return pm.syncasync.RequestReply(ctx, ns, func(requestID *fftypes.UUID) error {
+	requestID := fftypes.NewUUID()
+	return pm.syncasync.RequestReply(ctx, ns, requestID, func() error {
 		_, err := pm.sendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
 		return err
 	})

@@ -182,8 +182,6 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	requestID := fftypes.NewUUID()
-
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
@@ -191,17 +189,15 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil).Times(2)
-	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.MatchedBy(func(pool *fftypes.TokenPool) bool {
-		return pool.ID == requestID
-	})).Return(nil).Times(1)
+	mti.On("CreateTokenPool", context.Background(), mock.Anything, mock.Anything).Return(nil).Times(1)
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenPool
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil).Times(1)
-	msa.On("SendConfirmTokenPool", context.Background(), "ns1", mock.Anything).
+	msa.On("SendConfirmTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(requestID)
+			send := args[3].(syncasync.RequestSender)
+			send()
 		}).
 		Return(nil, nil)
 
@@ -462,7 +458,6 @@ func TestMintTokensConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	requestID := fftypes.NewUUID()
 	mint := &fftypes.TokenTransfer{}
 	mint.Amount.Int().SetInt64(5)
 
@@ -478,10 +473,10 @@ func TestMintTokensConfirm(t *testing.T) {
 	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything).
+	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(requestID)
+			send := args[3].(syncasync.RequestSender)
+			send()
 		}).
 		Return(nil, nil)
 

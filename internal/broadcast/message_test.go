@@ -201,22 +201,19 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	}, []*fftypes.DataAndBlob{}, nil)
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	requestID := fftypes.NewUUID()
 	replyMsg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 		},
 	}
-	msa.On("SendConfirm", ctx, "ns1", mock.Anything).
+	msa.On("SendConfirm", ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(requestID)
+			send := args[3].(syncasync.RequestSender)
+			send()
 		}).
 		Return(replyMsg, nil)
-	mdi.On("InsertMessageLocal", ctx, mock.MatchedBy(func(msg *fftypes.Message) bool {
-		return msg.Header.ID == requestID
-	})).Return(nil)
+	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
