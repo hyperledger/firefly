@@ -22,7 +22,7 @@
 rm -f manifest.yaml
 
 echo $'# SPDX-License-Identifier: Apache-2.0\n' >> manifest.yaml
-echo $'# FireflyVersion Manifest' >> manifest.yaml
+echo $'# FireFly Version Manifest' >> manifest.yaml
 echo $'# This file describes the version of each microservice that should be used with this version of FireFly\n' >> manifest.yaml
 
 declare -a arr=(
@@ -34,5 +34,7 @@ declare -a arr=(
 
 for i in "${arr[@]}"
 do
-   echo "$i: ghcr.io/hyperledger/firefly-$i:$(curl https://api.github.com/repos/hyperledger/firefly-$i/releases/latest -s | jq .tag_name -r)" >> manifest.yaml
+   echo "$i:" >> manifest.yaml
+   echo "  image: ghcr.io/hyperledger/firefly-$i" >> manifest.yaml
+   echo "  tag: "$(curl https://api.github.com/repos/hyperledger/firefly-$i/releases/latest -s | jq .tag_name -r)"" >> manifest.yaml
 done
