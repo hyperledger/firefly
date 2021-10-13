@@ -23,7 +23,7 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ## Documentation
 
-https://hyperledger.github.io/firefly/
+https://hyperledger.github.io/firefly
 
 ## FireFly repos
 
