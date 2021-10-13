@@ -5,14 +5,14 @@
   },
   "fabconnect": {
     "image": "ghcr.io/hyperledger/firefly-fabconnect",
-    "tag": "null"
+    "tag": "v0.9.0"
   },
-  "data-exchange-https": {
-    "image": "ghcr.io/hyperledger/firefly-data-exchange-https",
-    "tag": "null"
+  "dataexchange-https": {
+    "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
+    "tag": "v0.9.0"
   },
-  "tokens-erc-1155": {
-    "image": "ghcr.io/hyperledger/firefly-tokens-erc-1155",
-    "tag": "null"
+  "tokens-erc1155": {
+    "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
+    "tag": "v0.9.0"
   }
 }

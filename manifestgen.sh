@@ -24,8 +24,8 @@ rm -f manifest.json
 SERVICES=(
     "ethconnect"
     "fabconnect"
-    "data-exchange-https"
-    "tokens-erc-1155"
+    "dataexchange-https"
+    "tokens-erc1155"
 )
 SERVICE_COUNT=${#SERVICES[@]}
 
