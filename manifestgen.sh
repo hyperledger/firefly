@@ -16,25 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script will automatically update the manifest.yaml file with the
+# This script will automatically update the manifest.json file with the
 # latest releases of all FireFly microservice dependencies
 
-rm -f manifest.yaml
+rm -f manifest.json
 
-echo $'# SPDX-License-Identifier: Apache-2.0\n' >> manifest.yaml
-echo $'# FireFly Version Manifest' >> manifest.yaml
-echo $'# This file describes the version of each microservice that should be used with this version of FireFly\n' >> manifest.yaml
-
-declare -a arr=(
+SERVICES=(
     "ethconnect"
     "fabconnect"
     "data-exchange-https"
     "tokens-erc-1155"
 )
+SERVICE_COUNT=${#SERVICES[@]}
 
-for i in "${arr[@]}"
+echo "{" >> manifest.json
+
+for (( i=0; i<${SERVICE_COUNT}; i++ ))
 do
-   echo "$i:" >> manifest.yaml
-   echo "  image: ghcr.io/hyperledger/firefly-$i" >> manifest.yaml
-   echo "  tag: "$(curl https://api.github.com/repos/hyperledger/firefly-$i/releases/latest -s | jq .tag_name -r)"" >> manifest.yaml
+    echo "  \"${SERVICES[$i]}\": {" >> manifest.json
+    echo "    \"image\": \"ghcr.io/hyperledger/firefly-${SERVICES[$i]}\"," >> manifest.json
+    echo "    \"tag\": \""$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases/latest -s | jq .tag_name -r)\""" >> manifest.json
+    if [[ $(($i + 1)) -eq ${SERVICE_COUNT} ]]
+    then
+        echo "  }" >> manifest.json
+    else
+        echo "  }," >> manifest.json
+    fi
 done
+
+echo "}" >> manifest.json
