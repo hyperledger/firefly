@@ -354,26 +354,23 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdi := bm.database.(*databasemocks.Plugin)
+	mdm := bm.data.(*datamocks.Manager)
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
-	mps := bm.publicstorage.(*publicstoragemocks.Plugin)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	blobHash := fftypes.NewRandB32()
 	dataID := fftypes.NewUUID()
 
 	ctx := context.Background()
-	mdx.On("DownloadBLOB", ctx, "blob/1").Return(ioutil.NopCloser(bytes.NewReader([]byte(`some data`))), nil)
-	mps.On("PublishData", ctx, mock.MatchedBy(func(reader io.ReadCloser) bool {
-		b, err := ioutil.ReadAll(reader)
-		assert.NoError(t, err)
-		assert.Equal(t, "some data", string(b))
-		return true
-	})).Return("payload-ref", nil)
-	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	rag := mdi.On("RunAsGroup", ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		var fn = a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
-
-	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
+	mdm.On("ResolveInlineDataBroadcast", ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: dataID, Hash: fftypes.NewRandB32()},
+	}, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
 				ID: dataID,
@@ -386,10 +383,30 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
+	}, nil)
+	mdx.On("DownloadBLOB", ctx, "blob/1").Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Identity: fftypes.Identity{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
+			},
+		},
+		InlineData: fftypes.InlineData{
+			{Blob: &fftypes.BlobRef{
+				Hash: blobHash,
+			}},
+		},
 	}, false)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "FF10240", err)
 
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPublishBlobsUpdateDataFail(t *testing.T) {
@@ -414,7 +431,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 	mdi.On("UpdateData", ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
+	err := bm.publishBlobs(ctx, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
 				ID: dataID,
@@ -427,7 +444,7 @@ func TestPublishBlobsUpdateDataFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	}, false)
+	})
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -454,7 +471,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 	})).Return("", fmt.Errorf("pop"))
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
+	err := bm.publishBlobs(ctx, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
 				ID: dataID,
@@ -467,7 +484,7 @@ func TestPublishBlobsPublishFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	}, false)
+	})
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -487,7 +504,7 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 	mdx.On("DownloadBLOB", ctx, "blob/1").Return(nil, fmt.Errorf("pop"))
 	mim.On("ResolveInputIdentity", ctx, mock.Anything).Return(nil)
 
-	_, err := bm.publishBlobsAndSend(ctx, &fftypes.Message{}, []*fftypes.DataAndBlob{
+	err := bm.publishBlobs(ctx, []*fftypes.DataAndBlob{
 		{
 			Data: &fftypes.Data{
 				ID: dataID,
@@ -500,7 +517,7 @@ func TestPublishBlobsDownloadFail(t *testing.T) {
 				PayloadRef: "blob/1",
 			},
 		},
-	}, false)
+	})
 	assert.Regexp(t, "FF10240", err)
 
 	mdi.AssertExpectations(t)
