@@ -34,8 +34,64 @@ func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, tra
 	return nil
 }
 
+func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
+	transfer.LocalID = nil
+
+	// Find a matching operation within this transaction
+	fb := database.OperationQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("tx", transfer.TX.ID),
+		fb.Eq("type", fftypes.OpTypeTokenTransfer),
+	)
+	operations, _, err := em.database.GetOperations(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	if len(operations) > 0 {
+		err = retrieveTokenTransferInputs(ctx, operations[0], transfer)
+		if err != nil {
+			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
+		}
+	}
+
+	if transfer.LocalID == nil {
+		transfer.LocalID = fftypes.NewUUID()
+	}
+
+	transaction := &fftypes.Transaction{
+		ID:     transfer.TX.ID,
+		Status: fftypes.OpStatusSucceeded,
+		Subject: fftypes.TransactionSubject{
+			Namespace: ns,
+			Type:      transfer.TX.Type,
+			Signer:    transfer.Key,
+			Reference: transfer.LocalID,
+		},
+		ProtocolID: protocolTxID,
+		Info:       additionalInfo,
+	}
+	return em.txhelper.PersistTransaction(ctx, transaction)
+}
+
+func (em *eventManager) getBatchForTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) (*fftypes.UUID, error) {
+	// Find the messages assocated with that data
+	var messages []*fftypes.Message
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("pending", true),
+		fb.Eq("hash", transfer.MessageHash),
+	)
+	messages, _, err := em.database.GetMessages(ctx, filter)
+	if err != nil || len(messages) == 0 {
+		return nil, err
+	}
+	return messages[0].BatchID, nil
+}
+
 func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
+	var batchID *fftypes.UUID
+
+	err := em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// Check that this is from a known pool
 			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
@@ -47,47 +103,11 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				return nil
 			}
 
-			transfer.LocalID = nil
-
 			if transfer.TX.ID != nil {
-				// Find a matching operation within this transaction
-				fb := database.OperationQueryFactory.NewFilter(ctx)
-				filter := fb.And(
-					fb.Eq("tx", transfer.TX.ID),
-					fb.Eq("type", fftypes.OpTypeTokenTransfer),
-				)
-				operations, _, err := em.database.GetOperations(ctx, filter)
-				if err != nil {
+				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
 					return err
 				}
-				if len(operations) > 0 {
-					err = retrieveTokenTransferInputs(ctx, operations[0], transfer)
-					if err != nil {
-						log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
-					}
-				}
-
-				transaction := &fftypes.Transaction{
-					ID:     transfer.TX.ID,
-					Status: fftypes.OpStatusSucceeded,
-					Subject: fftypes.TransactionSubject{
-						Namespace: pool.Namespace,
-						Type:      transfer.TX.Type,
-						Signer:    transfer.Key,
-						Reference: transfer.LocalID,
-					},
-					ProtocolID: protocolTxID,
-					Info:       additionalInfo,
-				}
-				valid, err := em.txhelper.PersistTransaction(ctx, transaction)
-				if err != nil {
-					return err
-				} else if !valid {
-					return nil
-				}
-			}
-
-			if transfer.LocalID == nil {
+			} else {
 				transfer.LocalID = fftypes.NewUUID()
 			}
 
@@ -100,6 +120,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				PoolProtocolID: transfer.PoolProtocolID,
 				TokenIndex:     transfer.TokenIndex,
 			}
+
 			if transfer.Type != fftypes.TokenTransferTypeMint {
 				balance.Identity = transfer.From
 				balance.Amount.Int().Neg(transfer.Amount.Int())
@@ -119,9 +140,27 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			}
 
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
+
+			if transfer.MessageHash != nil {
+				if batchID, err = em.getBatchForTransfer(ctx, transfer); err != nil {
+					log.L(ctx).Errorf("Failed to lookup batch for token transfer '%s': %s", transfer.ProtocolID, err)
+					return err
+				}
+			}
+
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, transfer.LocalID)
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})
+
+	if err == nil {
+		// Initiate a rewind if a batch was potentially completed by the arrival of this transfer
+		if batchID != nil {
+			log.L(em.ctx).Infof("Batch '%s' contains reference to received transfer. Transfer='%s' Message='%s'", batchID, transfer.ProtocolID, transfer.MessageHash)
+			em.aggregator.offchainBatches <- batchID
+		}
+	}
+
+	return err
 }

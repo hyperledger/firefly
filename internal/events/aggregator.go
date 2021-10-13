@@ -21,7 +21,6 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
@@ -419,11 +418,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		filter := fb.And(
 			fb.Eq("messagehash", msg.Hash),
 		)
-		transfers, _, err := ag.database.GetTokenTransfers(ctx, filter)
-		if err != nil {
+		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Hash)
 			return false, err
-		} else if len(transfers) == 0 {
-			return false, fmt.Errorf("transfer for message '%s' not available", msg.Hash)
 		}
 	}
 

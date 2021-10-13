@@ -905,7 +905,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 	}
 	msg.Hash = msg.Header.Hash()
 	dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg)
-	assert.EqualError(t, err, "transfer for message '"+msg.Hash.String()+"' not available")
+	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
 	mdm.AssertExpectations(t)
