@@ -23,7 +23,7 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ## Documentation
 
-https://hyperledger.github.io/firefly//
+https://hyperledger.github.io/firefly
 
 ## FireFly repos
 
@@ -276,9 +276,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘   └───────────────┘
   │
   │           ┌───────────────┐  - Pluggable identity infrastructure
-  ├───────────┤ identity  [Ii]│    * TBD 
+  ├───────────┤ identity  [Ii]│    * TBD
   │           │ interface     │    * See Identity Manager component above
-  │           └───────────────┘    * See Issue 
+  │           └───────────────┘    * See Issue
   │
   │           ┌───────────────┐  - API Authentication and Authorization Interface
   ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
