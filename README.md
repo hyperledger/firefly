@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/gh/hyperledger/firefly/branch/main/graph/badge.svg?token=QdEnpMqB1G)](https://codecov.io/gh/hyperledger/firefly)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
-[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
+[![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly/)
 
 Hyperledger FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
 
@@ -23,7 +23,7 @@ You will see enterprise focussed code in FireFly solving hard "plumbing" problem
 
 ## Documentation
 
-https://hyperledger.github.io/firefly//
+https://hyperledger.github.io/firefly/
 
 ## FireFly repos
 
@@ -276,9 +276,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘   └───────────────┘
   │
   │           ┌───────────────┐  - Pluggable identity infrastructure
-  ├───────────┤ identity  [Ii]│    * TBD 
+  ├───────────┤ identity  [Ii]│    * TBD
   │           │ interface     │    * See Identity Manager component above
-  │           └───────────────┘    * See Issue 
+  │           └───────────────┘    * See Issue
   │
   │           ┌───────────────┐  - API Authentication and Authorization Interface
   ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
