@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assets
+package events
 
 import (
 	"context"
@@ -25,11 +25,20 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return am.retry.Do(am.ctx, "persist token transfer", func(attempt int) (bool, error) {
-		err := am.database.RunAsGroup(am.ctx, func(ctx context.Context) error {
+func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
+	input := &op.Input
+	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	return em.retry.Do(em.ctx, "persist token transfer", func(attempt int) (bool, error) {
+		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			// Check that this is from a known pool
-			pool, err := am.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
+			pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.PoolProtocolID)
 			if err != nil {
 				return err
 			}
@@ -47,7 +56,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 					fb.Eq("tx", transfer.TX.ID),
 					fb.Eq("type", fftypes.OpTypeTokenTransfer),
 				)
-				operations, _, err := am.database.GetOperations(ctx, filter)
+				operations, _, err := em.database.GetOperations(ctx, filter)
 				if err != nil {
 					return err
 				}
@@ -70,7 +79,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 					ProtocolID: protocolTxID,
 					Info:       additionalInfo,
 				}
-				valid, err := am.txhelper.PersistTransaction(ctx, transaction)
+				valid, err := em.txhelper.PersistTransaction(ctx, transaction)
 				if err != nil {
 					return err
 				} else if !valid {
@@ -82,7 +91,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				transfer.LocalID = fftypes.NewUUID()
 			}
 
-			if err := am.database.UpsertTokenTransfer(ctx, transfer); err != nil {
+			if err := em.database.UpsertTokenTransfer(ctx, transfer); err != nil {
 				log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 				return err
 			}
@@ -94,7 +103,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			if transfer.Type != fftypes.TokenTransferTypeMint {
 				balance.Identity = transfer.From
 				balance.Amount.Int().Neg(transfer.Amount.Int())
-				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
+				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
 					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
 					return err
 				}
@@ -103,7 +112,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			if transfer.Type != fftypes.TokenTransferTypeBurn {
 				balance.Identity = transfer.To
 				balance.Amount.Int().Set(transfer.Amount.Int())
-				if err := am.database.AddTokenAccountBalance(ctx, balance); err != nil {
+				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
 					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
 					return err
 				}
@@ -111,7 +120,7 @@ func (am *assetManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 
 			log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, pool.Namespace, transfer.LocalID)
-			return am.database.InsertEvent(ctx, event)
+			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)
 	})

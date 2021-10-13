@@ -47,7 +47,6 @@ type Manager interface {
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
-	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	Start() error
 	WaitStop()
@@ -122,19 +121,11 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	return nil
 }
 
+// Note: the counterpart to below (retrieveTokenTransferInputs) lives in the events package
 func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
 	op.Input = fftypes.JSONObject{
 		"id": transfer.LocalID.String(),
 	}
-}
-
-func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	input := &op.Input
-	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {

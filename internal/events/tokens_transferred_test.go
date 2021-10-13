@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assets
+package events
 
 import (
 	"fmt"
@@ -29,9 +29,10 @@ import (
 )
 
 func TestTokensTransferredAddBalanceSucceedWithRetries(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	transfer := &fftypes.TokenTransfer{
@@ -59,20 +60,20 @@ func TestTokensTransferredAddBalanceSucceedWithRetries(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "F1").Return(pool, nil).Times(4)
-	mdi.On("UpsertTokenTransfer", am.ctx, transfer).Return(fmt.Errorf("pop")).Once()
-	mdi.On("UpsertTokenTransfer", am.ctx, transfer).Return(nil).Times(3)
-	mdi.On("AddTokenAccountBalance", am.ctx, fromBalance).Return(fmt.Errorf("pop")).Once()
-	mdi.On("AddTokenAccountBalance", am.ctx, fromBalance).Return(nil).Times(2)
-	mdi.On("AddTokenAccountBalance", am.ctx, toBalance).Return(fmt.Errorf("pop")).Once()
-	mdi.On("AddTokenAccountBalance", am.ctx, toBalance).Return(nil).Once()
-	mdi.On("InsertEvent", am.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(4)
+	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpsertTokenTransfer", em.ctx, transfer).Return(nil).Times(3)
+	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(fmt.Errorf("pop")).Once()
+	mdi.On("AddTokenAccountBalance", em.ctx, fromBalance).Return(nil).Times(2)
+	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(fmt.Errorf("pop")).Once()
+	mdi.On("AddTokenAccountBalance", em.ctx, toBalance).Return(nil).Once()
+	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokensTransferred(mti, transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -80,9 +81,10 @@ func TestTokensTransferredAddBalanceSucceedWithRetries(t *testing.T) {
 }
 
 func TestTokensTransferredWithTransactionRetries(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	transfer := &fftypes.TokenTransfer{
@@ -112,18 +114,18 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "F1").Return(pool, nil).Times(3)
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operationsBad, nil, nil).Once()
-	mdi.On("GetOperations", am.ctx, mock.Anything).Return(operationsGood, nil, nil).Once()
-	mdi.On("GetTransactionByID", am.ctx, transfer.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTransactionByID", am.ctx, transfer.TX.ID).Return(nil, nil).Once()
-	mdi.On("UpsertTransaction", am.ctx, mock.MatchedBy(func(t *fftypes.Transaction) bool {
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(pool, nil).Times(3)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operationsBad, nil, nil).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operationsGood, nil, nil).Once()
+	mdi.On("GetTransactionByID", em.ctx, transfer.TX.ID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTransactionByID", em.ctx, transfer.TX.ID).Return(nil, nil).Once()
+	mdi.On("UpsertTransaction", em.ctx, mock.MatchedBy(func(t *fftypes.Transaction) bool {
 		return *t.ID == *transfer.TX.ID && t.Subject.Type == fftypes.TransactionTypeTokenTransfer && t.ProtocolID == "tx1"
 	}), false).Return(database.HashMismatch).Once()
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokensTransferred(mti, transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -131,9 +133,10 @@ func TestTokensTransferredWithTransactionRetries(t *testing.T) {
 }
 
 func TestTokensTransferredAddBalanceIgnore(t *testing.T) {
-	am, cancel := newTestAssets(t)
+	em, cancel := newTestEventManager(t)
 	defer cancel()
-	mdi := am.database.(*databasemocks.Plugin)
+
+	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
 
 	transfer := &fftypes.TokenTransfer{
@@ -146,10 +149,10 @@ func TestTokensTransferredAddBalanceIgnore(t *testing.T) {
 	}
 	transfer.Amount.Int().SetInt64(1)
 
-	mdi.On("GetTokenPoolByProtocolID", am.ctx, "F1").Return(nil, nil)
+	mdi.On("GetTokenPoolByProtocolID", em.ctx, "F1").Return(nil, nil)
 
 	info := fftypes.JSONObject{"some": "info"}
-	err := am.TokensTransferred(mti, transfer, "tx1", info)
+	err := em.TokensTransferred(mti, transfer, "tx1", info)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

@@ -234,20 +234,6 @@ func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, p
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: tk, transfer, protocolTxID, additionalInfo
-func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, transfer, protocolTxID, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, transfer, protocolTxID, additionalInfo)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // TransferTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
 func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
