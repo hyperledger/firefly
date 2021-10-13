@@ -35,7 +35,17 @@ for (( i=0; i<${SERVICE_COUNT}; i++ ))
 do
     echo "  \"${SERVICES[$i]}\": {" >> manifest.json
     echo "    \"image\": \"ghcr.io/hyperledger/firefly-${SERVICES[$i]}\"," >> manifest.json
-    echo "    \"tag\": \""$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases/latest -s | jq .tag_name -r)\""" >> manifest.json
+
+    # Query GitHub API the latest release version
+    TAG=$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases/latest -s | jq .tag_name -r)
+    
+    # Attempt to pull the image from GitHub Container Repository
+    docker pull ghcr.io/hyperledger/firefly-${SERVICES[$i]}:$TAG
+    # Get the SHA of the downloaded image
+    SHA=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/hyperledger/firefly-${SERVICES[$i]}:$TAG | cut -d ':' -f 2)
+
+    echo "    \"tag\": \"$TAG\"," >> manifest.json
+    echo "    \"sha\": \"$SHA\"" >> manifest.json
     if [[ $(($i + 1)) -eq ${SERVICE_COUNT} ]]
     then
         echo "  }" >> manifest.json
