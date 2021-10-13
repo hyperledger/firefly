@@ -135,20 +135,25 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 }
 
 func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+	if waitConfirm {
+		return bm.broadcastMessageSync(ctx, msg)
+	}
+	return bm.broadcastMessageAsync(ctx, msg)
+}
 
-	if !waitConfirm {
-		// Seal the message
-		if err := msg.Seal(ctx); err != nil {
-			return nil, err
-		}
-
-		// Store the message - this asynchronously triggers the next step in process
-		return msg, bm.database.InsertMessageLocal(ctx, msg)
+func (bm *broadcastManager) broadcastMessageAsync(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
+	// Seal the message
+	if err := msg.Seal(ctx); err != nil {
+		return nil, err
 	}
 
-	requestID := fftypes.NewUUID()
-	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, requestID, func() error {
-		_, err := bm.broadcastMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+	// Store the message - this asynchronously triggers the next step in process
+	return msg, bm.database.InsertMessageLocal(ctx, msg)
+}
+
+func (bm *broadcastManager) broadcastMessageSync(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
+	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, msg.Header.ID, func() error {
+		_, err := bm.resolveAndSend(ctx, nil, msg, false)
 		return err
 	})
 }

@@ -177,6 +177,34 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
 }
 
+func TestSendMessageBadGroup(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		err := a[1].(func(context.Context) error)(a[0].(context.Context))
+		rag.ReturnArguments = mock.Arguments{err}
+	}
+
+	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
+		InlineData: fftypes.InlineData{
+			{Value: fftypes.Byteable(`{"some": "data"}`)},
+		},
+		Group: &fftypes.InputGroup{},
+	}, true)
+	assert.Regexp(t, "FF10219", err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
 func TestSendMessageBadIdentity(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -237,20 +265,6 @@ func TestSendMessageFail(t *testing.T) {
 
 }
 
-func TestResolveAndSendBadMembers(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	err := pm.resolveMessage(pm.ctx, &fftypes.MessageInOut{
-		InlineData: fftypes.InlineData{
-			{Value: fftypes.Byteable(`{"some": "data"}`)},
-		},
-	})
-	assert.Regexp(t, "FF10219", err)
-
-}
-
 func TestResolveAndSendBadInlineData(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -293,7 +307,7 @@ func TestSealFail(t *testing.T) {
 	defer cancel()
 
 	id1 := fftypes.NewUUID()
-	_, err := pm.sendOrWaitMessage(pm.ctx, &fftypes.Message{
+	_, err := pm.sendMessageCommon(pm.ctx, &fftypes.Message{
 		Header: fftypes.MessageHeader{Namespace: "ns1"},
 		Data: fftypes.DataRefs{
 			{ID: id1},
@@ -593,6 +607,103 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
+
+}
+
+func TestRequestReplyMissingTag(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
+	assert.Regexp(t, "FF10261", err)
+}
+
+func TestRequestReplyInvalidCID(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:   "mytag",
+				CID:   fftypes.NewUUID(),
+				Group: fftypes.NewRandB32(),
+			},
+		},
+	})
+	assert.Regexp(t, "FF10262", err)
+}
+
+func TestRequestReplySuccess(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
+
+	msa := pm.syncasync.(*syncasyncmocks.Bridge)
+	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			send := args[3].(syncasync.RequestSender)
+			send()
+		}).
+		Return(nil, nil)
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(fftypes.DataRefs{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+	}, nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything)
+	rag.RunFn = func(a mock.Arguments) {
+		fn := a[1].(func(context.Context) error)
+		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
+	}
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
+				Identity: fftypes.Identity{
+					Author: "org1",
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+}
+
+func TestRequestReplyBadIdentity(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
+
+	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Tag:   "mytag",
+				Group: fftypes.NewRandB32(),
+				Identity: fftypes.Identity{
+					Author: "org1",
+				},
+			},
+		},
+	})
+	assert.Regexp(t, "FF10206.*pop", err)
+
 	mim.AssertExpectations(t)
 
 }

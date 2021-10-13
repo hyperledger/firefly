@@ -231,17 +231,3 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
-
-func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	if unresolved.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
-	}
-	if unresolved.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
-	}
-	requestID := fftypes.NewUUID()
-	return pm.syncasync.RequestReply(ctx, ns, requestID, func() error {
-		_, err := pm.sendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
-		return err
-	})
-}
