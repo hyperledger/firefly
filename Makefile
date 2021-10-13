@@ -82,3 +82,5 @@ deps:
 		$(VGO) get
 swagger:
 		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
+manifest:
+		./manifestgen.sh
