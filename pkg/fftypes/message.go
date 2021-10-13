@@ -42,9 +42,9 @@ var (
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
 	MessageTypeGroupInit MessageType = ffEnum("messagetype", "groupinit")
 	// MessageTypeTransferBroadcast is a broadcast message to accompany/annotate a token transfer
-	MessageTypeTransferBroadcast MessageType = ffEnum("messagetype", "transfer-broadcast")
+	MessageTypeTransferBroadcast MessageType = ffEnum("messagetype", "transfer_broadcast")
 	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
-	MessageTypeTransferPrivate MessageType = ffEnum("messagetype", "transfer-private")
+	MessageTypeTransferPrivate MessageType = ffEnum("messagetype", "transfer_private")
 )
 
 // MessageHeader contains all fields that contribute to the hash

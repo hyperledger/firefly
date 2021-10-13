@@ -5180,8 +5180,8 @@ paths:
                           - broadcast
                           - private
                           - groupinit
-                          - transfer-broadcast
-                          - transfer-private
+                          - transfer_broadcast
+                          - transfer_private
                           type: string
                       type: object
                     local:
