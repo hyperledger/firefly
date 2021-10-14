@@ -91,7 +91,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 		assert.Equal(t, *dataID, *msg.Data[0].ID)
 	}
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Namespace: "ns1",
@@ -126,7 +126,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -158,7 +158,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -185,7 +185,7 @@ func TestResolveMemberListLocalOrgUnregistered(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", fmt.Errorf("pop"))
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -212,7 +212,7 @@ func TestResolveMemberListLocalOrgLookupFailed(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -243,7 +243,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -274,7 +274,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -305,7 +305,7 @@ func TestResolveMemberOrgNameNotFound(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -340,7 +340,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Identity: fftypes.Identity{
@@ -417,7 +417,7 @@ func TestResolveReceipientListExisting(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{
 		Message: fftypes.Message{
 			Header: fftypes.MessageHeader{
 				Group: fftypes.NewRandB32(),
@@ -431,7 +431,7 @@ func TestResolveReceipientListEmptyList(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.resolveReceipientList(pm.ctx, &fftypes.MessageInOut{})
+	err := pm.resolveRecipientList(pm.ctx, &fftypes.MessageInOut{})
 	assert.Regexp(t, "FF10219", err)
 }
 

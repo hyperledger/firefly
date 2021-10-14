@@ -36,10 +36,16 @@ import (
 	"github.com/karlseguin/ccache"
 )
 
+type PrivateMessage interface {
+	Send(ctx context.Context) error
+	SendAndWait(ctx context.Context) error
+}
+
 type Manager interface {
 	GroupManager
 
 	Start() error
+	NewMessage(ns string, msg *fftypes.MessageInOut) PrivateMessage
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }

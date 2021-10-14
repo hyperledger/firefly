@@ -17,7 +17,6 @@
 package privatemessaging
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -49,11 +48,6 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
 	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
 		ID: fftypes.NewUUID(),
 	}, nil)
@@ -125,11 +119,6 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	}, true, nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
@@ -185,13 +174,6 @@ func TestSendMessageBadGroup(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
-
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
@@ -201,7 +183,6 @@ func TestSendMessageBadGroup(t *testing.T) {
 	assert.Regexp(t, "FF10219", err)
 
 	mim.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 
 }
 
@@ -235,11 +216,25 @@ func TestSendMessageFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
+	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("GetOrganizationByName", pm.ctx, "localorg").Return(&fftypes.Organization{
+		ID: fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetNodes", pm.ctx, mock.Anything).Return([]*fftypes.Node{
+		{ID: fftypes.NewUUID(), Name: "node1", Owner: "localorg"},
+	}, nil, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{
+		{Hash: fftypes.NewRandB32()},
+	}, nil, nil)
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	dataID := fftypes.NewUUID()
 	mdm := pm.data.(*datamocks.Manager)
@@ -247,21 +242,21 @@ func TestSendMessageFail(t *testing.T) {
 		{ID: dataID, Hash: fftypes.NewRandB32()},
 	}, nil)
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
 		InlineData: fftypes.InlineData{
 			{Value: fftypes.Byteable(`{"some": "data"}`)},
 		},
 		Group: &fftypes.InputGroup{
 			Members: []fftypes.MemberInput{
-				{Identity: "org1"},
+				{Identity: "localorg"},
 			},
 		},
 	}, false)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 
 }
 
@@ -273,6 +268,11 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveLocalOrgDID", pm.ctx).Return("localorg", nil)
 	mim.On("GetLocalOrganization", pm.ctx).Return(&fftypes.Organization{Identity: "localorg"}, nil)
+	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*fftypes.Identity)
+		identity.Author = "localorg"
+		identity.Key = "localkey"
+	}).Return(nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 
@@ -289,15 +289,25 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("ResolveInlineDataPrivate", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := pm.resolveMessage(pm.ctx, &fftypes.MessageInOut{
-		Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
-		Group: &fftypes.InputGroup{
-			Members: []fftypes.MemberInput{
-				{Identity: "localorg"},
+	message := &messageSender{
+		mgr:       pm,
+		namespace: "ns1",
+		msg: &fftypes.MessageInOut{
+			Message: fftypes.Message{Header: fftypes.MessageHeader{Namespace: "ns1"}},
+			Group: &fftypes.InputGroup{
+				Members: []fftypes.MemberInput{
+					{Identity: "localorg"},
+				},
 			},
 		},
-	})
+	}
+
+	err := message.resolveMessage(pm.ctx)
 	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 
 }
 
@@ -307,13 +317,20 @@ func TestSealFail(t *testing.T) {
 	defer cancel()
 
 	id1 := fftypes.NewUUID()
-	_, err := pm.sendMessageCommon(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{Namespace: "ns1"},
-		Data: fftypes.DataRefs{
-			{ID: id1},
-			{ID: id1}, // duplicate
+	message := &messageSender{
+		mgr: pm,
+		msg: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{Namespace: "ns1"},
+				Data: fftypes.DataRefs{
+					{ID: id1},
+					{ID: id1}, // duplicate
+				},
+			},
 		},
-	}, false)
+	}
+
+	err := message.sendInternal(pm.ctx, false)
 	assert.Regexp(t, "FF10144", err)
 
 }
@@ -354,15 +371,22 @@ func TestSendUnpinnedMessageMarshalFail(t *testing.T) {
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
 
-	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Identity: fftypes.Identity{
-				Author: "localorg",
+	message := &messageSender{
+		mgr: pm,
+		msg: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Identity: fftypes.Identity{
+						Author: "localorg",
+					},
+					TxType: fftypes.TransactionTypeNone,
+					Group:  groupID,
+				},
 			},
-			TxType: fftypes.TransactionTypeNone,
-			Group:  groupID,
 		},
-	})
+	}
+
+	err := message.sendUnpinned(pm.ctx)
 	assert.Regexp(t, "FF10137", err)
 
 	mdm.AssertExpectations(t)
@@ -398,15 +422,22 @@ func TestSendUnpinnedMessageGetDataFail(t *testing.T) {
 		ID: nodeID2, Name: "node2", Owner: "org1", DX: fftypes.DXInfo{Peer: "peer2-remote"},
 	}, nil).Once()
 
-	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Identity: fftypes.Identity{
-				Author: "localorg",
+	message := &messageSender{
+		mgr: pm,
+		msg: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Identity: fftypes.Identity{
+						Author: "localorg",
+					},
+					TxType: fftypes.TransactionTypeNone,
+					Group:  groupID,
+				},
 			},
-			TxType: fftypes.TransactionTypeNone,
-			Group:  groupID,
 		},
-	})
+	}
+
+	err := message.sendUnpinned(pm.ctx)
 	assert.Regexp(t, "pop", err)
 
 	mdm.AssertExpectations(t)
@@ -423,15 +454,22 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 
-	err := pm.sendUnpinnedMessage(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Identity: fftypes.Identity{
-				Author: "org1",
+	message := &messageSender{
+		mgr: pm,
+		msg: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Header: fftypes.MessageHeader{
+					Identity: fftypes.Identity{
+						Author: "org1",
+					},
+					TxType: fftypes.TransactionTypeNone,
+					Group:  groupID,
+				},
 			},
-			TxType: fftypes.TransactionTypeNone,
-			Group:  groupID,
 		},
-	})
+	}
+
+	err := message.sendUnpinned(pm.ctx)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -457,11 +495,6 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &fftypes.MessageInOut{
@@ -504,11 +537,6 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
@@ -561,11 +589,6 @@ func TestSendUnpinnedMessageEventFail(t *testing.T) {
 	}, true, nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-	rag.RunFn = func(a mock.Arguments) {
-		err := a[1].(func(context.Context) error)(a[0].(context.Context))
-		rag.ReturnArguments = mock.Arguments{err}
-	}
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&fftypes.Group{
 		Hash: groupID,
 		GroupIdentity: fftypes.GroupIdentity{
@@ -662,11 +685,6 @@ func TestRequestReplySuccess(t *testing.T) {
 	}, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything)
-	rag.RunFn = func(a mock.Arguments) {
-		fn := a[1].(func(context.Context) error)
-		rag.ReturnArguments = mock.Arguments{fn(a[0].(context.Context))}
-	}
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
@@ -681,29 +699,4 @@ func TestRequestReplySuccess(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-}
-
-func TestRequestReplyBadIdentity(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
-
-	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Tag:   "mytag",
-				Group: fftypes.NewRandB32(),
-				Identity: fftypes.Identity{
-					Author: "org1",
-				},
-			},
-		},
-	})
-	assert.Regexp(t, "FF10206.*pop", err)
-
-	mim.AssertExpectations(t)
-
 }
