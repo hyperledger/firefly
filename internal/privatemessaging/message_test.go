@@ -17,6 +17,7 @@
 package privatemessaging
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -317,21 +318,45 @@ func TestSealFail(t *testing.T) {
 	defer cancel()
 
 	id1 := fftypes.NewUUID()
-	message := &messageSender{
-		mgr: pm,
-		msg: &fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{Namespace: "ns1"},
-				Data: fftypes.DataRefs{
-					{ID: id1},
-					{ID: id1}, // duplicate
-				},
+	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Data: fftypes.DataRefs{
+				{ID: id1, Hash: fftypes.NewRandB32()},
+				{ID: id1, Hash: fftypes.NewRandB32()}, // duplicate ID
 			},
 		},
-	}
+	})
 
-	err := message.sendInternal(pm.ctx, false)
-	assert.Regexp(t, "FF10144", err)
+	err := message.(*messageSender).sendInternal(pm.ctx, false)
+	assert.Regexp(t, "FF10145", err)
+
+}
+
+func TestSealCallback(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	id1 := fftypes.NewUUID()
+	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Data: fftypes.DataRefs{
+				{ID: id1, Hash: fftypes.NewRandB32()},
+			},
+		},
+	})
+
+	called := false
+	message.AfterSeal(func(ctx context.Context) {
+		called = true
+	})
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil)
+
+	err := message.(*messageSender).sendInternal(pm.ctx, false)
+	assert.NoError(t, err)
+	assert.True(t, called)
 
 }
 

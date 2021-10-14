@@ -408,3 +408,29 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
+
+func TestSealCallback(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	id1 := fftypes.NewUUID()
+	message := bm.NewBroadcast("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Data: fftypes.DataRefs{
+				{ID: id1, Hash: fftypes.NewRandB32()},
+			},
+		},
+	})
+
+	called := false
+	message.AfterSeal(func(ctx context.Context) {
+		called = true
+	})
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	mdi.On("InsertMessageLocal", bm.ctx, mock.Anything).Return(nil)
+
+	err := message.(*broadcastSender).sendInternal(bm.ctx, false)
+	assert.NoError(t, err)
+	assert.True(t, called)
+}
