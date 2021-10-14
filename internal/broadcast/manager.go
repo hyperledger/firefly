@@ -39,6 +39,7 @@ import (
 type Broadcast interface {
 	Send(ctx context.Context) error
 	SendAndWait(ctx context.Context) error
+	AfterSeal(cb func(ctx context.Context)) Broadcast
 }
 
 type Manager interface {

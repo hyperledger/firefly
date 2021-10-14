@@ -58,10 +58,11 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fft
 }
 
 type messageSender struct {
-	mgr       *privateMessaging
-	namespace string
-	msg       *fftypes.MessageInOut
-	resolved  bool
+	mgr          *privateMessaging
+	namespace    string
+	msg          *fftypes.MessageInOut
+	resolved     bool
+	sealCallback func(ctx context.Context)
 }
 
 func (s *messageSender) Send(ctx context.Context) error {
@@ -70,6 +71,11 @@ func (s *messageSender) Send(ctx context.Context) error {
 
 func (s *messageSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
+}
+
+func (s *messageSender) AfterSeal(cb func(ctx context.Context)) PrivateMessage {
+	s.sealCallback = cb
+	return s
 }
 
 func (s *messageSender) setDefaults() {
@@ -143,6 +149,9 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 	// Seal the message
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
+	}
+	if s.sealCallback != nil {
+		s.sealCallback(ctx)
 	}
 
 	if immediateConfirm {

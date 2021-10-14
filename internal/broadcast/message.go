@@ -45,10 +45,11 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 }
 
 type broadcastSender struct {
-	mgr       *broadcastManager
-	namespace string
-	msg       *fftypes.MessageInOut
-	resolved  bool
+	mgr          *broadcastManager
+	namespace    string
+	msg          *fftypes.MessageInOut
+	resolved     bool
+	sealCallback func(ctx context.Context)
 }
 
 func (s *broadcastSender) Send(ctx context.Context) error {
@@ -57,6 +58,11 @@ func (s *broadcastSender) Send(ctx context.Context) error {
 
 func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
+}
+
+func (s *broadcastSender) AfterSeal(cb func(ctx context.Context)) Broadcast {
+	s.sealCallback = cb
+	return s
 }
 
 func (s *broadcastSender) setDefaults() {
@@ -132,6 +138,9 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 	// Seal the message
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
+	}
+	if s.sealCallback != nil {
+		s.sealCallback(ctx)
 	}
 
 	// Store the message - this asynchronously triggers the next step in process

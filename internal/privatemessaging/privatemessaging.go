@@ -39,6 +39,7 @@ import (
 type PrivateMessage interface {
 	Send(ctx context.Context) error
 	SendAndWait(ctx context.Context) error
+	AfterSeal(cb func(ctx context.Context)) PrivateMessage
 }
 
 type Manager interface {
