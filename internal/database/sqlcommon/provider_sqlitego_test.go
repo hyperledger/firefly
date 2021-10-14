@@ -19,7 +19,6 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -57,7 +56,7 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 	tp.SQLCommon.InitPrefix(tp, tp.prefix)
 	dir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err)
-	tp.prefix.Set(SQLConfDatasourceURL, fmt.Sprintf("file:%s/testdb", dir))
+	tp.prefix.Set(SQLConfDatasourceURL, "file::memory:")
 	tp.prefix.Set(SQLConfMigrationsAuto, true)
 	tp.prefix.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
 	tp.prefix.Set(SQLConfMaxConnections, 1)
