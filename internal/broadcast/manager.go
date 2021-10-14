@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -35,7 +36,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
+type Broadcast interface {
+	Send(ctx context.Context) error
+	SendAndWait(ctx context.Context) error
+}
+
 type Manager interface {
+	NewBroadcast(ns string, in *fftypes.MessageInOut) Broadcast
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
@@ -134,28 +141,32 @@ func (bm *broadcastManager) submitTXAndUpdateDB(ctx context.Context, batch *ffty
 	return bm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
 }
 
-func (bm *broadcastManager) broadcastMessageCommon(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
-	if waitConfirm {
-		return bm.broadcastMessageSync(ctx, msg)
+func (bm *broadcastManager) publishBlobs(ctx context.Context, dataToPublish []*fftypes.DataAndBlob) error {
+	for _, d := range dataToPublish {
+		// Stream from the local data exchange ...
+		reader, err := bm.exchange.DownloadBLOB(ctx, d.Blob.PayloadRef)
+		if err != nil {
+			return i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, d.Blob.PayloadRef)
+		}
+		defer reader.Close()
+
+		// ... to the public storage
+		publicRef, err := bm.publicstorage.PublishData(ctx, reader)
+		if err != nil {
+			return err
+		}
+		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Data.Blob, d.Data.ID, publicRef)
+
+		// Update the data in the database, with the public reference.
+		// We do this independently for each piece of data
+		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", publicRef)
+		err = bm.database.UpdateData(ctx, d.Data.ID, update)
+		if err != nil {
+			return err
+		}
 	}
-	return bm.broadcastMessageAsync(ctx, msg)
-}
 
-func (bm *broadcastManager) broadcastMessageAsync(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	// Seal the message
-	if err := msg.Seal(ctx); err != nil {
-		return nil, err
-	}
-
-	// Store the message - this asynchronously triggers the next step in process
-	return msg, bm.database.InsertMessageLocal(ctx, msg)
-}
-
-func (bm *broadcastManager) broadcastMessageSync(ctx context.Context, msg *fftypes.Message) (*fftypes.Message, error) {
-	return bm.syncasync.SendConfirm(ctx, msg.Header.Namespace, msg.Header.ID, func() error {
-		_, err := bm.resolveAndSend(ctx, nil, msg, false)
-		return err
-	})
+	return nil
 }
 
 func (bm *broadcastManager) Start() error {

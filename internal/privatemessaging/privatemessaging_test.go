@@ -56,6 +56,13 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 		fftypes.MessageTypeTransferPrivate,
 	}, mock.Anything, mock.Anything).Return()
 
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)
 	assert.NoError(t, err)
@@ -87,13 +94,6 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
-
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{
-			a[1].(func(context.Context) error)(a[0].(context.Context)),
-		}
-	}
 
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)

@@ -5,7 +5,10 @@ package broadcastmocks
 import (
 	context "context"
 
+	broadcast "github.com/hyperledger/firefly/internal/broadcast"
+
 	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -173,6 +176,22 @@ func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *ffty
 	}
 
 	return r0, r1
+}
+
+// NewBroadcast provides a mock function with given fields: ns, in
+func (_m *Manager) NewBroadcast(ns string, in *fftypes.MessageInOut) broadcast.Broadcast {
+	ret := _m.Called(ns, in)
+
+	var r0 broadcast.Broadcast
+	if rf, ok := ret.Get(0).(func(string, *fftypes.MessageInOut) broadcast.Broadcast); ok {
+		r0 = rf(ns, in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(broadcast.Broadcast)
+		}
+	}
+
+	return r0
 }
 
 // Start provides a mock function with given fields:
