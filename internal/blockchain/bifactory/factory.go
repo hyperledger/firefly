@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
+	"github.com/hyperledger/firefly/internal/blockchain/fabric"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -27,6 +28,7 @@ import (
 
 var plugins = []blockchain.Plugin{
 	&ethereum.Ethereum{},
+	&fabric.Fabric{},
 }
 
 var pluginsByName = make(map[string]blockchain.Plugin)
