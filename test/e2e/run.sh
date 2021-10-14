@@ -49,7 +49,7 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  docker build -t ghcr.io/hyperledger/firefly:latest ../..
+  docker build -t hyperledger/firefly ../..
   checkOk $?
 fi
 
@@ -59,7 +59,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --database $DATABASE_TYPE $STACK_NAME 2
+  $CLI init --database $DATABASE_TYPE $STACK_NAME 2 --manifest ../../manifest.json
   checkOk $?
 
   $CLI start -nb $STACK_NAME
