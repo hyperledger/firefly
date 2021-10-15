@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) PrivateMessage {
+func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
 	message := &messageSender{
 		mgr:       pm,
 		namespace: ns,
@@ -62,7 +63,7 @@ type messageSender struct {
 	namespace    string
 	msg          *fftypes.MessageInOut
 	resolved     bool
-	sealCallback func(ctx context.Context)
+	sealCallback sysmessaging.SealCallback
 }
 
 func (s *messageSender) Send(ctx context.Context) error {
@@ -73,7 +74,7 @@ func (s *messageSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
 }
 
-func (s *messageSender) AfterSeal(cb func(ctx context.Context)) PrivateMessage {
+func (s *messageSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
 	s.sealCallback = cb
 	return s
 }
@@ -151,7 +152,9 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 		return err
 	}
 	if s.sealCallback != nil {
-		s.sealCallback(ctx)
+		if err := s.sealCallback(ctx); err != nil {
+			return err
+		}
 	}
 
 	if immediateConfirm {

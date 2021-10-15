@@ -347,8 +347,9 @@ func TestSealCallback(t *testing.T) {
 	})
 
 	called := false
-	message.AfterSeal(func(ctx context.Context) {
+	message.AfterSeal(func(ctx context.Context) error {
 		called = true
+		return nil
 	})
 
 	mdi := pm.database.(*databasemocks.Plugin)
@@ -356,6 +357,35 @@ func TestSealCallback(t *testing.T) {
 
 	err := message.(*messageSender).sendInternal(pm.ctx, false)
 	assert.NoError(t, err)
+	assert.True(t, called)
+
+}
+
+func TestSealCallbackFail(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	id1 := fftypes.NewUUID()
+	message := pm.NewMessage("ns1", &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Data: fftypes.DataRefs{
+				{ID: id1, Hash: fftypes.NewRandB32()},
+			},
+		},
+	})
+
+	called := false
+	message.AfterSeal(func(ctx context.Context) error {
+		called = true
+		return fmt.Errorf("pop")
+	})
+
+	mdi := pm.database.(*databasemocks.Plugin)
+	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil)
+
+	err := message.(*messageSender).sendInternal(pm.ctx, false)
+	assert.EqualError(t, err, "pop")
 	assert.True(t, called)
 
 }

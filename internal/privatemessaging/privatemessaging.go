@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -36,17 +37,11 @@ import (
 	"github.com/karlseguin/ccache"
 )
 
-type PrivateMessage interface {
-	Send(ctx context.Context) error
-	SendAndWait(ctx context.Context) error
-	AfterSeal(cb func(ctx context.Context)) PrivateMessage
-}
-
 type Manager interface {
 	GroupManager
 
 	Start() error
-	NewMessage(ns string, msg *fftypes.MessageInOut) PrivateMessage
+	NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }

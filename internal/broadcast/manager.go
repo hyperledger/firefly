@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -36,14 +37,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/publicstorage"
 )
 
-type Broadcast interface {
-	Send(ctx context.Context) error
-	SendAndWait(ctx context.Context) error
-	AfterSeal(cb func(ctx context.Context)) Broadcast
-}
-
 type Manager interface {
-	NewBroadcast(ns string, in *fftypes.MessageInOut) Broadcast
+	NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender
 	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
