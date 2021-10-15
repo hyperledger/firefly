@@ -71,18 +71,12 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
-type subscriptionFilter struct {
-	Address string   `json:"address"`
-	Topics  []string `json:"topics"`
-}
-
 type subscription struct {
-	ID          string             `json:"id"`
-	Description string             `json:"description"`
-	Name        string             `json:"name"`
-	Stream      string             `json:"stream"`
-	FromBlock   string             `json:"fromBlock"`
-	Filter      subscriptionFilter `json:"filter"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	Stream      string `json:"stream"`
+	FromBlock   string `json:"fromBlock"`
 }
 
 type asyncTXSubmission struct {
