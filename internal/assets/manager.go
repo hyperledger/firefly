@@ -179,10 +179,8 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 
 	pool.ID = id
 	pool.Namespace = ns
-	pool.TX = fftypes.TransactionRef{
-		ID:   tx.ID,
-		Type: tx.Subject.Type,
-	}
+	pool.TX.ID = tx.ID
+	pool.TX.Type = tx.Subject.Type
 
 	op := fftypes.NewTXOperation(
 		plugin,
@@ -274,7 +272,7 @@ type transferSender struct {
 	typeName     string
 	poolName     string
 	transfer     *fftypes.TokenTransferInput
-	sealCallback sysmessaging.SealCallback
+	sendCallback sysmessaging.BeforeSendCallback
 }
 
 func (s *transferSender) Send(ctx context.Context) error {
@@ -285,8 +283,8 @@ func (s *transferSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
 }
 
-func (s *transferSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
-	s.sealCallback = cb
+func (s *transferSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
+	s.sendCallback = cb
 	return s
 }
 
@@ -379,12 +377,29 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 	}
 	s.transfer.PoolProtocolID = pool.ProtocolID
 
-	if waitConfirm {
-		return s.sendSync(ctx)
+	var messageSender sysmessaging.MessageSender
+	if s.transfer.Message != nil {
+		if messageSender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
+			return err
+		}
 	}
 
-	if s.transfer.Message != nil {
-		if err := s.sendTransferMessage(ctx, s.namespace, s.transfer.Message); err != nil {
+	switch {
+	case waitConfirm && messageSender != nil:
+		// prepare the message, send the transfer async, then send the message and wait
+		return messageSender.
+			BeforeSend(func(ctx context.Context) error {
+				s.transfer.MessageHash = s.transfer.Message.Hash
+				s.transfer.Message = nil
+				return s.Send(ctx)
+			}).
+			SendAndWait(ctx)
+	case waitConfirm:
+		// no message - just send the transfer and wait
+		return s.sendSync(ctx)
+	case messageSender != nil:
+		// send the message async and then move on to the transfer
+		if err := messageSender.Send(ctx); err != nil {
 			return err
 		}
 		s.transfer.MessageHash = s.transfer.Message.Hash
@@ -423,8 +438,8 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		return err
 	}
 
-	if s.sealCallback != nil {
-		if err := s.sealCallback(ctx); err != nil {
+	if s.sendCallback != nil {
+		if err := s.sendCallback(ctx); err != nil {
 			return err
 		}
 	}
@@ -449,7 +464,7 @@ func (s *transferSender) sendSync(ctx context.Context) error {
 	return err
 }
 
-func (s *transferSender) sendTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) error {
+func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {
 	allowedTypes := []fftypes.FFEnum{
 		fftypes.MessageTypeTransferBroadcast,
 		fftypes.MessageTypeTransferPrivate,
@@ -459,11 +474,11 @@ func (s *transferSender) sendTransferMessage(ctx context.Context, ns string, in 
 	}
 	switch in.Header.Type {
 	case fftypes.MessageTypeTransferBroadcast:
-		return s.mgr.broadcast.NewBroadcast(ns, in).Send(ctx)
+		return s.mgr.broadcast.NewBroadcast(ns, in), nil
 	case fftypes.MessageTypeTransferPrivate:
-		return s.mgr.messaging.NewMessage(ns, in).Send(ctx)
+		return s.mgr.messaging.NewMessage(ns, in), nil
 	default:
-		return i18n.NewError(ctx, i18n.MsgInvalidMessageType, allowedTypes)
+		return nil, i18n.NewError(ctx, i18n.MsgInvalidMessageType, allowedTypes)
 	}
 }
 

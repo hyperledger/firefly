@@ -50,7 +50,7 @@ type broadcastSender struct {
 	namespace    string
 	msg          *fftypes.MessageInOut
 	resolved     bool
-	sealCallback sysmessaging.SealCallback
+	sendCallback sysmessaging.BeforeSendCallback
 }
 
 func (s *broadcastSender) Send(ctx context.Context) error {
@@ -61,8 +61,8 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
 }
 
-func (s *broadcastSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
-	s.sealCallback = cb
+func (s *broadcastSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
+	s.sendCallback = cb
 	return s
 }
 
@@ -140,8 +140,8 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
 	}
-	if s.sealCallback != nil {
-		if err := s.sealCallback(ctx); err != nil {
+	if s.sendCallback != nil {
+		if err := s.sendCallback(ctx); err != nil {
 			return err
 		}
 	}

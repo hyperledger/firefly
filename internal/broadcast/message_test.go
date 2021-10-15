@@ -409,7 +409,7 @@ func TestPublishBlobsSendMessageFail(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestSealCallback(t *testing.T) {
+func TestBeforeSendCallback(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
@@ -423,7 +423,7 @@ func TestSealCallback(t *testing.T) {
 	})
 
 	called := false
-	message.AfterSeal(func(ctx context.Context) error {
+	message.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return nil
 	})
@@ -436,7 +436,7 @@ func TestSealCallback(t *testing.T) {
 	assert.True(t, called)
 }
 
-func TestSealCallbackFail(t *testing.T) {
+func TestBeforeSendCallbackFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
@@ -450,7 +450,7 @@ func TestSealCallbackFail(t *testing.T) {
 	})
 
 	called := false
-	message.AfterSeal(func(ctx context.Context) error {
+	message.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return fmt.Errorf("pop")
 	})

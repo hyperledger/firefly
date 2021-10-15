@@ -332,7 +332,7 @@ func TestSealFail(t *testing.T) {
 
 }
 
-func TestSealCallback(t *testing.T) {
+func TestBeforeSendCallback(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -347,7 +347,7 @@ func TestSealCallback(t *testing.T) {
 	})
 
 	called := false
-	message.AfterSeal(func(ctx context.Context) error {
+	message.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return nil
 	})
@@ -361,7 +361,7 @@ func TestSealCallback(t *testing.T) {
 
 }
 
-func TestSealCallbackFail(t *testing.T) {
+func TestBeforeSendCallbackFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
@@ -376,7 +376,7 @@ func TestSealCallbackFail(t *testing.T) {
 	})
 
 	called := false
-	message.AfterSeal(func(ctx context.Context) error {
+	message.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return fmt.Errorf("pop")
 	})

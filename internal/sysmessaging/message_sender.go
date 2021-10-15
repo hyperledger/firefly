@@ -18,10 +18,10 @@ package sysmessaging
 
 import "context"
 
-type SealCallback func(ctx context.Context) error
+type BeforeSendCallback func(ctx context.Context) error
 
 type MessageSender interface {
 	Send(ctx context.Context) error
 	SendAndWait(ctx context.Context) error
-	AfterSeal(cb SealCallback) MessageSender
+	BeforeSend(cb BeforeSendCallback) MessageSender
 }

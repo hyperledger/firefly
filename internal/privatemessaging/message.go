@@ -61,7 +61,7 @@ type messageSender struct {
 	namespace    string
 	msg          *fftypes.MessageInOut
 	resolved     bool
-	sealCallback sysmessaging.SealCallback
+	sendCallback sysmessaging.BeforeSendCallback
 }
 
 func (s *messageSender) Send(ctx context.Context) error {
@@ -72,8 +72,8 @@ func (s *messageSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
 }
 
-func (s *messageSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
-	s.sealCallback = cb
+func (s *messageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
+	s.sendCallback = cb
 	return s
 }
 
@@ -149,8 +149,8 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
 	}
-	if s.sealCallback != nil {
-		if err := s.sealCallback(ctx); err != nil {
+	if s.sendCallback != nil {
+		if err := s.sendCallback(ctx); err != nil {
 			return err
 		}
 	}

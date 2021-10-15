@@ -14,12 +14,12 @@ type MessageSender struct {
 	mock.Mock
 }
 
-// AfterSeal provides a mock function with given fields: cb
-func (_m *MessageSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
+// BeforeSend provides a mock function with given fields: cb
+func (_m *MessageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
 	ret := _m.Called(cb)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(sysmessaging.SealCallback) sysmessaging.MessageSender); ok {
+	if rf, ok := ret.Get(0).(func(sysmessaging.BeforeSendCallback) sysmessaging.MessageSender); ok {
 		r0 = rf(cb)
 	} else {
 		if ret.Get(0) != nil {

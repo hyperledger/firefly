@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
@@ -696,12 +697,16 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			From: "A",
 			To:   "B",
 		},
 		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
 			InlineData: fftypes.InlineData{
 				{
 					Value: []byte("test data"),
@@ -728,6 +733,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
+	assert.Equal(t, *hash, *transfer.MessageHash)
 
 	mbm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -736,10 +742,48 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
+func TestTransferTokensWithBroadcastMessageFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
+	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
+	assert.EqualError(t, err, "pop")
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
 func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	hash := fftypes.NewRandB32()
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
 			From: "A",
@@ -750,6 +794,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 				Header: fftypes.MessageHeader{
 					Type: fftypes.MessageTypeTransferPrivate,
 				},
+				Hash: hash,
 			},
 			InlineData: fftypes.InlineData{
 				{
@@ -777,6 +822,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
 	assert.NoError(t, err)
+	assert.Equal(t, *hash, *transfer.MessageHash)
 
 	mpm.AssertExpectations(t)
 	mim.AssertExpectations(t)
@@ -861,7 +907,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTransferTokensSealCallback(t *testing.T) {
+func TestTransferTokensBeforeSendCallback(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -887,7 +933,7 @@ func TestTransferTokensSealCallback(t *testing.T) {
 	sender := am.NewTransfer("ns1", "magic-tokens", "pool1", transfer)
 
 	called := false
-	sender.AfterSeal(func(ctx context.Context) error {
+	sender.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return nil
 	})
@@ -901,7 +947,7 @@ func TestTransferTokensSealCallback(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
-func TestTransferTokensSealCallbackFail(t *testing.T) {
+func TestTransferTokensBeforeSendCallbackFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -926,7 +972,7 @@ func TestTransferTokensSealCallbackFail(t *testing.T) {
 	sender := am.NewTransfer("ns1", "magic-tokens", "pool1", transfer)
 
 	called := false
-	sender.AfterSeal(func(ctx context.Context) error {
+	sender.BeforeSend(func(ctx context.Context) error {
 		called = true
 		return fmt.Errorf("pop")
 	})
@@ -938,4 +984,60 @@ func TestTransferTokensSealCallbackFail(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+}
+
+func TestTransferTokensWithBroadcastMessageConfirm(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	hash := fftypes.NewRandB32()
+	transfer := &fftypes.TokenTransferInput{
+		TokenTransfer: fftypes.TokenTransfer{
+			From: "A",
+			To:   "B",
+		},
+		Message: &fftypes.MessageInOut{
+			Message: fftypes.Message{
+				Hash: hash,
+			},
+			InlineData: fftypes.InlineData{
+				{
+					Value: []byte("test data"),
+				},
+			},
+		},
+	}
+	transfer.Amount.Int().SetInt64(5)
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mbm := am.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(&fftypes.TokenPool{}, nil)
+	mti.On("TransferTokens", context.Background(), mock.Anything, &transfer.TokenTransfer).Return(nil)
+	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
+	mdi.On("UpsertTransaction", context.Background(), mock.MatchedBy(func(tx *fftypes.Transaction) bool {
+		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
+	}), false).Return(nil)
+	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
+	mms.On("BeforeSend", mock.Anything).
+		Run(func(args mock.Arguments) {
+			cb := args[0].(sysmessaging.BeforeSendCallback)
+			cb(context.Background())
+		}).
+		Return(mms)
+	mms.On("SendAndWait", context.Background()).Return(nil)
+
+	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, true)
+	assert.NoError(t, err)
+	assert.Nil(t, transfer.Message)
+	assert.Equal(t, *hash, *transfer.MessageHash)
+
+	mbm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mti.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
