@@ -405,7 +405,7 @@ func rootKey(k string) RootKey {
 
 // GetKnownKeys gets the known keys
 func GetKnownKeys() []string {
-	var keys []string
+	keys := make([]string, 0, len(knownKeys))
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
 	for k := range knownKeys {
