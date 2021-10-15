@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly/internal/config"
@@ -63,14 +64,15 @@ type IServer interface {
 }
 
 type httpServer struct {
-	name        string
-	s           IServer
-	l           net.Listener
-	conf        config.Prefix
-	onClose     chan error
-	tlsEnabled  bool
-	tlsCertFile string
-	tlsKeyFile  string
+	name            string
+	s               IServer
+	l               net.Listener
+	conf            config.Prefix
+	onClose         chan error
+	tlsEnabled      bool
+	tlsCertFile     string
+	tlsKeyFile      string
+	shutdownTimeout time.Duration
 }
 
 func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
@@ -88,12 +90,13 @@ func initHTTPConfPrefx(prefix config.Prefix, defaultPort int) {
 
 func newHTTPServer(ctx context.Context, name string, r *mux.Router, onClose chan error, conf config.Prefix) (hs *httpServer, err error) {
 	hs = &httpServer{
-		name:        name,
-		onClose:     onClose,
-		conf:        conf,
-		tlsEnabled:  conf.GetBool(HTTPConfTLSEnabled),
-		tlsCertFile: conf.GetString(HTTPConfTLSCertFile),
-		tlsKeyFile:  conf.GetString(HTTPConfTLSKeyFile),
+		name:            name,
+		onClose:         onClose,
+		conf:            conf,
+		tlsEnabled:      conf.GetBool(HTTPConfTLSEnabled),
+		tlsCertFile:     conf.GetString(HTTPConfTLSCertFile),
+		tlsKeyFile:      conf.GetString(HTTPConfTLSKeyFile),
+		shutdownTimeout: config.GetDuration(config.APIShutdownTimeout),
 	}
 	hs.l, err = hs.createListener(ctx)
 	if err == nil {
@@ -172,7 +175,7 @@ func (hs *httpServer) serveHTTP(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			log.L(ctx).Infof("API server context cancelled - shutting down")
-			shutdownContext, cancel := context.WithTimeout(context.Background(), config.GetDuration(config.APIShutdownTimeout))
+			shutdownContext, cancel := context.WithTimeout(context.Background(), hs.shutdownTimeout)
 			defer cancel()
 			if err := hs.s.Shutdown(shutdownContext); err != nil {
 				hs.onClose <- err
