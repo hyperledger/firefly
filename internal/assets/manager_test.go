@@ -769,7 +769,7 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 	mim.On("GetLocalOrganization", context.Background()).Return(&fftypes.Organization{Identity: "0x12345"}, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", "magic-tokens", "pool1", transfer, false)
-	assert.Regexp(t, "FF10281", err)
+	assert.Regexp(t, "FF10287", err)
 
 	mim.AssertExpectations(t)
 }
