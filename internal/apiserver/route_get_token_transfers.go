@@ -28,12 +28,10 @@ import (
 
 var getTokenTransfers = &oapispec.Route{
 	Name:   "getTokenTransfers",
-	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}/transfers",
+	Path:   "namespaces/{ns}/tokens/transfers",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "type", Description: i18n.MsgTBD},
-		{Name: "name", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenTransferQueryFactory,
@@ -42,6 +40,6 @@ var getTokenTransfers = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Filter))
+		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

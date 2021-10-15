@@ -39,6 +39,18 @@ func TestGetTokenTransfers(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*fftypes.TokenTransfer{}, nil, nil)
+	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenTransfersByPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
 	pool := &fftypes.TokenPool{
 		ID: fftypes.NewUUID(),
 	}
@@ -47,11 +59,11 @@ func TestGetTokenTransfers(t *testing.T) {
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
 	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*fftypes.TokenTransfer{}, nil, nil)
-	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.NoError(t, err)
 }
 
-func TestGetTokenTransfersBadPool(t *testing.T) {
+func TestGetTokenTransfersByPoolBadPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -59,11 +71,11 @@ func TestGetTokenTransfersBadPool(t *testing.T) {
 	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
-	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestGetTokenTransfersNoPool(t *testing.T) {
+func TestGetTokenTransfersByPoolNoPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -71,7 +83,7 @@ func TestGetTokenTransfersNoPool(t *testing.T) {
 	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, nil)
-	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenTransfersByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.Regexp(t, "FF10109", err)
 }
 

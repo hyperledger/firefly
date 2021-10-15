@@ -211,16 +211,8 @@ func TestGetTokenPools(t *testing.T) {
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	mdi.On("GetTokenPools", context.Background(), f).Return([]*fftypes.TokenPool{}, nil, nil)
-	_, _, err := am.GetTokenPools(context.Background(), "ns1", "magic-tokens", f)
+	_, _, err := am.GetTokenPools(context.Background(), "ns1", f)
 	assert.NoError(t, err)
-}
-
-func TestGetTokenPoolsBadPlugin(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, _, err := am.GetTokenPools(context.Background(), "", "", nil)
-	assert.Regexp(t, "FF10272", err)
 }
 
 func TestGetTokenPoolsBadNamespace(t *testing.T) {
@@ -230,7 +222,38 @@ func TestGetTokenPoolsBadNamespace(t *testing.T) {
 	u := fftypes.NewUUID()
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := am.GetTokenPools(context.Background(), "", "magic-tokens", f)
+	_, _, err := am.GetTokenPools(context.Background(), "", f)
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPoolsByType(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	mdi.On("GetTokenPools", context.Background(), f).Return([]*fftypes.TokenPool{}, nil, nil)
+	_, _, err := am.GetTokenPoolsByType(context.Background(), "ns1", "magic-tokens", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenPoolsByTypeBadPlugin(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, _, err := am.GetTokenPoolsByType(context.Background(), "", "", nil)
+	assert.Regexp(t, "FF10272", err)
+}
+
+func TestGetTokenPoolsByTypeBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("id", u))
+	_, _, err := am.GetTokenPoolsByType(context.Background(), "", "magic-tokens", f)
 	assert.Regexp(t, "FF10131", err)
 }
 

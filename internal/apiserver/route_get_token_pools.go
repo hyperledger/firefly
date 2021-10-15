@@ -28,11 +28,10 @@ import (
 
 var getTokenPools = &oapispec.Route{
 	Name:   "getTokenPools",
-	Path:   "namespaces/{ns}/tokens/{type}/pools",
+	Path:   "namespaces/{ns}/tokens/pools",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "type", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenPoolQueryFactory,
@@ -41,6 +40,6 @@ var getTokenPools = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenPools(r.Ctx, r.PP["ns"], r.PP["type"], r.Filter))
+		return filterResult(r.Or.Assets().GetTokenPools(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }
