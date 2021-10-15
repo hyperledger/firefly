@@ -45,7 +45,7 @@ type Bridge interface {
 	SendConfirmTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error)
 }
 
-type RequestSender func() error
+type RequestSender func(ctx context.Context) error
 
 type requestType int
 
@@ -314,7 +314,7 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftyp
 		}
 	}()
 
-	err = send()
+	err = send(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -198,7 +198,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	msa.On("SendConfirmTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
-			send()
+			send(context.Background())
 		}).
 		Return(nil, nil)
 
@@ -477,7 +477,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
-			send()
+			send(context.Background())
 		}).
 		Return(&fftypes.TokenTransfer{}, nil)
 

@@ -129,9 +129,7 @@ func (s *broadcastSender) resolveMessage(ctx context.Context) ([]*fftypes.DataAn
 
 func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (err error) {
 	if waitConfirm {
-		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, func() error {
-			return s.Send(ctx)
-		})
+		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
 		if out != nil {
 			s.msg.Message = *out
 		}

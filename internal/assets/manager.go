@@ -154,7 +154,7 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 
 	if waitConfirm {
 		requestID := fftypes.NewUUID()
-		return am.syncasync.SendConfirmTokenPool(ctx, ns, requestID, func() error {
+		return am.syncasync.SendConfirmTokenPool(ctx, ns, requestID, func(ctx context.Context) error {
 			_, err := am.createTokenPoolWithID(ctx, requestID, ns, typeName, pool, false)
 			return err
 		})
@@ -442,9 +442,7 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 }
 
 func (s *transferSender) sendSync(ctx context.Context) error {
-	out, err := s.mgr.syncasync.SendConfirmTokenTransfer(ctx, s.namespace, s.transfer.LocalID, func() error {
-		return s.Send(ctx)
-	})
+	out, err := s.mgr.syncasync.SendConfirmTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
 	if out != nil {
 		s.transfer.TokenTransfer = *out
 	}

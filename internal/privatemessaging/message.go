@@ -53,9 +53,7 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fft
 		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
 	message := pm.NewMessage(ns, in)
-	return pm.syncasync.RequestReply(ctx, ns, in.Header.ID, func() error {
-		return message.Send(ctx)
-	})
+	return pm.syncasync.RequestReply(ctx, ns, in.Header.ID, message.Send)
 }
 
 type messageSender struct {
@@ -140,9 +138,7 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 	if waitConfirm && !immediateConfirm {
 		// Pass it to the sync-async handler to wait for the confirmation to come back in.
 		// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
-		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, func() error {
-			return s.Send(ctx)
-		})
+		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
 		if out != nil {
 			s.msg.Message = *out
 		}

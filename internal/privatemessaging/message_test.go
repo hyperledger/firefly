@@ -74,7 +74,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
-			send()
+			send(pm.ctx)
 		}).
 		Return(retMsg, nil).Once()
 	mdi.On("InsertMessageLocal", pm.ctx, mock.Anything).Return(nil).Once()
@@ -730,7 +730,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
-			send()
+			send(pm.ctx)
 		}).
 		Return(nil, nil)
 

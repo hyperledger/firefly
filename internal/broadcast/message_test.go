@@ -210,7 +210,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	msa.On("SendConfirm", ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
-			send()
+			send(ctx)
 		}).
 		Return(replyMsg, nil)
 	mdi.On("InsertMessageLocal", ctx, mock.Anything).Return(nil)
