@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) Broadcast {
+func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
 	broadcast := &broadcastSender{
 		mgr:       bm,
 		namespace: ns,
@@ -49,7 +50,7 @@ type broadcastSender struct {
 	namespace    string
 	msg          *fftypes.MessageInOut
 	resolved     bool
-	sealCallback func(ctx context.Context)
+	sealCallback sysmessaging.SealCallback
 }
 
 func (s *broadcastSender) Send(ctx context.Context) error {
@@ -60,7 +61,7 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 	return s.resolveAndSend(ctx, true)
 }
 
-func (s *broadcastSender) AfterSeal(cb func(ctx context.Context)) Broadcast {
+func (s *broadcastSender) AfterSeal(cb sysmessaging.SealCallback) sysmessaging.MessageSender {
 	s.sealCallback = cb
 	return s
 }
@@ -140,7 +141,9 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 		return err
 	}
 	if s.sealCallback != nil {
-		s.sealCallback(ctx)
+		if err := s.sealCallback(ctx); err != nil {
+			return err
+		}
 	}
 
 	// Store the message - this asynchronously triggers the next step in process

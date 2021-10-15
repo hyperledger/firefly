@@ -23,16 +23,17 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
-	mbs := &broadcastmocks.Broadcast{}
+	mms := &sysmessagingmocks.MessageSender{}
 	mbm := sh.broadcast.(*broadcastmocks.Manager)
-	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mbs)
-	mbs.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
@@ -40,15 +41,15 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 	}, &fftypes.MessageInOut{})
 
 	mbm.AssertExpectations(t)
-	mbs.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
 
 func TestSendReplyPrivateFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
-	mps := &privatemessagingmocks.PrivateMessage{}
+	mms := &sysmessagingmocks.MessageSender{}
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mps)
-	mps.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
@@ -62,7 +63,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 	})
 
 	mpm.AssertExpectations(t)
-	mps.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
 
 func TestSendReplyPrivateOk(t *testing.T) {
@@ -74,10 +75,10 @@ func TestSendReplyPrivateOk(t *testing.T) {
 		},
 	}
 
-	mps := &privatemessagingmocks.PrivateMessage{}
+	mms := &sysmessagingmocks.MessageSender{}
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mps)
-	mps.On("Send", context.Background()).Return(nil)
+	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(nil)
 
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
@@ -87,5 +88,5 @@ func TestSendReplyPrivateOk(t *testing.T) {
 	})
 
 	mpm.AssertExpectations(t)
-	mps.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
