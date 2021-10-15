@@ -393,8 +393,10 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 	return nil
 }
 
+var rootKeys = map[string]bool{}
+var keysMutex sync.Mutex
 var root = &configPrefix{
-	keys: map[string]bool{}, // All keys go here, including those defined in sub prefixies
+	keys: rootKeys, // All keys go here, including those defined in sub prefixies
 }
 
 // ark adds a root key, used to define the keys that are used within the core
@@ -406,8 +408,8 @@ func rootKey(k string) RootKey {
 // GetKnownKeys gets the known keys
 func GetKnownKeys() []string {
 	var keys []string
-	root.keysMutex.Lock()
-	defer root.keysMutex.Unlock()
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
 	for k := range root.keys {
 		keys = append(keys, k)
 	}
@@ -417,9 +419,8 @@ func GetKnownKeys() []string {
 
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
 type configPrefix struct {
-	prefix    string
-	keys      map[string]bool
-	keysMutex sync.Mutex
+	prefix string
+	keys   map[string]bool
 }
 
 // configPrefixArray is a point in the config that supports an array
@@ -440,8 +441,8 @@ func NewPluginConfig(prefix string) Prefix {
 }
 
 func (c *configPrefix) prefixKey(k string) string {
-	c.keysMutex.Lock()
-	defer c.keysMutex.Unlock()
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
 	key := c.prefix + k
 	if !c.keys[key] {
 		panic(fmt.Sprintf("Undefined configuration key '%s'", key))
@@ -495,8 +496,8 @@ func (c *configPrefixArray) ArrayEntry(i int) Prefix {
 
 func (c *configPrefixArray) AddKnownKey(k string, defValue ...interface{}) {
 	// Put a simulated key in the known keys array, to pop into the help info.
-	root.keysMutex.Lock()
-	defer root.keysMutex.Unlock()
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
 	root.keys[fmt.Sprintf("%s[].%s", c.base, k)] = true
 	c.defaults[k] = defValue
 }
@@ -508,8 +509,8 @@ func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
 	} else if len(defValue) > 0 {
 		c.SetDefault(k, defValue)
 	}
-	c.keysMutex.Lock()
-	defer c.keysMutex.Unlock()
+	keysMutex.Lock()
+	defer keysMutex.Unlock()
 	c.keys[key] = true
 }
 
