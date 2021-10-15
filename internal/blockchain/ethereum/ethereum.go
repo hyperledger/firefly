@@ -18,6 +18,7 @@ package ethereum
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -70,12 +71,18 @@ type eventStreamWebsocket struct {
 	Topic string `json:"topic"`
 }
 
+type subscriptionFilter struct {
+	Address string   `json:"address"`
+	Topics  []string `json:"topics"`
+}
+
 type subscription struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	Stream      string `json:"stream"`
-	FromBlock   string `json:"fromBlock"`
+	ID          string             `json:"id"`
+	Description string             `json:"description"`
+	Name        string             `json:"name"`
+	Stream      string             `json:"stream"`
+	FromBlock   string             `json:"fromBlock"`
+	Filter      subscriptionFilter `json:"filter"`
 }
 
 type asyncTXSubmission struct {
@@ -215,7 +222,12 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 }
 
 func (e *Ethereum) ensureSubscriptions() error {
+	// Include a hash of the instance path in the subscription, so if we ever point at a different
+	// contract configuration, we re-subscribe from block 0.
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(e.instancePath)))[0:16]
+
 	for eventType, subDesc := range requiredSubscriptions {
+		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
 
 		var existingSubs []*subscription
 		res, err := e.client.R().SetResult(&existingSubs).Get("/subscriptions")
@@ -225,14 +237,14 @@ func (e *Ethereum) ensureSubscriptions() error {
 
 		var sub *subscription
 		for _, s := range existingSubs {
-			if s.Name == eventType {
+			if s.Name == subName {
 				sub = s
 			}
 		}
 
 		if sub == nil {
 			newSub := subscription{
-				Name:        eventType,
+				Name:        subName,
 				Description: subDesc,
 				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
