@@ -22,24 +22,23 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getTokenAccounts = &oapispec.Route{
-	Name:   "getTokenAccounts",
-	Path:   "namespaces/{ns}/tokens/accounts",
+var getTokenConnectors = &oapispec.Route{
+	Name:   "getTokenConnectors",
+	Path:   "namespaces/{ns}/tokens/connectors",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenAccountQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.TokenConnector{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenAccounts(r.Ctx, r.PP["ns"], r.Filter))
+		return r.Or.Assets().GetTokenConnectors(r.Ctx, r.PP["ns"])
 	},
 }

@@ -26,16 +26,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetTokenPools(t *testing.T) {
+func TestGetTokenConnectors(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/pools", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/connectors", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenPools", mock.Anything, "ns1", mock.Anything).
-		Return([]*fftypes.TokenPool{}, nil, nil)
+	mam.On("GetTokenConnectors", mock.Anything, "ns1", mock.Anything).
+		Return([]*fftypes.TokenConnector{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

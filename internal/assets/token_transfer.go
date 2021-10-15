@@ -33,7 +33,11 @@ func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransf
 	}
 }
 
-func (am *assetManager) GetTokenTransfers(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+	return am.database.GetTokenTransfers(ctx, filter)
+}
+
+func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, typeName, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
 	pool, err := am.GetTokenPool(ctx, ns, typeName, name)
 	if err != nil {
 		return nil, nil, err

@@ -71,6 +71,18 @@ func TestGetTokenAccounts(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
+	f := fb.And()
+	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenAccountsByPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
 	pool := &fftypes.TokenPool{
 		ID: fftypes.NewUUID(),
 	}
@@ -79,11 +91,11 @@ func TestGetTokenAccounts(t *testing.T) {
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(pool, nil)
 	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
-	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenAccountsByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.NoError(t, err)
 }
 
-func TestGetTokenAccountsBadPool(t *testing.T) {
+func TestGetTokenAccountsByPoolBadPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -91,6 +103,22 @@ func TestGetTokenAccountsBadPool(t *testing.T) {
 	fb := database.TokenAccountQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenPool", context.Background(), "ns1", "test").Return(nil, fmt.Errorf("pop"))
-	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", "magic-tokens", "test", f)
+	_, _, err := am.GetTokenAccountsByPool(context.Background(), "ns1", "magic-tokens", "test", f)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestGetTokenConnectors(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenConnectors(context.Background(), "ns1")
+	assert.NoError(t, err)
+}
+
+func TestGetTokenConnectorsBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenConnectors(context.Background(), "")
+	assert.Regexp(t, "FF10131", err)
 }
