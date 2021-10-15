@@ -412,21 +412,29 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"13"},"event":"ack"}`, string(msg))
 
+	// token-transfer: bad message hash (success)
+	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
+		return t.PoolProtocolID == "F1" && t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
+	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
+	fromServer <- `{"id":"14","event":"token-transfer","data":{"poolId":"F1","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","data":"bad","transaction":{"transactionHash":"abc"}}}`
+	msg = <-toServer
+	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
+
 	// token-transfer: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.PoolProtocolID == "F1" && t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == ""
 	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"14","event":"token-transfer","data":{"poolId":"F1","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"15","event":"token-transfer","data":{"poolId":"F1","operator":"0x0","from":"0x0","to":"0x1","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"14"},"event":"ack"}`, string(msg))
+	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *fftypes.TokenTransfer) bool {
 		return t.PoolProtocolID == "F1" && t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0"
 	}), "abc", fftypes.JSONObject{"transactionHash": "abc"}).Return(nil)
-	fromServer <- `{"id":"15","event":"token-burn","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
+	fromServer <- `{"id":"16","event":"token-burn","data":{"poolId":"F1","tokenIndex":"0","operator":"0x0","from":"0x0","amount":"2","trackingId":"` + txID.String() + `","transaction":{"transactionHash":"abc"}}}`
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"15"},"event":"ack"}`, string(msg))
+	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
 
 	mcb.AssertExpectations(t)
 }

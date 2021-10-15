@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -42,11 +43,10 @@ type Manager interface {
 	GetTokenTransfers(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	MintTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	BurnTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
 	// Bound token callbacks
 	TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error
-	TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error
 
 	Start() error
 	WaitStop()
@@ -59,13 +59,14 @@ type assetManager struct {
 	data      data.Manager
 	syncasync syncasync.Bridge
 	broadcast broadcast.Manager
+	messaging privatemessaging.Manager
 	tokens    map[string]tokens.Plugin
 	retry     retry.Retry
 	txhelper  txcommon.Helper
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, ti map[string]tokens.Plugin) (Manager, error) {
-	if di == nil || im == nil || sa == nil || bm == nil || ti == nil {
+func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin) (Manager, error) {
+	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
@@ -75,6 +76,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		data:      dm,
 		syncasync: sa,
 		broadcast: bm,
+		messaging: pm,
 		tokens:    ti,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.AssetManagerRetryInitialDelay),
@@ -119,19 +121,11 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	return nil
 }
 
+// Note: the counterpart to below (retrieveTokenTransferInputs) lives in the events package
 func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
 	op.Input = fftypes.JSONObject{
 		"id": transfer.LocalID.String(),
 	}
-}
-
-func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	input := &op.Input
-	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -291,7 +285,25 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns, typeName, poolName s
 	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
 }
 
-func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (am *assetManager) sendTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.Message, error) {
+	allowedTypes := []fftypes.FFEnum{
+		fftypes.MessageTypeTransferBroadcast,
+		fftypes.MessageTypeTransferPrivate,
+	}
+	if in.Header.Type == "" {
+		in.Header.Type = fftypes.MessageTypeTransferBroadcast
+	}
+	switch in.Header.Type {
+	case fftypes.MessageTypeTransferBroadcast:
+		return am.broadcast.BroadcastMessage(ctx, ns, in, false)
+	case fftypes.MessageTypeTransferPrivate:
+		return am.messaging.SendMessage(ctx, ns, in, false)
+	default:
+		return nil, i18n.NewError(ctx, i18n.MsgInvalidMessageType, allowedTypes)
+	}
+}
+
+func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	transfer.Type = fftypes.TokenTransferTypeTransfer
 	if transfer.Key == "" {
 		org, err := am.identity.GetLocalOrganization(ctx)
@@ -309,7 +321,17 @@ func (am *assetManager) TransferTokens(ctx context.Context, ns, typeName, poolNa
 	if transfer.From == transfer.To {
 		return nil, i18n.NewError(ctx, i18n.MsgCannotTransferToSelf)
 	}
-	return am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, transfer, waitConfirm)
+
+	if transfer.Message != nil {
+		msg, err := am.sendTransferMessage(ctx, ns, transfer.Message)
+		if err != nil {
+			return nil, err
+		}
+		transfer.MessageHash = msg.Hash
+	}
+
+	result, err := am.transferTokensWithID(ctx, fftypes.NewUUID(), ns, typeName, poolName, &transfer.TokenTransfer, waitConfirm)
+	return result, err
 }
 
 func (am *assetManager) transferTokensWithID(ctx context.Context, id *fftypes.UUID, ns, typeName, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {

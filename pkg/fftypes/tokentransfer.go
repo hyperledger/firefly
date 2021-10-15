@@ -38,3 +38,8 @@ type TokenTransfer struct {
 	Created        *FFTime           `json:"created,omitempty"`
 	TX             TransactionRef    `json:"tx,omitempty"`
 }
+
+type TokenTransferInput struct {
+	TokenTransfer
+	Message *MessageInOut `json:"message,omitempty"`
+}

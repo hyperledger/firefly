@@ -61,5 +61,5 @@ func (bc *boundCallbacks) TokenPoolCreated(plugin tokens.Plugin, pool *fftypes.T
 }
 
 func (bc *boundCallbacks) TokensTransferred(plugin tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	return bc.am.TokensTransferred(plugin, transfer, protocolTxID, additionalInfo)
+	return bc.ei.TokensTransferred(plugin, transfer, protocolTxID, additionalInfo)
 }

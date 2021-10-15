@@ -204,4 +204,5 @@ var (
 	MsgFabconnectRESTErr           = ffm("FF10284", "Error from fabconnect: %s")
 	MsgInvalidIdentity             = ffm("FF10285", "Supplied Fabric signer identity is invalid", 400)
 	MsgFailedToDecodeCertificate   = ffm("FF10286", "Failed to decode certificate: %s", 500)
+	MsgInvalidMessageType          = ffm("FF10287", "Invalid message type - allowed types are %s", 400)
 )
