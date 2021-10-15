@@ -73,7 +73,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.TokenPoolCreated(mti, pool, "tx12345", info)
 	assert.EqualError(t, err, "pop")
 
-	mam.On("TokensTransferred", mti, transfer, "tx12345", info).Return(fmt.Errorf("pop"))
+	mei.On("TokensTransferred", mti, transfer, "tx12345", info).Return(fmt.Errorf("pop"))
 	err = bc.TokensTransferred(mti, transfer, "tx12345", info)
 	assert.EqualError(t, err, "pop")
 }

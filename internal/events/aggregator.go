@@ -412,6 +412,18 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		return false, err
 	}
 
+	// For transfers, verify the transfer has come through
+	if msg.Header.Type == fftypes.MessageTypeTransferBroadcast || msg.Header.Type == fftypes.MessageTypeTransferPrivate {
+		fb := database.TokenTransferQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("messagehash", msg.Hash),
+		)
+		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
+			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Hash)
+			return false, err
+		}
+	}
+
 	// We're going to dispatch it at this point, but we need to validate the data first
 	valid := true
 	eventType := fftypes.EventTypeMessageConfirmed

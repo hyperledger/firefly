@@ -234,26 +234,12 @@ func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, p
 	return r0
 }
 
-// TokensTransferred provides a mock function with given fields: tk, transfer, protocolTxID, additionalInfo
-func (_m *Manager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, transfer, protocolTxID, additionalInfo)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenTransfer, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, transfer, protocolTxID, additionalInfo)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // TransferTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
-func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
 		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -262,7 +248,7 @@ func (_m *Manager) TransferTokens(ctx context.Context, ns string, typeName strin
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) error); ok {
 		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)

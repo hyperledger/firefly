@@ -79,7 +79,7 @@ func TestBigIntJSONBadString(t *testing.T) {
 
 	var bi BigInt
 	err := json.Unmarshal(jsonVal, &bi)
-	assert.Regexp(t, "FF10292", err)
+	assert.Regexp(t, "FF10283", err)
 
 }
 
@@ -91,7 +91,7 @@ func TestBigIntJSONBadType(t *testing.T) {
 
 	var bi BigInt
 	err := json.Unmarshal(jsonVal, &bi)
-	assert.Regexp(t, "FF10292", err)
+	assert.Regexp(t, "FF10283", err)
 
 }
 
@@ -101,7 +101,7 @@ func TestBigIntJSONBadJSON(t *testing.T) {
 
 	var bi BigInt
 	err := bi.UnmarshalJSON(jsonVal)
-	assert.Regexp(t, "FF10292", err)
+	assert.Regexp(t, "FF10283", err)
 
 }
 
@@ -142,7 +142,7 @@ func TestTooLargeInteger(t *testing.T) {
 	_ = iMax.Int().Exp(big.NewInt(2), big.NewInt(256), nil)
 	iMax.Int().Neg(iMax.Int())
 	_, err := iMax.Value()
-	assert.Regexp(t, "FF10291", err)
+	assert.Regexp(t, "FF10282", err)
 
 }
 

@@ -50,7 +50,11 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 
-	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
+	}, mock.Anything, mock.Anything).Return()
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {

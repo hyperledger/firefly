@@ -18,6 +18,7 @@ package ethereum
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -215,6 +216,11 @@ func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error 
 }
 
 func (e *Ethereum) ensureSubscriptions() error {
+	// Include a hash of the instance path in the subscription, so if we ever point at a different
+	// contract configuration, we re-subscribe from block 0.
+	// We don't need full strength hashing, so just use the first 16 chars for readability.
+	instanceUniqueHash := hex.EncodeToString(sha256.New().Sum([]byte(e.instancePath)))[0:16]
+
 	for eventType, subDesc := range requiredSubscriptions {
 
 		var existingSubs []*subscription
@@ -224,15 +230,20 @@ func (e *Ethereum) ensureSubscriptions() error {
 		}
 
 		var sub *subscription
+		subName := fmt.Sprintf("%s_%s", eventType, instanceUniqueHash)
 		for _, s := range existingSubs {
-			if s.Name == eventType {
+			if s.Name == subName ||
+				/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
+				   If one of these very early environments needed a new subscription, the existing one would need to
+					 be deleted manually. */
+				s.Name == eventType {
 				sub = s
 			}
 		}
 
 		if sub == nil {
 			newSub := subscription{
-				Name:        eventType,
+				Name:        subName,
 				Description: subDesc,
 				Stream:      e.initInfo.stream.ID,
 				FromBlock:   "0",
