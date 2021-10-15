@@ -393,11 +393,9 @@ func MergeConfig(configRecords []*fftypes.ConfigRecord) error {
 	return nil
 }
 
-var rootKeys = map[string]bool{}
+var knownKeys = map[string]bool{} // All keys go here, including those defined in sub prefixies
 var keysMutex sync.Mutex
-var root = &configPrefix{
-	keys: rootKeys, // All keys go here, including those defined in sub prefixies
-}
+var root = &configPrefix{}
 
 // ark adds a root key, used to define the keys that are used within the core
 func rootKey(k string) RootKey {
@@ -410,7 +408,7 @@ func GetKnownKeys() []string {
 	var keys []string
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
-	for k := range root.keys {
+	for k := range knownKeys {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -420,7 +418,6 @@ func GetKnownKeys() []string {
 // configPrefix is the main config structure passed to plugins, and used for root to wrap viper
 type configPrefix struct {
 	prefix string
-	keys   map[string]bool
 }
 
 // configPrefixArray is a point in the config that supports an array
@@ -436,7 +433,6 @@ func NewPluginConfig(prefix string) Prefix {
 	}
 	return &configPrefix{
 		prefix: prefix,
-		keys:   root.keys,
 	}
 }
 
@@ -444,7 +440,7 @@ func (c *configPrefix) prefixKey(k string) string {
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
 	key := c.prefix + k
-	if !c.keys[key] {
+	if !knownKeys[key] {
 		panic(fmt.Sprintf("Undefined configuration key '%s'", key))
 	}
 	return key
@@ -453,7 +449,6 @@ func (c *configPrefix) prefixKey(k string) string {
 func (c *configPrefix) SubPrefix(suffix string) Prefix {
 	return &configPrefix{
 		prefix: c.prefix + suffix + ".",
-		keys:   root.keys,
 	}
 }
 
@@ -477,7 +472,6 @@ func (c *configPrefixArray) ArraySize() int {
 func (c *configPrefixArray) ArrayEntry(i int) Prefix {
 	cp := &configPrefix{
 		prefix: c.base + fmt.Sprintf(".%d.", i),
-		keys:   root.keys,
 	}
 	for knownKey, defValue := range c.defaults {
 		cp.AddKnownKey(knownKey, defValue...)
@@ -498,7 +492,7 @@ func (c *configPrefixArray) AddKnownKey(k string, defValue ...interface{}) {
 	// Put a simulated key in the known keys array, to pop into the help info.
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
-	root.keys[fmt.Sprintf("%s[].%s", c.base, k)] = true
+	knownKeys[fmt.Sprintf("%s[].%s", c.base, k)] = true
 	c.defaults[k] = defValue
 }
 
@@ -511,7 +505,7 @@ func (c *configPrefix) AddKnownKey(k string, defValue ...interface{}) {
 	}
 	keysMutex.Lock()
 	defer keysMutex.Unlock()
-	c.keys[key] = true
+	knownKeys[key] = true
 }
 
 func (c *configPrefix) SetDefault(k string, defValue interface{}) {
