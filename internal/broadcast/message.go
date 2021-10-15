@@ -132,7 +132,9 @@ func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (e
 		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, func() error {
 			return s.Send(ctx)
 		})
-		s.msg.Message = *out
+		if out != nil {
+			s.msg.Message = *out
+		}
 		return err
 	}
 
