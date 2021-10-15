@@ -50,13 +50,12 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 }
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	return am.createTokenPoolWithID(ctx, fftypes.NewUUID(), ns, connector, pool, waitConfirm)
-}
-
-func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
+	pool.ID = fftypes.NewUUID()
+	pool.Namespace = ns
+	pool.Connector = connector
 
 	if pool.Key == "" {
 		org, err := am.identity.GetLocalOrganization(ctx)
@@ -65,20 +64,18 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 		}
 		pool.Key = org.Identity
 	}
+	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
+}
 
-	plugin, err := am.selectTokenPlugin(ctx, connector)
+func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return nil, err
 	}
 
-	pool.ID = id
-	pool.Namespace = ns
-	pool.Connector = connector
-
 	if waitConfirm {
-		requestID := fftypes.NewUUID()
-		return am.syncasync.SendConfirmTokenPool(ctx, ns, requestID, func(ctx context.Context) error {
-			_, err := am.createTokenPoolWithID(ctx, requestID, ns, connector, pool, false)
+		return am.syncasync.SendConfirmTokenPool(ctx, pool.Namespace, pool.ID, func(ctx context.Context) error {
+			_, err := am.createTokenPoolInternal(ctx, pool, false)
 			return err
 		})
 	}
@@ -86,10 +83,10 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 	tx := &fftypes.Transaction{
 		ID: fftypes.NewUUID(),
 		Subject: fftypes.TransactionSubject{
-			Namespace: ns,
+			Namespace: pool.Namespace,
 			Type:      fftypes.TransactionTypeTokenPool,
 			Signer:    pool.Key,
-			Reference: id,
+			Reference: pool.ID,
 		},
 		Created: fftypes.Now(),
 		Status:  fftypes.OpStatusPending,
@@ -105,7 +102,7 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 
 	op := fftypes.NewTXOperation(
 		plugin,
-		ns,
+		pool.Namespace,
 		tx.ID,
 		"",
 		fftypes.OpTypeTokenCreatePool,
