@@ -19,11 +19,13 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image/png"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -51,6 +53,24 @@ type testState struct {
 	org2      *fftypes.Organization
 	done      func()
 }
+
+var widgetSchemaJSON = []byte(`{
+	"$id": "https://example.com/widget.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Widget",
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "The unique identifier for the widget."
+		},
+		"name": {
+			"type": "string",
+			"description": "The person's last name."
+		}
+	},
+	"additionalProperties": false
+}`)
 
 func pollForUp(t *testing.T, client *resty.Client) {
 	var resp *resty.Response
@@ -268,7 +288,7 @@ func TestE2EBroadcast(t *testing.T) {
 		Value: value,
 	}
 
-	resp, err := BroadcastMessage(ts.client1, &data)
+	resp, err := BroadcastMessage(ts.client1, &data, false)
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
@@ -301,7 +321,7 @@ func TestE2EPrivate(t *testing.T) {
 	resp, err := PrivateMessage(t, ts.client1, &data, []string{
 		ts.org1.Name,
 		ts.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin)
+	}, "", fftypes.TransactionTypeBatchPin, false)
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
@@ -312,6 +332,107 @@ func TestE2EPrivate(t *testing.T) {
 	<-received2
 	val2 := validateReceivedMessages(ts, ts.client2, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(t, data.Value, val2)
+}
+
+func TestStrongDatatypesBroadcast(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+	defer ts.done()
+
+	var resp *resty.Response
+	value := fftypes.Byteable(`"Hello"`)
+	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
+	version := fmt.Sprintf("0.0.%d", randVer.Int64())
+	data := fftypes.DataRefOrValue{
+		Value: value,
+		Datatype: &fftypes.DatatypeRef{
+			Name:    "widget",
+			Version: version,
+		},
+	}
+
+	// Should be rejected as datatype not known
+	resp, err := BroadcastMessage(ts.client1, &data, true)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode())
+	assert.Contains(t, resp.String(), "FF10195") // datatype not found
+
+	dt := &fftypes.Datatype{
+		Name:    "widget",
+		Version: version,
+		Value:   widgetSchemaJSON,
+	}
+	dt = CreateDatatype(t, ts.client1, dt, true)
+
+	resp, err = BroadcastMessage(ts.client1, &data, true)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode())
+	assert.Contains(t, resp.String(), "FF10198") // does not conform
+
+	data.Value = fftypes.Byteable(`{
+		"id": "widget12345",
+		"name": "mywidget"
+	}`)
+
+	resp, err = BroadcastMessage(ts.client1, &data, true)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode())
+
+}
+
+func TestStrongDatatypesPrivate(t *testing.T) {
+
+	ts := beforeE2ETest(t)
+	defer ts.done()
+
+	var resp *resty.Response
+	value := fftypes.Byteable(`{"foo":"bar"}`)
+	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
+	version := fmt.Sprintf("0.0.%d", randVer.Int64())
+	data := fftypes.DataRefOrValue{
+		Value: value,
+		Datatype: &fftypes.DatatypeRef{
+			Name:    "widget",
+			Version: version,
+		},
+	}
+
+	// Should be rejected as datatype not known
+	resp, err := PrivateMessage(t, ts.client1, &data, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, true)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode())
+	assert.Contains(t, resp.String(), "FF10195") // datatype not found
+
+	dt := &fftypes.Datatype{
+		Name:    "widget",
+		Version: version,
+		Value:   widgetSchemaJSON,
+	}
+	dt = CreateDatatype(t, ts.client1, dt, true)
+
+	resp, err = PrivateMessage(t, ts.client1, &data, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, false)
+	require.NoError(t, err)
+	assert.Equal(t, 400, resp.StatusCode())
+	assert.Contains(t, resp.String(), "FF10198") // does not conform
+
+	data.Value = fftypes.Byteable(`{
+		"id": "widget12345",
+		"name": "mywidget"
+	}`)
+
+	resp, err = PrivateMessage(t, ts.client1, &data, []string{
+		ts.org1.Name,
+		ts.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, true)
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode())
+
 }
 
 func TestE2EBroadcastBlob(t *testing.T) {
@@ -510,7 +631,7 @@ func TestE2EWebhookExchange(t *testing.T) {
 	resp, err := PrivateMessage(t, ts.client1, &data, []string{
 		ts.org1.Name,
 		ts.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeBatchPin)
+	}, "myrequest", fftypes.TransactionTypeBatchPin, false)
 	require.NoError(t, err)
 	assert.Equal(t, 202, resp.StatusCode())
 
