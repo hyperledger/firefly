@@ -18,6 +18,7 @@ package fabric
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -453,7 +454,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 }
 
-func TestVerifyFullIDSigner(t *testing.T) {
+func TestResolveFullIDSigner(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 
@@ -464,7 +465,7 @@ func TestVerifyFullIDSigner(t *testing.T) {
 
 }
 
-func TestVerifyPartialIDSigner(t *testing.T) {
+func TestResolveSigner(t *testing.T) {
 	e, cancel := newTestFabric()
 	e.idCache = make(map[string]*fabIdentity)
 	defer cancel()
@@ -481,6 +482,66 @@ func TestVerifyPartialIDSigner(t *testing.T) {
 	resolved, err := e.ResolveSigningKey(context.Background(), "signer001")
 	assert.NoError(t, err)
 	assert.Equal(t, "org1MSP::x509::CN=admin,OU=client::CN=fabric-ca-server", resolved)
+}
+
+func TestResolveSignerFailedFabricCARequest(t *testing.T) {
+	e, cancel := newTestFabric()
+	e.idCache = make(map[string]*fabIdentity)
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	res := make(map[string]string)
+
+	responder, _ := httpmock.NewJsonResponder(503, res)
+	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
+	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s()")
+}
+
+func TestResolveSignerBadECertReturned(t *testing.T) {
+	e, cancel := newTestFabric()
+	e.idCache = make(map[string]*fabIdentity)
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	res := make(map[string]string)
+	res["name"] = "signer001"
+	res["mspId"] = "org1MSP"
+	res["enrollmentCert"] = base64.StdEncoding.EncodeToString([]byte(badCert))
+	res["caCert"] = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lVYndac0FnK2Zac0FmSUF2VWFlWXBpOXF3NG9jd0NnWUlLb1pJemowRUF3SXcKR3pFWk1CY0dBMVVFQXhNUVptRmljbWxqTFdOaExYTmxjblpsY2pBZUZ3MHlNVEEzTWpNd01URTRNREJhRncwegpOakEzTVRrd01URTRNREJhTUJzeEdUQVhCZ05WQkFNVEVHWmhZbkpwWXkxallTMXpaWEoyWlhJd1dUQVRCZ2NxCmhrak9QUUlCQmdncWhrak9QUU1CQndOQ0FBUlZNajcyR1dTeXk1UjRQN084ckpidXkrNHd6NWJWSE94dHBxRlUKamNadVE0Q2VSUGJoNDF3KzR1dFJsTlRTbFhLdTBMblBlVEZLSjlRT00xd0xwTGJtbzBVd1F6QU9CZ05WSFE4QgpBZjhFQkFNQ0FRWXdFZ1lEVlIwVEFRSC9CQWd3QmdFQi93SUJBREFkQmdOVkhRNEVGZ1FVNnU0VnVQVzgrR2ROCnZuOXQ4VkI1UWFPOHNXb3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWhBTzRod085UjB2Z3htMUphaGdTOWJnajQKZm9JNmc1QnRrUzRKcmgvc0ZpbzlBaUFRVVhnTUhXYzZSMVZhTHpXTkx0U0tkbHMvWTFuM3Z5MnlPZE1PL1Y4cApCZz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+
+	responder, _ := httpmock.NewJsonResponder(200, res)
+	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
+	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	assert.EqualError(t, err, "FF10286: Failed to decode certificate: asn1: syntax error: data truncated")
+}
+
+func TestResolveSignerBadCACertReturned(t *testing.T) {
+	e, cancel := newTestFabric()
+	e.idCache = make(map[string]*fabIdentity)
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	res := make(map[string]string)
+	res["name"] = "signer001"
+	res["mspId"] = "org1MSP"
+	res["enrollmentCert"] = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lVYndac0FnK2Zac0FmSUF2VWFlWXBpOXF3NG9jd0NnWUlLb1pJemowRUF3SXcKR3pFWk1CY0dBMVVFQXhNUVptRmljbWxqTFdOaExYTmxjblpsY2pBZUZ3MHlNVEEzTWpNd01URTRNREJhRncwegpOakEzTVRrd01URTRNREJhTUJzeEdUQVhCZ05WQkFNVEVHWmhZbkpwWXkxallTMXpaWEoyWlhJd1dUQVRCZ2NxCmhrak9QUUlCQmdncWhrak9QUU1CQndOQ0FBUlZNajcyR1dTeXk1UjRQN084ckpidXkrNHd6NWJWSE94dHBxRlUKamNadVE0Q2VSUGJoNDF3KzR1dFJsTlRTbFhLdTBMblBlVEZLSjlRT00xd0xwTGJtbzBVd1F6QU9CZ05WSFE4QgpBZjhFQkFNQ0FRWXdFZ1lEVlIwVEFRSC9CQWd3QmdFQi93SUJBREFkQmdOVkhRNEVGZ1FVNnU0VnVQVzgrR2ROCnZuOXQ4VkI1UWFPOHNXb3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWhBTzRod085UjB2Z3htMUphaGdTOWJnajQKZm9JNmc1QnRrUzRKcmgvc0ZpbzlBaUFRVVhnTUhXYzZSMVZhTHpXTkx0U0tkbHMvWTFuM3Z5MnlPZE1PL1Y4cApCZz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+	res["caCert"] = base64.StdEncoding.EncodeToString([]byte(badCert))
+
+	responder, _ := httpmock.NewJsonResponder(200, res)
+	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
+	_, err := e.ResolveSigningKey(context.Background(), "signer001")
+	assert.EqualError(t, err, "FF10286: Failed to decode certificate: asn1: syntax error: data truncated")
+}
+
+func TestGetUserNameWithMatches(t *testing.T) {
+	result := getUserName(signer)
+	assert.Equal(t, result, "signer001")
+}
+
+func TestGetUserNameNoMatches(t *testing.T) {
+	result := getUserName("orgMSP::x509::OU=client::OU=CA")
+	assert.Equal(t, result, "")
 }
 
 func TestHandleMessageBatchPinOK(t *testing.T) {
@@ -625,6 +686,28 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	assert.Equal(t, 0, len(em.Calls))
 }
 
+func TestHandleMessageUnknownEventName(t *testing.T) {
+	data := []byte(`
+[
+  {
+    "chaincodeId": "firefly",
+    "blockNumber": 91,
+    "transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+    "eventName": "UnknownEvent",
+    "subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Fabric{callbacks: em}
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(em.Calls))
+}
+
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
@@ -653,6 +736,44 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"eventName": "BatchPin",
 		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMzMzQ0LCJuYW5vcyI6OTY1NjE4MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIiFnb29kIl19",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+	}]`)
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	e := &Fabric{callbacks: em}
+	data := []byte(`[{
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "BatchPin",
+		"payload": "--eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMzMzQ0LCJuYW5vcyI6OTY1NjE4MDAwfSwibmFtZXNwYWNlIjoibnMxIiwidXVpZHMiOiIweGUxOWFmOGIzOTA2MDQwNTE4MTJkNzU5N2QxOWFkZmI5ODQ3ZDNiZmQwNzQyNDllZmI2NWQzZmVkMTVmNWIwYTYiLCJiYXRjaEhhc2giOiIweGQ3MWViMTM4ZDc0YzIyOWEzODhlYjBlMWFiYzAzZjRjN2NiYjIxZDRmYzRiODM5ZmJmMGVjNzNlNDI2M2Y2YmUiLCJwYXlsb2FkUmVmIjoiUW1mNDEyalFaaXVWVXRkZ25CMzZGWEZYN3hnNVY2S0ViU0o0ZHBRdWhrTHlmRCIsImNvbnRleHRzIjpbIjB4NjhlNGRhNzlmODA1YmNhNWI5MTJiY2RhOWM2M2QwM2U2ZTg2NzEwOGRhYmI5Yjk0NDEwOWFlYTU0MWVmNTIyYSIsIiFnb29kIl19",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+	}]`)
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(em.Calls))
+}
+
+func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	e := &Fabric{callbacks: em}
+	data := []byte(`[{
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJPcmcxTVNQOjp4NTA5OjpDTj0weDA3YTA5YzE2ZWQ5ZWYyYmIwYmNiYzUxNzk4OGU4MmIzNzA0NDk4YzQsT1U9Y2xpZW50OjpDTj1mYWJyaWNfY2Eub3JnMS5leGFtcGxlLmNvbSxPVT1IeXBlcmxlZGdlciBGYWJyaWMsTz1vcmcxLmV4YW1wbGUuY29tLEw9U2FuIEZyYW5jaXNjbyxTVD1DYWxpZm9ybmlhLEM9VVMiLCJ0aW1lc3RhbXAiOnsic2Vjb25kcyI6MTYzNDMwNDAzNSwibmFub3MiOjI5OTcwMjUwMH0sIm5hbWVzcGFjZSI6ImRlZmF1bHQiLCJ1dWlkcyI6IjB4MjYxNjY2OGExYjIxNGFkY2JkN2IyOGE3ZjkxMDM3MjNiNzEwMTk4ODc4NWE0NzZmYTM2YjM1OWUyZCIsImJhdGNoSGFzaCI6IjB4ZDRkYjliNmQ3YWYzNWQyYTU4ZDgwYmFlY2QxOTI2MjM0Mzg0YmIxODljMGQ2YmRmMzQzNGMyZmE5YzY2MGM0MiIsInBheWxvYWRSZWYiOiJRbWNuRUVjY0tkV0tHZDZqV2ZaNGZOV2dqTnBVSm15bm5lV0tMRW11Rjh3UlNDIiwiY29udGV4dHMiOlsiMHgzN2E4ZWVjMWNlMTk2ODdkMTMyZmUyOTA1MWRjYTYyOWQxNjRlMmM0OTU4YmExNDFkNWY0MTMzYTMzZjA2ODhmIl19",
 		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	}]`)
 	var events []interface{}
@@ -702,6 +823,46 @@ func TestEventLoopSendClosed(t *testing.T) {
 	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+}
+
+func TestEventLoopUnexpectedMessage(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	r := make(chan []byte)
+	wsm := e.wsconn.(*wsmocks.WSClient)
+	wsm.On("Receive").Return((<-chan []byte)(r))
+	e.closed = make(chan struct{})
+	operationID := fftypes.NewUUID()
+	data := []byte(`{
+		"_id": "6fb94fff-81d3-4094-567d-e031b1871694",
+		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
+		"headers": {
+			"id": "3a37b17b-13b6-4dc5-647a-07c11eae0be3",
+			"requestId": "` + operationID.String() + `",
+			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:0",
+			"timeElapsed": 0.020969053,
+			"timeReceived": "2021-05-31T02:35:11.458880504Z",
+			"type": "Error"
+		},
+		"receivedAt": 1622428511616,
+		"requestPayload": "{\"from\":\"0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635\",\"gas\":0,\"gasPrice\":0,\"headers\":{\"id\":\"6fb94fff-81d3-4094-567d-e031b1871694\",\"type\":\"SendTransaction\"},\"method\":{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txnId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"batchId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"payloadRef\",\"type\":\"bytes32\"}],\"name\":\"broadcastBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},\"params\":[\"12345\",\"!\",\"!\"],\"to\":\"0xd3266a857285fb75eb7df37353b4a15c8bb828f5\",\"value\":0}"
+	}`)
+	em := e.callbacks.(*blockchainmocks.Callbacks)
+	txsu := em.On("BlockchainOpUpdate",
+		operationID,
+		fftypes.OpStatusFailed,
+		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
+		mock.Anything).Return(fmt.Errorf("Shutdown"))
+	done := make(chan struct{})
+	txsu.RunFn = func(a mock.Arguments) {
+		close(done)
+	}
+
+	go e.eventLoop()
+	r <- []byte(`!badjson`)        // ignored bad json
+	r <- []byte(`"not an object"`) // ignored wrong type
+	r <- data
+	e.ctx.Done()
 }
 
 func TestHandleReceiptTXSuccess(t *testing.T) {
@@ -754,6 +915,73 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 
 	var reply fftypes.JSONObject
 	data := []byte(`{}`)
+	err := json.Unmarshal(data, &reply)
+	assert.NoError(t, err)
+	err = e.handleReceipt(context.Background(), reply)
+	assert.NoError(t, err)
+}
+
+func TestHandleReceiptBadRequestID(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	wsm := &wsmocks.WSClient{}
+	e := &Fabric{
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
+	}
+
+	var reply fftypes.JSONObject
+	data := []byte(`{
+		"_id": "748e7587-9e72-4244-7351-808f69b88291",
+    "headers": {
+        "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
+        "requestId": "bad-UUID",
+        "requestOffset": "",
+        "timeElapsed": 0.475721,
+        "timeReceived": "2021-08-27T03:04:34.199742Z",
+        "type": "TransactionSuccess"
+    },
+    "receivedAt": 1630033474675
+  }`)
+
+	err := json.Unmarshal(data, &reply)
+	assert.NoError(t, err)
+	err = e.handleReceipt(context.Background(), reply)
+	assert.NoError(t, err)
+}
+
+func TestHandleReceiptFailedTx(t *testing.T) {
+	em := &blockchainmocks.Callbacks{}
+	wsm := &wsmocks.WSClient{}
+	e := &Fabric{
+		ctx:       context.Background(),
+		topic:     "topic1",
+		callbacks: em,
+		wsconn:    wsm,
+	}
+
+	var reply fftypes.JSONObject
+	operationID := fftypes.NewUUID()
+	data := []byte(`{
+		"_id": "748e7587-9e72-4244-7351-808f69b88291",
+    "headers": {
+        "id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
+        "requestId": "` + operationID.String() + `",
+        "requestOffset": "",
+        "timeElapsed": 0.475721,
+        "timeReceived": "2021-08-27T03:04:34.199742Z",
+        "type": "TransactionFailure"
+    },
+    "receivedAt": 1630033474675
+  }`)
+
+	em.On("BlockchainOpUpdate",
+		operationID,
+		fftypes.OpStatusFailed,
+		"",
+		mock.Anything).Return(nil)
+
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
 	err = e.handleReceipt(context.Background(), reply)
