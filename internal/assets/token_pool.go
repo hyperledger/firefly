@@ -92,11 +92,6 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
-	if err != nil {
-		return nil, err
-	}
-
 	pool.TX.ID = tx.ID
 	pool.TX.Type = tx.Subject.Type
 
@@ -109,7 +104,14 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		fftypes.OpStatusPending,
 		"")
 	addTokenPoolCreateInputs(op, pool)
-	err = am.database.UpsertOperation(ctx, op, false)
+
+	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		err = am.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+		if err == nil {
+			err = am.database.UpsertOperation(ctx, op, false)
+		}
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

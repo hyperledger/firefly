@@ -46,7 +46,7 @@ func newTestAssets(t *testing.T) (*assetManager, func()) {
 	mti.On("Name").Return("ut_tokens").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
 	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti})
-	rag := mdi.On("RunAsGroup", ctx, mock.Anything).Maybe()
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
