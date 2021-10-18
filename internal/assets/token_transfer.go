@@ -163,11 +163,6 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 	if err != nil {
 		return err
 	}
-	pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
-	if err != nil {
-		return err
-	}
-	s.transfer.PoolProtocolID = pool.ProtocolID
 
 	var messageSender sysmessaging.MessageSender
 	if s.transfer.Message != nil {
@@ -209,11 +204,6 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		Status:  fftypes.OpStatusPending,
 	}
 	tx.Hash = tx.Subject.Hash()
-	err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
-	if err != nil {
-		return err
-	}
-
 	s.transfer.TX.ID = tx.ID
 	s.transfer.TX.Type = tx.Subject.Type
 
@@ -226,7 +216,21 @@ func (s *transferSender) resolveAndSend(ctx context.Context, waitConfirm bool) (
 		fftypes.OpStatusPending,
 		"")
 	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
-	if err := s.mgr.database.UpsertOperation(ctx, op, false); err != nil {
+
+	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)
+		if err != nil {
+			return err
+		}
+		s.transfer.PoolProtocolID = pool.ProtocolID
+
+		err = s.mgr.database.UpsertTransaction(ctx, tx, false /* should be new, or idempotent replay */)
+		if err == nil {
+			err = s.mgr.database.UpsertOperation(ctx, op, false)
+		}
+		return err
+	})
+	if err != nil {
 		return err
 	}
 
