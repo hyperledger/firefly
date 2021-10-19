@@ -418,7 +418,10 @@ type PeristenceInterface interface {
 
 	// RunAsGroup instructs the database plugin that all database operations performed within the context
 	// function can be grouped into a single transaction (if supported).
-	// Note, the caller is responsible for passing the context back to all database operations performed within the supplied function.
+	// Requirements:
+	// - Firefly must not depend on this to guarantee ACID properties (it is only a suggestion/optimization)
+	// - The database implementation must support nested RunAsGroup calls (ie by reusing a transaction if one exists)
+	// - The caller is responsible for passing the supplied context to all database operations within the callback function
 	RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error
 
 	iNamespaceCollection
