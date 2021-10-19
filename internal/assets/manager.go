@@ -35,19 +35,19 @@ import (
 )
 
 type Manager interface {
-	CreateTokenPool(ctx context.Context, ns, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
+	CreateTokenPool(ctx context.Context, ns, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error)
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenPoolsByType(ctx context.Context, ns, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
-	GetTokenPool(ctx context.Context, ns, typeName, poolName string) (*fftypes.TokenPool, error)
+	GetTokenPoolsByType(ctx context.Context, ns, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error)
+	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error)
 	ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error
 	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
-	GetTokenAccountsByPool(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
+	GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	GetTokenTransfersByPool(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	NewTransfer(ns, typeName, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
-	MintTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	BurnTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
-	TransferTokens(ctx context.Context, ns, typeName, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
+	NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
+	MintTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	BurnTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
+	TransferTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
 
 	// Bound token callbacks
@@ -110,8 +110,8 @@ func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter 
 	return am.database.GetTokenAccounts(ctx, filter)
 }
 
-func (am *assetManager) GetTokenAccountsByPool(ctx context.Context, ns, typeName, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	pool, err := am.GetTokenPool(ctx, ns, typeName, poolName)
+func (am *assetManager) GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+	pool, err := am.GetTokenPool(ctx, ns, connector, poolName)
 	if err != nil {
 		return nil, nil, err
 	}

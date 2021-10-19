@@ -132,6 +132,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 func validateAccountBalances(t *testing.T, client *resty.Client, poolName, tokenIndex string, balances map[string]int64) {
 	for identity, balance := range balances {
 		account := GetTokenAccount(t, client, poolName, tokenIndex, identity)
+		assert.Equal(t, "erc1155", account.Connector)
 		assert.Equal(t, balance, account.Balance.Int().Int64())
 	}
 }
@@ -505,6 +506,7 @@ func TestE2ETokenPool(t *testing.T) {
 	pools = GetTokenPools(t, ts.client1, ts.startTime)
 	assert.Equal(t, 1, len(pools))
 	assert.Equal(t, "default", pools[0].Namespace)
+	assert.Equal(t, "erc1155", pools[0].Connector)
 	assert.Equal(t, poolName, pools[0].Name)
 	assert.Equal(t, fftypes.TokenTypeFungible, pools[0].Type)
 
@@ -512,6 +514,7 @@ func TestE2ETokenPool(t *testing.T) {
 	pools = GetTokenPools(t, ts.client1, ts.startTime)
 	assert.Equal(t, 1, len(pools))
 	assert.Equal(t, "default", pools[0].Namespace)
+	assert.Equal(t, "erc1155", pools[0].Connector)
 	assert.Equal(t, poolName, pools[0].Name)
 	assert.Equal(t, fftypes.TokenTypeFungible, pools[0].Type)
 
@@ -522,6 +525,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received1
 	transfers := GetTokenTransfers(t, ts.client1, poolName)
 	assert.Equal(t, 1, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "", map[string]int64{
@@ -531,6 +535,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received2
 	transfers = GetTokenTransfers(t, ts.client2, poolName)
 	assert.Equal(t, 1, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeMint, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "", map[string]int64{
@@ -546,6 +551,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received1
 	transfers = GetTokenTransfers(t, ts.client1, poolName)
 	assert.Equal(t, 2, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "", map[string]int64{
@@ -556,6 +562,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received2
 	transfers = GetTokenTransfers(t, ts.client2, poolName)
 	assert.Equal(t, 2, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeTransfer, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "", map[string]int64{
@@ -570,6 +577,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received2
 	transfers = GetTokenTransfers(t, ts.client2, poolName)
 	assert.Equal(t, 3, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client2, poolName, "", map[string]int64{
@@ -580,6 +588,7 @@ func TestE2ETokenPool(t *testing.T) {
 	<-received1
 	transfers = GetTokenTransfers(t, ts.client1, poolName)
 	assert.Equal(t, 3, len(transfers))
+	assert.Equal(t, "erc1155", transfers[0].Connector)
 	assert.Equal(t, fftypes.TokenTransferTypeBurn, transfers[0].Type)
 	assert.Equal(t, int64(1), transfers[0].Amount.Int().Int64())
 	validateAccountBalances(t, ts.client1, poolName, "", map[string]int64{

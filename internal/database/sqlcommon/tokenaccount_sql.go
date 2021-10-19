@@ -31,6 +31,7 @@ var (
 	tokenAccountColumns = []string{
 		"pool_protocol_id",
 		"token_index",
+		"connector",
 		"identity",
 		"balance",
 	}
@@ -90,6 +91,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 				Values(
 					account.PoolProtocolID,
 					account.TokenIndex,
+					account.Connector,
 					account.Identity,
 					account.Amount,
 				),
@@ -107,6 +109,7 @@ func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fft
 	err := row.Scan(
 		&account.PoolProtocolID,
 		&account.TokenIndex,
+		&account.Connector,
 		&account.Identity,
 		&account.Balance,
 	)

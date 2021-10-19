@@ -395,7 +395,7 @@ func TestTransferTokensInvalidType(t *testing.T) {
 	sender := &transferSender{
 		mgr:       am,
 		namespace: "ns1",
-		typeName:  "magic-tokens",
+		connector: "magic-tokens",
 		poolName:  "pool1",
 		transfer:  transfer,
 	}

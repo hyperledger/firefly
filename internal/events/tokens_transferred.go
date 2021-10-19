@@ -119,6 +119,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			balance := &fftypes.TokenBalanceChange{
 				PoolProtocolID: transfer.PoolProtocolID,
 				TokenIndex:     transfer.TokenIndex,
+				Connector:      transfer.Connector,
 			}
 
 			if transfer.Type != fftypes.TokenTransferTypeMint {

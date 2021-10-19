@@ -49,11 +49,11 @@ func retrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation, p
 	return nil
 }
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
-	return am.createTokenPoolWithID(ctx, fftypes.NewUUID(), ns, typeName, pool, waitConfirm)
+func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+	return am.createTokenPoolWithID(ctx, fftypes.NewUUID(), ns, connector, pool, waitConfirm)
 }
 
-func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, typeName string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.UUID, ns string, connector string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
@@ -66,15 +66,19 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 		pool.Key = org.Identity
 	}
 
-	plugin, err := am.selectTokenPlugin(ctx, typeName)
+	plugin, err := am.selectTokenPlugin(ctx, connector)
 	if err != nil {
 		return nil, err
 	}
 
+	pool.ID = id
+	pool.Namespace = ns
+	pool.Connector = connector
+
 	if waitConfirm {
 		requestID := fftypes.NewUUID()
 		return am.syncasync.SendConfirmTokenPool(ctx, ns, requestID, func(ctx context.Context) error {
-			_, err := am.createTokenPoolWithID(ctx, requestID, ns, typeName, pool, false)
+			_, err := am.createTokenPoolWithID(ctx, requestID, ns, connector, pool, false)
 			return err
 		})
 	}
@@ -96,8 +100,6 @@ func (am *assetManager) createTokenPoolWithID(ctx context.Context, id *fftypes.U
 		return nil, err
 	}
 
-	pool.ID = id
-	pool.Namespace = ns
 	pool.TX.ID = tx.ID
 	pool.TX.Type = tx.Subject.Type
 
@@ -125,8 +127,8 @@ func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter dat
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenPoolsByType(ctx context.Context, ns string, typeName string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
+func (am *assetManager) GetTokenPoolsByType(ctx context.Context, ns string, connector string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, nil, err
 	}
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
@@ -135,8 +137,8 @@ func (am *assetManager) GetTokenPoolsByType(ctx context.Context, ns string, type
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, ns, typeName, poolName string) (*fftypes.TokenPool, error) {
-	if _, err := am.selectTokenPlugin(ctx, typeName); err != nil {
+func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error) {
+	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
 	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {

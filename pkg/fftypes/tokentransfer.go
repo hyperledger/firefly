@@ -29,6 +29,7 @@ type TokenTransfer struct {
 	LocalID        *UUID             `json:"localId,omitempty"`
 	PoolProtocolID string            `json:"poolProtocolId,omitempty"`
 	TokenIndex     string            `json:"tokenIndex,omitempty"`
+	Connector      string            `json:"connector,omitempty"`
 	Key            string            `json:"key,omitempty"`
 	From           string            `json:"from,omitempty"`
 	To             string            `json:"to,omitempty"`

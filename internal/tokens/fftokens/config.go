@@ -21,6 +21,6 @@ import (
 	"github.com/hyperledger/firefly/internal/config/wsconfig"
 )
 
-func (h *FFTokens) InitPrefix(prefix config.PrefixArray) {
+func (ft *FFTokens) InitPrefix(prefix config.PrefixArray) {
 	wsconfig.InitPrefix(prefix)
 }
