@@ -32,7 +32,7 @@ var (
 		"pool_protocol_id",
 		"token_index",
 		"connector",
-		"identity",
+		"key",
 		"balance",
 	}
 	tokenAccountFilterFieldMap = map[string]string{
@@ -54,7 +54,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 			Where(sq.And{
 				sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 				sq.Eq{"token_index": account.TokenIndex},
-				sq.Eq{"identity": account.Identity},
+				sq.Eq{"key": account.Key},
 			}),
 	)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 				Where(sq.And{
 					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 					sq.Eq{"token_index": account.TokenIndex},
-					sq.Eq{"identity": account.Identity},
+					sq.Eq{"key": account.Key},
 				}),
 			nil,
 		); err != nil {
@@ -92,7 +92,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 					account.PoolProtocolID,
 					account.TokenIndex,
 					account.Connector,
-					account.Identity,
+					account.Key,
 					account.Amount,
 				),
 			nil,
@@ -110,7 +110,7 @@ func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fft
 		&account.PoolProtocolID,
 		&account.TokenIndex,
 		&account.Connector,
-		&account.Identity,
+		&account.Key,
 		&account.Balance,
 	)
 	if err != nil {
@@ -143,12 +143,12 @@ func (s *SQLCommon) getTokenAccountPred(ctx context.Context, desc string, pred i
 	return account, nil
 }
 
-func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID, tokenIndex, identity string) (message *fftypes.TokenAccount, err error) {
-	desc := fftypes.TokenAccountIdentifier(protocolID, tokenIndex, identity)
+func (s *SQLCommon) GetTokenAccount(ctx context.Context, protocolID, tokenIndex, key string) (message *fftypes.TokenAccount, err error) {
+	desc := fftypes.TokenAccountIdentifier(protocolID, tokenIndex, key)
 	return s.getTokenAccountPred(ctx, desc, sq.And{
 		sq.Eq{"pool_protocol_id": protocolID},
 		sq.Eq{"token_index": tokenIndex},
-		sq.Eq{"identity": identity},
+		sq.Eq{"key": key},
 	})
 }
 

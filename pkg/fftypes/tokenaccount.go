@@ -20,7 +20,7 @@ type TokenAccount struct {
 	PoolProtocolID string `json:"poolProtocolId,omitempty"`
 	TokenIndex     string `json:"tokenIndex,omitempty"`
 	Connector      string `json:"connector,omitempty"`
-	Identity       string `json:"identity,omitempty"`
+	Key            string `json:"key,omitempty"`
 	Balance        BigInt `json:"balance"`
 }
 
@@ -29,13 +29,13 @@ func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {
 }
 
 func (t *TokenAccount) Identifier() string {
-	return TokenAccountIdentifier(t.PoolProtocolID, t.TokenIndex, t.Identity)
+	return TokenAccountIdentifier(t.PoolProtocolID, t.TokenIndex, t.Key)
 }
 
 type TokenBalanceChange struct {
 	PoolProtocolID string
 	TokenIndex     string
 	Connector      string
-	Identity       string
+	Key            string
 	Amount         BigInt
 }

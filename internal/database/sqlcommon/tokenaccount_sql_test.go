@@ -40,14 +40,14 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
-		Identity:       "0x0",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 	account := &fftypes.TokenAccount{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
-		Identity:       "0x0",
+		Key:            "0x0",
 	}
 	account.Balance.Int().SetInt64(10)
 	accountJson, _ := json.Marshal(&account)
@@ -67,7 +67,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("poolprotocolid", account.PoolProtocolID),
 		fb.Eq("tokenindex", account.TokenIndex),
-		fb.Eq("identity", account.Identity),
+		fb.Eq("key", account.Key),
 	)
 	accounts, res, err := s.GetTokenAccounts(ctx, filter.Count(true))
 	assert.NoError(t, err)
@@ -161,7 +161,7 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
-		Identity:       "0x0",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 
@@ -183,7 +183,7 @@ func TestAddTokenAccountBalanceUpdateSuccess(t *testing.T) {
 	operation := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
-		Identity:       "0x0",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 

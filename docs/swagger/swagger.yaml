@@ -4640,7 +4640,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: key
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4697,7 +4697,7 @@ paths:
                     balance: {}
                     connector:
                       type: string
-                    identity:
+                    key:
                       type: string
                     poolProtocolId:
                       type: string
@@ -5580,7 +5580,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: key
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5637,7 +5637,7 @@ paths:
                     balance: {}
                     connector:
                       type: string
-                    identity:
+                    key:
                       type: string
                     poolProtocolId:
                       type: string

@@ -776,7 +776,7 @@ var TokenAccountQueryFactory = &queryFields{
 	"poolprotocolid": &StringField{},
 	"tokenindex":     &StringField{},
 	"connector":      &StringField{},
-	"identity":       &StringField{},
+	"key":            &StringField{},
 	"balance":        &Int64Field{},
 }
 
