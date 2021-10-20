@@ -17,11 +17,12 @@
 package fftypes
 
 type TokenAccount struct {
-	PoolProtocolID string `json:"poolProtocolId,omitempty"`
-	TokenIndex     string `json:"tokenIndex,omitempty"`
-	Connector      string `json:"connector,omitempty"`
-	Key            string `json:"key,omitempty"`
-	Balance        BigInt `json:"balance"`
+	PoolProtocolID string  `json:"poolProtocolId,omitempty"`
+	TokenIndex     string  `json:"tokenIndex,omitempty"`
+	Connector      string  `json:"connector,omitempty"`
+	Key            string  `json:"key,omitempty"`
+	Balance        BigInt  `json:"balance"`
+	Updated        *FFTime `json:"updated,omitempty"`
 }
 
 func TokenAccountIdentifier(protocolID, tokenIndex, identity string) string {

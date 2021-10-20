@@ -59,6 +59,8 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	accountRead, err := s.GetTokenAccount(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
+	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
+	accountRead.Updated = nil
 	accountReadJson, _ := json.Marshal(&accountRead)
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 
@@ -73,6 +75,8 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(accounts))
 	assert.Equal(t, int64(1), *res.TotalCount)
+	assert.Greater(t, accounts[0].Updated.UnixNano(), int64(0))
+	accounts[0].Updated = nil
 	accountReadJson, _ = json.Marshal(accounts[0])
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 
@@ -84,6 +88,8 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	accountRead, err = s.GetTokenAccount(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
+	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
+	accountRead.Updated = nil
 	accountReadJson, _ = json.Marshal(&accountRead)
 	account.Balance.Int().SetInt64(20)
 	accountJson, _ = json.Marshal(&account)
@@ -168,7 +174,7 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs("F1", "1", "erc1155", "0x0", sqlmock.AnyArg()).
+		WithArgs("F1", "1", "erc1155", "0x0", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	err := s.AddTokenAccountBalance(context.Background(), operation)

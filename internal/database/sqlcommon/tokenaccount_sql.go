@@ -34,6 +34,7 @@ var (
 		"connector",
 		"key",
 		"balance",
+		"updated",
 	}
 	tokenAccountFilterFieldMap = map[string]string{
 		"poolprotocolid": "pool_protocol_id",
@@ -75,6 +76,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 		if err = s.updateTx(ctx, tx,
 			sq.Update("tokenaccount").
 				Set("balance", balance).
+				Set("updated", fftypes.Now()).
 				Where(sq.And{
 					sq.Eq{"pool_protocol_id": account.PoolProtocolID},
 					sq.Eq{"token_index": account.TokenIndex},
@@ -94,6 +96,7 @@ func (s *SQLCommon) AddTokenAccountBalance(ctx context.Context, account *fftypes
 					account.Connector,
 					account.Key,
 					account.Amount,
+					fftypes.Now(),
 				),
 			nil,
 		); err != nil {
@@ -112,6 +115,7 @@ func (s *SQLCommon) tokenAccountResult(ctx context.Context, row *sql.Rows) (*fft
 		&account.Connector,
 		&account.Key,
 		&account.Balance,
+		&account.Updated,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenaccount")

@@ -4653,6 +4653,11 @@ paths:
         name: tokenindex
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -4703,6 +4708,7 @@ paths:
                       type: string
                     tokenIndex:
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success
@@ -5593,6 +5599,11 @@ paths:
         name: tokenindex
         schema:
           type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5643,6 +5654,7 @@ paths:
                       type: string
                     tokenIndex:
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success

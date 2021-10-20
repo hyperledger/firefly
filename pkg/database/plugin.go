@@ -778,6 +778,7 @@ var TokenAccountQueryFactory = &queryFields{
 	"connector":      &StringField{},
 	"key":            &StringField{},
 	"balance":        &Int64Field{},
+	"updated":        &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
