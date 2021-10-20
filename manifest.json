@@ -16,7 +16,7 @@
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v0.9.0",
-    "sha": "6c5f8a28739ad4c45ee207038e55ec1793b9f42ca2d7548dcf54a02787711f9b"
+    "tag": "v0.10.0",
+    "sha": "086055b97a4d26a66f967702ef5fd2117af50c6d96faea1f010ea240de338a1e"
   }
 }
