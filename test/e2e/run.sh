@@ -5,7 +5,7 @@ set -o pipefail
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
-STACK_NAME=firefly-e2e
+STACK_NAME=firefly_e2e
 
 checkOk() {
   local rc=$1
@@ -44,8 +44,8 @@ fi
 cd $CWD
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI remove -f $STACK_NAME || true
-  checkOk $?
+  $CLI remove -f firefly-e2e  # TODO: remove
+  $CLI remove -f $STACK_NAME
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
