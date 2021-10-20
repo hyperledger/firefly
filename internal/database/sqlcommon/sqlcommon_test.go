@@ -162,6 +162,14 @@ func TestRunAsGroup(t *testing.T) {
 		// Query, not specifying a transaction
 		_, _, err = s.query(ctx, sq.Select("test").From("test"))
 		assert.NoError(t, err)
+
+		// Nested call
+		err = s.RunAsGroup(ctx, func(ctx2 context.Context) error {
+			assert.Equal(t, ctx, ctx2)
+			return nil
+		})
+		assert.NoError(t, err)
+
 		return
 	})
 
