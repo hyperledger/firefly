@@ -5267,12 +5267,29 @@ paths:
               schema:
                 items:
                   properties:
-                    balance: {}
-                    identity:
+                    amount: {}
+                    created: {}
+                    from:
                       type: string
+                    key:
+                      type: string
+                    localId: {}
+                    messageHash: {}
                     poolProtocolId:
                       type: string
+                    protocolId:
+                      type: string
+                    to:
+                      type: string
                     tokenIndex:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                    type:
                       type: string
                   type: object
                 type: array
@@ -5871,12 +5888,29 @@ paths:
               schema:
                 items:
                   properties:
-                    balance: {}
-                    identity:
+                    amount: {}
+                    created: {}
+                    from:
                       type: string
+                    key:
+                      type: string
+                    localId: {}
+                    messageHash: {}
                     poolProtocolId:
                       type: string
+                    protocolId:
+                      type: string
+                    to:
+                      type: string
                     tokenIndex:
+                      type: string
+                    tx:
+                      properties:
+                        id: {}
+                        type:
+                          type: string
+                      type: object
+                    type:
                       type: string
                   type: object
                 type: array

@@ -37,7 +37,7 @@ var getTokenTransfers = &oapispec.Route{
 	FilterFactory:   database.TokenTransferQueryFactory,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], r.Filter))
