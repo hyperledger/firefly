@@ -157,6 +157,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
+	standard := data.GetString("standard") // this is optional
 	trackingID := data.GetString("trackingId")
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
@@ -180,6 +181,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	pool := &fftypes.TokenPool{
 		Type:       fftypes.FFEnum(tokenType),
 		ProtocolID: protocolID,
+		Standard:   standard,
 		Connector:  ft.configuredName,
 		Key:        operatorAddress,
 		TX: fftypes.TransactionRef{

@@ -41,6 +41,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		ID:         poolID,
 		Namespace:  "ns1",
 		Name:       "my-pool",
+		Standard:   "ERC1155",
 		Type:       fftypes.TokenTypeFungible,
 		ProtocolID: "12345",
 		Connector:  "erc1155",

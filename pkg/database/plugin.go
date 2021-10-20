@@ -764,6 +764,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"type":       &StringField{},
 	"namespace":  &StringField{},
 	"name":       &StringField{},
+	"standard":   &StringField{},
 	"protocolid": &StringField{},
 	"key":        &StringField{},
 	"symbol":     &StringField{},
