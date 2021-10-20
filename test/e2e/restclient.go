@@ -375,16 +375,16 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (tra
 	return transfers
 }
 
-func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, identity string) (account *fftypes.TokenAccount) {
+func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, key string) (account *fftypes.TokenAccount) {
 	var accounts []*fftypes.TokenAccount
 	path := fmt.Sprintf(urlTokenAccounts, poolName)
 	resp, err := client.R().
 		SetQueryParam("tokenIndex", tokenIndex).
-		SetQueryParam("identity", identity).
+		SetQueryParam("key", key).
 		SetResult(&accounts).
 		Get(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	require.Greater(t, len(accounts), 0)
+	require.Equal(t, len(accounts), 1)
 	return accounts[0]
 }

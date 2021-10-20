@@ -40,6 +40,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		Type:           fftypes.TokenTransferTypeTransfer,
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
+		Connector:      "erc1155",
 		From:           "0x01",
 		To:             "0x02",
 		ProtocolID:     "12345",

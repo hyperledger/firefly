@@ -32,6 +32,7 @@ type TokenPool struct {
 	Type       TokenType      `json:"type" ffenum:"tokentype"`
 	Namespace  string         `json:"namespace,omitempty"`
 	Name       string         `json:"name,omitempty"`
+	Standard   string         `json:"standard,omitempty"`
 	ProtocolID string         `json:"protocolId,omitempty"`
 	Key        string         `json:"key,omitempty"`
 	Symbol     string         `json:"symbol,omitempty"`

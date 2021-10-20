@@ -91,21 +91,21 @@ type transferTokens struct {
 	Data       string `json:"data,omitempty"`
 }
 
-func (h *FFTokens) Name() string {
+func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
-func (h *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
-	h.ctx = log.WithLogField(ctx, "proto", "fftokens")
-	h.callbacks = callbacks
-	h.configuredName = name
+func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
+	ft.callbacks = callbacks
+	ft.configuredName = name
 
 	if prefix.GetString(restclient.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
-	h.client = restclient.New(h.ctx, prefix)
-	h.capabilities = &tokens.Capabilities{}
+	ft.client = restclient.New(ft.ctx, prefix)
+	ft.capabilities = &tokens.Capabilities{}
 
 	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
 
@@ -113,25 +113,25 @@ func (h *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, 
 		wsConfig.WSKeyPath = "/api/ws"
 	}
 
-	h.wsconn, err = wsclient.New(ctx, wsConfig, nil)
+	ft.wsconn, err = wsclient.New(ctx, wsConfig, nil)
 	if err != nil {
 		return err
 	}
 
-	go h.eventLoop()
+	go ft.eventLoop()
 
 	return nil
 }
 
-func (h *FFTokens) Start() error {
-	return h.wsconn.Connect()
+func (ft *FFTokens) Start() error {
+	return ft.wsconn.Connect()
 }
 
-func (h *FFTokens) Capabilities() *tokens.Capabilities {
-	return h.capabilities
+func (ft *FFTokens) Capabilities() *tokens.Capabilities {
+	return ft.capabilities
 }
 
-func (h *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
@@ -151,12 +151,13 @@ func (h *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) e
 		replyType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	return h.callbacks.TokensOpUpdate(h, operationID, replyType, message, data)
+	return ft.callbacks.TokensOpUpdate(ft, operationID, replyType, message, data)
 }
 
-func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
+func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
 	tokenType := data.GetString("type")
 	protocolID := data.GetString("poolId")
+	standard := data.GetString("standard") // this is optional
 	trackingID := data.GetString("trackingId")
 	operatorAddress := data.GetString("operator")
 	tx := data.GetObject("transaction")
@@ -180,6 +181,8 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 	pool := &fftypes.TokenPool{
 		Type:       fftypes.FFEnum(tokenType),
 		ProtocolID: protocolID,
+		Standard:   standard,
+		Connector:  ft.configuredName,
 		Key:        operatorAddress,
 		TX: fftypes.TransactionRef{
 			ID:   txID,
@@ -188,10 +191,10 @@ func (h *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONO
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokenPoolCreated(h, pool, txHash, tx)
+	return ft.callbacks.TokenPoolCreated(ft, pool, txHash, tx)
 }
 
-func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
+func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
 	tokenIndex := data.GetString("tokenIndex")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
@@ -243,6 +246,7 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 		Type:           t,
 		PoolProtocolID: poolProtocolID,
 		TokenIndex:     tokenIndex,
+		Connector:      ft.configuredName,
 		From:           fromAddress,
 		To:             toAddress,
 		ProtocolID:     txHash,
@@ -261,19 +265,19 @@ func (h *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTrans
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return h.callbacks.TokensTransferred(h, transfer, txHash, tx)
+	return ft.callbacks.TokensTransferred(ft, transfer, txHash, tx)
 }
 
-func (h *FFTokens) eventLoop() {
-	defer h.wsconn.Close()
-	l := log.L(h.ctx).WithField("role", "event-loop")
-	ctx := log.WithLogger(h.ctx, l)
+func (ft *FFTokens) eventLoop() {
+	defer ft.wsconn.Close()
+	l := log.L(ft.ctx).WithField("role", "event-loop")
+	ctx := log.WithLogger(ft.ctx, l)
 	for {
 		select {
 		case <-ctx.Done():
 			l.Debugf("Event loop exiting (context cancelled)")
 			return
-		case msgBytes, ok := <-h.wsconn.Receive():
+		case msgBytes, ok := <-ft.wsconn.Receive():
 			if !ok {
 				l.Debugf("Event loop exiting (receive channel closed)")
 				return
@@ -288,15 +292,15 @@ func (h *FFTokens) eventLoop() {
 			l.Debugf("Received %s event %s", msg.Event, msg.ID)
 			switch msg.Event {
 			case messageReceipt:
-				err = h.handleReceipt(ctx, msg.Data)
+				err = ft.handleReceipt(ctx, msg.Data)
 			case messageTokenPool:
-				err = h.handleTokenPoolCreate(ctx, msg.Data)
+				err = ft.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:
-				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
+				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
 			case messageTokenBurn:
-				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
+				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
 			case messageTokenTransfer:
-				err = h.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
+				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
 			default:
 				l.Errorf("Message unexpected: %s", msg.Event)
 			}
@@ -309,7 +313,7 @@ func (h *FFTokens) eventLoop() {
 						"id": msg.ID,
 					},
 				})
-				err = h.wsconn.Send(ctx, ack)
+				err = ft.wsconn.Send(ctx, ack)
 			}
 
 			if err != nil {
@@ -320,8 +324,8 @@ func (h *FFTokens) eventLoop() {
 	}
 }
 
-func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error {
-	res, err := h.client.R().SetContext(ctx).
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUID, pool *fftypes.TokenPool) error {
+	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
 			Type:       pool.Type,
 			RequestID:  operationID.String(),
@@ -335,8 +339,8 @@ func (h *FFTokens) CreateTokenPool(ctx context.Context, operationID *fftypes.UUI
 	return nil
 }
 
-func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
-	res, err := h.client.R().SetContext(ctx).
+func (ft *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mint *fftypes.TokenTransfer) error {
+	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
 			PoolID:     mint.PoolProtocolID,
 			To:         mint.To,
@@ -351,8 +355,8 @@ func (h *FFTokens) MintTokens(ctx context.Context, operationID *fftypes.UUID, mi
 	return nil
 }
 
-func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
-	res, err := h.client.R().SetContext(ctx).
+func (ft *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, burn *fftypes.TokenTransfer) error {
+	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
 			PoolID:     burn.PoolProtocolID,
 			TokenIndex: burn.TokenIndex,
@@ -368,8 +372,8 @@ func (h *FFTokens) BurnTokens(ctx context.Context, operationID *fftypes.UUID, bu
 	return nil
 }
 
-func (h *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
-	res, err := h.client.R().SetContext(ctx).
+func (ft *FFTokens) TransferTokens(ctx context.Context, operationID *fftypes.UUID, transfer *fftypes.TokenTransfer) error {
+	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
 			PoolID:     transfer.PoolProtocolID,
 			TokenIndex: transfer.TokenIndex,

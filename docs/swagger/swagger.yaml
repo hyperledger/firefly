@@ -4332,6 +4332,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: standard
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -4396,6 +4401,8 @@ paths:
                     namespace:
                       type: string
                     protocolId:
+                      type: string
+                    standard:
                       type: string
                     symbol:
                       type: string
@@ -4483,6 +4490,8 @@ paths:
                     type: string
                   protocolId:
                     type: string
+                  standard:
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -4515,6 +4524,8 @@ paths:
                   namespace:
                     type: string
                   protocolId:
+                    type: string
+                  standard:
                     type: string
                   symbol:
                     type: string
@@ -4583,6 +4594,8 @@ paths:
                     type: string
                   protocolId:
                     type: string
+                  standard:
+                    type: string
                   symbol:
                     type: string
                   tx:
@@ -4635,7 +4648,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: connector
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4646,6 +4664,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: tokenindex
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -4690,12 +4713,15 @@ paths:
                 items:
                   properties:
                     balance: {}
-                    identity:
+                    connector:
+                      type: string
+                    key:
                       type: string
                     poolProtocolId:
                       type: string
                     tokenIndex:
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success
@@ -4743,6 +4769,8 @@ paths:
             schema:
               properties:
                 amount: {}
+                connector:
+                  type: string
                 created: {}
                 from:
                   type: string
@@ -4865,6 +4893,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -4896,6 +4926,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -4965,6 +4997,8 @@ paths:
             schema:
               properties:
                 amount: {}
+                connector:
+                  type: string
                 created: {}
                 from:
                   type: string
@@ -5087,6 +5121,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -5118,6 +5154,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -5179,6 +5217,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: amount
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: connector
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5268,6 +5311,8 @@ paths:
                 items:
                   properties:
                     amount: {}
+                    connector:
+                      type: string
                     created: {}
                     from:
                       type: string
@@ -5337,6 +5382,8 @@ paths:
             schema:
               properties:
                 amount: {}
+                connector:
+                  type: string
                 created: {}
                 from:
                   type: string
@@ -5459,6 +5506,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -5490,6 +5539,8 @@ paths:
               schema:
                 properties:
                   amount: {}
+                  connector:
+                    type: string
                   created: {}
                   from:
                     type: string
@@ -5543,7 +5594,12 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: identity
+        name: connector
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: key
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5554,6 +5610,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: tokenindex
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -5598,12 +5659,15 @@ paths:
                 items:
                   properties:
                     balance: {}
-                    identity:
+                    connector:
+                      type: string
+                    key:
                       type: string
                     poolProtocolId:
                       type: string
                     tokenIndex:
                       type: string
+                    updated: {}
                   type: object
                 type: array
           description: Success
@@ -5698,6 +5762,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: standard
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: symbol
         schema:
           type: string
@@ -5763,6 +5832,8 @@ paths:
                       type: string
                     protocolId:
                       type: string
+                    standard:
+                      type: string
                     symbol:
                       type: string
                     tx:
@@ -5800,6 +5871,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: amount
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: connector
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5889,6 +5965,8 @@ paths:
                 items:
                   properties:
                     amount: {}
+                    connector:
+                      type: string
                     created: {}
                     from:
                       type: string

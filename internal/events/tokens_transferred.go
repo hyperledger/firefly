@@ -119,22 +119,23 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 			balance := &fftypes.TokenBalanceChange{
 				PoolProtocolID: transfer.PoolProtocolID,
 				TokenIndex:     transfer.TokenIndex,
+				Connector:      transfer.Connector,
 			}
 
 			if transfer.Type != fftypes.TokenTransferTypeMint {
-				balance.Identity = transfer.From
+				balance.Key = transfer.From
 				balance.Amount.Int().Neg(transfer.Amount.Int())
 				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
-					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
+					log.L(ctx).Errorf("Failed to update account '%s' for token transfer '%s': %s", balance.Key, transfer.ProtocolID, err)
 					return err
 				}
 			}
 
 			if transfer.Type != fftypes.TokenTransferTypeBurn {
-				balance.Identity = transfer.To
+				balance.Key = transfer.To
 				balance.Amount.Int().Set(transfer.Amount.Int())
 				if err := em.database.AddTokenAccountBalance(ctx, balance); err != nil {
-					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Identity, transfer.ProtocolID, err)
+					log.L(ctx).Errorf("Failed to update account '%s for token transfer '%s': %s", balance.Key, transfer.ProtocolID, err)
 					return err
 				}
 			}

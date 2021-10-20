@@ -39,13 +39,15 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	operation := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
-		Identity:       "0x0",
+		Connector:      "erc1155",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 	account := &fftypes.TokenAccount{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
-		Identity:       "0x0",
+		Connector:      "erc1155",
+		Key:            "0x0",
 	}
 	account.Balance.Int().SetInt64(10)
 	accountJson, _ := json.Marshal(&account)
@@ -57,6 +59,8 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	accountRead, err := s.GetTokenAccount(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
+	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
+	accountRead.Updated = nil
 	accountReadJson, _ := json.Marshal(&accountRead)
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 
@@ -65,12 +69,14 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("poolprotocolid", account.PoolProtocolID),
 		fb.Eq("tokenindex", account.TokenIndex),
-		fb.Eq("identity", account.Identity),
+		fb.Eq("key", account.Key),
 	)
 	accounts, res, err := s.GetTokenAccounts(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(accounts))
 	assert.Equal(t, int64(1), *res.TotalCount)
+	assert.Greater(t, accounts[0].Updated.UnixNano(), int64(0))
+	accounts[0].Updated = nil
 	accountReadJson, _ = json.Marshal(accounts[0])
 	assert.Equal(t, string(accountJson), string(accountReadJson))
 
@@ -82,6 +88,8 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 	accountRead, err = s.GetTokenAccount(ctx, "F1", "1", "0x0")
 	assert.NoError(t, err)
 	assert.NotNil(t, accountRead)
+	assert.Greater(t, accountRead.Updated.UnixNano(), int64(0))
+	accountRead.Updated = nil
 	accountReadJson, _ = json.Marshal(&accountRead)
 	account.Balance.Int().SetInt64(20)
 	accountJson, _ = json.Marshal(&account)
@@ -158,14 +166,15 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 	operation := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
-		Identity:       "0x0",
+		Connector:      "erc1155",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs("F1", "1", "0x0", sqlmock.AnyArg()).
+		WithArgs("F1", "1", "erc1155", "0x0", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	err := s.AddTokenAccountBalance(context.Background(), operation)
@@ -180,7 +189,7 @@ func TestAddTokenAccountBalanceUpdateSuccess(t *testing.T) {
 	operation := &fftypes.TokenBalanceChange{
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
-		Identity:       "0x0",
+		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
 

@@ -764,6 +764,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"type":       &StringField{},
 	"namespace":  &StringField{},
 	"name":       &StringField{},
+	"standard":   &StringField{},
 	"protocolid": &StringField{},
 	"key":        &StringField{},
 	"symbol":     &StringField{},
@@ -775,8 +776,10 @@ var TokenPoolQueryFactory = &queryFields{
 var TokenAccountQueryFactory = &queryFields{
 	"poolprotocolid": &StringField{},
 	"tokenindex":     &StringField{},
-	"identity":       &StringField{},
+	"connector":      &StringField{},
+	"key":            &StringField{},
 	"balance":        &Int64Field{},
+	"updated":        &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
@@ -784,6 +787,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"localid":        &StringField{},
 	"poolprotocolid": &StringField{},
 	"tokenindex":     &StringField{},
+	"connector":      &StringField{},
 	"key":            &StringField{},
 	"from":           &StringField{},
 	"to":             &StringField{},
