@@ -21,78 +21,139 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return bm.broadcastMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
+func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
+	broadcast := &broadcastSender{
+		mgr:       bm,
+		namespace: ns,
+		msg:       in,
+	}
+	broadcast.setDefaults()
+	return broadcast
 }
 
-func (bm *broadcastManager) broadcastMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (out *fftypes.Message, err error) {
-	if unresolved != nil {
-		resolved = &unresolved.Message
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+	broadcast := bm.NewBroadcast(ns, in)
+	if waitConfirm {
+		err = broadcast.SendAndWait(ctx)
+	} else {
+		err = broadcast.Send(ctx)
 	}
-	resolved.Header.ID = id
-	resolved.Header.Namespace = ns
+	return &in.Message, err
+}
 
-	if resolved.Header.Type == "" {
-		resolved.Header.Type = fftypes.MessageTypeBroadcast
+type broadcastSender struct {
+	mgr          *broadcastManager
+	namespace    string
+	msg          *fftypes.MessageInOut
+	resolved     bool
+	sendCallback sysmessaging.BeforeSendCallback
+}
+
+func (s *broadcastSender) Send(ctx context.Context) error {
+	return s.resolveAndSend(ctx, false)
+}
+
+func (s *broadcastSender) SendAndWait(ctx context.Context) error {
+	return s.resolveAndSend(ctx, true)
+}
+
+func (s *broadcastSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
+	s.sendCallback = cb
+	return s
+}
+
+func (s *broadcastSender) setDefaults() {
+	s.msg.Header.ID = fftypes.NewUUID()
+	s.msg.Header.Namespace = s.namespace
+	if s.msg.Header.Type == "" {
+		s.msg.Header.Type = fftypes.MessageTypeBroadcast
 	}
-
-	if resolved.Header.TxType == "" {
-		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
+	if s.msg.Header.TxType == "" {
+		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
 	}
+}
 
-	if !bm.isRootOrgBroadcast(ctx, resolved) {
-		// Resolve the sending identity
-		if err := bm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
-		}
-	}
+func (s *broadcastSender) resolveAndSend(ctx context.Context, waitConfirm bool) error {
+	sent := false
 
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
 	var dataToPublish []*fftypes.DataAndBlob
-	err = bm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		if unresolved != nil {
-			// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-			resolved.Data, dataToPublish, err = bm.data.ResolveInlineDataBroadcast(ctx, ns, unresolved.InlineData)
-			if err != nil {
+	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		if !s.resolved {
+			if dataToPublish, err = s.resolveMessage(ctx); err != nil {
 				return err
 			}
+			s.resolved = true
 		}
 
-		// If we have data to publish, we break out of the DB transaction, do the publishes, then
-		// do the send later - as that could take a long time (multiple seconds) depending on the size
-		//
-		// Same for waiting for confirmation of the send from the blockchain
-		if len(dataToPublish) > 0 || waitConfirm {
-			return nil
+		// For the simple case where we have no data to publish and aren't waiting for blockchain confirmation,
+		// insert the local message immediately within the same DB transaction.
+		// Otherwise, break out of the DB transaction (since those operations could take multiple seconds).
+		if len(dataToPublish) == 0 && !waitConfirm {
+			sent = true
+			return s.sendInternal(ctx, waitConfirm)
 		}
-
-		out, err = bm.broadcastMessageCommon(ctx, resolved, false)
-		return err
+		return nil
 	})
-	if err != nil {
-		return nil, err
+
+	if err != nil || sent {
+		return err
 	}
 
 	// Perform deferred processing
 	if len(dataToPublish) > 0 {
-		return bm.publishBlobsAndSend(ctx, resolved, dataToPublish, waitConfirm)
-	} else if waitConfirm {
-		return bm.broadcastMessageCommon(ctx, resolved, true)
+		if err := s.mgr.publishBlobs(ctx, dataToPublish); err != nil {
+			return err
+		}
 	}
-
-	// The broadcastMessage function modifies the input message to create all the refs
-	return out, err
+	return s.sendInternal(ctx, waitConfirm)
 }
 
-func (bm *broadcastManager) isRootOrgBroadcast(ctx context.Context, message *fftypes.Message) bool {
+func (s *broadcastSender) resolveMessage(ctx context.Context) ([]*fftypes.DataAndBlob, error) {
+	// Resolve the sending identity
+	if !s.isRootOrgBroadcast(ctx) {
+		if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
+			return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+		}
+	}
+
+	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
+	dataRefs, dataToPublish, err := s.mgr.data.ResolveInlineDataBroadcast(ctx, s.namespace, s.msg.InlineData)
+	s.msg.Message.Data = dataRefs
+	return dataToPublish, err
+}
+
+func (s *broadcastSender) sendInternal(ctx context.Context, waitConfirm bool) (err error) {
+	if waitConfirm {
+		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
+		if out != nil {
+			s.msg.Message = *out
+		}
+		return err
+	}
+
+	// Seal the message
+	if err := s.msg.Seal(ctx); err != nil {
+		return err
+	}
+	if s.sendCallback != nil {
+		if err := s.sendCallback(ctx); err != nil {
+			return err
+		}
+	}
+
+	// Store the message - this asynchronously triggers the next step in process
+	return s.mgr.database.InsertMessageLocal(ctx, &s.msg.Message)
+}
+
+func (s *broadcastSender) isRootOrgBroadcast(ctx context.Context) bool {
 	// Look into message to see if it contains a data item that is a root organization definition
-	if message.Header.Type == fftypes.MessageTypeDefinition {
-		messageData, ok, err := bm.data.GetMessageData(ctx, message, true)
+	if s.msg.Header.Type == fftypes.MessageTypeDefinition {
+		messageData, ok, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
 		if ok && err == nil {
 			if len(messageData) > 0 {
 				dataItem := messageData[0]
@@ -110,36 +171,4 @@ func (bm *broadcastManager) isRootOrgBroadcast(ctx context.Context, message *fft
 		}
 	}
 	return false
-}
-
-func (bm *broadcastManager) publishBlobsAndSend(ctx context.Context, msg *fftypes.Message, dataToPublish []*fftypes.DataAndBlob, waitConfirm bool) (*fftypes.Message, error) {
-
-	for _, d := range dataToPublish {
-
-		// Stream from the local data exchange ...
-		reader, err := bm.exchange.DownloadBLOB(ctx, d.Blob.PayloadRef)
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgDownloadBlobFailed, d.Blob.PayloadRef)
-		}
-		defer reader.Close()
-
-		// ... to the public storage
-		publicRef, err := bm.publicstorage.PublishData(ctx, reader)
-		if err != nil {
-			return nil, err
-		}
-		log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to public storage: '%s'", d.Data.Blob, d.Data.ID, publicRef)
-
-		// Update the data in the database, with the public reference.
-		// We do this independently for each piece of data
-		update := database.DataQueryFactory.NewUpdate(ctx).Set("blob.public", publicRef)
-		err = bm.database.UpdateData(ctx, d.Data.ID, update)
-		if err != nil {
-			return nil, err
-		}
-
-	}
-
-	// Now we broadcast the message, as all data has been published
-	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
 }

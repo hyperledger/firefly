@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) resolveReceipientList(ctx context.Context, in *fftypes.MessageInOut) error {
+func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftypes.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		return nil // validity of existing group checked later

@@ -10,6 +10,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	sysmessaging "github.com/hyperledger/firefly/internal/sysmessaging"
+
 	tokens "github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -19,11 +21,11 @@ type Manager struct {
 }
 
 // BurnTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
-func (_m *Manager) BurnTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (_m *Manager) BurnTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
 		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -32,7 +34,7 @@ func (_m *Manager) BurnTokens(ctx context.Context, ns string, typeName string, p
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) error); ok {
 		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -184,11 +186,11 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, typeName st
 }
 
 // MintTokens provides a mock function with given fields: ctx, ns, typeName, poolName, transfer, waitConfirm
-func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransfer, waitConfirm bool) (*fftypes.TokenTransfer, error) {
+func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, typeName, poolName, transfer, waitConfirm)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) *fftypes.TokenTransfer); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) *fftypes.TokenTransfer); ok {
 		r0 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -197,13 +199,29 @@ func (_m *Manager) MintTokens(ctx context.Context, ns string, typeName string, p
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransfer, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.TokenTransferInput, bool) error); ok {
 		r1 = rf(ctx, ns, typeName, poolName, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// NewTransfer provides a mock function with given fields: ns, typeName, poolName, transfer
+func (_m *Manager) NewTransfer(ns string, typeName string, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+	ret := _m.Called(ns, typeName, poolName, transfer)
+
+	var r0 sysmessaging.MessageSender
+	if rf, ok := ret.Get(0).(func(string, string, string, *fftypes.TokenTransferInput) sysmessaging.MessageSender); ok {
+		r0 = rf(ns, typeName, poolName, transfer)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(sysmessaging.MessageSender)
+		}
+	}
+
+	return r0
 }
 
 // Start provides a mock function with given fields:

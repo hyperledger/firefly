@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -40,6 +41,7 @@ type Manager interface {
 	GroupManager
 
 	Start() error
+	NewMessage(ns string, msg *fftypes.MessageInOut) sysmessaging.MessageSender
 	SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
 	RequestReply(ctx context.Context, ns string, request *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
 }
@@ -230,17 +232,4 @@ func (pm *privateMessaging) sendAndSubmitBatch(ctx context.Context, batch *fftyp
 
 func (pm *privateMessaging) writeTransaction(ctx context.Context, batch *fftypes.Batch, contexts []*fftypes.Bytes32) error {
 	return pm.batchpin.SubmitPinnedBatch(ctx, batch, contexts)
-}
-
-func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, unresolved *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
-	if unresolved.Header.Tag == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
-	}
-	if unresolved.Header.CID != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
-	}
-	return pm.syncasync.RequestReply(ctx, ns, func(requestID *fftypes.UUID) error {
-		_, err := pm.sendMessageWithID(ctx, ns, requestID, unresolved, &unresolved.Message, false)
-		return err
-	})
 }

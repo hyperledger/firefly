@@ -40,13 +40,13 @@ var postTokenMint = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.TokenTransfer{} },
+	JSONInputValue:  func() interface{} { return &fftypes.TokenTransferInput{} },
 	JSONInputMask:   []string{"Type", "LocalID", "PoolProtocolID", "TokenIndex", "From", "ProtocolID", "MessageHash", "TX", "Created"},
 	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return r.Or.Assets().MintTokens(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransfer), waitConfirm)
+		return r.Or.Assets().MintTokens(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
 	},
 }

@@ -23,25 +23,34 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
+	mms := &sysmessagingmocks.MessageSender{}
 	mbm := sh.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.Anything, false).Return(nil, fmt.Errorf("pop"))
+	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{})
+
 	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
 
-func TestSendReplyPrivatetFail(t *testing.T) {
+func TestSendReplyPrivateFail(t *testing.T) {
 	sh := newTestSystemHandlers(t)
+	mms := &sysmessagingmocks.MessageSender{}
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("SendMessage", mock.Anything, "ns1", mock.Anything, false).Return(nil, fmt.Errorf("pop"))
+	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
+
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
@@ -52,10 +61,12 @@ func TestSendReplyPrivatetFail(t *testing.T) {
 			},
 		},
 	})
+
 	mpm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }
 
-func TestSendReplyPrivatetOk(t *testing.T) {
+func TestSendReplyPrivateOk(t *testing.T) {
 	sh := newTestSystemHandlers(t)
 
 	msg := &fftypes.Message{
@@ -64,13 +75,18 @@ func TestSendReplyPrivatetOk(t *testing.T) {
 		},
 	}
 
+	mms := &sysmessagingmocks.MessageSender{}
 	mpm := sh.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("SendMessage", mock.Anything, "ns1", mock.Anything, false).Return(msg, nil)
+	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(nil)
+
 	sh.SendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{
 		Message: *msg,
 	})
+
 	mpm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

@@ -25,15 +25,14 @@ import (
 
 func (sh *systemHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
 	var err error
-	var msg *fftypes.Message
 	if reply.Header.Group != nil {
-		msg, err = sh.messaging.SendMessage(ctx, event.Namespace, reply, false)
+		err = sh.messaging.NewMessage(event.Namespace, reply).Send(ctx)
 	} else {
-		msg, err = sh.broadcast.BroadcastMessage(ctx, event.Namespace, reply, false)
+		err = sh.broadcast.NewBroadcast(event.Namespace, reply).Send(ctx)
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)
 	} else {
-		log.L(ctx).Infof("Sent reply %s:%s (%s) cid=%s to event '%s'", msg.Header.Namespace, msg.Header.ID, msg.Header.Type, msg.Header.CID, event.ID)
+		log.L(ctx).Infof("Sent reply %s:%s (%s) cid=%s to event '%s'", reply.Header.Namespace, reply.Header.ID, reply.Header.Type, reply.Header.CID, event.ID)
 	}
 }
