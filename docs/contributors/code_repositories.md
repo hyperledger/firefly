@@ -2,7 +2,7 @@
 layout: default
 title: Code Repositories
 parent: Contributors
-nav_order: 5
+nav_order: 3
 ---
 
 # Code Repositories
