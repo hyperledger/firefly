@@ -22,16 +22,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-// Note: the counterpart to below (retrieveTokenTransferInputs) lives in the events package
-func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) {
-	op.Input = fftypes.JSONObject{
-		"id": transfer.LocalID.String(),
-	}
-}
 
 func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
 	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
@@ -258,7 +252,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) er
 		fftypes.OpTypeTokenTransfer,
 		fftypes.OpStatusPending,
 		"")
-	addTokenTransferInputs(op, &s.transfer.TokenTransfer)
+	txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer)
 
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err := s.mgr.GetTokenPool(ctx, s.namespace, s.connector, s.poolName)

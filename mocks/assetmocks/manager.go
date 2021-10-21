@@ -403,13 +403,13 @@ func (_m *Manager) Start() error {
 	return r0
 }
 
-// TokenPoolCreated provides a mock function with given fields: tk, pool, protocolTxID, additionalInfo
-func (_m *Manager) TokenPoolCreated(tk tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
-	ret := _m.Called(tk, pool, protocolTxID, additionalInfo)
+// TokenPoolCreated provides a mock function with given fields: ti, pool, protocolTxID, additionalInfo
+func (_m *Manager) TokenPoolCreated(ti tokens.Plugin, pool *fftypes.TokenPool, protocolTxID string, additionalInfo fftypes.JSONObject) error {
+	ret := _m.Called(ti, pool, protocolTxID, additionalInfo)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(tokens.Plugin, *fftypes.TokenPool, string, fftypes.JSONObject) error); ok {
-		r0 = rf(tk, pool, protocolTxID, additionalInfo)
+		r0 = rf(ti, pool, protocolTxID, additionalInfo)
 	} else {
 		r0 = ret.Error(0)
 	}

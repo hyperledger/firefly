@@ -54,7 +54,6 @@ func TestRequestReplyOk(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
 		gmid.ReturnArguments = mock.Arguments{
 			&fftypes.Message{
 				Header: fftypes.MessageHeader{
@@ -106,7 +105,6 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
 		msgSent := &fftypes.Message{}
 		msgSent.Header.ID = requestID
 		msgSent.Confirmed = fftypes.Now()
@@ -153,7 +151,6 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
 		msgSent := &fftypes.Message{}
 		msgSent.Header.ID = requestID
 		msgSent.Confirmed = fftypes.Now()
@@ -506,7 +503,6 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
 		pool := &fftypes.TokenPool{
 			ID:   requestID,
 			Name: "my-pool",
@@ -561,7 +557,6 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
 		pool := &fftypes.TokenPool{
 			ID:   requestID,
 			Name: "my-pool",
@@ -600,13 +595,12 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	mdi := sa.database.(*databasemocks.Plugin)
 	gmid := mdi.On("GetTokenTransfer", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
-		assert.NotNil(t, requestID)
-		pool := &fftypes.TokenTransfer{
+		transfer := &fftypes.TokenTransfer{
 			LocalID:    requestID,
 			ProtocolID: "abc",
 		}
 		gmid.ReturnArguments = mock.Arguments{
-			pool, nil,
+			transfer, nil,
 		}
 	}
 
@@ -640,4 +634,142 @@ func TestAwaitTokenTransferConfirmationSendFail(t *testing.T) {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
+}
+
+func TestAwaitFailedTokenTransfer(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id": requestID.String(),
+		},
+	}
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+
+	_, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				Event: fftypes.Event{
+					ID:        fftypes.NewUUID(),
+					Type:      fftypes.EventTypeTransferOpFailed,
+					Reference: op.ID,
+					Namespace: "ns1",
+				},
+			})
+		}()
+		return nil
+	})
+	assert.Regexp(t, "FF10289", err)
+}
+
+func TestFailedTokenTransferOpError(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{},
+		},
+	}
+
+	op := &fftypes.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id": requestID.String(),
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.EventTypeTransferOpFailed,
+			Reference: op.ID,
+			Namespace: "ns1",
+		},
+	})
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestFailedTokenTransferOpNotFound(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{},
+		},
+	}
+
+	op := &fftypes.Operation{
+		ID: fftypes.NewUUID(),
+		Input: fftypes.JSONObject{
+			"id": requestID.String(),
+		},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.EventTypeTransferOpFailed,
+			Reference: op.ID,
+			Namespace: "ns1",
+		},
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestFailedTokenTransferIDLookupFail(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{},
+		},
+	}
+
+	op := &fftypes.Operation{
+		ID:    fftypes.NewUUID(),
+		Input: fftypes.JSONObject{},
+	}
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		Event: fftypes.Event{
+			ID:        fftypes.NewUUID(),
+			Type:      fftypes.EventTypeTransferOpFailed,
+			Reference: op.ID,
+			Namespace: "ns1",
+		},
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
 }
