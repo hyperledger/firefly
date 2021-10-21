@@ -176,6 +176,29 @@ func (_m *Manager) GetTokenPool(ctx context.Context, ns string, connector string
 	return r0, r1
 }
 
+// GetTokenPoolByNameOrID provides a mock function with given fields: ctx, ns, poolNameOrID
+func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, ns, poolNameOrID)
+
+	var r0 *fftypes.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
+		r0 = rf(ctx, ns, poolNameOrID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenPool)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, poolNameOrID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetTokenPools provides a mock function with given fields: ctx, ns, filter
 func (_m *Manager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
@@ -238,6 +261,29 @@ func (_m *Manager) GetTokenPoolsByType(ctx context.Context, ns string, connector
 	}
 
 	return r0, r1, r2
+}
+
+// GetTokenTransferByID provides a mock function with given fields: ctx, ns, id
+func (_m *Manager) GetTokenTransferByID(ctx context.Context, ns string, id string) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, ns, id)
+
+	var r0 *fftypes.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, ns, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetTokenTransfers provides a mock function with given fields: ctx, ns, filter

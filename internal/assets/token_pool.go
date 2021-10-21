@@ -157,6 +157,30 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 	return pool, nil
 }
 
+func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolNameOrID string) (*fftypes.TokenPool, error) {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return nil, err
+	}
+
+	var pool *fftypes.TokenPool
+
+	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
+	if err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
+			return nil, err
+		}
+		if pool, err = am.database.GetTokenPool(ctx, ns, poolNameOrID); err != nil {
+			return nil, err
+		}
+	} else if pool, err = am.database.GetTokenPoolByID(ctx, poolID); err != nil {
+		return nil, err
+	}
+	if pool == nil {
+		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+	}
+	return pool, nil
+}
+
 func (am *assetManager) ValidateTokenPoolTx(ctx context.Context, pool *fftypes.TokenPool, protocolTxID string) error {
 	// TODO: validate that the given token pool was created with the given protocolTxId
 	return nil
