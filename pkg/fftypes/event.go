@@ -37,6 +37,8 @@ var (
 	EventTypePoolRejected EventType = ffEnum("eventtype", "token_pool_rejected")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
 	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
+	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
+	EventTypeTransferOpFailed EventType = ffEnum("eventtype", "token_transfer_op_failed")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

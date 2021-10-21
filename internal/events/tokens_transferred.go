@@ -20,19 +20,11 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
-
-func retrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	input := &op.Input
-	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, transfer *fftypes.TokenTransfer, protocolTxID string, additionalInfo fftypes.JSONObject) (valid bool, err error) {
 	transfer.LocalID = nil
@@ -48,7 +40,7 @@ func (em *eventManager) persistTokenTransaction(ctx context.Context, ns string, 
 		return false, err
 	}
 	if len(operations) > 0 {
-		err = retrieveTokenTransferInputs(ctx, operations[0], transfer)
+		err = txcommon.RetrieveTokenTransferInputs(ctx, operations[0], transfer)
 		if err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		}
