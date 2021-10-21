@@ -770,6 +770,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"symbol":     &StringField{},
 	"message":    &UUIDField{},
 	"created":    &TimeField{},
+	"connector":  &StringField{},
 }
 
 // TokenAccountQueryFactory filter fields for token accounts
