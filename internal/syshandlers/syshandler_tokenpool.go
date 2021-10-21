@@ -29,7 +29,7 @@ func (sh *systemHandlers) persistTokenPool(ctx context.Context, pool *fftypes.To
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", pool.TX.ID),
-		fb.Eq("type", fftypes.OpTypeTokensAnnouncePool),
+		fb.Eq("type", fftypes.OpTypeTokenAnnouncePool),
 	)
 	operations, _, err := sh.database.GetOperations(ctx, filter)
 	if err != nil {

@@ -32,6 +32,7 @@ var (
 		"id",
 		"namespace",
 		"name",
+		"standard",
 		"protocol_id",
 		"type",
 		"connector",
@@ -83,6 +84,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 			sq.Update("tokenpool").
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
+				Set("standard", pool.Standard).
 				Set("protocol_id", pool.ProtocolID).
 				Set("type", pool.Type).
 				Set("connector", pool.Connector).
@@ -107,6 +109,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.ID,
 					pool.Namespace,
 					pool.Name,
+					pool.Standard,
 					pool.ProtocolID,
 					pool.Type,
 					pool.Connector,
@@ -134,6 +137,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.ID,
 		&pool.Namespace,
 		&pool.Name,
+		&pool.Standard,
 		&pool.ProtocolID,
 		&pool.Type,
 		&pool.Connector,

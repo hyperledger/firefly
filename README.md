@@ -4,56 +4,137 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hyperledger/firefly)](https://goreportcard.com/report/github.com/hyperledger/firefly)
 [![FireFy Documentation](https://img.shields.io/static/v1?label=FireFly&message=documentation&color=informational)](https://hyperledger.github.io/firefly//)
 
-Hyperledger FireFly is a multiparty system for enterprise data flows, powered by blockchain. It solves all of the layers of complexity that sit between the low level blockchain and high level business processes and user interfaces. FireFly enables developers to build blockchain apps for enterprise radically faster by allowing them to focus on business logic instead of infrastructure.
+![Hyperledger FireFly](./images/hyperledger_firefly_logo.png)
 
-FireFly focusses on:
+Hyperledger FireFly is an API and data orchestration layer on top of core blockchain technologies.
 
-- Providing a great developer API and experience, with a CLI and UI as first class project components
-- Pluggability for implementations of multi-party system infrastructure (blockchains, off-chain data exchange, identity, compute etc.)
-- Making proven multi-party system patterns easy for new projects to adopt
-- Providing developer friendly access to custom transactions+events in the underlying blockchain platforms
-- Giving visibility and control on the private data exchange that occurs between businesses in a multi-party system
-- Simplifying the journey of building multi-party business processes, by empowering non-blockchain developers to build great APIs+UX
+It implements a [multi-party system](#multi-party-systems) for building enterprise decentralized applications.
 
-You will see enterprise focussed code in FireFly solving hard "plumbing" problems like on-chain/off-chain event sequencing and aggregation, and enough smart contract code to make the patterns possible. You will then find patterns of integration with the individual communities that are already building the deep blockchain & multi-party compute tech, like Hyperledger Fabric, Hyperledger Besu, Quorum, Corda, IPFS, Hyperledger Avalon, OpenZeppelin, NodeRED etc.
+- Transaction submission and event streaming
+  - Radically simplified API access to your on-chain smart contracts
+- Multi-protocol blockchain integration
+  - [Hyperledger Fabric](https://www.hyperledger.org/use/fabric)
+  - Enterprise Ethereum - [Hyperledger Besu](https://www.hyperledger.org/use/besu) & [Quorum](https://github.com/ConsenSys/quorum)
+  - [Corda](https://www.corda.net/) *(work in progress)*
+- Developer friendly event-driven REST & WebSocket APIs
+  - For building multi-party business applications that solve real enterprise use cases
+- Digital assets
+  - Tokens and NFTs ready for use, with indexed transaction history, and easy extension/customization
+- On-chain/off-chain orchestration
+  - Enterprise data flows backed by blockchain, with secure off-chain transfer of private docs+data
+  - Pluggable private data exchange / messaging (inc. [HTTPS + Mutual TLS](https://github.com/hyperledger/firefly-dataexchange-https))
+- Identity, data format, and interface distribution
+  - Broadcast data schema, proven identity, and on-chain logic integration APIs across the network
+  - Pluggable data distribution network with batch optimization (inc. [IPFS](https://ipfs.io/))
+  - *Pluggable DIDs for identity and multi-protocol on-chain interface definition are work in progress*
+- Microservice architecture, optimized for docker deployment
+  - Fully pluggable architecture, embracing multiple runtime technologies (Go, Node.js, Java etc.)
+- Built by developers for developers
+  - Ready to go in minutes, with a CLI, built-in UI explorer, OpenAPI spec, and samples
+- Data operations at the boundary of your data center
+  - Fast database cache + audit of all data flowing out of your enterprise, to the network
 
-> Watch this space for patterns on integrating Tokens into the model (fungible token value exchange, and NFTs), which is a big current focus of evolution in the gen2 FireFly architecture (building on the work done in gen1, also in this repo). The tokens working group is being lead by [Jim Zhang](https://github.com/jimthematrix)
+## Quick Start Guide
 
-![Introducing FireFly](./architecture/intro_to_firefly_teaser.svg)
+Follow the [get started](https://hyperledger.github.io/firefly/gettingstarted/gettingstarted.html) guide in the doc, and your
+local developer environment will be up in minutes.
+
+You'll have your own private multi-party system, comprising a blockchain (Ethereum/Fabric) with API/Event connectors, a Private Data Exchange, an IPFS data sharing network, and ERC-1155 Token/NFT implementations.
+
+All with the Hyperledger FireFly Explorer UI of course, and a [samples to get you building fast](https://github.com/hyperledger/firefly-samples).
+
+![FireFly Explorer](images/firefly_explorer.png)
+
+## API Reference
+
+All the Hyperledger FireFly APIs are self-documenting via Swagger, and you can just open them up on `/api` on your running FireFly.
+
+Or you can check out the [latest API here](https://hyperledger.github.io/firefly/swagger/swagger.html).
 
 ## Documentation
 
-https://hyperledger.github.io/firefly//
+https://hyperledger.github.io/firefly
 
-## FireFly repos
+## Multi-party Systems
 
-FireFly has a plugin based architecture design, with a microservice runtime footprint.
-As such there are a number of repos, and the list will grow as the community evolves.
+Hyperledger Firefly is an implementation of a multi-party system.
 
-But not to worry, one of those repos is a CLI designed to get you running with all the components you need in minutes!
+![Multi-party System](./images/multi_party_systems.png)
 
-- CLI / Developer experience - https://github.com/hyperledger/firefly-cli
-- UI Explorer - https://github.com/hyperledger/firefly-ui
-- Sample applications - https://github.com/hyperledger/firefly-samples
+Multi-party systems have the potential to unlock the next wave of digitization in core transaction processing systems. They combine the best features of the existing secure data exchange models for API/WebService/Messaging integration of business data/processes today, with the new technologies of the blockchain revolution.
+
+Working within existing regulatory environments, and existing IT and data security governance frameworks, multi-party systems provide a secure gateway for organizations to participate securely in blockchain backed business ecosystems.
+
+They are the middleware tier for decentralized applications, which are fundamentally different to centralized/SaaS applications because they are hosted independently by each IT organization, and can be customized by each organization to their own IT landscape. These applications communicate through a mix of blockchain, and private data exchange, to execute multi-party transactions at scale - powered by revolutionary new programming constructs like digital assets.
+
+The next wave of business applications that build in a decentralized way on multi-party systems, can orchestrate data and business process flows across organizational boundaries. The integrity of the end-to-end transactions can be established throughout its lifecycle, rather than requiring complex handoff and compensation logic each time a new party performs its step. Yet the autonomy of each business and IT team is maintained in a way that could not be by pooling data and business logic in a 3rd party centralized business application.
+
+Blockchain and other advanced cryptography technologies like zero-knowledge proofs (ZKPs), and trusted execution environments (TEEs), are the core technologies that enable this new model of cross-organizational data flow.
+
+In an enterprise context these raw technologies are necessary, but not sufficient. Organizations need a comprehensive toolset at the boundary of their *existing core systems of record* to govern the flow of data out of their own secure IT infrastructure.
+- To store the private data staged in canonical formats ready for exchange with other parties
+- For retrieval of the state of transaction and data flows in-flight in the system
+- To provide an audit record and reporting system for what has been shared so far
+- Providing event-driven integration APIs fit for purpose to integrate to the core systems of record
+
+This all needs to be fast, secure and reliable.
+
+[Learn more in the Hyperledger FireFly Documentation](https://hyperledger.github.io/firefly/)
+
+## Event-driven programming model
+
+The core programming model of FireFly is event-driven:
+- FireFly delivers data and actions from your application instance, reliably to on-chain logic and privately to other parties in the network
+- FireFly receives data and actions from on-chain, and other parties in the network, correlates them, and once complete and verified delivers them to your application for processing
+
+For this reason FireFly has a pluggable database that keeps track of all those interactions.
+
+This database is *not intended to replace* your application database (apart from in early PoC scenarios). Instead it complements it.
+
+You process the events from the network as they happen, **including ones you submit** because they have to be ordered with other events in the network ([learn more](https://hyperledger.github.io/firefly/keyconcepts/multiparty_process_flow.html)).
+
+Then you update the indexed business objects in your own database, as a result of the ordered state changes that come from the network. At any point you can go back and retrieve the set of events that caused that update to your "latest" state, whether that's on-chain transaction events, digital asset transfers (Tokens/NFTs), private data transfers, or a combination.
+
+![FireFly Event-driven Programming API Model](images/event_driven_programming_model.png)
+
+## Learn more about Hyperledger FireFly Architecture
+
+- [YouTube Channel](https://www.youtube.com/playlist?list=PL0MZ85B_96CFVEdBNsHRoX_f15AJacZJD)
+  - Check out the architecture series
+- [Architecture reference documentation](https://hyperledger.github.io/firefly/architecture/node_component_architecture.html)
+  - Still evolving, and open for feedback - let us know what you think [on Rocket Chat](https://chat.hyperledger.org/channel/firefly)
+- [Tagged git issues](https://github.com/hyperledger/firefly/issues?q=is%3Aissue+is%3Aopen+label%3Aarchitecture)
+  - Watch out for a new formalized Feature Improvement Request (FIR) process coming soon
+
+## Hyperledger FireFly project status
+
+A number projects are actively building on Hyperledger FireFly today, and the current feature set and API is sufficient to build many decentralized applications. Some of the microservice components have matured through a number of years (including production adoption), others are new, and some areas are still evolving quickly and subject to flux in the APIs and feature set. 
+
+Overall, the community is working hard towards a V1.0 release.
+
+A good reference for the scope of the V1.0 release is included in issue #117. You might be interested in getting involved.
+
+## Git repositories
+
+There are multiple Git repos making up the Hyperledger FireFly project, and this
+list is likely to grow as additional pluggable extensions come online in the community:
+
+- Command Line Interface (CLI) - https://github.com/hyperledger/firefly-cli
 - Core (this repo) - https://github.com/hyperledger/firefly
-- HTTP Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
-- Ethereum (Hyperledger Besu / Quorum) connector: https://github.com/hyperledger/firefly-ethconnect
+- Sample applications - https://github.com/hyperledger/firefly-samples
+- HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
+- Hyperledger Fabric connector - https://github.com/hyperledger/firefly-fabconnect
+- Ethereum (Hyperledger Besu / Quorum) connector - https://github.com/hyperledger/firefly-ethconnect
 - Corda connector: https://github.com/hyperledger/firefly-cordaconnect - contributed from Kaleido generation 1 - porting to generation 2
-- Hyperledger Fabric connector - in design phase, including collaboration with https://github.com/hyperledger/fabric-smart-client
+- FireFly Explorer UI - https://github.com/hyperledger/firefly-ui
 
-> Note only the projects that are primarily built to support FireFly are listed here, not all
-> of the ecosystem of projects that integrate underneath the plugins. See [below](#firefly-code-hierarchy) for
-> more information on the landscape of plugins and components.
+## Contributing
 
-## Getting Started
+Interested in contributing to the community?
 
-Use the FireFly CLI for fast bootstrap: https://github.com/hyperledger/firefly-cli
+Check out our [Contributor Guide](https://hyperledger.github.io/firefly/contributors/contributors.html), and **welcome!**.
 
-## Navigating this repo
-
-There are **two core codebases** currently active in this repo:
-
-### Generation 2: FireFly
+## Navigating this core repo
 
 Directories:
 
@@ -64,57 +145,7 @@ Directories:
 
 [Full code layout here](#firefly-code-hierarchy)
 
-This latest generation is re-engineered from the ground up to improve developer experience, runtime performance, and extensibility.
-
-This means a simplified REST/WebSocket programming model for app development, and a wider range of infrastructure options for deployment.
-
-It also means a focus on an architecture and code structure for a vibrant open source community.
-
-A few highlights:
-
-- Golang codebase
-  - Strong coding standards, including unit test coverage, translation support, logging and more
-  - Fast starting, low memory footprint, multi-threaded runtime
-- OpenAPI 3.0 API specification (Swagger)
-  - Generated from the API router code, to avoid divergence with the implementation
-- Active/active HA architecture for the core runtime
-  - Deferring to the core database for state high availability
-  - Exploiting leader election where required
-- Fully pluggable architecture
-  - Everything from Database through to Blockchain, and Compute
-  - Golang plugin infrastructure to decouple the core code from the implementation
-  - Remote Agent model to decouple code languages, and HA designs
-- Updated API resource model
-  - `Asset`, `Data`, `Message`, `Event`, `Topic`, `Transaction`
-- Added flexibility, with simplified the developer experience:
-  - Versioning of data definitions
-  - Introducing a first class `Context` construct link related events into a single sequence
-  - Allow many pieces of data to be attached to a single message, and be automatically re-assembled on arrival
-  - Clearer separation of concerns between the FireFly DB and the Application DB
-  - Better search, filter and query support
-
-### Generation 1: Kaleido Asset Trail (KAT)
-
-Directories:
-
-- [kat](./kat): The core TypeScript runtime
-- [solidity_kat](./solidity_kat): Ethereum/Solidity smart contract code
-- [cordapp_kat](./cordapp_kat): The Corda smart contract (CorDapp)
-
-This was the original implementation of the multi-party systems API by Kaleido, and is already deployed in a number production projects.
-
-The codebase distilled years of learning, into a set of patterns for performing blockchain orchestrated data exchange.
-
-It depends on the following Kaleido services:
-
-- Blockchain nodes
-  - Ethereum with the Kaleido [Kaleido REST API Gateway](https://docs.kaleido.io/kaleido-services/ethconnect/)
-  - Corda with the Kaleido built-in API for streaming KAT transactions
-- [Kaleido Event Streams](https://docs.kaleido.io/kaleido-services/event-streams/)
-- [Kaleido App2App Messaging](https://docs.kaleido.io/kaleido-services/app2app/)
-- [Kaleido Document Exchange](https://docs.kaleido.io/kaleido-services/document-store/)
-
-## FireFly code hierarchy
+## FireFly Core code hierarchy
 
 ```
 ┌──────────┐  ┌───────────────┐
@@ -276,9 +307,9 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           └───────────────┘   └───────────────┘
   │
   │           ┌───────────────┐  - Pluggable identity infrastructure
-  ├───────────┤ identity  [Ii]│    * TBD 
+  ├───────────┤ identity  [Ii]│    * TBD
   │           │ interface     │    * See Identity Manager component above
-  │           └───────────────┘    * See Issue 
+  │           └───────────────┘    * See Issue
   │
   │           ┌───────────────┐  - API Authentication and Authorization Interface
   ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
@@ -343,39 +374,3 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
 
 ```
-
-## API Query Syntax
-
-REST collections provide filter, `skip`, `limit` and `sort` support.
-
-- The field in the message is used as the query parameter
-- When multiple query parameters are supplied these are combined with AND
-- When the same query parameter is supplied multiple times, these are combined with OR
-
-### Example
-
-`GET` `/api/v1/messages?confirmed=>0&type=broadcast&topic=t1&topic=t2&context=@someprefix&sort=sequence&descending&skip=100&limit=50`
-
-This states:
-
-- Filter on `confirmed` greater than 0
-- Filter on `type` exactly equal to `broadcast`
-- Filter on `topic` exactly equal to `t1` _or_ `t2`
-- Filter on `context` containing the case-sensitive string `someprefix`
-- Sort on `sequence` in `descending` order
-- Paginate with `limit` of `50` and `skip` of `100` (e.g. get page 3, with 50/page)
-
-Table of filter operations, which must be the first character of the query string (after the `=` in the above URL path example)
-
-| Operator | Description                       |
-| -------- | --------------------------------- |
-| (none)   | Equal                             |
-| `!`      | Not equal                         |
-| `<`      | Less than                         |
-| `<=`     | Less than or equal                |
-| `>`      | Greater than                      |
-| `>=`     | Greater than or equal             |
-| `@`      | Containing - case sensitive       |
-| `!@`     | Not containing - case sensitive   |
-| `^`      | Containing - case insensitive     |
-| `!^`     | Not containing - case insensitive |

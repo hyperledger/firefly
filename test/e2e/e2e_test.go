@@ -47,6 +47,24 @@ type testState struct {
 	done      func()
 }
 
+var widgetSchemaJSON = []byte(`{
+	"$id": "https://example.com/widget.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Widget",
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "The unique identifier for the widget."
+		},
+		"name": {
+			"type": "string",
+			"description": "The person's last name."
+		}
+	},
+	"additionalProperties": false
+}`)
+
 func pollForUp(t *testing.T, client *resty.Client) {
 	var resp *resty.Response
 	var err error
@@ -102,6 +120,14 @@ func validateReceivedMessages(ts *testState, client *resty.Client, msgType fftyp
 	}
 
 	return msgData.Value
+}
+
+func validateAccountBalances(t *testing.T, client *resty.Client, poolName, tokenIndex string, balances map[string]int64) {
+	for key, balance := range balances {
+		account := GetTokenAccount(t, client, poolName, tokenIndex, key)
+		assert.Equal(t, "erc1155", account.Connector)
+		assert.Equal(t, balance, account.Balance.Int().Int64())
+	}
 }
 
 func beforeE2ETest(t *testing.T) *testState {
@@ -171,17 +197,20 @@ func beforeE2ETest(t *testing.T) *testState {
 		time.Sleep(3 * time.Second)
 	}
 
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed"
+	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
+
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[0].FireflyHostname, stack.Members[0].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 	wsUrl2 := url.URL{
 		Scheme:   websocketProtocolClient2,
 		Host:     fmt.Sprintf("%s:%d", stack.Members[1].FireflyHostname, stack.Members[1].ExposedFireflyPort),
 		Path:     "/ws",
-		RawQuery: "namespace=default&ephemeral&autoack&filter.events=message_confirmed|token_pool_confirmed&changeevents=.*",
+		RawQuery: queryString,
 	}
 
 	t.Logf("Websocket 1: " + wsUrl1.String())

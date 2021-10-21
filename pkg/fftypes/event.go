@@ -35,6 +35,8 @@ var (
 	EventTypePoolConfirmed EventType = ffEnum("eventtype", "token_pool_confirmed")
 	// EventTypePoolRejected occurs when a new token pool is rejected (due to validation errors, duplicates, etc)
 	EventTypePoolRejected EventType = ffEnum("eventtype", "token_pool_rejected")
+	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
+	EventTypeTransferConfirmed EventType = ffEnum("eventtype", "token_transfer_confirmed")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

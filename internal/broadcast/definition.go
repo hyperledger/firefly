@@ -68,21 +68,30 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def f
 	}
 
 	// Create a broadcast message referring to the data
-	msg = &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Namespace: fftypes.SystemNamespace,
-			Type:      fftypes.MessageTypeDefinition,
-			Identity:  *signingIdentity,
-			Topics:    fftypes.FFNameArray{def.Topic()},
-			Tag:       string(tag),
-			TxType:    fftypes.TransactionTypeBatchPin,
-		},
-		Data: fftypes.DataRefs{
-			{ID: data.ID, Hash: data.Hash},
+	in := &fftypes.MessageInOut{
+		Message: fftypes.Message{
+			Header: fftypes.MessageHeader{
+				Namespace: fftypes.SystemNamespace,
+				Type:      fftypes.MessageTypeDefinition,
+				Identity:  *signingIdentity,
+				Topics:    fftypes.FFNameArray{def.Topic()},
+				Tag:       string(tag),
+				TxType:    fftypes.TransactionTypeBatchPin,
+			},
+			Data: fftypes.DataRefs{
+				{ID: data.ID, Hash: data.Hash},
+			},
 		},
 	}
 
 	// Broadcast the message
-	return bm.broadcastMessageCommon(ctx, msg, waitConfirm)
-
+	sender := broadcastSender{
+		mgr:       bm,
+		namespace: fftypes.SystemNamespace,
+		msg:       in,
+		resolved:  true,
+	}
+	sender.setDefaults()
+	err = sender.sendInternal(ctx, waitConfirm)
+	return &in.Message, err
 }

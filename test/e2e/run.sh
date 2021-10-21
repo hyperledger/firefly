@@ -5,7 +5,7 @@ set -o pipefail
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 STACK_DIR=~/.firefly/stacks
-STACK_NAME=firefly-e2e
+STACK_NAME=firefly_e2e
 
 checkOk() {
   local rc=$1
@@ -57,25 +57,28 @@ fi
 cd $CWD
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI remove -f $STACK_NAME || true
-  checkOk $?
+  $CLI remove -f firefly-e2e  # TODO: remove
+  $CLI remove -f $STACK_NAME
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  docker build -t ghcr.io/hyperledger/firefly:latest ../..
+  docker build -t hyperledger/firefly ../..
   checkOk $?
 fi
 
 if [ "$DOWNLOAD_CLI" == "true" ]; then
-  go install github.com/hyperledger/firefly-cli/ff@latest
+  go install github.com/hyperledger/firefly-cli/ff@v0.0.35
   checkOk $?
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --tokens-provider $TOKENS_PROVIDER
+  $CLI init --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --tokens-provider $TOKENS_PROVIDER --manifest ../../manifest.json
   checkOk $?
 
-  $CLI start -nb $STACK_NAME
+  $CLI pull $STACK_NAME -r 3
+  checkOk $?
+
+  $CLI start -b $STACK_NAME
   checkOk $?
 fi
 

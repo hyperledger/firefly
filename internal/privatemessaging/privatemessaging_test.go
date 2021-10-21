@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -51,7 +50,18 @@ func newTestPrivateMessaging(t *testing.T) (*privateMessaging, func()) {
 	msa := &syncasyncmocks.Bridge{}
 	mbp := &batchpinmocks.Submitter{}
 
-	mba.On("RegisterDispatcher", []fftypes.MessageType{fftypes.MessageTypeGroupInit, fftypes.MessageTypePrivate}, mock.Anything, mock.Anything).Return()
+	mba.On("RegisterDispatcher", []fftypes.MessageType{
+		fftypes.MessageTypeGroupInit,
+		fftypes.MessageTypePrivate,
+		fftypes.MessageTypeTransferPrivate,
+	}, mock.Anything, mock.Anything).Return()
+
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(context.Context) error)(a[0].(context.Context)),
+		}
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp)
@@ -84,13 +94,6 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
-
-	rag := mdi.On("RunAsGroup", pm.ctx, mock.Anything).Maybe()
-	rag.RunFn = func(a mock.Arguments) {
-		rag.ReturnArguments = mock.Arguments{
-			a[1].(func(context.Context) error)(a[0].(context.Context)),
-		}
-	}
 
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[1].(*fftypes.Identity)
@@ -391,68 +394,6 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{Hash: fftypes.NewRandB32()}},
 	}, fftypes.NewUUID(), &fftypes.Node{ID: fftypes.NewUUID(), DX: fftypes.DXInfo{Peer: "peer1"}})
 	assert.Regexp(t, "pop", err)
-}
-
-func TestRequestReplyMissingTag(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
-
-	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
-	assert.Regexp(t, "FF10261", err)
-}
-
-func TestRequestReplyInvalidCID(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
-
-	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Tag:   "mytag",
-				CID:   fftypes.NewUUID(),
-				Group: fftypes.NewRandB32(),
-			},
-		},
-	})
-	assert.Regexp(t, "FF10262", err)
-}
-
-func TestRequestReplySuccess(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
-
-	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).
-		Run(func(args mock.Arguments) {
-			send := args[2].(syncasync.RequestSender)
-			send(fftypes.NewUUID())
-		}).
-		Return(nil, nil)
-
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("RunAsGroup", pm.ctx, mock.Anything).Return(nil)
-
-	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				Tag:   "mytag",
-				Group: fftypes.NewRandB32(),
-				Identity: fftypes.Identity{
-					Author: "org1",
-				},
-			},
-		},
-	})
-	assert.NoError(t, err)
 }
 
 func TestStart(t *testing.T) {

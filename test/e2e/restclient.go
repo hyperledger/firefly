@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"strconv"
 	"testing"
 	"time"
 
@@ -36,13 +37,18 @@ var (
 	urlGetNamespaces    = "/namespaces"
 	urlUploadData       = "/namespaces/default/data"
 	urlGetMessages      = "/namespaces/default/messages"
-	urlBroadcastMessage = "/namespaces/default/broadcast/message"
-	urlPrivateMessage   = "/namespaces/default/send/message"
-	urlRequestMessage   = "/namespaces/default/request/message"
+	urlBroadcastMessage = "/namespaces/default/messages/broadcast"
+	urlPrivateMessage   = "/namespaces/default/messages/private"
+	urlRequestMessage   = "/namespaces/default/messages/requestreply"
 	urlGetData          = "/namespaces/default/data"
 	urlGetDataBlob      = "/namespaces/default/data/%s/blob"
 	urlSubscriptions    = "/namespaces/default/subscriptions"
 	urlTokenPools       = "/namespaces/default/tokens/erc1155/pools"
+	urlDatatypes        = "/namespaces/default/datatypes"
+	urlTokenMint        = "/namespaces/default/tokens/erc1155/pools/%s/mint"
+	urlTokenBurn        = "/namespaces/default/tokens/erc1155/pools/%s/burn"
+	urlTokenTransfers   = "/namespaces/default/tokens/erc1155/pools/%s/transfers"
+	urlTokenAccounts    = "/namespaces/default/tokens/erc1155/pools/%s/accounts"
 	urlGetOrganizations = "/network/organizations"
 )
 
@@ -154,11 +160,12 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue) (*resty.Response, error) {
+func BroadcastMessage(client *resty.Client, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	return client.R().
 		SetBody(fftypes.MessageInOut{
 			InlineData: fftypes.InlineData{data},
 		}).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		Post(urlBroadcastMessage)
 }
 
@@ -236,7 +243,7 @@ func PrivateBlobMessageDatatypeTagged(t *testing.T, client *resty.Client, orgNam
 		Post(urlPrivateMessage)
 }
 
-func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) (*resty.Response, error) {
+func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]fftypes.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -259,6 +266,7 @@ func PrivateMessage(t *testing.T, client *resty.Client, data *fftypes.DataRefOrV
 	}
 	return client.R().
 		SetBody(msg).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		Post(urlPrivateMessage)
 }
 
@@ -293,6 +301,23 @@ func RequestReply(t *testing.T, client *resty.Client, data *fftypes.DataRefOrVal
 	return &replyMsg
 }
 
+func CreateDatatype(t *testing.T, client *resty.Client, datatype *fftypes.Datatype, confirm bool) *fftypes.Datatype {
+	var dtReturn fftypes.Datatype
+	path := urlDatatypes
+	resp, err := client.R().
+		SetBody(datatype).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&dtReturn).
+		Post(path)
+	require.NoError(t, err)
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &dtReturn
+}
+
 func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool) {
 	path := urlTokenPools
 	resp, err := client.R().
@@ -311,4 +336,55 @@ func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (poo
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return pools
+}
+
+func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenMint, poolName)
+	resp, err := client.R().
+		SetBody(mint).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenBurn, poolName)
+	resp, err := client.R().
+		SetBody(burn).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	resp, err := client.R().
+		SetBody(transfer).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+}
+
+func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (transfers []*fftypes.TokenTransfer) {
+	path := fmt.Sprintf(urlTokenTransfers, poolName)
+	resp, err := client.R().
+		SetResult(&transfers).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return transfers
+}
+
+func GetTokenAccount(t *testing.T, client *resty.Client, poolName, tokenIndex, key string) (account *fftypes.TokenAccount) {
+	var accounts []*fftypes.TokenAccount
+	path := fmt.Sprintf(urlTokenAccounts, poolName)
+	resp, err := client.R().
+		SetQueryParam("tokenIndex", tokenIndex).
+		SetQueryParam("key", key).
+		SetResult(&accounts).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, len(accounts), 1)
+	return accounts[0]
 }

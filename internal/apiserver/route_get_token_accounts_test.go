@@ -30,11 +30,11 @@ func TestGetTokenAccounts(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/tok1/pools/pool1/accounts", nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/tokens/accounts", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenAccounts", mock.Anything, "ns1", "tok1", "pool1", mock.Anything).
+	mam.On("GetTokenAccounts", mock.Anything, "ns1", mock.Anything).
 		Return([]*fftypes.TokenAccount{}, nil, nil)
 	r.ServeHTTP(res, req)
 

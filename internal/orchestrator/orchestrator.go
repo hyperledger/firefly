@@ -324,12 +324,16 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.tokens == nil {
 		or.tokens = make(map[string]tokens.Plugin)
-		for i := 0; i < tokensConfig.ArraySize(); i++ {
+		tokensConfigArraySize := tokensConfig.ArraySize()
+		for i := 0; i < tokensConfigArraySize; i++ {
 			prefix := tokensConfig.ArrayEntry(i)
 			name := prefix.GetString(tokens.TokensConfigName)
 			pluginName := prefix.GetString(tokens.TokensConfigPlugin)
 			if name == "" {
 				return i18n.NewError(ctx, i18n.MsgMissingTokensPluginConfig)
+			}
+			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+				return err
 			}
 			if pluginName == "" {
 				// Migration path for old config key
@@ -401,7 +405,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.tokens)
+		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens)
 		if err != nil {
 			return err
 		}

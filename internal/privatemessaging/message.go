@@ -21,126 +21,181 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
-	return pm.sendMessageWithID(ctx, ns, nil, in, nil, waitConfirm)
+func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
+	message := &messageSender{
+		mgr:       pm,
+		namespace: ns,
+		msg:       in,
+	}
+	message.setDefaults()
+	return message
 }
 
-func (pm *privateMessaging) sendMessageWithID(ctx context.Context, ns string, id *fftypes.UUID, unresolved *fftypes.MessageInOut, resolved *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
-	if unresolved != nil {
-		resolved = &unresolved.Message
+func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+	message := pm.NewMessage(ns, in)
+	if waitConfirm {
+		err = message.SendAndWait(ctx)
+	} else {
+		err = message.Send(ctx)
 	}
+	return &in.Message, err
+}
 
-	resolved.Header.ID = id
-	resolved.Header.Namespace = ns
-	resolved.Header.Type = fftypes.MessageTypePrivate
-	if resolved.Header.TxType == "" {
-		resolved.Header.TxType = fftypes.TransactionTypeBatchPin
+func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+	if in.Header.Tag == "" {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestReplyTagRequired)
 	}
-
-	// Resolve the sending identity
-	if err := pm.identity.ResolveInputIdentity(ctx, &resolved.Header.Identity); err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	if in.Header.CID != nil {
+		return nil, i18n.NewError(ctx, i18n.MsgRequestCannotHaveCID)
 	}
+	message := pm.NewMessage(ns, in)
+	return pm.syncasync.RequestReply(ctx, ns, in.Header.ID, message.Send)
+}
 
-	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin
-	var err error
-	err = pm.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		if unresolved != nil {
-			err = pm.resolveMessage(ctx, unresolved)
+type messageSender struct {
+	mgr          *privateMessaging
+	namespace    string
+	msg          *fftypes.MessageInOut
+	resolved     bool
+	sendCallback sysmessaging.BeforeSendCallback
+}
+
+func (s *messageSender) Send(ctx context.Context) error {
+	return s.resolveAndSend(ctx, false)
+}
+
+func (s *messageSender) SendAndWait(ctx context.Context) error {
+	return s.resolveAndSend(ctx, true)
+}
+
+func (s *messageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
+	s.sendCallback = cb
+	return s
+}
+
+func (s *messageSender) setDefaults() {
+	s.msg.Header.ID = fftypes.NewUUID()
+	s.msg.Header.Namespace = s.namespace
+	if s.msg.Header.Type == "" {
+		s.msg.Header.Type = fftypes.MessageTypePrivate
+	}
+	if s.msg.Header.TxType == "" {
+		s.msg.Header.TxType = fftypes.TransactionTypeBatchPin
+	}
+}
+
+func (s *messageSender) resolveAndSend(ctx context.Context, waitConfirm bool) error {
+	sent := false
+
+	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
+	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		if !s.resolved {
+			if err := s.resolveMessage(ctx); err != nil {
+				return err
+			}
+			s.resolved = true
 		}
-		if err == nil && !waitConfirm {
-			// We can safely optimize the send into the same DB transaction
-			resolved, err = pm.sendOrWaitMessage(ctx, resolved, false)
+
+		// If we aren't waiting for blockchain confirmation, insert the local message immediately within the same DB transaction.
+		if !waitConfirm {
+			err = s.sendInternal(ctx, waitConfirm)
+			sent = true
 		}
 		return err
 	})
-	if err != nil {
-		return nil, err
+
+	if err != nil || sent {
+		return err
 	}
-	if waitConfirm {
-		// perform the send and wait for the confirmation after closing the original DB transaction
-		return pm.sendOrWaitMessage(ctx, resolved, true)
-	}
-	return resolved, err
+
+	return s.sendInternal(ctx, waitConfirm)
 }
 
-func (pm *privateMessaging) resolveMessage(ctx context.Context, in *fftypes.MessageInOut) (err error) {
+func (s *messageSender) resolveMessage(ctx context.Context) error {
+	// Resolve the sending identity
+	if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
+		return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+	}
 
 	// Resolve the member list into a group
-	if err = pm.resolveReceipientList(ctx, in); err != nil {
+	if err := s.mgr.resolveRecipientList(ctx, s.msg); err != nil {
 		return err
 	}
 
 	// The data manager is responsible for the heavy lifting of storing/validating all our in-line data elements
-	in.Message.Data, err = pm.data.ResolveInlineDataPrivate(ctx, in.Header.Namespace, in.InlineData)
+	dataRefs, err := s.mgr.data.ResolveInlineDataPrivate(ctx, s.namespace, s.msg.InlineData)
+	s.msg.Message.Data = dataRefs
 	return err
 }
 
-func (pm *privateMessaging) sendOrWaitMessage(ctx context.Context, msg *fftypes.Message, waitConfirm bool) (*fftypes.Message, error) {
+func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) error {
+	immediateConfirm := s.msg.Header.TxType == fftypes.TransactionTypeNone
 
-	immediateConfirm := msg.Header.TxType == fftypes.TransactionTypeNone
-
-	if immediateConfirm || !waitConfirm {
-
-		// Seal the message
-		if err := msg.Seal(ctx); err != nil {
-			return nil, err
+	if waitConfirm && !immediateConfirm {
+		// Pass it to the sync-async handler to wait for the confirmation to come back in.
+		// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
+		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
+		if out != nil {
+			s.msg.Message = *out
 		}
-
-		if immediateConfirm {
-			msg.Confirmed = fftypes.Now()
-			msg.Pending = false
-			// msg.Header.Key = "" // there is no on-chain signing assurance with this message
-		}
-
-		// Store the message - this asynchronously triggers the next step in process
-		if err := pm.database.InsertMessageLocal(ctx, msg); err != nil {
-			return nil, err
-		}
-
-		if immediateConfirm {
-			if err := pm.sendUnpinnedMessage(ctx, msg); err != nil {
-				return nil, err
-			}
-
-			// Emit a confirmation event locally immediately
-			event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, msg.Header.Namespace, msg.Header.ID)
-			if err := pm.database.InsertEvent(ctx, event); err != nil {
-				return nil, err
-			}
-		}
-
-		return msg, nil
+		return err
 	}
 
-	// Pass it to the sync-async handler to wait for the confirmation to come back in.
-	// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
-	return pm.syncasync.SendConfirm(ctx, msg.Header.Namespace, func(requestID *fftypes.UUID) error {
-		_, err := pm.sendMessageWithID(ctx, msg.Header.Namespace, requestID, nil, msg, false)
+	// Seal the message
+	if err := s.msg.Seal(ctx); err != nil {
 		return err
-	})
+	}
+	if s.sendCallback != nil {
+		if err := s.sendCallback(ctx); err != nil {
+			return err
+		}
+	}
 
+	if immediateConfirm {
+		s.msg.Confirmed = fftypes.Now()
+		s.msg.Pending = false
+		// msg.Header.Key = "" // there is no on-chain signing assurance with this message
+	}
+
+	// Store the message - this asynchronously triggers the next step in process
+	if err := s.mgr.database.InsertMessageLocal(ctx, &s.msg.Message); err != nil {
+		return err
+	}
+
+	if immediateConfirm {
+		if err := s.sendUnpinned(ctx); err != nil {
+			return err
+		}
+
+		// Emit a confirmation event locally immediately
+		event := fftypes.NewEvent(fftypes.EventTypeMessageConfirmed, s.namespace, s.msg.Header.ID)
+		if err := s.mgr.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *fftypes.Message) (err error) {
-
+func (s *messageSender) sendUnpinned(ctx context.Context) (err error) {
 	// Retrieve the group
-	group, nodes, err := pm.groupManager.getGroupNodes(ctx, message.Header.Group)
+	group, nodes, err := s.mgr.groupManager.getGroupNodes(ctx, s.msg.Header.Group)
 	if err != nil {
 		return err
 	}
 
-	data, _, err := pm.data.GetMessageData(ctx, message, true)
+	data, _, err := s.mgr.data.GetMessageData(ctx, &s.msg.Message, true)
 	if err != nil {
 		return err
 	}
 
 	payload, err := json.Marshal(&fftypes.TransportWrapper{
 		Type:    fftypes.TransportPayloadTypeMessage,
-		Message: message,
+		Message: &s.msg.Message,
 		Data:    data,
 		Group:   group,
 	})
@@ -148,5 +203,5 @@ func (pm *privateMessaging) sendUnpinnedMessage(ctx context.Context, message *ff
 		return i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
 	}
 
-	return pm.sendData(ctx, "message", message.Header.ID, message.Header.Group, message.Header.Namespace, nodes, payload, nil, data)
+	return s.mgr.sendData(ctx, "message", s.msg.Header.ID, s.msg.Header.Group, s.namespace, nodes, payload, nil, data)
 }

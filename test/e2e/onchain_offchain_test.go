@@ -18,9 +18,11 @@ package e2e
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"image/png"
+	"math/big"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -53,7 +55,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 		Value: value,
 	}
 
-	resp, err := BroadcastMessage(suite.testState.client1, &data)
+	resp, err := BroadcastMessage(suite.testState.client1, &data, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
@@ -66,6 +68,103 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	<-changes2 // also expect database change events
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1, 0)
 	assert.Equal(suite.T(), data.Value, val2)
+
+}
+
+func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
+	defer suite.testState.done()
+
+	var resp *resty.Response
+	value := fftypes.Byteable(`"Hello"`)
+	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
+	version := fmt.Sprintf("0.0.%d", randVer.Int64())
+	data := fftypes.DataRefOrValue{
+		Value: value,
+		Datatype: &fftypes.DatatypeRef{
+			Name:    "widget",
+			Version: version,
+		},
+	}
+
+	// Should be rejected as datatype not known
+	resp, err := BroadcastMessage(suite.testState.client1, &data, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 400, resp.StatusCode())
+	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
+
+	dt := &fftypes.Datatype{
+		Name:    "widget",
+		Version: version,
+		Value:   widgetSchemaJSON,
+	}
+	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+
+	resp, err = BroadcastMessage(suite.testState.client1, &data, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 400, resp.StatusCode())
+	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
+
+	data.Value = fftypes.Byteable(`{
+		"id": "widget12345",
+		"name": "mywidget"
+	}`)
+
+	resp, err = BroadcastMessage(suite.testState.client1, &data, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 200, resp.StatusCode())
+
+}
+
+func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
+	defer suite.testState.done()
+
+	var resp *resty.Response
+	value := fftypes.Byteable(`{"foo":"bar"}`)
+	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
+	version := fmt.Sprintf("0.0.%d", randVer.Int64())
+	data := fftypes.DataRefOrValue{
+		Value: value,
+		Datatype: &fftypes.DatatypeRef{
+			Name:    "widget",
+			Version: version,
+		},
+	}
+
+	// Should be rejected as datatype not known
+	resp, err := PrivateMessage(suite.T(), suite.testState.client1, &data, []string{
+		suite.testState.org1.Name,
+		suite.testState.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 400, resp.StatusCode())
+	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
+
+	dt := &fftypes.Datatype{
+		Name:    "widget",
+		Version: version,
+		Value:   widgetSchemaJSON,
+	}
+	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+
+	resp, err = PrivateMessage(suite.T(), suite.testState.client1, &data, []string{
+		suite.testState.org1.Name,
+		suite.testState.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, false)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 400, resp.StatusCode())
+	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
+
+	data.Value = fftypes.Byteable(`{
+		"id": "widget12345",
+		"name": "mywidget"
+	}`)
+
+	resp, err = PrivateMessage(suite.T(), suite.testState.client1, &data, []string{
+		suite.testState.org1.Name,
+		suite.testState.org2.Name,
+	}, "", fftypes.TransactionTypeBatchPin, true)
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 200, resp.StatusCode())
 
 }
 
@@ -84,7 +183,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 	resp, err := PrivateMessage(suite.T(), suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin)
+	}, "", fftypes.TransactionTypeBatchPin, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
@@ -174,7 +273,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	resp, err := PrivateMessage(suite.T(), suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeBatchPin)
+	}, "myrequest", fftypes.TransactionTypeBatchPin, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 

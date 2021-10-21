@@ -28,12 +28,10 @@ import (
 
 var getTokenAccounts = &oapispec.Route{
 	Name:   "getTokenAccounts",
-	Path:   "namespaces/{ns}/tokens/{type}/pools/{name}/accounts",
+	Path:   "namespaces/{ns}/tokens/accounts",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "type", Description: i18n.MsgTBD},
-		{Name: "name", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenAccountQueryFactory,
@@ -42,6 +40,6 @@ var getTokenAccounts = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenAccounts(r.Ctx, r.PP["ns"], r.PP["type"], r.PP["name"], r.Filter))
+		return filterResult(r.Or.Assets().GetTokenAccounts(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

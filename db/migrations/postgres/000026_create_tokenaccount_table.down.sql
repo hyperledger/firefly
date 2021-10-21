@@ -1,3 +1,0 @@
-BEGIN;
-DROP TABLE IF EXISTS tokenaccount;
-COMMIT;

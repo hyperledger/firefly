@@ -75,6 +75,11 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }
 
 func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context) error) error {
+	if tx := getTXFromContext(ctx); tx != nil {
+		// transaction already exists - just continue using it
+		return fn(ctx)
+	}
+
 	ctx, tx, _, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err

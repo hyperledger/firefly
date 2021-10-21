@@ -24,10 +24,9 @@ import (
 
 func TestTokenAccountIdentifier(t *testing.T) {
 	account := &TokenAccount{
-		ProtocolID: "123",
-		TokenIndex: "1",
-		Identity:   "0x00",
-		Balance:    5,
+		PoolProtocolID: "123",
+		TokenIndex:     "1",
+		Key:            "0x00",
 	}
 	assert.Equal(t, "123:1:0x00", account.Identifier())
 }
