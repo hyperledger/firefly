@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetTokenTransfersByID(t *testing.T) {
+func TestGetTokenTransferByID(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
@@ -34,8 +34,8 @@ func TestGetTokenTransfersByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenTransfersByID", mock.Anything, "ns1", "id1", mock.Anything).
-		Return([]*fftypes.TokenTransfer{}, nil, nil)
+	mam.On("GetTokenTransferByID", mock.Anything, "ns1", "id1").
+		Return(&fftypes.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

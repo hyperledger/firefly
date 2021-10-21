@@ -37,13 +37,13 @@ func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter
 	return am.database.GetTokenTransfers(ctx, filter)
 }
 
-func (am *assetManager) GetTokenTransfersByID(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error) {
 	transferID, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return am.database.GetTokenTransfers(ctx, filter.Condition(filter.Builder().Eq("localid", transferID)))
+	return am.database.GetTokenTransfer(ctx, transferID)
 }
 
 func (am *assetManager) GetTokenTransfersByPool(ctx context.Context, ns, connector, name string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {

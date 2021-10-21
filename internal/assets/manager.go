@@ -44,7 +44,7 @@ type Manager interface {
 	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error)
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
-	GetTokenTransfersByID(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
+	GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error)
 	GetTokenTransfersByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error)
 	NewTransfer(ns, connector, poolName string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender
 	MintTokens(ctx context.Context, ns, connector, poolName string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)

@@ -22,12 +22,11 @@ import (
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getTokenTransfersByID = &oapispec.Route{
-	Name:   "getTokenTransfersByID",
+var getTokenTransferByID = &oapispec.Route{
+	Name:   "getTokenTransferByID",
 	Path:   "namespaces/{ns}/tokens/transfers/{transferID}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -35,12 +34,13 @@ var getTokenTransfersByID = &oapispec.Route{
 		{Name: "transferID", Description: i18n.MsgTBD},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenTransferQueryFactory,
+	FilterFactory:   nil,
 	Description:     i18n.MsgTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenTransfer{} },
+	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.Assets().GetTokenTransfersByID(r.Ctx, r.PP["ns"], r.PP["transferID"], r.Filter))
+		output, err = r.Or.Assets().GetTokenTransferByID(r.Ctx, r.PP["ns"], r.PP["transferID"])
+		return output, err
 	},
 }
