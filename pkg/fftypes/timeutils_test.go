@@ -74,11 +74,19 @@ func TestFFTimeJSONUnmarshalFail(t *testing.T) {
 	assert.Regexp(t, "FF10165", err)
 }
 
+func TestNilTimeConversion(t *testing.T) {
+	var ft FFTime
+	var epoch time.Time
+	conversion := ft.Time()
+
+	assert.Equal(t, epoch, *conversion)
+}
+
 func TestFFTimeDatabaseSerialization(t *testing.T) {
 	now := Now()
 	zero := ZeroTime()
 
-	var ft *FFTime = &zero
+	var ft = &zero
 	v, err := ft.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), v)
@@ -130,11 +138,13 @@ func TestFFTimeParseValue(t *testing.T) {
 	err := ft.Scan("1621108144123456789")
 	assert.NoError(t, err)
 	assert.Equal(t, "2021-05-15T19:49:04.123456789Z", ft.String())
+	assert.Equal(t, "2021-05-15T19:49:04.123456789Z", ft.Time().UTC().Format(time.RFC3339Nano))
 
 	// Unix Millis
 	err = ft.Scan("1621108144123")
 	assert.NoError(t, err)
 	assert.Equal(t, "2021-05-15T19:49:04.123Z", ft.String())
+	assert.Equal(t, "2021-05-15T19:49:04.123Z", ft.Time().UTC().Format(time.RFC3339Nano))
 
 	// Unix Secs
 	err = ft.Scan("1621108144")
