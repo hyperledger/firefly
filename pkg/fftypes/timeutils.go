@@ -84,6 +84,10 @@ func ParseString(str string) (*FFTime, error) {
 	return &ft, nil
 }
 
+func (ft *FFTime) Time() *time.Time {
+	return (*time.Time)(ft)
+}
+
 func (ft *FFTime) UnixNano() int64 {
 	if ft == nil {
 		return 0

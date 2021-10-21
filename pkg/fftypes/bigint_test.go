@@ -64,13 +64,14 @@ func TestBigIntSetJSONOk(t *testing.T) {
 	assert.Equal(t, int64(4276993775), myStruct.Field4.Int().Int64())
 
 	jsonValSerialized, err := json.Marshal(&myStruct)
+
+	assert.NoError(t, err)
 	assert.JSONEq(t, `{
 		"field1": "-111111",
 		"field2": "2222",
 		"field3": "333333",
 		"field4": "4276993775"
 	}`, string(jsonValSerialized))
-
 }
 
 func TestBigIntJSONBadString(t *testing.T) {
