@@ -202,6 +202,75 @@ func TestGetTokenPoolBadName(t *testing.T) {
 	assert.Regexp(t, "FF10131", err)
 }
 
+func TestGetTokenPoolByID(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", context.Background(), u).Return(&fftypes.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", u.String())
+	assert.NoError(t, err)
+}
+
+func TestGetTokenPoolByIDBadNamespace(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPoolByIDBadID(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", context.Background(), u).Return(nil, fmt.Errorf("pop"))
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", u.String())
+	assert.EqualError(t, err, "pop")
+}
+
+func TestGetTokenPoolByIDNilPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPoolByID", context.Background(), u).Return(nil, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", u.String())
+	assert.Regexp(t, "FF10109", err)
+}
+
+func TestGetTokenPoolByName(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&fftypes.TokenPool{}, nil)
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", "abc")
+	assert.NoError(t, err)
+}
+
+func TestGetTokenPoolByNameBadName(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", "")
+	assert.Regexp(t, "FF10131", err)
+}
+
+func TestGetTokenPoolByNameNilPool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(nil, fmt.Errorf("pop"))
+	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", "abc")
+	assert.EqualError(t, err, "pop")
+}
+
 func TestGetTokenPools(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()

@@ -47,6 +47,30 @@ func TestGetTokenTransfers(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetTokenTransfersByID(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	mdi := am.database.(*databasemocks.Plugin)
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("localid", u))
+	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*fftypes.TokenTransfer{}, nil, nil)
+	_, _, err := am.GetTokenTransfersByID(context.Background(), "ns1", u.String(), f)
+	assert.NoError(t, err)
+}
+
+func TestGetTokenTransfersByIDBadID(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	u := fftypes.NewUUID()
+	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
+	f := fb.And(fb.Eq("localid", u))
+	_, _, err := am.GetTokenTransfersByID(context.Background(), "ns1", "badUUID", f)
+	assert.Regexp(t, "FF10142", err)
+}
+
 func TestGetTokenTransfersByPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
