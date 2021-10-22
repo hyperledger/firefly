@@ -207,7 +207,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 		},
 	}
-	msa.On("SendConfirm", ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(ctx)

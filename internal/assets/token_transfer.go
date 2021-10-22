@@ -214,7 +214,7 @@ func (s *transferSender) resolve(ctx context.Context) (sender sysmessaging.Messa
 
 func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) error {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.SendConfirmTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
+		out, err := s.mgr.syncasync.WaitForTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
 		if out != nil {
 			s.transfer.TokenTransfer = *out
 		}

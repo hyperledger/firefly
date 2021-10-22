@@ -38,7 +38,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 
 	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	msa.On("SendConfirm", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")

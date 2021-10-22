@@ -135,7 +135,7 @@ func (s *broadcastSender) resolve(ctx context.Context) ([]*fftypes.DataAndBlob, 
 
 func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
+		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Header.ID, s.Send)
 		if out != nil {
 			s.msg.Message = *out
 		}

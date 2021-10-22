@@ -231,7 +231,7 @@ func TestMintTokensConfirm(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -308,7 +308,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -678,7 +678,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 		return tx.Subject.Type == fftypes.TransactionTypeTokenTransfer
 	}), false).Return(nil)
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -752,7 +752,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
 	mms.On("SendAndWait", context.Background()).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
@@ -809,7 +809,7 @@ func TestTransferTokensWithBroadcastConfirmTransferFail(t *testing.T) {
 	mdi.On("UpsertOperation", context.Background(), mock.Anything, false).Return(nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(nil)
-	msa.On("SendConfirmTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForTokenTransfer", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())

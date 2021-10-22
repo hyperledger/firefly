@@ -70,7 +70,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("SendConfirm", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(pm.ctx)
@@ -715,7 +715,7 @@ func TestRequestReplyMissingTag(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{})
 	assert.Regexp(t, "FF10261", err)
@@ -726,7 +726,7 @@ func TestRequestReplyInvalidCID(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, err := pm.RequestReply(pm.ctx, "ns1", &fftypes.MessageInOut{
 		Message: fftypes.Message{
@@ -748,7 +748,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	mim.On("ResolveInputIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("RequestReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
 			send := args[3].(syncasync.RequestSender)
 			send(pm.ctx)

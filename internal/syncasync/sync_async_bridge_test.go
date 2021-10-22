@@ -73,7 +73,7 @@ func TestRequestReplyOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.RequestReply(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForReply(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -121,7 +121,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.SendConfirm(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -168,7 +168,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 		{ID: dataID, Value: fftypes.Byteable(`"response data"`)},
 	}, true, nil)
 
-	_, err := sa.SendConfirm(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -192,7 +192,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
 		return nil
 	})
 	assert.Regexp(t, "FF10260", err)
@@ -206,7 +206,7 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := sa.RequestReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
 		return nil
 	})
 	assert.Regexp(t, "pop", err)
@@ -516,7 +516,7 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 		}
 	}
 
-	reply, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -542,7 +542,7 @@ func TestAwaitTokenPoolConfirmationSendFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
@@ -571,7 +571,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 		}
 	}
 
-	_, err := sa.SendConfirmTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -610,7 +610,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 		}
 	}
 
-	reply, err := sa.SendConfirmTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&fftypes.EventDelivery{
 				Event: fftypes.Event{
@@ -636,7 +636,7 @@ func TestAwaitTokenTransferConfirmationSendFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.SendConfirmTokenTransfer(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
