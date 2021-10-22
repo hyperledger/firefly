@@ -293,6 +293,7 @@ func (f *Fabric) ensureSusbscriptions(streamID string) error {
 				Channel:     f.defaultChannel,
 				Signer:      f.signer,
 				Stream:      streamID,
+				FromBlock:   "0",
 			}
 			newSub.Filter.ChaincodeID = f.chaincode
 			newSub.Filter.EventFilter = "BatchPin"
