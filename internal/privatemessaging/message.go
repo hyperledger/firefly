@@ -57,24 +57,37 @@ func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fft
 }
 
 type messageSender struct {
-	mgr          *privateMessaging
-	namespace    string
-	msg          *fftypes.MessageInOut
-	resolved     bool
-	sendCallback sysmessaging.BeforeSendCallback
+	mgr       *privateMessaging
+	namespace string
+	msg       *fftypes.MessageInOut
+	resolved  bool
+}
+
+type sendMethod int
+
+const (
+	methodPrepare sendMethod = iota
+	methodSend
+	methodSendAndWait
+	methodSendImmediate
+)
+
+func (s *messageSender) Prepare(ctx context.Context) error {
+	return s.resolveAndSend(ctx, methodPrepare)
 }
 
 func (s *messageSender) Send(ctx context.Context) error {
-	return s.resolveAndSend(ctx, false)
+	if s.msg.Header.TxType == fftypes.TransactionTypeNone {
+		return s.resolveAndSend(ctx, methodSendImmediate)
+	}
+	return s.resolveAndSend(ctx, methodSend)
 }
 
 func (s *messageSender) SendAndWait(ctx context.Context) error {
-	return s.resolveAndSend(ctx, true)
-}
-
-func (s *messageSender) BeforeSend(cb sysmessaging.BeforeSendCallback) sysmessaging.MessageSender {
-	s.sendCallback = cb
-	return s
+	if s.msg.Header.TxType == fftypes.TransactionTypeNone {
+		return s.resolveAndSend(ctx, methodSendImmediate)
+	}
+	return s.resolveAndSend(ctx, methodSendAndWait)
 }
 
 func (s *messageSender) setDefaults() {
@@ -88,21 +101,21 @@ func (s *messageSender) setDefaults() {
 	}
 }
 
-func (s *messageSender) resolveAndSend(ctx context.Context, waitConfirm bool) error {
+func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) error {
 	sent := false
 
 	// We optimize the DB storage of all the parts of the message using transaction semantics (assuming those are supported by the DB plugin)
 	err := s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		if !s.resolved {
-			if err := s.resolveMessage(ctx); err != nil {
+			if err := s.resolve(ctx); err != nil {
 				return err
 			}
 			s.resolved = true
 		}
 
 		// If we aren't waiting for blockchain confirmation, insert the local message immediately within the same DB transaction.
-		if !waitConfirm {
-			err = s.sendInternal(ctx, waitConfirm)
+		if method != methodSendAndWait {
+			err = s.sendInternal(ctx, method)
 			sent = true
 		}
 		return err
@@ -112,10 +125,10 @@ func (s *messageSender) resolveAndSend(ctx context.Context, waitConfirm bool) er
 		return err
 	}
 
-	return s.sendInternal(ctx, waitConfirm)
+	return s.sendInternal(ctx, method)
 }
 
-func (s *messageSender) resolveMessage(ctx context.Context) error {
+func (s *messageSender) resolve(ctx context.Context) error {
 	// Resolve the sending identity
 	if err := s.mgr.identity.ResolveInputIdentity(ctx, &s.msg.Header.Identity); err != nil {
 		return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
@@ -132,10 +145,8 @@ func (s *messageSender) resolveMessage(ctx context.Context) error {
 	return err
 }
 
-func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) error {
-	immediateConfirm := s.msg.Header.TxType == fftypes.TransactionTypeNone
-
-	if waitConfirm && !immediateConfirm {
+func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) error {
+	if method == methodSendAndWait {
 		// Pass it to the sync-async handler to wait for the confirmation to come back in.
 		// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
 		out, err := s.mgr.syncasync.SendConfirm(ctx, s.namespace, s.msg.Header.ID, s.Send)
@@ -149,13 +160,11 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 	if err := s.msg.Seal(ctx); err != nil {
 		return err
 	}
-	if s.sendCallback != nil {
-		if err := s.sendCallback(ctx); err != nil {
-			return err
-		}
+	if method == methodPrepare {
+		return nil
 	}
 
-	if immediateConfirm {
+	if method == methodSendImmediate {
 		s.msg.Confirmed = fftypes.Now()
 		s.msg.Pending = false
 		// msg.Header.Key = "" // there is no on-chain signing assurance with this message
@@ -166,7 +175,7 @@ func (s *messageSender) sendInternal(ctx context.Context, waitConfirm bool) erro
 		return err
 	}
 
-	if immediateConfirm {
+	if method == methodSendImmediate {
 		if err := s.sendUnpinned(ctx); err != nil {
 			return err
 		}

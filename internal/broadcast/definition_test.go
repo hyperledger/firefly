@@ -22,10 +22,31 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mdi := bm.database.(*databasemocks.Plugin)
+	msa := bm.syncasync.(*syncasyncmocks.Bridge)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	mdi.On("UpsertData", mock.Anything, mock.Anything, true, false).Return(nil)
+	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
+	msa.On("SendConfirm", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, true)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	msa.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
 
 func TestBroadcastDefinitionAsNodeUpsertFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
