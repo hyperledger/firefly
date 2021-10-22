@@ -4297,6 +4297,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: connector
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -5727,6 +5732,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: connector
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -5846,6 +5856,69 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/pools/{nameOrID}:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokenPoolByNameOrID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: nameOrID
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  config:
+                    additionalProperties: {}
+                    type: object
+                  connector:
+                    type: string
+                  created: {}
+                  id: {}
+                  key:
+                    type: string
+                  message: {}
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  protocolId:
+                    type: string
+                  standard:
+                    type: string
+                  symbol:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""
@@ -5992,6 +6065,67 @@ paths:
                       type: string
                   type: object
                 type: array
+          description: Success
+        default:
+          description: ""
+  /namespaces/{ns}/tokens/transfers/{transferID}:
+    get:
+      description: 'TODO: Description'
+      operationId: getTokenTransferByID
+      parameters:
+      - description: 'TODO: Description'
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: 'TODO: Description'
+        in: path
+        name: transferID
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  amount: {}
+                  connector:
+                    type: string
+                  created: {}
+                  from:
+                    type: string
+                  key:
+                    type: string
+                  localId: {}
+                  messageHash: {}
+                  poolProtocolId:
+                    type: string
+                  protocolId:
+                    type: string
+                  to:
+                    type: string
+                  tokenIndex:
+                    type: string
+                  tx:
+                    properties:
+                      id: {}
+                      type:
+                        type: string
+                    type: object
+                  type:
+                    type: string
+                type: object
           description: Success
         default:
           description: ""

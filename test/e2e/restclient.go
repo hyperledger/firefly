@@ -102,6 +102,28 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, messageHash *fftypes.Bytes32) (data []*fftypes.Data) {
+	var msgs []*fftypes.Message
+	path := urlGetMessages
+	resp, err := client.R().
+		SetQueryParam("hash", messageHash.String()).
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&msgs).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 1, len(msgs))
+
+	path += "/" + msgs[0].Header.ID.String() + "/data"
+	resp, err = client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&data).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return data
+}
+
 func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedStatus int) []byte {
 	path := fmt.Sprintf(urlGetDataBlob, data.ID)
 	resp, err := client.R().
@@ -318,13 +340,21 @@ func CreateDatatype(t *testing.T, client *resty.Client, datatype *fftypes.Dataty
 	return &dtReturn
 }
 
-func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool) {
+func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool, confirm bool) *fftypes.TokenPool {
+	var poolOut fftypes.TokenPool
 	path := urlTokenPools
 	resp, err := client.R().
 		SetBody(pool).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&poolOut).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &poolOut
 }
 
 func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*fftypes.TokenPool) {
@@ -338,31 +368,55 @@ func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (poo
 	return pools
 }
 
-func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftypes.TokenTransfer) {
+func MintTokens(t *testing.T, client *resty.Client, poolName string, mint *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+	var transferOut fftypes.TokenTransfer
 	path := fmt.Sprintf(urlTokenMint, poolName)
 	resp, err := client.R().
 		SetBody(mint).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &transferOut
 }
 
-func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransfer) {
+func BurnTokens(t *testing.T, client *resty.Client, poolName string, burn *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+	var transferOut fftypes.TokenTransfer
 	path := fmt.Sprintf(urlTokenBurn, poolName)
 	resp, err := client.R().
 		SetBody(burn).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &transferOut
 }
 
-func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransfer) {
+func TransferTokens(t *testing.T, client *resty.Client, poolName string, transfer *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
+	var transferOut fftypes.TokenTransfer
 	path := fmt.Sprintf(urlTokenTransfers, poolName)
 	resp, err := client.R().
 		SetBody(transfer).
+		SetQueryParam("confirm", strconv.FormatBool(confirm)).
+		SetResult(&transferOut).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	expected := 202
+	if confirm {
+		expected = 200
+	}
+	require.Equal(t, expected, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &transferOut
 }
 
 func GetTokenTransfers(t *testing.T, client *resty.Client, poolName string) (transfers []*fftypes.TokenTransfer) {
