@@ -23,7 +23,7 @@ jobs:
         run: docker build \
           --label commit=$GITHUB_SHA \
           --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-          --label tag=$BUILD_TAG
+          --label tag=$BUILD_TAG \
           --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} .
       
       - name: Tag release
