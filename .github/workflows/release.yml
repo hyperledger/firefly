@@ -1,0 +1,33 @@
+name: Docker Release Build
+
+on:
+  release:
+    types: [released, prereleased]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build
+        run: docker build \
+          --label commit=$GITHUB_SHA \
+          --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+          --label tag=${GITHUB_REF##*/}
+          --tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} .
+      
+      - name: Tag release
+        if: github.event.action == 'released'
+        run: docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:latest
+      
+      - name: Push docker image
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          docker push ghcr.io/hyperledger/firefly:${GITHUB_REF##*/}
+      
+      - name: Push latest tag
+        if: github.event.action == 'released'
+        run: |
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+          docker push ghcr.io/hyperledger/firefly:latest
