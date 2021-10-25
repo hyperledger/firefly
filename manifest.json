@@ -11,12 +11,12 @@
   },
   "dataexchange-https": {
     "image": "ghcr.io/hyperledger/firefly-dataexchange-https",
-    "tag": "v0.9.0",
-    "sha": "0de5b1db891a02871505ba5e0507821416d9fa93c96ccb4b1ba2fac45eb37214"
+    "tag": "v0.9.0-20211025-01",
+    "sha": ""
   },
   "tokens-erc1155": {
     "image": "ghcr.io/hyperledger/firefly-tokens-erc1155",
-    "tag": "v0.9.0-20211019-01",
-    "sha": "aabc6c483db408896838329dab5f4b9e3c16d1e9fa9fffdb7e1ff05b7b2bbdd4"
+    "tag": "v0.9.0-20211021-01",
+    "sha": "9925e2d2afcf837386cd115ace8c1e50c84f69a504469834da9a48ee4d696e18"
   }
 }

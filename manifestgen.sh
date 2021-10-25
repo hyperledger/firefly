@@ -38,7 +38,10 @@ do
 
     # Query GitHub API the latest release version
     TAG=$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases/latest -s | jq .tag_name -r)
-    
+
+    # Comment out this line to get the most recent version, including pre-releases
+    # TAG=$(curl https://api.github.com/repos/hyperledger/firefly-${SERVICES[$i]}/releases -s | jq .[0].tag_name -r)
+
     # Attempt to pull the image from GitHub Container Repository
     docker pull ghcr.io/hyperledger/firefly-${SERVICES[$i]}:$TAG
     # Get the SHA of the downloaded image
