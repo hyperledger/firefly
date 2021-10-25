@@ -20,11 +20,12 @@ jobs:
           echo ::set-output name=BUILD_TAG::$BUILD_TAG
 
       - name: Build
-        run: docker build \
-          --label commit=$GITHUB_SHA \
-          --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-          --label tag=$BUILD_TAG \
-          --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} .
+        run: |
+          docker build \
+            --label commit=$GITHUB_SHA \
+            --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+            --label tag=$BUILD_TAG \
+            --tag ghcr.io/hyperledger/firefly:${{ steps.build_tag_generator.outputs.BUILD_TAG }} .
       
       - name: Tag release
         run: docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:head
