@@ -102,6 +102,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				log.L(ctx).Warnf("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolProtocolID, protocolTxID)
 				return nil
 			}
+			transfer.Namespace = pool.Namespace
 
 			if transfer.TX.ID != nil {
 				if valid, err := em.persistTokenTransaction(ctx, pool.Namespace, transfer, protocolTxID, additionalInfo); err != nil || !valid {
@@ -120,6 +121,7 @@ func (em *eventManager) TokensTransferred(tk tokens.Plugin, transfer *fftypes.To
 				PoolProtocolID: transfer.PoolProtocolID,
 				TokenIndex:     transfer.TokenIndex,
 				Connector:      transfer.Connector,
+				Namespace:      transfer.Namespace,
 			}
 
 			if transfer.Type != fftypes.TokenTransferTypeMint {
