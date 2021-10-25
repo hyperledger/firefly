@@ -40,6 +40,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
@@ -47,6 +48,7 @@ func TestTokenAccountE2EWithDB(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x0",
 	}
 	account.Balance.Int().SetInt64(10)
@@ -167,6 +169,7 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 		PoolProtocolID: "F1",
 		TokenIndex:     "1",
 		Connector:      "erc1155",
+		Namespace:      "ns1",
 		Key:            "0x0",
 	}
 	operation.Amount.Int().SetInt64(10)
@@ -174,7 +177,7 @@ func TestAddTokenAccountBalanceInsertSuccess(t *testing.T) {
 	db.ExpectBegin()
 	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	db.ExpectExec("INSERT .*").
-		WithArgs("F1", "1", "erc1155", "0x0", sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs("F1", "1", "erc1155", "ns1", "0x0", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	db.ExpectCommit()
 	err := s.AddTokenAccountBalance(context.Background(), operation)

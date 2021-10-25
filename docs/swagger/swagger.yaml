@@ -4663,6 +4663,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -4721,6 +4726,8 @@ paths:
                     connector:
                       type: string
                     key:
+                      type: string
+                    namespace:
                       type: string
                     poolProtocolId:
                       type: string
@@ -4870,6 +4877,8 @@ paths:
                       type: boolean
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -4907,6 +4916,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -4940,6 +4951,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5098,6 +5111,8 @@ paths:
                       type: boolean
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -5135,6 +5150,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5168,6 +5185,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5256,6 +5275,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -5325,6 +5349,8 @@ paths:
                       type: string
                     localId: {}
                     messageHash: {}
+                    namespace:
+                      type: string
                     poolProtocolId:
                       type: string
                     protocolId:
@@ -5483,6 +5509,8 @@ paths:
                       type: boolean
                   type: object
                 messageHash: {}
+                namespace:
+                  type: string
                 poolProtocolId:
                   type: string
                 protocolId:
@@ -5520,6 +5548,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5553,6 +5583,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
@@ -5605,6 +5637,11 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5667,6 +5704,8 @@ paths:
                     connector:
                       type: string
                     key:
+                      type: string
+                    namespace:
                       type: string
                     poolProtocolId:
                       type: string
@@ -5978,6 +6017,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: poolprotocolid
         schema:
           type: string
@@ -6047,6 +6091,8 @@ paths:
                       type: string
                     localId: {}
                     messageHash: {}
+                    namespace:
+                      type: string
                     poolProtocolId:
                       type: string
                     protocolId:
@@ -6109,6 +6155,8 @@ paths:
                     type: string
                   localId: {}
                   messageHash: {}
+                  namespace:
+                    type: string
                   poolProtocolId:
                     type: string
                   protocolId:
