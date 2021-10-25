@@ -109,7 +109,7 @@ func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.A
 }
 
 func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
-	return am.database.GetTokenAccounts(ctx, filter)
+	return am.database.GetTokenAccounts(ctx, am.scopeNS(ns, filter))
 }
 
 func (am *assetManager) GetTokenAccountsByPool(ctx context.Context, ns, connector, poolName string, filter database.AndFilter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {

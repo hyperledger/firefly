@@ -34,7 +34,7 @@ func addTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransf
 }
 
 func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
-	return am.database.GetTokenTransfers(ctx, filter)
+	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
 }
 
 func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error) {
