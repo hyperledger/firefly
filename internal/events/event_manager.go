@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
@@ -29,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syshandlers"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -80,6 +82,8 @@ type eventManager struct {
 	retry                retry.Retry
 	txhelper             txcommon.Helper
 	aggregator           *aggregator
+	broadcast            broadcast.Manager
+	messaging            privatemessaging.Manager
 	newEventNotifier     *eventNotifier
 	newPinNotifier       *eventNotifier
 	opCorrelationRetries int
@@ -87,8 +91,8 @@ type eventManager struct {
 	internalEvents       *system.Events
 }
 
-func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager) (EventManager, error) {
-	if pi == nil || di == nil || im == nil || dm == nil {
+func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.Plugin, im identity.Manager, sh syshandlers.SystemHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager) (EventManager, error) {
+	if pi == nil || di == nil || im == nil || dm == nil || bm == nil || pm == nil {
 		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -100,6 +104,8 @@ func NewEventManager(ctx context.Context, pi publicstorage.Plugin, di database.P
 		identity:      im,
 		syshandlers:   sh,
 		data:          dm,
+		broadcast:     bm,
+		messaging:     pm,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),

@@ -23,10 +23,12 @@ import (
 
 	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/publicstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syshandlersmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -43,8 +45,10 @@ func newTestEventManager(t *testing.T) (*eventManager, func()) {
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &syshandlersmocks.SystemHandlers{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	met.On("Name").Return("ut").Maybe()
-	emi, err := NewEventManager(ctx, mpi, mdi, mim, msh, mdm)
+	emi, err := NewEventManager(ctx, mpi, mdi, mim, msh, mdm, mbm, mpm)
 	em := emi.(*eventManager)
 	rag := mdi.On("RunAsGroup", em.ctx, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -74,7 +78,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -87,7 +91,9 @@ func TestStartStopBadTransports(t *testing.T) {
 	mpi := &publicstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &syshandlersmocks.SystemHandlers{}
-	_, err := NewEventManager(context.Background(), mpi, mdi, mim, msh, mdm)
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	_, err := NewEventManager(context.Background(), mpi, mdi, mim, msh, mdm, mbm, mpm)
 	assert.Regexp(t, "FF10172", err)
 
 }

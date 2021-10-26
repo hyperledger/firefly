@@ -29,9 +29,7 @@ func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransf
 }
 
 func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
-	input := &op.Input
-	transfer.LocalID, err = fftypes.ParseUUID(ctx, input.GetString("id"))
-	if err != nil {
+	if transfer.LocalID, err = fftypes.ParseUUID(ctx, op.Input.GetString("id")); err != nil {
 		return err
 	}
 	return nil
